@@ -1,0 +1,58 @@
+#ifndef TCPCONNECTION_H
+#define TCPCONNECTION_H
+
+#include <QObject>
+#include <QFile>
+#include <QTcpSocket>
+#include <time.h>
+#include <QTimer>
+
+
+class TcpConnection : public QObject
+{
+    Q_OBJECT
+
+public:
+    TcpConnection(int socketDescriptor, int verbose = 4, int timeout = 15000,
+                  int pingInterval = 5000, QObject *parent = 0);
+    void delay(int millisecondsWait);
+    void startTimePulser();
+
+signals:
+    void stoppedConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort,
+                           quint32 timeoutTime, quint32 connectionDuration);
+    void madeConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort);
+    void connectionTimeout(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort,
+                           quint32 timeoutTime, quint32 connectionDuration);
+    void error(int socketError, const QString &message);
+    void toConsole(QString data);
+    void stopTimePulser();
+
+public slots:
+    //void onSocketDisconnected();
+    void doStuff();
+    void onReadyRead();
+    void onTimePulse();
+    bool sendData(const quint8 someCode, QString someData);
+
+
+private:
+    bool handleFileTransfer(QDataStream &incomingData);
+    int timeout;
+    QDataStream *in;
+    quint16 fileTransmissionCounter;
+    QFile *file;
+    QHostAddress *peerAddress;
+    quint16 peerPort;
+    QHostAddress *localAddress;
+    quint16 localPort;
+    QTcpSocket *tcpSocket;
+    QTimer *t;
+    int socketDescriptor;
+    int pingInterval;
+    int verbose;
+    time_t firstConnection;
+    time_t lastConnection;
+};
+
+#endif // TCPCONNECTION_H
