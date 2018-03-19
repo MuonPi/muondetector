@@ -33,15 +33,16 @@ public slots:
     void doStuff();
     void onReadyRead();
     void onTimePulse();
-    bool sendData(const quint8 someCode, QString someData);
+    bool sendData(const quint16 someCode, QString someData);
 
 
 private:
-    bool handleFileTransfer(QDataStream &incomingData);
+    bool handleFileTransfer(QString fileName, QByteArray &block, quint16 nextCount);
     int timeout;
     QDataStream *in;
-    quint16 fileTransmissionCounter;
-    QFile *file;
+    QByteArray carry;
+    quint16 fileTransmissionCounter = -1;
+    QFile *file = NULL;
     QHostAddress *peerAddress;
     quint16 peerPort;
     QHostAddress *localAddress;

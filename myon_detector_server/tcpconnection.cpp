@@ -1,12 +1,16 @@
 #include "tcpconnection.h"
+#include "custom_io_operators.h" // remove after debug
 #include <QtNetwork>
 
-const quint8 ping = 123;
-const quint8 msgSig = 246;
-const quint8 answPing = 231;
-const quint8 fileSig = 142;
-const quint8 quitConnection = 101;
-const quint8 timeoutSig = 138;
+using namespace std; //remove after debug
+
+const quint16 ping = 123;
+const quint16 msgSig = 246;
+const quint16 answPing = 231;
+const quint16 fileSig = 142;
+//const quint16 nextPart = 143;
+const quint16 quitConnection = 101;
+const quint16 timeoutSig = 138;
 
 TcpConnection::TcpConnection(int socketDescriptor, int newVerbose, int newTimeout, int newPingInterval, QObject *parent)
     : QObject(parent), socketDescriptor(socketDescriptor)//, text(data)
@@ -42,22 +46,31 @@ void TcpConnection::doStuff()
 
 void TcpConnection::onReadyRead(){
     // what happens when a packet from the client arrives
-    if(!in){ return; }
+    if(!in){
+        emit toConsole("input stream not yet initialized");
+        return;
+    }
     QByteArray block;
-    quint8 someCode;
-    QString someData;
-    QDataStream incomingData(&block,QIODevice::ReadWrite);
+    quint16 someCode;
+    quint16 nextCount = -1;
+    QString fileName;
     in->startTransaction();
-    *in >> block;
+    *in >> someCode;
+    if (someCode == fileSig){
+        *in >> nextCount;
+        if (nextCount == 0){
+            *in >> fileName;
+        }else{
+            *in >> block;
+        }
+    }
     if (!in->commitTransaction()){
         return;
     }
-    //incomingData >> someCode;
-    // cout << block.toStdString()<<endl;
     if (someCode == fileSig){
-        emit toConsole("receiving data file");
+        //emit toConsole("receiving data file");
         lastConnection = time(NULL);
-        if (!handleFileTransfer(incomingData)){
+        if (!handleFileTransfer(fileName, block, nextCount)){
             // eventually send some information to server that transmission failed
         }
         return;
@@ -65,8 +78,9 @@ void TcpConnection::onReadyRead(){
     if (someCode == msgSig){
         emit toConsole("received message");
         QString temp;
-        incomingData >> temp;
-        emit toConsole(someData);
+        block.remove(0,1);
+        temp = block;
+        emit toConsole(temp);
         return;
     }
     if (someCode == ping){
@@ -93,43 +107,39 @@ void TcpConnection::onReadyRead(){
         emit connectionTimeout(peerAddress->toString(),peerPort,localAddress->toString(),localPort,(quint32)time(NULL),connectionDuration);
         return;
     }
+    cout << "something went wrong with the transmission code" <<endl;
 }
-
-bool TcpConnection::handleFileTransfer(QDataStream& incomingData){
-    quint16 nextCount;
-    incomingData >> nextCount;
+bool TcpConnection::handleFileTransfer(QString fileName, QByteArray &block, quint16 nextCount){
     if (nextCount == 0){
-        fileTransmissionCounter = nextCount;
+        fileTransmissionCounter = 0;
         if(file){
             file->close();
             delete file;
         }
-        QString fileName;
-        incomingData >> fileName;
         if (fileName.isEmpty()){
             emit toConsole("filename is empty, something went wrong");
             fileName = "./testfile.txt";
         }
-        file = new QFile(fileName);
-        if(!file->open(QIODevice::WriteOnly)){
+        file = new QFile(QCoreApplication::applicationDirPath()+"/"+fileName);
+        if(!file->open(QIODevice::ReadWrite)){
             if (verbose>2){
                 emit toConsole("could not open "+fileName);
                 return false;
             }
         }
+        //sendData(nextPart,"");
+        return true;
     }
     if (fileTransmissionCounter+1!=nextCount){
+        emit toConsole("received file transmission out of order");
         return false;
     }
     fileTransmissionCounter = nextCount;
-    QByteArray temp;
-    incomingData >> temp;
-    QDataStream toFile(file);
-    toFile << temp;
+    file->write(block);
     return true;
 }
 
-bool TcpConnection::sendData(const quint8 someCode, QString someData){
+bool TcpConnection::sendData(const quint16 someCode, QString someData){
     if(!tcpSocket){
         emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
         return false;

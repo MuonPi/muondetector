@@ -1,7 +1,9 @@
 #include <QCoreApplication>
 #include <QCommandLineParser>
+#include "custom_io_operators.h"
 #include "tcpserver.h"
 
+using namespace std;
 
 int main(int argc, char *argv[])
 {

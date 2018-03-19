@@ -4,6 +4,7 @@
 #include <QTcpSocket>
 #include <time.h>
 #include <QTimer>
+#include <QFile>
 
 class TcpConnection : public QObject
 {
@@ -28,14 +29,16 @@ public slots:
     //void onPosixTerminate();
     void onReadyRead();
     void onTimePulse();
-    bool sendFile(QString fileName);
+    bool sendFile(QString fileName = "");
     bool sendMsg(QString message);
-    bool sendData(const quint8 someCode, QString someData);
+    bool sendData(const quint16 someCode, QString someData);
 
 private:
     int timeout;
     int verbose;
     int pingInterval;
+    quint16 fileCounter = 0;
+    QFile *myFile = NULL;
     QDataStream *in;
     QTcpSocket *tcpSocket;
 	QString hostName;

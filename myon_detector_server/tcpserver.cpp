@@ -7,7 +7,7 @@ using namespace std;
 TcpServer::TcpServer(int newVerbose, QObject *parent)
     : QTcpServer(parent)
 {
-    verbose = verbose;
+    verbose = newVerbose;
     // find out IP to connect
     /*QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
     // use the first non-localhost IPv4 address

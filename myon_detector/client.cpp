@@ -107,7 +107,7 @@ Client::Client(std::string new_gpsdevname, int new_verbose, bool new_allSats,
     }
     delay(1000);
     //emit sendMsg("testMessage");
-    emit sendFile(QCoreApplication::applicationDirPath()+"/lang.txt");
+    emit sendFile("lang.txt");
 }
 
 void Client::connectToServer(){
