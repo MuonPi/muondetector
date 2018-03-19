@@ -51,7 +51,7 @@ void TcpConnection::onReadyRead(){
         return;
     }
     QByteArray block;
-    quint16 someCode;
+    quint16 someCode = 0;
     quint16 nextCount = -1;
     QString fileName;
     in->startTransaction();
@@ -67,6 +67,10 @@ void TcpConnection::onReadyRead(){
     if (!in->commitTransaction()){
         return;
     }
+    /*
+    cout << someCode << endl;
+    cout << nextCount << endl;
+    */
     if (someCode == fileSig){
         //emit toConsole("receiving data file");
         lastConnection = time(NULL);

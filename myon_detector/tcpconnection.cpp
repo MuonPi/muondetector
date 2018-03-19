@@ -135,8 +135,6 @@ bool TcpConnection::sendFile(QString fileName){
         emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
         return false;
     }
-    QByteArray block;
-    QDataStream out(&block, QIODevice::WriteOnly);
     if (myFile){
         myFile->close();
         delete myFile;
@@ -151,19 +149,23 @@ bool TcpConnection::sendFile(QString fileName){
         emit toConsole("empty Filename error");
         return false;
     }
+    QByteArray fileNameBlock;
+    QDataStream out(&fileNameBlock, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
     out << fileSig;
     out << fileCounter;
     out << fileName;
-    tcpSocket->write(block);
+    tcpSocket->write(fileNameBlock);
     if(!tcpSocket->waitForBytesWritten(timeout)){
         return false;
     }
     while(true){
+        QByteArray block;
+        QDataStream out(&block, QIODevice::WriteOnly);
         fileCounter++;
         out << fileSig;
         out << fileCounter;
-        out << myFile->read(8*32768);
+        out <<myFile->read(1024);
         //cout << block.toStdString()<<endl;
         tcpSocket->write(block);
         if(!tcpSocket->waitForBytesWritten(timeout)){
