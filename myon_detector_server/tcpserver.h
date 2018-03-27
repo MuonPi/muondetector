@@ -11,7 +11,7 @@ class TcpServer : public QTcpServer
     Q_OBJECT
 
 public:
-    TcpServer(int verbose = 0, QObject *parent = 0);
+    TcpServer(QString listenIpAddress, quint16 portFromStart , int verbose = 0, QObject *parent = 0);
 
 private slots:
     void incomingConnection(qintptr socketDescriptor) override;

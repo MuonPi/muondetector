@@ -1,15 +1,20 @@
 #include <QThread>
+#include <QNetworkInterface>
 #include "tcpserver.h"
 #include "custom_io_operators.h"
 
 using namespace std;
 
-TcpServer::TcpServer(int newVerbose, QObject *parent)
+TcpServer::TcpServer(QString listenIpAddress, quint16 portFromStart ,int newVerbose, QObject *parent)
     : QTcpServer(parent)
 {
     verbose = newVerbose;
+    if (!listenIpAddress.isEmpty()){
+    // use ipAddress from start parameters or not
+        ipAddress = QHostAddress(listenIpAddress);
+    }else{
     // find out IP to connect
-    /*QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
+    QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
     // use the first non-localhost IPv4 address
     for (int i = 0; i < ipAddressesList.size(); ++i) {
         if (ipAddressesList.at(i) != QHostAddress::LocalHost &&
@@ -17,15 +22,20 @@ TcpServer::TcpServer(int newVerbose, QObject *parent)
             ipAddress = ipAddressesList.at(i);
             break;
         }
-    }*/
+    }
     // use localhost for test purposes
     // if we did not find one, use IPv4 localhost
-
+    }
     if (ipAddress.isNull()){
         ipAddress = QHostAddress(QHostAddress::LocalHost);
     }
-    //port = 43102;
-    if (!this->listen(ipAddress,51508)) {
+    // it is possible to select specific port from star parameters
+    port = portFromStart;
+    if (port == 0){
+        // maybe think about other fall back solution
+        port = 51508;
+    }
+    if (!this->listen(ipAddress,port)) {
         cout << tr("Unable to start the server: %1.\n").arg(this->errorString());
     }else{
         cout <<tr("\nThe server is running on\n\nIP: %1\nport: %2\n\n")

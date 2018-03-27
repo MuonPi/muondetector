@@ -29,13 +29,49 @@ int main(int argc, char *argv[])
         QCoreApplication::translate("main", "verbosity"));
     parser.addOption(verbosityOption);
 
+    // ip option
+    QCommandLineOption ipOption(QStringList() << "ip" << "address",
+        QCoreApplication::translate("main", "set server ip address"),
+        QCoreApplication::translate("main", "ipAddress"));
+    parser.addOption(ipOption);
+
+    // port option
+    QCommandLineOption portOption(QStringList() << "p" << "port",
+        QCoreApplication::translate("main", "set server port"),
+        QCoreApplication::translate("main", "port"));
+    parser.addOption(portOption);
+
     // process the actual command line arguments given by the user
     parser.process(a);
+    bool ok;
     int verbose = 0;
+    if (parser.isSet(verbosityOption)) {
+        verbose = parser.value(verbosityOption).toInt(&ok);
+        if (!ok) {
+            verbose = 0;
+            cout << "wrong input verbosity level" << endl;
+        }
+    }
+    quint16 port = 0;
+    if (parser.isSet(portOption)){
+        port = parser.value(portOption).toInt(&ok);
+        if (!ok) {
+            port = 0;
+            cout << "wrong input port (maybe not an integer)" << endl;
+        }
+    }
+    QString ipAddress;
+    if (parser.isSet(ipOption)){
+        ipAddress = parser.value(ipOption);
+        if (!QHostAddress(ipAddress).toIPv4Address()){
+            ipAddress = "";
+            cout << "wrong input ipAddress, not an ipv4address" << endl;
+        }
+    }
     if (verbose > 2){
         cout << "int main running in thread "
              << QCoreApplication::instance()->thread() << endl;
     }
-        TcpServer server(verbose);
-        return a.exec();
+    TcpServer server(ipAddress, port, verbose);
+    return a.exec();
 }

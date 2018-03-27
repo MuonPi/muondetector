@@ -11,9 +11,9 @@ class Client : public QObject
 	Q_OBJECT
 
 public:
-	Client(std::string new_gpsdevname, int new_verbose, bool new_allSats,
-		bool new_listSats, bool new_dumpRaw, int new_baudrate, bool new_poll,
-		bool new_configGnss, int new_timingCmd, long int new_N, QObject *parent = 0);
+    Client(std::string new_gpsdevname, int new_verbose, bool new_allSats,
+        bool new_listSats, bool new_dumpRaw, int new_baudrate, bool new_poll,
+        bool new_configGnss, int new_timingCmd, long int new_N, QString serverAddress, quint16 serverPort, QObject *parent = 0);
 	void configGps();
 	void loop();
 

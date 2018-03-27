@@ -1,6 +1,7 @@
 #include <QCoreApplication>
 #include <QCommandLineParser>
 #include <QObject>
+#include <QHostAddress>
 //#include <unistd.h>
 #include "custom_io_operators.h"
 #include "client.h"
@@ -68,13 +69,39 @@ int main(int argc, char *argv[])
 		QCoreApplication::translate("main", "set verbosity level\n"
 			"3 is max"),
 		QCoreApplication::translate("main", "verbosity"));
-	parser.addOption(verbosityOption);
+    parser.addOption(verbosityOption);
+
+    // ip option
+    QCommandLineOption ipOption(QStringList() << "ip" << "address",
+        QCoreApplication::translate("main", "set server ip address"),
+        QCoreApplication::translate("main", "ipAddress"));
+    parser.addOption(ipOption);
+
+    // port option
+    QCommandLineOption portOption(QStringList() << "p" << "port",
+        QCoreApplication::translate("main", "set server port"),
+        QCoreApplication::translate("main", "port"));
+    parser.addOption(portOption);
+
 
 	// baudrate option
 	QCommandLineOption baudrateOption("b",
 		QCoreApplication::translate("main", "set baudrate for serial connection"),
 		QCoreApplication::translate("main", "baudrate"));
 	parser.addOption(baudrateOption);
+
+    // set number of read cycles
+    QCommandLineOption numberReadCyclesOption("n",
+        QCoreApplication::translate("main", "number of read cycles"),
+        QCoreApplication::translate("main", "number"));
+    parser.addOption(numberReadCyclesOption);
+
+    // set timing option
+    QCommandLineOption timingOption("t",
+        QCoreApplication::translate("main", "cmd=1 for nav-clock\n"
+            "cmd=2 for time-tp"),
+        QCoreApplication::translate("main", "cmd"));
+    parser.addOption(timingOption);
 
 	// dumpraw option
 	QCommandLineOption dumpRawOption("d",
@@ -102,24 +129,11 @@ int main(int argc, char *argv[])
 		QCoreApplication::translate("main", "show GNSS configs"));
 	parser.addOption(showGnssConfigOption);
 
-	// set number of read cycles
-	QCommandLineOption numberReadCyclesOption("n",
-		QCoreApplication::translate("main", "number of read cycles"),
-		QCoreApplication::translate("main", "number"));
-	parser.addOption(numberReadCyclesOption);
-
-	// set timing option
-	QCommandLineOption timingOption("t",
-		QCoreApplication::translate("main", "cmd=1 for nav-clock\n"
-			"cmd=2 for time-tp"),
-		QCoreApplication::translate("main", "cmd"));
-	parser.addOption(timingOption);
 
 	// process the actual command line arguments given by the user
 	parser.process(a);
 	const QStringList args = parser.positionalArguments();
 	if (args.size() > 1) { cout << "you set positional arguments but the program does not use them" << endl; }
-
 
 
 	// setup all variables for ublox module manager, then make the object run
@@ -178,8 +192,24 @@ int main(int argc, char *argv[])
 			cout << "wrong input for timing" << endl;
 		}
 	}
+    quint16 port = 0;
+    if (parser.isSet(portOption)){
+        port = parser.value(portOption).toUInt(&ok);
+        if (!ok) {
+            port = 0;
+            cout << "wrong input port (maybe not an integer)" << endl;
+        }
+    }
+    QString ipAddress;
+    if (parser.isSet(ipOption)){
+        ipAddress = parser.value(ipOption);
+        if (!QHostAddress(ipAddress).toIPv4Address()){
+            ipAddress = "";
+            cout << "wrong input ipAddress, not an ipv4address" << endl;
+        }
+    }
 	Client client(gpsdevname.toStdString(), verbose, allSats, listSats, dumpRaw,
-		baudrate, poll, showGnssConfig, timingCmd, N);
+        baudrate, poll, showGnssConfig, timingCmd, N, ipAddress, port);
 
     /* handling posix signals does not really work atm
     QObject::connect(d, SIGNAL(myIntSignal()),&client,

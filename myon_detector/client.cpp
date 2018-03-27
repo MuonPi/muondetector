@@ -7,7 +7,7 @@ using namespace std;
 
 Client::Client(std::string new_gpsdevname, int new_verbose, bool new_allSats,
 	bool new_listSats, bool new_dumpRaw, int new_baudrate, bool new_poll,
-	bool new_configGnss, int new_timingCmd, long int new_N, QObject *parent)
+    bool new_configGnss, int new_timingCmd, long int new_N,QString serverAddress, quint16 serverPort, QObject *parent)
 	: QObject(parent)
 {
     //connect(this, &Client::posixTerminate, this, &Client::deleteLater);
@@ -27,12 +27,14 @@ Client::Client(std::string new_gpsdevname, int new_verbose, bool new_allSats,
 	// use localhost for test purposes
 	// if we did not find one, use IPv4 localhost
 
-
+    ipAddress = serverAddress;
 	if (ipAddress.isEmpty()) {
 		ipAddress = QHostAddress(QHostAddress::LocalHost).toString();
-	} 
-    ipAddress = "127.0.0.1";
-    port = 51508;
+    }
+    port = serverPort;
+    if (port == 0){
+        port = 51508;
+    }
     connectToServer();
     /*
     connect(tcpConnection, SIGNAL(error(int, QString)), this, SLOT(displayError(int, QString)));
