@@ -28,7 +28,7 @@ Client::Client(std::string new_gpsdevname, int new_verbose, bool new_allSats,
 	// if we did not find one, use IPv4 localhost
 
     ipAddress = serverAddress;
-	if (ipAddress.isEmpty()) {
+    if (ipAddress.isEmpty()||ipAddress == "local"||ipAddress == "localhost") {
 		ipAddress = QHostAddress(QHostAddress::LocalHost).toString();
     }
     port = serverPort;

@@ -11,7 +11,11 @@ TcpServer::TcpServer(QString listenIpAddress, quint16 portFromStart ,int newVerb
     verbose = newVerbose;
     if (!listenIpAddress.isEmpty()){
     // use ipAddress from start parameters or not
-        ipAddress = QHostAddress(listenIpAddress);
+        if (listenIpAddress == "localhost" || listenIpAddress == "local"){
+            ipAddress = QHostAddress::LocalHost;
+        }else{
+            ipAddress = QHostAddress(listenIpAddress);
+        }
     }else{
     // find out IP to connect
     QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();

@@ -165,7 +165,7 @@ bool TcpConnection::sendFile(QString fileName){
         fileCounter++;
         out << fileSig;
         out << fileCounter;
-        out <<myFile->read(1024);
+        out << myFile->read(1024);
         //cout << block.toStdString()<<endl;
         tcpSocket->write(block);
         if(!tcpSocket->waitForBytesWritten(timeout)){

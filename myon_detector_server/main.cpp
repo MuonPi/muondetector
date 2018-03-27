@@ -64,8 +64,10 @@ int main(int argc, char *argv[])
     if (parser.isSet(ipOption)){
         ipAddress = parser.value(ipOption);
         if (!QHostAddress(ipAddress).toIPv4Address()){
-            ipAddress = "";
-            cout << "wrong input ipAddress, not an ipv4address" << endl;
+            if (ipAddress != "localhost" && ipAddress != "local"){
+                ipAddress = "";
+                cout << "wrong input ipAddress, not an ipv4address" << endl;
+            }
         }
     }
     if (verbose > 2){
