@@ -8,7 +8,7 @@ const quint16 ping = 123;
 const quint16 msgSig = 246;
 const quint16 answPing = 231;
 const quint16 fileSig = 142;
-//const quint16 nextPart = 143;
+const quint16 nextPart = 143;
 const quint16 quitConnection = 101;
 const quint16 timeoutSig = 138;
 
@@ -67,16 +67,13 @@ void TcpConnection::onReadyRead(){
     if (!in->commitTransaction()){
         return;
     }
-    /*
-    cout << someCode << endl;
-    cout << nextCount << endl;
-    */
     if (someCode == fileSig){
-        //emit toConsole("receiving data file");
         lastConnection = time(NULL);
         if (!handleFileTransfer(fileName, block, nextCount)){
+            emit toConsole("handle file transfer failed");
             // eventually send some information to server that transmission failed
         }
+        sendData(nextPart,"");
         return;
     }
     if (someCode == msgSig){
@@ -111,7 +108,7 @@ void TcpConnection::onReadyRead(){
         emit connectionTimeout(peerAddress->toString(),peerPort,localAddress->toString(),localPort,(quint32)time(NULL),connectionDuration);
         return;
     }
-    cout << "something went wrong with the transmission code" <<endl;
+    emit toConsole("something went wrong with the transmission code");
 }
 bool TcpConnection::handleFileTransfer(QString fileName, QByteArray &block, quint16 nextCount){
     if (nextCount == 0){
@@ -131,7 +128,6 @@ bool TcpConnection::handleFileTransfer(QString fileName, QByteArray &block, quin
                 return false;
             }
         }
-        //sendData(nextPart,"");
         return true;
     }
     if (fileTransmissionCounter+1!=nextCount){

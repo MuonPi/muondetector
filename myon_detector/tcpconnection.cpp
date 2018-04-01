@@ -26,9 +26,11 @@ TcpConnection::TcpConnection(QString newHostName, quint16 newPort, int newVerbos
 
 void TcpConnection::makeConnection()
 {
-    std::stringstream str;
-    str << "client tcpConnection reporting from thread " << this->thread();
-    emit toConsole(QString::fromStdString(str.str()));
+    if (verbose > 2){
+        std::stringstream str;
+        str << "client tcpConnection reporting from thread " << this->thread();
+        emit toConsole(QString::fromStdString(str.str()));
+    }
     tcpSocket = new QTcpSocket();
     in = new QDataStream();
     in->setDevice(tcpSocket);
@@ -52,15 +54,21 @@ void TcpConnection::closeConnection(){
 
 void TcpConnection::onReadyRead(){
     if(!in){ return; }
-    quint8 someCode;
+    quint16 someCode;
+    QString someMsg;
     QByteArray block;
     in->startTransaction();
-    *in >> block;
-    //*in >> data;
+    *in >> someCode;
+    if (someCode == msgSig){
+        *in >> someMsg;
+    }
     if (!in->commitTransaction()){
         return;
     }
     if (someCode == nextPart){
+        // really important even if you put "" in the block it must be read out here or it will hang...
+        // you have to get EVERYTHING out of the DataStream or it won't work!!!
+        *in >> someMsg;
         lastConnection = time(NULL);
         sendFile();
     }
@@ -135,102 +143,45 @@ bool TcpConnection::sendFile(QString fileName){
         emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
         return false;
     }
-    if (myFile){
-        myFile->close();
-        delete myFile;
-    }
     if (!fileName.isEmpty()){
+        if (myFile){
+            myFile->close();
+            delete myFile;
+        }
         myFile = new QFile(QCoreApplication::applicationDirPath()+"/"+fileName);
         if (!myFile->open(QIODevice::ReadOnly)) {
             emit toConsole("Could not open file, maybe no permission or file does not exist.");
             return false;
         }
-    }else{
-        emit toConsole("empty Filename error");
-        return false;
-    }
-    QByteArray fileNameBlock;
-    QDataStream out(&fileNameBlock, QIODevice::WriteOnly);
-    out.setVersion(QDataStream::Qt_4_0);
-    out << fileSig;
-    out << fileCounter;
-    out << fileName;
-    tcpSocket->write(fileNameBlock);
-    if(!tcpSocket->waitForBytesWritten(timeout)){
-        return false;
-    }
-    while(true){
-        QByteArray block;
-        QDataStream out(&block, QIODevice::WriteOnly);
-        fileCounter++;
-        out << fileSig;
-        out << fileCounter;
-        out << myFile->read(1024);
-        //cout << block.toStdString()<<endl;
-        tcpSocket->write(block);
-        if(!tcpSocket->waitForBytesWritten(timeout)){
-            emit toConsole("wait for bytes written timeout while sending file");
-            return false;
-        }
-        if(myFile->atEnd()){
-            break;
-        }
-    }
-    return true;
-}
-/*
-bool TcpConnection::sendFile(QString fileName){
-    if (!tcpSocket) {
-        emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
-        return false;
-    }
-    QByteArray block;
-    QDataStream out(&block, QIODevice::WriteOnly);
-    if(fileCounter==0){
-        if (myFile){
-            bool retAfterclose = false;
-            if (myFile->atEnd()){
-                retAfterclose = true;
-            }
-            myFile->close();
-            delete myFile;
-            if (retAfterclose){
-                return true;
-            }
-        }
-        if (!fileName.isEmpty()){
-            myFile = new QFile(QCoreApplication::applicationDirPath()+"/"+fileName);
-            if (!myFile->open(QIODevice::ReadOnly)) {
-                emit toConsole("Could not open file, maybe no permission or file does not exist.");
-                return false;
-            }
-        }else{
-            emit toConsole("empty Filename error");
-            return false;
-        }
+        fileCounter = 0;
+        QByteArray fileNameBlock;
+        QDataStream out(&fileNameBlock, QIODevice::WriteOnly);
         out.setVersion(QDataStream::Qt_4_0);
         out << fileSig;
         out << fileCounter;
         out << fileName;
-        tcpSocket->write(block);
+        tcpSocket->write(fileNameBlock);
         if(!tcpSocket->waitForBytesWritten(timeout)){
             return false;
         }
-    }else{
-        out << fileSig;
-        out << fileCounter;
-        out << myFile->read(8*32768);
-        //cout << block.toStdString()<<endl;
-        tcpSocket->write(block);
-        if(!tcpSocket->waitForBytesWritten(timeout)){
-            emit toConsole("wait for bytes written timeout while sending file");
-            return false;
-        }
+        return true;
     }
+    if(myFile->atEnd()){
+        cout << "file at end"<<endl;
+    }
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
     fileCounter++;
+    out << fileSig;
+    out << fileCounter;
+    out << myFile->read(100*1024);
+    tcpSocket->write(block);
+    if(!tcpSocket->waitForBytesWritten(timeout)){
+        emit toConsole("wait for bytes written timeout while sending file");
+        return false;
+    }
     return true;
 }
-*/
 
 void TcpConnection::onTimePulse(){
     if (fabs(time(NULL)-lastConnection)>timeout/1000){
