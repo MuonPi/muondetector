@@ -47,7 +47,7 @@ void TcpConnection::makeConnection()
 }
 
 void TcpConnection::closeConnection(){
-    sendData(quitConnection,"");
+    sendCode(quitConnection);
     this->deleteLater();
     return;
 }
@@ -77,7 +77,7 @@ void TcpConnection::onReadyRead(){
         if (verbose>3){
             emit toConsole("received ping, sending answerping");
         }
-        sendData(answPing, "");
+        sendCode(answPing);
         lastConnection = time(NULL);
     }
     if (someCode == answPing){
@@ -97,7 +97,7 @@ void TcpConnection::onPosixTerminate(){
 }
 */
 
-bool TcpConnection::sendData(const quint16 someCode, QString someData){
+bool TcpConnection::sendText(const quint16 someCode, QString someText){
     if (!tcpSocket) {
         emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
         return false;
@@ -106,7 +106,7 @@ bool TcpConnection::sendData(const quint16 someCode, QString someData){
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
     out << someCode;
-    out << someData;
+    out << someText;
     // for qt version < 5.7:
     // send the size of the string so that receiver knows when
     // all data has been successfully received
@@ -128,15 +128,40 @@ bool TcpConnection::sendData(const quint16 someCode, QString someData){
     emit toConsole("tcp unconnected state before wait for bytes written");
     return false;
 }
-
+/*
 bool TcpConnection::sendMsg(QString message){
-    if(!sendData(msgSig,message)){
+    if(!sendText(msgSig,message)){
         emit toConsole("unable to send message");
         return false;
     }
     return true;
 }
+*/
 
+bool TcpConnection::sendCode(const quint16 someCode){
+    if (!tcpSocket) {
+        emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
+        return false;
+    }
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_0);
+    out << someCode;
+    tcpSocket->write(block);
+    for(int i = 0; i<3; i++){
+        if(!tcpSocket->state()==QTcpSocket::UnconnectedState){
+            if(!tcpSocket->waitForBytesWritten(timeout)){
+                emit toConsole("wait for bytes written timeout");
+                return false;
+            }
+            return true;
+        }else{
+            delay(100);
+        }
+    }
+    emit toConsole("tcp unconnected state before wait for bytes written");
+    return false;
+}
 
 bool TcpConnection::sendFile(QString fileName){
     if (!tcpSocket) {
@@ -168,6 +193,7 @@ bool TcpConnection::sendFile(QString fileName){
     }
     if(myFile->atEnd()){
         cout << "file at end"<<endl;
+        return true;
     }
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
@@ -198,7 +224,7 @@ void TcpConnection::onTimePulse(){
         if (verbose>3){
             emit toConsole("sending ping");
         }
-        sendData(ping, "");
+        sendCode(ping);
     }
 }
 
