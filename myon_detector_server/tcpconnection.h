@@ -33,7 +33,8 @@ public slots:
     void doStuff();
     void onReadyRead();
     void onTimePulse();
-    bool sendData(const quint16 someCode, QString someData);
+    bool sendText(const quint16 someCode, QString someText);
+    bool sendCode(const quint16 someCode);
 
 
 private:

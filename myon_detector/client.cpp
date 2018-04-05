@@ -123,7 +123,7 @@ void Client::connectToServer(){
     connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
     connect(tcpThread, &QThread::finished, tcpThread, &QThread::deleteLater);
     connect(this, &Client::sendFile, tcpConnection, &TcpConnection::sendFile);
-    connect(this, &Client::sendMsg, tcpConnection, &TcpConnection::sendMsg);
+    //connect(this, &Client::sendMsg, tcpConnection, &TcpConnection::sendMsg);
     connect(tcpConnection, &TcpConnection::error, this, &Client::displaySocketError);
     connect(tcpConnection, &TcpConnection::toConsole, this, &Client::toConsole);
     //connect(tcpConnection, &TcpConnection::stoppedConnection, this, &Client::stoppedConnection);

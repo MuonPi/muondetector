@@ -8,7 +8,7 @@ const quint16 ping = 123;
 const quint16 msgSig = 246;
 const quint16 answPing = 231;
 const quint16 fileSig = 142;
-//const quint16 nextPart = 143;
+const quint16 nextPart = 143;
 const quint16 quitConnection = 101;
 const quint16 timeoutSig = 138;
 
@@ -67,16 +67,13 @@ void TcpConnection::onReadyRead(){
     if (!in->commitTransaction()){
         return;
     }
-    /*
-    cout << someCode << endl;
-    cout << nextCount << endl;
-    */
     if (someCode == fileSig){
-        //emit toConsole("receiving data file");
         lastConnection = time(NULL);
         if (!handleFileTransfer(fileName, block, nextCount)){
+            emit toConsole("handle file transfer failed");
             // eventually send some information to server that transmission failed
         }
+        sendCode(nextPart);
         return;
     }
     if (someCode == msgSig){
@@ -91,7 +88,7 @@ void TcpConnection::onReadyRead(){
         if (verbose>3){
             emit toConsole("received ping, sending answerping");
         }
-        sendData(answPing, "");
+        sendCode(answPing);
         lastConnection = time(NULL);
         return;
     }
@@ -111,7 +108,7 @@ void TcpConnection::onReadyRead(){
         emit connectionTimeout(peerAddress->toString(),peerPort,localAddress->toString(),localPort,(quint32)time(NULL),connectionDuration);
         return;
     }
-    cout << "something went wrong with the transmission code" <<endl;
+    emit toConsole("something went wrong with the transmission code");
 }
 bool TcpConnection::handleFileTransfer(QString fileName, QByteArray &block, quint16 nextCount){
     if (nextCount == 0){
@@ -131,7 +128,6 @@ bool TcpConnection::handleFileTransfer(QString fileName, QByteArray &block, quin
                 return false;
             }
         }
-        //sendData(nextPart,"");
         return true;
     }
     if (fileTransmissionCounter+1!=nextCount){
@@ -143,7 +139,7 @@ bool TcpConnection::handleFileTransfer(QString fileName, QByteArray &block, quin
     return true;
 }
 
-bool TcpConnection::sendData(const quint16 someCode, QString someData){
+bool TcpConnection::sendText(const quint16 someCode, QString someText){
     if(!tcpSocket){
         emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
         return false;
@@ -154,7 +150,7 @@ bool TcpConnection::sendData(const quint16 someCode, QString someData){
     // for qt version < 5.7:
     // out << (quint16)0;
     out << someCode;
-    out << someData;
+    out << someText;
     // for qt version < 5.7:
     // send the size of the string so that receiver knows when
     // all data has been successfully received
@@ -177,12 +173,37 @@ bool TcpConnection::sendData(const quint16 someCode, QString someData){
     return false;
 }
 
+bool TcpConnection::sendCode(const quint16 someCode){
+    if(!tcpSocket){
+        emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
+        return false;
+    }
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_0);
+    out << someCode;
+    tcpSocket->write(block);
+    for(int i = 0; i<3; i++){
+        if(!tcpSocket->state()==QTcpSocket::UnconnectedState){
+            if(!tcpSocket->waitForBytesWritten(timeout)){
+                emit toConsole("wait for bytes written timeout");
+                return false;
+            }
+            return true;
+        }else{
+            delay(100);
+        }
+    }
+    emit toConsole("tcp unconnected state before wait for bytes written");
+    return false;
+}
+
 void TcpConnection::onTimePulse(){
     if (fabs(time(NULL)-lastConnection)>timeout/1000){
         // hier einfügen, was passiert, wenn host nicht auf ping antwortet
         quint32 connectionDuration = (quint32)(time(NULL)-firstConnection);
         quint32 timeoutTime = (quint32)time(NULL);
-        sendData(timeoutSig,"");
+        sendCode(timeoutSig);
         emit connectionTimeout(peerAddress->toString(),peerPort,localAddress->toString(),localPort,timeoutTime,connectionDuration);
         this->deleteLater();
         return;
@@ -191,7 +212,7 @@ void TcpConnection::onTimePulse(){
         if (verbose>3){
             emit toConsole("sending ping");
         }
-        sendData(ping, "");
+        sendCode(ping);
     }
 }
 

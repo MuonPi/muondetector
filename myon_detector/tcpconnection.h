@@ -30,8 +30,8 @@ public slots:
     void onReadyRead();
     void onTimePulse();
     bool sendFile(QString fileName = "");
-    bool sendMsg(QString message);
-    bool sendData(const quint16 someCode, QString someData);
+    bool sendCode(const quint16 someCode);
+    bool sendText(const quint16 someCode, QString someText);
 
 private:
     int timeout;
