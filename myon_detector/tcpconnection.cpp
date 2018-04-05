@@ -128,15 +128,6 @@ bool TcpConnection::sendText(const quint16 someCode, QString someText){
     emit toConsole("tcp unconnected state before wait for bytes written");
     return false;
 }
-/*
-bool TcpConnection::sendMsg(QString message){
-    if(!sendText(msgSig,message)){
-        emit toConsole("unable to send message");
-        return false;
-    }
-    return true;
-}
-*/
 
 bool TcpConnection::sendCode(const quint16 someCode){
     if (!tcpSocket) {
