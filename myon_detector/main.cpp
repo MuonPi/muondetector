@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
             cout << "wrong input port (maybe not an integer)" << endl;
         }
     }
-    QString ipAddress;
+    QString ipAddress = "";
     if (parser.isSet(ipOption)){
         ipAddress = parser.value(ipOption);
         if (!QHostAddress(ipAddress).toIPv4Address()){
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
             }
         }
     }
-	Client client(gpsdevname.toStdString(), verbose, allSats, listSats, dumpRaw,
+    Client client(gpsdevname, verbose, allSats, listSats, dumpRaw,
         baudrate, poll, showGnssConfig, timingCmd, N, ipAddress, port);
 
     /* handling posix signals does not really work atm

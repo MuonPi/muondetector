@@ -5,13 +5,15 @@
 
 using namespace std;
 
-Client::Client(std::string new_gpsdevname, int new_verbose, bool new_allSats,
+Client::Client(QString new_gpsdevname, int new_verbose, bool new_allSats,
 	bool new_listSats, bool new_dumpRaw, int new_baudrate, bool new_poll,
     bool new_configGnss, int new_timingCmd, long int new_N,QString serverAddress, quint16 serverPort, QObject *parent)
 	: QObject(parent)
 {
     //connect(this, &Client::posixTerminate, this, &Client::deleteLater);
-
+    if (verbose > 2){
+        cout << "client running in thread " << this->thread() << endl;
+    }
 	// All the stuff to make the tcp connection work
 
 	// find out IP to connect
@@ -36,21 +38,6 @@ Client::Client(std::string new_gpsdevname, int new_verbose, bool new_allSats,
         port = 51508;
     }
     connectToServer();
-    /*
-    connect(tcpConnection, SIGNAL(error(int, QString)), this, SLOT(displayError(int, QString)));
-    //connect(tcpConnection, SIGNAL(stoppedConnection()), this, SLOT(stoppedConnection()));
-    connect(tcpConnection, SIGNAL(toConsole(QString)), this, SLOT(toConsole(QString)));
-    connect(this, SIGNAL(posixTerminate()), tcpConnection, SLOT(onPosixTerminate()));
-    connect(tcpConnection, SIGNAL(finished()), tcpConnection, SLOT(deleteLater()));
-	cout<<"Please specify ip\n";
-	flush(cout);
-	cin>>ipAddress;
-	cout<<"Please specify port\n";
-	flush(cout);
-	cin>>port;
-    */
-
-
 	// All the stuff to make the gps module work
 	gpsdevname = new_gpsdevname;
 	verbose = new_verbose;
@@ -62,57 +49,34 @@ Client::Client(std::string new_gpsdevname, int new_verbose, bool new_allSats,
 	configGnss = new_configGnss;
 	timingCmd = new_timingCmd;
 	N = new_N;
+    connectToGps();
     if (verbose > 2){
-        cout << "client running in thread " << this->thread() << endl;
+        cout << "client initialization complete, tcp und gps thread started" << endl;
     }
+}
+
+void Client::connectToGps(){
+    // before connecting to gps we have to make sure all other programs are closed
+    // and serial echo is off
+    QProcess prepareSerial;
+    QString command = "stty";
+    QStringList args = {"-F", "/dev/ttyAMA0", "-echo", "-onlcr"};
+    prepareSerial.start(command,args,QIODevice::ReadWrite);
+    prepareSerial.waitForFinished();
+
     // here is where the magic threading happens look closely
-	gps = new Ublox(gpsdevname, baudrate);
+    qtGps = new QtSerialUblox(gpsdevname, baudrate, dumpRaw, verbose);
     QThread *gpsThread = new QThread();
-    gps->moveToThread(gpsThread);
-    //connect(this, SIGNAL(posixTerminate()), gps, SLOT(Disconnect()));
-    connect(gpsThread, SIGNAL(started()), gps, SLOT(Connect()));
-    //connect(gpsThread, SIGNAL(finished()), gps, SLOT(Disconnect()));
-    connect(gpsThread, SIGNAL(finished()), gps, SLOT(deleteLater()));
-    connect(gps, SIGNAL(UBXCfgError(QString)),
-            this, SLOT(displayError(QString)));
-    connect(gps, SIGNAL(toConsole(QString)), this, SLOT(toConsole(QString)));
-    connect(this, SIGNAL(UBXSetCfgMsg(uint8_t,uint8_t,uint8_t,uint8_t)),
-            gps, SLOT(UBXSetCfgMsg(uint8_t,uint8_t,uint8_t,uint8_t)));
-    connect(this, SIGNAL(UBXSetCfgMsg(uint16_t,uint8_t,uint8_t)),
-            gps, SLOT(UBXSetCfgMsg(uint16_t,uint8_t,uint8_t)));
-    connect(this, SIGNAL(UBXSetCfgRate(uint8_t,uint8_t)),
-            gps, SLOT(UBXSetCfgRate(uint8_t,uint8_t)));
-    connect(gps, SIGNAL(gpsPropertyUpdatedGnss(std::vector<GnssSatellite>,
-                                              std::chrono::duration<double>)),
-            this, SLOT(gpsPropertyUpdatedGnss(std::vector<GnssSatellite>,
-                                              std::chrono::duration<double>)));
-    connect(gps, SIGNAL(gpsPropertyUpdatedUint8(uint8_t,
-                                                std::chrono::duration<double>, char)),
-            this, SLOT(gpsPropertyUpdatedUint8(uint8_t,
-                                               std::chrono::duration<double>, char)));
-    connect(gps, SIGNAL(gpsPropertyUpdatedUint32(uint32_t,
-                                                 std::chrono::duration<double>, char)),
-            this, SLOT(gpsPropertyUpdatedUint32(uint32_t,
-                                                std::chrono::duration<double>, char)));
-    connect(gps, SIGNAL(gpsPropertyUpdatedInt32(int32_t,
-                                                std::chrono::duration<double>, char)),
-            this, SLOT(gpsPropertyUpdatedInt32(int32_t,
-                                               std::chrono::duration<double>, char)));
-    gps->setVerbosity(verbose);
-    /*if (!gps->Connect()) {
-		cout << "failed to open serial interface " << gpsdevname << endl;
-		exit(-1);
-    }*/
-    //gpsThread->start();
-    if (configGnss) {
-        configGps();
-    }
+    qtGps->moveToThread(gpsThread);
+    connect(qtGps,&QtSerialUblox::toConsole, this, &Client::gpsToConsole);
+    connect(gpsThread, &QThread::started, qtGps, &QtSerialUblox::makeConnection);
+    gpsThread->start();
 }
 
 void Client::connectToServer(){
     QThread *tcpThread = new QThread();
-    if (tcpConnection){
-        delete tcpConnection;
+    if (tcpConnection!=nullptr){
+        delete(tcpConnection);
     }
     tcpConnection = new TcpConnection(ipAddress, port, verbose);
     tcpConnection->moveToThread(tcpThread);
@@ -120,12 +84,12 @@ void Client::connectToServer(){
     connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
     connect(tcpThread, &QThread::finished, tcpThread, &QThread::deleteLater);
     connect(this, &Client::sendFile, tcpConnection, &TcpConnection::sendFile);
-    //connect(this, &Client::sendMsg, tcpConnection, &TcpConnection::sendMsg);
     connect(tcpConnection, &TcpConnection::error, this, &Client::displaySocketError);
     connect(tcpConnection, &TcpConnection::toConsole, this, &Client::toConsole);
-    //connect(tcpConnection, &TcpConnection::stoppedConnection, this, &Client::stoppedConnection);
     connect(tcpConnection, &TcpConnection::connectionTimeout, this, &Client::connectToServer);
+    //connect(this, &Client::sendMsg, tcpConnection, &TcpConnection::sendMsg);
     //connect(this, &Client::posixTerminate, tcpConnection, &TcpConnection::onPosixTerminate);
+    //connect(tcpConnection, &TcpConnection::stoppedConnection, this, &Client::stoppedConnection);
     tcpThread->start();
 }
 
@@ -307,7 +271,12 @@ void Client::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
 */
 
 void Client::toConsole(QString data) {
-    cout <<"client: "<< data << endl;
+    //cout <<"client: "<< data << endl;
+    cout << data << endl;
+}
+
+void Client::gpsToConsole(QString data){
+    cout << data;
 }
 
 void Client::stoppedConnection(QString hostName, quint16 port, quint32 connectionTimeout, quint32 connectionDuration){

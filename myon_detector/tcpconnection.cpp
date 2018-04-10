@@ -1,9 +1,5 @@
 #include "tcpconnection.h"
-#include "custom_io_operators.h" //remove after debug
 #include <QtNetwork>
-#include <sstream>
-
-using namespace std; //remove after debug
 
 const quint16 ping = 123;
 const quint16 msgSig = 246;
@@ -25,11 +21,11 @@ TcpConnection::TcpConnection(QString newHostName, quint16 newPort, int newVerbos
 }
 
 void TcpConnection::makeConnection()
+// this function gets called with a signal from client-thread
+// (TcpConnection runs in a separate thread only communicating with main thread through messages)
 {
     if (verbose > 2){
-        std::stringstream str;
-        str << "client tcpConnection reporting from thread " << this->thread();
-        emit toConsole(QString::fromStdString(str.str()));
+        emit toConsole(QString("client tcpConnection running in thread " + QString( "0x%1" ).arg( (int)this->thread(), 16 )));
     }
     tcpSocket = new QTcpSocket();
     in = new QDataStream();
@@ -53,6 +49,7 @@ void TcpConnection::closeConnection(){
 }
 
 void TcpConnection::onReadyRead(){
+    // this function gets called when tcpSocket emits readyRead signal
     if(!in){ return; }
     quint16 someCode;
     QString someMsg;
@@ -183,7 +180,7 @@ bool TcpConnection::sendFile(QString fileName){
         return true;
     }
     if(myFile->atEnd()){
-        cout << "file at end"<<endl;
+        emit toConsole("file at end");
         return true;
     }
     QByteArray block;
