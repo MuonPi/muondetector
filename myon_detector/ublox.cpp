@@ -99,8 +99,7 @@ void Ublox::loop()//run()
     while (!q) {
 		std::string answer = "";
         std::string buf = "";
-        int n = 0;
-        n = ReadBuffer(buf);
+        ReadBuffer(buf);
         mutex.lock();
         q = quit;
         mutex.unlock();
@@ -111,7 +110,7 @@ void Ublox::loop()//run()
             //std::this_thread::yield();
             //std::this_thread::sleep_for(std::chrono::milliseconds(100));
             delay(100);
-            n = ReadBuffer(buf);
+            ReadBuffer(buf);
             if (dumpraw){
                 //cout << buf;
                 emit toConsole(QString::fromStdString(buf));
@@ -131,8 +130,6 @@ void Ublox::loop()//run()
 				// 	cout<<"received UBX message "<<hex<<(int)message.classID<<" "<<hex<<(int)message.messageID<<" : ";
                 tempStream << "received UBX message " << "0x" << hex << setw(4) << setfill('0') << message.msgID << " : ";
                 for (std::string::size_type i = 0; i < answer.size(); i++) tempStream << hex << setw(2) << setfill('0') << (int)answer[i] << " ";
-                string temp;
-                //tempStream >> temp;
                 emit toConsole(QString::fromStdString(tempStream.str()));
 			}
             answer = scanUnknownMessage(buffer, message.msgID);

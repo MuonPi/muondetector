@@ -107,9 +107,6 @@ Client::Client(std::string new_gpsdevname, int new_verbose, bool new_allSats,
     if (configGnss) {
         configGps();
     }
-    delay(1000);
-    //emit sendMsg("testMessage");
-    emit sendFile("lang.txt");
 }
 
 void Client::connectToServer(){

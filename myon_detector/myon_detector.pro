@@ -1,6 +1,7 @@
 QT -= gui
 QT += core
 QT += network
+QT += serialport
 
 CONFIG += c++11 console
 CONFIG -= app_bundle
@@ -22,7 +23,8 @@ SOURCES += main.cpp \
     client.cpp \
     gnsssatellite.cpp \
     serial.cpp \
-    tcpconnection.cpp
+    tcpconnection.cpp \
+    qtserialublox.cpp
 
 HEADERS += \
     ublox.h \
@@ -33,6 +35,7 @@ HEADERS += \
     structs_and_defines.h \
     time_from_rtc.h \
     serial.h \
-    tcpconnection.h
+    tcpconnection.h \
+    qtserialublox.h
 
 #QMAKE_CXXFLAGS += -std=c++11
