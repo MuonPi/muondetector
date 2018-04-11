@@ -4,7 +4,7 @@
 #include <QObject>
 #include "tcpconnection.h"
 #include "custom_io_operators.h"
-#include "ublox.h"
+//#include "ublox.h"
 #include "qtserialublox.h"
 
 class Client : public QObject
@@ -46,7 +46,7 @@ signals:
 
 private:
     TcpConnection * tcpConnection = nullptr;
-    Ublox *gps = nullptr;
+    //Ublox *gps = nullptr;
     QtSerialUblox *qtGps = nullptr;
 	QString ipAddress;
 	quint16 port;
