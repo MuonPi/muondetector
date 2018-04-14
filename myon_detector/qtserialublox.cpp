@@ -91,7 +91,7 @@ void QtSerialUblox::calcChkSum(const std::string& buf, unsigned char* chkA, unsi
     }
 }
 
-void QtSerialUblox::UBXSetCfgRate(uint8_t measRate, uint8_t navRate)
+void QtSerialUblox::UBXSetCfgRate(uint8_t measRate, uint8_t navRate, int verbose)
 {
     if (verbose>2){
         emit toConsole(QString("Ublox UBXsetCfgRate running in thread "  + QString( "0x%1" )
@@ -120,7 +120,7 @@ void QtSerialUblox::UBXSetCfgRate(uint8_t measRate, uint8_t navRate)
     */
 }
 
-void QtSerialUblox::UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate)
+void QtSerialUblox::UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate, int verbose)
 {
     if (verbose>2){
         emit toConsole(QString("Ublox UBXsetCfgMsg running in thread "  + QString( "0x%1" )
@@ -145,7 +145,7 @@ void QtSerialUblox::UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate)
     */
 }
 
-void QtSerialUblox::UBXSetCfgMsg(uint8_t classID, uint8_t messageID, uint8_t port, uint8_t rate)
+void QtSerialUblox::UBXSetCfgMsg(uint8_t classID, uint8_t messageID, uint8_t port, uint8_t rate, int verbose)
 {
     uint16_t msgID = (messageID + (uint16_t)classID) << 8;
     UBXSetCfgMsg(msgID, port, rate, verbose);
