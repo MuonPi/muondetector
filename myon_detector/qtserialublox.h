@@ -21,13 +21,13 @@ public slots:
     void makeConnection();
     void onReadyRead();
     void handleError(QSerialPort::SerialPortError serialPortError);
-    void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate, int verbose);
-    void UBXSetCfgMsg(uint8_t classID, uint8_t messageID, uint8_t port, uint8_t rate, int verbose);
+    void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
     void calcChkSum(const std::string& buf, unsigned char* chkA, unsigned char* chkB);
-    void UBXSetCfgRate(uint8_t measRate, uint8_t navRate, int verbose);
+    void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
 
 
 private:
+    void UBXSetCfgMsg(uint8_t classID, uint8_t messageID, uint8_t port, uint8_t rate);
     bool sendUBX(uint16_t msgID, unsigned char* payload, int nBytes);
     bool sendUBX(unsigned char classID, unsigned char messageID,
                                 unsigned char* payload, int nBytes);

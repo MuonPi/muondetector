@@ -53,6 +53,8 @@ Client::Client(QString new_gpsdevname, int new_verbose, bool new_allSats,
     if (verbose > 2){
         cout << "client initialization complete, tcp und gps thread started" << endl;
     }
+    emit UBXSetCfgRate(100, 1);
+    emit UBXSetCfgMsg(MSG_TIM_TM2, 1, 1);	// TIM-TM2 activates the timemark function (external interrupt)
 }
 
 void Client::connectToGps(){
@@ -70,6 +72,13 @@ void Client::connectToGps(){
     qtGps->moveToThread(gpsThread);
     connect(qtGps,&QtSerialUblox::toConsole, this, &Client::gpsToConsole);
     connect(gpsThread, &QThread::started, qtGps, &QtSerialUblox::makeConnection);
+    // connect all command signals for ublox module here
+    connect(this, &Client::UBXSetCfgMsg, qtGps, &QtSerialUblox::UBXSetCfgMsg);
+    connect(this, &Client::UBXSetCfgRate, qtGps, &QtSerialUblox::UBXSetCfgRate);
+    // connect cfgError signal to output, could also create special errorFunction
+    connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Client::toConsole);
+
+    // after thread start there will be a signal emitted which starts the qtGps makeConnection function
     gpsThread->start();
 }
 
