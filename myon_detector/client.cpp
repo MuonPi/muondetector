@@ -53,8 +53,10 @@ Client::Client(QString new_gpsdevname, int new_verbose, bool new_allSats,
     if (verbose > 2){
         cout << "client initialization complete, tcp und gps thread started" << endl;
     }
-    emit UBXSetCfgRate(100, 1);
-    emit UBXSetCfgMsg(MSG_TIM_TM2, 1, 1);	// TIM-TM2 activates the timemark function (external interrupt)
+    if(configGnss){
+        emit UBXSetCfgRate(100, 1);
+        emit UBXSetCfgMsg(MSG_TIM_TM2, 1, 1);	// TIM-TM2 activates the timemark function (external interrupt)
+    }
 }
 
 void Client::connectToGps(){

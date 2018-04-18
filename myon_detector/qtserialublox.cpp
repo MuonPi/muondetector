@@ -1,6 +1,7 @@
 #include "qtserialublox.h"
-#include "custom_io_operators.h" // remove after debug
-using namespace std; //remove after debug
+#include <sstream>
+//#include "custom_io_operators.h" // remove after debug
+using namespace std;
 
 QtSerialUblox::QtSerialUblox(const QString serialPortName, int baudRate,
                              bool newDumpRaw, int newVerbose, QObject *parent) : QObject(parent)
@@ -34,7 +35,82 @@ void QtSerialUblox::makeConnection(){
 void QtSerialUblox::onReadyRead(){
     // this function gets called when the serial port emits readyRead signal
     QByteArray temp = serialPort->readAll();
-    emit toConsole(QString(temp));
+    if (dumpRaw) {
+        emit toConsole(QString(temp));
+    }
+    buffer += temp.toStdString();
+    UbxMessage message;
+    if(!scanUnknownMessage(buffer, message)){
+        // maybe add some message if scan for unknown message fails
+        return;
+    }
+}
+
+bool QtSerialUblox::scanUnknownMessage(string &buffer, UbxMessage &message)
+{   // gets the (maybe not finished) buffer and checks for messages in it that make sense
+    if (buffer.size() < 9) return false;
+    std::string refstr = "";
+    // refstr are the first two hex numbers defining the header of an ubx message
+    refstr += 0xb5; refstr += 0x62;
+    std::string::size_type found = buffer.find(refstr);
+    std::string mess = "";
+    if (found != string::npos)
+    {
+        mess = buffer.substr(found, buffer.size());
+        // discard everything before start of the message
+        buffer.erase(0, found);
+    }
+    else{
+        // discard everything before the start of a NMEA message, too
+        // to ensure that buffer won't grow too big
+        if(discardAllNMEA){
+            char beginNMEA = '$';
+            found = 0;
+            while (found!= string::npos){
+                found = buffer.find(beginNMEA);
+                buffer.erase(0,found);
+            }
+        }
+        return false;
+    }
+    message.classID = (uint8_t)mess[2];
+    message.messageID = (uint8_t)mess[3];
+    message.msgID = (uint16_t)mess[2] << 8;
+    message.msgID += (uint16_t)mess[3];
+    if (mess.size() < 8) return false;
+    //        cout<<"received UBX string: ";
+    //        for (int i=0; i<mess.size(); i++) cout<<hex<<(int)mess[i]<<" ";
+    //        cout<<endl;
+    int len = (int)(mess[4]);
+    len += ((int)(mess[5])) << 8;
+    if (((long int)mess.size() - 8) < len) {
+        std::string::size_type found = buffer.find(refstr, 2);
+        if (found != string::npos) {
+            std::stringstream tempStream;
+            tempStream << "received faulty UBX string:\n " << dec;
+            for (std::string::size_type i = 0; i < found; i++) tempStream << hex << (int)buffer[i] << " ";
+            emit toConsole(QString::fromStdString(tempStream.str()));
+            buffer.erase(0, found);
+        }
+        return false;
+    }
+    //    cout<<"len="<<dec<<len<<endl;
+    //    cout<<"mess.size()="<<dec<<mess.size()<<endl;
+    //	cout<<"da2"<<endl;
+    buffer.erase(0, len + 8);
+
+    unsigned char chkA;
+    unsigned char chkB;
+    calcChkSum(mess.substr(0, len + 6), &chkA, &chkB);
+    //     cout<<"chkA/B="<<hex<<(int)chkA<<" "<<(int)chkB<<endl;
+    //     cout<<"mess[len+6/7]="<<hex<<(int)mess[len+6]<<" "<<(int)mess[len+7]<<endl;
+    if (mess[len + 6] == chkA && mess[len + 7] == chkB)
+    {
+        message.data = mess.substr(6, len);
+        return true;
+    }
+
+    return false;
 }
 
 bool QtSerialUblox::sendUBX(uint16_t msgID, unsigned char* payload, int nBytes)
@@ -145,10 +221,10 @@ void QtSerialUblox::UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate)
     */
 }
 
-void QtSerialUblox::UBXSetCfgMsg(uint8_t classID, uint8_t messageID, uint8_t port, uint8_t rate)
+void QtSerialUblox::UBXSetCfgMsg2(uint8_t classID, uint8_t messageID, uint8_t port, uint8_t rate)
 {
     uint16_t msgID = (messageID + (uint16_t)classID) << 8;
-    UBXSetCfgMsg(msgID, port, rate, verbose);
+    UBXSetCfgMsg(msgID, port, rate);
 }
 
 void QtSerialUblox::handleError(QSerialPort::SerialPortError serialPortError)
@@ -159,4 +235,55 @@ void QtSerialUblox::handleError(QSerialPort::SerialPortError serialPortError)
                             .arg(serialPort->portName())
                             .arg(serialPort->errorString()));
     }
+}
+
+
+
+bool QtSerialUblox::pollUBX(uint16_t msgID, std::string& answer, int timeout)
+{
+    sendUBX(msgID, NULL, 0);
+    int iter = 0;
+    answer = "";
+    //std::string buffer = "";
+    while (iter < timeout && !answer.size())
+    {
+        /*
+                std::string buf="";
+                int n=ReadBuffer(buf);
+                if (n>0) {
+                    buffer+=buf;
+                    iter++;
+                    answer=scanMessage(buffer,classID,messageID);
+                }
+        */
+        // include something about sleep maybe 1 ms
+        //usleep(1);
+        iter++;
+        //mutex.lock();
+        for (std::list<UbxMessage>::iterator it = fMessageBuffer.begin(); it != fMessageBuffer.end(); it++) {
+            if (it->msgID == msgID) {
+                answer = it->data;
+                fMessageBuffer.erase(it);
+                break;
+            }
+        }
+        //mutex.unlock();
+    }
+    if (iter >= timeout) return false;
+    if (verbose > 2) {
+        std::stringstream tempStream;
+        //std::string temp;
+        tempStream << "received UBX string: ";
+        for (std::string::size_type i = 0; i < answer.size(); i++) tempStream << hex << (int)answer[i] << " ";
+        //tempStream >> temp;
+        emit toConsole(QString::fromStdString(tempStream.str()));
+    }
+    if (answer.size()) return true;
+    return false;
+}
+
+bool QtSerialUblox::pollUBX(uint8_t classID, uint8_t messageID, std::string& answer, int timeout)
+{
+    uint16_t msgID = (messageID + (uint16_t)classID) << 8;
+    return pollUBX(msgID, answer, timeout);
 }

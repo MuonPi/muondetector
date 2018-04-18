@@ -129,7 +129,5 @@ public:
 private:
     T value;
 };
-//Q_DECLARE_METATYPE_TEMPLATE_1ARG(gpsProperty)
-//Q_DECLARE_METATYPE(gpsProperty)
 
 #endif // STRUCTS_AND_DEFINES_H
