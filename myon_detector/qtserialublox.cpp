@@ -30,19 +30,24 @@ void QtSerialUblox::makeConnection(){
         return;
     }
     connect(serialPort, &QSerialPort::readyRead, this, &QtSerialUblox::onReadyRead);
+    serialPort->clear(QSerialPort::AllDirections);
 }
 
 void QtSerialUblox::onReadyRead(){
     // this function gets called when the serial port emits readyRead signal
+    //cout << "\nstart readyread" <<endl;
     QByteArray temp = serialPort->readAll();
     if (dumpRaw) {
         emit toConsole(QString(temp));
+        // if put std::string to console it gets stuck!?
+        //emit stdToConsole(temp.toStdString());
     }
     buffer += temp.toStdString();
+    //cout << QString(temp).toStdString();
     UbxMessage message;
-    if(!scanUnknownMessage(buffer, message)){
-        // maybe add some message if scan for unknown message fails
-        return;
+    if(scanUnknownMessage(buffer, message)){
+        // so it found a message therefore we can now process the message
+        processMessage(message);
     }
 }
 
@@ -64,11 +69,14 @@ bool QtSerialUblox::scanUnknownMessage(string &buffer, UbxMessage &message)
         // discard everything before the start of a NMEA message, too
         // to ensure that buffer won't grow too big
         if(discardAllNMEA){
-            char beginNMEA = '$';
-            found = 0;
+            std::string beginNMEA = "$";
+            size_t found = 0;
             while (found!= string::npos){
                 found = buffer.find(beginNMEA);
-                buffer.erase(0,found);
+                if (found== string::npos){
+                    break;
+                }
+                buffer.erase(0,found+1);
             }
         }
         return false;
@@ -115,6 +123,9 @@ bool QtSerialUblox::scanUnknownMessage(string &buffer, UbxMessage &message)
 
 bool QtSerialUblox::sendUBX(uint16_t msgID, unsigned char* payload, int nBytes)
 {
+    if (verbose > 2){
+        emit toConsole("\nsending ubx message\n");
+    }
     std::string s = "";
     s += 0xb5; s += 0x62;
     s += (unsigned char)((msgID & 0xff00) >> 8);
@@ -131,10 +142,10 @@ bool QtSerialUblox::sendUBX(uint16_t msgID, unsigned char* payload, int nBytes)
     //   for (int i=0; i<s.size(); i++) cout<<hex<<(int)s[i]<<" ";
     //   cout<<endl<<endl;
     //if (s.size() == WriteBuffer(s)) return true;
-    QByteArray block;
-    block.append(QString::fromStdString(s));
+    //QByteArray block;
+    //block.append(QString::fromStdString(s));
     if (serialPort){
-        if (serialPort->write(block)){
+        if (serialPort->write(s.c_str())){
             if(serialPort->waitForBytesWritten(timeout)){
                return true;
             }else{

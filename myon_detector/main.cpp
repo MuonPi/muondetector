@@ -6,7 +6,6 @@
 #include "custom_io_operators.h"
 #include "client.h"
 //#include "unix_sig_handler_daemon.h" //for handling unix signals
-
 using namespace std;
 
 /* for handling unix signals, does not really work
@@ -51,6 +50,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<uint16_t>("uint16_t");
     qRegisterMetaType<uint32_t>("uint32_t");
     qRegisterMetaType<int32_t>("int32_t");
+    qRegisterMetaType<std::string>("std::string");
 
 	// command line input management
 	QCommandLineParser parser;

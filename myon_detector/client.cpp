@@ -10,52 +10,41 @@ Client::Client(QString new_gpsdevname, int new_verbose, bool new_allSats,
     bool new_configGnss, int new_timingCmd, long int new_N,QString serverAddress, quint16 serverPort, QObject *parent)
 	: QObject(parent)
 {
-    //connect(this, &Client::posixTerminate, this, &Client::deleteLater);
+    // set all variables
+
+    // general
+    verbose = new_verbose;
     if (verbose > 2){
         cout << "client running in thread " << this->thread() << endl;
     }
-	// All the stuff to make the tcp connection work
 
-	// find out IP to connect
-	/*QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
-	// use the first non-localhost IPv4 address
-	for (int i = 0; i < ipAddressesList.size(); ++i) {
-		if (ipAddressesList.at(i) != QHostAddress::LocalHost &&
-			ipAddressesList.at(i).toIPv4Address()) {
-			ipAddress = ipAddressesList.at(i).toString();
-			break;
-		}
-	}*/
-	// use localhost for test purposes
-	// if we did not find one, use IPv4 localhost
+    // for gps module
+    gpsdevname = new_gpsdevname;
+    allSats = new_allSats;
+    listSats = new_listSats;
+    dumpRaw = new_dumpRaw;
+    baudrate = new_baudrate;
+    poll = new_poll;
+    configGnss = new_configGnss;
+    timingCmd = new_timingCmd;
+    N = new_N;
 
-    ipAddress = serverAddress;
-    if (ipAddress.isEmpty()||ipAddress == "local"||ipAddress == "localhost") {
-		ipAddress = QHostAddress(QHostAddress::LocalHost).toString();
-    }
+    // for tcp connection
     port = serverPort;
     if (port == 0){
         port = 51508;
     }
-    connectToServer();
-	// All the stuff to make the gps module work
-	gpsdevname = new_gpsdevname;
-	verbose = new_verbose;
-	allSats = new_allSats;
-	listSats = new_listSats;
-	dumpRaw = new_dumpRaw;
-	baudrate = new_baudrate;
-	poll = new_poll;
-	configGnss = new_configGnss;
-	timingCmd = new_timingCmd;
-	N = new_N;
-    connectToGps();
-    if (verbose > 2){
-        cout << "client initialization complete, tcp und gps thread started" << endl;
+    ipAddress = serverAddress;
+    if (ipAddress.isEmpty()||ipAddress == "local"||ipAddress == "localhost") {
+        ipAddress = QHostAddress(QHostAddress::LocalHost).toString();
     }
+
+    // start tcp connection and gps module connection
+    connectToServer();
+    connectToGps();
     if(configGnss){
-        emit UBXSetCfgRate(100, 1);
-        emit UBXSetCfgMsg(MSG_TIM_TM2, 1, 1);	// TIM-TM2 activates the timemark function (external interrupt)
+        emit UBXSetCfgMsg(MSG_NAV_STATUS, 1, 1);	// TIM-TP
+        emit UBXSetCfgMsg(MSG_TIM_TP, 1, 1);	// TIM-TP
     }
 }
 
@@ -287,7 +276,7 @@ void Client::toConsole(QString data) {
 }
 
 void Client::gpsToConsole(QString data){
-    cout << data;
+    cout << data << flush;
 }
 
 void Client::stoppedConnection(QString hostName, quint16 port, quint32 connectionTimeout, quint32 connectionDuration){
