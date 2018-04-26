@@ -13,12 +13,13 @@ class QtSerialUblox : public QObject
 
 public:
     explicit QtSerialUblox(const QString serialPortName, int baudRate,
-                           bool newDumpRaw, int newVerbose, QObject *parent = 0);
+                           bool newDumpRaw, int newVerbose, bool newShowout, QObject *parent = 0);
 
 signals:
     // all messages coming from QtSerialUblox class that should be displayed on console
     // get sent to Client thread with signal/slot mechanics
     void toConsole(QString data);
+    void toConsoleNewLine(QString data);
     void UBXCfgError(QString data);
 
     // information about updated properties
@@ -83,8 +84,10 @@ private:
     int _baudRate = 0;
     int verbose = 0;
     int timeout = 5000;
-    bool dumpRaw = false;
-    bool discardAllNMEA = true;
+    bool dumpRaw = false; // if true show all messages coming from the gps board that can
+                          // be interpreted as QString by QString(message) (basically all NMEA)
+    bool discardAllNMEA = true; // if true discard all NMEA messages and do not parse them
+    bool showout = false; // if true show the ubx messages sent to the gps board as hex
 
     // all global variables used for keeping track of satellites and statistics (gpsProperty)
     gpsProperty<int> leapSeconds;

@@ -24,8 +24,8 @@ void TcpConnection::makeConnection()
 // this function gets called with a signal from client-thread
 // (TcpConnection runs in a separate thread only communicating with main thread through messages)
 {
-    if (verbose > 2){
-        //emit toConsole(QString("client tcpConnection running in thread " + QString("0x%1").arg(this->thread())));
+    if (verbose > 4){
+        emit toConsole(QString("client tcpConnection running in thread " + QString("0x%1").arg((int)this->thread())));
     }
     tcpSocket = new QTcpSocket();
     in = new QDataStream();

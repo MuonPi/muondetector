@@ -4,19 +4,20 @@
 using namespace std;
 
 QtSerialUblox::QtSerialUblox(const QString serialPortName, int baudRate,
-                             bool newDumpRaw, int newVerbose, QObject *parent) : QObject(parent)
+                             bool newDumpRaw, int newVerbose, bool newShowout, QObject *parent) : QObject(parent)
 {
     _portName = serialPortName;
     _baudRate = baudRate;
     verbose = newVerbose;
     dumpRaw = newDumpRaw;
+    showout = newShowout;
 }
 
 void QtSerialUblox::makeConnection(){
     // this function gets called with a signal from client-thread
     // (QtSerialUblox runs in a separate thread only communicating with main thread through messages)
-    if (verbose > 2){
-        emit toConsole(QString("gps running in thread " + QString( "0x%1" ).arg( (int)this->thread(), 16 )));
+    if (verbose > 4){
+        emit toConsoleNewLine(QString("gps running in thread " + QString( "0x%1" ).arg( (int)this->thread())));
     }
     if (serialPort){
         delete(serialPort);
@@ -123,9 +124,6 @@ bool QtSerialUblox::scanUnknownMessage(string &buffer, UbxMessage &message)
 
 bool QtSerialUblox::sendUBX(uint16_t msgID, unsigned char* payload, int nBytes)
 {
-    if (verbose > 2){
-        emit toConsole("\nsending ubx message\n");
-    }
     std::string s = "";
     s += 0xb5; s += 0x62;
     s += (unsigned char)((msgID & 0xff00) >> 8);
@@ -147,7 +145,16 @@ bool QtSerialUblox::sendUBX(uint16_t msgID, unsigned char* payload, int nBytes)
     if (serialPort){
         if (serialPort->write(s.c_str())){
             if(serialPort->waitForBytesWritten(timeout)){
-               return true;
+                if (showout){
+                    std::stringstream tempStream;
+                    tempStream << "\nmessage sent: ";
+                    for (std::string::size_type i = 0; i < s.length(); i++){
+                        tempStream << "0x"<<std::setfill('0') << std::setw(2) << std::hex << (int)s[i] << " ";
+                    }
+                    tempStream << "\n";
+                    emit toConsole(QString::fromStdString(tempStream.str()));
+                }
+                return true;
             }else{
                 emit toConsole("wait for bytes written timeout while trying to write to serialPort");
             }
@@ -180,9 +187,9 @@ void QtSerialUblox::calcChkSum(const std::string& buf, unsigned char* chkA, unsi
 
 void QtSerialUblox::UBXSetCfgRate(uint8_t measRate, uint8_t navRate)
 {
-    if (verbose>2){
-        emit toConsole(QString("Ublox UBXsetCfgRate running in thread "  + QString( "0x%1" )
-                               .arg( (int)this->thread(), 16 )));
+    if (verbose>4){
+        emit toConsoleNewLine(QString("Ublox UBXsetCfgRate running in thread "  + QString( "0x%1" )
+                               .arg( (int)this->thread())));
     }
         unsigned char data[6];
     if (measRate < 10 || navRate < 1 || navRate>127) {
@@ -209,9 +216,9 @@ void QtSerialUblox::UBXSetCfgRate(uint8_t measRate, uint8_t navRate)
 
 void QtSerialUblox::UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate)
 {
-    if (verbose>2){
-        emit toConsole(QString("Ublox UBXsetCfgMsg running in thread "  + QString( "0x%1" )
-                               .arg( (int)this->thread(), 16 )));
+    if (verbose>4){
+        emit toConsoleNewLine(QString("Ublox UBXsetCfgMsg running in thread "  + QString( "0x%1" )
+                               .arg( (int)this->thread())));
     }
     unsigned char data[8];
     if (port > 5) {

@@ -14,7 +14,7 @@ class Client : public QObject
 public:
     Client(QString new_gpsdevname, int new_verbose, bool new_allSats,
         bool new_listSats, bool new_dumpRaw, int new_baudrate, bool new_poll,
-        bool new_configGnss, int new_timingCmd, long int new_N, QString serverAddress, quint16 serverPort, QObject *parent = 0);
+        bool new_configGnss, int new_timingCmd, long int new_N, QString serverAddress, quint16 serverPort, bool new_showout, QObject *parent = 0);
 	void configGps();
 	void loop();
 
@@ -54,7 +54,7 @@ private:
     QString gpsdevname;
 	int verbose, timingCmd, baudrate;
 	long int N;
-	bool allSats, listSats, dumpRaw, poll, configGnss;
+    bool allSats, listSats, dumpRaw, poll, configGnss, showout;
 };
 
 #endif // CLIENT_H

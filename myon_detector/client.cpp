@@ -7,15 +7,15 @@ using namespace std;
 
 Client::Client(QString new_gpsdevname, int new_verbose, bool new_allSats,
 	bool new_listSats, bool new_dumpRaw, int new_baudrate, bool new_poll,
-    bool new_configGnss, int new_timingCmd, long int new_N,QString serverAddress, quint16 serverPort, QObject *parent)
+    bool new_configGnss, int new_timingCmd, long int new_N,QString serverAddress, quint16 serverPort, bool new_showout, QObject *parent)
 	: QObject(parent)
 {
     // set all variables
 
     // general
     verbose = new_verbose;
-    if (verbose > 2){
-        cout << "client running in thread " << this->thread() << endl;
+    if (verbose > 4){
+        cout << "client running in thread " << QString("0x%1").arg((int)this->thread()) << endl;
     }
 
     // for gps module
@@ -28,6 +28,7 @@ Client::Client(QString new_gpsdevname, int new_verbose, bool new_allSats,
     configGnss = new_configGnss;
     timingCmd = new_timingCmd;
     N = new_N;
+    showout = new_showout;
 
     // for tcp connection
     port = serverPort;
@@ -42,6 +43,7 @@ Client::Client(QString new_gpsdevname, int new_verbose, bool new_allSats,
     // start tcp connection and gps module connection
     connectToServer();
     connectToGps();
+    delay(1000);
     if(configGnss){
         emit UBXSetCfgMsg(MSG_NAV_STATUS, 1, 1);	// TIM-TP
         emit UBXSetCfgMsg(MSG_TIM_TP, 1, 1);	// TIM-TP
@@ -58,10 +60,11 @@ void Client::connectToGps(){
     prepareSerial.waitForFinished();
 
     // here is where the magic threading happens look closely
-    qtGps = new QtSerialUblox(gpsdevname, baudrate, dumpRaw, verbose);
+    qtGps = new QtSerialUblox(gpsdevname, baudrate, dumpRaw, verbose, showout);
     QThread *gpsThread = new QThread();
     qtGps->moveToThread(gpsThread);
     connect(qtGps,&QtSerialUblox::toConsole, this, &Client::gpsToConsole);
+    connect(qtGps,&QtSerialUblox::toConsoleNewLine, this, &Client::toConsole);
     connect(gpsThread, &QThread::started, qtGps, &QtSerialUblox::makeConnection);
     // connect all command signals for ublox module here
     connect(this, &Client::UBXSetCfgMsg, qtGps, &QtSerialUblox::UBXSetCfgMsg);
