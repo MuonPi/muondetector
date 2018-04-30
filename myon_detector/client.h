@@ -40,6 +40,7 @@ signals:
     //void posixTerminate();
     void sendFile(QString fileName);
     void sendMsg(QString msg);
+    void sendPoll(uint16_t msgID);
 	void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
 	void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
 

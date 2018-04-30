@@ -45,8 +45,7 @@ Client::Client(QString new_gpsdevname, int new_verbose, bool new_allSats,
     connectToGps();
     delay(1000);
     if(configGnss){
-        emit UBXSetCfgMsg(MSG_NAV_STATUS, 1, 1);	// TIM-TP
-        emit UBXSetCfgMsg(MSG_TIM_TP, 1, 1);	// TIM-TP
+        configGps();
     }
 }
 
@@ -63,12 +62,13 @@ void Client::connectToGps(){
     qtGps = new QtSerialUblox(gpsdevname, baudrate, dumpRaw, verbose, showout);
     QThread *gpsThread = new QThread();
     qtGps->moveToThread(gpsThread);
+    // connect all signals not coming from client to gps
     connect(qtGps,&QtSerialUblox::toConsole, this, &Client::gpsToConsole);
-    connect(qtGps,&QtSerialUblox::toConsoleNewLine, this, &Client::toConsole);
     connect(gpsThread, &QThread::started, qtGps, &QtSerialUblox::makeConnection);
     // connect all command signals for ublox module here
     connect(this, &Client::UBXSetCfgMsg, qtGps, &QtSerialUblox::UBXSetCfgMsg);
     connect(this, &Client::UBXSetCfgRate, qtGps, &QtSerialUblox::UBXSetCfgRate);
+    connect(this, &Client::sendPoll, qtGps, &QtSerialUblox::sendPoll);
     // connect cfgError signal to output, could also create special errorFunction
     connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Client::toConsole);
 
@@ -97,12 +97,30 @@ void Client::connectToServer(){
 }
 
 void Client::configGps() {
-	// going to put this in ublox.cpp because it's not really useful here ?
+    // deactivate all NMEA messages:
+    emit UBXSetCfgMsg(MSG_NMEA_DTM,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_GBQ,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_GBS,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_GGA,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_GLL,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_GLQ,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_GNQ,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_GNS,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_GPQ,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_GRS,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_GSA,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_GST,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_GSV,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_RMC,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_TXT,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_VLW,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_VTG,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_ZDA,6,0);
+    emit UBXSetCfgMsg(MSG_NMEA_POSITION,6,0);
 
-	// 	gps->UBXCfgGNSS();
-	// 	gps->UBXCfgNav5();
-	// 	gps->UBXMonVer();
-
+    // set protocol configuration for ports
+    delay(2000);
+    // set UBX messages
 	const int measrate = 10;
 	emit UBXSetCfgRate(1000 / measrate, 1);
 	emit UBXSetCfgMsg(MSG_TIM_TM2, 1, 1);	// TIM-TM2
@@ -118,6 +136,9 @@ void Client::configGps() {
 	emit UBXSetCfgMsg(MSG_NAV_SBAS, 1, 255);	// NAV-SBAS
 	emit UBXSetCfgMsg(MSG_NAV_DOP, 1, 101);	// NAV-DOP
 	emit UBXSetCfgMsg(MSG_NAV_SVINFO, 1, 49);	// NAV-SVINFO
+
+    delay(1000);
+    emit sendPoll(0x0600);
 }
 
 void Client::gpsPropertyUpdatedGnss(std::vector<GnssSatellite> data,
@@ -204,77 +225,7 @@ void Client::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
     }
 }
 
-/*void Client::loop() {
-    // not needed anymore since ublox will emit message that something got updated
-    // do not use this function!!! (not thread safe unless mutexes in ublox.cpp active
-    // but those mutexes are kept out of ublox.cpp since they cost time)
-	int i = 0;
-	int cycles = 0;
-	while (i < N || N == -1) {
-		if (dumpRaw) {
-			string s;
-			int n = gps->ReadBuffer(s);
-			if (n > 0) {
-				cout << s;
-				//cout<<n<<endl;
-			}
-			continue;
-		}
-		if (listSats) {
-			if (gps->satList.updated) {
-				vector<GnssSatellite> sats = gps->satList();
-				if (!allSats) {
-					std::sort(sats.begin(), sats.end(), GnssSatellite::sortByCnr);
-					while (sats.back().getCnr() == 0 && sats.size() > 0) sats.pop_back();
-				}
-				cout << std::chrono::system_clock::now() - std::chrono::duration_cast<std::chrono::microseconds>(gps->nrSats.updateAge()) << "Nr of " << std::string((allSats) ? "visible" : "received") << " satellites: " << sats.size() << endl;
-				// read nrSats property without evaluation to prevent separate display of this property
-				// in the common message poll below
-                //int dummy = gps->nrSats();
-				GnssSatellite::PrintHeader(true);
-                for (unsigned int i = 0; i < sats.size(); i++) sats[i].Print(i, false);
-			}
-		}
-
-		if (gps->nrSats.updated)
-			cout << std::chrono::system_clock::now() - std::chrono::duration_cast<std::chrono::microseconds>(gps->nrSats.updateAge()) << "Nr of available satellites: " << gps->nrSats() << endl;
-		if (gps->timeAccuracy.updated)
-			cout << std::chrono::system_clock::now() - std::chrono::duration_cast<std::chrono::microseconds>(gps->timeAccuracy.updateAge()) << "time accuracy: " << gps->timeAccuracy() << " ns" << endl;
-		if (gps->TPQuantErr.updated)
-			cout << std::chrono::system_clock::now() - std::chrono::duration_cast<std::chrono::microseconds>(gps->TPQuantErr.updateAge()) << "quant error: " << gps->TPQuantErr() << " ps" << endl;
-		if (gps->noise.updated)
-			cout << std::chrono::system_clock::now() - std::chrono::duration_cast<std::chrono::microseconds>(gps->noise.updateAge()) << "noise: " << gps->noise() << endl;
-		if (gps->agc.updated)
-			cout << std::chrono::system_clock::now() - std::chrono::duration_cast<std::chrono::microseconds>(gps->agc.updateAge()) << "agc: " << gps->agc() << endl;
-		if (gps->txBufUsage.updated)
-			cout << std::chrono::system_clock::now() - std::chrono::duration_cast<std::chrono::microseconds>(gps->txBufUsage.updateAge()) << "TX buf usage: " << gps->txBufUsage() << " %" << endl;
-		if (gps->txBufPeakUsage.updated)
-			cout << std::chrono::system_clock::now() - std::chrono::duration_cast<std::chrono::microseconds>(gps->txBufPeakUsage.updateAge()) << "TX buf peak usage: " << gps->txBufPeakUsage() << " %" << endl;
-		if (gps->eventCounter.updated)
-			cout << std::chrono::system_clock::now() - std::chrono::duration_cast<std::chrono::microseconds>(gps->eventCounter.updateAge()) << "rising edge counter: " << gps->eventCounter() << endl;
-		if (gps->clkBias.updated)
-			cout << std::chrono::system_clock::now() - std::chrono::duration_cast<std::chrono::microseconds>(gps->clkBias.updateAge()) << "clock bias: " << gps->clkBias() << " ns" << endl;
-		if (gps->clkDrift.updated)
-			cout << std::chrono::system_clock::now() - std::chrono::duration_cast<std::chrono::microseconds>(gps->clkDrift.updateAge()) << "clock drift: " << gps->clkDrift() << " ns/s" << endl;
-		if (gps->getEventFIFOSize()) {
-			struct gpsTimestamp ts = gps->getEventFIFOEntry();
-			//cout<<ts.rising_time<<" timestamp event";
-			if (ts.rising) cout << ts.rising_time << " timestamp event rising " << " accuracy: " << ts.accuracy_ns << " ns  counter: " << ts.counter << endl;
-			if (ts.falling) cout << ts.falling_time << " timestamp event falling " << " accuracy: " << ts.accuracy_ns << " ns  counter: " << ts.counter << endl;
-			//	  cout<<" accuracy: "<<ts.accuracy_ns<<" ns  counter: "<<ts.counter<<endl;
-		}
-		cout << flush;
-		delay(10000);
-		if (++cycles >= 100) {
-			cycles = 0;
-			i++;
-		}
-	}
-}
-*/
-
 void Client::toConsole(QString data) {
-    //cout <<"client: "<< data << endl;
     cout << data << endl;
 }
 

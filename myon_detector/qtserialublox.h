@@ -19,7 +19,7 @@ signals:
     // all messages coming from QtSerialUblox class that should be displayed on console
     // get sent to Client thread with signal/slot mechanics
     void toConsole(QString data);
-    void toConsoleNewLine(QString data);
+    void UBXReceivedAckAckNak(uint16_t ClsMsgID, bool ackAck);
     void UBXCfgError(QString data);
 
     // information about updated properties
@@ -39,6 +39,7 @@ public slots:
     // all functions that can be called from other classes through signal/slot mechanics
     void makeConnection();
     void onReadyRead();
+    void sendPoll(uint16_t msgID);
     void handleError(QSerialPort::SerialPortError serialPortError);
     void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
     void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
@@ -53,9 +54,6 @@ private:
     bool sendUBX(uint16_t msgID, unsigned char* payload, int nBytes);
     bool sendUBX(unsigned char classID, unsigned char messageID,
                                 unsigned char* payload, int nBytes);
-    bool pollUBX(uint16_t msgID, std::string& answer, int timeout);
-    bool pollUBX(uint8_t classID, uint8_t messageID, std::string& answer, int timeout);
-
 
     // all functions only used for processing and showing "UbxMessage"
     void processMessage(const UbxMessage& msg);
