@@ -40,12 +40,14 @@ signals:
     //void posixTerminate();
     void sendFile(QString fileName);
     void sendMsg(QString msg);
-    void sendPoll(uint16_t msgID);
+    void sendPoll(uint16_t msgID, uint8_t port);
 	void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
 	void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
+    void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
 
 private:
     TcpConnection * tcpConnection = nullptr;
+    QHash <uint16_t, bool> *messagesWaitingForAck;
     //Ublox *gps = nullptr;
     QtSerialUblox *qtGps = nullptr;
 	QString ipAddress;

@@ -22,7 +22,6 @@ SOURCES += main.cpp \
     custom_io_operators.cpp \
     client.cpp \
     gnsssatellite.cpp \
-    serial.cpp \
     tcpconnection.cpp \
     qtserialublox.cpp \
     qtserialublox_processmessages.cpp

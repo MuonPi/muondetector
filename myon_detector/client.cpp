@@ -12,6 +12,9 @@ Client::Client(QString new_gpsdevname, int new_verbose, bool new_allSats,
 {
     // set all variables
 
+    // QHash for keeping track of AckAck answers for configuration messages
+    messagesWaitingForAck = new QHash<uint16_t, bool>();
+
     // general
     verbose = new_verbose;
     if (verbose > 4){
@@ -97,7 +100,32 @@ void Client::connectToServer(){
 }
 
 void Client::configGps() {
-    // deactivate all NMEA messages:
+    // set up ubx as only outPortProtocol
+    emit UBXSetCfgPrt(1,1); // enables on UART port (1) only the UBX protocol
+
+    // deactivate all NMEA messages: (port 6 means ALL ports)
+
+    // first remember (in a QHash) which messages are waiting for AckAck
+    // must think about what is sent as classID and msgID from AckAck (is it maybe always CFG_MSG ??)
+    /*messagesWaitingForAck->insert(MSG_NMEA_DTM,true);
+    messagesWaitingForAck->insert(MSG_NMEA_GBQ,true);
+    messagesWaitingForAck->insert(MSG_NMEA_GBS,true);
+    messagesWaitingForAck->insert(MSG_NMEA_GGA,true);
+    messagesWaitingForAck->insert(MSG_NMEA_GLL,true);
+    messagesWaitingForAck->insert(MSG_NMEA_GLQ,true);
+    messagesWaitingForAck->insert(MSG_NMEA_GNQ,true);
+    messagesWaitingForAck->insert(MSG_NMEA_GNS,true);
+    messagesWaitingForAck->insert(MSG_NMEA_GPQ,true);
+    messagesWaitingForAck->insert(MSG_NMEA_GRS,true);
+    messagesWaitingForAck->insert(MSG_NMEA_GSA,true);
+    messagesWaitingForAck->insert(MSG_NMEA_GST,true);
+    messagesWaitingForAck->insert(MSG_NMEA_GSV,true);
+    messagesWaitingForAck->insert(MSG_NMEA_RMC,true);
+    messagesWaitingForAck->insert(MSG_NMEA_TXT,true);
+    messagesWaitingForAck->insert(MSG_NMEA_VLW,true);
+    messagesWaitingForAck->insert(MSG_NMEA_VTG,true);
+    messagesWaitingForAck->insert(MSG_NMEA_ZDA,true);
+    messagesWaitingForAck->insert(MSG_NMEA_POSITION,true);*/
     emit UBXSetCfgMsg(MSG_NMEA_DTM,6,0);
     emit UBXSetCfgMsg(MSG_NMEA_GBQ,6,0);
     emit UBXSetCfgMsg(MSG_NMEA_GBS,6,0);
@@ -120,10 +148,11 @@ void Client::configGps() {
 
     // set protocol configuration for ports
     delay(2000);
-    // set UBX messages
-	const int measrate = 10;
-	emit UBXSetCfgRate(1000 / measrate, 1);
-	emit UBXSetCfgMsg(MSG_TIM_TM2, 1, 1);	// TIM-TM2
+    const int measrate = 10;
+    // set active UBX messages
+    // also remember (in QHash) which messages are waiting for AckAck (have to overthink it)
+    emit UBXSetCfgRate(1000 / measrate, 1);
+    emit UBXSetCfgMsg(MSG_TIM_TM2, 1, 1);	// TIM-TM2
 	emit UBXSetCfgMsg(MSG_TIM_TP, 1, 51);	// TIM-TP
 	emit UBXSetCfgMsg(MSG_NAV_TIMEUTC, 1, 20);	// NAV-TIMEUTC
 	emit UBXSetCfgMsg(MSG_MON_HW, 1, 47);	// MON-HW
@@ -138,7 +167,7 @@ void Client::configGps() {
 	emit UBXSetCfgMsg(MSG_NAV_SVINFO, 1, 49);	// NAV-SVINFO
 
     delay(1000);
-    emit sendPoll(0x0600);
+    emit sendPoll(0x0600,1);
 }
 
 void Client::gpsPropertyUpdatedGnss(std::vector<GnssSatellite> data,

@@ -39,10 +39,12 @@ public slots:
     // all functions that can be called from other classes through signal/slot mechanics
     void makeConnection();
     void onReadyRead();
-    void sendPoll(uint16_t msgID);
+    void sendPoll(uint16_t msgID, uint8_t port);
     void handleError(QSerialPort::SerialPortError serialPortError);
     void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
     void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
+    void UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask);
+    // outPortMask is something like 1 for only UBX protocol or 0b11 for UBX and NMEA
 
 
 private:

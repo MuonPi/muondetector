@@ -212,6 +212,51 @@ void QtSerialUblox::UBXSetCfgRate(uint8_t measRate, uint8_t navRate)
     */
 }
 
+void QtSerialUblox::UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask){
+    if (verbose>4){
+        emit toConsole(QString("Ublox UBXSetCfgPort running in thread "  + QString( "0x%1\n" )
+                               .arg( (int)this->thread())));
+    }
+    unsigned char data[20];
+    // initialise all contents from data as 0 first!
+    for (int i = 0; i < 20; i++){
+        data[i]=0;
+    }
+    if (port > 6) {
+        emit UBXCfgError("port > 5 is not possible");
+    }
+    if (port == 1){
+        // port 1 is UART port, payload for other ports may differ
+        // setup payload. Bit masks are set up byte wise from lowest to highest byte
+        data[0] = port; // set port (1 Byte)
+        // data[1]=0; reserved
+        // data[2]=0;data[3]=0; txReady options (not used)
+        // mode option:
+        data[4] = 0b11000000; // charLen option (first 2 bits): 11 means 8 bit character length. (10 means 7 bit character length only with parity enabled)
+        data[5] = 0b00001000; // first 2 bits unimportant. 00 -> 1 stop bit. 100 -> no parity. last bit unimportant.
+        // data[6]=0; data[7]=0; part of mode option but no meaning
+
+        // baudrate: (check if it works)
+        data[6] = (uint8_t)(((uint16_t)_baudRate) & 0x00ff);
+        data[7] = (uint8_t)((((uint16_t)_baudRate) & 0xff00)>>8);
+        // data[8]=0; data[9]=0; not needed because baudRate will never be over 65536 (2^16)
+
+        // inProtoMask enables/disables possible protocols for sending messages to the gps module:
+        data[12] = 0b00100111; // () () (RTCM3) () () (RTCM) (NMEA) (UBX)
+        // data[13]=0; has no meaning but part of inProtoMask
+
+        // outProtoMask enables/disables protocols for receiving messages from the gps module:
+        //data[14] = 0b00100011; // () () (RTCM3) () () () (NMEA) (UBX) FOR EXAMPLE
+        data[14] = outProtocolMask;
+
+        // data[15]=0; has no meaning but part of outProtoMask
+
+        // data[16]=0; data[17]=0; extendedTxTimeout not needed
+        // data[18]=0; data[19]=0; reserved
+    }
+    sendUBX(MSG_CFG_PRT, data, 20);
+}
+
 void QtSerialUblox::UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate)
 { // set message rate on port. (rate 1 means every intervall the messages is sent)
     // if port = -1 set all ports
@@ -266,7 +311,15 @@ void QtSerialUblox::handleError(QSerialPort::SerialPortError serialPortError)
 
 
 
-void QtSerialUblox::sendPoll(uint16_t msgID){
-    sendUBX(msgID,NULL,0);
+void QtSerialUblox::sendPoll(uint16_t msgID, uint8_t port){
+    switch (msgID){
+    case 0x0601:
+        std::string temp;
+        temp.append(port);
+        sendUBX(msgID,temp.c_str(),1);
+        break;
+    default:
+        break;
+    }
 }
 
