@@ -6,7 +6,6 @@
 #include "custom_io_operators.h"
 #include "client.h"
 //#include "unix_sig_handler_daemon.h" //for handling unix signals
-
 using namespace std;
 
 /* for handling unix signals, does not really work
@@ -51,6 +50,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<uint16_t>("uint16_t");
     qRegisterMetaType<uint32_t>("uint32_t");
     qRegisterMetaType<int32_t>("int32_t");
+    qRegisterMetaType<std::string>("std::string");
 
 	// command line input management
 	QCommandLineParser parser;
@@ -129,6 +129,10 @@ int main(int argc, char *argv[])
 		QCoreApplication::translate("main", "show GNSS configs"));
 	parser.addOption(showGnssConfigOption);
 
+    // show outgoing ubx messages as hex
+    QCommandLineOption showoutOption(QStringList() << "showoutput" << "showout",
+        QCoreApplication::translate("main", "show outgoing ubx messages as hex"));
+    parser.addOption(showoutOption);
 
 	// process the actual command line arguments given by the user
 	parser.process(a);
@@ -154,9 +158,9 @@ int main(int argc, char *argv[])
 			cout << "wrong input verbosity level" << endl;
 		}
 	}
-    if (verbose > 2){
+    if (verbose > 4){
         cout << "int main running in thread "
-             << QCoreApplication::instance()->thread() << endl;
+             << QString("0x%1").arg((int)QCoreApplication::instance()->thread()) << endl;
     }
 	long int N = -1;
 	if (parser.isSet(numberReadCyclesOption)) {
@@ -200,7 +204,7 @@ int main(int argc, char *argv[])
             cout << "wrong input port (maybe not an integer)" << endl;
         }
     }
-    QString ipAddress;
+    QString ipAddress = "";
     if (parser.isSet(ipOption)){
         ipAddress = parser.value(ipOption);
         if (!QHostAddress(ipAddress).toIPv4Address()){
@@ -210,8 +214,11 @@ int main(int argc, char *argv[])
             }
         }
     }
-	Client client(gpsdevname.toStdString(), verbose, allSats, listSats, dumpRaw,
-        baudrate, poll, showGnssConfig, timingCmd, N, ipAddress, port);
+    bool showout = false;
+    showout = parser.isSet(showoutOption);
+
+    Client client(gpsdevname, verbose, allSats, listSats, dumpRaw,
+        baudrate, poll, showGnssConfig, timingCmd, N, ipAddress, port, showout);
 
     /* handling posix signals does not really work atm
     QObject::connect(d, SIGNAL(myIntSignal()),&client,

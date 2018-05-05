@@ -1,6 +1,8 @@
 #ifndef STRUCTS_AND_DEFINES_H
 #define STRUCTS_AND_DEFINES__H
 
+
+// list of UBX message Cls/ID
 #define MSG_ACK			0x0501
 #define MSG_NAK			0x0500
 
@@ -77,6 +79,35 @@
 #define MSG_MON_SMGR		0x0a2e
 #define MSG_MON_TXBUF		0x0a08
 
+// list of NMEA message Cls/ID
+#define MSG_NMEA_DTM 0xf00a
+#define MSG_NMEA_GBQ 0xf044
+#define MSG_NMEA_GBS 0xf009
+#define MSG_NMEA_GGA 0xf000
+#define MSG_NMEA_GLL 0xf001
+#define MSG_NMEA_GLQ 0xf043
+#define MSG_NMEA_GNQ 0xf042
+#define MSG_NMEA_GNS 0xf00d
+#define MSG_NMEA_GPQ 0xf040
+#define MSG_NMEA_GRS 0xf006
+#define MSG_NMEA_GSA 0xf002
+#define MSG_NMEA_GST 0xf007
+#define MSG_NMEA_GSV 0xf003
+#define MSG_NMEA_RMC 0xf004
+#define MSG_NMEA_TXT 0xf041
+#define MSG_NMEA_VLW 0xf00f
+#define MSG_NMEA_VTG 0xf005
+#define MSG_NMEA_ZDA 0xf008
+#define MSG_NMEA_CONFIG 0xf141
+#define MSG_NMEA_POSITION 0xf100
+#define MSG_NMEA_RATE 0xf140
+#define MSG_NMEA_SVSTATUS 0xf103
+#define MSG_NMEA_TIME 0xf104
+
+#define PROTO_UBX 1
+#define PROTO_NMEA 0b10
+#define PROTO_RTCM3 0b100000
+
 #include <string>
 #include <chrono>
 #include "gnsssatellite.h"
@@ -129,7 +160,5 @@ public:
 private:
     T value;
 };
-//Q_DECLARE_METATYPE_TEMPLATE_1ARG(gpsProperty)
-//Q_DECLARE_METATYPE(gpsProperty)
 
 #endif // STRUCTS_AND_DEFINES_H

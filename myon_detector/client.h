@@ -4,25 +4,28 @@
 #include <QObject>
 #include "tcpconnection.h"
 #include "custom_io_operators.h"
-#include "ublox.h"
+//#include "ublox.h"
+#include "qtserialublox.h"
 
 class Client : public QObject
 {
 	Q_OBJECT
 
 public:
-    Client(std::string new_gpsdevname, int new_verbose, bool new_allSats,
+    Client(QString new_gpsdevname, int new_verbose, bool new_allSats,
         bool new_listSats, bool new_dumpRaw, int new_baudrate, bool new_poll,
-        bool new_configGnss, int new_timingCmd, long int new_N, QString serverAddress, quint16 serverPort, QObject *parent = 0);
+        bool new_configGnss, int new_timingCmd, long int new_N, QString serverAddress, quint16 serverPort, bool new_showout, QObject *parent = 0);
 	void configGps();
 	void loop();
 
 public slots:
     //void onPosixTerminateReceived();
+    void connectToGps();
     void connectToServer();
     void displaySocketError(int socketError, QString message);
 	void displayError(QString message);
     void toConsole(QString data);
+    void gpsToConsole(QString data);
     void stoppedConnection(QString hostName, quint16 port, quint32 connectionTimeout, quint32 connectionDuration);
     void gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double> updateAge,
                             char propertyName);
@@ -37,21 +40,24 @@ signals:
     //void posixTerminate();
     void sendFile(QString fileName);
     void sendMsg(QString msg);
-	void UBXSetCfgMsg(uint8_t classID, uint8_t messageID, uint8_t port, uint8_t rate);
+    void sendPoll(uint16_t msgID, uint8_t port);
 	void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
 	void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
+    void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
 
 private:
-    TcpConnection * tcpConnection;
-	Ublox *gps;
+    TcpConnection * tcpConnection = nullptr;
+    QHash <uint16_t, bool> *messagesWaitingForAck;
+    //Ublox *gps = nullptr;
+    QtSerialUblox *qtGps = nullptr;
 	QString ipAddress;
 	quint16 port;
 	void printTimestamp();
 	void delay(int millisecondsWait);
-	std::string gpsdevname;
+    QString gpsdevname;
 	int verbose, timingCmd, baudrate;
 	long int N;
-	bool allSats, listSats, dumpRaw, poll, configGnss;
+    bool allSats, listSats, dumpRaw, poll, configGnss, showout;
 };
 
 #endif // CLIENT_H

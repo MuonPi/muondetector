@@ -38,12 +38,12 @@ private:
     int verbose;
     int pingInterval;
     quint16 fileCounter = 0;
-    QFile *myFile = NULL;
-    QDataStream *in;
-    QTcpSocket *tcpSocket;
+    QFile *myFile = nullptr;
+    QDataStream *in = nullptr;
+    QTcpSocket *tcpSocket = nullptr;
 	QString hostName;
 	quint16 port;
-    QTimer *t;
+    QTimer *t = nullptr;
     time_t lastConnection;
     time_t firstConnection;
 };
