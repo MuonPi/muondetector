@@ -69,6 +69,7 @@ void Client::connectToGps(){
     connect(qtGps,&QtSerialUblox::toConsole, this, &Client::gpsToConsole);
     connect(gpsThread, &QThread::started, qtGps, &QtSerialUblox::makeConnection);
     // connect all command signals for ublox module here
+    connect(this, &Client::UBXSetCfgPrt, qtGps, &QtSerialUblox::UBXSetCfgPrt);
     connect(this, &Client::UBXSetCfgMsg, qtGps, &QtSerialUblox::UBXSetCfgMsg);
     connect(this, &Client::UBXSetCfgRate, qtGps, &QtSerialUblox::UBXSetCfgRate);
     connect(this, &Client::sendPoll, qtGps, &QtSerialUblox::sendPoll);
@@ -101,31 +102,10 @@ void Client::connectToServer(){
 
 void Client::configGps() {
     // set up ubx as only outPortProtocol
-    emit UBXSetCfgPrt(1,1); // enables on UART port (1) only the UBX protocol
-
+    //emit UBXSetCfgPrt(1,1); // enables on UART port (1) only the UBX protocol
+    emit UBXSetCfgPrt(1,PROTO_UBX);
     // deactivate all NMEA messages: (port 6 means ALL ports)
-
-    // first remember (in a QHash) which messages are waiting for AckAck
-    // must think about what is sent as classID and msgID from AckAck (is it maybe always CFG_MSG ??)
-    /*messagesWaitingForAck->insert(MSG_NMEA_DTM,true);
-    messagesWaitingForAck->insert(MSG_NMEA_GBQ,true);
-    messagesWaitingForAck->insert(MSG_NMEA_GBS,true);
-    messagesWaitingForAck->insert(MSG_NMEA_GGA,true);
-    messagesWaitingForAck->insert(MSG_NMEA_GLL,true);
-    messagesWaitingForAck->insert(MSG_NMEA_GLQ,true);
-    messagesWaitingForAck->insert(MSG_NMEA_GNQ,true);
-    messagesWaitingForAck->insert(MSG_NMEA_GNS,true);
-    messagesWaitingForAck->insert(MSG_NMEA_GPQ,true);
-    messagesWaitingForAck->insert(MSG_NMEA_GRS,true);
-    messagesWaitingForAck->insert(MSG_NMEA_GSA,true);
-    messagesWaitingForAck->insert(MSG_NMEA_GST,true);
-    messagesWaitingForAck->insert(MSG_NMEA_GSV,true);
-    messagesWaitingForAck->insert(MSG_NMEA_RMC,true);
-    messagesWaitingForAck->insert(MSG_NMEA_TXT,true);
-    messagesWaitingForAck->insert(MSG_NMEA_VLW,true);
-    messagesWaitingForAck->insert(MSG_NMEA_VTG,true);
-    messagesWaitingForAck->insert(MSG_NMEA_ZDA,true);
-    messagesWaitingForAck->insert(MSG_NMEA_POSITION,true);*/
+    // for acknowledge we have to think about a better solution
     emit UBXSetCfgMsg(MSG_NMEA_DTM,6,0);
     emit UBXSetCfgMsg(MSG_NMEA_GBQ,6,0);
     emit UBXSetCfgMsg(MSG_NMEA_GBS,6,0);
@@ -149,8 +129,6 @@ void Client::configGps() {
     // set protocol configuration for ports
     delay(2000);
     const int measrate = 10;
-    // set active UBX messages
-    // also remember (in QHash) which messages are waiting for AckAck (have to overthink it)
     emit UBXSetCfgRate(1000 / measrate, 1);
     emit UBXSetCfgMsg(MSG_TIM_TM2, 1, 1);	// TIM-TM2
 	emit UBXSetCfgMsg(MSG_TIM_TP, 1, 51);	// TIM-TP

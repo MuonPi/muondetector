@@ -104,6 +104,9 @@
 #define MSG_NMEA_SVSTATUS 0xf103
 #define MSG_NMEA_TIME 0xf104
 
+#define PROTO_UBX 1
+#define PROTO_NMEA 0b10
+#define PROTO_RTCM3 0b100000
 
 #include <string>
 #include <chrono>
