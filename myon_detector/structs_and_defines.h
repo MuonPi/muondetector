@@ -114,10 +114,10 @@
 
 struct UbxMessage {
 public:
-	uint8_t classID;
-	uint8_t messageID;
 	uint16_t msgID;
 	std::string data;
+    UbxMessage(uint16_t new_msgID = 0, std::string new_data = ""):msgID(new_msgID),data(new_data){}
+    UbxMessage(uint16_t new_msgID = 0, unsigned char* new_data = NULL):msgID(new_msgID),data(new_data){}
 };
 
 struct gpsTimestamp {

@@ -82,8 +82,8 @@ bool QtSerialUblox::scanUnknownMessage(string &buffer, UbxMessage &message)
         }
         return false;
     }
-    message.classID = (uint8_t)mess[2];
-    message.messageID = (uint8_t)mess[3];
+    // message.classID = (uint8_t)mess[2];
+    // message.messageID = (uint8_t)mess[3];
     message.msgID = (uint16_t)mess[2] << 8;
     message.msgID += (uint16_t)mess[3];
     if (mess.size() < 8) return false;
@@ -161,10 +161,8 @@ bool QtSerialUblox::sendUBX(uint16_t msgID, unsigned char* payload, int nBytes)
     return false;
 }
 
-bool QtSerialUblox::sendUBX(unsigned char classID, unsigned char messageID, unsigned char* payload, int nBytes)
-{
-    uint16_t msgID = (messageID + (uint16_t)classID) << 8;
-    return sendUBX(msgID, payload, nBytes);
+bool QtSerialUblox::sendUBX(UbxMessage &msg){
+    return sendUBX(msg.msgID,msg.data.c_str(), msg.data.size());
 }
 
 void QtSerialUblox::calcChkSum(const std::string& buf, unsigned char* chkA, unsigned char* chkB)
@@ -200,7 +198,9 @@ void QtSerialUblox::UBXSetCfgRate(uint8_t measRate, uint8_t navRate)
     data[4] = 0;
     data[5] = 0;
 
-    sendUBX(MSG_CFG_RATE, data, sizeof(data));
+    UbxMessage newMessage(MSG_CFG_RATE,data);
+    outMsgBuffer.push_back(newMessage);
+    // sendUBX(MSG_CFG_RATE, data, sizeof(data));
     /* Ack check has to be done differently, asynchronously
     if (waitAck(MSG_CFG_RATE, 10000))
     {
@@ -259,7 +259,9 @@ void QtSerialUblox::UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask){
         data[18]=0;
         data[19]=0; // reserved
     }
-    sendUBX(MSG_CFG_PRT, data, 20);
+    // sendUBX(MSG_CFG_PRT, data, 20);
+    UbxMessage newMessage(MSG_CFG_PRT,data);
+    outMsgBuffer.push_back(newMessage);
 }
 
 void QtSerialUblox::UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate)
@@ -287,7 +289,9 @@ void QtSerialUblox::UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate)
             data[i] = rate;
         }
     }
-    sendUBX(MSG_CFG_MSG, data, 8);
+    //sendUBX(MSG_CFG_MSG, data, 8);#
+    UbxMessage newMessage(MSG_CFG_MSG,data);
+    outMsgBuffer.push_back(newMessage);
     /* Ack check has to be done differently, asynchronously
     if (waitAck(MSG_CFG_MSG, 12000)) {
         emit toConsole("Set CFG successful");
@@ -296,12 +300,6 @@ void QtSerialUblox::UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate)
         emit UBXCfgError("Set CFG timeout");
     }
     */
-}
-
-void QtSerialUblox::UBXSetCfgMsg2(uint8_t classID, uint8_t messageID, uint8_t port, uint8_t rate)
-{
-    uint16_t msgID = (messageID + (uint16_t)classID) << 8;
-    UBXSetCfgMsg(msgID, port, rate);
 }
 
 void QtSerialUblox::handleError(QSerialPort::SerialPortError serialPortError)

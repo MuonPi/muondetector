@@ -50,12 +50,10 @@ public slots:
 private:
     // all functions for sending and receiving raw data used by other functions in "public slots" section
     // and scanning raw data up to the point where "UbxMessage" object is generated
-    void UBXSetCfgMsg2(uint8_t classID, uint8_t messageID, uint8_t port, uint8_t rate);
     bool scanUnknownMessage(std::string &buffer,UbxMessage &message);
     void calcChkSum(const std::string &buf, unsigned char* chkA, unsigned char* chkB);
     bool sendUBX(uint16_t msgID, unsigned char* payload, int nBytes);
-    bool sendUBX(unsigned char classID, unsigned char messageID,
-                                unsigned char* payload, int nBytes);
+    bool sendUBX(UbxMessage &msg);
 
     // all functions only used for processing and showing "UbxMessage"
     void processMessage(const UbxMessage& msg);
@@ -88,6 +86,7 @@ private:
                           // be interpreted as QString by QString(message) (basically all NMEA)
     bool discardAllNMEA = true; // if true discard all NMEA messages and do not parse them
     bool showout = false; // if true show the ubx messages sent to the gps board as hex
+    std::vector <UbxMessage> outMsgBuffer;
 
     // all global variables used for keeping track of satellites and statistics (gpsProperty)
     gpsProperty<int> leapSeconds;
@@ -104,7 +103,7 @@ private:
     gpsProperty<std::vector<GnssSatellite> > satList;
     const int	MSGTIMEOUT = 1500;
     std::queue<gpsTimestamp> fTimestamps;
-    std::list<UbxMessage> fMessageBuffer;
+    //std::list<UbxMessage> fMessageBuffer;
 
 };
 
