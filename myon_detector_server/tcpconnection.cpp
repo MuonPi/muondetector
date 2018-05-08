@@ -1,8 +1,5 @@
 #include "tcpconnection.h"
-#include "custom_io_operators.h" // remove after debug
 #include <QtNetwork>
-
-using namespace std; //remove after debug
 
 const quint16 ping = 123;
 const quint16 msgSig = 246;
