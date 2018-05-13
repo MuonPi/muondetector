@@ -4,7 +4,7 @@
 #include <QHostAddress>
 //#include <unistd.h>
 #include "custom_io_operators.h"
-#include "client.h"
+#include "demon.h"
 //#include "unix_sig_handler_daemon.h" //for handling unix signals
 using namespace std;
 
@@ -217,15 +217,15 @@ int main(int argc, char *argv[])
     bool showout = false;
     showout = parser.isSet(showoutOption);
 
-    Client client(gpsdevname, verbose, allSats, listSats, dumpRaw,
+    Demon demon(gpsdevname, verbose, allSats, listSats, dumpRaw,
         baudrate, poll, showGnssConfig, timingCmd, N, ipAddress, port, showout);
 
     /* handling posix signals does not really work atm
-    QObject::connect(d, SIGNAL(myIntSignal()),&client,
+    QObject::connect(d, SIGNAL(myIntSignal()),&Demon,
                      SLOT(onPosixTerminateReceived()));
-    QObject::connect(d, SIGNAL(myHupSignal()),&client,
+    QObject::connect(d, SIGNAL(myHupSignal()),&Demon,
                      SLOT(onPosixTerminateReceived()));
-    QObject::connect(d, SIGNAL(myTermSignal()),&client,
+    QObject::connect(d, SIGNAL(myTermSignal()),&Demon,
                      SLOT(onPosixTerminateReceived()));
     */
     return a.exec();

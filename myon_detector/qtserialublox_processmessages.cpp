@@ -14,7 +14,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
     std::vector<GnssSatellite> sats;
     std::stringstream tempStream;
     //std::string temp;
-    uint16_t msgIDFromPayload;
+    uint16_t ackedMsgID;
     switch (classID) {
     case 0x05: // UBX-ACK
         if(msg.data.size()<2){
@@ -27,15 +27,34 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
                        <<std::setfill('0') << std::setw(2) << std::hex << (int)msg.data[1] << "\n";
             emit toConsole(QString::fromStdString(tempStream.str()));
         }
-        msgIDFromPayload = (uint16_t)(msg.data[0]) << 8 | msg.data[1];
-        switch (messageID){
-        case 0x01:
-            emit UBXReceivedAckAckNak(msgIDFromPayload, true);
-            break;
-        case 0x00:
-            emit UBXReceivedAckAckNak(msgIDFromPayload, false);
+        ackedMsgID = (uint16_t)(msg.data[0]) << 8 | msg.data[1];
+        if (!msgWaitingForAck){
+            if (verbose > 0){
+                emit toConsole("received Ack message but no message is waiting for Ack\n");
+            }
             break;
         }
+        if (ackedMsgID!=msgWaitingForAck->msgID){
+            if (verbose > 0){
+                emit toConsole("received unexpected Ack message\n");
+            }
+            break;
+        }
+        switch (messageID){
+        case 0x01:
+            emit UBXReceivedAckAckNak(true, msgWaitingForAck->msgID,
+                                     (uint16_t)(msgWaitingForAck->data[0])<<8
+                                    |msgWaitingForAck->data[1]);
+            break;
+        case 0x00:
+            emit UBXReceivedAckAckNak(false, msgWaitingForAck->msgID,
+                                      (uint16_t)(msgWaitingForAck->data[0])<<8
+                                     |msgWaitingForAck->data[1]);
+            break;
+        }
+        delete msgWaitingForAck;
+        msgWaitingForAck = 0;
+        sendQueuedMsg();
         break;
     case 0x01: // UBX-NAV
         switch (messageID) {

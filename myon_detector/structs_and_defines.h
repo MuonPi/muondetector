@@ -112,12 +112,13 @@
 #include <chrono>
 #include "gnsssatellite.h"
 
+#include <sstream>
+#include <string>
+
 struct UbxMessage {
 public:
 	uint16_t msgID;
-	std::string data;
-    UbxMessage(uint16_t new_msgID = 0, std::string new_data = ""):msgID(new_msgID),data(new_data){}
-    UbxMessage(uint16_t new_msgID = 0, unsigned char* new_data = NULL):msgID(new_msgID),data(new_data){}
+    std::string data;
 };
 
 struct gpsTimestamp {

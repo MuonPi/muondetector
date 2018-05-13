@@ -18,24 +18,21 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += main.cpp \
-#    ublox.cpp \
     custom_io_operators.cpp \
-    client.cpp \
     gnsssatellite.cpp \
     tcpconnection.cpp \
     qtserialublox.cpp \
-    qtserialublox_processmessages.cpp
+    qtserialublox_processmessages.cpp \
+    demon.cpp
 
 HEADERS += \
-#    ublox.h \
     custom_io_operators.h \
-    client.h \
     gnsssatellite.h \
     unixtime_from_gps.h \
     structs_and_defines.h \
     time_from_rtc.h \
-#    serial.h \
     tcpconnection.h \
-    qtserialublox.h
+    qtserialublox.h \
+    demon.h
 
 #QMAKE_CXXFLAGS += -std=c++11
