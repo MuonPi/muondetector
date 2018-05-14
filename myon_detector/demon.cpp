@@ -59,12 +59,13 @@ void Demon::connectToGps(){
     prepareSerial.waitForFinished();
 
     // here is where the magic threading happens look closely
-    qtGps = new QtSerialUblox(gpsdevname, baudrate, dumpRaw, verbose, showout);
+    qtGps = new QtSerialUblox(gpsdevname, gpsTimeout, baudrate, dumpRaw, verbose, showout);
     QThread *gpsThread = new QThread();
     qtGps->moveToThread(gpsThread);
     // connect all signals not coming from Demon to gps
     connect(qtGps,&QtSerialUblox::toConsole, this, &Demon::gpsToConsole);
     connect(gpsThread, &QThread::started, qtGps, &QtSerialUblox::makeConnection);
+    connect(qtGps, &QtSerialUblox::destroyed, gpsThread, &QThread::deleteLater);
     // connect all command signals for ublox module here
     connect(this, &Demon::UBXSetCfgPrt, qtGps, &QtSerialUblox::UBXSetCfgPrt);
     connect(this, &Demon::UBXSetCfgMsg, qtGps, &QtSerialUblox::UBXSetCfgMsg);
@@ -284,6 +285,10 @@ void Demon::toConsole(QString data) {
 
 void Demon::gpsToConsole(QString data){
     cout << data << flush;
+}
+
+void Demon::gpsConnectionError(){
+
 }
 
 void Demon::stoppedConnection(QString hostName, quint16 port, quint32 connectionTimeout, quint32 connectionDuration){

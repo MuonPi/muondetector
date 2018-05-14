@@ -145,10 +145,44 @@ protected:
 	}
 };
 
+
 class ADS1015 : public ADS1115 {
 public:
 	using ADS1115::ADS1115;
 	enum CFG_RATE { RATE8 = 0, RATE16, RATE32, RATE64, RATE128, RATE250, RATE475, RATE860 };
+};
+
+
+class MCP4728 : public i2cDevice {
+	// the DAC supports writing to input register but not sending latch bit to update the output register
+	// here we will always send the "UDAC" (latch) bit because we don't neet this functionality
+	// MCP4728 listens to I2C Generall Call Commands
+	// reset, wake-up, software update, read address bits
+	// reset is "0x00 0x06"
+	// wake-up is "0x00 0x09"
+public:
+	//enum CFG_CHANNEL {CH_A=0, CH_B, CH_C, CH_D};
+	//enum POWER_DOWN {NORM=0, LOAD1, LOAD2, LOAD3};  // at Power Down mode the output is loaded with 1k, 100k, 500k
+													// to ground to power down the circuit
+	enum CFG_GAIN {GAIN1 = 1, GAIN2 = 2};
+	MCP4728() : i2cDevice(0x60) {}
+	MCP4728(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
+	MCP4728(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
+	bool setVoltage(CFG_CHANNEL channel, float voltage, CFG_GAIN gain = GAIN1);
+	bool setValue(CFG_CHANNEL channel, unsigned int value, CFG_GAIN gain = GAIN1);
+};
+
+
+class PCA9536 : public i2cDevice {
+	// the device supports reading the incoming logic levels of the pins if set to input in the configuration register (will probably not use this feature)
+	// the device supports polarity inversion (by configuring the polarity inversino register) (will probably not use this feature)
+public:
+	enum CFG_REG {INPUT=0, OUTPUT, POLARITY_INVERSION, CONFIG};
+	enum CFG_PORT{C0=0, C1=2, C3=4, C4=8};
+	PCA9536() : i2cDevice(0x41) {}
+	PCA9536(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
+	PCA9536(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
+	void setOutputPorts(uint8_t portMask);
 };
 
 
@@ -190,7 +224,6 @@ private:
 
 class EEPROM24AA02 : public i2cDevice {
 public:
-
 	EEPROM24AA02() : i2cDevice(0x50) {}
 	EEPROM24AA02(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress,slaveAddress) {}
 	EEPROM24AA02(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}

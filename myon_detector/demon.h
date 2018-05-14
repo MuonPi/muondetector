@@ -27,6 +27,7 @@ public slots:
     void gpsToConsole(QString data);
     void stoppedConnection(QString hostName, quint16 port, quint32 connectionTimeout, quint32 connectionDuration);
     void UBXReceivedAckAckNak(bool ackAck, uint16_t ackedMsgID, uint16_t ackedCfgMsgID);
+    void gpsConnectionError();
     void gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double> updateAge,
                             char propertyName);
     void gpsPropertyUpdatedUint32(uint32_t data, std::chrono::duration<double> updateAge,
@@ -55,6 +56,7 @@ private:
 	void delay(int millisecondsWait);
     QString gpsdevname;
 	int verbose, timingCmd, baudrate;
+    int gpsTimeout = 5000;
 	long int N;
     bool allSats, listSats, dumpRaw, poll, configGnss, showout;
 };

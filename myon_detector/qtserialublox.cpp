@@ -12,7 +12,7 @@ static std::string toStdString(unsigned char* data, int dataSize){
     return tempStream.str();
 }
 
-QtSerialUblox::QtSerialUblox(const QString serialPortName, int baudRate,
+QtSerialUblox::QtSerialUblox(const QString serialPortName, int newTimeout, int baudRate,
                              bool newDumpRaw, int newVerbose, bool newShowout, QObject *parent) : QObject(parent)
 {
     _portName = serialPortName;
@@ -20,6 +20,7 @@ QtSerialUblox::QtSerialUblox(const QString serialPortName, int baudRate,
     verbose = newVerbose;
     dumpRaw = newDumpRaw;
     showout = newShowout;
+    timeout = newTimeout;
 }
 
 void QtSerialUblox::makeConnection(){
@@ -34,9 +35,12 @@ void QtSerialUblox::makeConnection(){
     serialPort = new QSerialPort(_portName);
     serialPort->setBaudRate(_baudRate);
     if (!serialPort->open(QIODevice::ReadWrite)) {
+        emit gpsConnectionError();
         emit toConsole(QObject::tr("Failed to open port %1, error: %2\n")
                           .arg(_portName)
                           .arg(serialPort->errorString()));
+        serialPort->deleteLater();
+        this->deleteLater();
         return;
     }
     connect(serialPort, &QSerialPort::readyRead, this, &QtSerialUblox::onReadyRead);
@@ -269,7 +273,8 @@ void QtSerialUblox::UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask){
         data[2]=0;
         data[3]=0; // txReady options (not used)
         // mode option:
-        data[4] = 0b11000000; // charLen option (first 2 bits): 11 means 8 bit character length. (10 means 7 bit character length only with parity enabled)
+        data[4] = 0b11000000; // charLen option (first 2 bits): 11 means 8 bit character length.
+                              // (10 means 7 bit character length only with parity enabled)
         data[5] = 0b00001000; // first 2 bits unimportant. 00 -> 1 stop bit. 100 -> no parity. last bit unimportant.
         data[6]=0;
         data[7]=0; //part of mode option but no meaning

@@ -12,7 +12,7 @@ class QtSerialUblox : public QObject
     Q_OBJECT
 
 public:
-    explicit QtSerialUblox(const QString serialPortName, int baudRate,
+    explicit QtSerialUblox(const QString serialPortName, int newTimeout, int baudRate,
                            bool newDumpRaw, int newVerbose, bool newShowout, QObject *parent = 0);
 
 signals:
@@ -23,6 +23,7 @@ signals:
     // ackedMsgID contains the return value of the ack msg (in case of CFG_MSG that is CFG_MSG)
     void UBXCfgError(QString data);
 
+    void gpsConnectionError();
     // information about updated properties
     void gpsPropertyUpdatedUint8(uint8_t data,
                                  std::chrono::duration<double> updateAge,
