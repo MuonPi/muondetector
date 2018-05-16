@@ -208,7 +208,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
             UBXTimTP(msg.data);
             break;
         case 0x03: // UBX-TIM-TM2
-            if (verbose > 3) {
+            if (verbose ) {
                 tempStream << "received UBX-TIM-TM2 message (0x" << std::hex <<std::setfill('0') << std::setw(2) << (int)classID << " 0x"
                            << std::hex << (int)messageID << ")\n";
                 emit toConsole(QString::fromStdString(tempStream.str()));
@@ -409,7 +409,7 @@ bool QtSerialUblox::UBXTimTP(const std::string& msg)
 
     //   cout<<"0d 01 "<<dec<<weekNr<<" "<<towMS/1000<<" "<<(long int)(sr*1e9+towSubMS+0.5)<<" "<<qErr<<flush<<endl;
 
-    if (verbose > 1) {
+    if (verbose > 0) {
         std::stringstream tempStream;
         //std::string temp;
         tempStream << "*** UBX-TIM-TP message:" << endl;
@@ -539,7 +539,7 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
     //   cout<<endl;
     //  cout<<flush;
 
-    if (verbose > 1) {
+    if (verbose > 0) {
         std::stringstream tempStream;
         //std::string temp;
         tempStream << "*** UBX-TimTM2 message:" << endl;
@@ -1004,7 +1004,9 @@ void QtSerialUblox::UBXNavTimeGPS(const std::string& msg)
     //std::string temp;
     tempStream << ts.tv_sec << '.' << ts.tv_nsec << "\n";
     //tempStream >> temp;
-    emit toConsole(QString::fromStdString(tempStream.str()));
+    if (verbose > 1) {
+        emit toConsole(QString::fromStdString(tempStream.str()));
+    }
 }
 
 void QtSerialUblox::UBXNavTimeUTC(const std::string& msg)

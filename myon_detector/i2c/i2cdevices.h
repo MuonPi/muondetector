@@ -164,14 +164,13 @@ public:
 	//enum CFG_CHANNEL {CH_A=0, CH_B, CH_C, CH_D};
 	//enum POWER_DOWN {NORM=0, LOAD1, LOAD2, LOAD3};  // at Power Down mode the output is loaded with 1k, 100k, 500k
 													// to ground to power down the circuit
-	enum CFG_GAIN {GAIN1 = 1, GAIN2 = 2};
+	enum CFG_GAIN {GAIN1 = 0, GAIN2 = 1};
 	MCP4728() : i2cDevice(0x60) {}
 	MCP4728(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
 	MCP4728(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
-	bool setVoltage(CFG_CHANNEL channel, float voltage, CFG_GAIN gain = GAIN1);
-	bool setValue(CFG_CHANNEL channel, unsigned int value, CFG_GAIN gain = GAIN1);
+	bool setVoltage(uint8_t channel, float voltage);
+	bool setValue(uint8_t channel, uint16_t value, uint8_t gain = GAIN1);
 };
-
 
 class PCA9536 : public i2cDevice {
 	// the device supports reading the incoming logic levels of the pins if set to input in the configuration register (will probably not use this feature)
@@ -182,9 +181,9 @@ public:
 	PCA9536() : i2cDevice(0x41) {}
 	PCA9536(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
 	PCA9536(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
-	void setOutputPorts(uint8_t portMask);
+	bool setOutputPorts(uint8_t portMask);
+	bool setOutputState(uint8_t portMask);
 };
-
 
 class LM75 : public i2cDevice {
 public:

@@ -460,46 +460,54 @@ void ADS1115::readVoltage(unsigned int channel, int16_t& adc, double& voltage)
   return;
 }
 
-bool MCP4728::setVoltage(uint8_t channel, float voltage, uint8_t gain) {
+bool MCP4728::setVoltage(uint8_t channel, float voltage) {
 	// Vout = (2.048V * Dn) / 4096 * Gx <= VDD
-	unsigned int value = (int)(voltage * 2000 / (int)gain);
+	if (voltage < 0) {
+		return false;
+	}
+	uint8_t gain = 0;
+	unsigned int value = (int)(voltage * 2000 + 0.5);
 	if (value > 0xfff) {
+		value = value >> 1;
+		gain = 1;
+	}
+	if (value > 0xfff) {
+		// error message
 		return false;
 	}
 	return setValue(channel, value, gain);
 }
 
-bool MCP4728::setValue(uint8_t channel, unsigned int value, uint8_t gain) {
+bool MCP4728::setValue(uint8_t channel, uint16_t value, uint8_t gain) {
 	if (value > 0xfff) {
 		value = 0xfff;
 		// error number of bits exceeding 12
 		return false;
 	}
-	if (channel > 3) {
-		return false;
-	}
+	channel = channel & 3;
 	uint8_t buf[3];
 	buf[0] = 0b01000001 | (channel << 1); // 01000 (multiwrite command) DAC1 DAC0 (channel) UDAC bit =1
-	buf[1] = 0b10000000 | (uint8_t)(((uint16_t)value & 0xf00) >> 8) ; // Vref PD1 PD0 Gx (gain) D11 D10 D9 D8
-	buf[2] = (uint8_t)((uint16_t)value & 0xff); 	// D7 D6 D5 D4 D3 D2 D1 D0
-	buf[3] = buf[0];
-	buf[4] = buf[1];
-	buf[5] = buf[2];
-	if (write(buf, 6) != 6){
+	buf[1] = 0b10000000 | (uint8_t)((value & 0xf00) >> 8) ; // Vref PD1 PD0 Gx (gain) D11 D10 D9 D8
+	buf[1] = buf[1] | (gain << 4);
+	buf[2] = (uint8_t)(value & 0xff); 	// D7 D6 D5 D4 D3 D2 D1 D0
+	if (write(buf, 3) != 3){
 		// somehow did not write exact same amount of bytes as it should
 		return false;
 	}
 	return true;
 }
 
-bool PCA9536::setOutputPorts(uint8_t portMask) {
-	if (1 != writeReg(CONFIG, portMask ^ 0xff, 1)) {
+bool PCA9536::setOutputPorts(uint8_t portMask) { 
+	unsigned char data = ~portMask;
+	if (1 != writeReg(CONFIG, &data, 1)) {
 		return false;
 	}
-	if (1 != writeReg(OUTPUT, portMask, 1)) {
+}
+
+bool PCA9536::setOutputState(uint8_t portMask) {
+	if (1 != writeReg(OUTPUT, &portMask, 1)) {
 		return false;
 	}
-	return true;
 }
 
 /*
