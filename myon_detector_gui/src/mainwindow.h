@@ -1,6 +1,5 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
-
 #include <QMainWindow>
 
 namespace Ui {
@@ -17,6 +16,7 @@ public:
 
 private:
     Ui::MainWindow *ui;
+    int verbose = 0;
 };
 
 #endif // MAINWINDOW_H

@@ -21,12 +21,12 @@ INCLUDEPATH += \
     src
 
 SOURCES += src/main.cpp \
-    src/tcpserver.cpp \
+    tcpserver.cpp \
     src/custom_io_operators.cpp \
     ../shared/tcpconnection.cpp
 
 HEADERS += \
-    src/tcpserver.h \
+    tcpserver.h \
     src/custom_io_operators.h \
     ../shared/tcpconnection.h
 
