@@ -6,6 +6,7 @@
 #include "custom_io_operators.h"
 //#include "ublox.h"
 #include "qtserialublox.h"
+#include "i2c/i2cdevices.h"
 
 class Demon : public QObject
 {
@@ -46,9 +47,12 @@ signals:
     void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
 
 private:
+    MCP4728 *dac;
+    ADS1115 *adc;
+    PCA9536 *pca;
+    LM75 *lm75;
     TcpConnection * tcpConnection = nullptr;
     QMap <uint16_t, int> messageConfiguration;
-    //Ublox *gps = nullptr;
     QtSerialUblox *qtGps = nullptr;
 	QString ipAddress;
 	quint16 port;

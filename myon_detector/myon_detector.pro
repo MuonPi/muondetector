@@ -23,7 +23,10 @@ SOURCES += main.cpp \
     tcpconnection.cpp \
     qtserialublox.cpp \
     qtserialublox_processmessages.cpp \
-    demon.cpp
+    demon.cpp \
+    i2c/i2cdevices.cpp \
+    i2c/custom_i2cdetect.c \
+    i2c/i2cbusses.c
 
 HEADERS += \
     custom_io_operators.h \
@@ -33,6 +36,11 @@ HEADERS += \
     time_from_rtc.h \
     tcpconnection.h \
     qtserialublox.h \
-    demon.h
+    demon.h \
+    i2c/addresses.h \
+    i2c/custom_i2cdetect.h \
+    i2c/i2cbusses.h \
+    i2c/i2cdevices.h \
+    i2c/linux/i2c-dev.h
 
 #QMAKE_CXXFLAGS += -std=c++11

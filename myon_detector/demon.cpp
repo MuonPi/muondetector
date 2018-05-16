@@ -18,6 +18,11 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, bool new_allSats,
         cout << "demon running in thread " << QString("0x%1").arg((int)this->thread()) << endl;
     }
 
+    // for i2c devices
+    lm75 = new LM75();
+    adc = new ADS1115();
+    dac = new MCP4728();
+
     // for gps module
     gpsdevname = new_gpsdevname;
     allSats = new_allSats;
@@ -66,6 +71,7 @@ void Demon::connectToGps(){
     connect(qtGps,&QtSerialUblox::toConsole, this, &Demon::gpsToConsole);
     connect(gpsThread, &QThread::started, qtGps, &QtSerialUblox::makeConnection);
     connect(qtGps, &QtSerialUblox::destroyed, gpsThread, &QThread::deleteLater);
+    connect(qtGps, &QtSerialUblox::gpsRestart, this, &Demon::connectToGps);
     // connect all command signals for ublox module here
     connect(this, &Demon::UBXSetCfgPrt, qtGps, &QtSerialUblox::UBXSetCfgPrt);
     connect(this, &Demon::UBXSetCfgMsg, qtGps, &QtSerialUblox::UBXSetCfgMsg);

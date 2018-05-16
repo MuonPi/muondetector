@@ -187,10 +187,9 @@ public:
 
 class LM75 : public i2cDevice {
 public:
-
 	LM75() : i2cDevice(0x4c) {}
 	LM75(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress,slaveAddress) {}
-	LM75(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
+    LM75(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
 	signed int readRaw();
 	double getTemperature();
 

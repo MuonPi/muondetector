@@ -52,6 +52,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
                                      |msgWaitingForAck->data[1]);
             break;
         }
+        ackTimer->stop();
         delete msgWaitingForAck;
         msgWaitingForAck = 0;
         sendQueuedMsg();

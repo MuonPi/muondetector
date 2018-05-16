@@ -6,6 +6,7 @@
 #include <string>
 #include <QSerialPort>
 #include <QObject>
+#include <QTimer>
 
 class QtSerialUblox : public QObject
 {
@@ -22,7 +23,7 @@ signals:
     void UBXReceivedAckAckNak(bool ackAck, uint16_t ackedMsgID, uint16_t ackedCfgMsgID);
     // ackedMsgID contains the return value of the ack msg (in case of CFG_MSG that is CFG_MSG)
     void UBXCfgError(QString data);
-
+    void gpsRestart();
     void gpsConnectionError();
     // information about updated properties
     void gpsPropertyUpdatedUint8(uint8_t data,
@@ -46,6 +47,7 @@ public slots:
     void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
     void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
     void UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask);
+    void ackTimeout();
     // outPortMask is something like 1 for only UBX protocol or 0b11 for UBX and NMEA
 
 
@@ -57,7 +59,8 @@ private:
     bool sendUBX(uint16_t msgID, std::string& payload, uint16_t nBytes);
     bool sendUBX(uint16_t msgID, unsigned char* payload, uint16_t nBytes);
     bool sendUBX(UbxMessage &msg);
-    void sendQueuedMsg();
+    void sendQueuedMsg(bool afterTimeout = false);
+    void delay(int millisecondsWait);
 
     // all functions only used for processing and showing "UbxMessage"
     void processMessage(const UbxMessage& msg);
@@ -92,6 +95,7 @@ private:
     bool showout = false; // if true show the ubx messages sent to the gps board as hex
     std::queue <UbxMessage> outMsgBuffer;
     UbxMessage *msgWaitingForAck = 0;
+    QTimer *ackTimer;
 
     // all global variables used for keeping track of satellites and statistics (gpsProperty)
     gpsProperty<int> leapSeconds;

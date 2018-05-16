@@ -1,5 +1,6 @@
 #include "qtserialublox.h"
 #include <sstream>
+#include <QEventLoop>
 //#include "custom_io_operators.h" // remove after debug
 using namespace std;
 
@@ -36,18 +37,31 @@ void QtSerialUblox::makeConnection(){
     serialPort->setBaudRate(_baudRate);
     if (!serialPort->open(QIODevice::ReadWrite)) {
         emit gpsConnectionError();
-        emit toConsole(QObject::tr("Failed to open port %1, error: %2\n")
+        emit toConsole(QObject::tr("Failed to open port %1, error: %2\ntrying again in %3 seconds\n")
                           .arg(_portName)
-                          .arg(serialPort->errorString()));
+                          .arg(serialPort->errorString())
+                          .arg(timeout));
         serialPort->deleteLater();
+        delay(timeout);
+        emit gpsRestart();
         this->deleteLater();
         return;
     }
+    ackTimer = new QTimer();
+    connect(ackTimer, &QTimer::timeout, this, &QtSerialUblox::ackTimeout);
     connect(serialPort, &QSerialPort::readyRead, this, &QtSerialUblox::onReadyRead);
     serialPort->clear(QSerialPort::AllDirections);
 }
 
-void QtSerialUblox::sendQueuedMsg(){
+void QtSerialUblox::sendQueuedMsg(bool afterTimeout){
+    if (afterTimeout){
+        if (!msgWaitingForAck){
+            return;
+        }
+        ackTimer->start(timeout);
+        sendUBX(*msgWaitingForAck);
+        return;
+    }
     if (outMsgBuffer.empty()){ return;}
     if (msgWaitingForAck){
         if (verbose > 0){
@@ -57,8 +71,25 @@ void QtSerialUblox::sendQueuedMsg(){
     }
     msgWaitingForAck = new UbxMessage;
     *msgWaitingForAck = outMsgBuffer.front();
+    ackTimer->setSingleShot(true);
+    ackTimer->start(timeout);
     sendUBX(*msgWaitingForAck);
     outMsgBuffer.pop();
+}
+
+void QtSerialUblox::ackTimeout(){
+    if (!msgWaitingForAck){
+        return;
+    }
+    std::stringstream tempStream;
+    tempStream << "ack timeout, trying to resent message 0x" << std::setfill('0') << std::setw(2) << hex
+               << ((msgWaitingForAck->msgID & 0xff00)>>8) << " 0x" << std::setfill('0') << std::setw(2) << hex << (msgWaitingForAck->msgID & 0x00ff);
+    for (unsigned int i = 0; i < msgWaitingForAck->data.length(); i++){
+        tempStream << " 0x" << std::setfill('0') << std::setw(2) << hex << (int)(msgWaitingForAck->data[i]);
+    }
+    tempStream << endl;
+    emit toConsole(QString::fromStdString(tempStream.str()));
+    sendQueuedMsg(true);
 }
 
 void QtSerialUblox::onReadyRead(){
@@ -351,6 +382,15 @@ void QtSerialUblox::UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate)
         emit UBXCfgError("Set CFG timeout");
     }
     */
+}
+
+void QtSerialUblox::delay(int millisecondsWait)
+{
+    QEventLoop loop;
+    QTimer t;
+    t.connect(&t, &QTimer::timeout, &loop, &QEventLoop::quit);
+    t.start(millisecondsWait);
+    loop.exec();
 }
 
 void QtSerialUblox::handleError(QSerialPort::SerialPortError serialPortError)
