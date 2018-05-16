@@ -17,30 +17,35 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-SOURCES += main.cpp \
-    custom_io_operators.cpp \
-    gnsssatellite.cpp \
-    tcpconnection.cpp \
-    qtserialublox.cpp \
-    qtserialublox_processmessages.cpp \
-    demon.cpp \
-    i2c/i2cdevices.cpp \
-    i2c/custom_i2cdetect.c \
-    i2c/i2cbusses.c
+INCLUDEPATH += ../shared  \
+    src
+
+SOURCES += src/main.cpp \
+    src/custom_io_operators.cpp \
+    src/gnsssatellite.cpp \
+    ../shared/tcpconnection.cpp \
+    src/qtserialublox.cpp \
+    src/qtserialublox_processmessages.cpp \
+    src/demon.cpp \
+    src/i2c/i2cdevices.cpp \
+    src/i2c/custom_i2cdetect.c \
+    src/i2c/i2cbusses.c
 
 HEADERS += \
-    custom_io_operators.h \
-    gnsssatellite.h \
-    unixtime_from_gps.h \
-    structs_and_defines.h \
-    time_from_rtc.h \
-    tcpconnection.h \
-    qtserialublox.h \
-    demon.h \
-    i2c/addresses.h \
-    i2c/custom_i2cdetect.h \
-    i2c/i2cbusses.h \
-    i2c/i2cdevices.h \
-    i2c/linux/i2c-dev.h
+    src/custom_io_operators.h \
+    src/gnsssatellite.h \
+    src/unixtime_from_gps.h \
+    src/structs_and_defines.h \
+    src/time_from_rtc.h \
+    ../shared/tcpconnection.h \
+    src/qtserialublox.h \
+    src/demon.h \
+    src/i2c/addresses.h \
+    src/i2c/custom_i2cdetect.h \
+    src/i2c/i2cbusses.h \
+    src/i2c/i2cdevices.h \
+    src/i2c/linux/i2c-dev.h
 
-#QMAKE_CXXFLAGS += -std=c++11
+OBJECTS_DIR += created_files
+
+MOC_DIR += created_files

@@ -2,7 +2,7 @@
 #define DEMON_H
 
 #include <QObject>
-#include "tcpconnection.h"
+#include "../shared/tcpconnection.h"
 #include "custom_io_operators.h"
 //#include "ublox.h"
 #include "qtserialublox.h"

@@ -16,12 +16,20 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-SOURCES += main.cpp \
-    tcpserver.cpp \
-    custom_io_operators.cpp \
-    tcpconnection.cpp
+INCLUDEPATH += \
+    ../shared \
+    src
+
+SOURCES += src/main.cpp \
+    src/tcpserver.cpp \
+    src/custom_io_operators.cpp \
+    ../shared/tcpconnection.cpp
 
 HEADERS += \
-    tcpserver.h \
-    custom_io_operators.h \
-    tcpconnection.h
+    src/tcpserver.h \
+    src/custom_io_operators.h \
+    ../shared/tcpconnection.h
+
+OBJECTS_DIR += generated_files
+
+MOC_DIR += generated_files
