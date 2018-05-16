@@ -50,10 +50,13 @@ void TcpConnection::closeConnection(){
 
 void TcpConnection::onReadyRead(){
     // this function gets called when tcpSocket emits readyRead signal
-    if(!in){ return; }
+    if(!in){
+        emit toConsole("input stream not yet initialized");
+        return;
+    }
+    QByteArray block;
     quint16 someCode;
     QString someMsg;
-    QByteArray block;
     in->startTransaction();
     *in >> someCode;
     if (someCode == msgSig){
