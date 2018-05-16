@@ -12,16 +12,18 @@ class QtSerialUblox : public QObject
     Q_OBJECT
 
 public:
-    explicit QtSerialUblox(const QString serialPortName, int baudRate,
+    explicit QtSerialUblox(const QString serialPortName, int newTimeout, int baudRate,
                            bool newDumpRaw, int newVerbose, bool newShowout, QObject *parent = 0);
 
 signals:
     // all messages coming from QtSerialUblox class that should be displayed on console
     // get sent to Client thread with signal/slot mechanics
     void toConsole(QString data);
-    void UBXReceivedAckAckNak(uint16_t ClsMsgID, bool ackAck);
+    void UBXReceivedAckAckNak(bool ackAck, uint16_t ackedMsgID, uint16_t ackedCfgMsgID);
+    // ackedMsgID contains the return value of the ack msg (in case of CFG_MSG that is CFG_MSG)
     void UBXCfgError(QString data);
 
+    void gpsConnectionError();
     // information about updated properties
     void gpsPropertyUpdatedUint8(uint8_t data,
                                  std::chrono::duration<double> updateAge,
@@ -50,12 +52,12 @@ public slots:
 private:
     // all functions for sending and receiving raw data used by other functions in "public slots" section
     // and scanning raw data up to the point where "UbxMessage" object is generated
-    void UBXSetCfgMsg2(uint8_t classID, uint8_t messageID, uint8_t port, uint8_t rate);
     bool scanUnknownMessage(std::string &buffer,UbxMessage &message);
     void calcChkSum(const std::string &buf, unsigned char* chkA, unsigned char* chkB);
-    bool sendUBX(uint16_t msgID, unsigned char* payload, int nBytes);
-    bool sendUBX(unsigned char classID, unsigned char messageID,
-                                unsigned char* payload, int nBytes);
+    bool sendUBX(uint16_t msgID, std::string& payload, uint16_t nBytes);
+    bool sendUBX(uint16_t msgID, unsigned char* payload, uint16_t nBytes);
+    bool sendUBX(UbxMessage &msg);
+    void sendQueuedMsg();
 
     // all functions only used for processing and showing "UbxMessage"
     void processMessage(const UbxMessage& msg);
@@ -88,6 +90,8 @@ private:
                           // be interpreted as QString by QString(message) (basically all NMEA)
     bool discardAllNMEA = true; // if true discard all NMEA messages and do not parse them
     bool showout = false; // if true show the ubx messages sent to the gps board as hex
+    std::queue <UbxMessage> outMsgBuffer;
+    UbxMessage *msgWaitingForAck = 0;
 
     // all global variables used for keeping track of satellites and statistics (gpsProperty)
     gpsProperty<int> leapSeconds;
@@ -104,8 +108,7 @@ private:
     gpsProperty<std::vector<GnssSatellite> > satList;
     const int	MSGTIMEOUT = 1500;
     std::queue<gpsTimestamp> fTimestamps;
-    std::list<UbxMessage> fMessageBuffer;
-
+    //std::list<UbxMessage> fMessageBuffer;
 };
 
 #endif // QTSERIALUBLOX_H
