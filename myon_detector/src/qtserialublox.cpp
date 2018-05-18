@@ -51,6 +51,9 @@ void QtSerialUblox::makeConnection(){
     connect(ackTimer, &QTimer::timeout, this, &QtSerialUblox::ackTimeout);
     connect(serialPort, &QSerialPort::readyRead, this, &QtSerialUblox::onReadyRead);
     serialPort->clear(QSerialPort::AllDirections);
+    if (verbose == 1){
+        emit toConsole("rising               falling               accEst valid timebase utc\n");
+    }
 }
 
 void QtSerialUblox::sendQueuedMsg(bool afterTimeout){
@@ -154,6 +157,7 @@ bool QtSerialUblox::scanUnknownMessage(string &buffer, UbxMessage &message)
             tempStream << "received faulty UBX string:\n " << dec;
             for (std::string::size_type i = 0; i < found; i++) tempStream
                     << setw(2) << hex << "0x" <<(int)buffer[i] << " ";
+            tempStream << endl;
             emit toConsole(QString::fromStdString(tempStream.str()));
             buffer.erase(0, found);
         }

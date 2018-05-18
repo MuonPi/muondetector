@@ -22,7 +22,7 @@ int main() {
 	std::cout << "ADC Value: " << adcValue << std::endl;*/
 	PCA9536 pca("/dev/i2c-1", 0x41);
 	pca.setOutputPorts(3); 
-	pca.setOutputState(2); // sets TIME_SEL0 = 0, TIME_SEL1 = 1 -> 74AC151SJ forwards channel DISCR1.1 to ublox TIME_MEAS
+	pca.setOutputState(0); // sets TIME_SEL0 = 0, TIME_SEL1 = 1 -> 74AC151SJ forwards channel DISCR1.1 to ublox TIME_MEAS
 	MCP4728 dac("/dev/i2c-1", 0x60);
 	while (true) {
 		int channel = 0;

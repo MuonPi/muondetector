@@ -26,6 +26,8 @@ signals:
     void gpsRestart();
     void gpsConnectionError();
     // information about updated properties
+    void gpsTimeTM2(uint16_t rising, uint16_t falling,
+                    uint8_t accEst, bool valid, uint8_t timeBase, bool utc);
     void gpsPropertyUpdatedUint8(uint8_t data,
                                  std::chrono::duration<double> updateAge,
                            char propertyName);

@@ -22,6 +22,8 @@ public:
 public slots:
     void connectToGps();
     void connectToServer();
+    void selectPcaChannel();
+
     void displaySocketError(int socketError, QString message);
 	void displayError(QString message);
     void toConsole(QString data);

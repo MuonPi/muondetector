@@ -22,7 +22,7 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, bool new_allSats,
     lm75 = new LM75();
     adc = new ADS1115();
     dac = new MCP4728();
-
+    pca = new PCA9536();
     // for gps module
     gpsdevname = new_gpsdevname;
     allSats = new_allSats;
@@ -52,6 +52,22 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, bool new_allSats,
     if(configGnss){
         configGps();
     }
+}
+
+void Demon::pcaSelectTimeMeas(uint8_t channel){
+    if (channel>3){
+        cout << "can there is no channel > 3" << endl;
+        return;
+    }
+    if (!pca){
+        return;
+    }
+    pca->setOutputPorts(channel);
+    pca->setOutputState(channel);
+}
+
+void Demon::dacSetThreashold(uint8_t channel, float threashold){
+    dac->setVoltage(channel, threashold);
 }
 
 void Demon::connectToGps(){

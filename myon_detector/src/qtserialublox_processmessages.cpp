@@ -29,13 +29,13 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
         }
         ackedMsgID = (uint16_t)(msg.data[0]) << 8 | msg.data[1];
         if (!msgWaitingForAck){
-            if (verbose > 0){
+            if (verbose > 1){
                 emit toConsole("received Ack message but no message is waiting for Ack\n");
             }
             break;
         }
         if (ackedMsgID!=msgWaitingForAck->msgID){
-            if (verbose > 0){
+            if (verbose > 1){
                 emit toConsole("received unexpected Ack message\n");
             }
             break;
@@ -209,7 +209,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
             UBXTimTP(msg.data);
             break;
         case 0x03: // UBX-TIM-TM2
-            if (verbose ) {
+            if (verbose > 3) {
                 tempStream << "received UBX-TIM-TM2 message (0x" << std::hex <<std::setfill('0') << std::setw(2) << (int)classID << " 0x"
                            << std::hex << (int)messageID << ")\n";
                 emit toConsole(QString::fromStdString(tempStream.str()));
@@ -410,7 +410,7 @@ bool QtSerialUblox::UBXTimTP(const std::string& msg)
 
     //   cout<<"0d 01 "<<dec<<weekNr<<" "<<towMS/1000<<" "<<(long int)(sr*1e9+towSubMS+0.5)<<" "<<qErr<<flush<<endl;
 
-    if (verbose > 0) {
+    if (verbose > 1) {
         std::stringstream tempStream;
         //std::string temp;
         tempStream << "*** UBX-TIM-TP message:" << endl;
@@ -483,7 +483,7 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
     // flags
     uint8_t flags = msg[1];
     // rising edge counter
-    uint16_t count = (int)msg[2];
+    uint16_t count = (int)msg[2]; // 16 bit counter
     count += ((int)msg[3]) << 8;
     // week number of last rising edge
     uint16_t wnR = (int)msg[4];
@@ -540,7 +540,7 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
     //   cout<<endl;
     //  cout<<flush;
 
-    if (verbose > 0) {
+    if (verbose > 1) {
         std::stringstream tempStream;
         //std::string temp;
         tempStream << "*** UBX-TimTM2 message:" << endl;
@@ -580,6 +580,27 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
         }
         tempStream << "   time base            : " << timeBase << "\n";
         //tempStream >> temp;
+        emit toConsole(QString::fromStdString(tempStream.str()));
+    }else if(verbose > 0){
+        // output is: rising falling accEst valid timeBase utcAvailable
+        std::stringstream tempStream;
+        if (((flags & 0x80)>>7)==1){
+            // if new rising edge
+            tempStream << unixtime_from_gps(wnR, towMsR / 1000, (long int)(sr*1e9 + towSubMsR));
+        }else{
+            tempStream << "..................... ";
+        }
+        if (((flags & 0x4)>>2)==1){
+            // if new falling edge
+            tempStream << unixtime_from_gps(wnF, towMsF / 1000, (long int)(sr*1e9 + towSubMsF));
+        }else{
+            tempStream << "..................... ";
+        }
+        tempStream << accEst
+                   << " " << count
+                   << " " << ((flags & 0x40)>>6)
+                   << " " << setfill('0') << setw(2) << ((flags & 0x18)>>3)
+                   << " " << ((flags & 0x20)>>5) << endl;
         emit toConsole(QString::fromStdString(tempStream.str()));
     }
 
