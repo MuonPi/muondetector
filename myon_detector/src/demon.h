@@ -2,27 +2,27 @@
 #define DEMON_H
 
 #include <QObject>
+#include <QTcpServer>
 #include "../shared/tcpconnection.h"
 #include "custom_io_operators.h"
-//#include "ublox.h"
 #include "qtserialublox.h"
 #include "i2c/i2cdevices.h"
 
-class Demon : public QObject
+class Demon : public QTcpServer
 {
 	Q_OBJECT
 
 public:
-    Demon(QString new_gpsdevname, int new_verbose, bool new_allSats,
-        bool new_listSats, bool new_dumpRaw, int new_baudrate, bool new_poll,
-        bool new_configGnss, int new_timingCmd, long int new_N, QString serverAddress, quint16 serverPort, bool new_showout, QObject *parent = 0);
+    Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
+        float *new_dacThresh, bool new_dumpRaw, int new_baudrate,
+        bool new_configGnss, QString new_PeerAddress, quint16 new_PpeerPort,
+        QString new_serverAddress, quint16 new_serverPort, bool new_showout, QObject *parent = 0);
 	void configGps();
 	void loop();
 
 public slots:
     void connectToGps();
     void connectToServer();
-    void selectPcaChannel();
 
     void displaySocketError(int socketError, QString message);
 	void displayError(QString message);
@@ -49,22 +49,29 @@ signals:
     void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
 
 private:
+    void incomingConnection(qintptr socketDescriptor) override;
+    void pcaSelectTimeMeas(uint8_t channel); // channel 0 to 3
+                                             // 0: coincidence ; 1: xor ; 2: discr 1 ; 3: discr 2
+    void dacSetThreashold(uint8_t channel, float threashold); // channel 0 or 1 ; threashold in volts
     MCP4728 *dac;
+    float *dacThresh;
     ADS1115 *adc;
     PCA9536 *pca;
+    quint8 pcaChannel;
     LM75 *lm75;
     TcpConnection * tcpConnection = nullptr;
     QMap <uint16_t, int> messageConfiguration;
     QtSerialUblox *qtGps = nullptr;
-	QString ipAddress;
-	quint16 port;
+    QString peerAddress;
+    QHostAddress demonAddress = QHostAddress::Null;
+    quint16 peerPort, demonPort;
+    QTcpServer *tcpServer;
 	void printTimestamp();
 	void delay(int millisecondsWait);
     QString gpsdevname;
-	int verbose, timingCmd, baudrate;
+    int verbose, baudrate;
     int gpsTimeout = 5000;
-	long int N;
-    bool allSats, listSats, dumpRaw, poll, configGnss, showout;
+    bool dumpRaw, configGnss, showout;
 };
 
 #endif // DEMON_H

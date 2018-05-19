@@ -71,18 +71,31 @@ int main(int argc, char *argv[])
 		QCoreApplication::translate("main", "verbosity"));
     parser.addOption(verbosityOption);
 
-    // ip option
-    QCommandLineOption ipOption(QStringList() << "ip" << "address",
-        QCoreApplication::translate("main", "set server ip address"),
-        QCoreApplication::translate("main", "ipAddress"));
-    parser.addOption(ipOption);
+    //
 
-    // port option
-    QCommandLineOption portOption(QStringList() << "p" << "port",
-        QCoreApplication::translate("main", "set server port"),
-        QCoreApplication::translate("main", "port"));
-    parser.addOption(portOption);
+    // peerAddress option
+    QCommandLineOption peerIpOption(QStringList() << "peer" << "peerAddress",
+        QCoreApplication::translate("main", "set file server ip address"),
+        QCoreApplication::translate("main", "peerAddress"));
+    parser.addOption(peerIpOption);
 
+    // peerPort option
+    QCommandLineOption peerPortOption(QStringList() << "pp" << "peerPort",
+        QCoreApplication::translate("main", "set file server port"),
+        QCoreApplication::translate("main", "peerPort"));
+    parser.addOption(peerPortOption);
+
+    // demonAddress option
+    QCommandLineOption demonIpOption(QStringList() << "server" << "demonAddress",
+                                      QCoreApplication::translate("main", "set gui server ip address"),
+                                      QCoreApplication::translate("main", "demonAddress"));
+    parser.addOption(demonIpOption);
+
+    // demonPort option
+    QCommandLineOption demonPortOption(QStringList() << "dp" << "demonPort",
+                                      QCoreApplication::translate("main", "set gui server port"),
+                                      QCoreApplication::translate("main", "demonPort"));
+    parser.addOption(demonPortOption);
 
 	// baudrate option
 	QCommandLineOption baudrateOption("b",
@@ -90,44 +103,25 @@ int main(int argc, char *argv[])
 		QCoreApplication::translate("main", "baudrate"));
 	parser.addOption(baudrateOption);
 
-    // set number of read cycles
-    QCommandLineOption numberReadCyclesOption("n",
-        QCoreApplication::translate("main", "number of read cycles"),
-        QCoreApplication::translate("main", "number"));
-    parser.addOption(numberReadCyclesOption);
-
-    // set timing option
-    QCommandLineOption timingOption("t",
-        QCoreApplication::translate("main", "cmd=1 for nav-clock\n"
-            "cmd=2 for time-tp"),
-        QCoreApplication::translate("main", "cmd"));
-    parser.addOption(timingOption);
-
 	// dumpraw option
 	QCommandLineOption dumpRawOption("d",
 		QCoreApplication::translate("main", "dump raw gps device output to stdout"));
 	parser.addOption(dumpRawOption);
 
-	// list sats
-	QCommandLineOption listSatsOption("L",
-		QCoreApplication::translate("main", "show list of satellites in range"));
-	parser.addOption(listSatsOption);
-
-	// all sats
-	QCommandLineOption allSatsOption("l",
-		QCoreApplication::translate("main", "show list of currently available satellites"));
-	parser.addOption(allSatsOption);
-
-	// poll
-	QCommandLineOption pollOption("p",
-		QCoreApplication::translate("main", "poll"));
-	parser.addOption(pollOption);
-
-
 	// show GNSS configs
 	QCommandLineOption showGnssConfigOption("c",
 		QCoreApplication::translate("main", "show GNSS configs"));
 	parser.addOption(showGnssConfigOption);
+
+    // pcaChannel to select signal to ublox
+    QCommandLineOption pcaChannelOption(QStringList() << "pca" << "signal",
+                                        QCoreApplication::translate("main","set signal for ublox:"
+                                                                           "0 - coincidence"
+                                                                           "1 - XOR"
+                                                                           "2 - discr 1"
+                                                                           "3 - discr 2"));
+    parser.addOption(pcaChannelOption);
+
 
     // show outgoing ubx messages as hex
     QCommandLineOption showoutOption(QStringList() << "showoutput" << "showout",
@@ -162,20 +156,7 @@ int main(int argc, char *argv[])
         cout << "int main running in thread "
              << QString("0x%1").arg((int)QCoreApplication::instance()->thread()) << endl;
     }
-	long int N = -1;
-	if (parser.isSet(numberReadCyclesOption)) {
-		N = parser.value(numberReadCyclesOption).toInt(&ok);
-		if (!ok) {
-			N = -1;
-			cout << "wrong input for number of read cycles" << endl;
-		}
-	}
-	bool allSats = false;
-	allSats = parser.isSet(allSatsOption);
-	bool listSats = false;
-	listSats = parser.isSet(listSatsOption);
-	bool dumpRaw = false;
-	dumpRaw = parser.isSet(dumpRawOption);
+    bool dumpRaw = parser.isSet(dumpRawOption);
 	int baudrate = 9600;
 	if (parser.isSet(baudrateOption)) {
 		baudrate = parser.value(baudrateOption).toInt(&ok);
@@ -183,42 +164,54 @@ int main(int argc, char *argv[])
 			baudrate = 9600;
 			cout << "wrong input for baudrate using default " << baudrate << endl;
 		}
-	}
-	bool poll = false;
-	poll = parser.isSet(pollOption);
+    }
 	bool showGnssConfig = false;
 	showGnssConfig = parser.isSet(showGnssConfigOption);
-	int timingCmd = 1;
-	if (parser.isSet(timingOption)) {
-		timingCmd = parser.value(timingOption).toInt(&ok);
-		if (!ok || timingCmd > 2 || timingCmd < 1) {
-			timingCmd = 1;
-			cout << "wrong input for timing" << endl;
-		}
-	}
-    quint16 port = 0;
-    if (parser.isSet(portOption)){
-        port = parser.value(portOption).toUInt(&ok);
+    quint16 peerPort = 0;
+    if (parser.isSet(peerPortOption)){
+        peerPort = parser.value(peerPortOption).toUInt(&ok);
         if (!ok) {
-            port = 0;
-            cout << "wrong input port (maybe not an integer)" << endl;
+            peerPort = 0;
+            cout << "wrong input peerPort (maybe not an integer)" << endl;
         }
     }
-    QString ipAddress = "";
-    if (parser.isSet(ipOption)){
-        ipAddress = parser.value(ipOption);
-        if (!QHostAddress(ipAddress).toIPv4Address()){
-            if (ipAddress != "localhost" && ipAddress != "local"){
-                ipAddress = "";
+    QString peerAddress = "";
+    if (parser.isSet(peerIpOption)){
+        peerAddress = parser.value(peerIpOption);
+        if (!QHostAddress(peerAddress).toIPv4Address()){
+            if (peerAddress != "localhost" && peerAddress != "local"){
+                peerAddress = "";
                 cout << "wrong input ipAddress, not an ipv4address" << endl;
             }
         }
     }
+    quint16 demonPort = 0;
+    if (parser.isSet(demonPortOption)){
+        demonPort = parser.value(demonPortOption).toUInt(&ok);
+        if (!ok) {
+            peerPort = 0;
+            cout << "wrong input peerPort (maybe not an integer)" << endl;
+        }
+    }
+    QString demonAddress = "";
+    if (parser.isSet(demonIpOption)){
+        demonAddress = parser.value(demonIpOption);
+        if (!QHostAddress(demonAddress).toIPv4Address()){
+            if (demonAddress != "localhost" && demonAddress != "local"){
+                demonAddress = "";
+                cout << "wrong input ipAddress, not an ipv4address" << endl;
+            }
+        }
+    }
+    quint8 pcaChannel=0;
     bool showout = false;
     showout = parser.isSet(showoutOption);
+    float dacThresh[2];
+    dacThresh[0]=0;
+    dacThresh[1]=0;
 
-    Demon demon(gpsdevname, verbose, allSats, listSats, dumpRaw,
-        baudrate, poll, showGnssConfig, timingCmd, N, ipAddress, port, showout);
+    Demon demon(gpsdevname, verbose, pcaChannel, dacThresh, dumpRaw,
+        baudrate, showGnssConfig, peerAddress, peerPort, demonAddress, demonPort, showout);
 
     /* handling posix signals does not really work atm
     QObject::connect(d, SIGNAL(myIntSignal()),&Demon,

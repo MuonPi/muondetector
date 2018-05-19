@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 #include <QMainWindow>
+#include <tcpconnection.h>
 
 namespace Ui {
 class MainWindow;

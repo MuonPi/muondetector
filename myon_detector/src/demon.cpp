@@ -1,14 +1,16 @@
 #include <QtNetwork>
 #include <chrono>
 #include <QThread>
+#include <QNetworkInterface>
 #include "demon.h"
 
 using namespace std;
 
-Demon::Demon(QString new_gpsdevname, int new_verbose, bool new_allSats,
-	bool new_listSats, bool new_dumpRaw, int new_baudrate, bool new_poll,
-    bool new_configGnss, int new_timingCmd, long int new_N,QString serverAddress, quint16 serverPort, bool new_showout, QObject *parent)
-	: QObject(parent)
+Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
+    float* new_dacThresh, bool new_dumpRaw, int new_baudrate,
+    bool new_configGnss, QString new_peerAddress, quint16 new_peerPort,
+    QString new_demonAddress, quint16 new_demonPort, bool new_showout, QObject *parent)
+    : QTcpServer(parent)
 {
     // set all variables
 
@@ -22,27 +24,44 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, bool new_allSats,
     lm75 = new LM75();
     adc = new ADS1115();
     dac = new MCP4728();
+    dacThresh = new_dacThresh;
     pca = new PCA9536();
+    pcaChannel = new_pcaChannel;
+
     // for gps module
     gpsdevname = new_gpsdevname;
-    allSats = new_allSats;
-    listSats = new_listSats;
     dumpRaw = new_dumpRaw;
     baudrate = new_baudrate;
-    poll = new_poll;
     configGnss = new_configGnss;
-    timingCmd = new_timingCmd;
-    N = new_N;
     showout = new_showout;
 
-    // for tcp connection
-    port = serverPort;
-    if (port == 0){
-        port = 51508;
+    // for tcp connection with fileServer
+    peerPort = new_peerPort;
+    if (peerPort == 0){
+        peerPort = 51508;
     }
-    ipAddress = serverAddress;
-    if (ipAddress.isEmpty()||ipAddress == "local"||ipAddress == "localhost") {
-        ipAddress = QHostAddress(QHostAddress::LocalHost).toString();
+    peerAddress = new_peerAddress;
+    if (peerAddress.isEmpty()||peerAddress == "local"||peerAddress == "localhost") {
+        peerAddress = QHostAddress(QHostAddress::LocalHost).toString();
+    }
+
+    // for own server to communicate with gui
+    demonAddress = QHostAddress(new_demonAddress);
+    if (new_demonAddress == "localhost" || new_demonAddress == "local"){
+        demonAddress = QHostAddress(QHostAddress::LocalHost);
+    }
+    bool ok = false;
+    QHostAddress(new_demonAddress).toIPv4Address(&ok);
+    if (!ok){
+        demonAddress.clear();
+    }
+    if (demonAddress.isNull()){
+        // if not otherwise specified: listen on all available addresses
+        demonAddress = QHostAddress(QHostAddress::Any);
+    }
+    demonPort = new_demonPort;
+    if (!this->listen(demonAddress,demonPort)) {
+        cout << tr("Unable to start the server: %1.\n").arg(this->errorString())<<endl;
     }
 
     // start tcp connection and gps module connection
@@ -52,22 +71,6 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, bool new_allSats,
     if(configGnss){
         configGps();
     }
-}
-
-void Demon::pcaSelectTimeMeas(uint8_t channel){
-    if (channel>3){
-        cout << "can there is no channel > 3" << endl;
-        return;
-    }
-    if (!pca){
-        return;
-    }
-    pca->setOutputPorts(channel);
-    pca->setOutputState(channel);
-}
-
-void Demon::dacSetThreashold(uint8_t channel, float threashold){
-    dac->setVoltage(channel, threashold);
 }
 
 void Demon::connectToGps(){
@@ -105,7 +108,7 @@ void Demon::connectToServer(){
     if (tcpConnection!=nullptr){
         delete(tcpConnection);
     }
-    tcpConnection = new TcpConnection(ipAddress, port, verbose);
+    tcpConnection = new TcpConnection(peerAddress, peerPort, verbose);
     tcpConnection->moveToThread(tcpThread);
     connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::makeConnection);
     connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
@@ -118,6 +121,33 @@ void Demon::connectToServer(){
     //connect(this, &Demon::posixTerminate, tcpConnection, &TcpConnection::onPosixTerminate);
     //connect(tcpConnection, &TcpConnection::stoppedConnection, this, &Demon::stoppedConnection);
     tcpThread->start();
+}
+
+void Demon::incomingConnection(qintptr socketDescriptor){
+    QThread *thread = new QThread();
+    TcpConnection *tcpConnection = new TcpConnection(socketDescriptor);
+    tcpConnection->moveToThread(thread);
+    connect(thread, &QThread::started, tcpConnection, &TcpConnection::receiveConnection);
+    connect(thread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+    QObject::connect(tcpConnection, &TcpConnection::toConsole, this, &Demon::toConsole);
+    thread->start();
+}
+
+void Demon::pcaSelectTimeMeas(uint8_t channel){
+    if (channel>3){
+        cout << "can there is no channel > 3" << endl;
+        return;
+    }
+    if (!pca){
+        return;
+    }
+    pca->setOutputPorts(channel);
+    pca->setOutputState(channel);
+}
+
+void Demon::dacSetThreashold(uint8_t channel, float threashold){
+    dac->setVoltage(channel, threashold);
 }
 
 void Demon::configGps() {
@@ -219,8 +249,10 @@ void Demon::UBXReceivedAckAckNak(bool ackAck, uint16_t ackedMsgID, uint16_t acke
 
 void Demon::gpsPropertyUpdatedGnss(std::vector<GnssSatellite> data,
                                 std::chrono::duration<double> lastUpdated){
-    if (listSats){
+    //if (listSats){
+    if (verbose > 3){
         vector<GnssSatellite> sats = data;
+        bool allSats = true;
         if (!allSats) {
             std::sort(sats.begin(), sats.end(), GnssSatellite::sortByCnr);
             while (sats.back().getCnr() == 0 && sats.size() > 0) sats.pop_back();
