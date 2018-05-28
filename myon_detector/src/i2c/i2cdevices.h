@@ -176,8 +176,8 @@ class PCA9536 : public i2cDevice {
 	// the device supports reading the incoming logic levels of the pins if set to input in the configuration register (will probably not use this feature)
 	// the device supports polarity inversion (by configuring the polarity inversino register) (will probably not use this feature)
 public:
-	enum CFG_REG {INPUT=0, OUTPUT, POLARITY_INVERSION, CONFIG};
-	enum CFG_PORT{C0=0, C1=2, C3=4, C4=8};
+	enum CFG_REG {INPUT_REG=0, OUTPUT_REG, POLARITY_INVERSION, CONFIG_REG};
+	enum CFG_PORT {C0=0, C1=2, C3=4, C4=8};
 	PCA9536() : i2cDevice(0x41) {}
 	PCA9536(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
 	PCA9536(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}

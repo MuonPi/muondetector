@@ -499,13 +499,13 @@ bool MCP4728::setValue(uint8_t channel, uint16_t value, uint8_t gain) {
 
 bool PCA9536::setOutputPorts(uint8_t portMask) { 
 	unsigned char data = ~portMask;
-	if (1 != writeReg(CONFIG, &data, 1)) {
+	if (1 != writeReg(CONFIG_REG, &data, 1)) {
 		return false;
 	}
 }
 
 bool PCA9536::setOutputState(uint8_t portMask) {
-	if (1 != writeReg(OUTPUT, &portMask, 1)) {
+	if (1 != writeReg(OUTPUT_REG, &portMask, 1)) {
 		return false;
 	}
 }

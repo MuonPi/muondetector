@@ -27,6 +27,7 @@ signals:
     void error(int socketError, const QString message);
     void toConsole(QString data);
     void stopTimePulser();
+    void connected();
 
 public slots:
     void makeConnection();

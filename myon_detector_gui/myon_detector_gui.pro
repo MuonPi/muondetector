@@ -29,10 +29,12 @@ INCLUDEPATH += ../shared \
         src
 
 SOURCES += \
+        ../shared/tcpconnection.cpp \
         src/main.cpp \
         src/mainwindow.cpp
 
 HEADERS += \
+        ../shared/tcpconnection.h \
         src/mainwindow.h
 
 FORMS += \

@@ -5,15 +5,15 @@
 #
 OBJS = cosmic_i2c_test.o custom_i2cdetect.o i2cbusses.o i2cdevices.o
 C = gcc -std=c11
-CPP = g++ -std=c++0x
-LFLAGS = -O
+CPP = g++ -std=c++11
+LFLAGS = -O -lwiringPi
 CFLAGS = -c -O
 	
-hvd-tool : $(OBJS)
+cosmic_i2c_test : $(OBJS)
 	$(CPP) $(OBJS) $(LFLAGS) -o cosmic_i2c_test
 
-hvd-tool.o : cosmic_i2c_test.cpp hvd-tool.h addresses.h i2cdevices.h custom_i2cdetect.h
-	$(CPP) $(CFLAGS) hvd-tool.cpp
+cosmic_i2c_test.o : cosmic_i2c_test.cpp addresses.h i2cdevices.h custom_i2cdetect.h
+	$(CPP) $(CFLAGS) cosmic_i2c_test.cpp
 	
 custom_i2cdetect.o : custom_i2cdetect.c custom_i2cdetect.h addresses.h linux/i2c-dev.h i2cbusses.h
 	$(C) $(CFLAGS) custom_i2cdetect.c

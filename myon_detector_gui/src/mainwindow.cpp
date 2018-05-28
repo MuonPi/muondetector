@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "../shared/tcpconnection.h"
+#include <QThread>
 #include <QFile>
 #include <QKeyEvent>
 #include <QDebug>
@@ -24,16 +24,48 @@ MainWindow::MainWindow(QWidget *parent) :
     loadSettings("ipAddresses.save",addresses);
     ui->ipBox->setModel(addresses);
     //ui->ipBox->installEventFilter(this);
-    QPalette palette = ui->ipStatusLabel->palette();
+
+    // setup colors
+    ui->ipStatusLabel->setStyleSheet("QLabel {color : darkGray;}");
+    ui->discr1Hit->setStyleSheet("QLabel {background-color : darkRed;}");
+    ui->discr2Hit->setStyleSheet("QLabel {background-color : darkRed;}");
+    /*QPalette palette = ui->ipStatusLabel->palette();
     palette.setColor(ui->ipStatusLabel->foregroundRole(),Qt::darkGray);
     ui->ipStatusLabel->setPalette(palette);
+    palette = ui->discr1Hit->palette();
+    palette.setColor(ui->discr1Hit->backgroundRole(),Qt::darkRed);
+    ui->discr1Hit->setPalette(palette);
+    palette.setColor(ui->discr2Hit->backgroundRole(),Qt::darkRed);
+    ui->discr2Hit->setPalette(palette);
+*/
+    // setup event filter
     ui->ipBox->installEventFilter(this);
     ui->ipButton->installEventFilter(this);
 }
 
 void MainWindow::makeConnection(QString ipAddress){
+    // add popup windows for errors!!!
+    QThread *tcpThread = new QThread();
+    if (tcpConnection!=nullptr){
+        delete(tcpConnection);
+    }
+    tcpConnection = new TcpConnection(ipAddress, 1234, verbose);
+    tcpConnection->moveToThread(tcpThread);
+    connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::makeConnection);
+    connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
+    connect(tcpThread, &QThread::finished, tcpThread, &QThread::deleteLater);
+    //connect(this, &Demon::sendFile, tcpConnection, &TcpConnection::sendFile);
+    connect(tcpConnection, &TcpConnection::connected, this, &MainWindow::connected);
+    //connect(tcpConnection, &TcpConnection::error, this, &Demon::displaySocketError);
+    //connect(tcpConnection, &TcpConnection::toConsole, this, &Demon::toConsole);
+    connect(tcpConnection, &TcpConnection::connectionTimeout, this, &MainWindow::makeConnection);
+    //connect(this, &Demon::sendMsg, tcpConnection, &TcpConnection::sendMsg);
+    //connect(this, &Demon::posixTerminate, tcpConnection, &TcpConnection::onPosixTerminate);
+    //connect(tcpConnection, &TcpConnection::stoppedConnection, this, &Demon::stoppedConnection);
+    tcpThread->start();
+}
 
-    // if connection was successfully made: set "connectedToDemon" to true!
+void MainWindow::connected(){
     connectedToDemon = true;
 }
 
@@ -99,14 +131,11 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_ipButton_clicked()
 {
-    QPalette palette;
     if (connectedToDemon){
         // it is connected and the button shows "disconnect" -> here comes disconnect code
         connectedToDemon = false;
         // set button and color of label
-        palette = ui->ipStatusLabel->palette();
-        palette.setColor(ui->ipStatusLabel->foregroundRole(),Qt::darkGray);
-        ui->ipStatusLabel->setPalette(palette);
+        ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGray;}");
         ui->ipStatusLabel->setText("not connected");
         ui->ipButton->setText("connect");
         ui->ipBox->setEnabled(true);
@@ -123,9 +152,7 @@ void MainWindow::on_ipButton_clicked()
     }
 
     // change color and text of label and button
-    palette = ui->ipStatusLabel->palette();
-    palette.setColor(ui->ipStatusLabel->foregroundRole(),Qt::darkGreen);
-    ui->ipStatusLabel->setPalette(palette);
+    ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGreen;}");
     ui->ipStatusLabel->setText("connected");
     ui->ipButton->setText("disconnect");
     ui->ipBox->setDisabled(true);

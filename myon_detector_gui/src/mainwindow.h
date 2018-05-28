@@ -3,6 +3,8 @@
 #include <QMainWindow>
 #include <tcpconnection.h>
 #include <QStandardItemModel>
+#include "../shared/tcpconnection.h"
+
 
 namespace Ui {
 class MainWindow;
@@ -21,10 +23,12 @@ public slots:
 
 private slots:
     void on_ipButton_clicked();
+    void connected();
 
 private:
     Ui::MainWindow *ui;
     int verbose = 0;
+    TcpConnection *tcpConnection = nullptr;
     QStandardItemModel *addresses;
     QList<QStandardItem *> *addressColumn;
     bool saveSettings(QString fileName, QStandardItemModel* model);
