@@ -23,6 +23,8 @@ MainWindow::MainWindow(QWidget *parent) :
     //addresses->appendColumn(*addressColumn);
     loadSettings("ipAddresses.save",addresses);
     ui->ipBox->setModel(addresses);
+    ui->ipBox->setAutoCompletion(true);
+    ui->ipBox->setEditable(true);
     //ui->ipBox->installEventFilter(this);
 
     // setup colors
@@ -43,13 +45,13 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->ipButton->installEventFilter(this);
 }
 
-void MainWindow::makeConnection(QString ipAddress){
+void MainWindow::makeConnection(QString ipAddress, quint16 port){
     // add popup windows for errors!!!
     QThread *tcpThread = new QThread();
-    if (tcpConnection!=nullptr){
+    if (!tcpConnection){
         delete(tcpConnection);
     }
-    tcpConnection = new TcpConnection(ipAddress, 1234, verbose);
+    tcpConnection = new TcpConnection(ipAddress, port, verbose);
     tcpConnection->moveToThread(tcpThread);
     connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::makeConnection);
     connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
@@ -59,14 +61,11 @@ void MainWindow::makeConnection(QString ipAddress){
     //connect(tcpConnection, &TcpConnection::error, this, &Demon::displaySocketError);
     //connect(tcpConnection, &TcpConnection::toConsole, this, &Demon::toConsole);
     connect(tcpConnection, &TcpConnection::connectionTimeout, this, &MainWindow::makeConnection);
+    connect(this, &MainWindow::closeConnection, tcpConnection, &TcpConnection::closeConnection);
     //connect(this, &Demon::sendMsg, tcpConnection, &TcpConnection::sendMsg);
     //connect(this, &Demon::posixTerminate, tcpConnection, &TcpConnection::onPosixTerminate);
     //connect(tcpConnection, &TcpConnection::stoppedConnection, this, &Demon::stoppedConnection);
     tcpThread->start();
-}
-
-void MainWindow::connected(){
-    connectedToDemon = true;
 }
 
 bool MainWindow::saveSettings(QString fileName, QStandardItemModel *model){
@@ -117,10 +116,10 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
         if (ke->key() == Qt::Key_Enter){
             this->on_ipButton_clicked();
         }
-    }
-    else
         return false;
-
+    }else{
+        return false;
+    }
 }
 
 MainWindow::~MainWindow()
@@ -129,31 +128,39 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_ipButton_clicked()
-{
-    if (connectedToDemon){
-        // it is connected and the button shows "disconnect" -> here comes disconnect code
-        connectedToDemon = false;
-        // set button and color of label
-        ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGray;}");
-        ui->ipStatusLabel->setText("not connected");
-        ui->ipButton->setText("connect");
-        ui->ipBox->setEnabled(true);
-        return;
-    }
-    makeConnection(ui->ipBox->currentText());
-    if (!connectedToDemon){
-        // after "makeConnection" it should be connected, if not: some error
-        return;
-    }
-    if (!ui->ipBox->currentText().isEmpty()&&ui->ipBox->findText(ui->ipBox->currentText())==-1){
-        // if text not already in there, put it in there
-        ui->ipBox->addItem(ui->ipBox->currentText());
-    }
+void MainWindow::connected(){
+    connectedToDemon = true;
 
     // change color and text of label and button
     ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGreen;}");
     ui->ipStatusLabel->setText("connected");
     ui->ipButton->setText("disconnect");
     ui->ipBox->setDisabled(true);
+}
+
+void MainWindow::on_ipButton_clicked()
+{
+    if (connectedToDemon){
+        // it is connected and the button shows "disconnect" -> here comes disconnect code
+        connectedToDemon = false;
+        // set button and color of label
+        emit closeConnection();
+        ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGray;}");
+        ui->ipStatusLabel->setText("not connected");
+        ui->ipButton->setText("connect");
+        ui->ipBox->setEnabled(true);
+        return;
+    }
+    QString ipBoxText = ui->ipBox->currentText();
+    QStringList ipAndPort= ipBoxText.split(':');
+    if (ipAndPort.size()!=2){
+        qDebug() << "error, size of ipAndPort not 2";
+    }
+    QString ipAddress = ipAndPort.at(0);
+    QString portString = ipAndPort.at(1);
+    makeConnection(ipAddress, portString.toUInt());
+    if (!ui->ipBox->currentText().isEmpty()&&ui->ipBox->findText(ui->ipBox->currentText())==-1){
+        // if text not already in there, put it in there
+        ui->ipBox->addItem(ui->ipBox->currentText());
+    }
 }

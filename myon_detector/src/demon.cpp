@@ -49,23 +49,42 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     demonAddress = QHostAddress(new_demonAddress);
     if (new_demonAddress == "localhost" || new_demonAddress == "local"){
         demonAddress = QHostAddress(QHostAddress::LocalHost);
+    }else{
+        QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
+        // use the first non-localhost IPv4 address
+        for (int i = 0; i < ipAddressesList.size(); ++i) {
+            if (ipAddressesList.at(i) != QHostAddress::LocalHost &&
+                ipAddressesList.at(i).toIPv4Address()) {
+                demonAddress = ipAddressesList.at(i);
+                break;
+            }
+        }
     }
-    bool ok = false;
-    QHostAddress(new_demonAddress).toIPv4Address(&ok);
-    if (!ok){
-        demonAddress.clear();
-    }
-    if (demonAddress.isNull()){
+    /* somehow does not work
+    if (new_demonAddress.isEmpty()){
         // if not otherwise specified: listen on all available addresses
         demonAddress = QHostAddress(QHostAddress::Any);
+        cout << demonAddress.toString()<<endl;
     }
+    */
+
     demonPort = new_demonPort;
-    if (!this->listen(demonAddress,demonPort)) {
-        cout << tr("Unable to start the server: %1.\n").arg(this->errorString())<<endl;
+    if (demonPort == 0){
+        // maybe think about other fall back solution
+        demonPort = 51508;
     }
+    if (!this->listen(demonAddress,demonPort)) {
+        cout << tr("Unable to start the server: %1.\n").arg(this->errorString());
+    }else{
+        if (verbose > 4){
+        cout <<tr("\nThe server is running on\n\nIP: %1\nport: %2\n\n")
+                             .arg(demonAddress.toString()).arg(serverPort());
+        }
+    }
+    flush(cout);
 
     // start tcp connection and gps module connection
-    connectToServer();
+    //connectToServer();
     connectToGps();
     delay(1000);
     if(configGnss){
@@ -124,8 +143,11 @@ void Demon::connectToServer(){
 }
 
 void Demon::incomingConnection(qintptr socketDescriptor){
+    if (verbose > 4){
+        cout << "incomingConnection" <<endl;
+    }
     QThread *thread = new QThread();
-    TcpConnection *tcpConnection = new TcpConnection(socketDescriptor);
+    TcpConnection *tcpConnection = new TcpConnection(socketDescriptor,verbose);
     tcpConnection->moveToThread(thread);
     connect(thread, &QThread::started, tcpConnection, &TcpConnection::receiveConnection);
     connect(thread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);

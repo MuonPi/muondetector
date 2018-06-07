@@ -18,8 +18,11 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+signals:
+    void closeConnection();
+
 public slots:
-    void makeConnection(QString ipAddress);
+    void makeConnection(QString ipAddress, quint16 port);
 
 private slots:
     void on_ipButton_clicked();

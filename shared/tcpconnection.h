@@ -13,8 +13,9 @@ class TcpConnection : public QObject
 public:
     TcpConnection(QString hostName, quint16 port, int verbose = 0, int timeout = 15000,
                   int pingInterval = 5000, QObject *parent = 0);
-    TcpConnection(int socketDescriptor, int verbose = 4, int timeout = 15000,
+    TcpConnection(int socketDescriptor, int verbose = 0, int timeout = 15000,
                   int pingInterval = 5000, QObject *parent = 0);
+    ~TcpConnection();
     void delay(int millisecondsWait);
     void startTimePulser();
 

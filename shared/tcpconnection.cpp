@@ -35,7 +35,7 @@ void TcpConnection::makeConnection()
     if (verbose > 4){
         emit toConsole(QString("client tcpConnection running in thread " + QString("0x%1").arg((int)this->thread())));
     }
-    tcpSocket = new QTcpSocket();
+    tcpSocket = new QTcpSocket(this);
     in = new QDataStream();
     in->setDevice(tcpSocket);
     connect(tcpSocket, &QTcpSocket::readyRead, this, &TcpConnection::onReadyRead);
@@ -47,6 +47,7 @@ void TcpConnection::makeConnection()
         emit error(tcpSocket->error(), tcpSocket->errorString());
         return;
     }
+    emit connected();
     peerAddress = new QHostAddress(tcpSocket->peerAddress());
     peerPort = tcpSocket->peerPort();
     localAddress = new QHostAddress(tcpSocket->localAddress());
@@ -57,7 +58,10 @@ void TcpConnection::makeConnection()
 void TcpConnection::receiveConnection()
 {   // setting up tcpSocket.
     // only done once
-    tcpSocket = new QTcpSocket();
+    if (verbose > 4){
+        emit toConsole(QString("client tcpConnection running in thread " + QString("0x%1").arg((int)this->thread())));
+    }
+    tcpSocket = new QTcpSocket(this);
     if (!tcpSocket->setSocketDescriptor(socketDescriptor)) {
         emit error(tcpSocket->error(),tcpSocket->errorString());
         return;
@@ -80,7 +84,7 @@ void TcpConnection::receiveConnection()
 
 void TcpConnection::closeConnection(){
     sendCode(quitConnection);
-    this->deleteLater();
+    this->thread()->quit();
     return;
 }
 
@@ -320,7 +324,7 @@ void TcpConnection::onTimePulse(){
 
 void TcpConnection::startTimePulser()
 {
-    t = new QTimer();
+    t = new QTimer(this);
     t->setInterval(pingInterval);
     connect(this, &TcpConnection::stopTimePulser, t, &QTimer::stop);
     connect(t, &QTimer::timeout, this, &TcpConnection::onTimePulse);
@@ -336,4 +340,12 @@ void TcpConnection::delay(int millisecondsWait)
     delay.connect(&delay, &QTimer::timeout, &loop, &QEventLoop::quit);
     delay.start(millisecondsWait);
     loop.exec();
+}
+
+TcpConnection::~TcpConnection(){
+    delete peerAddress;
+    delete localAddress;
+    delete file;
+    delete in;
+    delete t;
 }

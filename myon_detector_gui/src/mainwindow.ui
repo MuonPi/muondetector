@@ -31,15 +31,27 @@
        <widget class="QComboBox" name="ipBox">
         <property name="minimumSize">
          <size>
-          <width>150</width>
-          <height>0</height>
+          <width>200</width>
+          <height>22</height>
          </size>
         </property>
         <property name="focusPolicy">
          <enum>Qt::WheelFocus</enum>
         </property>
+        <property name="locale">
+         <locale language="English" country="Germany"/>
+        </property>
         <property name="editable">
          <bool>true</bool>
+        </property>
+        <property name="currentText">
+         <string notr="true"/>
+        </property>
+        <property name="insertPolicy">
+         <enum>QComboBox::InsertAlphabetically</enum>
+        </property>
+        <property name="minimumContentsLength">
+         <number>1</number>
         </property>
        </widget>
       </item>

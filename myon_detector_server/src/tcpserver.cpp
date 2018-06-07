@@ -52,7 +52,7 @@ TcpServer::TcpServer(QString listenIpAddress, quint16 portFromStart ,int newVerb
 void TcpServer::incomingConnection(qintptr socketDescriptor)
 {
     QThread *thread = new QThread();
-    TcpConnection *tcpConnection = new TcpConnection(socketDescriptor);
+    TcpConnection *tcpConnection = new TcpConnection(socketDescriptor,verbose);
     tcpConnection->moveToThread(thread);
     connect(thread, SIGNAL(started()), tcpConnection, SLOT(receiveConnection()));
     connect(thread, SIGNAL(finished()), tcpConnection, SLOT(deleteLater()));
