@@ -25,6 +25,9 @@ public slots:
     void makeConnection(QString ipAddress, quint16 port);
 
 private slots:
+    void updateUiProperties(int uartBufferValue = -1, int discr1SliderValue = -1,
+                                        int discr2SliderValue = -1);
+    // only those properties with value >= 0 will be updated!
     void on_ipButton_clicked();
     void connected();
 

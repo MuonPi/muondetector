@@ -20,6 +20,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 INCLUDEPATH += ../shared  \
     src
 
+LIBS += -lwiringPi
+
 SOURCES += src/main.cpp \
     src/custom_io_operators.cpp \
     src/gnsssatellite.cpp \

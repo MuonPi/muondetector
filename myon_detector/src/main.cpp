@@ -2,42 +2,9 @@
 #include <QCommandLineParser>
 #include <QObject>
 #include <QHostAddress>
-//#include <unistd.h>
 #include "custom_io_operators.h"
 #include "demon.h"
-//#include "unix_sig_handler_daemon.h" //for handling unix signals
 using namespace std;
-
-/* for handling unix signals, does not really work
-static int setup_unix_signal_handlers()
-{
-    struct sigaction hup, term, interrupt;
-
-    hup.sa_handler = unix_sig_handler_daemon::hupSignalHandler;
-    sigemptyset(&hup.sa_mask);
-    hup.sa_flags = 0;
-    hup.sa_flags |= SA_RESTART;
-
-    if (sigaction(SIGHUP, &hup, 0))
-       return 1;
-
-    term.sa_handler = unix_sig_handler_daemon::termSignalHandler;
-    sigemptyset(&term.sa_mask);
-    term.sa_flags |= SA_RESTART;
-
-    if (sigaction(SIGTERM, &term, 0))
-       return 2;
-
-    interrupt.sa_handler = unix_sig_handler_daemon::intSignalHandler;
-    sigemptyset(&interrupt.sa_mask);
-    interrupt.sa_flags |= SA_RESTART;
-
-    if (sigaction(SIGINT, &interrupt, 0))
-       return 3;
-
-    return 0;
-}
-*/
 
 int main(int argc, char *argv[])
 {
@@ -71,7 +38,20 @@ int main(int argc, char *argv[])
 		QCoreApplication::translate("main", "verbosity"));
     parser.addOption(verbosityOption);
 
-    //
+    // dumpraw option
+    QCommandLineOption dumpRawOption("d",
+        QCoreApplication::translate("main", "dump raw gps device (NMEA) output to stdout"));
+    parser.addOption(dumpRawOption);
+
+    // show GNSS configs
+    QCommandLineOption showGnssConfigOption("c",
+        QCoreApplication::translate("main", "configure standard ubx protocol messages at start"));
+    parser.addOption(showGnssConfigOption);
+
+    // show outgoing ubx messages as hex
+    QCommandLineOption showoutOption(QStringList() << "showoutput" << "showout",
+        QCoreApplication::translate("main", "show outgoing ubx messages as hex"));
+    parser.addOption(showoutOption);
 
     // peerAddress option
     QCommandLineOption peerIpOption(QStringList() << "peer" << "peerAddress",
@@ -103,15 +83,17 @@ int main(int argc, char *argv[])
 		QCoreApplication::translate("main", "baudrate"));
 	parser.addOption(baudrateOption);
 
-	// dumpraw option
-	QCommandLineOption dumpRawOption("d",
-		QCoreApplication::translate("main", "dump raw gps device output to stdout"));
-	parser.addOption(dumpRawOption);
-
-	// show GNSS configs
-	QCommandLineOption showGnssConfigOption("c",
-		QCoreApplication::translate("main", "show GNSS configs"));
-	parser.addOption(showGnssConfigOption);
+    // discriminator thresholds:
+    QCommandLineOption discr1Option(QStringList() << "discr1" << "thresh1" << "th1",
+                                    QCoreApplication::translate("main",
+                                                                "set discriminator 1 threshold in Volts"),
+                                    QCoreApplication::translate("main", "threshold1"));
+    parser.addOption(discr1Option);
+    QCommandLineOption discr2Option(QStringList() << "discr2" << "thresh2" << "th2",
+                                    QCoreApplication::translate("main",
+                                                                "set discriminator 2 threshold in Volts"),
+                                    QCoreApplication::translate("main", "threshold2"));
+    parser.addOption(discr2Option);
 
     // pcaChannel to select signal to ublox
     QCommandLineOption pcaChannelOption(QStringList() << "pca" << "signal",
@@ -119,19 +101,20 @@ int main(int argc, char *argv[])
                                                                            "0 - coincidence"
                                                                            "1 - XOR"
                                                                            "2 - discr 1"
-                                                                           "3 - discr 2"));
+                                                                           "3 - discr 2"),
+                                        QCoreApplication::translate("main", "channel"));
     parser.addOption(pcaChannelOption);
 
-
-    // show outgoing ubx messages as hex
-    QCommandLineOption showoutOption(QStringList() << "showoutput" << "showout",
-        QCoreApplication::translate("main", "show outgoing ubx messages as hex"));
-    parser.addOption(showoutOption);
+    // biasVoltage for SciPM
+    QCommandLineOption biasVoltageOption(QStringList() << "bias" << "vout",
+                                         QCoreApplication::translate("main","set voltage for SciPM"),
+                                         QCoreApplication::translate("main", "bias voltage"));
+    parser.addOption(biasVoltageOption);
 
 	// process the actual command line arguments given by the user
 	parser.process(a);
 	const QStringList args = parser.positionalArguments();
-	if (args.size() > 1) { cout << "you set positional arguments but the program does not use them" << endl; }
+    if (args.size() > 1) { cout << "you set additional positional arguments but the program does not use them" << endl; }
 
 
 	// setup all variables for ublox module manager, then make the object run
@@ -140,9 +123,8 @@ int main(int argc, char *argv[])
 		gpsdevname = args.at(0);
 	}
 	else {
-		cout << "no device selected" << endl;
-		exit(-1);
-	}
+        cout << "no device selected, will not connect to gps module" << endl;
+    }
 	bool ok;
 	int verbose = 0;
 	if (parser.isSet(verbosityOption)) {
@@ -204,22 +186,41 @@ int main(int argc, char *argv[])
         }
     }
     quint8 pcaChannel=0;
+    if (parser.isSet(pcaChannelOption)){
+        pcaChannel = parser.value(pcaChannelOption).toUInt(&ok);
+        if(!ok){
+            pcaChannel = 0;
+            cout << "wrong input pcaChannel (maybe not an unsigned integer)" << endl;
+        }
+    }
     bool showout = false;
     showout = parser.isSet(showoutOption);
     float dacThresh[2];
-    dacThresh[0]=0;
-    dacThresh[1]=0;
-
-    Demon demon(gpsdevname, verbose, pcaChannel, dacThresh, dumpRaw,
+    dacThresh[0] = -1;
+    if (parser.isSet(discr1Option)){
+        dacThresh[0] = parser.value(discr1Option).toFloat(&ok);
+        if (!ok){
+            dacThresh[0] = -1;
+            cout << "wrong input discr1 (maybe not a float)"<<endl;
+        }
+    }
+    dacThresh[1]=-1;
+    if (parser.isSet(discr2Option)){
+        dacThresh[1] = parser.value(discr2Option).toFloat(&ok);
+        if (!ok){
+            dacThresh[1] = -1;
+            cout << "wrong input discr2 (maybe not a float)"<<endl;
+        }
+    }
+    float biasVoltage = -1;
+    if (parser.isSet(biasVoltageOption)){
+        biasVoltage = parser.value(biasVoltageOption).toFloat(&ok);
+        if (!ok){
+            biasVoltage = -1;
+            cout << "wrong input biasVoltage (maybe not a float)"<<endl;
+        }
+    }
+    Demon demon(gpsdevname, verbose, pcaChannel, dacThresh, biasVoltage, dumpRaw,
         baudrate, showGnssConfig, peerAddress, peerPort, demonAddress, demonPort, showout);
-
-    /* handling posix signals does not really work atm
-    QObject::connect(d, SIGNAL(myIntSignal()),&Demon,
-                     SLOT(onPosixTerminateReceived()));
-    QObject::connect(d, SIGNAL(myHupSignal()),&Demon,
-                     SLOT(onPosixTerminateReceived()));
-    QObject::connect(d, SIGNAL(myTermSignal()),&Demon,
-                     SLOT(onPosixTerminateReceived()));
-    */
     return a.exec();
 }

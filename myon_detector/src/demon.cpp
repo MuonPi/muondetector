@@ -4,10 +4,16 @@
 #include <QNetworkInterface>
 #include "demon.h"
 
+// define pins on the raspberry pi, UBIAS_EN is the power on/off pin for bias voltage
+// PREAMP_1/2 enables the DC voltage to power the preamp through the signal cable
+#define UBIAS_EN 7
+#define PREAMP_1 28
+#define PREAMP_2 29
+
 using namespace std;
 
 Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
-    float* new_dacThresh, bool new_dumpRaw, int new_baudrate,
+    float* new_dacThresh, float new_biasVoltage, bool new_dumpRaw, int new_baudrate,
     bool new_configGnss, QString new_peerAddress, quint16 new_peerPort,
     QString new_demonAddress, quint16 new_demonPort, bool new_showout, QObject *parent)
     : QTcpServer(parent)
@@ -25,8 +31,17 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     adc = new ADS1115();
     dac = new MCP4728();
     dacThresh = new_dacThresh;
+    biasVoltage = new_biasVoltage;
     pca = new PCA9536();
     pcaChannel = new_pcaChannel;
+    for (int i = 0; i<2; i++){
+        if (dacThresh[i]>=0){
+            dac->setVoltage(i,dacThresh[i]);
+        }
+    }
+    if (biasVoltage>=0){
+        dac->setVoltage(2,biasVoltage);
+    }
 
     // for gps module
     gpsdevname = new_gpsdevname;
@@ -34,6 +49,20 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     baudrate = new_baudrate;
     configGnss = new_configGnss;
     showout = new_showout;
+
+    // for separate raspi pin output states
+    wiringPiSetup();
+    pinMode(UBIAS_EN, 1);
+    biasPowerOn = true; // test only
+    if (biasPowerOn){
+        digitalWrite(UBIAS_EN, 1);
+    }else{
+        digitalWrite(UBIAS_EN, 0);
+    }
+    pinMode(PREAMP_1, 1);
+    digitalWrite(PREAMP_1, 1);
+    pinMode(PREAMP_2, 1);
+    digitalWrite(PREAMP_2, 1);
 
     // for tcp connection with fileServer
     peerPort = new_peerPort;
@@ -153,7 +182,12 @@ void Demon::incomingConnection(qintptr socketDescriptor){
     connect(thread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
     QObject::connect(tcpConnection, &TcpConnection::toConsole, this, &Demon::toConsole);
+    //connect(this, &Demon::sendI2CProperties, tcpConnection, &TcpConnection::sendI2CProperties);
     thread->start();
+    QVector<float> temp;
+    temp.push_back(dacThresh[0]);
+    temp.push_back(dacThresh[1]);
+    emit sendI2CProperties(pcaChannel, temp, biasVoltage, biasPowerOn);
 }
 
 void Demon::pcaSelectTimeMeas(uint8_t channel){

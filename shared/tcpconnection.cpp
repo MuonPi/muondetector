@@ -218,6 +218,12 @@ bool TcpConnection::sendFile(QString fileName){
     return true;
 }
 
+//void sendI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh,
+//                         float bias_Voltage,
+//                         bool bias_powerOn){
+
+//}
+
 bool TcpConnection::handleFileTransfer(QString fileName, QByteArray &block, quint16 nextCount){
     if (nextCount == 0){
         fileCounter = 0;

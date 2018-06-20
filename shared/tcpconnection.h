@@ -39,6 +39,9 @@ public slots:
     bool sendFile(QString fileName = "");
     bool sendText(const quint16 someCode, QString someText);
     bool sendCode(const quint16 someCode);
+//    void sendI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh,
+//                             float bias_Voltage,
+//                             bool bias_powerOn);
 
 private:
     bool handleFileTransfer(QString fileName, QByteArray &block, quint16 nextCount);

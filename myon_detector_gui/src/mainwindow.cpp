@@ -14,13 +14,21 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->discr2Layout->setAlignment(ui->discr2Slider,Qt::AlignHCenter); // aligns the slider in their vertical layout centered
     QIcon icon("../myon.png");
     this->setWindowIcon(icon);
+
+    // initialise all ui elements that will be inactive at start
     ui->uartBuffer->setValue(0);
     ui->uartBuffer->setDisabled(true);
-    // addressColumn = new QList<QStandardItem *>;
-    //addressColumn->append(new QStandardItem("localhost"));
-    //addressColumn->append(new QStandardItem("134.176.17.217"));
+    ui->discr1Slider->setValue(0);
+    ui->discr1Slider->setDisabled(true);
+    ui->discr1Edit->clear();
+    ui->discr1Edit->setDisabled(true);
+    ui->discr2Slider->setValue(0);
+    ui->discr2Slider->setDisabled(true);
+    ui->discr2Edit->clear();
+    ui->discr2Edit->setDisabled(true);
+
+    // setup ipBox and load addresses etc.
     addresses = new QStandardItemModel();
-    //addresses->appendColumn(*addressColumn);
     loadSettings("ipAddresses.save",addresses);
     ui->ipBox->setModel(addresses);
     ui->ipBox->setAutoCompletion(true);
@@ -128,6 +136,22 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::updateUiProperties(int uartBufferValue, int discr1SliderValue,
+                                    int discr2SliderValue){
+    if (!(uartBufferValue<0)){
+        ui->uartBuffer->setEnabled(true);
+        ui->uartBuffer->setValue(uartBufferValue);
+    }
+    if (!(discr1SliderValue<0)){
+        ui->discr1Edit->setEnabled(true);
+        ui->discr1Edit->setText(""+discr1SliderValue);
+    }
+    if (!(discr2SliderValue<0)){
+        ui->discr2Edit->setEnabled(true);
+        ui->discr2Edit->setText(""+discr1SliderValue);
+    }
+}
+
 void MainWindow::connected(){
     connectedToDemon = true;
 
@@ -149,6 +173,17 @@ void MainWindow::on_ipButton_clicked()
         ui->ipStatusLabel->setText("not connected");
         ui->ipButton->setText("connect");
         ui->ipBox->setEnabled(true);
+        // disable all relevant objects
+        ui->uartBuffer->setValue(0);
+        ui->uartBuffer->setDisabled(true);
+        ui->discr1Slider->setValue(0);
+        ui->discr1Slider->setDisabled(true);
+        ui->discr1Edit->clear();
+        ui->discr1Edit->setDisabled(true);
+        ui->discr2Slider->setValue(0);
+        ui->discr2Slider->setDisabled(true);
+        ui->discr2Edit->clear();
+        ui->discr2Edit->setDisabled(true);
         return;
     }
     QString ipBoxText = ui->ipBox->currentText();

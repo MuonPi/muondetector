@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QTcpServer>
+#include <wiringPi.h>
 #include "../shared/tcpconnection.h"
 #include "custom_io_operators.h"
 #include "qtserialublox.h"
@@ -14,7 +15,7 @@ class Demon : public QTcpServer
 
 public:
     Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
-        float *new_dacThresh, bool new_dumpRaw, int new_baudrate,
+        float *new_dacThresh, float new_biasVoltage, bool new_dumpRaw, int new_baudrate,
         bool new_configGnss, QString new_PeerAddress, quint16 new_PpeerPort,
         QString new_serverAddress, quint16 new_serverPort, bool new_showout, QObject *parent = 0);
 	void configGps();
@@ -44,6 +45,9 @@ signals:
     void sendFile(QString fileName);
     void sendMsg(QString msg);
     void sendPoll(uint16_t msgID, uint8_t port);
+    void sendI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh,
+                           float bias_Voltage,
+                           bool bias_powerOn);
 	void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
 	void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
     void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
@@ -55,6 +59,8 @@ private:
     void dacSetThreashold(uint8_t channel, float threashold); // channel 0 or 1 ; threashold in volts
     MCP4728 *dac;
     float *dacThresh;
+    float biasVoltage;
+    bool biasPowerOn = false;
     ADS1115 *adc;
     PCA9536 *pca;
     quint8 pcaChannel;

@@ -478,7 +478,7 @@ bool MCP4728::setVoltage(uint8_t channel, float voltage) {
 	return setValue(channel, value, gain);
 }
 
-bool MCP4728::setValue(uint8_t channel, uint16_t value, uint8_t gain) {
+bool MCP4728::setValue(uint8_t channel, uint16_t value, uint8_t gain, bool toEEPROM) {
 	if (value > 0xfff) {
 		value = 0xfff;
 		// error number of bits exceeding 12
@@ -486,7 +486,13 @@ bool MCP4728::setValue(uint8_t channel, uint16_t value, uint8_t gain) {
 	}
 	channel = channel & 3;
 	uint8_t buf[3];
-	buf[0] = 0b01000001 | (channel << 1); // 01000 (multiwrite command) DAC1 DAC0 (channel) UDAC bit =1
+	if (toEEPROM) {
+		buf[0] = 0b01011001;
+	}
+	else {
+		buf[0] = 0b01000001;
+	}
+	buf[0] = buf[0] | (channel << 1); // 01000/01011 (multiwrite/singlewrite command) DAC1 DAC0 (channel) UDAC bit =1
 	buf[1] = 0b10000000 | (uint8_t)((value & 0xf00) >> 8) ; // Vref PD1 PD0 Gx (gain) D11 D10 D9 D8
 	buf[1] = buf[1] | (gain << 4);
 	buf[2] = (uint8_t)(value & 0xff); 	// D7 D6 D5 D4 D3 D2 D1 D0
