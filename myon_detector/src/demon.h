@@ -40,14 +40,17 @@ public slots:
                             char propertyName);
     void gpsPropertyUpdatedGnss(std::vector<GnssSatellite>,
                             std::chrono::duration<double> updateAge);
+    void sendI2CProperties();
+    void setI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh, float bias_Voltage,
+                          bool bias_PowerOn, bool setProperties);
 
 signals:
     void sendFile(QString fileName);
     void sendMsg(QString msg);
     void sendPoll(uint16_t msgID, uint8_t port);
-    void sendI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh,
+    void i2CProperties(quint8 pcaChann, QVector<float> dac_Thresh,
                            float bias_Voltage,
-                           bool bias_powerOn);
+                           bool bias_powerOn, bool set_Properties = false);
 	void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
 	void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
     void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
@@ -58,7 +61,7 @@ private:
                                              // 0: coincidence ; 1: xor ; 2: discr 1 ; 3: discr 2
     void dacSetThreashold(uint8_t channel, float threashold); // channel 0 or 1 ; threashold in volts
     MCP4728 *dac;
-    float *dacThresh;
+    QVector <float> dacThresh;
     float biasVoltage;
     bool biasPowerOn = false;
     ADS1115 *adc;

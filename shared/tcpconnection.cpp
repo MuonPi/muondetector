@@ -8,6 +8,7 @@ const quint16 fileSig = 142;
 const quint16 nextPart = 143;
 const quint16 quitConnection = 101;
 const quint16 timeoutSig = 138;
+const quint16 i2cProps = 275;
 
 TcpConnection::TcpConnection(QString newHostName, quint16 newPort, int newVerbose, int newTimeout,
                              int newPingInterval, QObject *parent)
@@ -128,9 +129,18 @@ void TcpConnection::onReadyRead(){
         sendFile();
     }
 
+    if (someCode == i2cProps){
+        *in >> block;
+    }
+
     // if this is not a complete transaction but just a part -> return
     if (!in->commitTransaction()){
         return;
+    }
+
+    // if it's an update about I2C device status the message is stored in "block" now to handle it
+    if (someCode == i2cProps){
+        handleI2CProperties(block);
     }
 
     // if it's a file transfer the message is stored in "block" now so we can handle it
@@ -218,11 +228,41 @@ bool TcpConnection::sendFile(QString fileName){
     return true;
 }
 
-//void sendI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh,
-//                         float bias_Voltage,
-//                         bool bias_powerOn){
+bool TcpConnection::sendI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh,
+                         float bias_Voltage,
+                         bool bias_powerOn, bool setProperties){
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out << i2cProps << pcaChann << dac_Thresh << bias_Voltage << bias_powerOn << setProperties;
+    tcpSocket->write(block);
+    for(int i = 0; i<3; i++){
+        if(!tcpSocket->state()==QTcpSocket::UnconnectedState){
+            if(!tcpSocket->waitForBytesWritten(timeout)){
+                emit toConsole("wait for bytes written timeout");
+                return false;
+            }
+            return true;
+        }else{
+            delay(100);
+        }
+        emit toConsole("tcp unconnected state before wait for bytes written");
+        return false;
+    }
+}
 
-//}
+void TcpConnection::handleI2CProperties(QByteArray &block){
+    quint8 pcaChann;
+    QVector<float> dac_Thresh;
+    float bias_Voltage;
+    bool bias_powerOn, set_Properties;
+    QDataStream tempStream(&block,QIODevice::ReadOnly);
+    tempStream >> pcaChann;
+    tempStream >> dac_Thresh;
+    tempStream >> bias_Voltage;
+    tempStream >> bias_powerOn;
+    tempStream >> set_Properties;
+    emit i2CProperties(pcaChann, dac_Thresh, bias_Voltage, bias_powerOn, set_Properties);
+}
 
 bool TcpConnection::handleFileTransfer(QString fileName, QByteArray &block, quint16 nextCount){
     if (nextCount == 0){
@@ -280,9 +320,9 @@ bool TcpConnection::sendText(const quint16 someCode, QString someText){
         }else{
             delay(100);
         }
+        emit toConsole("tcp unconnected state before wait for bytes written");
+        return false;
     }
-    emit toConsole("tcp unconnected state before wait for bytes written");
-    return false;
 }
 
 bool TcpConnection::sendCode(const quint16 someCode){

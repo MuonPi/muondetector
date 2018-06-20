@@ -70,8 +70,9 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port){
     //connect(tcpConnection, &TcpConnection::toConsole, this, &Demon::toConsole);
     connect(tcpConnection, &TcpConnection::connectionTimeout, this, &MainWindow::makeConnection);
     connect(this, &MainWindow::closeConnection, tcpConnection, &TcpConnection::closeConnection);
+    connect(tcpConnection, &TcpConnection::i2CProperties, this, &MainWindow::updateI2CProperties);
+    connect(this, &MainWindow::setI2CProperties, tcpConnection, &TcpConnection::sendI2CProperties);
     //connect(this, &Demon::sendMsg, tcpConnection, &TcpConnection::sendMsg);
-    //connect(this, &Demon::posixTerminate, tcpConnection, &TcpConnection::onPosixTerminate);
     //connect(tcpConnection, &TcpConnection::stoppedConnection, this, &Demon::stoppedConnection);
     tcpThread->start();
 }
@@ -135,6 +136,15 @@ MainWindow::~MainWindow()
     saveSettings(QString("ipAddresses.save"),addresses);
     delete ui;
 }
+
+void MainWindow::updateI2CProperties(quint16 pcaChann,  QVector<float> dacThresh,
+                                     float biasVoltage, bool biasPowerOn, bool setProperties){
+    if (!setProperties){
+        updateUiProperties(0, (int)(1000*dacThresh.at(0)), (int)(1000*dacThresh.at(1)));
+                // uartBufferValue to be replaced with the correct value
+    }
+}
+
 
 void MainWindow::updateUiProperties(int uartBufferValue, int discr1SliderValue,
                                     int discr2SliderValue){

@@ -29,6 +29,11 @@ signals:
     void toConsole(QString data);
     void stopTimePulser();
     void connected();
+    void i2CProperties(quint8 pcaChann, QVector<float> dac_Thresh,
+                                                float bias_Voltage,
+                                                bool bias_powerOn,
+                                                bool set_Properties);
+    void requestI2CProperties();
 
 public slots:
     void makeConnection();
@@ -39,11 +44,12 @@ public slots:
     bool sendFile(QString fileName = "");
     bool sendText(const quint16 someCode, QString someText);
     bool sendCode(const quint16 someCode);
-//    void sendI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh,
-//                             float bias_Voltage,
-//                             bool bias_powerOn);
+    bool sendI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh,
+                             float bias_Voltage,
+                             bool bias_powerOn, bool setProperties = false);
 
 private:
+    void handleI2CProperties(QByteArray &block);
     bool handleFileTransfer(QString fileName, QByteArray &block, quint16 nextCount);
     int timeout;
     int verbose;

@@ -30,7 +30,9 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     lm75 = new LM75();
     adc = new ADS1115();
     dac = new MCP4728();
-    dacThresh = new_dacThresh;
+    float *tempThresh = new_dacThresh;
+    dacThresh.push_back(tempThresh[0]);
+    dacThresh.push_back(tempThresh[1]);
     biasVoltage = new_biasVoltage;
     pca = new PCA9536();
     pcaChannel = new_pcaChannel;
@@ -182,12 +184,11 @@ void Demon::incomingConnection(qintptr socketDescriptor){
     connect(thread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
     QObject::connect(tcpConnection, &TcpConnection::toConsole, this, &Demon::toConsole);
-    //connect(this, &Demon::sendI2CProperties, tcpConnection, &TcpConnection::sendI2CProperties);
+    connect(this, &Demon::i2CProperties, tcpConnection, &TcpConnection::sendI2CProperties);
+    connect(tcpConnection, &TcpConnection::requestI2CProperties, this, &Demon::sendI2CProperties);
+    connect(tcpConnection, &TcpConnection::i2CProperties, this, &Demon::setI2CProperties);
     thread->start();
-    QVector<float> temp;
-    temp.push_back(dacThresh[0]);
-    temp.push_back(dacThresh[1]);
-    emit sendI2CProperties(pcaChannel, temp, biasVoltage, biasPowerOn);
+    emit i2CProperties(pcaChannel, dacThresh, biasVoltage, biasPowerOn);
 }
 
 void Demon::pcaSelectTimeMeas(uint8_t channel){
@@ -389,6 +390,14 @@ void Demon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double> 
     }
 }
 
+void setI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh, float bias_Voltage,
+                      bool bias_PowerOn, bool setProperties){
+    if (!setProperties){
+        return;
+    }
+
+}
+
 void Demon::toConsole(QString data) {
     cout << data << endl;
 }
@@ -454,4 +463,8 @@ void Demon::printTimestamp()
 
 		//double subs=timestamp-(long int)timestamp;
 	cout << secs.count() << "." << setw(6) << setfill('0') << subs.count() << " " << setfill(' ');
+}
+
+void Demon::sendI2CProperties(){
+    emit i2CProperties(pcaChannel, dacThresh, biasVoltage, biasPowerOn);
 }

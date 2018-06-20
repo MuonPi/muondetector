@@ -20,9 +20,12 @@ public:
 
 signals:
     void closeConnection();
-
+    void setI2CProperties(quint8 pcaChann, QVector<float> dacThresh, float biasVoltage,
+                          bool biasPowerOn, bool setProperties = true);
 public slots:
     void makeConnection(QString ipAddress, quint16 port);
+    void updateI2CProperties(quint8 pcaChann, QVector<float> dacThresh,
+                             float biasVoltage, bool biasPowerOn, bool setProperties);
 
 private slots:
     void updateUiProperties(int uartBufferValue = -1, int discr1SliderValue = -1,
