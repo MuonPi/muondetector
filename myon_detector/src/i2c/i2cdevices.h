@@ -168,8 +168,8 @@ public:
 	MCP4728() : i2cDevice(0x60) {}
 	MCP4728(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
 	MCP4728(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
-	bool setVoltage(uint8_t channel, float voltage);
-	bool setValue(uint8_t channel, uint16_t value, uint8_t gain = GAIN1, bool toEEPROM = true);
+	bool setVoltage(uint8_t channel, float voltage, bool toEEPROM = false);
+	bool setValue(uint8_t channel, uint16_t value, uint8_t gain = GAIN1, bool toEEPROM = false);
 };
 
 class PCA9536 : public i2cDevice {

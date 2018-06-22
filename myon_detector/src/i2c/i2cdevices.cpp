@@ -460,7 +460,7 @@ void ADS1115::readVoltage(unsigned int channel, int16_t& adc, double& voltage)
   return;
 }
 
-bool MCP4728::setVoltage(uint8_t channel, float voltage) {
+bool MCP4728::setVoltage(uint8_t channel, float voltage, bool toEEPROM) {
 	// Vout = (2.048V * Dn) / 4096 * Gx <= VDD
 	if (voltage < 0) {
 		return false;
@@ -475,7 +475,7 @@ bool MCP4728::setVoltage(uint8_t channel, float voltage) {
 		// error message
 		return false;
 	}
-	return setValue(channel, value, gain);
+	return setValue(channel, value, gain, toEEPROM);
 }
 
 bool MCP4728::setValue(uint8_t channel, uint16_t value, uint8_t gain, bool toEEPROM) {
