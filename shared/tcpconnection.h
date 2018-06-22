@@ -47,10 +47,12 @@ public slots:
     bool sendI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh,
                              float bias_Voltage,
                              bool bias_powerOn, bool setProperties = false);
+    bool sendI2CPropertiesRequest();
 
 private:
     void handleI2CProperties(QByteArray &block);
     bool handleFileTransfer(QString fileName, QByteArray &block, quint16 nextCount);
+    bool writeBlock(QByteArray &block);
     int timeout;
     int verbose;
     int pingInterval;

@@ -72,9 +72,11 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port){
     connect(this, &MainWindow::closeConnection, tcpConnection, &TcpConnection::closeConnection);
     connect(tcpConnection, &TcpConnection::i2CProperties, this, &MainWindow::updateI2CProperties);
     connect(this, &MainWindow::setI2CProperties, tcpConnection, &TcpConnection::sendI2CProperties);
+    connect(this, &MainWindow::requestI2CProperties, tcpConnection, &TcpConnection::sendI2CPropertiesRequest);
     //connect(this, &Demon::sendMsg, tcpConnection, &TcpConnection::sendMsg);
     //connect(tcpConnection, &TcpConnection::stoppedConnection, this, &Demon::stoppedConnection);
     tcpThread->start();
+    emit requestI2CProperties();
 }
 
 bool MainWindow::saveSettings(QString fileName, QStandardItemModel *model){
@@ -137,7 +139,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::updateI2CProperties(quint16 pcaChann,  QVector<float> dacThresh,
+void MainWindow::updateI2CProperties(quint8 pcaChann,  QVector<float> dacThresh,
                                      float biasVoltage, bool biasPowerOn, bool setProperties){
     if (!setProperties){
         updateUiProperties(0, (int)(1000*dacThresh.at(0)), (int)(1000*dacThresh.at(1)));
@@ -153,10 +155,14 @@ void MainWindow::updateUiProperties(int uartBufferValue, int discr1SliderValue,
         ui->uartBuffer->setValue(uartBufferValue);
     }
     if (!(discr1SliderValue<0)){
+        ui->discr1Slider->setEnabled(true);
+        ui->discr1Slider->setValue(discr1SliderValue);
         ui->discr1Edit->setEnabled(true);
         ui->discr1Edit->setText(""+discr1SliderValue);
     }
     if (!(discr2SliderValue<0)){
+        ui->discr2Slider->setEnabled(true);
+        ui->discr2Slider->setValue(discr2SliderValue);
         ui->discr2Edit->setEnabled(true);
         ui->discr2Edit->setText(""+discr1SliderValue);
     }

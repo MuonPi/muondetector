@@ -77,7 +77,7 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     }
 
     // for own server to communicate with gui
-    demonAddress = QHostAddress(new_demonAddress);
+    /*demonAddress = QHostAddress(new_demonAddress);
     if (new_demonAddress == "localhost" || new_demonAddress == "local"){
         demonAddress = QHostAddress(QHostAddress::LocalHost);
     }else{
@@ -90,14 +90,14 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
                 break;
             }
         }
-    }
-    /* somehow does not work
+    }*/
+    //somehow does not work
     if (new_demonAddress.isEmpty()){
         // if not otherwise specified: listen on all available addresses
         demonAddress = QHostAddress(QHostAddress::Any);
         cout << demonAddress.toString()<<endl;
     }
-    */
+
 
     demonPort = new_demonPort;
     if (demonPort == 0){
@@ -188,7 +188,6 @@ void Demon::incomingConnection(qintptr socketDescriptor){
     connect(tcpConnection, &TcpConnection::requestI2CProperties, this, &Demon::sendI2CProperties);
     connect(tcpConnection, &TcpConnection::i2CProperties, this, &Demon::setI2CProperties);
     thread->start();
-    emit i2CProperties(pcaChannel, dacThresh, biasVoltage, biasPowerOn);
 }
 
 void Demon::pcaSelectTimeMeas(uint8_t channel){
@@ -390,7 +389,7 @@ void Demon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double> 
     }
 }
 
-void setI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh, float bias_Voltage,
+void Demon::setI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh, float bias_Voltage,
                       bool bias_PowerOn, bool setProperties){
     if (!setProperties){
         return;

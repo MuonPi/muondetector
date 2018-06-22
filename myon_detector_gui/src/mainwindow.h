@@ -22,6 +22,8 @@ signals:
     void closeConnection();
     void setI2CProperties(quint8 pcaChann, QVector<float> dacThresh, float biasVoltage,
                           bool biasPowerOn, bool setProperties = true);
+    void requestI2CProperties();
+
 public slots:
     void makeConnection(QString ipAddress, quint16 port);
     void updateI2CProperties(quint8 pcaChann, QVector<float> dacThresh,

@@ -147,6 +147,9 @@
           <property name="accessibleName">
            <string/>
           </property>
+          <property name="maximum">
+           <number>4096</number>
+          </property>
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
@@ -212,6 +215,9 @@
         </item>
         <item>
          <widget class="QSlider" name="discr2Slider">
+          <property name="maximum">
+           <number>4096</number>
+          </property>
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>

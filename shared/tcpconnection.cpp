@@ -9,6 +9,7 @@ const quint16 nextPart = 143;
 const quint16 quitConnection = 101;
 const quint16 timeoutSig = 138;
 const quint16 i2cProps = 275;
+const quint16 i2cRequest = 271;
 
 TcpConnection::TcpConnection(QString newHostName, quint16 newPort, int newVerbose, int newTimeout,
                              int newPingInterval, QObject *parent)
@@ -133,6 +134,10 @@ void TcpConnection::onReadyRead(){
         *in >> block;
     }
 
+    if (someCode == i2cRequest){
+        emit requestI2CProperties();
+    }
+
     // if this is not a complete transaction but just a part -> return
     if (!in->commitTransaction()){
         return;
@@ -220,12 +225,7 @@ bool TcpConnection::sendFile(QString fileName){
     out << fileSig;
     out << fileCounter;
     out << file->read(100*1024);
-    tcpSocket->write(block);
-    if(!tcpSocket->waitForBytesWritten(timeout)){
-        emit toConsole("wait for bytes written timeout while sending file");
-        return false;
-    }
-    return true;
+    return writeBlock(block);
 }
 
 bool TcpConnection::sendI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh,
@@ -234,20 +234,14 @@ bool TcpConnection::sendI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out << i2cProps << pcaChann << dac_Thresh << bias_Voltage << bias_powerOn << setProperties;
-    tcpSocket->write(block);
-    for(int i = 0; i<3; i++){
-        if(!tcpSocket->state()==QTcpSocket::UnconnectedState){
-            if(!tcpSocket->waitForBytesWritten(timeout)){
-                emit toConsole("wait for bytes written timeout");
-                return false;
-            }
-            return true;
-        }else{
-            delay(100);
-        }
-        emit toConsole("tcp unconnected state before wait for bytes written");
-        return false;
-    }
+    return writeBlock(block);
+}
+
+bool TcpConnection::sendI2CPropertiesRequest(){
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out << i2cRequest;
+    return writeBlock(block);
 }
 
 void TcpConnection::handleI2CProperties(QByteArray &block){
@@ -309,6 +303,22 @@ bool TcpConnection::sendText(const quint16 someCode, QString someText){
     /*out.device()->seek(0);
     out << (quint16)(block.size() - sizeof(quint16));
     */
+    return writeBlock(block);
+}
+
+bool TcpConnection::sendCode(const quint16 someCode){
+    if (!tcpSocket) {
+        emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
+        return false;
+    }
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_0);
+    out << someCode;
+    return writeBlock(block);
+}
+
+bool TcpConnection::writeBlock(QByteArray &block){
     tcpSocket->write(block);
     for(int i = 0; i<3; i++){
         if(!tcpSocket->state()==QTcpSocket::UnconnectedState){
@@ -323,31 +333,6 @@ bool TcpConnection::sendText(const quint16 someCode, QString someText){
         emit toConsole("tcp unconnected state before wait for bytes written");
         return false;
     }
-}
-
-bool TcpConnection::sendCode(const quint16 someCode){
-    if (!tcpSocket) {
-        emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
-        return false;
-    }
-    QByteArray block;
-    QDataStream out(&block, QIODevice::WriteOnly);
-    out.setVersion(QDataStream::Qt_4_0);
-    out << someCode;
-    tcpSocket->write(block);
-    for(int i = 0; i<3; i++){
-        if(!tcpSocket->state()==QTcpSocket::UnconnectedState){
-            if(!tcpSocket->waitForBytesWritten(timeout)){
-                emit toConsole("wait for bytes written timeout");
-                return false;
-            }
-            return true;
-        }else{
-            delay(100);
-        }
-    }
-    emit toConsole("tcp unconnected state before wait for bytes written");
-    return false;
 }
 
 void TcpConnection::onTimePulse(){
