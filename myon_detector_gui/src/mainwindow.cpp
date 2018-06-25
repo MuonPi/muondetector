@@ -148,6 +148,26 @@ void MainWindow::updateI2CProperties(quint8 pcaChann,  QVector<float> dacThresh,
 }
 
 
+void MainWindow::uiSetDisconnectedState(){
+    // set button and color of label
+    emit closeConnection();
+    ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGray;}");
+    ui->ipStatusLabel->setText("not connected");
+    ui->ipButton->setText("connect");
+    ui->ipBox->setEnabled(true);
+    // disable all relevant objects
+    ui->uartBuffer->setValue(0);
+    ui->uartBuffer->setDisabled(true);
+    ui->discr1Slider->setValue(0);
+    ui->discr1Slider->setDisabled(true);
+    ui->discr1Edit->clear();
+    ui->discr1Edit->setDisabled(true);
+    ui->discr2Slider->setValue(0);
+    ui->discr2Slider->setDisabled(true);
+    ui->discr2Edit->clear();
+    ui->discr2Edit->setDisabled(true);
+}
+
 void MainWindow::updateUiProperties(int uartBufferValue, int discr1SliderValue,
                                     int discr2SliderValue){
     if (!(uartBufferValue<0)){
@@ -183,23 +203,7 @@ void MainWindow::on_ipButton_clicked()
     if (connectedToDemon){
         // it is connected and the button shows "disconnect" -> here comes disconnect code
         connectedToDemon = false;
-        // set button and color of label
-        emit closeConnection();
-        ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGray;}");
-        ui->ipStatusLabel->setText("not connected");
-        ui->ipButton->setText("connect");
-        ui->ipBox->setEnabled(true);
-        // disable all relevant objects
-        ui->uartBuffer->setValue(0);
-        ui->uartBuffer->setDisabled(true);
-        ui->discr1Slider->setValue(0);
-        ui->discr1Slider->setDisabled(true);
-        ui->discr1Edit->clear();
-        ui->discr1Edit->setDisabled(true);
-        ui->discr2Slider->setValue(0);
-        ui->discr2Slider->setDisabled(true);
-        ui->discr2Edit->clear();
-        ui->discr2Edit->setDisabled(true);
+        uiSetDisconnectedState();
         return;
     }
     QString ipBoxText = ui->ipBox->currentText();
@@ -208,7 +212,15 @@ void MainWindow::on_ipButton_clicked()
         qDebug() << "error, size of ipAndPort not 2";
     }
     QString ipAddress = ipAndPort.at(0);
-    QString portString = ipAndPort.at(1);
+    if (ipAddress == "local" || ipAddress == "localhost"){
+        ipAddress = "127.0.0.1";
+    }
+    QString portString;
+    if (ipAndPort.size()>1){
+         portString = ipAndPort.at(1);
+    }else{
+        portString = "51508";
+    }
     makeConnection(ipAddress, portString.toUInt());
     if (!ui->ipBox->currentText().isEmpty()&&ui->ipBox->findText(ui->ipBox->currentText())==-1){
         // if text not already in there, put it in there

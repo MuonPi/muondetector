@@ -38,6 +38,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+    void uiSetDisconnectedState();
     int verbose = 0;
     TcpConnection *tcpConnection = nullptr;
     QStandardItemModel *addresses;
