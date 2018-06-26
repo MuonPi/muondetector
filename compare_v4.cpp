@@ -1,31 +1,26 @@
-/*                   Stand 25.06.2018
+/*                   Stand 26.06.2018
 	compare_v4 sortiert und vergleicht die Zeilen mehrerer Textdateien,
 	indem es zeitlich korrelierte Eintraege erfasst
 	und zusammen mit den Zeitdifferenzen in eine Datei schreibt
 	Ziel: mehr als 2 Eingabe-Dateien (mehrere RasPi-Stationen) -> erfuellt
 	Ziel: Einstellbarkeit der match-Kriterien (ab wann gelten  -> erfuellt
 	Einträge als Zeitlich korreliert?) und versehen der
-	Coincidents mit einem Guetefaktor  -> momentan Guetefaktor== Anzahl Coincidents (an einem Zeitpunkt)  -> erfuellt
+	Coincidents mit einem Guetefaktor  -> momentan Guetefaktor == Anzahl Coincidents (an einem Zeitpunkt) -> (erfuellt)
 */
 //  Geschrieben von <Marvin.Peter@physik.uni-giessen.de>, Teilelemente sind geklaut von <Lukas.Nies@physik.uni-giessen.de>
 
-// On Linux compile with 'g++ -o Compare Compare.cpp -O' optional: '-fopenmp' flag
-// Vielleicht kann man mit openmp noch etwas mehr optimieren durch multithreading aber eher nicht so viel
-#include <fstream>
+// On Linux compile with 'g++ -o Compare Compare.cpp -O'
+// Vielleicht kann man mit openmp noch etwas mehr optimieren durch multithreading aber eher nicht so viel, weshalb diese Option verworfen wurde
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <stdio.h>
 #include <math.h>
 #include <time.h>
 #include <iomanip>
-#include <stdlib.h>
 #include <limits>
 #include <unistd.h>
-#include <functional>
 #include <fstream>
-#include <omp.h>
 #include <utility>
 
 using namespace std;
@@ -128,7 +123,7 @@ bool areTimestampsInOrder(string dateiName, bool verbose, unsigned long int& lin
 		}
 	}
 	return isInOrder;
-}//end of areTimestampsInOrder(string ...)
+}//end of areTimestampsInOrder																							
 
 void skipColumn(istream& data, int col)
 {
@@ -136,7 +131,7 @@ void skipColumn(istream& data, int col)
 		data.ignore(numeric_limits<streamsize>::max(), ' '); // col Leerzeichen-getrennte Werte uberspringen
 }
 
-void readToVector(ifstream& inputstream, vector<timespec>& oneVector, int& maxValues, int& column)
+void readToVector(ifstream& inputstream, vector<timespec>& oneVector, int& maxValues, int column)
 {
 	// ueberschreibt einen Vektor mit neuen Werten aus der Datei (aus dem inputstream)
 	// es werden maximal "maxValues" viele Eintraege hinzugefuegt,
@@ -164,7 +159,7 @@ void readToVector(ifstream& inputstream, vector<timespec>& oneVector, int& maxVa
 
 		oneVector.push_back(oneValue);
 	}
-}// end of readToVector(..)
+}// end of readToVector(..																		 )
 
 void Usage()
 {
@@ -180,22 +175,22 @@ void Usage()
 	cout << "Benutzung:    " << "compare" << " [-vh?][-o<output> -b<Bereich>] File1 File2" << endl;
 	cout << "		Optionen:" << endl;
 	cout << "		-h?		  : Zeigt diese Hilfeseite an." << endl;
-	cout << "		-c 		  : Zeile, in der die Daten stehen (Standard Zeile 0). momentan noch nicht individuell fuer jede Datei" << endl;
+	cout << "		-c 		  : Spalte, in der die Daten stehen (Standard Zeile 0). momentan noch nicht individuell fuer jede Datei" << endl;
 	cout << "		-v		  : Steigert das Verbosity-Level" << endl;
 	cout << "		-o <output>	  : Pfad/Name der Output-Datei." << endl;
 	cout << "		-b <Bereich>	  : Wahl des Koinzidenten Bereiches in [us] (Standard: 1us)." << endl;
-	cout << "     -m <maxWerte>     : Wahl der gleichzeitig in Vektoren eingelesenen Timestamps" << endl;
+	cout << "     -m <maxWerte>     : Wahl der gleichzeitig in Vektoren eingelesenen Timestamps. Standard 10k" << endl;
 	cout << endl;
 	cout << "Geschrieben von <Marvin.Peter@physik.uni-giessen.de>" << endl;
 	cout << "(Teilelemente sind geklaut von <Lukas.Nies@physik.uni-giessen.de>" << endl;
-	cout << "---Stand 25.06.2018---Bugs inclusive" << endl << endl;
+	cout << "---Stand 26.06.2018---Bugs inclusive" << endl << endl;
 }//end of Usage()
 
-void Algorithm(vector<unsigned int>& iterators,
+void compareAlgorithm(vector<unsigned int>& iterator,
 	vector<vector<timespec> >& values,
 	double& matchKriterium,
 	ofstream& output,
-	unsigned int fertigerVector)
+	unsigned int& fertigerVector)
 {
 	time_t t;
 	/*
@@ -203,59 +198,53 @@ void Algorithm(vector<unsigned int>& iterators,
 						- finde ein Match aus den anderen Vektoren (alle Werte durchgehen), Index merken!
 						- nutze aus, dass keine Werte kleiner diesem Match fuer ein Match in Frage kommen
 	*/
-	bool dateiEmpty[iterators.size()];
-	for (unsigned int i = 0; i < iterators.size(); i++)
+	bool dateiEmpty[iterator.size()];
+	for (unsigned int i = 0; i < iterator.size(); i++)
 	{
+		// remember which files were empty at the beginning
 		if (values[i].size() == 0)
 		{
-			//cout<<"datei "<<i<<" = EMPTY ; iterators.size() = "<<iterators.size()<<" ; values["<<i<<"]["<<currentVector[i]<<"].size() = 0 ; ";
 			dateiEmpty[i] = true;
 		}
 		else {
-			//cout<<"datei "<<i<<" not empty ; iterators.size() = "<<iterators.size()<<" ; values["<<i<<"]["<<currentVector[i]<<"].size() = "<<values[i][currentVector[i]].size();
 			dateiEmpty[i] = false;
 		}
 	}
-	//cout<<endl;
 	bool done = false;
 	while (!done)
 	{
-		//welcher hat den kleinsten Wert? (values und iterators haben die gleiche Laenge)
-		//iterators enthaelt die aktuellen Indizes bei denen die einzelnen Vektoren gelesen werden sollen
-		//iterators[j] und currentVector[j] gehoeren z.B. immer zu values[j] => values[j][currentVector[i]][iterators[j]] ist ein logisch korrekter sinnvoller Wert
-		//fuer den aktuellen zu bearbeitenden Wert der j-ten Datei
-		//currentVector[j] zeigt an ob der momentan zu bearbeitende Vektor 0 oder 1 ist (es gibt fuer jede Datei immer einen, der bearbeitet und einen der
-		//vollgeschrieben wird zur selben Zeit)
-		for (unsigned int i = 0; i < iterators.size(); i++)
+		//welcher hat den kleinsten Wert? (values und iterator haben die gleiche Laenge)
+		//iterator enthaelt die aktuellen Indizes bei denen die einzelnen Vektoren gelesen werden sollen
+		for (unsigned int i = 0; i < iterator.size(); i++)
 		{
 			if (dateiEmpty[i] == false) {
-				if (iterators[i] >= values[i].size())
+				// if the vector was not empty at start but is now, it is called "fertigerVector"
+				if (iterator[i] >= values[i].size())
 				{
 					fertigerVector = i;
-					//cout<<"fertigerVector = ["<<i<<"]["<<currentVector[i]<<"] ";
 					return;
 				}
 			}
 		}
 		unsigned int indexSmallest = 0;
-		for (unsigned int i = 0; i < iterators.size(); i++)
+		for (unsigned int i = 0; i < iterator.size(); i++)
 		{
 			if (dateiEmpty[indexSmallest] == true)
 			{
-				indexSmallest = indexSmallest + 1;
-				//cout<<" ; indexSmallest = "<<indexSmallest<<endl;
+				indexSmallest++;
+			}else {
+				break;
 			}
 		}
-		if (indexSmallest >= iterators.size())
+		if (indexSmallest >= iterator.size())
 		{
-			//cout<<"indexSmallest >= iterators.size()"<<endl;
 			return;
 		}
-		for (unsigned int i = 0; i < iterators.size(); i++)
+		for (unsigned int i = indexSmallest+1; i < iterator.size(); i++)
 		{
 			if (dateiEmpty[i] == false)
 			{
-				long long int diff = ts_diff_ns(values[i][iterators[i]], values[indexSmallest][iterators[indexSmallest]]);
+				long long int diff = ts_diff_ns(values[i][iterator[i]], values[indexSmallest][iterator[indexSmallest]]);
 				if (diff > 0)
 				{
 					indexSmallest = i;
@@ -263,26 +252,26 @@ void Algorithm(vector<unsigned int>& iterators,
 			}
 		}
 		int coincidents = 0;
-		for (unsigned int i = 0; i < iterators.size(); i++)
+		for (unsigned int i = 0; i < iterator.size(); i++)
 		{
 			//hier wird entschieden ob es ein CoincidenceEreignis ist und es wird gleich in die Datei geschrieben
 			if (dateiEmpty[i] == false) {
-				long long int tdiff = ts_diff_ns(values[i][iterators[i]], values[indexSmallest][iterators[indexSmallest]]);
-				tdiff = abs(tdiff);
-				if ((indexSmallest != i) && (tdiff <= matchKriterium * 1e9))
+				long long int tdiff = ts_diff_ns(values[i][iterator[i]], values[indexSmallest][iterator[indexSmallest]]);
+				tdiff = abs(tdiff); // [ns]
+				if ((indexSmallest != i) && (tdiff <= (matchKriterium * 1e9)))
 				{
 					if (coincidents < 1)
 					{
-						t = values[indexSmallest][iterators[indexSmallest]].tv_sec;
+						t = values[indexSmallest][iterator[indexSmallest]].tv_sec;
 						struct tm *tm = localtime(&t);
 						char date[20];
 						strftime(date, sizeof(date), "%Y.%m.%d %H:%M:%S", tm);
-						output << date << "  " << indexSmallest << "  " << values[indexSmallest][iterators[indexSmallest]].tv_sec << ".";
+						output << date << "  " << indexSmallest << "  " << values[indexSmallest][iterator[indexSmallest]].tv_sec << ".";
 						output.width(9);
-						output << setfill('0') << values[indexSmallest][iterators[indexSmallest]].tv_nsec << "  ";
+						output << setfill('0') << values[indexSmallest][iterator[indexSmallest]].tv_nsec << "  ";
 						coincidents++;
 					}
-					output << i << "-" << indexSmallest << "  " << -ts_diff_ns(values[i][iterators[i]], values[indexSmallest][iterators[indexSmallest]]) << "   ";
+					output << i << "-" << indexSmallest << "  " << -ts_diff_ns(values[i][iterator[i]], values[indexSmallest][iterator[indexSmallest]]) << "   ";
 					coincidents++;
 				}
 			}
@@ -291,16 +280,16 @@ void Algorithm(vector<unsigned int>& iterators,
 		{
 			output << coincidents << endl;
 		}
-		iterators[indexSmallest]++;
+		iterator[indexSmallest]++;
 	}
-}//end of Algorithmus
+}//end of Algorithmus																																			  
 
 int main(int argc, char*argv[])
 {
 	string outputDateiName;
 	vector <string> dateiName;
 	time_t start, end, readToVectorTime, checkTimestampOrderTime, algorithmTime;
-	double matchKriterium = 0.001;//in Sekunden
+	double matchKriterium = 0.001;//[us]
 	timespec oneValue;
 	int maxTimestampsAtOnce = 10000;
 
@@ -309,7 +298,7 @@ int main(int argc, char*argv[])
 	int ch;
 	int column1 = 0;
 	int column2 = 0;
-	double b = 1.;
+	double b = 1.0;
 	bool notSorted = true;
 	while ((ch = getopt(argc, argv, "svm:c:o:b:h?")) != EOF)
 	{
@@ -335,7 +324,7 @@ int main(int argc, char*argv[])
 		}
 	}
 	int maxTimestampsInVector = maxTimestampsAtOnce / 4;
-	matchKriterium = b * 1e-6; //Umrechnen, damit man die Eingabe in [us] machen kann
+	matchKriterium = b * 1e-6; //[us]
 	if (argc - optind < 2)
 	{
 		perror("Falsche Eingabe, zu wenige Argumente!\n");
@@ -438,7 +427,7 @@ int main(int argc, char*argv[])
 	unsigned long int prozent = 0;
 	unsigned long int prozentCounter = 0;
 	unsigned long int oldCounter = 0;
-	string ausgabeAlgorithmus = "vergleiche...";
+	string ausgabeAlgorithmString = "vergleiche...";
 	//Prozentanzeige
 
 
@@ -447,31 +436,26 @@ int main(int argc, char*argv[])
 		cout << endl << "Starte nun den Algorithmus...." << endl << endl;
 	}
 	vector<vector<timespec> > values;
-	//values [index der Datei] [0 oder 1] [werte in long double]
 	values.resize(dateiName.size());
-	vector<unsigned int> iterators;
-	unsigned int fertigerVector;
+	//values [index der Datei] [werte in timespec]
+	vector<unsigned int> iterator;
+	unsigned int fertigerVector = 0;
 	for (unsigned int i = 0; i < dateiName.size(); i++)
 	{
-		iterators.push_back(0);
+		iterator.push_back(0);
 		//hier werden die Vectors mit einer "festen Laenge" also Anzahl der Dateien gebaut
-		//iterators, currentVector und der aeußerste Container von "values" sind alle korelliert mit dem "dateiName" vector,
+		//iterator und der aeußerste Container von "values" sind korelliert mit dem "dateiName" vector,
 		//haben also die gleiche Anzahl Eintraege wie es Dateien gibt
-		//currentVector gibt an, ob gerade 0 oder 1 bei der jeweiligen Datei verarbeitet wird
-		//iterators gibt an, welcher index in der jeweiligen Datei (an welcher stelle in Datei i gerade gelesen wird,
-		//wird resettet, sobald von values0 auf values1 oder umgekehrt gewechselt wird.
+		//iterator gibt an, welcher index in der jeweiligen Datei (an welcher stelle in Datei i gerade gelesen wird)
 	}
-	fertigerVector = 0;
 	start = time(0);
-	prozentanzeige(0, ausgabeAlgorithmus);
-	// alles mit '#pragma omp...' ist nur wichtig fuer openmp, ein multithreading-tool, was dem compiler vermittelt,
-	// welche Zeilen parallel ausgefuehrt werden koennen
+	prozentanzeige(0, ausgabeAlgorithmString);
 
 	for (unsigned int i = 0; i < dateiName.size(); i++)
 	{
 		readToVector(*data[i], values[i], maxTimestampsInVector, column1);
 	}
-	Algorithm(iterators, values, matchKriterium, output, fertigerVector);
+	compareAlgorithm(iterator, values, matchKriterium, output, fertigerVector);
 	try
 	{
 		prozentCounter++;
@@ -479,32 +463,29 @@ int main(int argc, char*argv[])
 		{
 
 			prozent = (100.0*prozentCounter*(maxTimestampsInVector / (long double)(overallLines)));
-
-			prozentanzeige(prozent, ausgabeAlgorithmus);
+			prozentanzeige(prozent, ausgabeAlgorithmString);
 			oldCounter = prozentCounter;
 		}
 	}
 	catch (int e)
 	{
-		cout << "berechnung von prozent falsch" << endl;
+		cout << "berechnung von prozent falsch, prozentCounter " << prozentCounter << endl;
 		exit(EXIT_FAILURE);
-	}
-	//}
-//} // bis hier hin: alle Vektoren vollschreiben und schon mal den ersten Vektor abarbeiten
-// (und damit auch Teile anderer Vektoren)
 
-// ab hier: Schleife wird so oft ausgefuehrt bis alle Dateien keine Eintraege mehr haben
-// gleichzeitig Einlesen und bearbeiten im Optimalfall
-// vom Algorithmus erhaelt man immer die Information, welcher Vektor als erstes abgearbeitet ist,
-// dieser wird dann sofort ersetzt und mit diesem und den anderen Vektoren weitergemacht,
-// der abgearbeitete Vektor wird neu vollgeschrieben mit Werten aus der Datei
+	}
+	// bis hier hin: alle Vektoren vollschreiben und ein mal durchlaufen lassen
+
+	// ab hier: Schleife wird so oft ausgefuehrt bis alle Dateien keine Eintraege mehr haben
+	// gleichzeitig Einlesen und bearbeiten im Optimalfall
+	// vom Algorithmus erhaelt man immer die Information, welcher Vektor als erstes abgearbeitet ist,
+	// dieser wird dann sofort ersetzt und mit diesem und den anderen Vektoren weitergemacht,
+	// der abgearbeitete Vektor wird neu vollgeschrieben mit Werten aus der Datei
 	bool allDataEOF = false;
 	while (!allDataEOF)
 	{
-		iterators[fertigerVector] = 0;
+		iterator[fertigerVector] = 0;
 		readToVector(*data[fertigerVector], values[fertigerVector], maxTimestampsInVector, column1);
-		Algorithm(iterators, values, matchKriterium, output, fertigerVector);
-
+		compareAlgorithm(iterator, values, matchKriterium, output, fertigerVector);
 		try
 		{
 			prozentCounter++;
@@ -512,7 +493,7 @@ int main(int argc, char*argv[])
 			{
 
 				prozent = (100.0*prozentCounter*(maxTimestampsInVector / (long double)(overallLines)));
-				prozentanzeige(prozent, ausgabeAlgorithmus);
+				prozentanzeige(prozent, ausgabeAlgorithmString);
 				oldCounter = prozentCounter;
 			}
 		}
@@ -534,9 +515,9 @@ int main(int argc, char*argv[])
 	// ab hier: letzte reste die noch in den Vektoren sind, werden abgearbeitet
 	for (int i = 0; i < dateiName.size() * 2; i++)
 	{
-		iterators[fertigerVector] = 0;
+		iterator[fertigerVector] = 0;
 		readToVector(*data[fertigerVector], values[fertigerVector], maxTimestampsInVector, column1);
-		Algorithm(iterators, values, matchKriterium, output, fertigerVector);
+		compareAlgorithm(iterator, values, matchKriterium, output, fertigerVector);
 		try
 		{
 			prozentCounter++;
@@ -544,7 +525,7 @@ int main(int argc, char*argv[])
 			{
 
 				prozent = (100.0*prozentCounter*(maxTimestampsInVector / (long double)(overallLines)));
-				prozentanzeige(prozent, ausgabeAlgorithmus);
+				prozentanzeige(prozent, ausgabeAlgorithmString);
 				oldCounter = prozentCounter;
 			}
 		}
@@ -554,7 +535,7 @@ int main(int argc, char*argv[])
 			exit(EXIT_FAILURE);
 		}
 	}//end of for  
-	prozentanzeige(100, ausgabeAlgorithmus);
+	prozentanzeige(100, ausgabeAlgorithmString);
 	cout << endl << endl;
 	end = time(0);
 	algorithmTime = end - start;
@@ -562,4 +543,5 @@ int main(int argc, char*argv[])
 	{
 		cout << "Das Programm ist fertig, Dauer: " << algorithmTime << "s" << endl;
 	}
-}//end of int main()
+	return (int)true;
+}//end of int main()																										
