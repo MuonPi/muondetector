@@ -1,5 +1,5 @@
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
+#include <mainwindow.h>
+#include <ui_mainwindow.h>
 #include <QThread>
 #include <QFile>
 #include <QKeyEvent>
@@ -76,7 +76,6 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port){
     //connect(this, &Demon::sendMsg, tcpConnection, &TcpConnection::sendMsg);
     //connect(tcpConnection, &TcpConnection::stoppedConnection, this, &Demon::stoppedConnection);
     tcpThread->start();
-    emit requestI2CProperties();
 }
 
 bool MainWindow::saveSettings(QString fileName, QStandardItemModel *model){
@@ -139,9 +138,10 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::updateI2CProperties(quint8 pcaChann,  QVector<float> dacThresh,
-                                     float biasVoltage, bool biasPowerOn, bool setProperties){
+void MainWindow::updateI2CProperties(I2cProperty i2cProperty, bool setProperties){
     if (!setProperties){
+        qDebug() << "updateI2CProperties executed";
+        QVector<float> dacThresh = {i2cProperty.thresh1, i2cProperty.thresh2};
         updateUiProperties(0, (int)(1000*dacThresh.at(0)), (int)(1000*dacThresh.at(1)));
                 // uartBufferValue to be replaced with the correct value
     }
@@ -196,6 +196,7 @@ void MainWindow::connected(){
     ui->ipStatusLabel->setText("connected");
     ui->ipButton->setText("disconnect");
     ui->ipBox->setDisabled(true);
+    emit requestI2CProperties();
 }
 
 void MainWindow::on_ipButton_clicked()

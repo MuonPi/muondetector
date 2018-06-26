@@ -5,7 +5,6 @@ QT += serialport
 
 CONFIG += c++11 console
 CONFIG -= app_bundle
-
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
 # depend on your compiler). Please consult the documentation of the
@@ -31,7 +30,8 @@ SOURCES += src/main.cpp \
     src/demon.cpp \
     src/i2c/i2cdevices.cpp \
     src/i2c/custom_i2cdetect.c \
-    src/i2c/i2cbusses.c
+    src/i2c/i2cbusses.c \
+    ../shared/i2cproperty.cpp
 
 HEADERS += \
     src/custom_io_operators.h \
@@ -46,7 +46,8 @@ HEADERS += \
     src/i2c/custom_i2cdetect.h \
     src/i2c/i2cbusses.h \
     src/i2c/i2cdevices.h \
-    src/i2c/linux/i2c-dev.h
+    src/i2c/linux/i2c-dev.h \
+    ../shared/i2cproperty.h
 
 OBJECTS_DIR += created_files
 

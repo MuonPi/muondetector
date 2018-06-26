@@ -3,7 +3,7 @@
 #include <QMainWindow>
 #include <tcpconnection.h>
 #include <QStandardItemModel>
-#include "../shared/tcpconnection.h"
+#include <tcpconnection.h>
 
 
 namespace Ui {
@@ -20,14 +20,12 @@ public:
 
 signals:
     void closeConnection();
-    void setI2CProperties(quint8 pcaChann, QVector<float> dacThresh, float biasVoltage,
-                          bool biasPowerOn, bool setProperties = true);
+    void setI2CProperties(I2cProperty i2cProperty, bool setProperties = true);
     void requestI2CProperties();
 
 public slots:
     void makeConnection(QString ipAddress, quint16 port);
-    void updateI2CProperties(quint8 pcaChann, QVector<float> dacThresh,
-                             float biasVoltage, bool biasPowerOn, bool setProperties);
+    void updateI2CProperties(I2cProperty i2cProperty, bool setProperties);
 
 private slots:
     void updateUiProperties(int uartBufferValue = -1, int discr1SliderValue = -1,

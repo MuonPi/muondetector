@@ -31,11 +31,13 @@ INCLUDEPATH += ../shared \
 SOURCES += \
         ../shared/tcpconnection.cpp \
         src/main.cpp \
-        src/mainwindow.cpp
+        src/mainwindow.cpp \
+    ../shared/i2cproperty.cpp
 
 HEADERS += \
         ../shared/tcpconnection.h \
-        src/mainwindow.h
+        src/mainwindow.h \
+    ../shared/i2cproperty.h
 
 FORMS += \
         src/mainwindow.ui

@@ -1,4 +1,4 @@
-#include "gnsssatellite.h"
+#include <gnsssatellite.h>
 using namespace std;
 
 bool GnssSatellite::sortByCnr(const GnssSatellite &sat1, const GnssSatellite &sat2)

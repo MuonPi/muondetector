@@ -4,10 +4,10 @@
 #include <QObject>
 #include <QTcpServer>
 #include <wiringPi.h>
-#include "../shared/tcpconnection.h"
-#include "custom_io_operators.h"
-#include "qtserialublox.h"
-#include "i2c/i2cdevices.h"
+#include <tcpconnection.h>
+#include <custom_io_operators.h>
+#include <qtserialublox.h>
+#include <i2c/i2cdevices.h>
 
 class Demon : public QTcpServer
 {
@@ -41,16 +41,13 @@ public slots:
     void gpsPropertyUpdatedGnss(std::vector<GnssSatellite>,
                             std::chrono::duration<double> updateAge);
     void sendI2CProperties();
-    void setI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh, float bias_Voltage,
-                          bool bias_PowerOn, bool setProperties);
+    void setI2CProperties(I2cProperty i2cProperty, bool setProperties);
 
 signals:
     void sendFile(QString fileName);
     void sendMsg(QString msg);
     void sendPoll(uint16_t msgID, uint8_t port);
-    void i2CProperties(quint8 pcaChann, QVector<float> dac_Thresh,
-                           float bias_Voltage,
-                           bool bias_powerOn, bool set_Properties = false);
+    void i2CProperties(I2cProperty i2cProperty, bool set_Properties = false);
 	void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
 	void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
     void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);

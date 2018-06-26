@@ -1,7 +1,7 @@
 #include <sstream>
 #include <QThread>
-#include "qtserialublox.h"
-#include "unixtime_from_gps.h"
+#include <qtserialublox.h>
+#include <unixtime_from_gps.h>
 
 using namespace std;
 

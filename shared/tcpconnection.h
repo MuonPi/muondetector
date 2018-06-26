@@ -5,6 +5,7 @@
 #include <time.h>
 #include <QTimer>
 #include <QFile>
+#include <i2cproperty.h>
 
 class TcpConnection : public QObject
 {
@@ -29,10 +30,7 @@ signals:
     void toConsole(QString data);
     void stopTimePulser();
     void connected();
-    void i2CProperties(quint8 pcaChann, QVector<float> dac_Thresh,
-                                                float bias_Voltage,
-                                                bool bias_powerOn,
-                                                bool set_Properties);
+    void i2CProperties(I2cProperty i2cProperty, bool setProperties);
     void requestI2CProperties();
 
 public slots:
@@ -44,13 +42,10 @@ public slots:
     bool sendFile(QString fileName = "");
     bool sendText(const quint16 someCode, QString someText);
     bool sendCode(const quint16 someCode);
-    bool sendI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh,
-                             float bias_Voltage,
-                             bool bias_powerOn, bool setProperties = false);
+    bool sendI2CProperties(I2cProperty i2cProperty, bool setProperties);
     bool sendI2CPropertiesRequest();
 
 private:
-    void handleI2CProperties(QByteArray &block);
     bool handleFileTransfer(QString fileName, QByteArray &block, quint16 nextCount);
     bool writeBlock(QByteArray &block);
     int timeout;
@@ -71,5 +66,4 @@ private:
     time_t firstConnection;
     quint16 port = 0;
 };
-
 #endif // TCPCONNECTION_H

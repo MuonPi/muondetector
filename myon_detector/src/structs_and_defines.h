@@ -110,7 +110,7 @@
 
 #include <string>
 #include <chrono>
-#include "gnsssatellite.h"
+#include <gnsssatellite.h>
 
 #include <sstream>
 #include <string>

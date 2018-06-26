@@ -1,5 +1,5 @@
 #include <string>
-#include "custom_io_operators.h"
+#include <custom_io_operators.h>
 
 #ifndef GNSSSATELLITE_H
 #define GNSSSATELLITE_H

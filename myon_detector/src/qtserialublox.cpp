@@ -1,4 +1,4 @@
-#include "qtserialublox.h"
+#include <qtserialublox.h>
 #include <sstream>
 #include <QEventLoop>
 //#include "custom_io_operators.h" // remove after debug

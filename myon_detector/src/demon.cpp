@@ -2,7 +2,7 @@
 #include <chrono>
 #include <QThread>
 #include <QNetworkInterface>
-#include "demon.h"
+#include <demon.h>
 
 // define pins on the raspberry pi, UBIAS_EN is the power on/off pin for bias voltage
 // PREAMP_1/2 enables the DC voltage to power the preamp through the signal cable
@@ -389,12 +389,10 @@ void Demon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double> 
     }
 }
 
-void Demon::setI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh, float bias_Voltage,
-                      bool bias_PowerOn, bool setProperties){
+void Demon::setI2CProperties(I2cProperty i2cProperty, bool setProperties){
     if (!setProperties){
         return;
     }
-
 }
 
 void Demon::toConsole(QString data) {
@@ -465,5 +463,6 @@ void Demon::printTimestamp()
 }
 
 void Demon::sendI2CProperties(){
-    emit i2CProperties(pcaChannel, dacThresh, biasVoltage, biasPowerOn);
+    I2cProperty i2cProperty(pcaChannel, dacThresh.at(0), dacThresh.at(1), biasVoltage, biasPowerOn);
+    emit i2CProperties(i2cProperty);
 }

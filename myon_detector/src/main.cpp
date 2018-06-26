@@ -2,8 +2,8 @@
 #include <QCommandLineParser>
 #include <QObject>
 #include <QHostAddress>
-#include "custom_io_operators.h"
-#include "demon.h"
+#include <custom_io_operators.h>
+#include <demon.h>
 using namespace std;
 
 int main(int argc, char *argv[])

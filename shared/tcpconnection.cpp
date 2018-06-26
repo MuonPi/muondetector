@@ -1,4 +1,4 @@
-#include "tcpconnection.h"
+#include <tcpconnection.h>
 #include <QtNetwork>
 #include <iostream>
 
@@ -21,7 +21,8 @@ TcpConnection::TcpConnection(QString newHostName, quint16 newPort, int newVerbos
     port=newPort;
     timeout=newTimeout;
     pingInterval = newPingInterval;
-    qRegisterMetaType<QVector<float> >("QVector<float>");
+    //qRegisterMetaType<QVector<float> >("QVector<float>");
+    qRegisterMetaType<I2cProperty> ("I2cProperty");
 }
 
 TcpConnection::TcpConnection(int socketDescriptor, int newVerbose, int newTimeout, int newPingInterval, QObject *parent)
@@ -30,7 +31,8 @@ TcpConnection::TcpConnection(int socketDescriptor, int newVerbose, int newTimeou
     pingInterval = newPingInterval;
     timeout = newTimeout;
     verbose = newVerbose;
-    qRegisterMetaType<QVector<float> >("QVector<float>");
+    //qRegisterMetaType<QVector<float> >("QVector<float>");
+    qRegisterMetaType<I2cProperty> ("I2cProperty");
 }
 
 void TcpConnection::makeConnection()
@@ -104,6 +106,8 @@ void TcpConnection::onReadyRead(){
     quint16 nextCount = -1;
     QString someMsg;
     QString fileName;
+    I2cProperty i2cProperty;
+    bool setProperties;
     // first get some code (defined at the top of this file)
     // to see what kind of message this is
     in->startTransaction();
@@ -134,26 +138,21 @@ void TcpConnection::onReadyRead(){
     }
 
     if (someCode == i2cProps){
-        *in >> block;
+        *in >> i2cProperty;
+        *in >> setProperties;
     }
-
-    if (someCode == i2cRequest){
-        //emit toConsole("emit requestI2CProperties");
-        qDebug() << "emit requestI2CProperties";
-        emit requestI2CProperties();
-        return;
-    }
-
     // if this is not a complete transaction but just a part -> return
     if (!in->commitTransaction()){
+        return;
+    }
+    if (someCode == i2cRequest){
+        emit requestI2CProperties();
         return;
     }
 
     // if it's an update about I2C device status the message is stored in "block" now to handle it
     if (someCode == i2cProps){
-        //emit toConsole("sending i2cProperties");
-        std::cerr << "handle I2CProperties" << std::endl;
-        handleI2CProperties(block);
+        emit i2CProperties(i2cProperty,setProperties);
         return;
     }
 
@@ -169,6 +168,11 @@ void TcpConnection::onReadyRead(){
     }
 
     // if code says something else:
+    if (someCode == msgSig){
+        emit toConsole(someMsg);
+        return;
+    }
+
     if (someCode == ping){
         if (verbose>3){
             emit toConsole("received ping, sending answerping");
@@ -237,12 +241,12 @@ bool TcpConnection::sendFile(QString fileName){
     return writeBlock(block);
 }
 
-bool TcpConnection::sendI2CProperties(quint8 pcaChann, QVector<float> dac_Thresh,
-                         float bias_Voltage,
-                         bool bias_powerOn, bool setProperties){
+bool TcpConnection::sendI2CProperties(I2cProperty i2cProperty, bool setProperties){
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
-    out << i2cProps << pcaChann << dac_Thresh << bias_Voltage << bias_powerOn << setProperties;
+    out << i2cProps;
+    out << i2cProperty;
+    out << setProperties;
     qDebug() << "send i2cProperties";
     qDebug() << block;
 //    quint16 code;
@@ -257,36 +261,9 @@ bool TcpConnection::sendI2CPropertiesRequest(){
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out << i2cRequest;
+    qDebug() << "send I2CPropertiesRequest";
+    qDebug() << block;
     return writeBlock(block);
-}
-
-void TcpConnection::handleI2CProperties(QByteArray &block){
-    //quint16 someCode;
-    quint8 pcaChann;
-    QVector<float> dac_Thresh;
-    float bias_Voltage;
-    bool bias_powerOn, set_Properties;
-    QDataStream tempStream(&block,QIODevice::ReadOnly);
-    //qDebug() << block;
-    //tempStream >> someCode;
-    tempStream >> pcaChann;
-    tempStream >> dac_Thresh;
-    tempStream >> bias_Voltage;
-    tempStream >> bias_powerOn;
-    tempStream >> set_Properties;
-    QWarning() << pcaChann;
-    QWarning() << dac_Thresh;
-    QWarning() << bias_Voltage;
-    QWarning() << bias_powerOn;
-    QWarning() << set_Properties;
-    QWarning() << block;
-    std::cerr << pcaChann << std::endl;
-    std::cerr << dac_Thresh.at(1) << std::endl;
-    std::cerr << dac_Thresh.at(2) << std::endl;
-    std::cerr << bias_Voltage << std::endl;
-    std::cerr << bias_powerOn << std::endl;
-    std::cerr << set_Properties << std::endl;
-    emit i2CProperties(pcaChann, dac_Thresh, bias_Voltage, bias_powerOn, set_Properties);
 }
 
 bool TcpConnection::handleFileTransfer(QString fileName, QByteArray &block, quint16 nextCount){
