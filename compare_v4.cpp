@@ -295,6 +295,7 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 					rewriteToVectors.push_back(i);
 					output << -ts_diff_ns(values[i][iterator[i]], values[indexSmallest][iterator[indexSmallest]]) << "   ";
 					coincidents++;
+					iterator[i]++;
 				}
 			}
 		}
