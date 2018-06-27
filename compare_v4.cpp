@@ -179,6 +179,8 @@ void Usage()
 	cout << "		-v		  : Steigert das Verbosity-Level" << endl;
 	cout << "		-o <output>	  : Pfad/Name der Output-Datei." << endl;
 	cout << "		-b <Bereich>	  : Wahl des Koinzidenten Bereiches in [us] (Standard: 1us)." << endl;
+	cout << "							Beste Wahl: 2*TOF des Lichts zwischen den beiden am weitesten entfernten Detektoren" << endl;
+	cout << "							Zweifach, da dann durch kurz vorher auftretende random-events keine Daten verloren gehen" << endl;
 	cout << "     -m <maxWerte>     : Wahl der gleichzeitig in Vektoren eingelesenen Timestamps. Standard 10k" << endl;
 	cout << endl;
 	cout << "Geschrieben von <Marvin.Peter@physik.uni-giessen.de>" << endl;
