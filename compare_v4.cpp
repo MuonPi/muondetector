@@ -1,4 +1,4 @@
-/*                   Stand 26.06.2018
+/*                   Stand 27.06.2018
 	compare_v4 sortiert und vergleicht die Zeilen mehrerer Textdateien,
 	indem es zeitlich korrelierte Eintraege erfasst
 	und zusammen mit den Zeitdifferenzen in eine Datei schreibt
@@ -183,14 +183,14 @@ void Usage()
 	cout << endl;
 	cout << "Geschrieben von <Marvin.Peter@physik.uni-giessen.de>" << endl;
 	cout << "(Teilelemente sind geklaut von <Lukas.Nies@physik.uni-giessen.de>" << endl;
-	cout << "---Stand 26.06.2018---Bugs inclusive" << endl << endl;
+	cout << "---Stand 27.06.2018---Bugs inclusive" << endl << endl;
 }//end of Usage()
 
 void compareAlgorithm(vector<unsigned int>& iterator,
 	vector<vector<timespec> >& values,
 	double& matchKriterium,
 	ofstream& output,
-	unsigned int& fertigerVector)
+	vector<unsigned int>& rewriteToVectors)
 {
 	time_t t;
 	/*
@@ -198,10 +198,11 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 						- finde ein Match aus den anderen Vektoren (alle Werte durchgehen), Index merken!
 						- nutze aus, dass keine Werte kleiner diesem Match fuer ein Match in Frage kommen
 	*/
+	rewriteToVectors.clear();
 	bool dateiEmpty[iterator.size()];
 	for (unsigned int i = 0; i < iterator.size(); i++)
 	{
-		// remember which files were empty at the beginning
+		// remember which data vectors in "value" were empty at the beginning
 		if (values[i].size() == 0)
 		{
 			dateiEmpty[i] = true;
@@ -218,10 +219,10 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 		for (unsigned int i = 0; i < iterator.size(); i++)
 		{
 			if (dateiEmpty[i] == false) {
-				// if the vector was not empty at start but is now, it is called "fertigerVector"
+				// if the vector was not empty at start but is now, it's index is put in "rewriteToVectors"
 				if (iterator[i] >= values[i].size())
 				{
-					fertigerVector = i;
+					rewriteToVectors.push_back(i);
 					return;
 				}
 			}
@@ -229,6 +230,9 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 		unsigned int indexSmallest = 0;
 		for (unsigned int i = 0; i < iterator.size(); i++)
 		{
+			// look for index of first non empty data vector in "values" and set indexSmallest to this value
+			// indexSmallest should later be set to the number of the vector (file) that holds the smallest time value at
+			// it's individual iterator position right now
 			if (dateiEmpty[indexSmallest] == true)
 			{
 				indexSmallest++;
@@ -237,13 +241,16 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 			}
 		}
 		if (indexSmallest >= iterator.size())
-		{
+		{   // if all vectors in "values" are empty -> all files are empty, return to main program and it should stop soon
 			return;
 		}
 		for (unsigned int i = indexSmallest+1; i < iterator.size(); i++)
 		{
 			if (dateiEmpty[i] == false)
 			{
+				// really look for smallest time value at the iterator positions of the individual vectors (representing the different files) in "values"
+				// then put the index of the vector (file) that holds the smallest time value at it's iterator position
+				// (each vector in "values" represents a different file and has it's corresponding iterator in "iterator")
 				long long int diff = ts_diff_ns(values[i][iterator[i]], values[indexSmallest][iterator[indexSmallest]]);
 				if (diff > 0)
 				{
@@ -251,27 +258,42 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 				}
 			}
 		}
-		int coincidents = 0;
+		int coincidents = 0; // coincidents will later show the number of files that participate at a coincident event
 		for (unsigned int i = 0; i < iterator.size(); i++)
 		{
-			//hier wird entschieden ob es ein CoincidenceEreignis ist und es wird gleich in die Datei geschrieben
+			//hier wird entschieden ob es ein Coincidence-Ereignis ist und es wird gleich in die Datei geschrieben
 			if (dateiEmpty[i] == false) {
 				long long int tdiff = ts_diff_ns(values[i][iterator[i]], values[indexSmallest][iterator[indexSmallest]]);
 				tdiff = abs(tdiff); // [ns]
 				if ((indexSmallest != i) && (tdiff <= (matchKriterium * 1e9)))
 				{
+					// if the difference is smaller than or equal as the criterium: a coincident event has been found hooray!
+					// since we choose the criterium to be the maximum physically possible time difference for two coincident events
+					// in this specific set of data, e.g. time that light travels between the two farthest away detector stations + errors of time measurement,
+					// we can increment not only the index of the smallest but also the index of the coincidental files
+					// (we don't lose data) -> we only lose data if we are very unlucky
+					// for example: we have 3 files. every file has an individual iterator that always points at the smallest time value that has not already
+					// been checked for coincidence. file 1 has the smallest time value. we look at an interval from time 1 to time 1 + some interval.
+					// if nothing can be found -> increment iterator 1
+					// if a coincidence is found -> increment iterators of all at the coincidence participating files. Why?
+					// if file 1 and file 3 have coincidence we know that time of file 2 will be greater than time 1 + interval
+					// only in the very unlikely case that the real coincidence of the cosmic shower is between file 2 and file 3
+					// AND file 1 is a random event exactly in the time range time 3 - interval up to time 3 - (time 2 - time  3)
+					// we would lose data
+					// so should we increase the interval to exclude this error is a question for another time. To be continued...
 					if (coincidents < 1)
 					{
 						t = values[indexSmallest][iterator[indexSmallest]].tv_sec;
 						struct tm *tm = localtime(&t);
 						char date[20];
 						strftime(date, sizeof(date), "%Y.%m.%d %H:%M:%S", tm);
-						output << date << "  " << indexSmallest << "  " << values[indexSmallest][iterator[indexSmallest]].tv_sec << ".";
+						output << date << "  " << values[indexSmallest][iterator[indexSmallest]].tv_sec << ".";
 						output.width(9);
 						output << setfill('0') << values[indexSmallest][iterator[indexSmallest]].tv_nsec << "  ";
 						coincidents++;
 					}
-					output << i << "-" << indexSmallest << "  " << -ts_diff_ns(values[i][iterator[i]], values[indexSmallest][iterator[indexSmallest]]) << "   ";
+					rewriteToVectors.push_back(i);
+					output << -ts_diff_ns(values[i][iterator[i]], values[indexSmallest][iterator[indexSmallest]]) << "   ";
 					coincidents++;
 				}
 			}
@@ -439,7 +461,7 @@ int main(int argc, char*argv[])
 	values.resize(dateiName.size());
 	//values [index der Datei] [werte in timespec]
 	vector<unsigned int> iterator;
-	unsigned int fertigerVector = 0;
+	vector<unsigned int> rewriteToVectors;
 	for (unsigned int i = 0; i < dateiName.size(); i++)
 	{
 		iterator.push_back(0);
@@ -455,7 +477,7 @@ int main(int argc, char*argv[])
 	{
 		readToVector(*data[i], values[i], maxTimestampsInVector, column1);
 	}
-	compareAlgorithm(iterator, values, matchKriterium, output, fertigerVector);
+	compareAlgorithm(iterator, values, matchKriterium, output, rewriteToVectors);
 	try
 	{
 		prozentCounter++;
@@ -483,9 +505,11 @@ int main(int argc, char*argv[])
 	bool allDataEOF = false;
 	while (!allDataEOF)
 	{
-		iterator[fertigerVector] = 0;
-		readToVector(*data[fertigerVector], values[fertigerVector], maxTimestampsInVector, column1);
-		compareAlgorithm(iterator, values, matchKriterium, output, fertigerVector);
+		for (auto i : rewriteToVectors) {
+			iterator[i] = 0;		
+			readToVector(*data[i], values[i], maxTimestampsInVector, column1);
+		}
+		compareAlgorithm(iterator, values, matchKriterium, output, rewriteToVectors);
 		try
 		{
 			prozentCounter++;
@@ -515,9 +539,11 @@ int main(int argc, char*argv[])
 	// ab hier: letzte reste die noch in den Vektoren sind, werden abgearbeitet
 	for (int i = 0; i < dateiName.size() * 2; i++)
 	{
-		iterator[fertigerVector] = 0;
-		readToVector(*data[fertigerVector], values[fertigerVector], maxTimestampsInVector, column1);
-		compareAlgorithm(iterator, values, matchKriterium, output, fertigerVector);
+		for (auto i : rewriteToVectors) {
+			iterator[i] = 0;
+			readToVector(*data[i], values[i], maxTimestampsInVector, column1);
+		}
+		compareAlgorithm(iterator, values, matchKriterium, output, rewriteToVectors);
 		try
 		{
 			prozentCounter++;
