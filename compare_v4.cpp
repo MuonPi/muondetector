@@ -218,6 +218,7 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 	{
 		//welcher hat den kleinsten Wert? (values und iterator haben die gleiche Laenge)
 		//iterator enthaelt die aktuellen Indizes bei denen die einzelnen Vektoren gelesen werden sollen
+		rewriteToVectors.clear();
 		for (unsigned int i = 0; i < iterator.size(); i++)
 		{
 			if (dateiEmpty[i] == false) {
@@ -225,9 +226,11 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 				if (iterator[i] >= values[i].size())
 				{
 					rewriteToVectors.push_back(i);
-					return;
 				}
 			}
+		}
+		if (!rewriteToVectors.empty()) {
+			return;
 		}
 		unsigned int indexSmallest = 0;
 		for (unsigned int i = 0; i < iterator.size(); i++)
@@ -458,7 +461,7 @@ int main(int argc, char*argv[])
 
 	if (verbose)
 	{
-		cout << endl << "Starte nun den Algorithmus...." << endl << endl;
+		cout << endl << "Starte Vergleich von " << overallLines << " Timestamps in " << dateiName.size() <<" Files...." << endl << endl;
 	}
 	vector<vector<timespec> > values;
 	values.resize(dateiName.size());
