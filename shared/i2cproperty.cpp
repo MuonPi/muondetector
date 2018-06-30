@@ -1,7 +1,7 @@
 #include <i2cproperty.h>
 
 
-I2cProperty::I2cProperty(qint8 pcaChannel, float dac_Thresh1, float dac_Thresh2, float biasVoltage, bool biasPowerOn){
+I2cProperty::I2cProperty(int pcaChannel, float dac_Thresh1, float dac_Thresh2, float biasVoltage, bool biasPowerOn){
     pcaChann = pcaChannel;
     thresh1 = dac_Thresh1;
     thresh2 = dac_Thresh2;

@@ -123,6 +123,10 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     }
 }
 
+Demon::~Demon(){
+    emit closeConnection();
+}
+
 void Demon::connectToGps(){
     // before connecting to gps we have to make sure all other programs are closed
     // and serial echo is off
@@ -150,6 +154,7 @@ void Demon::connectToGps(){
     connect(this, &Demon::UBXSetCfgMsg, qtGps, &QtSerialUblox::UBXSetCfgMsg);
     connect(this, &Demon::UBXSetCfgRate, qtGps, &QtSerialUblox::UBXSetCfgRate);
     connect(this, &Demon::sendPoll, qtGps, &QtSerialUblox::sendPoll);
+    //connect(this, &Demon::closeConnection, gpsThread, &QThread::quit);
     // connect cfgError signal to output, could also create special errorFunction
     connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Demon::toConsole);
 
@@ -187,10 +192,13 @@ void Demon::incomingConnection(qintptr socketDescriptor){
     connect(thread, &QThread::started, tcpConnection, &TcpConnection::receiveConnection);
     connect(thread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
-    QObject::connect(tcpConnection, &TcpConnection::toConsole, this, &Demon::toConsole);
+    connect(this, &Demon::closeConnection, tcpConnection, &TcpConnection::closeConnection);
+    connect(tcpConnection, &TcpConnection::toConsole, this, &Demon::toConsole);
     connect(this, &Demon::i2CProperties, tcpConnection, &TcpConnection::sendI2CProperties);
     connect(tcpConnection, &TcpConnection::requestI2CProperties, this, &Demon::sendI2CProperties);
     connect(tcpConnection, &TcpConnection::i2CProperties, this, &Demon::setI2CProperties);
+    // connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
+    // why does this not work?? Probably because if QCoreApplication knows when it quits, tcpConnection already deleted :(
     thread->start();
 }
 
@@ -397,6 +405,29 @@ void Demon::setI2CProperties(I2cProperty i2cProperty, bool setProperties){
     if (!setProperties){
         return;
     }
+    if (i2cProperty.pcaChann>=0){
+        pcaChannel = i2cProperty.pcaChann;
+        pca->setOutputPorts(pcaChannel);
+    }
+    if (i2cProperty.thresh1>=0){
+        dacThresh[0] = i2cProperty.thresh1;
+        dac->setVoltage(0,dacThresh.at(0));
+    }
+    if (i2cProperty.thresh2>=0){
+        dacThresh[1] = i2cProperty.thresh2;
+        dac->setVoltage(1,dacThresh.at(1));
+    }
+    if (i2cProperty.bias_Voltage>=0){
+        biasVoltage = i2cProperty.bias_Voltage;
+        dac->setVoltage(2,biasVoltage);
+    }
+    biasPowerOn = i2cProperty.bias_powerOn;
+    if (i2cProperty.bias_powerOn){
+        digitalWrite(UBIAS_EN, 1);
+    }else{
+        digitalWrite(UBIAS_EN, 0);
+    }
+    sendI2CProperties();
 }
 
 void Demon::toConsole(QString data) {

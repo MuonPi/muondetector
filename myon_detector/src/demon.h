@@ -18,13 +18,13 @@ public:
         float *new_dacThresh, float new_biasVoltage, bool new_dumpRaw, int new_baudrate,
         bool new_configGnss, QString new_PeerAddress, quint16 new_PpeerPort,
         QString new_serverAddress, quint16 new_serverPort, bool new_showout, QObject *parent = 0);
+    ~Demon();
 	void configGps();
 	void loop();
 
 public slots:
     void connectToGps();
     void connectToServer();
-
     void displaySocketError(int socketError, QString message);
 	void displayError(QString message);
     void toConsole(QString data);
@@ -46,6 +46,7 @@ public slots:
 signals:
     void sendFile(QString fileName);
     void sendMsg(QString msg);
+    void closeConnection();
     void sendPoll(uint16_t msgID, uint8_t port);
     void i2CProperties(I2cProperty i2cProperty, bool set_Properties = false);
 	void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
@@ -63,7 +64,7 @@ private:
     bool biasPowerOn = false;
     ADS1115 *adc;
     PCA9536 *pca;
-    quint8 pcaChannel;
+    int pcaChannel;
     LM75 *lm75;
     TcpConnection * tcpConnection = nullptr;
     QMap <uint16_t, int> messageConfiguration;

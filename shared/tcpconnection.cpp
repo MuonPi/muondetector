@@ -25,6 +25,15 @@ TcpConnection::TcpConnection(QString newHostName, quint16 newPort, int newVerbos
     qRegisterMetaType<I2cProperty> ("I2cProperty");
 }
 
+TcpConnection::~TcpConnection(){
+    delete peerAddress;
+    delete localAddress;
+    delete file;
+    delete in;
+    delete t;
+    // sendCode(quitConnection); // does not work.... why?? WHYY????
+}
+
 TcpConnection::TcpConnection(int socketDescriptor, int newVerbose, int newTimeout, int newPingInterval, QObject *parent)
     : QObject(parent), socketDescriptor(socketDescriptor)//, text(data)
 {
@@ -335,7 +344,8 @@ bool TcpConnection::writeBlock(QByteArray &block){
             delay(100);
         }
     }
-    emit toConsole("tcp unconnected state before wait for bytes written");
+    emit toConsole("tcp unconnected state before wait for bytes written, closing connection");
+    this->thread()->quit();
     return false;
 }
 
@@ -375,12 +385,4 @@ void TcpConnection::delay(int millisecondsWait)
     delay.connect(&delay, &QTimer::timeout, &loop, &QEventLoop::quit);
     delay.start(millisecondsWait);
     loop.exec();
-}
-
-TcpConnection::~TcpConnection(){
-    delete peerAddress;
-    delete localAddress;
-    delete file;
-    delete in;
-    delete t;
 }
