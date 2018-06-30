@@ -41,7 +41,7 @@ void QtSerialUblox::makeConnection(){
                           .arg(_portName)
                           .arg(serialPort->errorString())
                           .arg(timeout));
-        serialPort->deleteLater();
+        delete serialPort;
         delay(timeout);
         emit gpsRestart();
         this->deleteLater();

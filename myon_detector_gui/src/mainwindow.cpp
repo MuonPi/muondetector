@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QKeyEvent>
 #include <QDebug>
+#include <QErrorMessage>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -140,7 +141,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::updateI2CProperties(I2cProperty i2cProperty, bool setProperties){
     if (!setProperties){
-        qDebug() << "updateI2CProperties executed";
         QVector<float> dacThresh = {i2cProperty.thresh1, i2cProperty.thresh2};
         updateUiProperties(0, (int)(1000*dacThresh.at(0)), (int)(1000*dacThresh.at(1)));
                 // uartBufferValue to be replaced with the correct value
@@ -150,7 +150,6 @@ void MainWindow::updateI2CProperties(I2cProperty i2cProperty, bool setProperties
 
 void MainWindow::uiSetDisconnectedState(){
     // set button and color of label
-    emit closeConnection();
     ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGray;}");
     ui->ipStatusLabel->setText("not connected");
     ui->ipButton->setText("connect");
@@ -178,13 +177,13 @@ void MainWindow::updateUiProperties(int uartBufferValue, int discr1SliderValue,
         ui->discr1Slider->setEnabled(true);
         ui->discr1Slider->setValue(discr1SliderValue);
         ui->discr1Edit->setEnabled(true);
-        ui->discr1Edit->setText(""+discr1SliderValue);
+        ui->discr1Edit->setText(QString::number(discr1SliderValue));
     }
     if (!(discr2SliderValue<0)){
         ui->discr2Slider->setEnabled(true);
         ui->discr2Slider->setValue(discr2SliderValue);
         ui->discr2Edit->setEnabled(true);
-        ui->discr2Edit->setText(""+discr1SliderValue);
+        ui->discr2Edit->setText(QString::number(discr2SliderValue));
     }
 }
 
@@ -204,13 +203,14 @@ void MainWindow::on_ipButton_clicked()
     if (connectedToDemon){
         // it is connected and the button shows "disconnect" -> here comes disconnect code
         connectedToDemon = false;
+        emit closeConnection();
         uiSetDisconnectedState();
         return;
     }
     QString ipBoxText = ui->ipBox->currentText();
     QStringList ipAndPort= ipBoxText.split(':');
     if (ipAndPort.size()!=2){
-        qDebug() << "error, size of ipAndPort not 2";
+        QErrorMessage("error, size of ipAndPort not 2");
     }
     QString ipAddress = ipAndPort.at(0);
     if (ipAddress == "local" || ipAddress == "localhost"){

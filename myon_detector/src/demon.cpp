@@ -126,6 +126,9 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
 void Demon::connectToGps(){
     // before connecting to gps we have to make sure all other programs are closed
     // and serial echo is off
+    if (gpsdevname.isEmpty()){
+        return;
+    }
     QProcess prepareSerial;
     QString command = "stty";
     QStringList args = {"-F", "/dev/ttyAMA0", "-echo", "-onlcr"};
@@ -139,7 +142,8 @@ void Demon::connectToGps(){
     // connect all signals not coming from Demon to gps
     connect(qtGps,&QtSerialUblox::toConsole, this, &Demon::gpsToConsole);
     connect(gpsThread, &QThread::started, qtGps, &QtSerialUblox::makeConnection);
-    connect(qtGps, &QtSerialUblox::destroyed, gpsThread, &QThread::deleteLater);
+    connect(qtGps, &QtSerialUblox::destroyed, gpsThread, &QThread::quit);
+    connect(gpsThread, &QThread::finished, gpsThread, &QThread::deleteLater);
     connect(qtGps, &QtSerialUblox::gpsRestart, this, &Demon::connectToGps);
     // connect all command signals for ublox module here
     connect(this, &Demon::UBXSetCfgPrt, qtGps, &QtSerialUblox::UBXSetCfgPrt);

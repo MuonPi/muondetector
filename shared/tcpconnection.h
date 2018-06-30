@@ -22,7 +22,7 @@ public:
 
 signals:
     void stoppedConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort,
-                           quint32 timeoutTime, quint32 connectionDuration);
+                           quint32 timeoutTime = 0, quint32 connectionDuration = 0);
     void madeConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort);
     void connectionTimeout(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort,
                            quint32 timeoutTime, quint32 connectionDuration);

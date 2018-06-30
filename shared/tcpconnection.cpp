@@ -189,7 +189,12 @@ void TcpConnection::onReadyRead(){
         return;
     }
     if (someCode == quitConnection){
-        this->deleteLater();
+        emit stoppedConnection(peerAddress->toString(), peerPort, localAddress->toString(), localPort);
+        if(verbose>3){
+            emit toConsole(QString("received quitConnection signal from peer, connection lasted "
+                                   +QString::number(time(NULL)-firstConnection)));
+        }
+        this->thread()->quit();
         return;
     }
     if (someCode == timeoutSig){
@@ -247,13 +252,6 @@ bool TcpConnection::sendI2CProperties(I2cProperty i2cProperty, bool setPropertie
     out << i2cProps;
     out << i2cProperty;
     out << setProperties;
-    qDebug() << "send i2cProperties";
-    qDebug() << block;
-//    quint16 code;
-//    QDataStream tempStream(&block, QIODevice::ReadOnly);
-//    tempStream >> code;
-//    qDebug() << code;
-//    handleI2CProperties(block);
     return writeBlock(block);
 }
 
@@ -261,8 +259,6 @@ bool TcpConnection::sendI2CPropertiesRequest(){
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out << i2cRequest;
-    qDebug() << "send I2CPropertiesRequest";
-    qDebug() << block;
     return writeBlock(block);
 }
 
