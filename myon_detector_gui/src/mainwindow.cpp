@@ -37,18 +37,10 @@ MainWindow::MainWindow(QWidget *parent) :
     //ui->ipBox->installEventFilter(this);
 
     // setup colors
-    ui->ipStatusLabel->setStyleSheet("QLabel {color : darkGray;}");
+    ui->ipStatusLabel->setStyleSheet("QLabel {color : darkGray;}");/*
     ui->discr1Hit->setStyleSheet("QLabel {background-color : darkRed;}");
-    ui->discr2Hit->setStyleSheet("QLabel {background-color : darkRed;}");
-    /*QPalette palette = ui->ipStatusLabel->palette();
-    palette.setColor(ui->ipStatusLabel->foregroundRole(),Qt::darkGray);
-    ui->ipStatusLabel->setPalette(palette);
-    palette = ui->discr1Hit->palette();
-    palette.setColor(ui->discr1Hit->backgroundRole(),Qt::darkRed);
-    ui->discr1Hit->setPalette(palette);
-    palette.setColor(ui->discr2Hit->backgroundRole(),Qt::darkRed);
-    ui->discr2Hit->setPalette(palette);
-*/
+    ui->discr2Hit->setStyleSheet("QLabel {background-color : darkRed;}");*/
+
     // setup event filter
     ui->ipBox->installEventFilter(this);
     ui->ipButton->installEventFilter(this);
@@ -210,7 +202,9 @@ void MainWindow::on_ipButton_clicked()
     QString ipBoxText = ui->ipBox->currentText();
     QStringList ipAndPort= ipBoxText.split(':');
     if (ipAndPort.size()!=2){
-        QErrorMessage("error, size of ipAndPort not 2");
+        QErrorMessage errorM;
+        QString errorMess = "error, size of ipAndPort not 2";
+        errorM.showMessage(errorMess);
     }
     QString ipAddress = ipAndPort.at(0);
     if (ipAddress == "local" || ipAddress == "localhost"){
