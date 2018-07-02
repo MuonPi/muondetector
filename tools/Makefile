@@ -8,7 +8,7 @@ OBJS = $(SHARED_PATH)custom_i2cdetect.o $(SHARED_PATH)i2cbusses.o $(SHARED_PATH)
 C = gcc -std=c11
 CPP = g++ -std=c++11
 LFLAGS = -O -lwiringPi -lpigpio
-CFLAGS = -c -O
+CFLAGS = -c -O -I $(SHARED_PATH)
 	
 all: shared cosmic_i2c_test cosmic_gpio_ratecounter
 	
@@ -18,10 +18,14 @@ cosmic_gpio_ratecounter : $(OBJS) cosmic_gpio_ratecounter.o
 cosmic_i2c_test : $(OBJS) cosmic_i2c_test.o
 	$(CPP) $(OBJS) cosmic_i2c_test.o $(LFLAGS) -o cosmic_i2c_test
 
+cosmic_gpio_ratecounter.o : cosmic_gpio_ratecounter.cpp
+	$(CPP) $(CFLAGS) cosmic_gpio_ratecounter.cpp
+
+cosmic_i2c_test.o : cosmic_i2c_test.cpp
+	$(CPP) $(CFLAGS) cosmic_i2c_test.cpp
 
 shared : 
 	$(MAKE) -C $(SHARED_PATH)
 
 clean :	
 	\rm -f *.o *~ cosmic_i2c_test cosmic_gpio_ratecounter
-
