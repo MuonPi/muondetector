@@ -8,6 +8,7 @@ C = gcc -std=c11
 CPP = g++ -std=c++11
 LFLAGS = -O -lwiringPi -lpigpio
 CFLAGS = -c -O
+SOURCE = ../shared/i2c/
 	
 all: cosmic_i2c_test cosmic_gpio_ratecounter
 	

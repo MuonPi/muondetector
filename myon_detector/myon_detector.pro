@@ -28,9 +28,9 @@ SOURCES += src/main.cpp \
     src/qtserialublox.cpp \
     src/qtserialublox_processmessages.cpp \
     src/demon.cpp \
-    src/i2c/i2cdevices.cpp \
-    src/i2c/custom_i2cdetect.c \
-    src/i2c/i2cbusses.c \
+    ../shared/i2c/i2cdevices.cpp \
+    ../shared/i2c/custom_i2cdetect.c \
+    ../shared/i2c/i2cbusses.c \
     ../shared/i2cproperty.cpp
 
 HEADERS += \
@@ -42,11 +42,11 @@ HEADERS += \
     ../shared/tcpconnection.h \
     src/qtserialublox.h \
     src/demon.h \
-    src/i2c/addresses.h \
-    src/i2c/custom_i2cdetect.h \
-    src/i2c/i2cbusses.h \
-    src/i2c/i2cdevices.h \
-    src/i2c/linux/i2c-dev.h \
+    ../shared/i2c/addresses.h \
+    ../shared/i2c/custom_i2cdetect.h \
+    ../shared/i2c/i2cbusses.h \
+    ../shared/i2c/i2cdevices.h \
+    ../shared/i2c/linux/i2c-dev.h \
     ../shared/i2cproperty.h
 
 OBJECTS_DIR += created_files
