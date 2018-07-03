@@ -1,7 +1,7 @@
-#ifndef MESSAGECODER_H
-#define MESSAGECODER_H
+#ifndef TCPMESSAGE_H
+#define TCPMESSAGE_H
 #include <QObject>
-#include <QByteArray>
+//#include <QByteArray>
 #include <QVector>
 
 //class  MessageCoder : public QObject{
@@ -16,10 +16,26 @@
 //union MessageContent{
 
 //};
-struct TcpMessage{
+union MyUnion{
+public:
+    int i;
+    bool b;
+    float f;
+};
+
+struct MessageContent{
+    unsigned int type;
+    MyUnion myUnion;
+    friend QDataStream& operator<<(QDataStream& in, MessageContent& content);
+    friend QDataStream& operator>>(QDataStream& out, MessageContent& content);
+};
+class TcpMessage{
+public:
     QVector<int> information;
-    QVector<QVariant<int, float, bool> > data;
+    QVector<MessageContent> data;
+    friend QDataStream& operator<<(QDataStream& in, TcpMessage& message);
+    friend QDataStream& operator>>(QDataStream& out, TcpMessage& message);
 };
 
 
-#endif // MESSAGECODER_H
+#endif // TCPMESSAGE_H

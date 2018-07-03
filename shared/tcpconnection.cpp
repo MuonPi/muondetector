@@ -1,6 +1,7 @@
 #include <tcpconnection.h>
 #include <QtNetwork>
 #include <iostream>
+#include <QDataStream>
 
 const quint16 ping = 123;
 const quint16 msgSig = 246;
@@ -11,6 +12,7 @@ const quint16 quitConnection = 101;
 const quint16 timeoutSig = 138;
 const quint16 i2cProps = 275;
 const quint16 i2cRequest = 271;
+const quint16 msgCode = 333;
 
 TcpConnection::TcpConnection(QString newHostName, quint16 newPort, int newVerbose, int newTimeout,
                              int newPingInterval, QObject *parent)
@@ -21,7 +23,8 @@ TcpConnection::TcpConnection(QString newHostName, quint16 newPort, int newVerbos
     port=newPort;
     timeout=newTimeout;
     pingInterval = newPingInterval;
-    //qRegisterMetaType<QVector<float> >("QVector<float>");
+    //qRegisterMetaType<QVector<QVariant> >("QVector<QVariant>");
+    qRegisterMetaType<TcpMessage> ("TcpMessage");
     qRegisterMetaType<I2cProperty> ("I2cProperty");
 }
 
@@ -215,10 +218,6 @@ void TcpConnection::onReadyRead(){
 }
 
 bool TcpConnection::sendFile(QString fileName){
-    if (!tcpSocket) {
-        emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
-        return false;
-    }
     if (!fileName.isEmpty()){
         if (file){
             file->close();
@@ -300,11 +299,17 @@ bool TcpConnection::handleFileTransfer(QString fileName, QByteArray &block, quin
     return true;
 }
 
+bool TcpConnection::sendMessage(TcpMessage tcpMessage){
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_0);
+    out << msgCode;
+    out << tcpMessage;
+    return writeBlock(block);
+}
+
+
 bool TcpConnection::sendText(const quint16 someCode, QString someText){
-    if (!tcpSocket) {
-        emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
-        return false;
-    }
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
@@ -320,10 +325,6 @@ bool TcpConnection::sendText(const quint16 someCode, QString someText){
 }
 
 bool TcpConnection::sendCode(const quint16 someCode){
-    if (!tcpSocket) {
-        emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
-        return false;
-    }
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out.setVersion(QDataStream::Qt_4_0);
@@ -332,6 +333,10 @@ bool TcpConnection::sendCode(const quint16 someCode){
 }
 
 bool TcpConnection::writeBlock(QByteArray &block){
+    if (!tcpSocket) {
+        emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
+        return false;
+    }
     tcpSocket->write(block);
     for(int i = 0; i<3; i++){
         if(!tcpSocket->state()==QTcpSocket::UnconnectedState){
