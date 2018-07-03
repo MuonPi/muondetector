@@ -1,17 +1,25 @@
-#ifndef TCPMESSAGE_H
-#define TCPMESSAGE_H
+#ifndef MESSAGECODER_H
+#define MESSAGECODER_H
+#include <QObject>
+#include <QByteArray>
+#include <QVector>
 
-template <typename T> class TcpMessage
-{
-public:
-    TcpMessage() : value(){}
-    TcpMessage(const T val);
-    const T& operator()(){
-        return value;
-    }
+//class  MessageCoder : public QObject{
+//    Q_OBJECT
+//public:
+//MessageCoder(QObject* parent = 0);
 
-private:
-    T value;
+//private:
+//QByteArray block;
+//};
+
+//union MessageContent{
+
+//};
+struct TcpMessage{
+    QVector<int> information;
+    QVector<QVariant<int, float, bool> > data;
 };
 
-#endif // TCPMESSAGE_H
+
+#endif // MESSAGECODER_H
