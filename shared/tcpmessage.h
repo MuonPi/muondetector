@@ -26,13 +26,14 @@ public:
 struct MessageContent{
     unsigned int type;
     MyUnion myUnion;
-    friend QDataStream& operator<<(QDataStream& in, MessageContent& content);
+    friend QDataStream& operator<<(QDataStream& in, const MessageContent& content);
     friend QDataStream& operator>>(QDataStream& out, MessageContent& content);
 };
 class TcpMessage{
 public:
     QVector<int> information;
     QVector<MessageContent> data;
+    friend QDataStream& operator<<(QDataStream& in, const TcpMessage& message);
     friend QDataStream& operator<<(QDataStream& in, TcpMessage& message);
     friend QDataStream& operator>>(QDataStream& out, TcpMessage& message);
 };

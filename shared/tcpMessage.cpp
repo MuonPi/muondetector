@@ -4,7 +4,7 @@
 //MessageCoder::MessageCoder(): QObject(parent){
 
 //}
-QDataStream& operator<<(QDataStream& in, MessageContent& content){
+QDataStream& operator<<(QDataStream& in, const MessageContent& content){
     in << content.type;
     switch(content.type){
     case 0: in << content.myUnion.i;
@@ -34,9 +34,16 @@ QDataStream& operator>>(QDataStream& out, MessageContent& content){
     return out;
 }
 
-QDataStream& operator<<(QDataStream& in, TcpMessage& message) {
+QDataStream& operator<<(QDataStream& in, const TcpMessage& message) {
     in << message.information << message.data;
     //in << message.data;
+    return in;
+}
+
+QDataStream& operator<<(QDataStream& in, TcpMessage& message) {
+    in << message.information << message.data;
+    // in << message.data;
+    // ausgabe, welche funktion aufgerufen wird hinzufuegen
     return in;
 }
 
