@@ -46,8 +46,8 @@ public slots:
     bool sendI2CPropertiesRequest();
 
 private:
-    bool handleFileTransfer(QString fileName, QByteArray &block, quint16 nextCount);
-    bool writeBlock(QByteArray &block);
+    bool handleFileTransfer(QString fileName, QByteArray& block, quint16 nextCount);
+    bool writeBlock(QByteArray& block);
     int timeout;
     int verbose;
     int pingInterval;

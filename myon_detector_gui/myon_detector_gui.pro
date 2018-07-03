@@ -37,7 +37,8 @@ SOURCES += \
 HEADERS += \
         ../shared/tcpconnection.h \
         src/mainwindow.h \
-    ../shared/i2cproperty.h
+    ../shared/i2cproperty.h \
+    ../shared/tcpmessage.h
 
 FORMS += \
         src/mainwindow.ui

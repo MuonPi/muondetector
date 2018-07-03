@@ -47,7 +47,8 @@ HEADERS += \
     ../shared/i2c/i2cbusses.h \
     ../shared/i2c/i2cdevices.h \
     ../shared/i2c/linux/i2c-dev.h \
-    ../shared/i2cproperty.h
+    ../shared/i2cproperty.h \
+    ../shared/tcpmessage.h
 
 OBJECTS_DIR += created_files
 
