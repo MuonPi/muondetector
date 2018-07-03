@@ -1,13 +1,35 @@
+#include <stdio.h>
+#include <signal.h>
+
 #include <QCoreApplication>
 #include <QCommandLineParser>
 #include <QObject>
 #include <QHostAddress>
+
 #include <custom_io_operators.h>
 #include <demon.h>
+
 using namespace std;
+
+/* Signal Handler for SIGINT */
+void sigintHandler(int sig_num)
+{
+    /* Reset handler to catch SIGINT next time.
+       Refer http://en.cppreference.com/w/c/program/signal */
+    printf("killing process %d\n",getpid());
+//    signal(SIGINT, SIG_IGN);
+//    printf("\n terminated using Ctrl+C \n");
+    fflush(stdout);
+    exit(0);
+}
 
 int main(int argc, char *argv[])
 {
+	/* Set the SIGINT (Ctrl-C) signal handler to sigintHandler 
+       Refer http://en.cppreference.com/w/c/program/signal */
+    signal(SIGINT, sigintHandler);
+	signal (SIGQUIT, sigintHandler);
+	
 	QCoreApplication a(argc, argv);
 	QCoreApplication::setApplicationName("myon_detector");
     QCoreApplication::setApplicationVersion("1.0");
