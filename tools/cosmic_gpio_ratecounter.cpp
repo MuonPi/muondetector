@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <algorithm>
+#include <cctype>
 #include <pigpio.h>
 #include "i2cdevices.h"
 
@@ -93,6 +95,7 @@ void Usage(const char* progname)
 	cout<<"				implies options -P and -i"<<endl;
 	cout<<"	-i <increment>	: 	specify scan increment for parameter scan"<<endl;
 	cout<<"				implies options -P and -s"<<endl;
+	cout<<"	-b <On|Off>	: 	switch on/off preamp voltage"<<endl;
 	cout<<"	-g		: 	additional gain switch for peak detector"<<endl;
 	cout<<"	-a		: 	measure single hit analog amplitudes of adc (in V) and output them on stdout"<<endl;
 	cout<<"	-d		: 	decay mode - print out succesive XOR hits which are delayed by less than 100 us"<<endl;
@@ -110,7 +113,13 @@ void Usage(const char* progname)
 	cout<<""<<endl<<endl;
 }//end of Usage()
 
-
+inline bool caseInsCharCompareN(char a, char b) {
+   return(toupper(a) == toupper(b));
+}
+bool caseInsCompare(const string& s1, const string& s2) {
+   return((s1.size() == s2.size()) &&
+          equal(s1.begin(), s1.end(), s2.begin(), caseInsCharCompareN));
+}
 
 int main(int argc, char** argv) {
 	
@@ -129,13 +138,14 @@ int main(int argc, char** argv) {
 	};
 	vector<parset_t> parset_list;
 	bool high_gain = false;
+	char preamps_on = -1;
 	bool show_amplitudes = false;
 	bool decay_mode = false;
 	
 	//cout<<"prog name is "<<string(argv[0])<<endl;
 	
 	int ch;
-    while ((ch = getopt(argc, argv, "n:s:p:P:t:i:gahd?")) != EOF)
+    while ((ch = getopt(argc, argv, "n:s:p:P:t:i:gb:ahd?")) != EOF)
     {
        string str, parname;
        size_t pos;
@@ -207,6 +217,12 @@ int main(int argc, char** argv) {
 		case 'd':
 			decay_mode = true;
 			break;
+		case 'b':
+			str = string(optarg);
+			if (caseInsCompare(str, string("On"))) preamps_on = 1;
+			else if (caseInsCompare(str, string("Off"))) preamps_on = 0;
+			//cout<<"premps_on="<<(int)preamps_on<<endl;
+			break;
 		case 'h':
 		case '?':
 			Usage(argv[0]);
@@ -257,9 +273,11 @@ int main(int argc, char** argv) {
 	gpioWrite(UBIAS_EN, BIAS_ON);
 	bool powerOn = BIAS_ON;
 	gpioSetMode(PREAMP_1, PI_OUTPUT);
-	gpioWrite(PREAMP_1, 1);
 	gpioSetMode(PREAMP_2, PI_OUTPUT);
-	gpioWrite(PREAMP_2, 1);
+	if (preamps_on==0 ||  preamps_on==1) {
+		gpioWrite(PREAMP_1, preamps_on);
+		gpioWrite(PREAMP_2, preamps_on);
+	}
 	gpioSetMode(GAIN_HL, PI_OUTPUT);
 	gpioWrite(GAIN_HL, high_gain);
 
@@ -272,8 +290,8 @@ int main(int argc, char** argv) {
 	LM75 tempSensor("/dev/i2c-1", LM75_ADDR);
 	ADS1115 adc("/dev/i2c-1", ADC_ADDR);
 	adc.setPga(ADS1115::PGA2V);
-	adc.setRate(ADS1115::RATE128);
-	adc.setAGC(true);
+	adc.setRate(ADS1115::RATE475);
+	adc.setAGC(false);
 	PCA9536 pca("/dev/i2c-1", IO_ADDR);
 	pca.setOutputPorts(0x03);
 	pca.setOutputState(0x00);
