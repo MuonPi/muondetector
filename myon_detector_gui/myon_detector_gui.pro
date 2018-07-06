@@ -32,12 +32,14 @@ SOURCES += \
         ../shared/tcpconnection.cpp \
         src/main.cpp \
         src/mainwindow.cpp \
-    ../shared/i2cproperty.cpp
+    ../shared/i2cproperty.cpp \
+    ../shared/tcpmessage.cpp
 
 HEADERS += \
         ../shared/tcpconnection.h \
         src/mainwindow.h \
-    ../shared/i2cproperty.h
+    ../shared/i2cproperty.h \
+    ../shared/tcpmessage.h
 
 FORMS += \
         src/mainwindow.ui

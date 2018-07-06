@@ -9,12 +9,12 @@ I2cProperty::I2cProperty(int pcaChannel, float dac_Thresh1, float dac_Thresh2, f
     bias_powerOn = biasPowerOn;
 }
 
-QDataStream &operator<<(QDataStream &in, I2cProperty &property) {
+QDataStream& operator<<(QDataStream& in, I2cProperty& property) {
     in << property.pcaChann << property.thresh1 << property.thresh2 << property.bias_Voltage << property.bias_powerOn;
     return in;
 }
 
-QDataStream &operator>>(QDataStream &out, I2cProperty &property) {
+QDataStream& operator>>(QDataStream& out, I2cProperty& property) {
     out >> property.pcaChann >> property.thresh1 >> property.thresh2 >> property.bias_Voltage >> property.bias_powerOn;
     return out;
 }

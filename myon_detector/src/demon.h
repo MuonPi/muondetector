@@ -8,6 +8,7 @@
 #include <custom_io_operators.h>
 #include <qtserialublox.h>
 #include <i2c/i2cdevices.h>
+#include <tcpmessage.h>
 
 class Demon : public QTcpServer
 {
@@ -46,6 +47,7 @@ public slots:
 signals:
     void sendFile(QString fileName);
     void sendMsg(QString msg);
+    void sendMessage(TcpMessage tcpMessage);
     void closeConnection();
     void sendPoll(uint16_t msgID, uint8_t port);
     void i2CProperties(I2cProperty i2cProperty, bool set_Properties = false);

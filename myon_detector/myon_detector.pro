@@ -31,7 +31,8 @@ SOURCES += src/main.cpp \
     ../shared/i2c/i2cdevices.cpp \
     ../shared/i2c/custom_i2cdetect.c \
     ../shared/i2c/i2cbusses.c \
-    ../shared/i2cproperty.cpp
+    ../shared/i2cproperty.cpp \
+    ../shared/tcpmessage.cpp
 
 HEADERS += \
     src/custom_io_operators.h \
@@ -47,7 +48,8 @@ HEADERS += \
     ../shared/i2c/i2cbusses.h \
     ../shared/i2c/i2cdevices.h \
     ../shared/i2c/linux/i2c-dev.h \
-    ../shared/i2cproperty.h
+    ../shared/i2cproperty.h \
+    ../shared/tcpmessage.h
 
 OBJECTS_DIR += created_files
 

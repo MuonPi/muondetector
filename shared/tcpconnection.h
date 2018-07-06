@@ -6,6 +6,7 @@
 #include <QTimer>
 #include <QFile>
 #include <i2cproperty.h>
+#include <tcpmessage.h>
 
 class TcpConnection : public QObject
 {
@@ -40,14 +41,15 @@ public slots:
     void onReadyRead();
     void onTimePulse();
     bool sendFile(QString fileName = "");
+    bool sendMessage(TcpMessage tcpMessage);
     bool sendText(const quint16 someCode, QString someText);
     bool sendCode(const quint16 someCode);
     bool sendI2CProperties(I2cProperty i2cProperty, bool setProperties);
     bool sendI2CPropertiesRequest();
 
 private:
-    bool handleFileTransfer(QString fileName, QByteArray &block, quint16 nextCount);
-    bool writeBlock(QByteArray &block);
+    bool handleFileTransfer(QString fileName, QByteArray& block, quint16 nextCount);
+    bool writeBlock(QByteArray& block);
     int timeout;
     int verbose;
     int pingInterval;
