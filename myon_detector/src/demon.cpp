@@ -405,7 +405,7 @@ void Demon::setI2CProperties(I2cProperty i2cProperty, bool setProperties){
     if (!setProperties){
         return;
     }
-    if (i2cProperty.pcaChann>=0 && i2cProperty.pcaChann>8){
+    if (i2cProperty.pcaChann>=0 && i2cProperty.pcaChann<8){
         pcaChannel = i2cProperty.pcaChann;
         pca->setOutputPorts(pcaChannel);
     }
