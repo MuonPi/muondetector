@@ -183,7 +183,7 @@
                <string/>
               </property>
               <property name="maximum">
-               <number>4096</number>
+               <number>4095</number>
               </property>
               <property name="orientation">
                <enum>Qt::Vertical</enum>
@@ -241,7 +241,7 @@
             <item>
              <widget class="QSlider" name="discr2Slider">
               <property name="maximum">
-               <number>4096</number>
+               <number>4095</number>
               </property>
               <property name="orientation">
                <enum>Qt::Vertical</enum>
@@ -290,7 +290,7 @@
         <item>
          <widget class="QPushButton" name="biasPowerButton">
           <property name="text">
-           <string>Enable Power</string>
+           <string>Enable Bias</string>
           </property>
          </widget>
         </item>

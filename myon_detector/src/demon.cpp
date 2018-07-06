@@ -405,19 +405,19 @@ void Demon::setI2CProperties(I2cProperty i2cProperty, bool setProperties){
     if (!setProperties){
         return;
     }
-    if (i2cProperty.pcaChann>=0){
+    if (i2cProperty.pcaChann>=0 && i2cProperty.pcaChann>8){
         pcaChannel = i2cProperty.pcaChann;
         pca->setOutputPorts(pcaChannel);
     }
-    if (i2cProperty.thresh1>=0){
+    if (i2cProperty.thresh1>=0 && i2cProperty.thresh1<4096){
         dacThresh[0] = i2cProperty.thresh1;
         dac->setVoltage(0,dacThresh.at(0));
     }
-    if (i2cProperty.thresh2>=0){
+    if (i2cProperty.thresh2>=0 && i2cProperty.thresh2<4096){
         dacThresh[1] = i2cProperty.thresh2;
         dac->setVoltage(1,dacThresh.at(1));
     }
-    if (i2cProperty.bias_Voltage>=0){
+    if (i2cProperty.bias_Voltage>=0. && i2cProperty.bias_Voltage<4.){
         biasVoltage = i2cProperty.bias_Voltage;
         dac->setVoltage(2,biasVoltage);
     }
