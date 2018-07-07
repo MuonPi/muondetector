@@ -97,7 +97,8 @@ void Usage(const char* progname)
 	cout<<"				implies options -P and -s"<<endl;
 	cout<<"	-b <On|Off>	: 	switch on/off preamp voltage"<<endl;
 	cout<<"	-g		: 	additional gain switch for peak detector"<<endl;
-	cout<<"	-a		: 	measure single hit analog amplitudes of adc (in V) and output them on stdout"<<endl;
+	cout<<"	-a		: 	measure single hit analog amplitudes (Ch1) of ADC (in V) and output them on stdout"<<endl;
+	cout<<"				if -v option is also specified: print out up to 10 consecutive ADC samples"<<endl;
 	cout<<"	-d		: 	decay mode - print out succesive XOR hits which are delayed by less than 100 us"<<endl;
 	cout<<"	-t <seconds>	: 	time for a single rate measurement in seconds"<<endl;
 	cout<<"	-n <number>	: 	number of measurements to do in total"<<endl;
@@ -137,15 +138,18 @@ int main(int argc, char** argv) {
 		double val;	
 	};
 	vector<parset_t> parset_list;
+	bool power_on = BIAS_ON;
 	bool high_gain = false;
 	char preamps_on = -1;
 	bool show_amplitudes = false;
 	bool decay_mode = false;
 	
+	int verbosity = 0;
+	
 	//cout<<"prog name is "<<string(argv[0])<<endl;
 	
 	int ch;
-    while ((ch = getopt(argc, argv, "n:s:p:P:t:i:gb:ahd?")) != EOF)
+    while ((ch = getopt(argc, argv, "n:s:p:P:t:i:gb:avhd?")) != EOF)
     {
        string str, parname;
        size_t pos;
@@ -223,6 +227,9 @@ int main(int argc, char** argv) {
 			else if (caseInsCompare(str, string("Off"))) preamps_on = 0;
 			//cout<<"premps_on="<<(int)preamps_on<<endl;
 			break;
+		case 'v':
+			verbosity++;
+			break;
 		case 'h':
 		case '?':
 			Usage(argv[0]);
@@ -270,8 +277,7 @@ int main(int argc, char** argv) {
     }
 
 	gpioSetMode(UBIAS_EN, PI_OUTPUT);
-	gpioWrite(UBIAS_EN, BIAS_ON);
-	bool powerOn = BIAS_ON;
+	gpioWrite(UBIAS_EN, power_on);
 	gpioSetMode(PREAMP_1, PI_OUTPUT);
 	gpioSetMode(PREAMP_2, PI_OUTPUT);
 	if (preamps_on==0 ||  preamps_on==1) {
@@ -289,7 +295,7 @@ int main(int argc, char** argv) {
 	
 	LM75 tempSensor("/dev/i2c-1", LM75_ADDR);
 	ADS1115 adc("/dev/i2c-1", ADC_ADDR);
-	adc.setPga(ADS1115::PGA2V);
+	adc.setPga(ADS1115::PGA4V);
 	adc.setRate(ADS1115::RATE475);
 	adc.setAGC(false);
 	PCA9536 pca("/dev/i2c-1", IO_ADDR);
@@ -359,7 +365,20 @@ int main(int argc, char** argv) {
 				if (sample_trigger && sample_valid) {
 					if (show_amplitudes) {
 //						cout<<"hit: "<<adc.readVoltage(0)<<" (readout took "<<adc.getReadWaitDelay()/1000.<<" ms, pga="<<(int)adc.getPga(0)<<")"<<endl;
-						cout<<adc.readVoltage(0)<<endl;
+						if (!verbosity)	{
+							double val = adc.readVoltage(0);
+							if (sample_valid)
+								cout<<adc.readVoltage(0)<<endl;
+						} else {
+							int n=0;
+							while (n<5 && sample_valid) {
+								double val = adc.readVoltage(0);
+								if (!sample_valid) break;
+								cout<<val<<" ";
+								n++;
+							}
+							if (n) cout<<endl;
+						}
 					}
 					sample_trigger = false;
 				} else if (sample_trigger && !sample_valid) {
