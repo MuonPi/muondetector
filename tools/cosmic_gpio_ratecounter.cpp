@@ -52,29 +52,33 @@ static bool sample_trigger = false;
 static bool sample_valid = false;
 static bool decay_trigger = false;
 
-static uint32_t curr_ts = 0;
-static uint32_t last_ts = 0;
+static uint32_t curr_tick = 0;
+static uint32_t last_tick = 0;
+
+static timespec pulse_ts;
 
 
 //void __attribute__ ((interrupt)) gpioInterrupt(int gpio,int level, uint32_t tick)
 void gpioInterrupt(int gpio,int level, uint32_t tick)
 {
-   if(level==1)
-   {
-	  if (sample_trigger) sample_valid = false;
-	  else sample_valid = true;
-	  sample_trigger = true;
+	if(level==1)
+	{
+		if (sample_trigger) sample_valid = false;
+		else sample_valid = true;
+		sample_trigger = true;
 
-      if (gpio==EVT_AND) {
-		  scaler_and++;
-	  }
-      else if (gpio==EVT_XOR) {
-		  scaler_xor++;
-		  last_ts = curr_ts;
-		  curr_ts = tick;
-		  if (curr_ts-last_ts < 100) decay_trigger=true;
-	  }
-   }
+		clock_gettime(CLOCK_REALTIME, &pulse_ts);
+
+		if (gpio==EVT_AND) {
+			scaler_and++;
+		}
+		else if (gpio==EVT_XOR) {
+			scaler_xor++;
+			last_tick = curr_tick;
+			curr_tick = tick;
+			if (curr_tick-last_tick < 100) decay_trigger=true;
+		}
+	}
 }
 
 void Usage(const char* progname)
@@ -369,7 +373,7 @@ int main(int argc, char** argv) {
 							double val = adc.readVoltage(0);
 							if (sample_valid)
 								cout<<adc.readVoltage(0)<<endl;
-						} else {
+						} else if (verbosity==1) {
 							int n=0;
 							while (n<5 && sample_valid) {
 								double val = adc.readVoltage(0);
@@ -379,6 +383,21 @@ int main(int argc, char** argv) {
 							}
 							if (n) cout<<endl;
 						}
+						else if (verbosity>1) {
+							int n=0;
+							timespec tSampleCurr;
+							cout<<"new pulse:"<<endl;
+							while (n<5000 && sample_valid) {
+								double val = adc.readVoltage(0);
+								clock_gettime(CLOCK_REALTIME, &tSampleCurr);
+								long double diff_ns = tSampleCurr.tv_sec-pulse_ts.tv_sec;
+								diff_ns*=1e9;
+								diff_ns+=tSampleCurr.tv_nsec-pulse_ts.tv_nsec;
+								if (!sample_valid) break;
+								cout<<(long int)(diff_ns/1000.+adc.getReadWaitDelay())<<" "<<val<<endl;
+								n++;
+							}
+						}
 					}
 					sample_trigger = false;
 				} else if (sample_trigger && !sample_valid) {
@@ -386,12 +405,12 @@ int main(int argc, char** argv) {
 					sample_valid = false;
 				}
 				if (decay_mode && decay_trigger) {
-					uint32_t diff=curr_ts-last_ts;
-//					cout<<"pileup hit: "<<"ts1="<<last_ts<<"  ts2="<<curr_ts<<"  diff="<<diff<<endl;
-					cout<<"delayed hit "<<"ts1= "<<last_ts<<"  ts2= "<<curr_ts<<"  diff= "<<diff<<endl;
+					uint32_t diff=curr_tick-last_tick;
+//					cout<<"pileup hit: "<<"ts1="<<last_tick<<"  ts2="<<curr_tick<<"  diff="<<diff<<endl;
+					cout<<"delayed hit "<<"ts1= "<<last_tick<<"  ts2= "<<curr_tick<<"  diff= "<<diff<<endl;
 					decay_trigger=false;
 				}
-				usleep(5000L);
+				usleep(1000L);
 			}
 			//sleep(MEAS_INTERVAL_DEFAULT);
 			long int and_latch = scaler_and;
