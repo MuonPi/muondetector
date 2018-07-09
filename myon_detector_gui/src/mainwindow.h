@@ -52,10 +52,13 @@ private slots:
 
     void on_biasPowerButton_clicked();
 
+    void on_discr2Edit_editingFinished();
+
 private:
     Ui::MainWindow *ui;
     void uiSetConnectedState();
     void uiSetDisconnectedState();
+    float parseValue(QString text);
     int verbose = 0;
     bool biasPowerOn = false;
     QErrorMessage errorM;

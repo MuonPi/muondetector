@@ -16,7 +16,7 @@ class Demon : public QTcpServer
 
 public:
     Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
-        float *new_dacThresh, float new_biasVoltage, bool new_dumpRaw, int new_baudrate,
+        float *new_dacThresh, float new_biasVoltage,bool biasPower, bool new_dumpRaw, int new_baudrate,
         bool new_configGnss, QString new_PeerAddress, quint16 new_PpeerPort,
         QString new_serverAddress, quint16 new_serverPort, bool new_showout, QObject *parent = 0);
     ~Demon();

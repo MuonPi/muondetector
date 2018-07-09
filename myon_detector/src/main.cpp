@@ -133,6 +133,11 @@ int main(int argc, char *argv[])
                                          QCoreApplication::translate("main", "bias voltage"));
     parser.addOption(biasVoltageOption);
 
+    // biasVoltage on or off
+    QCommandLineOption biasPowerOnOff(QStringList() << "p",
+                                         QCoreApplication::translate("main", "bias voltage on or off?"));
+    parser.addOption(biasPowerOnOff);
+
 	// process the actual command line arguments given by the user
 	parser.process(a);
 	const QStringList args = parser.positionalArguments();
@@ -218,19 +223,19 @@ int main(int argc, char *argv[])
     bool showout = false;
     showout = parser.isSet(showoutOption);
     float dacThresh[2];
-    dacThresh[0] = -1;
+    dacThresh[0] = 0;
     if (parser.isSet(discr1Option)){
         dacThresh[0] = parser.value(discr1Option).toFloat(&ok);
         if (!ok){
-            dacThresh[0] = -1;
+            dacThresh[0] = 0;
             cout << "wrong input discr1 (maybe not a float)"<<endl;
         }
     }
-    dacThresh[1]=-1;
+    dacThresh[1]=0;
     if (parser.isSet(discr2Option)){
         dacThresh[1] = parser.value(discr2Option).toFloat(&ok);
         if (!ok){
-            dacThresh[1] = -1;
+            dacThresh[1] = 0;
             cout << "wrong input discr2 (maybe not a float)"<<endl;
         }
     }
@@ -242,7 +247,11 @@ int main(int argc, char *argv[])
             cout << "wrong input biasVoltage (maybe not a float)"<<endl;
         }
     }
-    Demon demon(gpsdevname, verbose, pcaChannel, dacThresh, biasVoltage, dumpRaw,
+    bool biasPower = false;
+    if (parser.isSet(biasPowerOnOff)){
+        biasPower = true;
+    }
+    Demon demon(gpsdevname, verbose, pcaChannel, dacThresh, biasVoltage, biasPower, dumpRaw,
         baudrate, showGnssConfig, peerAddress, peerPort, demonAddress, demonPort, showout);
     return a.exec();
 }

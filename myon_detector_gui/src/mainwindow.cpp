@@ -59,7 +59,7 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port){
     connect(tcpConnection, &TcpConnection::connected, this, &MainWindow::connected);
     //connect(tcpConnection, &TcpConnection::error, this, &Demon::displaySocketError);
     //connect(tcpConnection, &TcpConnection::toConsole, this, &Demon::toConsole);
-    connect(tcpConnection, &TcpConnection::connectionTimeout, this, &MainWindow::makeConnection);
+    //connect(tcpConnection, &TcpConnection::connectionTimeout, this, &MainWindow::makeConnection);
     connect(this, &MainWindow::closeConnection, tcpConnection, &TcpConnection::closeConnection);
     connect(tcpConnection, &TcpConnection::stoppedConnection, this, &MainWindow::stoppedConnection);
     connect(tcpConnection, &TcpConnection::i2CProperties, this, &MainWindow::updateI2CProperties);
@@ -135,7 +135,7 @@ void MainWindow::updateI2CProperties(I2cProperty i2cProperty, bool setProperties
     if (!setProperties){
         biasPowerOn = i2cProperty.bias_powerOn;
         QVector<float> dacThresh = {i2cProperty.thresh1, i2cProperty.thresh2};
-        updateUiProperties(i2cProperty.bias_powerOn, 0, (int)(1000*dacThresh.at(0)), (int)(1000*dacThresh.at(1)));
+        updateUiProperties(i2cProperty.bias_powerOn, 0, (int)(2000*dacThresh.at(0)), (int)(2000*dacThresh.at(1)));
                 // uartBufferValue to be replaced with the correct value
     }
 }
@@ -183,6 +183,7 @@ void MainWindow::uiSetConnectedState(){
 
 void MainWindow::updateUiProperties(bool bias_powerOn, int uartBufferValue, int discr1SliderValue,
                                     int discr2SliderValue){
+    mouseHold = true;
     if (!(uartBufferValue<0)){
         ui->uartBuffer->setEnabled(true);
         ui->uartBuffer->setValue(uartBufferValue);
@@ -191,13 +192,13 @@ void MainWindow::updateUiProperties(bool bias_powerOn, int uartBufferValue, int 
         ui->discr1Slider->setEnabled(true);
         ui->discr1Slider->setValue(discr1SliderValue);
         ui->discr1Edit->setEnabled(true);
-        ui->discr1Edit->setText(QString::number(discr1SliderValue)+"mV");
+        ui->discr1Edit->setText(QString::number(discr1SliderValue/2.0)+"mV");
     }
     if (!(discr2SliderValue<0)){
         ui->discr2Slider->setEnabled(true);
         ui->discr2Slider->setValue(discr2SliderValue);
         ui->discr2Edit->setEnabled(true);
-        ui->discr2Edit->setText(QString::number(discr2SliderValue)+"mV");
+        ui->discr2Edit->setText(QString::number(discr2SliderValue/2.0)+"mV");
     }
     ui->ANDHit->setEnabled(true);
     ui->ANDHit->setStyleSheet("QLabel {background-color: darkRed; color: white;}");
@@ -214,6 +215,7 @@ void MainWindow::updateUiProperties(bool bias_powerOn, int uartBufferValue, int 
         ui->biasPowerLabel->setText("Power OFF");
         ui->biasPowerLabel->setStyleSheet("QLabel {background-color: red; color: white;}");
     }
+    mouseHold = false;
 }
 
 void MainWindow::connected(){
@@ -254,15 +256,9 @@ void MainWindow::on_ipButton_clicked()
     }
 }
 
-void MainWindow::on_discr1Edit_editingFinished()
+void MainWindow::on_discr1Slider_sliderPressed()
 {
-    bool ok;
-    int value = ui->discr1Edit->text().toInt(&ok);
-    if (!ok){
-        errorM.showMessage("failed to parse discr1Edit to float");
-        return;
-    }
-    ui->discr1Slider->setValue(value);
+    mouseHold = true;
 }
 
 void MainWindow::on_discr1Slider_sliderReleased()
@@ -271,26 +267,27 @@ void MainWindow::on_discr1Slider_sliderReleased()
     on_discr1Slider_valueChanged(ui->discr1Slider->value());
 }
 
+void MainWindow::on_discr1Edit_editingFinished()
+{
+    float value = parseValue(ui->discr1Edit->text());
+    if (value<0){
+        return;
+    }
+    ui->discr1Slider->setValue((int)(value*2+0.5));
+}
+
 void MainWindow::on_discr1Slider_valueChanged(int value)
 {
-//    if (lastValueChanged->elapsed()<100){
-//        return;
-//    }else{
-//        lastValueChanged->restart();
-//        on_discr1Slider_sliderReleased();
-//    }
-    I2cProperty i2cProperty;
+    I2cProperty i2cProperty = I2cProperty();
     i2cProperty.bias_powerOn = biasPowerOn;
-    i2cProperty.thresh1 = (float)(value/1000.0);
-    ui->discr1Edit->setText(QString::number(value)+"mV");
+    i2cProperty.thresh1 = (float)(value/2000.0);
+    ui->discr1Edit->setText(QString::number((float)value/2.0)+"mV");
     if (!mouseHold){
         emit setI2CProperties(i2cProperty);
     }
-    // must think about a solution where it get's sent in intervals of a few tenths of a second
-    // but must send LAST value!!
 }
 
-void MainWindow::on_discr1Slider_sliderPressed()
+void MainWindow::on_discr2Slider_sliderPressed()
 {
     mouseHold = true;
 }
@@ -301,20 +298,43 @@ void MainWindow::on_discr2Slider_sliderReleased()
     on_discr2Slider_valueChanged(ui->discr2Slider->value());
 }
 
+void MainWindow::on_discr2Edit_editingFinished()
+{
+    float value = parseValue(ui->discr2Edit->text());
+    if (value<0){
+        return;
+    }
+    ui->discr2Slider->setValue((int)(value*2+0.5));
+}
+
 void MainWindow::on_discr2Slider_valueChanged(int value)
 {
-    I2cProperty i2cProperty;
+    I2cProperty i2cProperty = I2cProperty();
     i2cProperty.bias_powerOn = biasPowerOn;
-    i2cProperty.thresh2 = (float)(value/1000.0);
-    ui->discr2Edit->setText(QString::number(value)+"mV");
+    i2cProperty.thresh2 = (float)(value/2000.0);
+    ui->discr2Edit->setText(QString::number((float)(value/2.0))+"mV");
     if (!mouseHold){
         emit setI2CProperties(i2cProperty);
     }
 }
 
-void MainWindow::on_discr2Slider_sliderPressed()
-{
-    mouseHold = true;
+float MainWindow::parseValue(QString text){
+    // ignores everything that is not a number or at least most of it
+    QRegExp alphabetical = QRegExp("[a-z]+[A-Z]+");
+    QRegExp specialCharacters = QRegExp(
+                QString::fromUtf8("[\\-`~!@#\\$%\\^\\&\\*()_\\—\\+=|:;<>«»\\?/{}\'\"ß\\\\]+"));
+    text = text.simplified();
+    text = text.replace(" ","");
+    text = text.remove(alphabetical);
+    text = text.replace(",",".");
+    text = text.remove(specialCharacters);
+    bool ok;
+    float value = text.toFloat(&ok);
+    if (!ok){
+        errorM.showMessage("failed to parse discr1Edit to float");
+        return -1;
+    }
+    return value;
 }
 
 void MainWindow::on_biasPowerButton_clicked()

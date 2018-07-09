@@ -13,7 +13,7 @@
 using namespace std;
 
 Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
-    float* new_dacThresh, float new_biasVoltage, bool new_dumpRaw, int new_baudrate,
+    float* new_dacThresh, float new_biasVoltage, bool biasPower, bool new_dumpRaw, int new_baudrate,
     bool new_configGnss, QString new_peerAddress, quint16 new_peerPort,
     QString new_demonAddress, quint16 new_demonPort, bool new_showout, QObject *parent)
     : QTcpServer(parent)
@@ -34,14 +34,15 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     dacThresh.push_back(tempThresh[0]);
     dacThresh.push_back(tempThresh[1]);
     biasVoltage = new_biasVoltage;
+    biasPowerOn = biasPower;
     pca = new PCA9536();
     pcaChannel = new_pcaChannel;
     for (int i = 0; i<2; i++){
-        if (dacThresh[i]>=0){
+        if (dacThresh[i]>0){
             dac->setVoltage(i,dacThresh[i]);
         }
     }
-    if (biasVoltage>=0){
+    if (biasVoltage>0){
         dac->setVoltage(2,biasVoltage);
     }
 
@@ -55,7 +56,6 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     // for separate raspi pin output states
     wiringPiSetup();
     pinMode(UBIAS_EN, 1);
-    biasPowerOn = true; // test only
     if (biasPowerOn){
         digitalWrite(UBIAS_EN, 1);
     }else{
