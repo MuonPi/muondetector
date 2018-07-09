@@ -4,6 +4,7 @@
 #include <QNetworkInterface>
 #include <demon.h>
 
+
 // define pins on the raspberry pi, UBIAS_EN is the power on/off pin for bias voltage
 // PREAMP_1/2 enables the DC voltage to power the preamp through the signal cable
 #define UBIAS_EN 7
@@ -12,12 +13,122 @@
 
 using namespace std;
 
+static int setup_unix_signal_handlers()
+{
+    struct sigaction hup, term,inte;
+
+    hup.sa_handler = Demon::hupSignalHandler;
+    sigemptyset(&hup.sa_mask);
+    hup.sa_flags = 0;
+    hup.sa_flags |= SA_RESTART;
+
+    if (sigaction(SIGHUP, &hup, 0)){
+       return 1;
+    }
+
+    term.sa_handler = Demon::termSignalHandler;
+    sigemptyset(&term.sa_mask);
+    term.sa_flags = 0;
+    term.sa_flags |= SA_RESTART;
+
+    if (sigaction(SIGTERM, &term, 0)){
+       return 2;
+    }
+
+    inte.sa_handler = Demon::intSignalHandler;
+    sigemptyset(&inte.sa_mask);
+    inte.sa_flags = 0;
+    inte.sa_flags |= SA_RESTART;
+
+    if (sigaction(SIGINT, &inte, 0)){
+        return 3;
+    }
+
+    return 0;
+}
+int Demon::sighupFd[2];
+int Demon::sigtermFd[2];
+int Demon::sigintFd[2];
+void Demon::hupSignalHandler(int)
+{
+    char a = 1;
+    ::write(sighupFd[0], &a, sizeof(a));
+}
+
+void Demon::termSignalHandler(int)
+{
+    char a = 1;
+    ::write(sigtermFd[0], &a, sizeof(a));
+}
+void Demon::intSignalHandler(int){
+    char a = 1;
+    ::write(sigintFd[0], &a, sizeof(a));
+}
+void Demon::handleSigTerm()
+{
+    snTerm->setEnabled(false);
+    char tmp;
+    ::read(sigtermFd[1], &tmp, sizeof(tmp));
+
+    // do Qt stuff
+    cout << "\nSIGTERM received"<<endl;
+    qApp->quit();
+
+    snTerm->setEnabled(true);
+}
+void Demon::handleSigHup()
+{
+    snHup->setEnabled(false);
+    char tmp;
+    ::read(sighupFd[1], &tmp, sizeof(tmp));
+
+    // do Qt stuff
+    cout << "\nSIGHUP received"<<endl;
+    qApp->quit();
+
+    snHup->setEnabled(true);
+}
+void Demon::handleSigInt()
+{
+    snInt->setEnabled(false);
+    char tmp;
+    ::read(sigintFd[1], &tmp, sizeof(tmp));
+
+    // do Qt stuff
+    cout << "\nSIGINT received"<<endl;
+    emit closeConnection();
+    this->thread()->quit();
+
+    snInt->setEnabled(true);
+}
+
+
 Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     float* new_dacThresh, float new_biasVoltage, bool biasPower, bool new_dumpRaw, int new_baudrate,
     bool new_configGnss, QString new_peerAddress, quint16 new_peerPort,
     QString new_demonAddress, quint16 new_demonPort, bool new_showout, QObject *parent)
     : QTcpServer(parent)
 {
+    // signal handling
+    setup_unix_signal_handlers();
+    if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)){
+       qFatal("Couldn't create HUP socketpair");
+    }
+
+    if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sigtermFd)){
+       qFatal("Couldn't create TERM socketpair");
+    }
+    if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sigintFd)){
+        qFatal("Couldn't createe INT socketpair");
+    }
+
+    snHup = new QSocketNotifier(sighupFd[1], QSocketNotifier::Read, this);
+    connect(snHup, SIGNAL(activated(int)), this, SLOT(handleSigHup()));
+    snTerm = new QSocketNotifier(sigtermFd[1], QSocketNotifier::Read, this);
+    connect(snTerm, SIGNAL(activated(int)), this, SLOT(handleSigTerm()));
+    snInt = new QSocketNotifier(sigintFd[1], QSocketNotifier::Read, this);
+    connect(snInt, SIGNAL(activated(int)), this, SLOT(handleSigInt()));
+
     // set all variables
 
     // general
@@ -192,6 +303,7 @@ void Demon::incomingConnection(qintptr socketDescriptor){
     connect(thread, &QThread::started, tcpConnection, &TcpConnection::receiveConnection);
     connect(thread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+    connect(qApp, &QCoreApplication::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
     connect(this, &Demon::closeConnection, tcpConnection, &TcpConnection::closeConnection);
     connect(tcpConnection, &TcpConnection::toConsole, this, &Demon::toConsole);
     connect(this, &Demon::i2CProperties, tcpConnection, &TcpConnection::sendI2CProperties);

@@ -9,6 +9,13 @@
 #include <qtserialublox.h>
 #include <i2c/i2cdevices.h>
 #include <tcpmessage.h>
+#include <QSocketNotifier>
+
+
+// for sig handling:
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <signal.h>
 
 class Demon : public QTcpServer
 {
@@ -22,8 +29,16 @@ public:
     ~Demon();
 	void configGps();
 	void loop();
+    static void hupSignalHandler(int);
+    static void termSignalHandler(int);
+    static void intSignalHandler(int);
 
 public slots:
+    // Qt signal handlers.
+    void handleSigHup();
+    void handleSigTerm();
+    void handleSigInt();
+    // others
     void connectToGps();
     void connectToServer();
     void displaySocketError(int socketError, QString message);
@@ -81,6 +96,15 @@ private:
     int verbose, baudrate;
     int gpsTimeout = 5000;
     bool dumpRaw, configGnss, showout;
+
+    // signal handling
+    static int sighupFd[2];
+    static int sigtermFd[2];
+    static int sigintFd[2];
+
+    QSocketNotifier *snHup;
+    QSocketNotifier *snTerm;
+    QSocketNotifier *snInt;
 };
 
 #endif // DEMON_H

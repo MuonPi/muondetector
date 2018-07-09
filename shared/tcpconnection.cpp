@@ -64,7 +64,7 @@ void TcpConnection::makeConnection()
     lastConnection = firstConnection;
     if (!tcpSocket->waitForConnected(timeout)) {
         emit error(tcpSocket->error(), tcpSocket->errorString());
-        return;
+        this->thread()->quit();
     }
     emit connected();
     peerAddress = new QHostAddress(tcpSocket->peerAddress());
@@ -83,7 +83,7 @@ void TcpConnection::receiveConnection()
     tcpSocket = new QTcpSocket(this);
     if (!tcpSocket->setSocketDescriptor(socketDescriptor)) {
         emit error(tcpSocket->error(),tcpSocket->errorString());
-        return;
+        this->thread()->quit();
     }else{
         peerAddress = new QHostAddress(tcpSocket->peerAddress());
         peerPort = tcpSocket->peerPort();

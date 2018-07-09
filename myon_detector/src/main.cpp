@@ -11,24 +11,29 @@
 
 using namespace std;
 
+// linux signal handling
+// https://gist.github.com/azadkuh/a2ac6869661ebd3f8588
+// http://doc.qt.io/qt-5/unix-signals.html
+
 /* Signal Handler for SIGINT */
-void sigintHandler(int sig_num)
-{
-    /* Reset handler to catch SIGINT next time.
-       Refer http://en.cppreference.com/w/c/program/signal */
-    printf("killing process %d\n",getpid());
-//    signal(SIGINT, SIG_IGN);
-//    printf("\n terminated using Ctrl+C \n");
-    fflush(stdout);
-    exit(0);
-}
+//void sigintHandler(int sig_num)
+//{
+//    sig_num = 0;
+//    /* Reset handler to catch SIGINT next time.
+//       Refer http://en.cppreference.com/w/c/program/signal */
+//    printf("killing process %d\n",getpid());
+////    signal(SIGINT, SIG_IGN);
+////    printf("\n terminated using Ctrl+C \n");
+//    fflush(stdout);
+//    exit(0);
+//}
 
 int main(int argc, char *argv[])
 {
 	/* Set the SIGINT (Ctrl-C) signal handler to sigintHandler 
        Refer http://en.cppreference.com/w/c/program/signal */
-    signal(SIGINT, sigintHandler);
-	signal (SIGQUIT, sigintHandler);
+//    signal(SIGINT, sigintHandler);
+//	signal (SIGQUIT, sigintHandler);
 	
 	QCoreApplication a(argc, argv);
 	QCoreApplication::setApplicationName("myon_detector");
