@@ -29,12 +29,15 @@ TcpConnection::TcpConnection(QString newHostName, quint16 newPort, int newVerbos
 }
 
 TcpConnection::~TcpConnection(){
-    delete peerAddress;
-    delete localAddress;
-    delete file;
-    delete in;
-    delete t;
-    // sendCode(quitConnection); // does not work.... why?? WHYY????
+
+//    if(peerAddress){delete peerAddress;}
+//    if(localAddress){delete localAddress;}
+//    if(file){delete file;}
+//    if(in){delete in;}
+//    if(t){delete t;}
+//    why gives all of this segmentation fault?
+//    does qt already delete them? what if there is memory leak?
+//    how to find out?
 }
 
 TcpConnection::TcpConnection(int socketDescriptor, int newVerbose, int newTimeout, int newPingInterval, QObject *parent)
@@ -65,6 +68,7 @@ void TcpConnection::makeConnection()
     if (!tcpSocket->waitForConnected(timeout)) {
         emit error(tcpSocket->error(), tcpSocket->errorString());
         this->thread()->quit();
+        return;
     }
     emit connected();
     peerAddress = new QHostAddress(tcpSocket->peerAddress());
@@ -84,6 +88,7 @@ void TcpConnection::receiveConnection()
     if (!tcpSocket->setSocketDescriptor(socketDescriptor)) {
         emit error(tcpSocket->error(),tcpSocket->errorString());
         this->thread()->quit();
+        return;
     }else{
         peerAddress = new QHostAddress(tcpSocket->peerAddress());
         peerPort = tcpSocket->peerPort();

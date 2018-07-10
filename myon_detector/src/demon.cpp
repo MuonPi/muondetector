@@ -13,6 +13,7 @@
 
 using namespace std;
 
+// signal handling stuff: put code to execute before shutdown down there
 static int setup_unix_signal_handlers()
 {
     struct sigaction hup, term,inte;
@@ -43,27 +44,11 @@ static int setup_unix_signal_handlers()
     if (sigaction(SIGINT, &inte, 0)){
         return 3;
     }
-
     return 0;
 }
 int Demon::sighupFd[2];
 int Demon::sigtermFd[2];
 int Demon::sigintFd[2];
-void Demon::hupSignalHandler(int)
-{
-    char a = 1;
-    ::write(sighupFd[0], &a, sizeof(a));
-}
-
-void Demon::termSignalHandler(int)
-{
-    char a = 1;
-    ::write(sigtermFd[0], &a, sizeof(a));
-}
-void Demon::intSignalHandler(int){
-    char a = 1;
-    ::write(sigintFd[0], &a, sizeof(a));
-}
 void Demon::handleSigTerm()
 {
     snTerm->setEnabled(false);
@@ -71,9 +56,12 @@ void Demon::handleSigTerm()
     ::read(sigtermFd[1], &tmp, sizeof(tmp));
 
     // do Qt stuff
-    cout << "\nSIGTERM received"<<endl;
-    qApp->quit();
-
+    if(verbose>1){
+        cout << "\nSIGTERM received"<<endl;
+    }
+    emit closeConnection();
+    this->thread()->quit();
+    exit(0);
     snTerm->setEnabled(true);
 }
 void Demon::handleSigHup()
@@ -83,9 +71,12 @@ void Demon::handleSigHup()
     ::read(sighupFd[1], &tmp, sizeof(tmp));
 
     // do Qt stuff
-    cout << "\nSIGHUP received"<<endl;
-    qApp->quit();
-
+    if(verbose>1){
+        cout << "\nSIGHUP received"<<endl;
+    }
+    emit closeConnection();
+    this->thread()->quit();
+    exit(0);
     snHup->setEnabled(true);
 }
 void Demon::handleSigInt()
@@ -95,14 +86,17 @@ void Demon::handleSigInt()
     ::read(sigintFd[1], &tmp, sizeof(tmp));
 
     // do Qt stuff
-    cout << "\nSIGINT received"<<endl;
+    if(verbose>1){
+        cout << "\nSIGINT received"<<endl;
+    }
     emit closeConnection();
     this->thread()->quit();
-
+    exit(0);
     snInt->setEnabled(true);
 }
 
 
+// begin of the Demon class
 Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     float* new_dacThresh, float new_biasVoltage, bool biasPower, bool new_dumpRaw, int new_baudrate,
     bool new_configGnss, QString new_peerAddress, quint16 new_peerPort,
@@ -206,7 +200,9 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     if (new_demonAddress.isEmpty()){
         // if not otherwise specified: listen on all available addresses
         demonAddress = QHostAddress(QHostAddress::Any);
-        cout << demonAddress.toString()<<endl;
+        if (verbose > 1){
+            cout << demonAddress.toString()<<endl;
+        }
     }
 
 
@@ -265,6 +261,7 @@ void Demon::connectToGps(){
     connect(this, &Demon::UBXSetCfgMsg, qtGps, &QtSerialUblox::UBXSetCfgMsg);
     connect(this, &Demon::UBXSetCfgRate, qtGps, &QtSerialUblox::UBXSetCfgRate);
     connect(this, &Demon::sendPoll, qtGps, &QtSerialUblox::sendPoll);
+    connect(this->thread(), &QThread::finished, gpsThread, &QThread::quit);
     //connect(this, &Demon::closeConnection, gpsThread, &QThread::quit);
     // connect cfgError signal to output, could also create special errorFunction
     connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Demon::toConsole);
@@ -283,6 +280,7 @@ void Demon::connectToServer(){
     connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::makeConnection);
     connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
     connect(tcpThread, &QThread::finished, tcpThread, &QThread::deleteLater);
+    connect(this->thread(), &QThread::finished, tcpThread, &QThread::quit);
     connect(this, &Demon::sendFile, tcpConnection, &TcpConnection::sendFile);
     connect(tcpConnection, &TcpConnection::error, this, &Demon::displaySocketError);
     connect(tcpConnection, &TcpConnection::toConsole, this, &Demon::toConsole);
@@ -303,7 +301,8 @@ void Demon::incomingConnection(qintptr socketDescriptor){
     connect(thread, &QThread::started, tcpConnection, &TcpConnection::receiveConnection);
     connect(thread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
-    connect(qApp, &QCoreApplication::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
+    connect(this->thread(), &QThread::finished, thread, &QThread::quit);
+    //connect(qApp, &QCoreApplication::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
     connect(this, &Demon::closeConnection, tcpConnection, &TcpConnection::closeConnection);
     connect(tcpConnection, &TcpConnection::toConsole, this, &Demon::toConsole);
     connect(this, &Demon::i2CProperties, tcpConnection, &TcpConnection::sendI2CProperties);
@@ -602,9 +601,6 @@ void Demon::printTimestamp()
 
 	// 	t1 = std::chrono::system_clock::now();
 	// 	t2 = std::chrono::duration_cast<std::chrono::seconds>(t1);
-
-
-
 		//double subs=timestamp-(long int)timestamp;
 	cout << secs.count() << "." << setw(6) << setfill('0') << subs.count() << " " << setfill(' ');
 }
@@ -612,4 +608,22 @@ void Demon::printTimestamp()
 void Demon::sendI2CProperties(){
     I2cProperty i2cProperty(pcaChannel, dacThresh.at(0), dacThresh.at(1), biasVoltage, biasPowerOn);
     emit i2CProperties(i2cProperty);
+}
+
+
+// some signal handling stuff
+void Demon::hupSignalHandler(int)
+{
+    char a = 1;
+    ::write(sighupFd[0], &a, sizeof(a));
+}
+
+void Demon::termSignalHandler(int)
+{
+    char a = 1;
+    ::write(sigtermFd[0], &a, sizeof(a));
+}
+void Demon::intSignalHandler(int){
+    char a = 1;
+    ::write(sigintFd[0], &a, sizeof(a));
 }
