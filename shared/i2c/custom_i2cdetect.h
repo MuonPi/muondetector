@@ -31,7 +31,8 @@ struct func
 static const struct func all_func[];
 */
 //static void print_functionality(unsigned long funcs);
-int i2cdetect();
-int i2cdetect(int expectedAddresses[]);
+// int i2cdetect();
+// int i2cdetect(int expectedAddresses[]);
+// c does not like overloading those functions
 int i2cdetect(bool outputAllAddresses, int expectedAddresses[]);
 #endif

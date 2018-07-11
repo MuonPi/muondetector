@@ -208,13 +208,14 @@ static void print_i2c_busses(void)
 // from original i2cdetect code, not important
 
 */
-int i2cdetect(){
-    int expectedAddresses[] = {};
-    return i2cdetect(true,expectedAddresses);
-}
-int i2cdetect(int expectedAddresses[]){
-    return i2cdetect(false,expectedAddresses);
-}
+//int i2cdetect(){
+//    int expectedAddresses[] = {};
+//    return i2cdetect(true,expectedAddresses);
+//}
+//int i2cdetect(int expectedAddresses[]){
+//    return i2cdetect(false,expectedAddresses);
+//}
+// c does not like overloading ....
 int i2cdetect(bool outputAllAddresses, int expectedAddresses[])
 {
 	// can be called by main program, used to check devices (are all connected devices in place?). Soon to be further improved!
