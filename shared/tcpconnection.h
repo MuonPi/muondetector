@@ -54,8 +54,8 @@ private:
     int verbose;
     int pingInterval;
     int socketDescriptor;
-    QHostAddress *peerAddress;
-    QHostAddress *localAddress;
+    QHostAddress *peerAddress = nullptr;
+    QHostAddress *localAddress = nullptr;
     quint16 fileCounter = -1;
     QFile *file = nullptr;
     QDataStream *in = nullptr;

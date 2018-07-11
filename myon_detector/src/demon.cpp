@@ -3,13 +3,20 @@
 #include <QThread>
 #include <QNetworkInterface>
 #include <demon.h>
+#include <pigpiodhandler.h>
 
+// for i2cdetect:
+extern "C"{
+#include <../shared/i2c/custom_i2cdetect.h>
+}
 
 // define pins on the raspberry pi, UBIAS_EN is the power on/off pin for bias voltage
 // PREAMP_1/2 enables the DC voltage to power the preamp through the signal cable
 #define UBIAS_EN 7
 #define PREAMP_1 28
 #define PREAMP_2 29
+#define EVT_AND 5
+#define EVT_XOR 6
 
 using namespace std;
 
@@ -59,7 +66,7 @@ void Demon::handleSigTerm()
     if(verbose>1){
         cout << "\nSIGTERM received"<<endl;
     }
-    emit closeConnection();
+    emit aboutToQuit();
     this->thread()->quit();
     exit(0);
     snTerm->setEnabled(true);
@@ -74,7 +81,7 @@ void Demon::handleSigHup()
     if(verbose>1){
         cout << "\nSIGHUP received"<<endl;
     }
-    emit closeConnection();
+    emit aboutToQuit();
     this->thread()->quit();
     exit(0);
     snHup->setEnabled(true);
@@ -89,7 +96,7 @@ void Demon::handleSigInt()
     if(verbose>1){
         cout << "\nSIGINT received"<<endl;
     }
-    emit closeConnection();
+    emit aboutToQuit();
     this->thread()->quit();
     exit(0);
     snInt->setEnabled(true);
@@ -130,6 +137,12 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     if (verbose > 4){
         cout << "demon running in thread " << QString("0x%1").arg((int)this->thread()) << endl;
     }
+
+    // for pigpio signals:
+    const QVector<unsigned int> gpio_pins({EVT_AND, EVT_XOR});
+    PigpiodHandler* pigHandler = new PigpiodHandler(gpio_pins,this);
+    connect(this, &Demon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
+    connect(pigHandler, &PigpiodHandler::signal, this, &Demon::sendAndXorSignal);
 
     // for i2c devices
     lm75 = new LM75();
@@ -231,7 +244,7 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
 }
 
 Demon::~Demon(){
-    emit closeConnection();
+    emit aboutToQuit();
 }
 
 void Demon::connectToGps(){
@@ -262,7 +275,7 @@ void Demon::connectToGps(){
     connect(this, &Demon::UBXSetCfgRate, qtGps, &QtSerialUblox::UBXSetCfgRate);
     connect(this, &Demon::sendPoll, qtGps, &QtSerialUblox::sendPoll);
     connect(this->thread(), &QThread::finished, gpsThread, &QThread::quit);
-    //connect(this, &Demon::closeConnection, gpsThread, &QThread::quit);
+    //connect(this, &Demon::aboutToQuit, gpsThread, &QThread::quit);
     // connect cfgError signal to output, could also create special errorFunction
     connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Demon::toConsole);
 
@@ -303,7 +316,7 @@ void Demon::incomingConnection(qintptr socketDescriptor){
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
     connect(this->thread(), &QThread::finished, thread, &QThread::quit);
     //connect(qApp, &QCoreApplication::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
-    connect(this, &Demon::closeConnection, tcpConnection, &TcpConnection::closeConnection);
+    connect(this, &Demon::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
     connect(tcpConnection, &TcpConnection::toConsole, this, &Demon::toConsole);
     connect(this, &Demon::i2CProperties, tcpConnection, &TcpConnection::sendI2CProperties);
     connect(tcpConnection, &TcpConnection::requestI2CProperties, this, &Demon::sendI2CProperties);
@@ -610,6 +623,9 @@ void Demon::sendI2CProperties(){
     emit i2CProperties(i2cProperty);
 }
 
+void Demon::sendAndXorSignal(uint8_t gpio_pin, uint32_t tick){
+
+}
 
 // some signal handling stuff
 void Demon::hupSignalHandler(int)

@@ -19,7 +19,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 INCLUDEPATH += ../shared  \
     src
 
-LIBS += -lwiringPi
+LIBS += -lwiringPi \
+        -lpigpiod_if2
 
 SOURCES += src/main.cpp \
     src/custom_io_operators.cpp \
@@ -32,7 +33,8 @@ SOURCES += src/main.cpp \
     ../shared/i2c/custom_i2cdetect.c \
     ../shared/i2c/i2cbusses.c \
     ../shared/i2cproperty.cpp \
-    ../shared/tcpmessage.cpp
+    ../shared/tcpmessage.cpp \
+    src/pigpiodhandler.cpp
 
 HEADERS += \
     src/custom_io_operators.h \
@@ -49,7 +51,8 @@ HEADERS += \
     ../shared/i2c/i2cdevices.h \
     ../shared/i2c/linux/i2c-dev.h \
     ../shared/i2cproperty.h \
-    ../shared/tcpmessage.h
+    ../shared/tcpmessage.h \
+    src/pigpiodhandler.h
 
 OBJECTS_DIR += created_files
 

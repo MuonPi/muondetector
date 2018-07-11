@@ -30,14 +30,11 @@ TcpConnection::TcpConnection(QString newHostName, quint16 newPort, int newVerbos
 
 TcpConnection::~TcpConnection(){
 
-//    if(peerAddress){delete peerAddress;}
-//    if(localAddress){delete localAddress;}
-//    if(file){delete file;}
-//    if(in){delete in;}
-//    if(t){delete t;}
-//    why gives all of this segmentation fault?
-//    does qt already delete them? what if there is memory leak?
-//    how to find out?
+      if(peerAddress!=nullptr){delete peerAddress;}
+      if(localAddress!=nullptr){delete localAddress;}
+      if(file!=nullptr){delete file;}
+      if(in!=nullptr){delete in;}
+      if(t!=nullptr){delete t;}
 }
 
 TcpConnection::TcpConnection(int socketDescriptor, int newVerbose, int newTimeout, int newPingInterval, QObject *parent)
@@ -227,6 +224,7 @@ bool TcpConnection::sendFile(QString fileName){
         if (file){
             file->close();
             delete file;
+            file = nullptr;
         }
         file = new QFile(QCoreApplication::applicationDirPath()+"/"+fileName);
         if (!file->open(QIODevice::ReadOnly)) {
@@ -281,6 +279,7 @@ bool TcpConnection::handleFileTransfer(QString fileName, QByteArray &block, quin
         if(file){
             file->close();
             delete file;
+            file = nullptr;
         }
         if (fileName.isEmpty()){
             emit toConsole("filename is empty, something went wrong");

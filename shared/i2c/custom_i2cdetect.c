@@ -6,15 +6,15 @@ Now it can be called by the main program and it's the only purpose of custom_i2c
 
 #include "custom_i2cdetect.h"
 
-
-static int scan_i2c_bus(int file, int mode, int first, int last)
+int scan_i2c_bus(int file, /*int mode,*/ int first, int last,
+                 bool outputAllAddresses, int expectedAddresses[])
 {
 	// called by i2cdetect() to scan through all busses
 	int i, j;
 	int res;
-
-	printf("     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\n");
-
+    if (outputAllAddresses){
+        printf("     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\n");
+    }
 	int deviceStatus[8];
 	bool deviceError = false;
 	// deviceError set to true means the program should exit with error
@@ -25,13 +25,17 @@ static int scan_i2c_bus(int file, int mode, int first, int last)
 		deviceStatus[k] = 0;
 	}
 	for (i = 0; i < 128; i += 16) {
-		printf("%02x: ", i);
+        if (outputAllAddresses){
+            printf("%02x: ", i);
+        }
 		for(j = 0; j < 16; j++) {
 			fflush(stdout);
 
 			/* Skip unwanted addresses */
 			if (i+j < first || i+j > last) {
-				printf("   ");
+                if (outputAllAddresses){
+                    printf("   ");
+                }
 				continue;
 			}
 
@@ -60,61 +64,24 @@ static int scan_i2c_bus(int file, int mode, int first, int last)
 			}
 			//}
 
-			if (res<0) {
-				printf("-- ");
-				/* there is no device at this address (address is j+i)
-				   so switch j+i and if the address matches one of the expected
-				   addresses used by one of the components on the board
-				   the program should exit with an error
-				*/
-				switch (j+i)
-				{
-				case ADC1_ADDR:
-					// if it should exit with error set deviceError true
-					// and set corresponding deviceStatus to the missing device
-					// so that it can be printed that this device is missing
-					deviceStatus[0] = ADC1_ADDR;
-					deviceError = true;
-					break;
-				case ADC2_ADDR:
-					deviceStatus[1] = ADC2_ADDR;
-					deviceError = true;
-					break;
-				case LM75_ADDR:
-					deviceStatus[2] = LM75_ADDR;
-					deviceError = true;
-					break;
-				case POTI1_ADDR:
-					deviceStatus[3] = POTI1_ADDR;
-					deviceError = true;
-					break;
-				case POTI2_ADDR:
-					deviceStatus[4] = POTI2_ADDR;
-					deviceError = true;
-					break;
-				case POTI3_ADDR:
-					deviceStatus[5] = POTI3_ADDR;
-					deviceError = true;
-					break;
-				case POTI4_ADDR:
-					deviceStatus[6] = POTI4_ADDR;
-					deviceError = true;
-					break;
-				case EEP_ADDR:
-					deviceStatus[7] = EEP_ADDR;
-					deviceError = true;
-					break;
-				default:
-					break;
-				}
-			}
-			else 
-			{
-				printf("%02x ", i+j);
-			}
+            if (outputAllAddresses){
+                if (res<0) {
+                    printf("-- ");
+                    /* there is no device at this address (address is j+i)
+                       so switch j+i and if the address matches one of the expected
+                       addresses used by one of the components on the board
+                       the program should exit with an error
+                    */
+
+                }else {
+                    printf("%02x ", i+j);
+                }
+            }
 		}
-		printf("\n");
-	}
+        if (outputAllAddresses){
+            printf("\n");
+        }
+    }
 	if (deviceError)
 	{
 		// print missing devices if there are any
@@ -161,59 +128,59 @@ static int scan_i2c_bus(int file, int mode, int first, int last)
 	return 0;
 }
 
-struct func
-{
-	// from original i2cdetect code, not important
-	long value;
-	const char* name;
-};
+//struct func
+//{
+//	// from original i2cdetect code, not important
+//	long value;
+//	const char* name;
+//};
 
 
-static const struct func all_func[] = {
-	// from original i2cdetect code, not important
-	// from original i2cdetect code, not important
-	{ .value = I2C_FUNC_I2C,
-	  .name = "I2C" },
-	{ .value = I2C_FUNC_SMBUS_QUICK,
-	  .name = "SMBus Quick Command" },
-	{ .value = I2C_FUNC_SMBUS_WRITE_BYTE,
-	  .name = "SMBus Send Byte" },
-	{ .value = I2C_FUNC_SMBUS_READ_BYTE,
-	  .name = "SMBus Receive Byte" },
-	{ .value = I2C_FUNC_SMBUS_WRITE_BYTE_DATA,
-	  .name = "SMBus Write Byte" },
-	{ .value = I2C_FUNC_SMBUS_READ_BYTE_DATA,
-	  .name = "SMBus Read Byte" },
-	{ .value = I2C_FUNC_SMBUS_WRITE_WORD_DATA,
-	  .name = "SMBus Write Word" },
-	{ .value = I2C_FUNC_SMBUS_READ_WORD_DATA,
-	  .name = "SMBus Read Word" },
-	{ .value = I2C_FUNC_SMBUS_PROC_CALL,
-	  .name = "SMBus Process Call" },
-	{ .value = I2C_FUNC_SMBUS_WRITE_BLOCK_DATA,
-	  .name = "SMBus Block Write" },
-	{ .value = I2C_FUNC_SMBUS_READ_BLOCK_DATA,
-	  .name = "SMBus Block Read" },
-	{ .value = I2C_FUNC_SMBUS_BLOCK_PROC_CALL,
-	  .name = "SMBus Block Process Call" },
-	{ .value = I2C_FUNC_SMBUS_PEC,
-	  .name = "SMBus PEC" },
-	{ .value = I2C_FUNC_SMBUS_WRITE_I2C_BLOCK,
-	  .name = "I2C Block Write" },
-	{ .value = I2C_FUNC_SMBUS_READ_I2C_BLOCK,
-	  .name = "I2C Block Read" },
-	{ .value = 0, .name = "" }
-};
+//static const struct func all_func[] = {
+//	// from original i2cdetect code, not important
+//	// from original i2cdetect code, not important
+//	{ .value = I2C_FUNC_I2C,
+//	  .name = "I2C" },
+//	{ .value = I2C_FUNC_SMBUS_QUICK,
+//	  .name = "SMBus Quick Command" },
+//	{ .value = I2C_FUNC_SMBUS_WRITE_BYTE,
+//	  .name = "SMBus Send Byte" },
+//	{ .value = I2C_FUNC_SMBUS_READ_BYTE,
+//	  .name = "SMBus Receive Byte" },
+//	{ .value = I2C_FUNC_SMBUS_WRITE_BYTE_DATA,
+//	  .name = "SMBus Write Byte" },
+//	{ .value = I2C_FUNC_SMBUS_READ_BYTE_DATA,
+//	  .name = "SMBus Read Byte" },
+//	{ .value = I2C_FUNC_SMBUS_WRITE_WORD_DATA,
+//	  .name = "SMBus Write Word" },
+//	{ .value = I2C_FUNC_SMBUS_READ_WORD_DATA,
+//	  .name = "SMBus Read Word" },
+//	{ .value = I2C_FUNC_SMBUS_PROC_CALL,
+//	  .name = "SMBus Process Call" },
+//	{ .value = I2C_FUNC_SMBUS_WRITE_BLOCK_DATA,
+//	  .name = "SMBus Block Write" },
+//	{ .value = I2C_FUNC_SMBUS_READ_BLOCK_DATA,
+//	  .name = "SMBus Block Read" },
+//	{ .value = I2C_FUNC_SMBUS_BLOCK_PROC_CALL,
+//	  .name = "SMBus Block Process Call" },
+//	{ .value = I2C_FUNC_SMBUS_PEC,
+//	  .name = "SMBus PEC" },
+//	{ .value = I2C_FUNC_SMBUS_WRITE_I2C_BLOCK,
+//	  .name = "I2C Block Write" },
+//	{ .value = I2C_FUNC_SMBUS_READ_I2C_BLOCK,
+//	  .name = "I2C Block Read" },
+//	{ .value = 0, .name = "" }
+//};
 
-static void print_functionality(unsigned long funcs)
-{
-	// from original i2cdetect code, not important
-	int i;
-	for (i = 0; all_func[i].value; i++) {
-		printf("%-32s %s\n", all_func[i].name,
-		       (funcs & all_func[i].value) ? "yes" : "no");
-	}
-}
+//static void print_functionality(unsigned long funcs)
+//{
+//	// from original i2cdetect code, not important
+//	int i;
+//	for (i = 0; all_func[i].value; i++) {
+//		printf("%-32s %s\n", all_func[i].name,
+//		       (funcs & all_func[i].value) ? "yes" : "no");
+//	}
+//}
 
 /*
  * Print the installed i2c busses. The format is those of Linux 2.4's
@@ -241,18 +208,24 @@ static void print_i2c_busses(void)
 // from original i2cdetect code, not important
 
 */
-
-const int i2cdetect()
+int i2cdetect(){
+    int expectedAddresses[] = {};
+    return i2cdetect(true,expectedAddresses);
+}
+int i2cdetect(int expectedAddresses[]){
+    return i2cdetect(false,expectedAddresses);
+}
+int i2cdetect(bool outputAllAddresses, int expectedAddresses[])
 {
 	// can be called by main program, used to check devices (are all connected devices in place?). Soon to be further improved!
-	char *end;
-	int i2cbus, file, res;
+    //char *end;
+    int /*i2cbus,*/ file, res;
 	char filename[20];
 	unsigned long funcs;
-	int mode = MODE_AUTO;
+    //int mode = MODE_AUTO;
 	int first = 0x03, last = 0x77;
-	int flags = 0;
-	int yes = 1, version = 0, list = 0;
+    //int flags = 0;
+    //int yes = 1, version = 0, list = 0;
 
 	if (I2C_BUS < 0) {
 		//help();
@@ -295,7 +268,8 @@ const int i2cdetect()
 	}
 	// from original i2cdetect code, not important
 	*/
-	res = scan_i2c_bus(file, mode, first, last);
+    res = scan_i2c_bus(file, /*mode,*/ first, last,
+                       outputAllAddresses, expectedAddresses);
 	// res will be either 1 or 0
 	// 0 means all ok
 	// 1 means there are missing devices

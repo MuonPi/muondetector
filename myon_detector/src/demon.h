@@ -11,7 +11,6 @@
 #include <tcpmessage.h>
 #include <QSocketNotifier>
 
-
 // for sig handling:
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -58,12 +57,13 @@ public slots:
                             std::chrono::duration<double> updateAge);
     void sendI2CProperties();
     void setI2CProperties(I2cProperty i2cProperty, bool setProperties);
+    void sendAndXorSignal(uint8_t gpio_pin, uint32_t tick);
 
 signals:
     void sendFile(QString fileName);
     void sendMsg(QString msg);
     void sendMessage(TcpMessage tcpMessage);
-    void closeConnection();
+    void aboutToQuit();
     void sendPoll(uint16_t msgID, uint8_t port);
     void i2CProperties(I2cProperty i2cProperty, bool set_Properties = false);
 	void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
