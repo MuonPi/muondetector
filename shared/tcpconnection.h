@@ -33,6 +33,7 @@ signals:
     void connected();
     void i2CProperties(I2cProperty i2cProperty, bool setProperties);
     void requestI2CProperties();
+    void gpioRisingEdge(quint8 pin, quint32 tick);
 
 public slots:
     void makeConnection();
@@ -46,6 +47,7 @@ public slots:
     bool sendCode(const quint16 someCode);
     bool sendI2CProperties(I2cProperty i2cProperty, bool setProperties);
     bool sendI2CPropertiesRequest();
+    bool sendGpioRisingEdge(quint8 pin, quint32 tick);
 
 private:
     bool handleFileTransfer(QString fileName, QByteArray& block, quint16 nextCount);

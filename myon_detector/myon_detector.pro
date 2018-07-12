@@ -28,23 +28,21 @@ SOURCES += src/main.cpp \
     ../shared/tcpconnection.cpp \
     src/qtserialublox.cpp \
     src/qtserialublox_processmessages.cpp \
-    src/demon.cpp \
     ../shared/i2c/i2cdevices.cpp \
     ../shared/i2c/custom_i2cdetect.c \
     ../shared/i2c/i2cbusses.c \
     ../shared/i2cproperty.cpp \
     ../shared/tcpmessage.cpp \
-    src/pigpiodhandler.cpp
+    src/pigpiodhandler.cpp \
+    src/daemon.cpp
 
 HEADERS += \
     src/custom_io_operators.h \
     src/gnsssatellite.h \
     src/unixtime_from_gps.h \
-    src/structs_and_defines.h \
     src/time_from_rtc.h \
     ../shared/tcpconnection.h \
     src/qtserialublox.h \
-    src/demon.h \
     ../shared/i2c/addresses.h \
     ../shared/i2c/custom_i2cdetect.h \
     ../shared/i2c/i2cbusses.h \
@@ -52,7 +50,10 @@ HEADERS += \
     ../shared/i2c/linux/i2c-dev.h \
     ../shared/i2cproperty.h \
     ../shared/tcpmessage.h \
-    src/pigpiodhandler.h
+    src/pigpiodhandler.h \
+    src/ublox_definitions_and_structs.h \
+    ../shared/gpio_pin_definitions.h \
+    src/daemon.h
 
 OBJECTS_DIR += created_files
 

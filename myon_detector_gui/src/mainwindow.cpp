@@ -5,6 +5,7 @@
 #include <QKeyEvent>
 #include <QDebug>
 #include <QErrorMessage>
+#include <gpio_pin_definitions.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -35,6 +36,15 @@ MainWindow::MainWindow(QWidget *parent) :
     // setup event filter
     ui->ipBox->installEventFilter(this);
     ui->ipButton->installEventFilter(this);
+
+    // set timer for and/xor label color change after hit
+    int timerInterval = 50; // in msec
+    andTimer.setSingleShot(true);
+    xorTimer.setSingleShot(true);
+    andTimer.setInterval(timerInterval);
+    xorTimer.setInterval(timerInterval);
+    connect(&andTimer, &QTimer::timeout, this, &MainWindow::resetAndHit);
+    connect(&xorTimer, &QTimer::timeout, this, &MainWindow::resetXorHit);
 }
 
 MainWindow::~MainWindow()
@@ -65,6 +75,7 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port){
     connect(tcpConnection, &TcpConnection::i2CProperties, this, &MainWindow::updateI2CProperties);
     connect(this, &MainWindow::setI2CProperties, tcpConnection, &TcpConnection::sendI2CProperties);
     connect(this, &MainWindow::requestI2CProperties, tcpConnection, &TcpConnection::sendI2CPropertiesRequest);
+    connect(tcpConnection, &TcpConnection::gpioRisingEdge, this, &MainWindow::receivedGpioRisingEdge);
     //connect(this, &Demon::sendMsg, tcpConnection, &TcpConnection::sendMsg);
     //connect(tcpConnection, &TcpConnection::stoppedConnection, this, &Demon::stoppedConnection);
     tcpThread->start();
@@ -137,6 +148,23 @@ void MainWindow::updateI2CProperties(I2cProperty i2cProperty, bool setProperties
         QVector<float> dacThresh = {i2cProperty.thresh1, i2cProperty.thresh2};
         updateUiProperties(i2cProperty.bias_powerOn, 0, (int)(2000*dacThresh.at(0)), (int)(2000*dacThresh.at(1)));
                 // uartBufferValue to be replaced with the correct value
+    }
+}
+
+void MainWindow::resetAndHit(){
+    ui->ANDHit->setStyleSheet("QLabel {color: white; background-color: darkRed;}");
+}
+void MainWindow::resetXorHit(){
+    ui->XORHit->setStyleSheet("QLabel {color: white; background-color: darkRed;}");
+}
+void MainWindow::receivedGpioRisingEdge(quint8 pin, quint32 tick){
+    if (pin==EVT_AND){
+        ui->ANDHit->setStyleSheet("QLabel {color: white; background-color: darkGreen;}");
+        andTimer.start();
+    }
+    if (pin==EVT_XOR){
+        ui->XORHit->setStyleSheet("QLabel {color: white; background-color: darkGreen;}");
+        xorTimer.start();
     }
 }
 

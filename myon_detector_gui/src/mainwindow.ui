@@ -318,7 +318,7 @@
              </size>
             </property>
             <property name="text">
-             <string>AND</string>
+             <string>XOR</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
@@ -340,7 +340,7 @@
              </size>
             </property>
             <property name="text">
-             <string>XOR</string>
+             <string>AND</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>

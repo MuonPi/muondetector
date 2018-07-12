@@ -1,4 +1,5 @@
-#include "pigpiodhandler.h"
+#include <pigpiodhandler.h>
+#include <QDebug>
 extern "C"{
 #include <pigpiod_if2.h>
 }
@@ -40,7 +41,7 @@ void cbFunction(int user_pi, unsigned int user_gpio,
     if (pi!=user_pi){
         // put some error here for the case pi is not the same as before initialized
     }
-    if (level==RISING_EDGE){
-        pigpioHandler->sendSignal(user_gpio, tick);
-    }
+    // level gives the information if it is up or down (only important if trigger is
+    // at both: rising and falling edge)
+    pigpioHandler->sendSignal(user_gpio, tick);
 }

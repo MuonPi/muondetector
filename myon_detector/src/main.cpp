@@ -7,7 +7,7 @@
 #include <QHostAddress>
 
 #include <custom_io_operators.h>
-#include <demon.h>
+#include <daemon.h>
 
 using namespace std;
 
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 	QCoreApplication a(argc, argv);
 	QCoreApplication::setApplicationName("myon_detector");
     QCoreApplication::setApplicationVersion("1.0");
-    //setup_unix_signal_handlers();
+
     //unix_sig_handler_daemon *d = new unix_sig_handler_daemon();
     qRegisterMetaType<uint8_t>("uint8_t");
     qRegisterMetaType<uint16_t>("uint16_t");
@@ -92,17 +92,17 @@ int main(int argc, char *argv[])
         QCoreApplication::translate("main", "peerPort"));
     parser.addOption(peerPortOption);
 
-    // demonAddress option
-    QCommandLineOption demonIpOption(QStringList() << "server" << "demonAddress",
+    // daemonAddress option
+    QCommandLineOption daemonIpOption(QStringList() << "server" << "daemonAddress",
                                       QCoreApplication::translate("main", "set gui server ip address"),
-                                      QCoreApplication::translate("main", "demonAddress"));
-    parser.addOption(demonIpOption);
+                                      QCoreApplication::translate("main", "daemonAddress"));
+    parser.addOption(daemonIpOption);
 
-    // demonPort option
-    QCommandLineOption demonPortOption(QStringList() << "dp" << "demonPort",
+    // daemonPort option
+    QCommandLineOption daemonPortOption(QStringList() << "dp" << "daemonPort",
                                       QCoreApplication::translate("main", "set gui server port"),
-                                      QCoreApplication::translate("main", "demonPort"));
-    parser.addOption(demonPortOption);
+                                      QCoreApplication::translate("main", "daemonPort"));
+    parser.addOption(daemonPortOption);
 
 	// baudrate option
 	QCommandLineOption baudrateOption("b",
@@ -199,20 +199,20 @@ int main(int argc, char *argv[])
             }
         }
     }
-    quint16 demonPort = 0;
-    if (parser.isSet(demonPortOption)){
-        demonPort = parser.value(demonPortOption).toUInt(&ok);
+    quint16 daemonPort = 0;
+    if (parser.isSet(daemonPortOption)){
+        daemonPort = parser.value(daemonPortOption).toUInt(&ok);
         if (!ok) {
             peerPort = 0;
             cout << "wrong input peerPort (maybe not an integer)" << endl;
         }
     }
-    QString demonAddress = "";
-    if (parser.isSet(demonIpOption)){
-        demonAddress = parser.value(demonIpOption);
-        if (!QHostAddress(demonAddress).toIPv4Address()){
-            if (demonAddress != "localhost" && demonAddress != "local"){
-                demonAddress = "";
+    QString daemonAddress = "";
+    if (parser.isSet(daemonIpOption)){
+        daemonAddress = parser.value(daemonIpOption);
+        if (!QHostAddress(daemonAddress).toIPv4Address()){
+            if (daemonAddress != "localhost" && daemonAddress != "local"){
+                daemonAddress = "";
                 cout << "wrong input ipAddress, not an ipv4address" << endl;
             }
         }
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
     if (parser.isSet(biasPowerOnOff)){
         biasPower = true;
     }
-    Demon demon(gpsdevname, verbose, pcaChannel, dacThresh, biasVoltage, biasPower, dumpRaw,
-        baudrate, showGnssConfig, peerAddress, peerPort, demonAddress, demonPort, showout);
+    Daemon daemon(gpsdevname, verbose, pcaChannel, dacThresh, biasVoltage, biasPower, dumpRaw,
+        baudrate, showGnssConfig, peerAddress, peerPort, daemonAddress, daemonPort, showout);
     return a.exec();
 }

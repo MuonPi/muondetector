@@ -31,7 +31,6 @@ struct MessageContent{
 };
 class TcpMessage{
 public:
-    QVector<int> information;
     QVector<MessageContent> data;
     friend QDataStream& operator<<(QDataStream& in, const TcpMessage& message);
     friend QDataStream& operator<<(QDataStream& in, TcpMessage& message);

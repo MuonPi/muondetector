@@ -39,7 +39,8 @@ HEADERS += \
         ../shared/tcpconnection.h \
         src/mainwindow.h \
     ../shared/i2cproperty.h \
-    ../shared/tcpmessage.h
+    ../shared/tcpmessage.h \
+    ../shared/gpio_pin_definitions.h
 
 FORMS += \
         src/mainwindow.ui

@@ -1,5 +1,5 @@
-#ifndef DEMON_H
-#define DEMON_H
+#ifndef DAEMON_H
+#define DAEMON_H
 
 #include <QObject>
 #include <QTcpServer>
@@ -16,16 +16,16 @@
 #include <sys/socket.h>
 #include <signal.h>
 
-class Demon : public QTcpServer
+class Daemon : public QTcpServer
 {
 	Q_OBJECT
 
 public:
-    Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
+    Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
         float *new_dacThresh, float new_biasVoltage,bool biasPower, bool new_dumpRaw, int new_baudrate,
         bool new_configGnss, QString new_PeerAddress, quint16 new_PpeerPort,
         QString new_serverAddress, quint16 new_serverPort, bool new_showout, QObject *parent = 0);
-    ~Demon();
+    ~Daemon();
 	void configGps();
 	void loop();
     static void hupSignalHandler(int);
@@ -69,6 +69,7 @@ signals:
 	void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
 	void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
     void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
+    void gpioRisingEdge(uint8_t gpio_pin, uint32_t tick);
 
 private:
     void incomingConnection(qintptr socketDescriptor) override;
@@ -87,8 +88,8 @@ private:
     QMap <uint16_t, int> messageConfiguration;
     QtSerialUblox *qtGps = nullptr;
     QString peerAddress;
-    QHostAddress demonAddress = QHostAddress::Null;
-    quint16 peerPort, demonPort;
+    QHostAddress daemonAddress = QHostAddress::Null;
+    quint16 peerPort, daemonPort;
     QTcpServer *tcpServer;
 	void printTimestamp();
 	void delay(int millisecondsWait);
@@ -107,4 +108,4 @@ private:
     QSocketNotifier *snInt;
 };
 
-#endif // DEMON_H
+#endif // DAEMON_H

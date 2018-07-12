@@ -12,6 +12,7 @@ const quint16 quitConnection = 101;
 const quint16 timeoutSig = 138;
 const quint16 i2cProps = 275;
 const quint16 i2cRequest = 271;
+const quint16 gpioPin = 331;
 const quint16 msgCode = 333;
 
 TcpConnection::TcpConnection(QString newHostName, quint16 newPort, int newVerbose, int newTimeout,
@@ -121,6 +122,8 @@ void TcpConnection::onReadyRead(){
     QString someMsg;
     QString fileName;
     I2cProperty i2cProperty;
+    quint8 pin;
+    quint32 tick;
     bool setProperties;
     // first get some code (defined at the top of this file)
     // to see what kind of message this is
@@ -155,6 +158,11 @@ void TcpConnection::onReadyRead(){
         *in >> i2cProperty;
         *in >> setProperties;
     }
+
+    if (someCode == gpioPin){
+        *in >> pin;
+        *in >> tick;
+    }
     // if this is not a complete transaction but just a part -> return
     if (!in->commitTransaction()){
         return;
@@ -167,6 +175,12 @@ void TcpConnection::onReadyRead(){
     // if it's an update about I2C device status the message is stored in "block" now to handle it
     if (someCode == i2cProps){
         emit i2CProperties(i2cProperty,setProperties);
+        return;
+    }
+
+    // if it's a rising edge on one pin:
+    if (someCode == gpioPin){
+        emit gpioRisingEdge(pin, tick);
         return;
     }
 
@@ -270,6 +284,15 @@ bool TcpConnection::sendI2CPropertiesRequest(){
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out << i2cRequest;
+    return writeBlock(block);
+}
+
+bool TcpConnection::sendGpioRisingEdge(quint8 pin, quint32 tick){
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out << gpioPin;
+    out << pin;
+    out << tick;
     return writeBlock(block);
 }
 
