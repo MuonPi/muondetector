@@ -1,5 +1,6 @@
 #include <pigpiodhandler.h>
 #include <QDebug>
+#include <../shared/gpio_pin_definitions.h>
 extern "C"{
 #include <pigpiod_if2.h>
 }
@@ -9,6 +10,8 @@ static PigpiodHandler *pigHandlerAddress = nullptr;
 PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
     : QObject(parent)
 {
+    lastAndTime.start();
+    lastXorTime.start();
     pi = pigpio_start((char*)"127.0.0.1",(char*)"8888");
     pigHandlerAddress = this;
     for (auto& gpio_pin : gpio_pins){
@@ -38,6 +41,20 @@ void cbFunction(int user_pi, unsigned int user_gpio,
         return;
     }
     PigpiodHandler* pigpioHandler = pigHandlerAddress;
+    if (user_gpio==EVT_AND){
+        if(pigpioHandler->lastAndTime.elapsed()<40){
+            return;
+        }else{
+            pigpioHandler->lastAndTime.restart();
+        }
+    }
+    if (user_gpio==EVT_XOR){
+        if(pigpioHandler->lastXorTime.elapsed()<40){
+            return;
+        }else{
+            pigpioHandler->lastXorTime.restart();
+        }
+    }
     if (pi!=user_pi){
         // put some error here for the case pi is not the same as before initialized
     }

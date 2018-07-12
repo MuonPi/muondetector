@@ -5,7 +5,7 @@
 #include <QStandardItemModel>
 #include <tcpconnection.h>
 #include <QErrorMessage>
-#include <QTimer>
+#include <QTime>
 
 namespace Ui {
 class MainWindow;

@@ -38,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->ipButton->installEventFilter(this);
 
     // set timer for and/xor label color change after hit
-    int timerInterval = 50; // in msec
+    int timerInterval = 80; // in msec
     andTimer.setSingleShot(true);
     xorTimer.setSingleShot(true);
     andTimer.setInterval(timerInterval);
@@ -258,6 +258,8 @@ void MainWindow::on_ipButton_clicked()
         // it is connected and the button shows "disconnect" -> here comes disconnect code
         connectedToDemon = false;
         emit closeConnection();
+        andTimer.stop();
+        xorTimer.stop();
         uiSetDisconnectedState();
         return;
     }
