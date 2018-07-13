@@ -58,6 +58,7 @@ public slots:
     void sendI2CProperties();
     void setI2CProperties(I2cProperty i2cProperty, bool setProperties);
     void sendAndXorSignal(uint8_t gpio_pin, uint32_t tick);
+    void pollAllUbx();
 
 signals:
     void sendFile(QString fileName);

@@ -398,11 +398,16 @@ void Daemon::configGps() {
 	emit UBXSetCfgMsg(MSG_NAV_SVINFO, 1, 49);	// NAV-SVINFO
 
     delay(1000);
-    emit sendPoll(0x0600,1);
+    // this poll is for checking the port cfg (welche protokolle etc.)
+    //emit sendPoll(0x0600,1);
+}
+
+void Daemon::pollAllUbx(){
+
 }
 
 void Daemon::UBXReceivedAckAckNak(bool ackAck, uint16_t ackedMsgID, uint16_t ackedCfgMsgID){
-    // the value was already set correctly,
+    // the value was already set correctly before by either poll or set,
     // if not acknowledged or timeout we set the value to -1 (unknown/undefined)
     if (!ackAck){
         switch(ackedMsgID){
