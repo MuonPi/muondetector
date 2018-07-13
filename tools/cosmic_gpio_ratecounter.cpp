@@ -329,6 +329,8 @@ int main(int argc, char** argv) {
 	
 	bool measurement = true;
 	double scanpar_value = scanstart-scanpar_increment;
+	if (N>0)
+		cout<<"# time temp scanpar AND-rate XOR-rate err(AND) err(XOR) ADC2 UBIAS"<<endl;
 	while (measurement) {
 		if (do_scan) {
 			scanpar_value += scanpar_increment;
@@ -351,8 +353,6 @@ int main(int argc, char** argv) {
 					break;
 			}
 		}
-		
-		cout<<"# time temp scanpar AND-rate XOR-rate err(AND) err(XOR) ADC2 UBIAS"<<endl;
 		
 		for (int n=0; n<N || N==-1; n++) {
 			// reset scalers
