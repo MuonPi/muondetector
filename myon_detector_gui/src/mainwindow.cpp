@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QErrorMessage>
 #include <gpio_pin_definitions.h>
+#include <settings.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -45,6 +46,9 @@ MainWindow::MainWindow(QWidget *parent) :
     xorTimer.setInterval(timerInterval);
     connect(&andTimer, &QTimer::timeout, this, &MainWindow::resetAndHit);
     connect(&xorTimer, &QTimer::timeout, this, &MainWindow::resetXorHit);
+
+    // set menu bar actions
+    connect(ui->actionsettings, &QAction::triggered, this, &MainWindow::settings_clicked);
 }
 
 MainWindow::~MainWindow()
@@ -346,6 +350,10 @@ void MainWindow::on_discr2Slider_valueChanged(int value)
     if (!mouseHold){
         emit setI2CProperties(i2cProperty);
     }
+}
+void MainWindow::settings_clicked(bool checked){
+    Settings *settings = new Settings(this);
+    settings->show();
 }
 
 float MainWindow::parseValue(QString text){

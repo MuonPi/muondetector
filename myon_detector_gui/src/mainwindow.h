@@ -58,6 +58,8 @@ private slots:
 
     void on_discr2Edit_editingFinished();
 
+    void settings_clicked(bool checked);
+
 private:
     Ui::MainWindow *ui;
     void uiSetConnectedState();
