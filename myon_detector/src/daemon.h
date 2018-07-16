@@ -65,7 +65,7 @@ signals:
     void sendMsg(QString msg);
     void sendMessage(TcpMessage tcpMessage);
     void aboutToQuit();
-    void sendPoll(uint16_t msgID, uint8_t port);
+    void sendPoll(uint16_t msgID);
     void i2CProperties(I2cProperty i2cProperty, bool set_Properties = false);
 	void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
 	void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);

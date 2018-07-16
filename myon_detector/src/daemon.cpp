@@ -134,8 +134,10 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     // for pigpio signals:
     const QVector<unsigned int> gpio_pins({EVT_AND, EVT_XOR});
     PigpiodHandler* pigHandler = new PigpiodHandler(gpio_pins,this);
-    connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
-    connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendAndXorSignal);
+    if (pigHandler!=nullptr){
+        connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
+        connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendAndXorSignal);
+    }
 
     // for i2c devices
     lm75 = new LM75();
@@ -398,8 +400,9 @@ void Daemon::configGps() {
 	emit UBXSetCfgMsg(MSG_NAV_SVINFO, 1, 49);	// NAV-SVINFO
 
     delay(1000);
-    // this poll is for checking the port cfg (welche protokolle etc.)
-    //emit sendPoll(0x0600,1);
+    // this poll is for checking the port cfg (which protocols are enabled etc.)
+    emit sendPoll(MSG_CFG_PRT);
+    //emit sendPoll()
 }
 
 void Daemon::pollAllUbx(){

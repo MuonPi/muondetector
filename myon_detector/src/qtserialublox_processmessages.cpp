@@ -123,13 +123,14 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
         switch (messageID) {
         default:
             if (verbose > 1) {
-                tempStream << "received UBX-CFG message: 0x";
+                tempStream << "received UBX-CFG message:";
                 for (std::string::size_type i = 0; i<msg.data.size(); i++){
                     tempStream << " 0x" << std::setfill('0') << std::setw(2) << std::hex << (int)msg.data[i];
                 }
                 tempStream << "\n";
                 emit toConsole(QString::fromStdString(tempStream.str()));
             }
+            emit UBXreceivedMsgCfg(msg.msgID);
         }
         break;
     case 0x10: // UBX-ESF

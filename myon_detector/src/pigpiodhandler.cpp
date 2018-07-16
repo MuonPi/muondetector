@@ -13,6 +13,10 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
     lastAndTime.start();
     lastXorTime.start();
     pi = pigpio_start((char*)"127.0.0.1",(char*)"8888");
+    if (pi<0){
+        this->deleteLater();
+        return;
+    }
     pigHandlerAddress = this;
     for (auto& gpio_pin : gpio_pins){
         set_mode(pi, gpio_pin, PI_INPUT);
