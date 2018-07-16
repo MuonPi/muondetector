@@ -153,7 +153,6 @@ bool QtSerialUblox::scanUnknownMessage(string &buffer, UbxMessage &message)
     if (((long int)mess.size() - 8) < len) {
         std::string::size_type found = buffer.find(refstr, 2);
         if (found != string::npos) {
-            emit toConsole(QString::fromStdString(tempStream.str()));
             if (verbose > 1){
                 std::stringstream tempStream;
                     tempStream << "received faulty UBX string:\n " << dec;
