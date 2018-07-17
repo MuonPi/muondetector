@@ -23,7 +23,7 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     // general
     verbose = new_verbose;
     if (verbose > 4){
-        cout << "demon running in thread " << QString("0x%1").arg((int)this->thread()) << endl;
+        cout << "daemon running in thread " << QString("0x%1").arg((int)this->thread()) << endl;
     }
 
     // for i2c devices
@@ -405,7 +405,7 @@ void Demon::setI2CProperties(I2cProperty i2cProperty, bool setProperties){
     if (!setProperties){
         return;
     }
-    if (i2cProperty.pcaChann>=0 && i2cProperty.pcaChann>8){
+    if (i2cProperty.pcaChann>=0 && i2cProperty.pcaChann<8){
         pcaChannel = i2cProperty.pcaChann;
         pca->setOutputPorts(pcaChannel);
     }

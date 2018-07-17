@@ -119,17 +119,17 @@ int main(int argc, char *argv[])
 
     // pcaChannel to select signal to ublox
     QCommandLineOption pcaChannelOption(QStringList() << "pca" << "signal",
-                                        QCoreApplication::translate("main","set signal for ublox:"
-                                                                           "0 - coincidence"
-                                                                           "1 - XOR"
-                                                                           "2 - discr 1"
-                                                                           "3 - discr 2"),
+                                        QCoreApplication::translate("main","set input signal for ublox interrupt pin:"
+                                                                           "\n0 - coincidence (AND)"
+                                                                           "\n1 - anti-coincidence (XOR)"
+                                                                           "\n2 - discr 1"
+                                                                           "\n3 - discr 2"),
                                         QCoreApplication::translate("main", "channel"));
     parser.addOption(pcaChannelOption);
 
     // biasVoltage for SciPM
     QCommandLineOption biasVoltageOption(QStringList() << "bias" << "vout",
-                                         QCoreApplication::translate("main","set voltage for SciPM"),
+                                         QCoreApplication::translate("main","set voltage for SiPM"),
                                          QCoreApplication::translate("main", "bias voltage"));
     parser.addOption(biasVoltageOption);
 
