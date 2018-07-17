@@ -240,11 +240,11 @@ void MainWindow::updateUiProperties(bool bias_powerOn, int uartBufferValue, int 
     ui->biasPowerLabel->setEnabled(true);
     if(bias_powerOn){
         ui->biasPowerButton->setText("Disable Bias");
-        ui->biasPowerLabel->setText("Power ON");
+        ui->biasPowerLabel->setText("Bias ON");
         ui->biasPowerLabel->setStyleSheet("QLabel {background-color: darkGreen; color: white;}");
     }else{
         ui->biasPowerButton->setText("Enable Bias");
-        ui->biasPowerLabel->setText("Power OFF");
+        ui->biasPowerLabel->setText("Bias OFF");
         ui->biasPowerLabel->setStyleSheet("QLabel {background-color: red; color: white;}");
     }
     mouseHold = false;
