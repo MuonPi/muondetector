@@ -5,12 +5,13 @@
 
 using namespace std;
 
+const uint8_t usedPort = 1; // this is the uart port. (0 = i2c; 1 = uart; 2 = usb; 3 = isp;)
+                            // see u-blox8-M8_Receiver... pdf documentation site 170
 // all about processing different ubx-messages:
 void QtSerialUblox::processMessage(const UbxMessage& msg)
 {
     uint8_t classID = (msg.msgID & 0xff00) >> 8;
     uint8_t messageID = msg.msgID & 0xff;
-
     std::vector<GnssSatellite> sats;
     std::stringstream tempStream;
     //std::string temp;
@@ -41,21 +42,19 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
             break;
         }
         switch (messageID){
-        case 0x01:
-            emit UBXReceivedAckAckNak(true, msgWaitingForAck->msgID,
-                                     (uint16_t)(msgWaitingForAck->data[0])<<8
-                                    |msgWaitingForAck->data[1]);
-            break;
         case 0x00:
-            emit UBXReceivedAckAckNak(false, msgWaitingForAck->msgID,
+            emit UBXReceivedAckNak(msgWaitingForAck->msgID,
                                       (uint16_t)(msgWaitingForAck->data[0])<<8
                                      |msgWaitingForAck->data[1]);
+            sendQueuedMsg(true); // tries to send the message again
+            break;
+        default:
+            ackTimer->stop();
+            delete msgWaitingForAck;
+            msgWaitingForAck = 0;
+            sendQueuedMsg();
             break;
         }
-        ackTimer->stop();
-        delete msgWaitingForAck;
-        msgWaitingForAck = 0;
-        sendQueuedMsg();
         break;
     case 0x01: // UBX-NAV
         switch (messageID) {
@@ -121,6 +120,12 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
         break;
     case 0x06: // UBX-CFG
         switch (messageID) {
+        case 0x01: // UBX-CFG-MSG   (message configuration)
+            emit UBXreceivedMsgRateCfg(
+                        (((uint16_t)msg.data[0])<<8)|((uint16_t)msg.data[1]),
+                        (uint8_t)(msg.data[2+usedPort])
+                    );
+            // 2: port 0 (i2c); 3: port 1 (uart); 4: port 2 (usb); 5: port 3 (isp)
         default:
             if (verbose > 1) {
                 tempStream << "received UBX-CFG message:";
@@ -130,7 +135,6 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
                 tempStream << "\n";
                 emit toConsole(QString::fromStdString(tempStream.str()));
             }
-            emit UBXreceivedMsgCfg(msg.msgID);
         }
         break;
     case 0x10: // UBX-ESF

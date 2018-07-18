@@ -14,15 +14,15 @@ class QtSerialUblox : public QObject
 
 public:
     explicit QtSerialUblox(const QString serialPortName, int newTimeout, int baudRate,
-                           bool newDumpRaw, int newVerbose, bool newShowout, QObject *parent = 0);
+                           bool newDumpRaw, int newVerbose, bool newShowout, bool newShowin, QObject *parent = 0);
 
 signals:
     // all messages coming from QtSerialUblox class that should be displayed on console
     // get sent to Client thread with signal/slot mechanics
     void toConsole(QString data);
-    void UBXReceivedAckAckNak(bool ackAck, uint16_t ackedMsgID, uint16_t ackedCfgMsgID);
+    void UBXReceivedAckNak(uint16_t ackedMsgID, uint16_t ackedCfgMsgID);
     // ackedMsgID contains the return value of the ack msg (in case of CFG_MSG that is CFG_MSG)
-    void UBXreceivedMsgCfg(uint16_t msgID);
+    void UBXreceivedMsgRateCfg(uint16_t msgID, uint8_t rate);
     void UBXCfgError(QString data);
     void gpsRestart();
     void gpsConnectionError();
@@ -45,10 +45,11 @@ public slots:
     // all functions that can be called from other classes through signal/slot mechanics
     void makeConnection();
     void onReadyRead();
-    void sendPoll(uint16_t msgID);
+    void pollMsgRate(uint16_t msgID);
+    void pollMsg(uint16_t msgID);
     // for polling the port configuration for specific port set rate to port ID
     void handleError(QSerialPort::SerialPortError serialPortError);
-    void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
+    void UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate);
     void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
     void UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask);
     void ackTimeout();
@@ -97,6 +98,8 @@ private:
                           // be interpreted as QString by QString(message) (basically all NMEA)
     bool discardAllNMEA = true; // if true discard all NMEA messages and do not parse them
     bool showout = false; // if true show the ubx messages sent to the gps board as hex
+    bool showin = false;
+    bool waitingForPolledMsg = false;
     std::queue <UbxMessage> outMsgBuffer;
     UbxMessage *msgWaitingForAck = 0;
     QTimer *ackTimer;

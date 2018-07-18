@@ -76,9 +76,14 @@ int main(int argc, char *argv[])
     parser.addOption(showGnssConfigOption);
 
     // show outgoing ubx messages as hex
-    QCommandLineOption showoutOption(QStringList() << "showoutput" << "showout",
+    QCommandLineOption showoutOption(QStringList() << "showoutgoing" << "showout",
         QCoreApplication::translate("main", "show outgoing ubx messages as hex"));
     parser.addOption(showoutOption);
+
+    // show incoming ubx messages as hex
+    QCommandLineOption showinOption(QStringList() << "showincoming" << "showin",
+        QCoreApplication::translate("main", "show incoming ubx messages as hex"));
+    parser.addOption(showinOption);
 
     // peerAddress option
     QCommandLineOption peerIpOption(QStringList() << "peer" << "peerAddress",
@@ -227,6 +232,8 @@ int main(int argc, char *argv[])
     }
     bool showout = false;
     showout = parser.isSet(showoutOption);
+    bool showin = false;
+    showin = parser.isSet(showinOption);
     float dacThresh[2];
     dacThresh[0] = 0;
     if (parser.isSet(discr1Option)){
@@ -257,6 +264,6 @@ int main(int argc, char *argv[])
         biasPower = true;
     }
     Daemon daemon(gpsdevname, verbose, pcaChannel, dacThresh, biasVoltage, biasPower, dumpRaw,
-        baudrate, showGnssConfig, peerAddress, peerPort, daemonAddress, daemonPort, showout);
+        baudrate, showGnssConfig, peerAddress, peerPort, daemonAddress, daemonPort, showout, showin);
     return a.exec();
 }

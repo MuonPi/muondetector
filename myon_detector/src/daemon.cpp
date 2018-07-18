@@ -13,6 +13,23 @@ extern "C"{
 
 using namespace std;
 
+
+static const QVector<uint16_t> allMsgCfgID({
+//   MSG_CFG_ANT, MSG_CFG_CFG, MSG_CFG_DAT, MSG_CFG_DOSC,
+//   MSG_CFG_DYNSEED, MSG_CFG_ESRC, MSG_CFG_FIXSEED, MSG_CFG_GEOFENCE,
+//   MSG_CFG_GNSS, MSG_CFG_INF, MSG_CFG_ITFM, MSG_CFG_LOGFILTER,
+//   MSG_CFG_MSG, MSG_CFG_NAV5, MSG_CFG_NAVX5, MSG_CFG_NMEA,
+//   MSG_CFG_ODO, MSG_CFG_PM2, MSG_CFG_PMS, MSG_CFG_PRT, MSG_CFG_PWR,
+//   MSG_CFG_RATE, MSG_CFG_RINV, MSG_CFG_RST, MSG_CFG_RXM, MSG_CFG_SBAS,
+//   MSG_CFG_SMGR, MSG_CFG_TMODE2, MSG_CFG_TP5, MSG_CFG_TXSLOT, MSG_CFG_USB
+     MSG_NAV_CLOCK, MSG_NAV_DGPS, MSG_NAV_AOPSTATUS, MSG_NAV_DOP, MSG_NAV_EOE, MSG_NAV_GEOFENCE,
+     MSG_NAV_ODO, MSG_NAV_ORB, MSG_NAV_POSECEF, MSG_NAV_LLH, MSG_NAV_PVT, MSG_NAV_RESETODO,
+     MSG_NAV_SAT, MSG_NAV_SBAS, MSG_NAV_SOL, MSG_NAV_STATUS, MSG_NAV_SVINFO, MSG_NAV_TIMEBDS,
+     MSG_NAV_TIMEGAL, MSG_NAV_TIMEGLO, MSG_NAV_TIMEGPS, MSG_NAV_TIMELS, MSG_NAV_TIMEUTC, MSG_NAV_VELECEF,
+     MSG_NAV_VELNED,
+     MSG_MON_VER, MSG_MON_GNSS, MSG_MON_HW, MSG_MON_HW2, MSG_MON_IO, MSG_MON_MSGPP, MSG_MON_PATCH,
+     MSG_MON_RXBUF, MSG_MON_RXR, MSG_MON_SMGR, MSG_MON_TXBUF
+     });
 // signal handling stuff: put code to execute before shutdown down there
 static int setup_unix_signal_handlers()
 {
@@ -89,6 +106,11 @@ void Daemon::handleSigInt()
     if(verbose>1){
         cout << "\nSIGINT received"<<endl;
     }
+//    qDebug() << allMsgCfgID.size();
+//    qDebug() << msgRateCfgs.size();
+//    for (QMap<uint16_t,int>::iterator it =msgRateCfgs.begin(); it!=msgRateCfgs.end(); it++){
+//        qDebug().nospace() << "0x"<<hex<<(uint8_t)(it.key()>>8) << " 0x"<<hex<<(uint8_t)(it.key()&0xff) << " " << dec << it.value();
+//    }
     emit aboutToQuit();
     this->thread()->quit();
     exit(0);
@@ -100,7 +122,7 @@ void Daemon::handleSigInt()
 Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     float* new_dacThresh, float new_biasVoltage, bool biasPower, bool new_dumpRaw, int new_baudrate,
     bool new_configGnss, QString new_peerAddress, quint16 new_peerPort,
-    QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, QObject *parent)
+    QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, QObject *parent)
     : QTcpServer(parent)
 {
     // signal handling
@@ -165,6 +187,7 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     baudrate = new_baudrate;
     configGnss = new_configGnss;
     showout = new_showout;
+    showin = new_showin;
 
     // for separate raspi pin output states
     wiringPiSetup();
@@ -216,10 +239,11 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     // start tcp connection and gps module connection
     //connectToServer();
     connectToGps();
-    delay(1000);
+    //delay(1000);
     if(configGnss){
         configGps();
     }
+    pollAllUbxMsgRate();
 }
 
 Daemon::~Daemon(){
@@ -239,7 +263,7 @@ void Daemon::connectToGps(){
     prepareSerial.waitForFinished();
 
     // here is where the magic threading happens look closely
-    qtGps = new QtSerialUblox(gpsdevname, gpsTimeout, baudrate, dumpRaw, verbose, showout);
+    qtGps = new QtSerialUblox(gpsdevname, gpsTimeout, baudrate, dumpRaw, verbose, showout, showin);
     QThread *gpsThread = new QThread();
     qtGps->moveToThread(gpsThread);
     // connect all signals not coming from Daemon to gps
@@ -248,14 +272,15 @@ void Daemon::connectToGps(){
     connect(qtGps, &QtSerialUblox::destroyed, gpsThread, &QThread::quit);
     connect(gpsThread, &QThread::finished, gpsThread, &QThread::deleteLater);
     connect(qtGps, &QtSerialUblox::gpsRestart, this, &Daemon::connectToGps);
+    connect(this->thread(), &QThread::finished, gpsThread, &QThread::quit);
     // connect all command signals for ublox module here
     connect(this, &Daemon::UBXSetCfgPrt, qtGps, &QtSerialUblox::UBXSetCfgPrt);
-    connect(this, &Daemon::UBXSetCfgMsg, qtGps, &QtSerialUblox::UBXSetCfgMsg);
+    connect(this, &Daemon::UBXSetCfgMsgRate, qtGps, &QtSerialUblox::UBXSetCfgMsgRate);
     connect(this, &Daemon::UBXSetCfgRate, qtGps, &QtSerialUblox::UBXSetCfgRate);
-    connect(this, &Daemon::sendPoll, qtGps, &QtSerialUblox::sendPoll);
-    connect(this->thread(), &QThread::finished, gpsThread, &QThread::quit);
-    //connect(this, &Daemon::aboutToQuit, gpsThread, &QThread::quit);
-    // connect cfgError signal to output, could also create special errorFunction
+    connect(this, &Daemon::sendPollUbxMsgRate, qtGps, &QtSerialUblox::pollMsgRate);
+    connect(this, &Daemon::sendPollUbxMsg, qtGps, &QtSerialUblox::pollMsg);
+    connect(qtGps, &QtSerialUblox::UBXReceivedAckNak, this, &Daemon::UBXReceivedAckNak);
+    connect(qtGps, &QtSerialUblox::UBXreceivedMsgRateCfg, this, &Daemon::UBXReceivedMsgRateCfg);
     connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Daemon::toConsole);
 
     // after thread start there will be a signal emitted which starts the qtGps makeConnection function
@@ -328,100 +353,101 @@ void Daemon::configGps() {
     emit UBXSetCfgPrt(1,PROTO_UBX);
     // deactivate all NMEA messages: (port 6 means ALL ports)
     // for acknowledge we have to think about a better solution
-    messageConfiguration.insert(MSG_NMEA_DTM,0);
-    messageConfiguration.insert(MSG_NMEA_GBQ,0);
-    messageConfiguration.insert(MSG_NMEA_GBS,0);
-    messageConfiguration.insert(MSG_NMEA_GGA,0);
-    messageConfiguration.insert(MSG_NMEA_GLL,0);
-    messageConfiguration.insert(MSG_NMEA_GLQ,0);
-    messageConfiguration.insert(MSG_NMEA_GNQ,0);
-    messageConfiguration.insert(MSG_NMEA_GNS,0);
-    messageConfiguration.insert(MSG_NMEA_GPQ,0);
-    messageConfiguration.insert(MSG_NMEA_GRS,0);
-    messageConfiguration.insert(MSG_NMEA_GSA,0);
-    messageConfiguration.insert(MSG_NMEA_GST,0);
-    messageConfiguration.insert(MSG_NMEA_GSV,0);
-    messageConfiguration.insert(MSG_NMEA_RMC,0);
-    messageConfiguration.insert(MSG_NMEA_TXT,0);
-    messageConfiguration.insert(MSG_NMEA_VLW,0);
-    messageConfiguration.insert(MSG_NMEA_VTG,0);
-    messageConfiguration.insert(MSG_NMEA_ZDA,0);
-    messageConfiguration.insert(MSG_NMEA_POSITION,0);
-    emit UBXSetCfgMsg(MSG_NMEA_DTM,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_GBQ,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_GBS,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_GGA,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_GLL,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_GLQ,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_GNQ,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_GNS,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_GPQ,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_GRS,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_GSA,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_GST,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_GSV,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_RMC,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_TXT,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_VLW,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_VTG,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_ZDA,6,0);
-    emit UBXSetCfgMsg(MSG_NMEA_POSITION,6,0);
+//    msgRateCfgs.insert(MSG_NMEA_DTM,0);
+//    msgRateCfgs.insert(MSG_NMEA_GBQ,0);
+//    msgRateCfgs.insert(MSG_NMEA_GBS,0);
+//    msgRateCfgs.insert(MSG_NMEA_GGA,0);
+//    msgRateCfgs.insert(MSG_NMEA_GLL,0);
+//    msgRateCfgs.insert(MSG_NMEA_GLQ,0);
+//    msgRateCfgs.insert(MSG_NMEA_GNQ,0);
+//    msgRateCfgs.insert(MSG_NMEA_GNS,0);
+//    msgRateCfgs.insert(MSG_NMEA_GPQ,0);
+//    msgRateCfgs.insert(MSG_NMEA_GRS,0);
+//    msgRateCfgs.insert(MSG_NMEA_GSA,0);
+//    msgRateCfgs.insert(MSG_NMEA_GST,0);
+//    msgRateCfgs.insert(MSG_NMEA_GSV,0);
+//    msgRateCfgs.insert(MSG_NMEA_RMC,0);
+//    msgRateCfgs.insert(MSG_NMEA_TXT,0);
+//    msgRateCfgs.insert(MSG_NMEA_VLW,0);
+//    msgRateCfgs.insert(MSG_NMEA_VTG,0);
+//    msgRateCfgs.insert(MSG_NMEA_ZDA,0);
+//    msgRateCfgs.insert(MSG_NMEA_POSITION,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_DTM,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_GBQ,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_GBS,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_GGA,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_GLL,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_GLQ,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_GNQ,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_GNS,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_GPQ,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_GRS,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_GSA,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_GST,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_GSV,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_RMC,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_TXT,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_VLW,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_VTG,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_ZDA,6,0);
+    emit UBXSetCfgMsgRate(MSG_NMEA_POSITION,6,0);
 
     // set protocol configuration for ports
-    // messageConfiguration: -1 means unknown, 0 means off, some positive value means update time
+    // msgRateCfgs: -1 means unknown, 0 means off, some positive value means update time
     const int measrate = 10;
-    messageConfiguration.insert(MSG_CFG_RATE, measrate);
-    messageConfiguration.insert(MSG_TIM_TM2, 1);
-    messageConfiguration.insert(MSG_TIM_TP, 51);
-    messageConfiguration.insert(MSG_NAV_TIMEUTC, 20);
-    messageConfiguration.insert(MSG_MON_HW, 47);
-    messageConfiguration.insert(MSG_NAV_SAT, 59);
-    messageConfiguration.insert(MSG_NAV_TIMEGPS, 61);
-    messageConfiguration.insert(MSG_NAV_SOL, 67);
-    messageConfiguration.insert(MSG_NAV_STATUS, 71);
-    messageConfiguration.insert(MSG_NAV_CLOCK, 89);
-    messageConfiguration.insert(MSG_MON_TXBUF, 97);
-    messageConfiguration.insert(MSG_NAV_SBAS, 255);
-    messageConfiguration.insert(MSG_NAV_DOP, 101);
-    messageConfiguration.insert(MSG_NAV_SVINFO, 49);
+//    msgRateCfgs.insert(MSG_CFG_RATE, measrate);
+//    msgRateCfgs.insert(MSG_TIM_TM2, 1);
+//    msgRateCfgs.insert(MSG_TIM_TP, 51);
+//    msgRateCfgs.insert(MSG_NAV_TIMEUTC, 20);
+//    msgRateCfgs.insert(MSG_MON_HW, 47);
+//    msgRateCfgs.insert(MSG_NAV_SAT, 59);
+//    msgRateCfgs.insert(MSG_NAV_TIMEGPS, 61);
+//    msgRateCfgs.insert(MSG_NAV_SOL, 67);
+//    msgRateCfgs.insert(MSG_NAV_STATUS, 71);
+//    msgRateCfgs.insert(MSG_NAV_CLOCK, 89);
+//    msgRateCfgs.insert(MSG_MON_TXBUF, 97);
+//    msgRateCfgs.insert(MSG_NAV_SBAS, 255);
+//    msgRateCfgs.insert(MSG_NAV_DOP, 101);
+//    msgRateCfgs.insert(MSG_NAV_SVINFO, 49);
     emit UBXSetCfgRate(1000 / measrate, 1); // MSG_CFG_RATE
-    emit UBXSetCfgMsg(MSG_TIM_TM2, 1, 1);	// TIM-TM2
-	emit UBXSetCfgMsg(MSG_TIM_TP, 1, 51);	// TIM-TP
-	emit UBXSetCfgMsg(MSG_NAV_TIMEUTC, 1, 20);	// NAV-TIMEUTC
-	emit UBXSetCfgMsg(MSG_MON_HW, 1, 47);	// MON-HW
-	emit UBXSetCfgMsg(MSG_NAV_SAT, 1, 59);	// NAV-SAT
-	emit UBXSetCfgMsg(MSG_NAV_TIMEGPS, 1, 61);	// NAV-TIMEGPS
-	emit UBXSetCfgMsg(MSG_NAV_SOL, 1, 67);	// NAV-SOL
-	emit UBXSetCfgMsg(MSG_NAV_STATUS, 1, 71);	// NAV-STATUS
-	emit UBXSetCfgMsg(MSG_NAV_CLOCK, 1, 89);	// NAV-CLOCK
-	emit UBXSetCfgMsg(MSG_MON_TXBUF, 1, 97);	// MON-TXBUF
-	emit UBXSetCfgMsg(MSG_NAV_SBAS, 1, 255);	// NAV-SBAS
-	emit UBXSetCfgMsg(MSG_NAV_DOP, 1, 101);	// NAV-DOP
-	emit UBXSetCfgMsg(MSG_NAV_SVINFO, 1, 49);	// NAV-SVINFO
-
-    delay(1000);
+    emit UBXSetCfgMsgRate(MSG_TIM_TM2, 1, 1);	// TIM-TM2
+    emit UBXSetCfgMsgRate(MSG_TIM_TP, 1, 51);	// TIM-TP
+    emit UBXSetCfgMsgRate(MSG_NAV_TIMEUTC, 1, 20);	// NAV-TIMEUTC
+    emit UBXSetCfgMsgRate(MSG_MON_HW, 1, 47);	// MON-HW
+    emit UBXSetCfgMsgRate(MSG_NAV_SAT, 1, 59);	// NAV-SAT
+    emit UBXSetCfgMsgRate(MSG_NAV_TIMEGPS, 1, 61);	// NAV-TIMEGPS
+    emit UBXSetCfgMsgRate(MSG_NAV_SOL, 1, 67);	// NAV-SOL
+    emit UBXSetCfgMsgRate(MSG_NAV_STATUS, 1, 71);	// NAV-STATUS
+    emit UBXSetCfgMsgRate(MSG_NAV_CLOCK, 1, 89);	// NAV-CLOCK
+    emit UBXSetCfgMsgRate(MSG_MON_TXBUF, 1, 97);	// MON-TXBUF
+    emit UBXSetCfgMsgRate(MSG_NAV_SBAS, 1, 255);	// NAV-SBAS
+    emit UBXSetCfgMsgRate(MSG_NAV_DOP, 1, 101);	// NAV-DOP
+    emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 49);	// NAV-SVINFO
     // this poll is for checking the port cfg (which protocols are enabled etc.)
-    emit sendPoll(MSG_CFG_PRT);
+    emit sendPollUbxMsg(MSG_CFG_PRT);
     //emit sendPoll()
 }
 
-void Daemon::pollAllUbx(){
-
+void Daemon::pollAllUbxMsgRate(){
+    for(const auto& id : allMsgCfgID){
+        emit sendPollUbxMsgRate(id);
+    }
 }
 
-void Daemon::UBXReceivedAckAckNak(bool ackAck, uint16_t ackedMsgID, uint16_t ackedCfgMsgID){
+void Daemon::UBXReceivedAckNak(uint16_t ackedMsgID, uint16_t ackedCfgMsgID){
     // the value was already set correctly before by either poll or set,
     // if not acknowledged or timeout we set the value to -1 (unknown/undefined)
-    if (!ackAck){
-        switch(ackedMsgID){
-        case MSG_CFG_MSG:
-            messageConfiguration.insert(ackedCfgMsgID,-1);
-            break;
-        default:
-            messageConfiguration.insert(ackedMsgID,-1);
-            break;
-        }
+    switch(ackedMsgID){
+    case MSG_CFG_MSG:
+        msgRateCfgs.insert(ackedCfgMsgID,-1);
+        break;
+    default:
+        break;
     }
+}
+
+void Daemon::UBXReceivedMsgRateCfg(uint16_t msgID, uint8_t rate){
+    msgRateCfgs.insert(msgID,rate);
 }
 
 

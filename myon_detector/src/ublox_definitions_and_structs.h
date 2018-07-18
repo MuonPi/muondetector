@@ -119,6 +119,7 @@ struct UbxMessage {
 public:
 	uint16_t msgID;
     std::string data;
+    bool pollMessage = false; // defines the message as poll msg (wait for poll answer in form of data)
 };
 
 struct gpsTimestamp {

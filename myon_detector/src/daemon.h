@@ -24,7 +24,7 @@ public:
     Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
         float *new_dacThresh, float new_biasVoltage,bool biasPower, bool new_dumpRaw, int new_baudrate,
         bool new_configGnss, QString new_PeerAddress, quint16 new_PpeerPort,
-        QString new_serverAddress, quint16 new_serverPort, bool new_showout, QObject *parent = 0);
+        QString new_serverAddress, quint16 new_serverPort, bool new_showout, bool new_showin, QObject *parent = 0);
     ~Daemon();
 	void configGps();
 	void loop();
@@ -45,7 +45,8 @@ public slots:
     void toConsole(QString data);
     void gpsToConsole(QString data);
     void stoppedConnection(QString hostName, quint16 port, quint32 connectionTimeout, quint32 connectionDuration);
-    void UBXReceivedAckAckNak(bool ackAck, uint16_t ackedMsgID, uint16_t ackedCfgMsgID);
+    void UBXReceivedAckNak(uint16_t ackedMsgID, uint16_t ackedCfgMsgID);
+    void UBXReceivedMsgRateCfg(uint16_t msgID, uint8_t rate);
     void gpsConnectionError();
     void gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double> updateAge,
                             char propertyName);
@@ -58,16 +59,20 @@ public slots:
     void sendI2CProperties();
     void setI2CProperties(I2cProperty i2cProperty, bool setProperties);
     void sendAndXorSignal(uint8_t gpio_pin, uint32_t tick);
-    void pollAllUbx();
+    void pollAllUbxMsgRate();
 
 signals:
     void sendFile(QString fileName);
     void sendMsg(QString msg);
     void sendMessage(TcpMessage tcpMessage);
     void aboutToQuit();
-    void sendPoll(uint16_t msgID);
+    void sendPollUbxMsgRate(uint16_t msgID);
+    void sendPollUbxMsg(uint16_t msgID);
+    // difference between msgRate and msg is that CFG-MSG (0x0601) alone is used
+    // to set/get the rate for every message so the msgID must be wrapped to the data
+    // of a message of type CFG-MSG first
     void i2CProperties(I2cProperty i2cProperty, bool set_Properties = false);
-	void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
+    void UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate);
 	void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
     void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
     void gpioRisingEdge(uint8_t gpio_pin, uint32_t tick);
@@ -86,7 +91,7 @@ private:
     int pcaChannel;
     LM75 *lm75;
     TcpConnection * tcpConnection = nullptr;
-    QMap <uint16_t, int> messageConfiguration;
+    QMap <uint16_t, int> msgRateCfgs;
     QtSerialUblox *qtGps = nullptr;
     QString peerAddress;
     QHostAddress daemonAddress = QHostAddress::Null;
@@ -97,7 +102,7 @@ private:
     QString gpsdevname;
     int verbose, baudrate;
     int gpsTimeout = 5000;
-    bool dumpRaw, configGnss, showout;
+    bool dumpRaw, configGnss, showout, showin;
 
     // signal handling
     static int sighupFd[2];
