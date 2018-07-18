@@ -1,7 +1,7 @@
 #ifndef QTSERIALUBLOX_H
 #define QTSERIALUBLOX_H
 
-#include <structs_and_defines.h>
+#include <ublox_definitions_and_structs.h>
 #include <queue>
 #include <string>
 #include <QSerialPort>
@@ -22,6 +22,7 @@ signals:
     void toConsole(QString data);
     void UBXReceivedAckAckNak(bool ackAck, uint16_t ackedMsgID, uint16_t ackedCfgMsgID);
     // ackedMsgID contains the return value of the ack msg (in case of CFG_MSG that is CFG_MSG)
+    void UBXreceivedMsgCfg(uint16_t msgID);
     void UBXCfgError(QString data);
     void gpsRestart();
     void gpsConnectionError();
@@ -44,7 +45,8 @@ public slots:
     // all functions that can be called from other classes through signal/slot mechanics
     void makeConnection();
     void onReadyRead();
-    void sendPoll(uint16_t msgID, uint8_t port);
+    void sendPoll(uint16_t msgID);
+    // for polling the port configuration for specific port set rate to port ID
     void handleError(QSerialPort::SerialPortError serialPortError);
     void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
     void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);

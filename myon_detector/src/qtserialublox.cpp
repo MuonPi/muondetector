@@ -153,12 +153,14 @@ bool QtSerialUblox::scanUnknownMessage(string &buffer, UbxMessage &message)
     if (((long int)mess.size() - 8) < len) {
         std::string::size_type found = buffer.find(refstr, 2);
         if (found != string::npos) {
-            std::stringstream tempStream;
-            tempStream << "received faulty UBX string:\n " << dec;
-            for (std::string::size_type i = 0; i < found; i++) tempStream
-                    << setw(2) << hex << "0x" <<(int)buffer[i] << " ";
-            tempStream << endl;
-            emit toConsole(QString::fromStdString(tempStream.str()));
+            if (verbose > 1){
+                std::stringstream tempStream;
+                    tempStream << "received faulty UBX string:\n " << dec;
+                for (std::string::size_type i = 0; i < found; i++) tempStream
+                        << setw(2) << hex << "0x" <<(int)buffer[i] << " ";
+                tempStream << endl;
+                emit toConsole(QString::fromStdString(tempStream.str()));
+            }
             buffer.erase(0, found);
         }
         return false;
@@ -407,19 +409,22 @@ void QtSerialUblox::handleError(QSerialPort::SerialPortError serialPortError)
     }
 }
 
-void QtSerialUblox::sendPoll(uint16_t msgID, uint8_t port){
+void QtSerialUblox::sendPoll(uint16_t msgID){
+    UbxMessage msg;
+    unsigned char temp[1];
     switch (msgID){
-    case 0x0600:
-        unsigned char temp[1];
-        temp[0] = port;
-        // vielleicht lieber auch in die queue ?
-        sendUBX(msgID,temp,1);
+    case MSG_CFG_PRT: // CFG-PRT
+        // in this special case "rate" is the port ID
+        temp[0]=1;
+        msg.msgID = msgID;
+        msg.data = toStdString(temp,1);
+        outMsgBuffer.push(msg);
+        if (!msgWaitingForAck){
+            sendQueuedMsg();
+        }
         break;
     default:
+        // for most messages the poll msg is just the message without payload
         break;
     }
 }
-
-/*void QtSerialUblox::pollAll(uint8_t port){
-    sendUBX();
-}*/

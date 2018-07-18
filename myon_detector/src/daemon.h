@@ -1,5 +1,5 @@
-#ifndef DEMON_H
-#define DEMON_H
+#ifndef DAEMON_H
+#define DAEMON_H
 
 #include <QObject>
 #include <QTcpServer>
@@ -9,21 +9,35 @@
 #include <qtserialublox.h>
 #include <i2c/i2cdevices.h>
 #include <tcpmessage.h>
+#include <QSocketNotifier>
 
-class Demon : public QTcpServer
+// for sig handling:
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <signal.h>
+
+class Daemon : public QTcpServer
 {
 	Q_OBJECT
 
 public:
-    Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
-        float *new_dacThresh, float new_biasVoltage, bool new_dumpRaw, int new_baudrate,
+    Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
+        float *new_dacThresh, float new_biasVoltage,bool biasPower, bool new_dumpRaw, int new_baudrate,
         bool new_configGnss, QString new_PeerAddress, quint16 new_PpeerPort,
         QString new_serverAddress, quint16 new_serverPort, bool new_showout, QObject *parent = 0);
-    ~Demon();
+    ~Daemon();
 	void configGps();
 	void loop();
+    static void hupSignalHandler(int);
+    static void termSignalHandler(int);
+    static void intSignalHandler(int);
 
 public slots:
+    // Qt signal handlers.
+    void handleSigHup();
+    void handleSigTerm();
+    void handleSigInt();
+    // others
     void connectToGps();
     void connectToServer();
     void displaySocketError(int socketError, QString message);
@@ -43,17 +57,20 @@ public slots:
                             std::chrono::duration<double> updateAge);
     void sendI2CProperties();
     void setI2CProperties(I2cProperty i2cProperty, bool setProperties);
+    void sendAndXorSignal(uint8_t gpio_pin, uint32_t tick);
+    void pollAllUbx();
 
 signals:
     void sendFile(QString fileName);
     void sendMsg(QString msg);
     void sendMessage(TcpMessage tcpMessage);
-    void closeConnection();
-    void sendPoll(uint16_t msgID, uint8_t port);
+    void aboutToQuit();
+    void sendPoll(uint16_t msgID);
     void i2CProperties(I2cProperty i2cProperty, bool set_Properties = false);
 	void UBXSetCfgMsg(uint16_t msgID, uint8_t port, uint8_t rate);
 	void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
     void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
+    void gpioRisingEdge(uint8_t gpio_pin, uint32_t tick);
 
 private:
     void incomingConnection(qintptr socketDescriptor) override;
@@ -72,8 +89,8 @@ private:
     QMap <uint16_t, int> messageConfiguration;
     QtSerialUblox *qtGps = nullptr;
     QString peerAddress;
-    QHostAddress demonAddress = QHostAddress::Null;
-    quint16 peerPort, demonPort;
+    QHostAddress daemonAddress = QHostAddress::Null;
+    quint16 peerPort, daemonPort;
     QTcpServer *tcpServer;
 	void printTimestamp();
 	void delay(int millisecondsWait);
@@ -81,6 +98,15 @@ private:
     int verbose, baudrate;
     int gpsTimeout = 5000;
     bool dumpRaw, configGnss, showout;
+
+    // signal handling
+    static int sighupFd[2];
+    static int sigtermFd[2];
+    static int sigintFd[2];
+
+    QSocketNotifier *snHup;
+    QSocketNotifier *snTerm;
+    QSocketNotifier *snInt;
 };
 
-#endif // DEMON_H
+#endif // DAEMON_H

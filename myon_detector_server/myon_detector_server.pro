@@ -23,12 +23,16 @@ INCLUDEPATH += \
 SOURCES += src/main.cpp \
     src/tcpserver.cpp \
     src/custom_io_operators.cpp \
-    ../shared/tcpconnection.cpp
+    ../shared/tcpconnection.cpp \
+    ../shared/i2cproperty.cpp \
+    ../shared/tcpmessage.cpp
 
 HEADERS += \
     src/tcpserver.h \
     src/custom_io_operators.h \
-    ../shared/tcpconnection.h
+    ../shared/tcpconnection.h \
+    ../shared/i2cproperty.h \
+    ../shared/tcpmessage.h
 
 OBJECTS_DIR += generated_files
 

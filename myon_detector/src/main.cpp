@@ -7,33 +7,38 @@
 #include <QHostAddress>
 
 #include <custom_io_operators.h>
-#include <demon.h>
+#include <daemon.h>
 
 using namespace std;
 
+// linux signal handling
+// https://gist.github.com/azadkuh/a2ac6869661ebd3f8588
+// http://doc.qt.io/qt-5/unix-signals.html
+
 /* Signal Handler for SIGINT */
-void sigintHandler(int sig_num)
-{
-    /* Reset handler to catch SIGINT next time.
-       Refer http://en.cppreference.com/w/c/program/signal */
-    printf("killing process %d\n",getpid());
-//    signal(SIGINT, SIG_IGN);
-//    printf("\n terminated using Ctrl+C \n");
-    fflush(stdout);
-    exit(0);
-}
+//void sigintHandler(int sig_num)
+//{
+//    sig_num = 0;
+//    /* Reset handler to catch SIGINT next time.
+//       Refer http://en.cppreference.com/w/c/program/signal */
+//    printf("killing process %d\n",getpid());
+////    signal(SIGINT, SIG_IGN);
+////    printf("\n terminated using Ctrl+C \n");
+//    fflush(stdout);
+//    exit(0);
+//}
 
 int main(int argc, char *argv[])
 {
 	/* Set the SIGINT (Ctrl-C) signal handler to sigintHandler 
        Refer http://en.cppreference.com/w/c/program/signal */
-    signal(SIGINT, sigintHandler);
-	signal (SIGQUIT, sigintHandler);
+//    signal(SIGINT, sigintHandler);
+//	signal (SIGQUIT, sigintHandler);
 	
 	QCoreApplication a(argc, argv);
 	QCoreApplication::setApplicationName("myon_detector");
     QCoreApplication::setApplicationVersion("1.0");
-    //setup_unix_signal_handlers();
+
     //unix_sig_handler_daemon *d = new unix_sig_handler_daemon();
     qRegisterMetaType<uint8_t>("uint8_t");
     qRegisterMetaType<uint16_t>("uint16_t");
@@ -87,17 +92,17 @@ int main(int argc, char *argv[])
         QCoreApplication::translate("main", "peerPort"));
     parser.addOption(peerPortOption);
 
-    // demonAddress option
-    QCommandLineOption demonIpOption(QStringList() << "server" << "demonAddress",
+    // daemonAddress option
+    QCommandLineOption daemonIpOption(QStringList() << "server" << "daemonAddress",
                                       QCoreApplication::translate("main", "set gui server ip address"),
-                                      QCoreApplication::translate("main", "demonAddress"));
-    parser.addOption(demonIpOption);
+                                      QCoreApplication::translate("main", "daemonAddress"));
+    parser.addOption(daemonIpOption);
 
-    // demonPort option
-    QCommandLineOption demonPortOption(QStringList() << "dp" << "demonPort",
+    // daemonPort option
+    QCommandLineOption daemonPortOption(QStringList() << "dp" << "daemonPort",
                                       QCoreApplication::translate("main", "set gui server port"),
-                                      QCoreApplication::translate("main", "demonPort"));
-    parser.addOption(demonPortOption);
+                                      QCoreApplication::translate("main", "daemonPort"));
+    parser.addOption(daemonPortOption);
 
 	// baudrate option
 	QCommandLineOption baudrateOption("b",
@@ -132,6 +137,11 @@ int main(int argc, char *argv[])
                                          QCoreApplication::translate("main","set voltage for SiPM"),
                                          QCoreApplication::translate("main", "bias voltage"));
     parser.addOption(biasVoltageOption);
+
+    // biasVoltage on or off
+    QCommandLineOption biasPowerOnOff(QStringList() << "p",
+                                         QCoreApplication::translate("main", "bias voltage on or off?"));
+    parser.addOption(biasPowerOnOff);
 
 	// process the actual command line arguments given by the user
 	parser.process(a);
@@ -189,20 +199,20 @@ int main(int argc, char *argv[])
             }
         }
     }
-    quint16 demonPort = 0;
-    if (parser.isSet(demonPortOption)){
-        demonPort = parser.value(demonPortOption).toUInt(&ok);
+    quint16 daemonPort = 0;
+    if (parser.isSet(daemonPortOption)){
+        daemonPort = parser.value(daemonPortOption).toUInt(&ok);
         if (!ok) {
             peerPort = 0;
             cout << "wrong input peerPort (maybe not an integer)" << endl;
         }
     }
-    QString demonAddress = "";
-    if (parser.isSet(demonIpOption)){
-        demonAddress = parser.value(demonIpOption);
-        if (!QHostAddress(demonAddress).toIPv4Address()){
-            if (demonAddress != "localhost" && demonAddress != "local"){
-                demonAddress = "";
+    QString daemonAddress = "";
+    if (parser.isSet(daemonIpOption)){
+        daemonAddress = parser.value(daemonIpOption);
+        if (!QHostAddress(daemonAddress).toIPv4Address()){
+            if (daemonAddress != "localhost" && daemonAddress != "local"){
+                daemonAddress = "";
                 cout << "wrong input ipAddress, not an ipv4address" << endl;
             }
         }
@@ -218,19 +228,19 @@ int main(int argc, char *argv[])
     bool showout = false;
     showout = parser.isSet(showoutOption);
     float dacThresh[2];
-    dacThresh[0] = -1;
+    dacThresh[0] = 0;
     if (parser.isSet(discr1Option)){
         dacThresh[0] = parser.value(discr1Option).toFloat(&ok);
         if (!ok){
-            dacThresh[0] = -1;
+            dacThresh[0] = 0;
             cout << "wrong input discr1 (maybe not a float)"<<endl;
         }
     }
-    dacThresh[1]=-1;
+    dacThresh[1]=0;
     if (parser.isSet(discr2Option)){
         dacThresh[1] = parser.value(discr2Option).toFloat(&ok);
         if (!ok){
-            dacThresh[1] = -1;
+            dacThresh[1] = 0;
             cout << "wrong input discr2 (maybe not a float)"<<endl;
         }
     }
@@ -242,7 +252,11 @@ int main(int argc, char *argv[])
             cout << "wrong input biasVoltage (maybe not a float)"<<endl;
         }
     }
-    Demon demon(gpsdevname, verbose, pcaChannel, dacThresh, biasVoltage, dumpRaw,
-        baudrate, showGnssConfig, peerAddress, peerPort, demonAddress, demonPort, showout);
+    bool biasPower = false;
+    if (parser.isSet(biasPowerOnOff)){
+        biasPower = true;
+    }
+    Daemon daemon(gpsdevname, verbose, pcaChannel, dacThresh, biasVoltage, biasPower, dumpRaw,
+        baudrate, showGnssConfig, peerAddress, peerPort, daemonAddress, daemonPort, showout);
     return a.exec();
 }

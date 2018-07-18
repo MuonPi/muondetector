@@ -33,16 +33,20 @@ SOURCES += \
         src/main.cpp \
         src/mainwindow.cpp \
     ../shared/i2cproperty.cpp \
-    ../shared/tcpmessage.cpp
+    ../shared/tcpmessage.cpp \
+    src/settings.cpp
 
 HEADERS += \
         ../shared/tcpconnection.h \
         src/mainwindow.h \
     ../shared/i2cproperty.h \
-    ../shared/tcpmessage.h
+    ../shared/tcpmessage.h \
+    ../shared/gpio_pin_definitions.h \
+    src/settings.h
 
 FORMS += \
-        src/mainwindow.ui
+        src/mainwindow.ui \
+    src/settings.ui
 
 OBJECTS_DIR += created_files
 

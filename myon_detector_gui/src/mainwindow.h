@@ -5,6 +5,7 @@
 #include <QStandardItemModel>
 #include <tcpconnection.h>
 #include <QErrorMessage>
+#include <QTime>
 
 namespace Ui {
 class MainWindow;
@@ -28,11 +29,14 @@ public slots:
                            quint32 timeoutTime, quint32 connectionDuration);
     void makeConnection(QString ipAddress, quint16 port);
     void updateI2CProperties(I2cProperty i2cProperty, bool setProperties);
+    void receivedGpioRisingEdge(quint8 pin, quint32 tick);
 
 private slots:
     void updateUiProperties(bool bias_powerOn, int uartBufferValue = -1, int discr1SliderValue = -1,
                                         int discr2SliderValue = -1);
     // only those properties with value >= 0 will be updated!
+    void resetAndHit();
+    void resetXorHit();
     void on_ipButton_clicked();
     void connected();
 
@@ -52,10 +56,15 @@ private slots:
 
     void on_biasPowerButton_clicked();
 
+    void on_discr2Edit_editingFinished();
+
+    void settings_clicked(bool checked);
+
 private:
     Ui::MainWindow *ui;
     void uiSetConnectedState();
     void uiSetDisconnectedState();
+    float parseValue(QString text);
     int verbose = 0;
     bool biasPowerOn = false;
     QErrorMessage errorM;
@@ -67,6 +76,7 @@ private:
     bool eventFilter(QObject *object, QEvent *event);
     bool connectedToDemon = false;
     bool mouseHold = false;
+    QTimer andTimer, xorTimer;
 };
 
 #endif // MAINWINDOW_H

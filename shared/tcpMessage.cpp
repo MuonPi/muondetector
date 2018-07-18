@@ -35,20 +35,20 @@ QDataStream& operator>>(QDataStream& out, MessageContent& content){
 }
 
 QDataStream& operator<<(QDataStream& in, const TcpMessage& message) {
-    in << message.information << message.data;
+    in << message.data;
     //in << message.data;
     return in;
 }
 
 QDataStream& operator<<(QDataStream& in, TcpMessage& message) {
-    in << message.information << message.data;
+    in <<  message.data;
     // in << message.data;
     // ausgabe, welche funktion aufgerufen wird hinzufuegen
     return in;
 }
 
 QDataStream& operator>>(QDataStream& out, TcpMessage& message) {
-    out >> message.information >> message.data;
+    out >> message.data;
     //out >> message.data;
     return out;
 }

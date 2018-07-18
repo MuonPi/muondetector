@@ -227,7 +227,7 @@ int8_t i2cDevice::readByte(uint8_t regAddr, uint8_t *data) {
  * @return Number of bytes read (-1 indicates failure)
  */
 int8_t i2cDevice::readBytes(uint8_t regAddr, uint8_t length, uint8_t *data) {
-    int8_t count = 0;
+    // not used?! int8_t count = 0;
 //    int fd = open("/dev/i2c-1", O_RDWR);
     return readReg(regAddr, data, length);
 }
@@ -507,13 +507,15 @@ bool PCA9536::setOutputPorts(uint8_t portMask) {
 	unsigned char data = ~portMask;
 	if (1 != writeReg(CONFIG_REG, &data, 1)) {
 		return false;
-	}
+    }
+    return true;
 }
 
 bool PCA9536::setOutputState(uint8_t portMask) {
 	if (1 != writeReg(OUTPUT_REG, &portMask, 1)) {
 		return false;
 	}
+    return true;
 }
 
 /*
@@ -579,7 +581,7 @@ unsigned int X9119::readWiperReg()
   readBuf[0]= 0;		
   readBuf[1]= 0;
 	  
-  int n=read(readBuf, 2);	// Read the config register into readBuf
+  /*int n=*/read(readBuf, 2);	// Read the config register into readBuf
 //  printf( "%d bytes read\n",n);
 
   val = (readBuf[0] & 0x03) << 8 | readBuf[1];
@@ -603,7 +605,7 @@ unsigned int X9119::readDataReg(uint8_t reg)
   readBuf[0]= 0;		
   readBuf[1]= 0;
 	  
-  int n=read(readBuf, 2);	// Read the config register into readBuf
+  /*int n=*/read(readBuf, 2);	// Read the config register into readBuf
 //  printf( "%d bytes read\n",n);
   
   val = (readBuf[0] & 0x03) << 8 | readBuf[1];
@@ -753,7 +755,7 @@ void X9119::writeDataReg(uint8_t reg, unsigned int value)
   
   // Write writeBuf to the X9119
   // this sets the write address for data register and writes dr with value
-  int n=write(writeBuf, 3);
+  /*int n=*/write(writeBuf, 3);
 //  printf( "%d bytes written\n",n);
   
 }
@@ -767,7 +769,7 @@ void X9119::writeDataReg(uint8_t reg, unsigned int value)
 uint8_t EEPROM24AA02::readByte(uint8_t addr)
 {
   uint8_t val=0;
-  int n=readReg(addr, &val, 1);	// Read the data at address location
+  /*int n=*/readReg(addr, &val, 1);	// Read the data at address location
 //  printf( "%d bytes read\n",n);
   return val;
 }
@@ -777,7 +779,7 @@ void EEPROM24AA02::writeByte(uint8_t addr, uint8_t data)
 {
   uint8_t writeBuf[2];		// Buffer to store the 3 bytes that we write to the I2C device
 //  uint8_t readBuf[16];		// 2 byte buffer to store the data read from the I2C device  
-  uint8_t val;			// Stores the 16 bit value of our ADC conversion
+//  uint8_t val;			// Stores the 16 bit value of our ADC conversion
 
   writeBuf[0] = addr;		// address of data byte
   writeBuf[1] = data;		// data byte
@@ -1197,7 +1199,7 @@ bool HMC5883::calibrate(int &x, int &y, int &z)
   // addr config reg A (CRA)
   // 8 average, 15 Hz, positive self test measurement: 0x71
   uint8_t cmd = 0x71;
-  int n=writeReg(0x00, &cmd, 1);
+  /*int n=*/writeReg(0x00, &cmd, 1);
   
   uint8_t oldGain=fGain;
   setGain(5);
@@ -1217,6 +1219,6 @@ bool HMC5883::calibrate(int &x, int &y, int &z)
 
   // set normal measurement mode in CRA again
   cmd = 0x70;
-  n=writeReg(0x00, &cmd, 1);
+  /*n=*/writeReg(0x00, &cmd, 1);
   return true;
 }

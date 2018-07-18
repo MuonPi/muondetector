@@ -1,5 +1,5 @@
-/*                   Stand 27.06.2018
-	compare_v4 sortiert und vergleicht die Zeilen mehrerer Textdateien,
+/*                   Stand 18.07.2018
+	compare_v5 sortiert und vergleicht die Zeilen mehrerer Textdateien,
 	indem es zeitlich korrelierte Eintraege erfasst
 	und zusammen mit den Zeitdifferenzen in eine Datei schreibt
 	Ziel: mehr als 2 Eingabe-Dateien (mehrere RasPi-Stationen) -> erfuellt
@@ -9,7 +9,7 @@
 */
 //  Geschrieben von <Marvin.Peter@physik.uni-giessen.de>, Teilelemente sind geklaut von <Lukas.Nies@physik.uni-giessen.de>
 
-// On Linux compile with 'g++ -o Compare Compare.cpp -O'
+// On Linux compile with 'g++ -o compare_v5 compare_v5.cpp -O'
 // Vielleicht kann man mit openmp noch etwas mehr optimieren durch multithreading aber eher nicht so viel, weshalb diese Option verworfen wurde
 #include <iostream>
 #include <sstream>
@@ -24,6 +24,12 @@
 #include <utility>
 
 using namespace std;
+
+struct timestamp_t {
+	timespec ts;
+	double err;
+};
+
 
 unsigned long int oldBalken = 0;
 void prozentanzeige(unsigned long int prozent, string& ausgabe)
@@ -76,7 +82,13 @@ long long int ts_diff_ns(timespec& ts1, timespec& ts2)
 	return diff;
 }
 
-bool areTimestampsInOrder(string dateiName, bool verbose, unsigned long int& lineCounter)
+void skipColumn(istream& data, int col)
+{
+	for (int i = 0; i < col; ++i)
+		data.ignore(numeric_limits<streamsize>::max(), ' '); // col Leerzeichen-getrennte Werte uberspringen
+}
+
+bool areTimestampsInOrder(string dateiName, bool verbose, unsigned long int& lineCounter, int tsCol)
 {   //ueberpruefe ob die Timestamps in der Datei mit Dateinamen der als string uebergeben wird zeitlich geordnet sind
 	ifstream dateiInputstream(dateiName.c_str());
 	if (!dateiInputstream.good())
@@ -93,6 +105,10 @@ bool areTimestampsInOrder(string dateiName, bool verbose, unsigned long int& lin
 	{
 		//skipvalues();
 		lineCounter++;
+		if (tsCol > 0)
+		{
+			skipColumn(dateiInputstream, tsCol);
+		}
 		getline(dateiInputstream, oneLine);
 		stringstream str(oneLine);
 		long int v1, v2;
@@ -125,37 +141,53 @@ bool areTimestampsInOrder(string dateiName, bool verbose, unsigned long int& lin
 	return isInOrder;
 }//end of areTimestampsInOrder																							
 
-void skipColumn(istream& data, int col)
-{
-	for (int i = 0; i < col; ++i)
-		data.ignore(numeric_limits<streamsize>::max(), ' '); // col Leerzeichen-getrennte Werte uberspringen
-}
 
-void readToVector(ifstream& inputstream, vector<timespec>& oneVector, int& maxValues, int column)
+void readToVector(ifstream& inputstream, vector<timestamp_t>& oneVector, int& maxValues, int tsCol, int errCol)
 {
 	// ueberschreibt einen Vektor mit neuen Werten aus der Datei (aus dem inputstream)
 	// es werden maximal "maxValues" viele Eintraege hinzugefuegt,
 	// es wird gestoppt falls keine weiteren Daten im InputFile sind
 	oneVector.clear();
 	string oneLine;
-	timespec oneValue;
+	timestamp_t oneValue;
 	for (unsigned int i = 0; i < maxValues; i++)
 	{
 		if (inputstream.eof())
 		{
 			break;
 		}
-		if (column > 0)
+		
+		if (errCol<0 && tsCol > 0)
 		{
-			skipColumn(inputstream, column);
+			skipColumn(inputstream, tsCol);
+		} else if (errCol>=0 && tsCol > 0)
+		{
+			skipColumn(inputstream, min(errCol, tsCol));
 		}
 		getline(inputstream, oneLine);
 		stringstream str(oneLine);
 		long int v1, v2;
+		double v3=0.;
 		char c;
-		str >> v1 >> c >> v2;
-		oneValue.tv_sec = v1;
-		oneValue.tv_nsec = v2;
+		
+		if (errCol<0) str >> v1 >> c >> v2;
+		else if (errCol>=0 && errCol<tsCol)	{
+			str >> v3;
+			string dummystring;
+			for (int i=0; i<abs(errCol-tsCol)-1; i++) str >> dummystring;
+			str >> v1 >> c >> v2;
+		}
+		else if (errCol>=0 && errCol>tsCol) {
+			str >> v1 >> c >> v2;
+			string dummystring;
+			for (int i=0; i<abs(errCol-tsCol)-1; i++) str >> dummystring;
+			str >> v3;
+		}
+		
+		//cout<<"read ts_i="<<v1<<" ts_ns="<<v2<<" err="<<v3<<endl;
+		oneValue.ts.tv_sec = v1;
+		oneValue.ts.tv_nsec = v2;
+		oneValue.err = v3;
 
 		oneVector.push_back(oneValue);
 	}
@@ -164,32 +196,31 @@ void readToVector(ifstream& inputstream, vector<timespec>& oneVector, int& maxVa
 void Usage()
 {
 	cout << endl;
-	cout << "Compare_v4" << endl;
-	cout << "Sortiert <File1>, ... <File n> falls nicht schon sortiert." << endl;
-	cout << "Vergleicht <File1>, ... <File n> jeweils miteinander und sucht nach sog. coincidents" << endl;
-	cout << "Timestamps und bildet aus beiden die Differenz. Das Ergebnis wird in" << endl;
-	cout << "der Form:" << endl;
-	cout << "[%Y.%m.%d %H:%M:%S] ... [Differenz1] ... [Differenz n] ... [coincidents]" << endl;
-	cout << "in <output> gespeichert. <File1> und <File2> sollte die Form haben:" << endl;
-	cout << "[Timestamp]		" << endl << endl;
-	cout << "Benutzung:    " << "compare" << " [-vh?][-o<output> -b<Bereich>] File1 File2" << endl;
+	cout << "timestamp compare program (v5)" << endl;
+	cout << "sort <File1>, ... <File n> unless in chronological order" << endl;
+	cout << "Compares <File1>, ... <File n> and searches for coincident timestamps." << endl;
+	cout << "mutual time differences are output under consideration of single timing errors (if available)." << endl;
+	cout << "The resulting output is written in format" << endl;
+	cout << "[%Y.%m.%d %H:%M:%S] ... [difference1] ... [difference n] ... [coincidents]" << endl;
+	cout << "to file <output>. <file1> and <file2> should provide unix timestamps and error in ns (if available):" << endl;
+	cout << "[Timestamp] [err]		" << endl << endl;
+	cout << "Usage:    " << "compare" << " [-vh?][-o<output> -b<interval>] file1 file2 ... filen" << endl;
 	cout << "		Optionen:" << endl;
-	cout << "		-h?		  : Zeigt diese Hilfeseite an." << endl;
-	cout << "		-c 		  : Spalte, in der die Daten stehen (Standard Zeile 0). momentan noch nicht individuell fuer jede Datei" << endl;
-	cout << "		-v		  : Steigert das Verbosity-Level" << endl;
-	cout << "		-o <output>	  : Pfad/Name der Output-Datei." << endl;
-	cout << "		-b <Bereich>	  : Wahl des Koinzidenten Bereiches in [us] (Standard: 1us)." << endl;
-	cout << "							Beste Wahl: 2*TOF des Lichts zwischen den beiden am weitesten entfernten Detektoren" << endl;
-	cout << "							Zweifach, da dann durch kurz vorher auftretende random-events keine Daten verloren gehen" << endl;
-	cout << "     -m <maxWerte>     : Wahl der gleichzeitig in Vektoren eingelesenen Timestamps. Standard 10k" << endl;
+	cout << "		-h?		  : shows this help page." << endl;
+	cout << "		-c 		  : column from which the timestamp is extracted (standard col 0). format is unix timestamp with floating point precision up to 1ns" << endl;
+	cout << "		-e 		  : column from which the timing error (in ns) is to be extracted (default = -1  to ignore and assume error=0) " << endl;
+	cout << "		-v		  : increase verbosity level" << endl;
+	cout << "		-o <output>	  : path/name of the output file" << endl;
+	cout << "		-b <time interval>  : coincidence range in [us] (default 1.0us)." << endl;
+	cout << "     	-m <maxValues>: number of timestamps which are read into vectors simultaneously. default 10k" << endl;
 	cout << endl;
-	cout << "Geschrieben von <Marvin.Peter@physik.uni-giessen.de>" << endl;
-	cout << "(Teilelemente sind geklaut von <Lukas.Nies@physik.uni-giessen.de>" << endl;
-	cout << "---Stand 27.06.2018---Bugs inclusive" << endl << endl;
+	cout << "written by <Marvin.Peter@physik.uni-giessen.de> and <Hans-Georg.Zaunick@exp2.physik.uni-giessen.de>" << endl;
+	cout << "(fragments are reused with permission of <Lukas.Nies@physik.uni-giessen.de>" << endl;
+	cout << "---status 18.07.2018---bugs inclusive" << endl << endl;
 }//end of Usage()
 
 void compareAlgorithm(vector<unsigned int>& iterator,
-	vector<vector<timespec> >& values,
+	vector<vector<timestamp_t> >& values,
 	double& matchKriterium,
 	ofstream& output,
 	vector<unsigned int>& rewriteToVectors)
@@ -256,7 +287,7 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 				// really look for smallest time value at the iterator positions of the individual vectors (representing the different files) in "values"
 				// then put the index of the vector (file) that holds the smallest time value at it's iterator position
 				// (each vector in "values" represents a different file and has it's corresponding iterator in "iterator")
-				long long int diff = ts_diff_ns(values[i][iterator[i]], values[indexSmallest][iterator[indexSmallest]]);
+				long long int diff = ts_diff_ns(values[i][iterator[i]].ts, values[indexSmallest][iterator[indexSmallest]].ts);
 				if (diff > 0)
 				{
 					indexSmallest = i;
@@ -268,9 +299,15 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 		{
 			//hier wird entschieden ob es ein Coincidence-Ereignis ist und es wird gleich in die Datei geschrieben
 			if (dateiEmpty[i] == false) {
-				long long int tdiff = ts_diff_ns(values[i][iterator[i]], values[indexSmallest][iterator[indexSmallest]]);
+				long long int tdiff = ts_diff_ns(values[i][iterator[i]].ts, values[indexSmallest][iterator[indexSmallest]].ts);
+				long long int err1 = values[i][iterator[i]].err;
+				long long int err2 = values[indexSmallest][iterator[indexSmallest]].err;
+				
 				tdiff = abs(tdiff); // [ns]
-				if ((indexSmallest != i) && (tdiff <= (matchKriterium * 1e9)))
+				long long int coinc_window = matchKriterium * 1e9;
+				coinc_window += err1+err2;
+				
+				if ((indexSmallest != i) && (tdiff <= coinc_window))
 				{
 					// if the difference is smaller than or equal as the criterium: a coincident event has been found hooray!
 					// since we choose the criterium to be the maximum physically possible time difference for two coincident events
@@ -288,18 +325,19 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 					// so should we increase the interval to exclude this error is a question for another time. To be continued...
 					if (coincidents < 1)
 					{
-						t = values[indexSmallest][iterator[indexSmallest]].tv_sec;
+						t = values[indexSmallest][iterator[indexSmallest]].ts.tv_sec;
 						struct tm *tm = localtime(&t);
 						char date[20];
 						strftime(date, sizeof(date), "%Y.%m.%d %H:%M:%S", tm);
-						output << date << "  " << values[indexSmallest][iterator[indexSmallest]].tv_sec << ".";
+						output << date << "  " << values[indexSmallest][iterator[indexSmallest]].ts.tv_sec << ".";
 						output.width(9);
-						output << setfill('0') << values[indexSmallest][iterator[indexSmallest]].tv_nsec << "  ";
+						output << setfill('0') << values[indexSmallest][iterator[indexSmallest]].ts.tv_nsec << "  ";
 						coincidents++;
 					}
 					rewriteToVectors.push_back(i);
-					output << -ts_diff_ns(values[i][iterator[i]], values[indexSmallest][iterator[indexSmallest]]) << "   ";
+					output << -ts_diff_ns(values[i][iterator[i]].ts, values[indexSmallest][iterator[indexSmallest]].ts) << "   ";
 					output << indexSmallest << "-" << i <<"  ";
+					output << "(+-"<<err1 << "/" << err2 <<"ns)  ";
 					coincidents++;
 					iterator[i]++;
 				}
@@ -319,17 +357,18 @@ int main(int argc, char*argv[])
 	vector <string> dateiName;
 	time_t start, end, readToVectorTime, checkTimestampOrderTime, algorithmTime;
 	double matchKriterium = 0.001;//[us]
-	timespec oneValue;
+	timestamp_t oneValue;
 	int maxTimestampsAtOnce = 10000;
 
 	// Einlesen der Zusatzinformationen aus der Konsole
 	bool verbose = false;
 	int ch;
 	int column1 = 0;
-	int column2 = 0;
+	int errColumn = -1;
+//	int column2 = 0;
 	double b = 1.0;
 	bool notSorted = true;
-	while ((ch = getopt(argc, argv, "svm:c:o:b:h?")) != EOF)
+	while ((ch = getopt(argc, argv, "svm:c:e:o:b:h?")) != EOF)
 	{
 		switch ((char)ch)
 		{
@@ -346,8 +385,8 @@ int main(int argc, char*argv[])
 			break;
 		case 'c': column1 = atoi(optarg); //momentan nicht individuell fuer jede Datei
 			break;
-			/*case 'C':column2 = atoi(optarg); momentan nicht moeglich
-				break;*/
+		case 'e': errColumn = atoi(optarg); //momentan nicht individuell fuer jede Datei
+			break;
 		case 'm': maxTimestampsAtOnce = atoi(optarg);
 			break;
 		}
@@ -356,15 +395,15 @@ int main(int argc, char*argv[])
 	matchKriterium = b * 1e-6; //[us]
 	if (argc - optind < 2)
 	{
-		perror("Falsche Eingabe, zu wenige Argumente!\n");
+		perror("wrong input. too few arguments!\n");
 		Usage();
 		return -1;
 	}
 	if (verbose)
 	{
-		cout << "Programm gestarted...." << endl;
-		cout << endl << "lese maximal " << maxTimestampsAtOnce << " Werte gleichzeitig ein" << endl << endl;
-		cout << "Koinzidenzfenster: " << b << " us" << endl;
+		cout << "launched program...." << endl;
+		cout << endl << "reading at most " << maxTimestampsAtOnce << " values at once" << endl << endl;
+		cout << "coincidence window: " << b << " us" << endl;
 	}
 	int index = 0;
 	for (int i = optind; i < argc; i++)
@@ -375,7 +414,7 @@ int main(int argc, char*argv[])
 		dateiName[index] = temp;
 		if (verbose)
 		{
-			cout << index << ". Dateiname ist " << dateiName[index].c_str() << "." << endl;
+			cout << index << ". file name is " << dateiName[index].c_str() << "." << endl;
 		}
 		index++;
 	}
@@ -395,7 +434,7 @@ int main(int argc, char*argv[])
 		for (unsigned int i = 0; i < dateiName.size(); i++)
 		{
 			lines.push_back(0);
-			if (!areTimestampsInOrder(dateiName[i], verbose, lines[i]))
+			if (!areTimestampsInOrder(dateiName[i], verbose, lines[i], column1))
 			{
 				if (verbose)
 				{
@@ -436,7 +475,7 @@ int main(int argc, char*argv[])
 	checkTimestampOrderTime = end - start;
 	if (verbose)
 	{
-		cout << endl << "Ueberpruefung auf reihenfolge abgeschlossen, Dauer: " << checkTimestampOrderTime << "s" << endl;
+		cout << endl << "check for sort order concluded. duration: " << checkTimestampOrderTime << "s" << endl;
 	}
 
 	// Erstellen der iostreams
@@ -456,15 +495,15 @@ int main(int argc, char*argv[])
 	unsigned long int prozent = 0;
 	unsigned long int prozentCounter = 0;
 	unsigned long int oldCounter = 0;
-	string ausgabeAlgorithmString = "vergleiche...";
+	string ausgabeAlgorithmString = "comparing...";
 	//Prozentanzeige
 
 
 	if (verbose)
 	{
-		cout << endl << "Starte Vergleich von " << overallLines << " Timestamps in " << dateiName.size() <<" Files...." << endl << endl;
+		cout << endl << "launch comparison of " << overallLines << " timestamps in " << dateiName.size() <<" files...." << endl << endl;
 	}
-	vector<vector<timespec> > values;
+	vector<vector<timestamp_t> > values;
 	values.resize(dateiName.size());
 	//values [index der Datei] [werte in timespec]
 	vector<unsigned int> iterator;
@@ -482,7 +521,7 @@ int main(int argc, char*argv[])
 
 	for (unsigned int i = 0; i < dateiName.size(); i++)
 	{
-		readToVector(*data[i], values[i], maxTimestampsInVector, column1);
+		readToVector(*data[i], values[i], maxTimestampsInVector, column1, errColumn);
 	}
 	compareAlgorithm(iterator, values, matchKriterium, output, rewriteToVectors);
 	try
@@ -498,7 +537,7 @@ int main(int argc, char*argv[])
 	}
 	catch (int e)
 	{
-		cout << "berechnung von prozent falsch, prozentCounter " << prozentCounter << endl;
+		cout << "percent counter error: " << prozentCounter << endl;
 		exit(EXIT_FAILURE);
 
 	}
@@ -514,7 +553,7 @@ int main(int argc, char*argv[])
 	{
 		for (auto i : rewriteToVectors) {
 			iterator[i] = 0;		
-			readToVector(*data[i], values[i], maxTimestampsInVector, column1);
+			readToVector(*data[i], values[i], maxTimestampsInVector, column1, errColumn);
 		}
 		compareAlgorithm(iterator, values, matchKriterium, output, rewriteToVectors);
 		try
@@ -530,7 +569,7 @@ int main(int argc, char*argv[])
 		}
 		catch (int e)
 		{
-			cout << "berechnung von prozent falsch, prozentCounter " << prozentCounter << endl;
+			cout << "percent counter error: " << prozentCounter << endl;
 			exit(EXIT_FAILURE);
 
 		}
@@ -548,7 +587,7 @@ int main(int argc, char*argv[])
 	{
 		for (auto i : rewriteToVectors) {
 			iterator[i] = 0;
-			readToVector(*data[i], values[i], maxTimestampsInVector, column1);
+			readToVector(*data[i], values[i], maxTimestampsInVector, column1, errColumn);
 		}
 		compareAlgorithm(iterator, values, matchKriterium, output, rewriteToVectors);
 		try
@@ -564,7 +603,7 @@ int main(int argc, char*argv[])
 		}
 		catch (int e)
 		{
-			cout << "berechnung von prozent falsch, prozentCounter " << prozentCounter << endl;
+			cout << "percent counter error: " << prozentCounter << endl;
 			exit(EXIT_FAILURE);
 		}
 	}//end of for  
@@ -574,7 +613,7 @@ int main(int argc, char*argv[])
 	algorithmTime = end - start;
 	if (verbose)
 	{
-		cout << "Das Programm ist fertig, Dauer: " << algorithmTime << "s" << endl;
+		cout << "finalized program. duration: " << algorithmTime << "s" << endl;
 	}
 	return (int)true;
 }//end of int main()																										

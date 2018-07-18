@@ -2,28 +2,141 @@
 #include <chrono>
 #include <QThread>
 #include <QNetworkInterface>
-#include <demon.h>
+#include <daemon.h>
+#include <pigpiodhandler.h>
+#include <../shared/gpio_pin_definitions.h>
 
-// define pins on the raspberry pi, UBIAS_EN is the power on/off pin for bias voltage
-// PREAMP_1/2 enables the DC voltage to power the preamp through the signal cable
-#define UBIAS_EN 7
-#define PREAMP_1 28
-#define PREAMP_2 29
+// for i2cdetect:
+extern "C"{
+#include <../shared/i2c/custom_i2cdetect.h>
+}
 
 using namespace std;
 
-Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
-    float* new_dacThresh, float new_biasVoltage, bool new_dumpRaw, int new_baudrate,
+// signal handling stuff: put code to execute before shutdown down there
+static int setup_unix_signal_handlers()
+{
+    struct sigaction hup, term,inte;
+
+    hup.sa_handler = Daemon::hupSignalHandler;
+    sigemptyset(&hup.sa_mask);
+    hup.sa_flags = 0;
+    hup.sa_flags |= SA_RESTART;
+
+    if (sigaction(SIGHUP, &hup, 0)){
+       return 1;
+    }
+
+    term.sa_handler = Daemon::termSignalHandler;
+    sigemptyset(&term.sa_mask);
+    term.sa_flags = 0;
+    term.sa_flags |= SA_RESTART;
+
+    if (sigaction(SIGTERM, &term, 0)){
+       return 2;
+    }
+
+    inte.sa_handler = Daemon::intSignalHandler;
+    sigemptyset(&inte.sa_mask);
+    inte.sa_flags = 0;
+    inte.sa_flags |= SA_RESTART;
+
+    if (sigaction(SIGINT, &inte, 0)){
+        return 3;
+    }
+    return 0;
+}
+int Daemon::sighupFd[2];
+int Daemon::sigtermFd[2];
+int Daemon::sigintFd[2];
+void Daemon::handleSigTerm()
+{
+    snTerm->setEnabled(false);
+    char tmp;
+    ::read(sigtermFd[1], &tmp, sizeof(tmp));
+
+    // do Qt stuff
+    if(verbose>1){
+        cout << "\nSIGTERM received"<<endl;
+    }
+    emit aboutToQuit();
+    this->thread()->quit();
+    exit(0);
+    snTerm->setEnabled(true);
+}
+void Daemon::handleSigHup()
+{
+    snHup->setEnabled(false);
+    char tmp;
+    ::read(sighupFd[1], &tmp, sizeof(tmp));
+
+    // do Qt stuff
+    if(verbose>1){
+        cout << "\nSIGHUP received"<<endl;
+    }
+    emit aboutToQuit();
+    this->thread()->quit();
+    exit(0);
+    snHup->setEnabled(true);
+}
+void Daemon::handleSigInt()
+{
+    snInt->setEnabled(false);
+    char tmp;
+    ::read(sigintFd[1], &tmp, sizeof(tmp));
+
+    // do Qt stuff
+    if(verbose>1){
+        cout << "\nSIGINT received"<<endl;
+    }
+    emit aboutToQuit();
+    this->thread()->quit();
+    exit(0);
+    snInt->setEnabled(true);
+}
+
+
+// begin of the Daemon class
+Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
+    float* new_dacThresh, float new_biasVoltage, bool biasPower, bool new_dumpRaw, int new_baudrate,
     bool new_configGnss, QString new_peerAddress, quint16 new_peerPort,
-    QString new_demonAddress, quint16 new_demonPort, bool new_showout, QObject *parent)
+    QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, QObject *parent)
     : QTcpServer(parent)
 {
+    // signal handling
+    setup_unix_signal_handlers();
+    if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)){
+       qFatal("Couldn't create HUP socketpair");
+    }
+
+    if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sigtermFd)){
+       qFatal("Couldn't create TERM socketpair");
+    }
+    if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sigintFd)){
+        qFatal("Couldn't createe INT socketpair");
+    }
+
+    snHup = new QSocketNotifier(sighupFd[1], QSocketNotifier::Read, this);
+    connect(snHup, SIGNAL(activated(int)), this, SLOT(handleSigHup()));
+    snTerm = new QSocketNotifier(sigtermFd[1], QSocketNotifier::Read, this);
+    connect(snTerm, SIGNAL(activated(int)), this, SLOT(handleSigTerm()));
+    snInt = new QSocketNotifier(sigintFd[1], QSocketNotifier::Read, this);
+    connect(snInt, SIGNAL(activated(int)), this, SLOT(handleSigInt()));
+
     // set all variables
 
     // general
     verbose = new_verbose;
     if (verbose > 4){
         cout << "daemon running in thread " << QString("0x%1").arg((int)this->thread()) << endl;
+    }
+
+    // for pigpio signals:
+    const QVector<unsigned int> gpio_pins({EVT_AND, EVT_XOR});
+    PigpiodHandler* pigHandler = new PigpiodHandler(gpio_pins,this);
+    if (pigHandler!=nullptr){
+        connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
+        connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendAndXorSignal);
     }
 
     // for i2c devices
@@ -34,14 +147,15 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     dacThresh.push_back(tempThresh[0]);
     dacThresh.push_back(tempThresh[1]);
     biasVoltage = new_biasVoltage;
+    biasPowerOn = biasPower;
     pca = new PCA9536();
     pcaChannel = new_pcaChannel;
     for (int i = 0; i<2; i++){
-        if (dacThresh[i]>=0){
+        if (dacThresh[i]>0){
             dac->setVoltage(i,dacThresh[i]);
         }
     }
-    if (biasVoltage>=0){
+    if (biasVoltage>0){
         dac->setVoltage(2,biasVoltage);
     }
 
@@ -55,7 +169,6 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     // for separate raspi pin output states
     wiringPiSetup();
     pinMode(UBIAS_EN, 1);
-    biasPowerOn = true; // test only
     if (biasPowerOn){
         digitalWrite(UBIAS_EN, 1);
     }else{
@@ -76,40 +189,26 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
         peerAddress = QHostAddress(QHostAddress::LocalHost).toString();
     }
 
-    // for own server to communicate with gui
-    /*demonAddress = QHostAddress(new_demonAddress);
-    if (new_demonAddress == "localhost" || new_demonAddress == "local"){
-        demonAddress = QHostAddress(QHostAddress::LocalHost);
-    }else{
-        QList<QHostAddress> ipAddressesList = QNetworkInterface::allAddresses();
-        // use the first non-localhost IPv4 address
-        for (int i = 0; i < ipAddressesList.size(); ++i) {
-            if (ipAddressesList.at(i) != QHostAddress::LocalHost &&
-                ipAddressesList.at(i).toIPv4Address()) {
-                demonAddress = ipAddressesList.at(i);
-                break;
-            }
-        }
-    }*/
-    //somehow does not work
-    if (new_demonAddress.isEmpty()){
+    if (new_daemonAddress.isEmpty()){
         // if not otherwise specified: listen on all available addresses
-        demonAddress = QHostAddress(QHostAddress::Any);
-        cout << demonAddress.toString()<<endl;
+        daemonAddress = QHostAddress(QHostAddress::Any);
+        if (verbose > 1){
+            cout << daemonAddress.toString()<<endl;
+        }
     }
 
 
-    demonPort = new_demonPort;
-    if (demonPort == 0){
+    daemonPort = new_daemonPort;
+    if (daemonPort == 0){
         // maybe think about other fall back solution
-        demonPort = 51508;
+        daemonPort = 51508;
     }
-    if (!this->listen(demonAddress,demonPort)) {
+    if (!this->listen(daemonAddress,daemonPort)) {
         cout << tr("Unable to start the server: %1.\n").arg(this->errorString());
     }else{
         if (verbose > 4){
         cout <<tr("\nThe server is running on\n\nIP: %1\nport: %2\n\n")
-                             .arg(demonAddress.toString()).arg(serverPort());
+                             .arg(daemonAddress.toString()).arg(serverPort());
         }
     }
     flush(cout);
@@ -123,11 +222,11 @@ Demon::Demon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     }
 }
 
-Demon::~Demon(){
-    emit closeConnection();
+Daemon::~Daemon(){
+    emit aboutToQuit();
 }
 
-void Demon::connectToGps(){
+void Daemon::connectToGps(){
     // before connecting to gps we have to make sure all other programs are closed
     // and serial echo is off
     if (gpsdevname.isEmpty()){
@@ -143,26 +242,27 @@ void Demon::connectToGps(){
     qtGps = new QtSerialUblox(gpsdevname, gpsTimeout, baudrate, dumpRaw, verbose, showout);
     QThread *gpsThread = new QThread();
     qtGps->moveToThread(gpsThread);
-    // connect all signals not coming from Demon to gps
-    connect(qtGps,&QtSerialUblox::toConsole, this, &Demon::gpsToConsole);
+    // connect all signals not coming from Daemon to gps
+    connect(qtGps,&QtSerialUblox::toConsole, this, &Daemon::gpsToConsole);
     connect(gpsThread, &QThread::started, qtGps, &QtSerialUblox::makeConnection);
     connect(qtGps, &QtSerialUblox::destroyed, gpsThread, &QThread::quit);
     connect(gpsThread, &QThread::finished, gpsThread, &QThread::deleteLater);
-    connect(qtGps, &QtSerialUblox::gpsRestart, this, &Demon::connectToGps);
+    connect(qtGps, &QtSerialUblox::gpsRestart, this, &Daemon::connectToGps);
     // connect all command signals for ublox module here
-    connect(this, &Demon::UBXSetCfgPrt, qtGps, &QtSerialUblox::UBXSetCfgPrt);
-    connect(this, &Demon::UBXSetCfgMsg, qtGps, &QtSerialUblox::UBXSetCfgMsg);
-    connect(this, &Demon::UBXSetCfgRate, qtGps, &QtSerialUblox::UBXSetCfgRate);
-    connect(this, &Demon::sendPoll, qtGps, &QtSerialUblox::sendPoll);
-    //connect(this, &Demon::closeConnection, gpsThread, &QThread::quit);
+    connect(this, &Daemon::UBXSetCfgPrt, qtGps, &QtSerialUblox::UBXSetCfgPrt);
+    connect(this, &Daemon::UBXSetCfgMsg, qtGps, &QtSerialUblox::UBXSetCfgMsg);
+    connect(this, &Daemon::UBXSetCfgRate, qtGps, &QtSerialUblox::UBXSetCfgRate);
+    connect(this, &Daemon::sendPoll, qtGps, &QtSerialUblox::sendPoll);
+    connect(this->thread(), &QThread::finished, gpsThread, &QThread::quit);
+    //connect(this, &Daemon::aboutToQuit, gpsThread, &QThread::quit);
     // connect cfgError signal to output, could also create special errorFunction
-    connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Demon::toConsole);
+    connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Daemon::toConsole);
 
     // after thread start there will be a signal emitted which starts the qtGps makeConnection function
     gpsThread->start();
 }
 
-void Demon::connectToServer(){
+void Daemon::connectToServer(){
     QThread *tcpThread = new QThread();
     if (tcpConnection!=nullptr){
         delete(tcpConnection);
@@ -172,17 +272,18 @@ void Demon::connectToServer(){
     connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::makeConnection);
     connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
     connect(tcpThread, &QThread::finished, tcpThread, &QThread::deleteLater);
-    connect(this, &Demon::sendFile, tcpConnection, &TcpConnection::sendFile);
-    connect(tcpConnection, &TcpConnection::error, this, &Demon::displaySocketError);
-    connect(tcpConnection, &TcpConnection::toConsole, this, &Demon::toConsole);
-    connect(tcpConnection, &TcpConnection::connectionTimeout, this, &Demon::connectToServer);
-    //connect(this, &Demon::sendMsg, tcpConnection, &TcpConnection::sendMsg);
-    //connect(this, &Demon::posixTerminate, tcpConnection, &TcpConnection::onPosixTerminate);
-    //connect(tcpConnection, &TcpConnection::stoppedConnection, this, &Demon::stoppedConnection);
+    connect(this->thread(), &QThread::finished, tcpThread, &QThread::quit);
+    connect(this, &Daemon::sendFile, tcpConnection, &TcpConnection::sendFile);
+    connect(tcpConnection, &TcpConnection::error, this, &Daemon::displaySocketError);
+    connect(tcpConnection, &TcpConnection::toConsole, this, &Daemon::toConsole);
+    connect(tcpConnection, &TcpConnection::connectionTimeout, this, &Daemon::connectToServer);
+    //connect(this, &Daemon::sendMsg, tcpConnection, &TcpConnection::sendMsg);
+    //connect(this, &Daemon::posixTerminate, tcpConnection, &TcpConnection::onPosixTerminate);
+    //connect(tcpConnection, &TcpConnection::stoppedConnection, this, &Daemon::stoppedConnection);
     tcpThread->start();
 }
 
-void Demon::incomingConnection(qintptr socketDescriptor){
+void Daemon::incomingConnection(qintptr socketDescriptor){
     if (verbose > 4){
         cout << "incomingConnection" <<endl;
     }
@@ -192,17 +293,20 @@ void Demon::incomingConnection(qintptr socketDescriptor){
     connect(thread, &QThread::started, tcpConnection, &TcpConnection::receiveConnection);
     connect(thread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
-    connect(this, &Demon::closeConnection, tcpConnection, &TcpConnection::closeConnection);
-    connect(tcpConnection, &TcpConnection::toConsole, this, &Demon::toConsole);
-    connect(this, &Demon::i2CProperties, tcpConnection, &TcpConnection::sendI2CProperties);
-    connect(tcpConnection, &TcpConnection::requestI2CProperties, this, &Demon::sendI2CProperties);
-    connect(tcpConnection, &TcpConnection::i2CProperties, this, &Demon::setI2CProperties);
+    connect(this->thread(), &QThread::finished, thread, &QThread::quit);
+    //connect(qApp, &QCoreApplication::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
+    connect(this, &Daemon::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
+    connect(tcpConnection, &TcpConnection::toConsole, this, &Daemon::toConsole);
+    connect(this, &Daemon::i2CProperties, tcpConnection, &TcpConnection::sendI2CProperties);
+    connect(tcpConnection, &TcpConnection::requestI2CProperties, this, &Daemon::sendI2CProperties);
+    connect(tcpConnection, &TcpConnection::i2CProperties, this, &Daemon::setI2CProperties);
+    connect(this, &Daemon::gpioRisingEdge, tcpConnection, &TcpConnection::sendGpioRisingEdge);
     // connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
     // why does this not work?? Probably because if QCoreApplication knows when it quits, tcpConnection already deleted :(
     thread->start();
 }
 
-void Demon::pcaSelectTimeMeas(uint8_t channel){
+void Daemon::pcaSelectTimeMeas(uint8_t channel){
     if (channel>3){
         cout << "can there is no channel > 3" << endl;
         return;
@@ -214,11 +318,11 @@ void Demon::pcaSelectTimeMeas(uint8_t channel){
     pca->setOutputState(channel);
 }
 
-void Demon::dacSetThreashold(uint8_t channel, float threashold){
+void Daemon::dacSetThreashold(uint8_t channel, float threashold){
     dac->setVoltage(channel, threashold);
 }
 
-void Demon::configGps() {
+void Daemon::configGps() {
     // set up ubx as only outPortProtocol
     //emit UBXSetCfgPrt(1,1); // enables on UART port (1) only the UBX protocol
     emit UBXSetCfgPrt(1,PROTO_UBX);
@@ -296,11 +400,17 @@ void Demon::configGps() {
 	emit UBXSetCfgMsg(MSG_NAV_SVINFO, 1, 49);	// NAV-SVINFO
 
     delay(1000);
-    emit sendPoll(0x0600,1);
+    // this poll is for checking the port cfg (which protocols are enabled etc.)
+    emit sendPoll(MSG_CFG_PRT);
+    //emit sendPoll()
 }
 
-void Demon::UBXReceivedAckAckNak(bool ackAck, uint16_t ackedMsgID, uint16_t ackedCfgMsgID){
-    // the value was already set correctly,
+void Daemon::pollAllUbx(){
+
+}
+
+void Daemon::UBXReceivedAckAckNak(bool ackAck, uint16_t ackedMsgID, uint16_t ackedCfgMsgID){
+    // the value was already set correctly before by either poll or set,
     // if not acknowledged or timeout we set the value to -1 (unknown/undefined)
     if (!ackAck){
         switch(ackedMsgID){
@@ -315,7 +425,7 @@ void Demon::UBXReceivedAckAckNak(bool ackAck, uint16_t ackedMsgID, uint16_t acke
 }
 
 
-void Demon::gpsPropertyUpdatedGnss(std::vector<GnssSatellite> data,
+void Daemon::gpsPropertyUpdatedGnss(std::vector<GnssSatellite> data,
                                 std::chrono::duration<double> lastUpdated){
     //if (listSats){
     if (verbose > 3){
@@ -337,7 +447,7 @@ void Demon::gpsPropertyUpdatedGnss(std::vector<GnssSatellite> data,
         }
     }
 }
-void Demon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double> updateAge,
+void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double> updateAge,
                                 char propertyName){
     switch (propertyName){
     case 's':
@@ -365,7 +475,7 @@ void Demon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double> 
     }
 }
 
-void Demon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> updateAge,
+void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> updateAge,
                                 char propertyName){
     switch (propertyName){
     case 'a':
@@ -383,7 +493,7 @@ void Demon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> upd
     }
 }
 
-void Demon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double> updateAge,
+void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double> updateAge,
                                 char propertyName){
     switch (propertyName){
     case 'd':
@@ -401,7 +511,7 @@ void Demon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double> 
     }
 }
 
-void Demon::setI2CProperties(I2cProperty i2cProperty, bool setProperties){
+void Daemon::setI2CProperties(I2cProperty i2cProperty, bool setProperties){
     if (!setProperties){
         return;
     }
@@ -430,29 +540,29 @@ void Demon::setI2CProperties(I2cProperty i2cProperty, bool setProperties){
     sendI2CProperties();
 }
 
-void Demon::toConsole(QString data) {
+void Daemon::toConsole(QString data) {
     cout << data << endl;
 }
 
-void Demon::gpsToConsole(QString data){
+void Daemon::gpsToConsole(QString data){
     cout << data << flush;
 }
 
-void Demon::gpsConnectionError(){
+void Daemon::gpsConnectionError(){
 
 }
 
-void Demon::stoppedConnection(QString hostName, quint16 port, quint32 connectionTimeout, quint32 connectionDuration){
+void Daemon::stoppedConnection(QString hostName, quint16 port, quint32 connectionTimeout, quint32 connectionDuration){
     cout << "stopped connection with " << hostName<<":"<<port<<endl;
     cout<<"connection timeout at "<<connectionTimeout<<"  connection lasted "<<connectionDuration<<"s"<<endl;
 }
 
-void Demon::displayError(QString message)
+void Daemon::displayError(QString message)
 {
-    cout <<"Demon: "<< message << endl;
+    cout <<"Daemon: "<< message << endl;
 }
 
-void Demon::displaySocketError(int socketError, QString message)
+void Daemon::displaySocketError(int socketError, QString message)
 {
 	switch (socketError) {
 	case QAbstractSocket::HostNotFoundError:
@@ -471,7 +581,7 @@ void Demon::displaySocketError(int socketError, QString message)
 	flush(cout);
 }
 
-void Demon::delay(int millisecondsWait)
+void Daemon::delay(int millisecondsWait)
 {
 	QEventLoop loop;
 	QTimer t;
@@ -480,7 +590,7 @@ void Demon::delay(int millisecondsWait)
 	loop.exec();
 }
 
-void Demon::printTimestamp()
+void Daemon::printTimestamp()
 {
 	std::chrono::time_point<std::chrono::system_clock> timestamp = std::chrono::system_clock::now();
 	std::chrono::microseconds mus = std::chrono::duration_cast<std::chrono::microseconds>(timestamp.time_since_epoch());
@@ -490,14 +600,32 @@ void Demon::printTimestamp()
 
 	// 	t1 = std::chrono::system_clock::now();
 	// 	t2 = std::chrono::duration_cast<std::chrono::seconds>(t1);
-
-
-
 		//double subs=timestamp-(long int)timestamp;
 	cout << secs.count() << "." << setw(6) << setfill('0') << subs.count() << " " << setfill(' ');
 }
 
-void Demon::sendI2CProperties(){
+void Daemon::sendI2CProperties(){
     I2cProperty i2cProperty(pcaChannel, dacThresh.at(0), dacThresh.at(1), biasVoltage, biasPowerOn);
     emit i2CProperties(i2cProperty);
+}
+
+void Daemon::sendAndXorSignal(uint8_t gpio_pin, uint32_t tick){
+    emit gpioRisingEdge((quint8)gpio_pin, (quint32)tick);
+}
+
+// some signal handling stuff
+void Daemon::hupSignalHandler(int)
+{
+    char a = 1;
+    ::write(sighupFd[0], &a, sizeof(a));
+}
+
+void Daemon::termSignalHandler(int)
+{
+    char a = 1;
+    ::write(sigtermFd[0], &a, sizeof(a));
+}
+void Daemon::intSignalHandler(int){
+    char a = 1;
+    ::write(sigintFd[0], &a, sizeof(a));
 }
