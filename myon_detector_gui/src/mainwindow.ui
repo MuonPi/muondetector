@@ -280,7 +280,7 @@
         <item>
          <widget class="QLabel" name="biasPowerLabel">
           <property name="text">
-           <string>Power OFF</string>
+           <string>Bias OFF</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
