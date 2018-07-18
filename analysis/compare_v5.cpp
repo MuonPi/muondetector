@@ -196,15 +196,15 @@ void readToVector(ifstream& inputstream, vector<timestamp_t>& oneVector, int& ma
 void Usage()
 {
 	cout << endl;
-	cout << "Compare_v5" << endl;
-	cout << "Sortiert <File1>, ... <File n> falls nicht schon sortiert." << endl;
-	cout << "Vergleicht <File1>, ... <File n> jeweils miteinander und sucht nach sog. coincidents" << endl;
-	cout << "Timestamps und bildet aus beiden die Differenz. Das Ergebnis wird in" << endl;
-	cout << "der Form:" << endl;
-	cout << "[%Y.%m.%d %H:%M:%S] ... [Differenz1] ... [Differenz n] ... [coincidents]" << endl;
-	cout << "in <output> gespeichert. <File1> und <File2> sollte die Form haben:" << endl;
-	cout << "[Timestamp]		" << endl << endl;
-	cout << "Benutzung:    " << "compare" << " [-vh?][-o<output> -b<Bereich>] File1 File2" << endl;
+	cout << "timestamp compare program (v5)" << endl;
+	cout << "sort <File1>, ... <File n> unless in chronological order" << endl;
+	cout << "Compares <File1>, ... <File n> and searches for coincident timestamps." << endl;
+	cout << "mutual time differences are output under consideration of single timing errors (if available)." << endl;
+	cout << "The resulting output is written in format" << endl;
+	cout << "[%Y.%m.%d %H:%M:%S] ... [difference1] ... [difference n] ... [coincidents]" << endl;
+	cout << "to file <output>. <file1> and <file2> should provide unix timestamps and error in ns (if available):" << endl;
+	cout << "[Timestamp] [err]		" << endl << endl;
+	cout << "Usage:    " << "compare" << " [-vh?][-o<output> -b<interval>] file1 file2 ... filen" << endl;
 	cout << "		Optionen:" << endl;
 	cout << "		-h?		  : shows this help page." << endl;
 	cout << "		-c 		  : column from which the timestamp is extracted (standard col 0). format is unix timestamp with floating point precision up to 1ns" << endl;
@@ -214,9 +214,9 @@ void Usage()
 	cout << "		-b <time interval>  : coincidence range in [us] (default 1.0us)." << endl;
 	cout << "     	-m <maxValues>: number of timestamps which are read into vectors simultaneously. default 10k" << endl;
 	cout << endl;
-	cout << "Geschrieben von <Marvin.Peter@physik.uni-giessen.de>" << endl;
-	cout << "(Teilelemente sind geklaut von <Lukas.Nies@physik.uni-giessen.de>" << endl;
-	cout << "---Stand 18.07.2018---Bugs inclusive" << endl << endl;
+	cout << "written by <Marvin.Peter@physik.uni-giessen.de> and <Hans-Georg.Zaunick@exp2.physik.uni-giessen.de>" << endl;
+	cout << "(fragments are reused with permission of <Lukas.Nies@physik.uni-giessen.de>" << endl;
+	cout << "---status 18.07.2018---bugs inclusive" << endl << endl;
 }//end of Usage()
 
 void compareAlgorithm(vector<unsigned int>& iterator,
@@ -395,15 +395,15 @@ int main(int argc, char*argv[])
 	matchKriterium = b * 1e-6; //[us]
 	if (argc - optind < 2)
 	{
-		perror("Falsche Eingabe, zu wenige Argumente!\n");
+		perror("wrong input. too few arguments!\n");
 		Usage();
 		return -1;
 	}
 	if (verbose)
 	{
-		cout << "Programm gestarted...." << endl;
-		cout << endl << "lese maximal " << maxTimestampsAtOnce << " Werte gleichzeitig ein" << endl << endl;
-		cout << "Koinzidenzfenster: " << b << " us" << endl;
+		cout << "launched program...." << endl;
+		cout << endl << "reading at most " << maxTimestampsAtOnce << " values at once" << endl << endl;
+		cout << "coincidence window: " << b << " us" << endl;
 	}
 	int index = 0;
 	for (int i = optind; i < argc; i++)
@@ -414,7 +414,7 @@ int main(int argc, char*argv[])
 		dateiName[index] = temp;
 		if (verbose)
 		{
-			cout << index << ". Dateiname ist " << dateiName[index].c_str() << "." << endl;
+			cout << index << ". file name is " << dateiName[index].c_str() << "." << endl;
 		}
 		index++;
 	}
@@ -475,7 +475,7 @@ int main(int argc, char*argv[])
 	checkTimestampOrderTime = end - start;
 	if (verbose)
 	{
-		cout << endl << "Ueberpruefung auf reihenfolge abgeschlossen, Dauer: " << checkTimestampOrderTime << "s" << endl;
+		cout << endl << "check for sort order concluded. duration: " << checkTimestampOrderTime << "s" << endl;
 	}
 
 	// Erstellen der iostreams
@@ -495,13 +495,13 @@ int main(int argc, char*argv[])
 	unsigned long int prozent = 0;
 	unsigned long int prozentCounter = 0;
 	unsigned long int oldCounter = 0;
-	string ausgabeAlgorithmString = "vergleiche...";
+	string ausgabeAlgorithmString = "comparing...";
 	//Prozentanzeige
 
 
 	if (verbose)
 	{
-		cout << endl << "Starte Vergleich von " << overallLines << " Timestamps in " << dateiName.size() <<" Files...." << endl << endl;
+		cout << endl << "launch comparison of " << overallLines << " timestamps in " << dateiName.size() <<" files...." << endl << endl;
 	}
 	vector<vector<timestamp_t> > values;
 	values.resize(dateiName.size());
@@ -537,7 +537,7 @@ int main(int argc, char*argv[])
 	}
 	catch (int e)
 	{
-		cout << "berechnung von prozent falsch, prozentCounter " << prozentCounter << endl;
+		cout << "percent counter error: " << prozentCounter << endl;
 		exit(EXIT_FAILURE);
 
 	}
@@ -569,7 +569,7 @@ int main(int argc, char*argv[])
 		}
 		catch (int e)
 		{
-			cout << "berechnung von prozent falsch, prozentCounter " << prozentCounter << endl;
+			cout << "percent counter error: " << prozentCounter << endl;
 			exit(EXIT_FAILURE);
 
 		}
@@ -603,7 +603,7 @@ int main(int argc, char*argv[])
 		}
 		catch (int e)
 		{
-			cout << "berechnung von prozent falsch, prozentCounter " << prozentCounter << endl;
+			cout << "percent counter error: " << prozentCounter << endl;
 			exit(EXIT_FAILURE);
 		}
 	}//end of for  
@@ -613,7 +613,7 @@ int main(int argc, char*argv[])
 	algorithmTime = end - start;
 	if (verbose)
 	{
-		cout << "Das Programm ist fertig, Dauer: " << algorithmTime << "s" << endl;
+		cout << "finalized program. duration: " << algorithmTime << "s" << endl;
 	}
 	return (int)true;
 }//end of int main()																										
