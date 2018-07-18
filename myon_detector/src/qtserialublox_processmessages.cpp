@@ -46,15 +46,16 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
             emit UBXReceivedAckNak(msgWaitingForAck->msgID,
                                       (uint16_t)(msgWaitingForAck->data[0])<<8
                                      |msgWaitingForAck->data[1]);
-            sendQueuedMsg(true); // tries to send the message again
+//            sendQueuedMsg(true); // tries to send the message again
+//            return;              // ends with an endless loop if a message is just wrong...
             break;
         default:
-            ackTimer->stop();
-            delete msgWaitingForAck;
-            msgWaitingForAck = 0;
-            sendQueuedMsg();
             break;
         }
+        ackTimer->stop();
+        delete msgWaitingForAck;
+        msgWaitingForAck = 0;
+        sendQueuedMsg();
         break;
     case 0x01: // UBX-NAV
         switch (messageID) {

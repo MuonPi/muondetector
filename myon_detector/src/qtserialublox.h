@@ -99,7 +99,6 @@ private:
     bool discardAllNMEA = true; // if true discard all NMEA messages and do not parse them
     bool showout = false; // if true show the ubx messages sent to the gps board as hex
     bool showin = false;
-    bool waitingForPolledMsg = false;
     std::queue <UbxMessage> outMsgBuffer;
     UbxMessage *msgWaitingForAck = 0;
     QTimer *ackTimer;

@@ -66,9 +66,6 @@ void QtSerialUblox::sendQueuedMsg(bool afterTimeout){
         sendUBX(*msgWaitingForAck);
         return;
     }
-    if (waitingForPolledMsg){
-        return;
-    }
     if (outMsgBuffer.empty()){ return;}
     if (msgWaitingForAck){
         if (verbose > 0){
@@ -434,11 +431,10 @@ void QtSerialUblox::handleError(QSerialPort::SerialPortError serialPortError)
 void QtSerialUblox::pollMsgRate(uint16_t msgID){
     UbxMessage msg;
     unsigned char temp[2];
-    temp[0] = (uint8_t)((msgID&0xff)>>8);
-    temp[1] = (uint8_t)(msgID&0x00ff);
+    temp[0] = (uint8_t)((msgID&0xff00)>>8);
+    temp[1] = (uint8_t)(msgID&0xff);
     msg.msgID = MSG_CFG_MSG;
     msg.data = toStdString(temp,2);
-    msg.pollMessage = true;
     outMsgBuffer.push(msg);
     if (!msgWaitingForAck){
         sendQueuedMsg();

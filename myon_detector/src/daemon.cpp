@@ -22,13 +22,12 @@ static const QVector<uint16_t> allMsgCfgID({
 //   MSG_CFG_ODO, MSG_CFG_PM2, MSG_CFG_PMS, MSG_CFG_PRT, MSG_CFG_PWR,
 //   MSG_CFG_RATE, MSG_CFG_RINV, MSG_CFG_RST, MSG_CFG_RXM, MSG_CFG_SBAS,
 //   MSG_CFG_SMGR, MSG_CFG_TMODE2, MSG_CFG_TP5, MSG_CFG_TXSLOT, MSG_CFG_USB
-     MSG_NAV_CLOCK, MSG_NAV_DGPS, MSG_NAV_AOPSTATUS, MSG_NAV_DOP, MSG_NAV_EOE, MSG_NAV_GEOFENCE,
-     MSG_NAV_ODO, MSG_NAV_ORB, MSG_NAV_POSECEF, MSG_NAV_LLH, MSG_NAV_PVT, MSG_NAV_RESETODO,
-     MSG_NAV_SAT, MSG_NAV_SBAS, MSG_NAV_SOL, MSG_NAV_STATUS, MSG_NAV_SVINFO, MSG_NAV_TIMEBDS,
-     MSG_NAV_TIMEGAL, MSG_NAV_TIMEGLO, MSG_NAV_TIMEGPS, MSG_NAV_TIMELS, MSG_NAV_TIMEUTC, MSG_NAV_VELECEF,
+     MSG_NAV_CLOCK, MSG_NAV_DGPS, MSG_NAV_AOPSTATUS, MSG_NAV_DOP,
+     MSG_NAV_POSECEF, MSG_NAV_POSLLH, MSG_NAV_PVT, MSG_NAV_SBAS, MSG_NAV_SOL,
+     MSG_NAV_STATUS, MSG_NAV_SVINFO, MSG_NAV_TIMEGPS, MSG_NAV_TIMEUTC, MSG_NAV_VELECEF,
      MSG_NAV_VELNED,
-     MSG_MON_VER, MSG_MON_GNSS, MSG_MON_HW, MSG_MON_HW2, MSG_MON_IO, MSG_MON_MSGPP, MSG_MON_PATCH,
-     MSG_MON_RXBUF, MSG_MON_RXR, MSG_MON_SMGR, MSG_MON_TXBUF
+     MSG_MON_HW, MSG_MON_HW2, MSG_MON_IO, MSG_MON_MSGPP,
+     MSG_MON_RXBUF, MSG_MON_RXR,MSG_MON_TXBUF
      });
 // signal handling stuff: put code to execute before shutdown down there
 static int setup_unix_signal_handlers()
@@ -106,11 +105,13 @@ void Daemon::handleSigInt()
     if(verbose>1){
         cout << "\nSIGINT received"<<endl;
     }
-//    qDebug() << allMsgCfgID.size();
-//    qDebug() << msgRateCfgs.size();
-//    for (QMap<uint16_t,int>::iterator it =msgRateCfgs.begin(); it!=msgRateCfgs.end(); it++){
-//        qDebug().nospace() << "0x"<<hex<<(uint8_t)(it.key()>>8) << " 0x"<<hex<<(uint8_t)(it.key()&0xff) << " " << dec << it.value();
-//    }
+    if (showin || showout){
+        qDebug() << allMsgCfgID.size();
+        qDebug() << msgRateCfgs.size();
+        for (QMap<uint16_t,int>::iterator it =msgRateCfgs.begin(); it!=msgRateCfgs.end(); it++){
+            qDebug().nospace() << "0x"<<hex<<(uint8_t)(it.key()>>8) << " 0x"<<hex<<(uint8_t)(it.key()&0xff) << " " << dec << it.value();
+        }
+    }
     emit aboutToQuit();
     this->thread()->quit();
     exit(0);
@@ -352,69 +353,71 @@ void Daemon::configGps() {
     //emit UBXSetCfgPrt(1,1); // enables on UART port (1) only the UBX protocol
     emit UBXSetCfgPrt(1,PROTO_UBX);
     // deactivate all NMEA messages: (port 6 means ALL ports)
-    // for acknowledge we have to think about a better solution
+    // not needed because of deactivation of all NMEA messages with "UBXSetCfgPrt"
 //    msgRateCfgs.insert(MSG_NMEA_DTM,0);
-//    msgRateCfgs.insert(MSG_NMEA_GBQ,0);
+//    // msgRateCfgs.insert(MSG_NMEA_GBQ,0);
 //    msgRateCfgs.insert(MSG_NMEA_GBS,0);
 //    msgRateCfgs.insert(MSG_NMEA_GGA,0);
 //    msgRateCfgs.insert(MSG_NMEA_GLL,0);
-//    msgRateCfgs.insert(MSG_NMEA_GLQ,0);
-//    msgRateCfgs.insert(MSG_NMEA_GNQ,0);
+//    // msgRateCfgs.insert(MSG_NMEA_GLQ,0);
+//    // msgRateCfgs.insert(MSG_NMEA_GNQ,0);
 //    msgRateCfgs.insert(MSG_NMEA_GNS,0);
-//    msgRateCfgs.insert(MSG_NMEA_GPQ,0);
+//    // msgRateCfgs.insert(MSG_NMEA_GPQ,0);
 //    msgRateCfgs.insert(MSG_NMEA_GRS,0);
 //    msgRateCfgs.insert(MSG_NMEA_GSA,0);
 //    msgRateCfgs.insert(MSG_NMEA_GST,0);
 //    msgRateCfgs.insert(MSG_NMEA_GSV,0);
 //    msgRateCfgs.insert(MSG_NMEA_RMC,0);
-//    msgRateCfgs.insert(MSG_NMEA_TXT,0);
+//    // msgRateCfgs.insert(MSG_NMEA_TXT,0);
 //    msgRateCfgs.insert(MSG_NMEA_VLW,0);
 //    msgRateCfgs.insert(MSG_NMEA_VTG,0);
 //    msgRateCfgs.insert(MSG_NMEA_ZDA,0);
 //    msgRateCfgs.insert(MSG_NMEA_POSITION,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_DTM,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_GBQ,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_GBS,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_GGA,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_GLL,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_GLQ,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_GNQ,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_GNS,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_GPQ,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_GRS,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_GSA,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_GST,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_GSV,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_RMC,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_TXT,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_VLW,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_VTG,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_ZDA,6,0);
-    emit UBXSetCfgMsgRate(MSG_NMEA_POSITION,6,0);
+//    emit UBXSetCfgMsgRate(MSG_NMEA_DTM,6,0);
+//    // has no output msg MSG_NMEA_GBQ
+//    emit UBXSetCfgMsgRate(MSG_NMEA_GBS,6,0);
+//    emit UBXSetCfgMsgRate(MSG_NMEA_GGA,6,0);
+//    emit UBXSetCfgMsgRate(MSG_NMEA_GLL,6,0);
+//    // has no output msg MSG_NMEA_GLQ
+//    // has no output msg MSG_NMEA_GNQ
+//    emit UBXSetCfgMsgRate(MSG_NMEA_GNS,6,0);
+//    // has no output msg MSG_NMEA_GPQ
+//    emit UBXSetCfgMsgRate(MSG_NMEA_GRS,6,0);
+//    emit UBXSetCfgMsgRate(MSG_NMEA_GSA,6,0);
+//    emit UBXSetCfgMsgRate(MSG_NMEA_GST,6,0);
+//    emit UBXSetCfgMsgRate(MSG_NMEA_GSV,6,0);
+//    emit UBXSetCfgMsgRate(MSG_NMEA_RMC,6,0);
+//    // is not configured through MSG_CFG_MSG but through UBX-CFG-INF!!!  (MSG_NMEA_TXT)
+//    //emit UBXSetCfgMsgRate(MSG_NMEA_VLW,6,0); don't know why this does not work, probably not supported anymore
+//    emit UBXSetCfgMsgRate(MSG_NMEA_VTG,6,0);
+//    emit UBXSetCfgMsgRate(MSG_NMEA_ZDA,6,0);
+//    emit UBXSetCfgMsgRate(MSG_NMEA_POSITION,6,0);
 
     // set protocol configuration for ports
     // msgRateCfgs: -1 means unknown, 0 means off, some positive value means update time
     const int measrate = 10;
-//    msgRateCfgs.insert(MSG_CFG_RATE, measrate);
-//    msgRateCfgs.insert(MSG_TIM_TM2, 1);
-//    msgRateCfgs.insert(MSG_TIM_TP, 51);
-//    msgRateCfgs.insert(MSG_NAV_TIMEUTC, 20);
-//    msgRateCfgs.insert(MSG_MON_HW, 47);
-//    msgRateCfgs.insert(MSG_NAV_SAT, 59);
-//    msgRateCfgs.insert(MSG_NAV_TIMEGPS, 61);
-//    msgRateCfgs.insert(MSG_NAV_SOL, 67);
-//    msgRateCfgs.insert(MSG_NAV_STATUS, 71);
-//    msgRateCfgs.insert(MSG_NAV_CLOCK, 89);
-//    msgRateCfgs.insert(MSG_MON_TXBUF, 97);
-//    msgRateCfgs.insert(MSG_NAV_SBAS, 255);
-//    msgRateCfgs.insert(MSG_NAV_DOP, 101);
-//    msgRateCfgs.insert(MSG_NAV_SVINFO, 49);
+    msgRateCfgs.insert(MSG_CFG_RATE, measrate);
+    msgRateCfgs.insert(MSG_TIM_TM2, 1);
+    msgRateCfgs.insert(MSG_TIM_TP, 51);
+    msgRateCfgs.insert(MSG_NAV_TIMEUTC, 20);
+    msgRateCfgs.insert(MSG_MON_HW, 47);
+   // msgRateCfgs.insert(MSG_NAV_SAT, 59);
+    msgRateCfgs.insert(MSG_NAV_TIMEGPS, 61);
+    msgRateCfgs.insert(MSG_NAV_SOL, 67);
+    msgRateCfgs.insert(MSG_NAV_STATUS, 71);
+    msgRateCfgs.insert(MSG_NAV_CLOCK, 89);
+    msgRateCfgs.insert(MSG_MON_TXBUF, 97);
+    msgRateCfgs.insert(MSG_NAV_SBAS, 255);
+    msgRateCfgs.insert(MSG_NAV_DOP, 101);
+    msgRateCfgs.insert(MSG_NAV_SVINFO, 49);
     emit UBXSetCfgRate(1000 / measrate, 1); // MSG_CFG_RATE
+
     emit UBXSetCfgMsgRate(MSG_TIM_TM2, 1, 1);	// TIM-TM2
     emit UBXSetCfgMsgRate(MSG_TIM_TP, 1, 51);	// TIM-TP
     emit UBXSetCfgMsgRate(MSG_NAV_TIMEUTC, 1, 20);	// NAV-TIMEUTC
     emit UBXSetCfgMsgRate(MSG_MON_HW, 1, 47);	// MON-HW
-    emit UBXSetCfgMsgRate(MSG_NAV_SAT, 1, 59);	// NAV-SAT
+    //emit UBXSetCfgMsgRate(MSG_NAV_SAT, 1, 59);	// NAV-SAT (don't know why it does not work,
+    // probably also configured with UBX-CFG-INFO...
     emit UBXSetCfgMsgRate(MSG_NAV_TIMEGPS, 1, 61);	// NAV-TIMEGPS
     emit UBXSetCfgMsgRate(MSG_NAV_SOL, 1, 67);	// NAV-SOL
     emit UBXSetCfgMsgRate(MSG_NAV_STATUS, 1, 71);	// NAV-STATUS
@@ -429,8 +432,8 @@ void Daemon::configGps() {
 }
 
 void Daemon::pollAllUbxMsgRate(){
-    for(const auto& id : allMsgCfgID){
-        emit sendPollUbxMsgRate(id);
+    for (const auto& elem : allMsgCfgID){
+        emit sendPollUbxMsgRate(elem);
     }
 }
 
