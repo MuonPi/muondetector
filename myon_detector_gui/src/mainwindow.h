@@ -23,6 +23,8 @@ signals:
     void closeConnection();
     void setI2CProperties(I2cProperty i2cProperty, bool setProperties = true);
     void requestI2CProperties();
+    void requestUbxMsgRates();
+    void addUbxMsgRates(QMap<uint16_t,int> ubxMsgRates);
 
 public slots:
     void stoppedConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort,
@@ -30,6 +32,7 @@ public slots:
     void makeConnection(QString ipAddress, quint16 port);
     void updateI2CProperties(I2cProperty i2cProperty, bool setProperties);
     void receivedGpioRisingEdge(quint8 pin, quint32 tick);
+    void updateUbxMsgRates(QMap<uint16_t,int> msgRateCfgs);
 
 private slots:
     void updateUiProperties(bool bias_powerOn, int uartBufferValue = -1, int discr1SliderValue = -1,

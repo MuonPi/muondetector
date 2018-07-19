@@ -23,7 +23,6 @@ LIBS += -lwiringPi \
         -lpigpiod_if2
 
 SOURCES += src/main.cpp \
-    src/custom_io_operators.cpp \
     src/gnsssatellite.cpp \
     ../shared/tcpconnection.cpp \
     src/qtserialublox.cpp \
@@ -34,10 +33,10 @@ SOURCES += src/main.cpp \
     ../shared/i2cproperty.cpp \
     ../shared/tcpmessage.cpp \
     src/pigpiodhandler.cpp \
-    src/daemon.cpp
+    src/daemon.cpp \
+    src/custom_io_operators.cpp
 
 HEADERS += \
-    src/custom_io_operators.h \
     src/gnsssatellite.h \
     src/unixtime_from_gps.h \
     src/time_from_rtc.h \
@@ -51,9 +50,12 @@ HEADERS += \
     ../shared/i2cproperty.h \
     ../shared/tcpmessage.h \
     src/pigpiodhandler.h \
-    src/ublox_definitions_and_structs.h \
     ../shared/gpio_pin_definitions.h \
-    src/daemon.h
+    src/daemon.h \
+    ../shared/ubx_msg_key_name_map.h \
+    src/ublox_structs.h \
+    ../shared/ublox_messages.h \
+    src/custom_io_operators.h
 
 OBJECTS_DIR += created_files
 

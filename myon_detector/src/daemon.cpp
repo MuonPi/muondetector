@@ -5,6 +5,7 @@
 #include <daemon.h>
 #include <pigpiodhandler.h>
 #include <../shared/gpio_pin_definitions.h>
+#include <../shared/ublox_messages.h>
 
 // for i2cdetect:
 extern "C"{
@@ -327,6 +328,8 @@ void Daemon::incomingConnection(qintptr socketDescriptor){
     connect(tcpConnection, &TcpConnection::requestI2CProperties, this, &Daemon::sendI2CProperties);
     connect(tcpConnection, &TcpConnection::i2CProperties, this, &Daemon::setI2CProperties);
     connect(this, &Daemon::gpioRisingEdge, tcpConnection, &TcpConnection::sendGpioRisingEdge);
+    connect(tcpConnection, &TcpConnection::requestUbxMsgRate, this, &Daemon::sendUbxMsgCfgs);
+    connect(this, &Daemon::ubxMsgRates, tcpConnection, &TcpConnection::sendUbxMsgRates);
     // connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
     // why does this not work?? Probably because if QCoreApplication knows when it quits, tcpConnection already deleted :(
     thread->start();
@@ -435,6 +438,10 @@ void Daemon::pollAllUbxMsgRate(){
     for (const auto& elem : allMsgCfgID){
         emit sendPollUbxMsgRate(elem);
     }
+}
+
+void Daemon::sendUbxMsgCfgs(){
+    emit ubxMsgRates(msgRateCfgs);
 }
 
 void Daemon::UBXReceivedAckNak(uint16_t ackedMsgID, uint16_t ackedCfgMsgID){

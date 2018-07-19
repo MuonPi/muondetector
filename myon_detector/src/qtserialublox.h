@@ -1,7 +1,7 @@
 #ifndef QTSERIALUBLOX_H
 #define QTSERIALUBLOX_H
 
-#include <ublox_definitions_and_structs.h>
+#include <ublox_structs.h>
 #include <queue>
 #include <string>
 #include <QSerialPort>

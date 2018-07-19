@@ -45,6 +45,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<uint32_t>("uint32_t");
     qRegisterMetaType<int32_t>("int32_t");
     qRegisterMetaType<std::string>("std::string");
+    qRegisterMetaType<QMap<uint16_t,int> >("QMap<uint16_t,int>");
 
 	// command line input management
 	QCommandLineParser parser;

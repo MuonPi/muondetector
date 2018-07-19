@@ -1,7 +1,7 @@
 #include <qtserialublox.h>
 #include <sstream>
 #include <QEventLoop>
-//#include "custom_io_operators.h" // remove after debug
+#include <../shared/ublox_messages.h>
 using namespace std;
 
 
@@ -85,14 +85,16 @@ void QtSerialUblox::ackTimeout(){
     if (!msgWaitingForAck){
         return;
     }
-    std::stringstream tempStream;
-    tempStream << "ack timeout, trying to resent message 0x" << std::setfill('0') << std::setw(2) << hex
-               << ((msgWaitingForAck->msgID & 0xff00)>>8) << " 0x" << std::setfill('0') << std::setw(2) << hex << (msgWaitingForAck->msgID & 0x00ff);
-    for (unsigned int i = 0; i < msgWaitingForAck->data.length(); i++){
-        tempStream << " 0x" << std::setfill('0') << std::setw(2) << hex << (int)(msgWaitingForAck->data[i]);
+    if (verbose > 1){
+        std::stringstream tempStream;
+        tempStream << "ack timeout, trying to resent message 0x" << std::setfill('0') << std::setw(2) << hex
+                   << ((msgWaitingForAck->msgID & 0xff00)>>8) << " 0x" << std::setfill('0') << std::setw(2) << hex << (msgWaitingForAck->msgID & 0x00ff);
+        for (unsigned int i = 0; i < msgWaitingForAck->data.length(); i++){
+            tempStream << " 0x" << std::setfill('0') << std::setw(2) << hex << (int)(msgWaitingForAck->data[i]);
+        }
+        tempStream << endl;
+        emit toConsole(QString::fromStdString(tempStream.str()));
     }
-    tempStream << endl;
-    emit toConsole(QString::fromStdString(tempStream.str()));
     sendQueuedMsg(true);
 }
 

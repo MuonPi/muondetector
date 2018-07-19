@@ -1,6 +1,6 @@
-#ifndef STRUCTS_AND_DEFINES_H
-#define STRUCTS_AND_DEFINES__H
-
+#ifndef UBLOX_MESSAGES_H
+#define UBLOX_MESSAGES_H
+#define UBLOX_VERSION 7
 // not in this list are all msg of types: RXM, LOG, AID and INF
 
 // list of UBX message Cls/ID
@@ -106,62 +106,10 @@
 #define MSG_NMEA_SVSTATUS 0xf103
 #define MSG_NMEA_TIME 0xf104
 
+// proto is the shortcut for protocol and
+// is defined as the correct bitmask for one
+// protocol
 #define PROTO_UBX 1
 #define PROTO_NMEA 0b10
 #define PROTO_RTCM3 0b100000
-
-#include <string>
-#include <chrono>
-#include <gnsssatellite.h>
-
-#include <sstream>
-#include <string>
-
-struct UbxMessage {
-public:
-	uint16_t msgID;
-    std::string data;
-};
-
-struct gpsTimestamp {
-	//   std::chrono::time_point<std::chrono::system_clock> rising_time;
-	//   std::chrono::time_point<std::chrono::system_clock> falling_time;
-	struct timespec rising_time;
-	struct timespec falling_time;
-	double accuracy_ns;
-	bool valid;
-	int channel;
-	bool rising;
-	bool falling;
-	int counter;
-};
-
-template <typename T> class gpsProperty{
-public:
-    gpsProperty() : value() {
-        updated=false;
-    }
-    gpsProperty(const T& val){
-        value = val;
-        updated = true;
-        lastUpdate = std::chrono::system_clock::now();
-    }
-	std::chrono::time_point<std::chrono::system_clock> lastUpdate;
-	std::chrono::duration<double> updatePeriod;
-	std::chrono::duration<double> updateAge() { return std::chrono::system_clock::now() - lastUpdate; }
-	bool updated;
-    gpsProperty& operator=(const T& val) {
-        value = val;
-		lastUpdate = std::chrono::system_clock::now();
-		updated = true;
-		return *this;
-    }
-    const T& operator()() {
-		updated = false;
-        return value;
-    }
-private:
-    T value;
-};
-
-#endif // STRUCTS_AND_DEFINES_H
+#endif // UBLOX_MESSAGES_H

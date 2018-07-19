@@ -12,6 +12,8 @@ const quint16 quitConnection = 101;
 const quint16 timeoutSig = 138;
 const quint16 i2cProps = 275;
 const quint16 i2cRequest = 271;
+const quint16 ubxMsgRateRequest = 293;
+const quint16 ubxMsgRate = 297;
 const quint16 gpioPin = 331;
 const quint16 msgCode = 333;
 
@@ -122,6 +124,7 @@ void TcpConnection::onReadyRead(){
     QString someMsg;
     QString fileName;
     I2cProperty i2cProperty;
+    QMap<uint16_t,int> ubxMsgRateCfgs;
     quint8 pin;
     quint32 tick;
     bool setProperties;
@@ -163,12 +166,21 @@ void TcpConnection::onReadyRead(){
         *in >> pin;
         *in >> tick;
     }
+
+    if (someCode == ubxMsgRate){
+        *in >> ubxMsgRateCfgs;
+    }
     // if this is not a complete transaction but just a part -> return
     if (!in->commitTransaction()){
         return;
     }
     if (someCode == i2cRequest){
         emit requestI2CProperties();
+        return;
+    }
+
+    if (someCode == ubxMsgRateRequest){
+        emit requestUbxMsgRate();
         return;
     }
 
@@ -181,6 +193,12 @@ void TcpConnection::onReadyRead(){
     // if it's a rising edge on one pin:
     if (someCode == gpioPin){
         emit gpioRisingEdge(pin, tick);
+        return;
+    }
+
+    // if it's a map of msg rate information
+    if (someCode == ubxMsgRate){
+        emit ubxMsgRates(ubxMsgRateCfgs);
         return;
     }
 
@@ -287,12 +305,27 @@ bool TcpConnection::sendI2CPropertiesRequest(){
     return writeBlock(block);
 }
 
+bool TcpConnection::sendUbxMsgRatesRequest(){
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out << ubxMsgRateRequest;
+    return writeBlock(block);
+}
+
 bool TcpConnection::sendGpioRisingEdge(quint8 pin, quint32 tick){
     QByteArray block;
     QDataStream out(&block, QIODevice::WriteOnly);
     out << gpioPin;
     out << pin;
     out << tick;
+    return writeBlock(block);
+}
+
+bool TcpConnection::sendUbxMsgRates(QMap<uint16_t, int> msgRateCfgs){
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out << ubxMsgRate;
+    out << msgRateCfgs;
     return writeBlock(block);
 }
 

@@ -59,6 +59,7 @@ public slots:
     void sendI2CProperties();
     void setI2CProperties(I2cProperty i2cProperty, bool setProperties);
     void sendAndXorSignal(uint8_t gpio_pin, uint32_t tick);
+    void sendUbxMsgCfgs();
     void pollAllUbxMsgRate();
 
 signals:
@@ -76,6 +77,7 @@ signals:
 	void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
     void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
     void gpioRisingEdge(uint8_t gpio_pin, uint32_t tick);
+    void ubxMsgRates(QMap<uint16_t,int> ubxMsgRateCfgs);
 
 private:
     void incomingConnection(qintptr socketDescriptor) override;

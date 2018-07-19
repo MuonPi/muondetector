@@ -42,7 +42,9 @@ HEADERS += \
     ../shared/i2cproperty.h \
     ../shared/tcpmessage.h \
     ../shared/gpio_pin_definitions.h \
-    src/settings.h
+    ../shared/ublox_messages.h \
+    src/settings.h \
+    ../shared/ubx_msg_key_name_map.h
 
 FORMS += \
         src/mainwindow.ui \

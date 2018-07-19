@@ -69,19 +69,15 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port){
     connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::makeConnection);
     connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
     connect(tcpThread, &QThread::finished, tcpThread, &QThread::deleteLater);
-    //connect(this, &Demon::sendFile, tcpConnection, &TcpConnection::sendFile);
     connect(tcpConnection, &TcpConnection::connected, this, &MainWindow::connected);
-    //connect(tcpConnection, &TcpConnection::error, this, &Demon::displaySocketError);
-    //connect(tcpConnection, &TcpConnection::toConsole, this, &Demon::toConsole);
-    //connect(tcpConnection, &TcpConnection::connectionTimeout, this, &MainWindow::makeConnection);
     connect(this, &MainWindow::closeConnection, tcpConnection, &TcpConnection::closeConnection);
     connect(tcpConnection, &TcpConnection::stoppedConnection, this, &MainWindow::stoppedConnection);
     connect(tcpConnection, &TcpConnection::i2CProperties, this, &MainWindow::updateI2CProperties);
     connect(this, &MainWindow::setI2CProperties, tcpConnection, &TcpConnection::sendI2CProperties);
     connect(this, &MainWindow::requestI2CProperties, tcpConnection, &TcpConnection::sendI2CPropertiesRequest);
     connect(tcpConnection, &TcpConnection::gpioRisingEdge, this, &MainWindow::receivedGpioRisingEdge);
-    //connect(this, &Demon::sendMsg, tcpConnection, &TcpConnection::sendMsg);
-    //connect(tcpConnection, &TcpConnection::stoppedConnection, this, &Demon::stoppedConnection);
+    connect(tcpConnection, &TcpConnection::ubxMsgRates, this, &MainWindow::updateUbxMsgRates);
+    connect(this, &MainWindow::requestUbxMsgRates, tcpConnection, &TcpConnection::sendUbxMsgRatesRequest);
     tcpThread->start();
 }
 
@@ -155,6 +151,10 @@ void MainWindow::updateI2CProperties(I2cProperty i2cProperty, bool setProperties
     }
 }
 
+void MainWindow::updateUbxMsgRates(QMap<uint16_t, int> msgRateCfgs){
+    emit addUbxMsgRates(msgRateCfgs);
+}
+
 void MainWindow::resetAndHit(){
     ui->ANDHit->setStyleSheet("QLabel {color: white; background-color: darkRed;}");
 }
@@ -171,7 +171,6 @@ void MainWindow::receivedGpioRisingEdge(quint8 pin, quint32 tick){
         xorTimer.start();
     }
 }
-
 
 void MainWindow::uiSetDisconnectedState(){
     // set button and color of label
@@ -353,6 +352,8 @@ void MainWindow::on_discr2Slider_valueChanged(int value)
 }
 void MainWindow::settings_clicked(bool checked){
     Settings *settings = new Settings(this);
+    connect(this, &MainWindow::addUbxMsgRates, settings, &Settings::addUbxMsgRates);
+    emit requestUbxMsgRates();
     settings->show();
 }
 

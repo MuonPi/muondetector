@@ -34,6 +34,8 @@ signals:
     void i2CProperties(I2cProperty i2cProperty, bool setProperties);
     void requestI2CProperties();
     void gpioRisingEdge(quint8 pin, quint32 tick);
+    void requestUbxMsgRate();
+    void ubxMsgRates(QMap<uint16_t,int> msgRateCfgs);
 
 public slots:
     void makeConnection();
@@ -48,6 +50,8 @@ public slots:
     bool sendI2CProperties(I2cProperty i2cProperty, bool setProperties);
     bool sendI2CPropertiesRequest();
     bool sendGpioRisingEdge(quint8 pin, quint32 tick);
+    bool sendUbxMsgRatesRequest();
+    bool sendUbxMsgRates(QMap<uint16_t,int> msgRateCfgs);
 
 private:
     bool handleFileTransfer(QString fileName, QByteArray& block, quint16 nextCount);
