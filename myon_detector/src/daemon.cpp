@@ -321,17 +321,10 @@ void Daemon::incomingConnection(qintptr socketDescriptor){
     connect(thread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
     connect(thread, &QThread::finished, thread, &QThread::deleteLater);
     connect(this->thread(), &QThread::finished, thread, &QThread::quit);
-    //connect(qApp, &QCoreApplication::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
     connect(this, &Daemon::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
+    connect(this, &Daemon::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
+    connect(tcpConnection, &TcpConnection::receivedTcpMessage, this, &Daemon::receivedTcpMessage);
     connect(tcpConnection, &TcpConnection::toConsole, this, &Daemon::toConsole);
-    connect(this, &Daemon::i2CProperties, tcpConnection, &TcpConnection::sendI2CProperties);
-    connect(tcpConnection, &TcpConnection::requestI2CProperties, this, &Daemon::sendI2CProperties);
-    connect(tcpConnection, &TcpConnection::i2CProperties, this, &Daemon::setI2CProperties);
-    connect(this, &Daemon::gpioRisingEdge, tcpConnection, &TcpConnection::sendGpioRisingEdge);
-    connect(tcpConnection, &TcpConnection::requestUbxMsgRate, this, &Daemon::sendUbxMsgCfgs);
-    connect(this, &Daemon::ubxMsgRates, tcpConnection, &TcpConnection::sendUbxMsgRates);
-    // connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
-    // why does this not work?? Probably because if QCoreApplication knows when it quits, tcpConnection already deleted :(
     thread->start();
 }
 
@@ -441,7 +434,7 @@ void Daemon::pollAllUbxMsgRate(){
 }
 
 void Daemon::sendUbxMsgCfgs(){
-    emit ubxMsgRates(msgRateCfgs);
+    TcpMessage tcpMessage;
 }
 
 void Daemon::UBXReceivedAckNak(uint16_t ackedMsgID, uint16_t ackedCfgMsgID){

@@ -34,17 +34,18 @@ SOURCES += \
         src/mainwindow.cpp \
     ../shared/i2cproperty.cpp \
     ../shared/tcpmessage.cpp \
-    src/settings.cpp
+    src/settings.cpp \
+    ../shared/tcpmessage.cpp
 
 HEADERS += \
         ../shared/tcpconnection.h \
         src/mainwindow.h \
     ../shared/i2cproperty.h \
     ../shared/tcpmessage.h \
-    ../shared/gpio_pin_definitions.h \
     ../shared/ublox_messages.h \
     src/settings.h \
-    ../shared/ubx_msg_key_name_map.h
+    ../shared/ubx_msg_key_name_map.h \
+    ../shared/tcpmessage.h
 
 FORMS += \
         src/mainwindow.ui \

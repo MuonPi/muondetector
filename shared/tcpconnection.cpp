@@ -47,6 +47,7 @@ TcpConnection::TcpConnection(int socketDescriptor, int newVerbose, int newTimeou
     timeout = newTimeout;
     verbose = newVerbose;
     //qRegisterMetaType<QVector<float> >("QVector<float>");
+    qRegisterMetaType<TcpMessage> ("TcpMessage");
     qRegisterMetaType<I2cProperty> ("I2cProperty");
 }
 
@@ -59,6 +60,7 @@ void TcpConnection::makeConnection()
     }
     tcpSocket = new QTcpSocket(this);
     in = new QDataStream();
+    in->setVersion(QDataStream::Qt_4_0);
     in->setDevice(tcpSocket);
     connect(tcpSocket, &QTcpSocket::readyRead, this, &TcpConnection::onReadyRead);
     //connect(tcpSocket, &QTcpSocket::disconnected, this, &TcpConnection::disconnected);
@@ -97,6 +99,7 @@ void TcpConnection::receiveConnection()
         lastConnection = time(NULL);
         //connect(tcpSocket, &QTcpSocket::disconnected, this, &TcpConnection::onSocketDisconnected);
         in = new QDataStream();
+        in->setVersion(QDataStream::Qt_4_0);
         in->setDevice(tcpSocket);
         connect(tcpSocket, &QTcpSocket::readyRead, this, &TcpConnection::onReadyRead);
         firstConnection = time(NULL);
@@ -118,139 +121,38 @@ void TcpConnection::onReadyRead(){
         emit toConsole("input stream not yet initialized");
         return;
     }
+    if (blockSize==0){
+        if (tcpSocket->bytesAvailable()<(int)(sizeof(quint16))){
+            return;
+        }
+        *in >> blockSize;
+    }
+    if (tcpSocket->bytesAvailable()<blockSize){
+        return;
+    }
+    if (tcpSocket->bytesAvailable()>blockSize){
+        emit toConsole(QString(QString::number(tcpSocket->bytesAvailable()-blockSize)
+                       +" more Bytes available than expected by blockSize"));
+    }
+    blockSize = 0;
     QByteArray block;
-    quint16 someCode = 0;
-    quint16 nextCount = -1;
-    QString someMsg;
-    QString fileName;
-    I2cProperty i2cProperty;
-    QMap<uint16_t,int> ubxMsgRateCfgs;
-    quint8 pin;
-    quint32 tick;
-    bool setProperties;
-    // first get some code (defined at the top of this file)
-    // to see what kind of message this is
-    in->startTransaction();
-    *in >> someCode;
-
-    // if the message belongs to a file transfer:
-    if (someCode == fileSig){
-        *in >> nextCount;
-        if (nextCount == 0){
-            *in >> fileName;
-        }else{
-            *in >> block;
-        }
-    }
-
-    // if the message is just some command (consisting of one string):
-    if (someCode == msgSig){
-        *in >> someMsg;
-    }
-
-    // if the code says "nextPart" it means: send the next part of the file transmission!
-    if (someCode == nextPart){
-        // really important even if you put "" in the block it must be read out here or it will hang...
-        // you have to get EVERYTHING out of the DataStream or it won't work!!!
-        *in >> someMsg;
-        lastConnection = time(NULL);
-        sendFile();
-    }
-
-    if (someCode == i2cProps){
-        *in >> i2cProperty;
-        *in >> setProperties;
-    }
-
-    if (someCode == gpioPin){
-        *in >> pin;
-        *in >> tick;
-    }
-
-    if (someCode == ubxMsgRate){
-        *in >> ubxMsgRateCfgs;
-    }
-    // if this is not a complete transaction but just a part -> return
-    if (!in->commitTransaction()){
-        return;
-    }
-    if (someCode == i2cRequest){
-        emit requestI2CProperties();
-        return;
-    }
-
-    if (someCode == ubxMsgRateRequest){
-        emit requestUbxMsgRate();
-        return;
-    }
-
-    // if it's an update about I2C device status the message is stored in "block" now to handle it
-    if (someCode == i2cProps){
-        emit i2CProperties(i2cProperty,setProperties);
-        return;
-    }
-
-    // if it's a rising edge on one pin:
-    if (someCode == gpioPin){
-        emit gpioRisingEdge(pin, tick);
-        return;
-    }
-
-    // if it's a map of msg rate information
-    if (someCode == ubxMsgRate){
-        emit ubxMsgRates(ubxMsgRateCfgs);
-        return;
-    }
-
-    // if it's a file transfer the message is stored in "block" now so we can handle it
-    if (someCode == fileSig){
-        lastConnection = time(NULL);
-        if (!handleFileTransfer(fileName, block, nextCount)){
-            emit toConsole("handle file transfer failed");
-            // eventually send some information to server that transmission failed
-        }
-        sendCode(nextPart);
-        return;
-    }
-
-    // if code says something else:
-    if (someCode == msgSig){
-        emit toConsole(someMsg);
-        return;
-    }
-
-    if (someCode == ping){
-        if (verbose>3){
-            emit toConsole("received ping, sending answerping");
-        }
-        sendCode(answPing);
-        lastConnection = time(NULL);
-        return;
-    }
-    if (someCode == answPing){
-        if(verbose>3){
-            emit toConsole("received answerping");
-        }
-        lastConnection = time(NULL);
-        return;
-    }
-    if (someCode == quitConnection){
-        emit stoppedConnection(peerAddress->toString(), peerPort, localAddress->toString(), localPort);
-        if(verbose>3){
-            emit toConsole(QString("received quitConnection signal from peer, connection lasted "
-                                   +QString::number(time(NULL)-firstConnection)));
-        }
-        this->thread()->quit();
-        return;
-    }
-    if (someCode == timeoutSig){
-        quint32 connectionDuration = (quint32)(time(NULL)-firstConnection);
-        emit connectionTimeout(peerAddress->toString(),peerPort,localAddress->toString(),localPort,(quint32)time(NULL),connectionDuration);
-        return;
-    }
-    emit toConsole("something went wrong with the transmission code");
+    *in >> block;
+    TcpMessage tcpMessage(block);
+    emit receivedTcpMessage(tcpMessage);
+   // emit toConsole("something went wrong with the transmission code");
 }
 
+bool TcpConnection::sendTcpMessage(TcpMessage tcpMessage){
+    QByteArray block;
+    QDataStream out(&block, QIODevice::WriteOnly);
+    out << (quint16)0;
+    out << tcpMessage.getData();
+    out.device()->seek(0);
+    out << (quint16)(block.size() - (int)sizeof(quint16));
+    return writeBlock(block);
+}
+
+/*
 bool TcpConnection::sendFile(QString fileName){
     if (!fileName.isEmpty()){
         if (file){
@@ -378,9 +280,7 @@ bool TcpConnection::sendText(const quint16 someCode, QString someText){
     // for qt version < 5.7:
     // send the size of the string so that receiver knows when
     // all data has been successfully received
-    /*out.device()->seek(0);
-    out << (quint16)(block.size() - sizeof(quint16));
-    */
+
     return writeBlock(block);
 }
 
@@ -391,7 +291,7 @@ bool TcpConnection::sendCode(const quint16 someCode){
     out << someCode;
     return writeBlock(block);
 }
-
+*/
 bool TcpConnection::writeBlock(QByteArray &block){
     if (!tcpSocket) {
         emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
@@ -413,7 +313,7 @@ bool TcpConnection::writeBlock(QByteArray &block){
     this->thread()->quit();
     return false;
 }
-
+/*
 void TcpConnection::onTimePulse(){
     if (fabs(time(NULL)-lastConnection)>timeout/1000){
         // hier einfügen, was passiert, wenn host nicht auf ping antwortet
@@ -424,7 +324,7 @@ void TcpConnection::onTimePulse(){
         this->deleteLater();
         return;
     }
-    if (tcpSocket/*&&tcpSocket->state()!=QTcpSocket::UnconnectedState*/){
+    if (tcpSocket){
         if (verbose>3){
             emit toConsole("sending ping");
         }
@@ -440,7 +340,7 @@ void TcpConnection::startTimePulser()
     connect(t, &QTimer::timeout, this, &TcpConnection::onTimePulse);
     t->start();
 }
-
+*/
 void TcpConnection::delay(int millisecondsWait)
 {
     QEventLoop loop;

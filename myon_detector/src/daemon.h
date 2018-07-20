@@ -8,7 +8,7 @@
 #include <custom_io_operators.h>
 #include <qtserialublox.h>
 #include <i2c/i2cdevices.h>
-#include <tcpmessage.h>
+#include <tcpmessage_old.h>
 #include <QSocketNotifier>
 
 // for sig handling:
@@ -56,28 +56,20 @@ public slots:
                             char propertyName);
     void gpsPropertyUpdatedGnss(std::vector<GnssSatellite>,
                             std::chrono::duration<double> updateAge);
-    void sendI2CProperties();
-    void setI2CProperties(I2cProperty i2cProperty, bool setProperties);
-    void sendAndXorSignal(uint8_t gpio_pin, uint32_t tick);
-    void sendUbxMsgCfgs();
+    void receivedTcpMessage(TcpMessage tcpMessage);
     void pollAllUbxMsgRate();
 
 signals:
-    void sendFile(QString fileName);
-    void sendMsg(QString msg);
-    void sendMessage(TcpMessage tcpMessage);
+    void sendTcpMessage(TcpMessage tcpMessage);
     void aboutToQuit();
     void sendPollUbxMsgRate(uint16_t msgID);
     void sendPollUbxMsg(uint16_t msgID);
     // difference between msgRate and msg is that CFG-MSG (0x0601) alone is used
     // to set/get the rate for every message so the msgID must be wrapped to the data
     // of a message of type CFG-MSG first
-    void i2CProperties(I2cProperty i2cProperty, bool set_Properties = false);
     void UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate);
 	void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
     void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
-    void gpioRisingEdge(uint8_t gpio_pin, uint32_t tick);
-    void ubxMsgRates(QMap<uint16_t,int> ubxMsgRateCfgs);
 
 private:
     void incomingConnection(qintptr socketDescriptor) override;
