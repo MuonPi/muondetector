@@ -174,6 +174,7 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
     biasPowerOn = biasPower;
     pca = new PCA9536();
     pcaChannel = new_pcaChannel;
+    pcaSelectTimeMeas(pcaChannel);
     for (int i = 0; i<2; i++){
         if (dacThresh[i]>0){
             dac->setVoltage(i,dacThresh[i]);
@@ -337,13 +338,15 @@ void Daemon::incomingConnection(qintptr socketDescriptor){
 
 void Daemon::pcaSelectTimeMeas(uint8_t channel){
     if (channel>3){
-        cout << "can there is no channel > 3" << endl;
+        cout << "there is no pca channel > 3" << endl;
         return;
     }
     if (!pca){
         return;
     }
-    pca->setOutputPorts(channel);
+    //std::cout<<"set pca channel = "<<(int)channel<<std::endl;
+    
+    pca->setOutputPorts(0x03);
     pca->setOutputState(channel);
 }
 
