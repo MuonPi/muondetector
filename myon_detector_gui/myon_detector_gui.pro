@@ -35,7 +35,6 @@ SOURCES += \
     ../shared/i2cproperty.cpp \
     ../shared/tcpmessage.cpp \
     src/settings.cpp \
-    ../shared/tcpmessage.cpp
 
 HEADERS += \
         ../shared/tcpconnection.h \
@@ -45,7 +44,7 @@ HEADERS += \
     ../shared/ublox_messages.h \
     src/settings.h \
     ../shared/ubx_msg_key_name_map.h \
-    ../shared/tcpmessage.h
+    ../shared/tcpmessage_keys.h
 
 FORMS += \
         src/mainwindow.ui \

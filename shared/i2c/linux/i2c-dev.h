@@ -1,23 +1,23 @@
 /*
-    i2c-dev.h - i2c-bus driver, char device interface
+	i2c-dev.h - i2c-bus driver, char device interface
 
-    Copyright (C) 1995-97 Simon G. Vogl
-    Copyright (C) 1998-99 Frodo Looijaard <frodol@dds.nl>
+	Copyright (C) 1995-97 Simon G. Vogl
+	Copyright (C) 1998-99 Frodo Looijaard <frodol@dds.nl>
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or
+	(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-    MA 02110-1301 USA.
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+	MA 02110-1301 USA.
 */
 
 #ifndef _LINUX_I2C_DEV_H
@@ -90,7 +90,7 @@ union i2c_smbus_data {
 	__u8 byte;
 	__u16 word;
 	__u8 block[I2C_SMBUS_BLOCK_MAX + 2]; /* block[0] is used for length */
-	                                            /* and one more for PEC */
+												/* and one more for PEC */
 };
 
 /* smbus_access read or write markers */
@@ -110,19 +110,19 @@ union i2c_smbus_data {
 #define I2C_SMBUS_I2C_BLOCK_DATA    8
 
 
-/* /dev/i2c-X ioctl commands.  The ioctl's parameter is always an
- * unsigned long, except for:
- *	- I2C_FUNCS, takes pointer to an unsigned long
- *	- I2C_RDWR, takes pointer to struct i2c_rdwr_ioctl_data
- *	- I2C_SMBUS, takes pointer to struct i2c_smbus_ioctl_data
- */
+   /* /dev/i2c-X ioctl commands.  The ioctl's parameter is always an
+	* unsigned long, except for:
+	*	- I2C_FUNCS, takes pointer to an unsigned long
+	*	- I2C_RDWR, takes pointer to struct i2c_rdwr_ioctl_data
+	*	- I2C_SMBUS, takes pointer to struct i2c_smbus_ioctl_data
+	*/
 #define I2C_RETRIES	0x0701	/* number of times a device address should
 				   be polled when not acknowledging */
 #define I2C_TIMEOUT	0x0702	/* set timeout in units of 10 ms */
 
-/* NOTE: Slave address is 7 or 10 bits, but 10-bit addresses
- * are NOT supported! (due to code brokenness)
- */
+				   /* NOTE: Slave address is 7 or 10 bits, but 10-bit addresses
+					* are NOT supported! (due to code brokenness)
+					*/
 #define I2C_SLAVE	0x0703	/* Use this slave address */
 #define I2C_SLAVE_FORCE	0x0706	/* Use this slave address, even if it
 				   is already in use by a driver! */
@@ -136,7 +136,7 @@ union i2c_smbus_data {
 #define I2C_SMBUS	0x0720	/* SMBus transfer */
 
 
-/* This is the structure as used in the I2C_SMBUS ioctl call */
+				   /* This is the structure as used in the I2C_SMBUS ioctl call */
 struct i2c_smbus_ioctl_data {
 	__u8 read_write;
 	__u8 command;
@@ -154,7 +154,7 @@ struct i2c_rdwr_ioctl_data {
 
 
 static inline __s32 i2c_smbus_access(int file, char read_write, __u8 command,
-                                     int size, union i2c_smbus_data *data)
+	int size, union i2c_smbus_data *data)
 {
 	struct i2c_smbus_ioctl_data args;
 
@@ -162,19 +162,19 @@ static inline __s32 i2c_smbus_access(int file, char read_write, __u8 command,
 	args.command = command;
 	args.size = size;
 	args.data = data;
-	return ioctl(file,I2C_SMBUS,&args);
+	return ioctl(file, I2C_SMBUS, &args);
 }
 
 
 static inline __s32 i2c_smbus_write_quick(int file, __u8 value)
 {
-	return i2c_smbus_access(file,value,0,I2C_SMBUS_QUICK,NULL);
+	return i2c_smbus_access(file, value, 0, I2C_SMBUS_QUICK, NULL);
 }
 
 static inline __s32 i2c_smbus_read_byte(int file)
 {
 	union i2c_smbus_data data;
-	if (i2c_smbus_access(file,I2C_SMBUS_READ,0,I2C_SMBUS_BYTE,&data))
+	if (i2c_smbus_access(file, I2C_SMBUS_READ, 0, I2C_SMBUS_BYTE, &data))
 		return -1;
 	else
 		return 0x0FF & data.byte;
@@ -182,54 +182,54 @@ static inline __s32 i2c_smbus_read_byte(int file)
 
 static inline __s32 i2c_smbus_write_byte(int file, __u8 value)
 {
-	return i2c_smbus_access(file,I2C_SMBUS_WRITE,value,
-	                        I2C_SMBUS_BYTE,NULL);
+	return i2c_smbus_access(file, I2C_SMBUS_WRITE, value,
+		I2C_SMBUS_BYTE, NULL);
 }
 
 static inline __s32 i2c_smbus_read_byte_data(int file, __u8 command)
 {
 	union i2c_smbus_data data;
-	if (i2c_smbus_access(file,I2C_SMBUS_READ,command,
-	                     I2C_SMBUS_BYTE_DATA,&data))
+	if (i2c_smbus_access(file, I2C_SMBUS_READ, command,
+		I2C_SMBUS_BYTE_DATA, &data))
 		return -1;
 	else
 		return 0x0FF & data.byte;
 }
 
 static inline __s32 i2c_smbus_write_byte_data(int file, __u8 command,
-                                              __u8 value)
+	__u8 value)
 {
 	union i2c_smbus_data data;
 	data.byte = value;
-	return i2c_smbus_access(file,I2C_SMBUS_WRITE,command,
-	                        I2C_SMBUS_BYTE_DATA, &data);
+	return i2c_smbus_access(file, I2C_SMBUS_WRITE, command,
+		I2C_SMBUS_BYTE_DATA, &data);
 }
 
 static inline __s32 i2c_smbus_read_word_data(int file, __u8 command)
 {
 	union i2c_smbus_data data;
-	if (i2c_smbus_access(file,I2C_SMBUS_READ,command,
-	                     I2C_SMBUS_WORD_DATA,&data))
+	if (i2c_smbus_access(file, I2C_SMBUS_READ, command,
+		I2C_SMBUS_WORD_DATA, &data))
 		return -1;
 	else
 		return 0x0FFFF & data.word;
 }
 
 static inline __s32 i2c_smbus_write_word_data(int file, __u8 command,
-                                              __u16 value)
+	__u16 value)
 {
 	union i2c_smbus_data data;
 	data.word = value;
-	return i2c_smbus_access(file,I2C_SMBUS_WRITE,command,
-	                        I2C_SMBUS_WORD_DATA, &data);
+	return i2c_smbus_access(file, I2C_SMBUS_WRITE, command,
+		I2C_SMBUS_WORD_DATA, &data);
 }
 
 static inline __s32 i2c_smbus_process_call(int file, __u8 command, __u16 value)
 {
 	union i2c_smbus_data data;
 	data.word = value;
-	if (i2c_smbus_access(file,I2C_SMBUS_WRITE,command,
-	                     I2C_SMBUS_PROC_CALL,&data))
+	if (i2c_smbus_access(file, I2C_SMBUS_WRITE, command,
+		I2C_SMBUS_PROC_CALL, &data))
 		return -1;
 	else
 		return 0x0FFFF & data.word;
@@ -238,32 +238,32 @@ static inline __s32 i2c_smbus_process_call(int file, __u8 command, __u16 value)
 
 /* Returns the number of read bytes */
 static inline __s32 i2c_smbus_read_block_data(int file, __u8 command,
-                                              __u8 *values)
+	__u8 *values)
 {
 	union i2c_smbus_data data;
 	int i;
-	if (i2c_smbus_access(file,I2C_SMBUS_READ,command,
-	                     I2C_SMBUS_BLOCK_DATA,&data))
+	if (i2c_smbus_access(file, I2C_SMBUS_READ, command,
+		I2C_SMBUS_BLOCK_DATA, &data))
 		return -1;
 	else {
 		for (i = 1; i <= data.block[0]; i++)
-			values[i-1] = data.block[i];
+			values[i - 1] = data.block[i];
 		return data.block[0];
 	}
 }
 
 static inline __s32 i2c_smbus_write_block_data(int file, __u8 command,
-                                               __u8 length, const __u8 *values)
+	__u8 length, const __u8 *values)
 {
 	union i2c_smbus_data data;
 	int i;
 	if (length > 32)
 		length = 32;
 	for (i = 1; i <= length; i++)
-		data.block[i] = values[i-1];
+		data.block[i] = values[i - 1];
 	data.block[0] = length;
-	return i2c_smbus_access(file,I2C_SMBUS_WRITE,command,
-	                        I2C_SMBUS_BLOCK_DATA, &data);
+	return i2c_smbus_access(file, I2C_SMBUS_WRITE, command,
+		I2C_SMBUS_BLOCK_DATA, &data);
 }
 
 /* Returns the number of read bytes */
@@ -271,7 +271,7 @@ static inline __s32 i2c_smbus_write_block_data(int file, __u8 command,
    ask for less than 32 bytes, your code will only work with kernels
    2.6.23 and later. */
 static inline __s32 i2c_smbus_read_i2c_block_data(int file, __u8 command,
-                                                  __u8 length, __u8 *values)
+	__u8 length, __u8 *values)
 {
 	union i2c_smbus_data data;
 	int i;
@@ -279,49 +279,49 @@ static inline __s32 i2c_smbus_read_i2c_block_data(int file, __u8 command,
 	if (length > 32)
 		length = 32;
 	data.block[0] = length;
-	if (i2c_smbus_access(file,I2C_SMBUS_READ,command,
-	                     length == 32 ? I2C_SMBUS_I2C_BLOCK_BROKEN :
-	                      I2C_SMBUS_I2C_BLOCK_DATA,&data))
+	if (i2c_smbus_access(file, I2C_SMBUS_READ, command,
+		length == 32 ? I2C_SMBUS_I2C_BLOCK_BROKEN :
+		I2C_SMBUS_I2C_BLOCK_DATA, &data))
 		return -1;
 	else {
 		for (i = 1; i <= data.block[0]; i++)
-			values[i-1] = data.block[i];
+			values[i - 1] = data.block[i];
 		return data.block[0];
 	}
 }
 
 static inline __s32 i2c_smbus_write_i2c_block_data(int file, __u8 command,
-                                                   __u8 length,
-                                                   const __u8 *values)
+	__u8 length,
+	const __u8 *values)
 {
 	union i2c_smbus_data data;
 	int i;
 	if (length > 32)
 		length = 32;
 	for (i = 1; i <= length; i++)
-		data.block[i] = values[i-1];
+		data.block[i] = values[i - 1];
 	data.block[0] = length;
-	return i2c_smbus_access(file,I2C_SMBUS_WRITE,command,
-	                        I2C_SMBUS_I2C_BLOCK_BROKEN, &data);
+	return i2c_smbus_access(file, I2C_SMBUS_WRITE, command,
+		I2C_SMBUS_I2C_BLOCK_BROKEN, &data);
 }
 
 /* Returns the number of read bytes */
 static inline __s32 i2c_smbus_block_process_call(int file, __u8 command,
-                                                 __u8 length, __u8 *values)
+	__u8 length, __u8 *values)
 {
 	union i2c_smbus_data data;
 	int i;
 	if (length > 32)
 		length = 32;
 	for (i = 1; i <= length; i++)
-		data.block[i] = values[i-1];
+		data.block[i] = values[i - 1];
 	data.block[0] = length;
-	if (i2c_smbus_access(file,I2C_SMBUS_WRITE,command,
-	                     I2C_SMBUS_BLOCK_PROC_CALL,&data))
+	if (i2c_smbus_access(file, I2C_SMBUS_WRITE, command,
+		I2C_SMBUS_BLOCK_PROC_CALL, &data))
 		return -1;
 	else {
 		for (i = 1; i <= data.block[0]; i++)
-			values[i-1] = data.block[i];
+			values[i - 1] = data.block[i];
 		return data.block[0];
 	}
 }

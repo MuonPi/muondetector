@@ -16,25 +16,25 @@
 //union MessageContent{
 
 //};
-union MyUnion{
+union MyUnion {
 public:
-    int i;
-    bool b;
-    float f;
+	int i;
+	bool b;
+	float f;
 };
 
-struct MessageContent{
-    unsigned int type;
-    MyUnion myUnion;
-    friend QDataStream& operator<<(QDataStream& in, const MessageContent& content);
-    friend QDataStream& operator>>(QDataStream& out, MessageContent& content);
+struct MessageContent {
+	unsigned int type;
+	MyUnion myUnion;
+	friend QDataStream& operator<<(QDataStream& in, const MessageContent& content);
+	friend QDataStream& operator>>(QDataStream& out, MessageContent& content);
 };
-class TcpMessage{
+class TcpMessage {
 public:
-    QVector<MessageContent> data;
-    friend QDataStream& operator<<(QDataStream& in, const TcpMessage& message);
-    friend QDataStream& operator<<(QDataStream& in, TcpMessage& message);
-    friend QDataStream& operator>>(QDataStream& out, TcpMessage& message);
+	QVector<MessageContent> data;
+	friend QDataStream& operator<<(QDataStream& in, const TcpMessage& message);
+	friend QDataStream& operator<<(QDataStream& in, TcpMessage& message);
+	friend QDataStream& operator>>(QDataStream& out, TcpMessage& message);
 };
 
 

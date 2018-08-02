@@ -55,7 +55,8 @@ HEADERS += \
     src/ublox_structs.h \
     ../shared/ublox_messages.h \
     src/custom_io_operators.h \
-    ../shared/tcpmessage.h
+    ../shared/tcpmessage.h \
+    ../shared/tcpmessage_keys.h
 
 OBJECTS_DIR += created_files
 

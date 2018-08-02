@@ -8,16 +8,16 @@ struct adap_type {
 };
 
 static struct adap_type adap_types[5] = {
-	{ .funcs	= "dummy",
-	  .algo		= "Dummy bus", },
-	{ .funcs	= "isa",
-	  .algo		= "ISA bus", },
-	{ .funcs	= "i2c",
-	  .algo		= "I2C adapter", },
-	{ .funcs	= "smbus",
-	  .algo		= "SMBus adapter", },
-	{ .funcs	= "unknown",
-	  .algo		= "N/A", },
+	{.funcs = "dummy",
+	  .algo = "Dummy bus", },
+	{.funcs = "isa",
+	  .algo = "ISA bus", },
+	{.funcs = "i2c",
+	  .algo = "I2C adapter", },
+	{.funcs = "smbus",
+	  .algo = "SMBus adapter", },
+	{.funcs = "unknown",
+	  .algo = "N/A", },
 };
 
 static enum adt i2c_get_funcs(int i2cbus)
@@ -36,8 +36,8 @@ static enum adt i2c_get_funcs(int i2cbus)
 	else if (funcs & I2C_FUNC_I2C)
 		ret = adt_i2c;
 	else if (funcs & (I2C_FUNC_SMBUS_BYTE |
-			  I2C_FUNC_SMBUS_BYTE_DATA |
-			  I2C_FUNC_SMBUS_WORD_DATA))
+		I2C_FUNC_SMBUS_BYTE_DATA |
+		I2C_FUNC_SMBUS_WORD_DATA))
 		ret = adt_smbus;
 	else
 		ret = adt_dummy;
@@ -71,7 +71,7 @@ void free_adapters(struct i2c_adap *adapters)
    be enough in most cases. If not, we allocate more later as needed. */
 #define BUNCH	8
 
-/* n must match the size of adapters at calling time */
+   /* n must match the size of adapters at calling time */
 static struct i2c_adap *more_adapters(struct i2c_adap *adapters, int n)
 {
 	struct i2c_adap *new_adapters;
@@ -94,7 +94,7 @@ struct i2c_adap *gather_i2c_busses(void)
 	FILE *f;
 	char fstype[NAME_MAX], sysfs[NAME_MAX], n[NAME_MAX];
 	int foundsysfs = 0;
-	int count=0;
+	int count = 0;
 	struct i2c_adap *adapters;
 
 	adapters = calloc(BUNCH, sizeof(struct i2c_adap));
@@ -138,7 +138,7 @@ struct i2c_adap *gather_i2c_busses(void)
 			adapters[count].name = strcpy(all, name);
 			adapters[count].funcs = strcpy(all + len_name, type);
 			adapters[count].algo = strcpy(all + len_name + len_type,
-						      algo);
+				algo);
 			count++;
 		}
 		fclose(f);
@@ -158,7 +158,7 @@ struct i2c_adap *gather_i2c_busses(void)
 		}
 	}
 	fclose(f);
-	if (! foundsysfs) {
+	if (!foundsysfs) {
 		goto done;
 	}
 
@@ -166,7 +166,7 @@ struct i2c_adap *gather_i2c_busses(void)
 	   i2c-dev and what we really care about are the i2c-dev numbers.
 	   Unfortunately the names are harder to get in i2c-dev */
 	strcat(sysfs, "/class/i2c-dev");
-	if(!(dir = opendir(sysfs)))
+	if (!(dir = opendir(sysfs)))
 		goto done;
 	/* go through the busses */
 	while ((de = readdir(dir)) != NULL) {
@@ -180,16 +180,16 @@ struct i2c_adap *gather_i2c_busses(void)
 		sprintf(n, "%s/%s/name", sysfs, de->d_name);
 		f = fopen(n, "r");
 		/* this seems to work for ISA */
-		if(f == NULL) {
+		if (f == NULL) {
 			sprintf(n, "%s/%s/device/name", sysfs, de->d_name);
 			f = fopen(n, "r");
 		}
 		/* non-ISA is much harder */
 		/* and this won't find the correct bus name if a driver
 		   has more than one bus */
-		if(f == NULL) {
+		if (f == NULL) {
 			sprintf(n, "%s/%s/device", sysfs, de->d_name);
-			if(!(ddir = opendir(n)))
+			if (!(ddir = opendir(n)))
 				continue;
 			while ((dde = readdir(ddir)) != NULL) {
 				if (!strcmp(dde->d_name, "."))
@@ -199,13 +199,13 @@ struct i2c_adap *gather_i2c_busses(void)
 				if ((!strncmp(dde->d_name, "i2c-", 4))) {
 					sprintf(n, "%s/%s/device/%s/name",
 						sysfs, de->d_name, dde->d_name);
-					if((f = fopen(n, "r")))
+					if ((f = fopen(n, "r")))
 						goto found;
 				}
 			}
 		}
 
-found:
+	found:
 		if (f != NULL) {
 			int i2cbus;
 			enum adt type;
@@ -223,7 +223,8 @@ found:
 				continue;
 			if (!strncmp(s, "ISA ", 4)) {
 				type = adt_isa;
-			} else {
+			}
+			else {
 				/* Attempt to probe for adapter capabilities */
 				type = i2c_get_funcs(i2cbus);
 			}
@@ -349,7 +350,8 @@ int open_i2c_dev(int i2cbus, char *filename, size_t size, int quiet)
 			fprintf(stderr, "Error: Could not open file "
 				"`/dev/i2c-%d' or `/dev/i2c/%d': %s\n",
 				i2cbus, i2cbus, strerror(ENOENT));
-		} else {
+		}
+		else {
 			fprintf(stderr, "Error: Could not open file "
 				"`%s': %s\n", filename, strerror(errno));
 			if (errno == EACCES)

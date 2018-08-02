@@ -21,7 +21,7 @@ Now it can be called by the main program and it's the only purpose of custom_i2c
 #define I2C_BUS 1
 
 int scan_i2c_bus(int file, /*int mode,*/ int first, int last,
-                 bool outputAllAddresses, int expectedAddresses[]);
+	bool outputAllAddresses, int expectedAddresses[]);
 /*
 struct func
 {
