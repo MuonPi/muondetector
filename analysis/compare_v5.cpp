@@ -9,7 +9,7 @@
 */
 //  Geschrieben von <Marvin.Peter@physik.uni-giessen.de>, Teilelemente sind geklaut von <Lukas.Nies@physik.uni-giessen.de>
 
-// On Linux compile with 'g++ -o compare_v5 compare_v5.cpp -O'
+// On Linux compile with 'g++ -std=gnu++11 -o compare compare_v5.cpp -O'
 // Vielleicht kann man mit openmp noch etwas mehr optimieren durch multithreading aber eher nicht so viel, weshalb diese Option verworfen wurde
 #include <iostream>
 #include <sstream>
@@ -22,6 +22,9 @@
 #include <unistd.h>
 #include <fstream>
 #include <utility>
+
+// max allowed timing error of a single station in ns
+#define MAX_ERR_LIMIT 50000.
 
 using namespace std;
 
@@ -307,7 +310,7 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 				long long int coinc_window = matchKriterium * 1e9;
 				coinc_window += err1+err2;
 				
-				if ((indexSmallest != i) && (tdiff <= coinc_window))
+				if ((indexSmallest != i) && (tdiff <= coinc_window) && (err1<MAX_ERR_LIMIT) && (err2<MAX_ERR_LIMIT))
 				{
 					// if the difference is smaller than or equal as the criterium: a coincident event has been found hooray!
 					// since we choose the criterium to be the maximum physically possible time difference for two coincident events
@@ -335,9 +338,9 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 						coincidents++;
 					}
 					rewriteToVectors.push_back(i);
-					output << -ts_diff_ns(values[i][iterator[i]].ts, values[indexSmallest][iterator[indexSmallest]].ts) << "   ";
-					output << indexSmallest << "-" << i <<"  ";
-					output << "(+-"<<err1 << "/" << err2 <<"ns)  ";
+					output << ts_diff_ns(values[max(i,indexSmallest)][iterator[max(i,indexSmallest)]].ts, values[min(i,indexSmallest)][iterator[min(i,indexSmallest)]].ts) << "   ";
+					//output << indexSmallest << "-" << i <<"  ";
+					output << (int)sqrt(err1*err1+err2*err2)<< "    "<<err1 << "/" << err2 <<"ns  ";
 					coincidents++;
 					iterator[i]++;
 				}
