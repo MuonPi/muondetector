@@ -339,7 +339,7 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 }
 
 void Daemon::pcaSelectTimeMeas(uint8_t pcaPorts) {
-	if (channel > 0b1111) {
+	if (pcaPorts > 0b1111) {
 		cout << "there is no valid pca port mask > 0b1111" << endl;
 		return;
 	}
