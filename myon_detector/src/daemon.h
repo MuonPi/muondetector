@@ -83,7 +83,7 @@ private:
 	void incomingConnection(qintptr socketDescriptor) override;
 	void pcaSelectTimeMeas(uint8_t pcaPorts); // channel 0 to 3
 											 // 0: coincidence ; 1: xor ; 2: discr 1 ; 3: discr 2
-	void dacSetThreashold(uint8_t channel, float threashold); // channel 0 or 1 ; threashold in volts
+    void dacSetThreshold(uint8_t channel, float threshold); // channel 0 or 1 ; threshold in volts
 	MCP4728 *dac;
 	QVector <float> dacThresh;
 	float biasVoltage;

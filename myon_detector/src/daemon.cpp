@@ -351,8 +351,8 @@ void Daemon::pcaSelectTimeMeas(uint8_t pcaPorts) {
 	pca->setOutputState(pcaPorts);// global variable pcaPortMask is set to 0x00 as default in "main.cpp"
 }
 
-void Daemon::dacSetThreashold(uint8_t channel, float threashold) {
-	dac->setVoltage(channel, threashold);
+void Daemon::dacSetThreshold(uint8_t channel, float threshold) {
+    dac->setVoltage(channel, threshold);
 }
 
 void Daemon::configGps() {
