@@ -229,7 +229,7 @@ int main(int argc, char** argv) {
 			str = string(optarg);
 			if (caseInsCompare(str, string("On"))) preamps_on = 1;
 			else if (caseInsCompare(str, string("Off"))) preamps_on = 0;
-			//cout<<"premps_on="<<(int)preamps_on<<endl;
+			//cout<<"preamps_on="<<(int)preamps_on<<endl;
 			break;
 		case 'v':
 			verbosity++;
@@ -418,9 +418,13 @@ int main(int argc, char** argv) {
 			double and_err = sqrt(and_latch);
 			double xor_err = sqrt(xor_latch);
 			double temperature = tempSensor.getTemperature();
-			double ubias = 0.;
-			for (int i=0; i<8; i++) ubias+=adc.readVoltage(2);
-			ubias /= 8.;			
+			double ubias1 = 0., ubias2 = 0.;
+			for (int i=0; i<8; i++) {
+				ubias1+=adc.readVoltage(2);
+				ubias2+=adc.readVoltage(3);
+			}
+			ubias1 /= 8.;			
+			ubias2 /= 8.;			
 			
 			cout<<tStart.tv_sec<<" "<<temperature<<" "
 				<<scanpar_value<<" "
@@ -428,7 +432,8 @@ int main(int argc, char** argv) {
 				<<xor_latch/(double)meas_interval_sec<<" "
 				<<and_err/(double)meas_interval_sec<<" "
 				<<xor_err/(double)meas_interval_sec<<" "
-				<<ubias<<" "<<ubias*10.4<<endl;
+				<<ubias1<<" "<<ubias1*11.<<" "
+				<<ubias2<<" "<<ubias2*11.<<endl;
 		}
 		if (!do_scan) measurement=false;
 	}
