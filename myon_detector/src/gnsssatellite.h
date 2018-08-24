@@ -7,16 +7,16 @@
 class GnssSatellite {
 public:
 	GnssSatellite();
-    GnssSatellite(int gnssId, int satId, int cnr, int elev, int azim, float prRes, uint32_t flags)
-    {
-        fGnssId = gnssId;
-        fSatId = satId;
-        fCnr = cnr;
-        fElev = elev;
-        fAzim = azim;
-        fPrRes = prRes;
-        fFlags = flags;
-    }
+	GnssSatellite(int gnssId, int satId, int cnr, int elev, int azim, float prRes, uint32_t flags)
+	{
+		fGnssId = gnssId;
+		fSatId = satId;
+		fCnr = cnr;
+		fElev = elev;
+		fAzim = azim;
+		fPrRes = prRes;
+		fFlags = flags;
+	}
 
 	GnssSatellite(const std::string& ubxNavSatSubMessage);
 

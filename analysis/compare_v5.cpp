@@ -9,7 +9,7 @@
 */
 //  Geschrieben von <Marvin.Peter@physik.uni-giessen.de>, Teilelemente sind geklaut von <Lukas.Nies@physik.uni-giessen.de>
 
-// On Linux compile with 'g++ -o compare_v5 compare_v5.cpp -O'
+// On Linux compile with 'g++ -std=gnu++11 -o compare compare_v5.cpp -O'
 // Vielleicht kann man mit openmp noch etwas mehr optimieren durch multithreading aber eher nicht so viel, weshalb diese Option verworfen wurde
 #include <iostream>
 #include <sstream>
@@ -23,11 +23,15 @@
 #include <fstream>
 #include <utility>
 
+// max allowed timing error of a single station in ns
+#define MAX_ERR_LIMIT 10000.
+
 using namespace std;
 
 struct timestamp_t {
 	timespec ts;
 	double err;
+	double length;
 };
 
 
@@ -131,7 +135,7 @@ bool areTimestampsInOrder(string dateiName, bool verbose, unsigned long int& lin
 		{
 			if (verbose)
 			{
-				cout << "Line " << lineCounter << " in " << dateiName << " is not in order: " << endl;
+				cout << "line " << lineCounter << " in " << dateiName << " is not in order: " << endl;
 				//cout<<"..."<<endl<<oldValue<<endl<<newValue<<endl<<"..."<<endl<<endl;
 			}
 			isInOrder = false;
@@ -166,29 +170,48 @@ void readToVector(ifstream& inputstream, vector<timestamp_t>& oneVector, int& ma
 		}
 		getline(inputstream, oneLine);
 		stringstream str(oneLine);
-		long int v1, v2;
+		long int v1, v2, v4, v5;
 		double v3=0.;
 		char c;
 		
-		if (errCol<0) str >> v1 >> c >> v2;
+		if (errCol<0) {
+		  str >> v1 >> c >> v2;
+		  str >> v4 >> c >> v5;
+		}
+
 		else if (errCol>=0 && errCol<tsCol)	{
 			str >> v3;
 			string dummystring;
 			for (int i=0; i<abs(errCol-tsCol)-1; i++) str >> dummystring;
 			str >> v1 >> c >> v2;
+			str >> v4 >> c >> v5;
 		}
 		else if (errCol>=0 && errCol>tsCol) {
 			str >> v1 >> c >> v2;
+			str >> v4 >> c >> v5;
 			string dummystring;
-			for (int i=0; i<abs(errCol-tsCol)-1; i++) str >> dummystring;
+			for (int i=0; i<abs(errCol-tsCol)-2; i++) str >> dummystring;
 			str >> v3;
 		}
 		
 		//cout<<"read ts_i="<<v1<<" ts_ns="<<v2<<" err="<<v3<<endl;
-		oneValue.ts.tv_sec = v1;
+		timespec ts1, ts2;
+		ts1.tv_sec = v1;
+		ts1.tv_nsec = v2;
+		ts2.tv_sec = v4;
+		ts2.tv_nsec = v5;
+		
+		
+		oneValue.ts=ts1;
+		oneValue.err = v3;
+		oneValue.length = ts_diff_ns(ts1, ts2);
+		
+
+
+/*		oneValue.ts.tv_sec = v1;
 		oneValue.ts.tv_nsec = v2;
 		oneValue.err = v3;
-
+*/
 		oneVector.push_back(oneValue);
 	}
 }// end of readToVector(..																		 )
@@ -302,12 +325,14 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 				long long int tdiff = ts_diff_ns(values[i][iterator[i]].ts, values[indexSmallest][iterator[indexSmallest]].ts);
 				long long int err1 = values[i][iterator[i]].err;
 				long long int err2 = values[indexSmallest][iterator[indexSmallest]].err;
+				long long int len1 = values[i][iterator[i]].length;
+				long long int len2 = values[indexSmallest][iterator[indexSmallest]].length;
 				
 				tdiff = abs(tdiff); // [ns]
 				long long int coinc_window = matchKriterium * 1e9;
 				coinc_window += err1+err2;
 				
-				if ((indexSmallest != i) && (tdiff <= coinc_window))
+				if ((indexSmallest != i) && (tdiff <= coinc_window) && (err1<MAX_ERR_LIMIT) && (err2<MAX_ERR_LIMIT))
 				{
 					// if the difference is smaller than or equal as the criterium: a coincident event has been found hooray!
 					// since we choose the criterium to be the maximum physically possible time difference for two coincident events
@@ -335,9 +360,10 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 						coincidents++;
 					}
 					rewriteToVectors.push_back(i);
-					output << -ts_diff_ns(values[i][iterator[i]].ts, values[indexSmallest][iterator[indexSmallest]].ts) << "   ";
-					output << indexSmallest << "-" << i <<"  ";
-					output << "(+-"<<err1 << "/" << err2 <<"ns)  ";
+					output << ts_diff_ns(values[max(i,indexSmallest)][iterator[max(i,indexSmallest)]].ts, values[min(i,indexSmallest)][iterator[min(i,indexSmallest)]].ts) << "   ";
+					//output << indexSmallest << "-" << i <<"  ";
+					output << (int)sqrt(err1*err1+err2*err2)<< "    err: "<<err1 << " " << err2 <<" ns  ";
+					output << "    len: "<<len1 << " " << len2 <<" ns  ";
 					coincidents++;
 					iterator[i]++;
 				}
@@ -421,7 +447,7 @@ int main(int argc, char*argv[])
 
 
 	// Ueberpruefung der Dateien auf Reihenfolge
-	cout << endl << "check files...." << flush;
+	cout << endl << "check files...." << flush<<endl;
 	if (verbose)
 	{
 		cout << endl << endl;
@@ -443,7 +469,7 @@ int main(int argc, char*argv[])
 					// laesst sich einstellen, momentan ja
 					cout << "sort " << dateiName[i] << " with Unix sort" << endl << endl;
 				}
-				string systemOut = "sort -g ";
+				string systemOut = "sort -n ";
 				systemOut += dateiName[i];
 				systemOut += " > ";
 				systemOut += "tmp";

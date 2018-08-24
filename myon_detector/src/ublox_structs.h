@@ -10,7 +10,7 @@
 struct UbxMessage {
 public:
 	uint16_t msgID;
-    std::string data;
+	std::string data;
 };
 
 struct gpsTimestamp {
@@ -26,32 +26,32 @@ struct gpsTimestamp {
 	int counter;
 };
 
-template <typename T> class gpsProperty{
+template <typename T> class gpsProperty {
 public:
-    gpsProperty() : value() {
-        updated=false;
-    }
-    gpsProperty(const T& val){
-        value = val;
-        updated = true;
-        lastUpdate = std::chrono::system_clock::now();
-    }
+	gpsProperty() : value() {
+		updated = false;
+	}
+	gpsProperty(const T& val) {
+		value = val;
+		updated = true;
+		lastUpdate = std::chrono::system_clock::now();
+	}
 	std::chrono::time_point<std::chrono::system_clock> lastUpdate;
 	std::chrono::duration<double> updatePeriod;
 	std::chrono::duration<double> updateAge() { return std::chrono::system_clock::now() - lastUpdate; }
 	bool updated;
-    gpsProperty& operator=(const T& val) {
-        value = val;
+	gpsProperty& operator=(const T& val) {
+		value = val;
 		lastUpdate = std::chrono::system_clock::now();
 		updated = true;
 		return *this;
-    }
-    const T& operator()() {
+	}
+	const T& operator()() {
 		updated = false;
-        return value;
-    }
+		return value;
+	}
 private:
-    T value;
+	T value;
 };
 
 #endif // UBLOX_STRUCTS_H
