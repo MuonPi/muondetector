@@ -11,6 +11,14 @@
 
 #define READ_WAIT_DELAY_INIT 10
 
+// struct to store temperature, pressure and humidity data in different ways
+struct TPH {
+	uint32_t adc_T;
+	uint32_t adc_P;
+	uint32_t adc_H;
+	double T, P, H;
+};
+
 //We define a class named i2cDevices to outsource the hardware dependant programm parts. We want to 
 //access components of integrated curcuits, like the ads1115 or other subdevices via i2c-bus.
 //The main aim here was, that the user does not have  to be concerned about the c like low level operations
@@ -231,7 +239,24 @@ public:
 private:
 };
 
+class SHT21 : public i2cDevice {
+public:
+	SHT21() : i2cDevice(0x40) {}
+	SHT21(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
+	SHT21(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
 
+	uint16_t readUT();  //read temperature; nothing gets passed
+	uint16_t readUH();   //read humidity;  nothing gets passed
+
+	bool softReset();                 //reset, datasheet, page 9, Rückgabetyp in void geändert
+	uint8_t readResolutionSettings();           
+	void setResolutionSettings(uint8_t settingsByte);	//Sets the resolution Bits for humidity and temperature
+	float getTemperature();   // calculates the temperature with the formula in the datasheet. Gets the solution of read_temp()
+	float getHumidity();    // calculates the temperature with the formula in the datasheet. Gets the solution of read_hum();
+
+private:
+	bool checksumCorrect(uint8_t data[]); // expects 3 byte long data array; Source: https://www2.htw-dresden.de/~wiki_sn/index.php/SHT21
+};
 
 class BMP180 : public i2cDevice {
 public:
@@ -256,7 +281,43 @@ private:
 	
 };
 
+class BME280 : public i2cDevice { // t_max = 112.8 ms for all three measurements at max oversampling
+public:
+	BME280() : i2cDevice(0x76) { init(); }
+	BME280(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) { init(); }
+	BME280(uint8_t slaveAddress) : i2cDevice(slaveAddress) { init(); }
 
+	bool init();
+	unsigned int status();
+	void measure();
+	unsigned int readConfig();
+	unsigned int read_CtrlMeasReg();
+	bool writeConfig(uint8_t config);
+	bool write_CtrlMeasReg(uint8_t config);
+	bool setMode(uint8_t mode); // 3 bits: "1=sleep", "2=single shot", "3=interval"
+	bool setTSamplingMode(uint8_t mode);
+	bool setPSamplingMode(uint8_t mode);
+	bool setHSamplingMode(uint8_t mode);
+	bool softReset();
+	void readCalibParameters();
+	inline bool isCalibValid() const { return fCalibrationValid; }
+	signed int getCalibParameter(unsigned int param) const;
+	unsigned int readUT();
+	unsigned int readUP();
+	unsigned int readUH();
+	TPH readTPCU();
+	TPH getTPHValues();
+	double getTemperature(signed int adc_T);
+	double getPressure(signed int adc_P);
+	double getPressure(signed int adc_P, signed int t_fine);
+	double getHumidity(signed int adc_H);
+	double getHumidity(signed int adc_H, signed int t_fine);
+private:
+	int32_t fT_fine = 0;
+	unsigned int fLastConvTime;
+	bool fCalibrationValid;
+	uint16_t fCalibParameters[18];	// 18x 16-Bit words in 36 8-Bit registers
+};
 
 class HMC5883 : public i2cDevice {
 public:
