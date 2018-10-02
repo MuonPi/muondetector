@@ -61,6 +61,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::makeConnection(QString ipAddress, quint16 port) {
 	// add popup windows for errors!!!
+    qRegisterMetaType<TcpMessage>("TcpMessage");
 	QThread *tcpThread = new QThread();
 	if (!tcpConnection) {
 		delete(tcpConnection);
@@ -81,7 +82,7 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
 void MainWindow::stoppedConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort,
 	quint32 timeoutTime, quint32 connectionDuration) {
 	connectedToDemon = false;
-	//qDebug() << "received stoppedConnection";
+    //qDebug() << "received stoppedConnection";
 	uiSetDisconnectedState();
 }
 
@@ -141,7 +142,7 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
 }
 
 void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
-	quint16 msgID = tcpMessage.getMsgID();
+    quint16 msgID = tcpMessage.msgID;
 	if (msgID == gpioPinSig) {
 		quint8 gpioPin;
 		quint32 tick;

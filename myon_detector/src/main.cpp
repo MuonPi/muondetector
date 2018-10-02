@@ -13,6 +13,7 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
+    qRegisterMetaType<TcpMessage>("TcpMessage");
 	QCoreApplication a(argc, argv);
 	QCoreApplication::setApplicationName("myon_detector");
 	QCoreApplication::setApplicationVersion("1.0");

@@ -5,6 +5,8 @@ TcpMessage::TcpMessage(quint16 tcpMsgID)
 {
 	msgID = tcpMsgID;
 	dStream = new QDataStream(&data, QIODevice::ReadWrite);
+    byteCount = 0;
+    *dStream << (quint16)0;
 	*dStream << tcpMsgID;
 }
 
@@ -30,10 +32,6 @@ TcpMessage::TcpMessage(QByteArray& rawdata) {
 //    }
 //}
 
-QByteArray TcpMessage::getData() {
-	return data;
-}
-
 void TcpMessage::setData(QByteArray& rawData) {
 	data = rawData;
 }
@@ -42,6 +40,10 @@ void TcpMessage::setMsgID(quint16 tcpMsgID) {
 	msgID = tcpMsgID;
 }
 
-quint16 TcpMessage::getMsgID() {
-	return msgID;
+QByteArray& TcpMessage::getData(){
+    return data;
+}
+
+quint16 TcpMessage::getMsgID(){
+    return msgID;
 }

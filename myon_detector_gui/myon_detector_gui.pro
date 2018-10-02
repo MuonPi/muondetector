@@ -52,4 +52,6 @@ FORMS += \
 
 OBJECTS_DIR += created_files
 
+UI_DIR += created_files
+
 MOC_DIR += created_files

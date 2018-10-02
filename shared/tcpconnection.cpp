@@ -7,22 +7,12 @@ TcpConnection::TcpConnection(QString newHostName, quint16 newPort, int newVerbos
 	int newPingInterval, QObject *parent)
 	: QObject(parent)
 {
-	qRegisterMetaType<TcpMessage>("TcpMessage");
 	verbose = newVerbose;
 	hostName = newHostName;
 	port = newPort;
 	timeout = newTimeout;
 	pingInterval = newPingInterval;
 	//qRegisterMetaType<QVector<QVariant> >("QVector<QVariant>");
-}
-
-TcpConnection::~TcpConnection()
-{
-	qRegisterMetaType<TcpMessage>("TcpMessage");
-	if (peerAddress != nullptr) { delete peerAddress; }
-	if (localAddress != nullptr) { delete localAddress; }
-	if (in != nullptr) { delete in; }
-	if (t != nullptr) { delete t; }
 }
 
 TcpConnection::TcpConnection(int socketDescriptor, int newVerbose, int newTimeout, int newPingInterval, QObject *parent)
@@ -32,6 +22,14 @@ TcpConnection::TcpConnection(int socketDescriptor, int newVerbose, int newTimeou
 	timeout = newTimeout;
 	verbose = newVerbose;
 	//qRegisterMetaType<QVector<float> >("QVector<float>");
+}
+
+TcpConnection::~TcpConnection()
+{
+    if (peerAddress != nullptr) { delete peerAddress; }
+    if (localAddress != nullptr) { delete localAddress; }
+    if (in != nullptr) { delete in; }
+    if (t != nullptr) { delete t; }
 }
 
 void TcpConnection::makeConnection()
@@ -109,34 +107,39 @@ void TcpConnection::onReadyRead() {
 		if (tcpSocket->bytesAvailable() < (int)(sizeof(quint16))) {
 			return;
 		}
-		*in >> blockSize;
+        *in >> blockSize;
 	}
 	if (tcpSocket->bytesAvailable() < blockSize) {
 		return;
 	}
-	if (tcpSocket->bytesAvailable() >= blockSize) {
+    if (tcpSocket->bytesAvailable() > blockSize) {
 		emit toConsole(QString(QString::number(tcpSocket->bytesAvailable() - blockSize)
 			+ " more Bytes available than expected by blockSize"));
-	}
-	blockSize = 0;
-	QByteArray block;
-	*in >> block;
+    }
+    QByteArray block;
+    char data[blockSize];
+    in->readRawData(data,blockSize);
+    block.setRawData(data,blockSize);
+    blockSize = 0;
+    //*in >> block;
+    qDebug() << "Bytes read:";
+    qDebug() << block.size();
+    qDebug() << block;
 	TcpMessage tcpMessage(block);
 	emit receivedTcpMessage(tcpMessage);
 	// emit toConsole("something went wrong with the transmission code");
 }
 
 bool TcpConnection::sendTcpMessage(TcpMessage tcpMessage) {
-	QByteArray block;
-	QDataStream out(&block, QIODevice::WriteOnly);
-	out << (quint16)0;
-	out << tcpMessage.getData();
-	out.device()->seek(0);
-	out << (quint16)(block.size() - (int)sizeof(quint16));
-	return writeBlock(block);
+    QByteArray block;
+    block = tcpMessage.getData();
+    QDataStream stream(&block, QIODevice::ReadWrite);
+    stream.device()->seek(0);
+    stream << (quint16)(block.size() - (int)sizeof(quint16)); // size of payload
+    return writeBlock(block);
 }
 
-bool TcpConnection::writeBlock(QByteArray &block) {
+bool TcpConnection::writeBlock(const QByteArray &block) {
 	if (!tcpSocket) {
 		emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
 		return false;

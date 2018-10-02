@@ -294,6 +294,7 @@ void Daemon::connectToGps() {
 }
 
 void Daemon::connectToServer() {
+    qRegisterMetaType<TcpMessage>("TcpMessage");
 	QThread *tcpThread = new QThread();
 	if (tcpConnection != nullptr) {
 		delete(tcpConnection);
@@ -314,6 +315,7 @@ void Daemon::connectToServer() {
 }
 
 void Daemon::incomingConnection(qintptr socketDescriptor) {
+    qRegisterMetaType<TcpMessage>("TcpMessage");
 	if (verbose > 4) {
 		cout << "incomingConnection" << endl;
 	}
@@ -325,7 +327,7 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 	connect(thread, &QThread::finished, thread, &QThread::deleteLater);
 	connect(this->thread(), &QThread::finished, thread, &QThread::quit);
 	connect(this, &Daemon::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
-	connect(this, &Daemon::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
+    connect(this, &Daemon::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
 	connect(tcpConnection, &TcpConnection::receivedTcpMessage, this, &Daemon::receivedTcpMessage);
 	connect(tcpConnection, &TcpConnection::toConsole, this, &Daemon::toConsole);
 	thread->start();
@@ -333,15 +335,15 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 
 // ALL FUNCTIONS ABOUT TCPMESSAGE SENDING AND RECEIVING
 void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
-	if (tcpMessage.getMsgID() == i2cProperties) {
+    if (tcpMessage.msgID == i2cProperties) {
 		I2cProperty i2cProperty;
 		*(tcpMessage.dStream) >> i2cProperty;
 		setI2CProperties(i2cProperty);
 	}
-	if (tcpMessage.getMsgID() == i2cRequest) {
+    if (tcpMessage.msgID == i2cRequest) {
 		sendI2CProperties();
 	}
-	if (tcpMessage.getMsgID() == ubxMsgRateRequest) {
+    if (tcpMessage.msgID == ubxMsgRateRequest) {
 		sendUbxMsgRates();
 	}
 }

@@ -57,16 +57,16 @@ public slots:
 	  bool sendUbxMsgRatesRequest();
 	  bool sendUbxMsgRates(QMap<uint16_t,int> msgRateCfgs);
    */
-	bool sendTcpMessage(TcpMessage tcpMessage);
+    bool sendTcpMessage(TcpMessage tcpMessage);
 
 private:
 	//    bool handleFileTransfer(QString fileName, QByteArray& block, quint16 nextCount);
-	bool writeBlock(QByteArray& block);
+    bool writeBlock(const QByteArray &block);
 	int timeout;
 	int verbose;
 	int pingInterval;
 	int socketDescriptor;
-	quint64 blockSize = 0;
+    quint16 blockSize = 0;
 	QHostAddress *peerAddress = nullptr;
 	QHostAddress *localAddress = nullptr;
 	//    quint16 fileCounter = -1;

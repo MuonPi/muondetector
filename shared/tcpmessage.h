@@ -16,12 +16,11 @@ public:
     //~TcpMessage();
     QDataStream *dStream = nullptr;
 	void setMsgID(quint16 tcpMsgID);
-	quint16 getMsgID();
-	QByteArray getData();
 	void setData(QByteArray& data);
-private:
-	quint16 msgID;
-	QByteArray data;
+    QByteArray &getData();
+    quint16 getMsgID();
+    QByteArray data;
+    quint16 msgID, byteCount;
 };
 
 #endif // TCPMESSAGE_H
