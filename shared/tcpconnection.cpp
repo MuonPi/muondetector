@@ -119,7 +119,9 @@ void TcpConnection::onReadyRead() {
     QByteArray block;
     char data[blockSize];
     in->readRawData(data,blockSize);
-    block.setRawData(data,blockSize);
+    QDataStream str(&block,QIODevice::ReadWrite);
+    str.writeRawData(data,blockSize);
+    //block.setRawData(data,blockSize); // not sure if it works correctly
     blockSize = 0;
     //*in >> block;
     qDebug() << "Bytes read:";
@@ -161,6 +163,7 @@ bool TcpConnection::writeBlock(const QByteArray &block) {
 	this->thread()->quit();
 	return false;
 }
+
 /*
 void TcpConnection::onTimePulse(){
 	if (fabs(time(NULL)-lastConnection)>timeout/1000){

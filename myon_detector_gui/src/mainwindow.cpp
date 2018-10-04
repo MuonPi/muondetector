@@ -142,23 +142,26 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
 }
 
 void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
-    quint16 msgID = tcpMessage.msgID;
+    quint16 msgID = tcpMessage.getMsgID();
 	if (msgID == gpioPinSig) {
 		quint8 gpioPin;
 		quint32 tick;
-		*(tcpMessage.dStream) >> gpioPin >> tick;
+        *(tcpMessage.dStream) >> gpioPin >> tick;
         receivedGpioRisingEdge(gpioPin, tick);
 		return;
 	}
 	if (msgID == ubxMsgRate) {
 		QMap<uint16_t, int> msgRateCfgs;
-		*(tcpMessage.dStream) >> msgRateCfgs;
+        *(tcpMessage.dStream) >> msgRateCfgs;
 		emit addUbxMsgRates(msgRateCfgs);
 		return;
 	}
 	if (msgID == i2cProperties) {
 		I2cProperty i2cProperty;
-		*(tcpMessage.dStream) >> i2cProperty;
+        qDebug() << "received i2cProperty message";
+        *(tcpMessage.dStream) >> i2cProperty.pcaChann >> i2cProperty.thresh1 >>
+                i2cProperty.thresh2 >> i2cProperty.bias_Voltage >> i2cProperty.bias_powerOn;
+        qDebug() << "parsing i2cProperty worked";
 		updateI2CProperties(i2cProperty);
 		return;
 	}
@@ -166,13 +169,13 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
 
 void MainWindow::sendSetI2CProperties(I2cProperty i2cProperty) {
 	TcpMessage tcpMessage(i2cProperties);
-	*(tcpMessage.dStream) << i2cProperty;
+    *(tcpMessage.dStream) << i2cProperty;
 	emit sendTcpMessage(tcpMessage);
 }
 
 void MainWindow::requestI2CProperties() {
-	TcpMessage tcpMessage(i2cRequest);
-	emit sendTcpMessage(tcpMessage);
+    TcpMessage tcpMessage(i2cRequest);
+    emit sendTcpMessage(tcpMessage);
 }
 
 void MainWindow::requestUbxMsgRates() {

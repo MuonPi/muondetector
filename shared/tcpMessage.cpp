@@ -4,16 +4,16 @@
 TcpMessage::TcpMessage(quint16 tcpMsgID)
 {
 	msgID = tcpMsgID;
-	dStream = new QDataStream(&data, QIODevice::ReadWrite);
+    dStream = new QDataStream(&data, QIODevice::ReadWrite);
     byteCount = 0;
     *dStream << (quint16)0;
-	*dStream << tcpMsgID;
+    *dStream << tcpMsgID;
 }
 
 TcpMessage::TcpMessage(QByteArray& rawdata) {
 	data = rawdata;
 	//    quint64 pos = dStream->device()->pos();
-	dStream = new QDataStream(&data, QIODevice::ReadWrite);
+    dStream = new QDataStream(&data, QIODevice::ReadWrite);
 	//    if (!dStream->device()->seek(0)){
 	//        qDebug() << "failed to seek position " << 0 << " in dStream";
 	//    }
@@ -21,7 +21,7 @@ TcpMessage::TcpMessage(QByteArray& rawdata) {
 	//    if(!dStream->device()->seek(pos)){
 	//        qDebug() << "failed to seek position " << pos << " in dStream";
 	//    }
-	*dStream >> msgID;
+    *dStream >> msgID;
 }
 
 
@@ -31,6 +31,16 @@ TcpMessage::TcpMessage(QByteArray& rawdata) {
 //        dStream = nullptr;
 //    }
 //}
+TcpMessage::TcpMessage(const TcpMessage& tcpMessage){
+    msgID = tcpMessage.getMsgID();
+    data = tcpMessage.getData();
+    dStream = new QDataStream(&data, QIODevice::ReadWrite);
+    *dStream >> newMsgID;
+    if (msgID != newMsgID){
+        qDebug() << "error msg ID not consistent";
+    }
+    byteCount = tcpMessage.getByteCount();
+}
 
 void TcpMessage::setData(QByteArray& rawData) {
 	data = rawData;
@@ -40,10 +50,14 @@ void TcpMessage::setMsgID(quint16 tcpMsgID) {
 	msgID = tcpMsgID;
 }
 
-QByteArray& TcpMessage::getData(){
+const QByteArray& TcpMessage::getData() const{
     return data;
 }
 
-quint16 TcpMessage::getMsgID(){
+quint16 TcpMessage::getMsgID() const{
     return msgID;
+}
+
+quint16 TcpMessage::getByteCount() const{
+    return byteCount;
 }

@@ -335,30 +335,31 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 
 // ALL FUNCTIONS ABOUT TCPMESSAGE SENDING AND RECEIVING
 void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
-    if (tcpMessage.msgID == i2cProperties) {
+    if (tcpMessage.getMsgID() == i2cProperties) {
 		I2cProperty i2cProperty;
-		*(tcpMessage.dStream) >> i2cProperty;
+        *(tcpMessage.dStream) >> i2cProperty;
 		setI2CProperties(i2cProperty);
 	}
-    if (tcpMessage.msgID == i2cRequest) {
+    if (tcpMessage.getMsgID() == i2cRequest) {
 		sendI2CProperties();
 	}
-    if (tcpMessage.msgID == ubxMsgRateRequest) {
+    if (tcpMessage.getMsgID() == ubxMsgRateRequest) {
 		sendUbxMsgRates();
 	}
 }
 
 void Daemon::sendUbxMsgRates() {
 	TcpMessage tcpMessage(ubxMsgRate);
-	*(tcpMessage.dStream) << msgRateCfgs;
+    *(tcpMessage.dStream) << msgRateCfgs;
 	emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::sendI2CProperties() {
 	I2cProperty i2cProperty(pcaChannel, dacThresh.at(0), dacThresh.at(1), biasVoltage, biasPowerOn);
-	TcpMessage message(i2cProperties);
-	*(message.dStream) << i2cProperty;
-	emit sendTcpMessage(message);
+    TcpMessage tcpMessage(i2cProperties);
+    //*(message.dStream) << i2cProperty;
+    *(tcpMessage.dStream) << pcaChannel << dacThresh.at(0) << dacThresh.at(1) << biasVoltage << biasPowerOn;
+    emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::sendGpioPinEvent(uint8_t gpio_pin, uint32_t tick) {

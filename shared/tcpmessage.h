@@ -12,15 +12,17 @@ class TcpMessage
 {
 public:
 	TcpMessage(quint16 tcpMsgID = 0);
-	TcpMessage(QByteArray& rawdata);
-    //~TcpMessage();
+    TcpMessage(QByteArray& rawdata);
+    TcpMessage(const TcpMessage &tcpMessage);
     QDataStream *dStream = nullptr;
 	void setMsgID(quint16 tcpMsgID);
 	void setData(QByteArray& data);
-    QByteArray &getData();
-    quint16 getMsgID();
-    QByteArray data;
+    const QByteArray& getData() const;
+    quint16 getMsgID() const;
+    quint16 getByteCount() const;
+private:
     quint16 msgID, byteCount;
+    QByteArray data;
 };
 
 #endif // TCPMESSAGE_H
