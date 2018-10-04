@@ -30,11 +30,11 @@ SOURCES += src/main.cpp \
     ../shared/i2c/i2cdevices.cpp \
     ../shared/i2c/custom_i2cdetect.c \
     ../shared/i2c/i2cbusses.c \
-    ../shared/i2cproperty.cpp \
     src/pigpiodhandler.cpp \
     src/daemon.cpp \
     src/custom_io_operators.cpp \
-    ../shared/tcpmessage.cpp
+    ../shared/tcpmessage.cpp \
+    ../shared/i2cproperty.cpp
 
 HEADERS += \
     src/gnsssatellite.h \
@@ -47,7 +47,6 @@ HEADERS += \
     ../shared/i2c/i2cbusses.h \
     ../shared/i2c/i2cdevices.h \
     ../shared/i2c/linux/i2c-dev.h \
-    ../shared/i2cproperty.h \
     src/pigpiodhandler.h \
     ../shared/gpio_pin_definitions.h \
     src/daemon.h \
@@ -56,7 +55,8 @@ HEADERS += \
     ../shared/ublox_messages.h \
     src/custom_io_operators.h \
     ../shared/tcpmessage.h \
-    ../shared/tcpmessage_keys.h
+    ../shared/tcpmessage_keys.h \
+    ../shared/i2cproperty.h
 
 OBJECTS_DIR += created_files
 

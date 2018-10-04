@@ -21,6 +21,7 @@ TcpMessage::TcpMessage(QByteArray& rawdata) {
 	//    if(!dStream->device()->seek(pos)){
 	//        qDebug() << "failed to seek position " << pos << " in dStream";
 	//    }
+    *dStream >> byteCount;
     *dStream >> msgID;
 }
 
@@ -35,10 +36,9 @@ TcpMessage::TcpMessage(const TcpMessage& tcpMessage){
     msgID = tcpMessage.getMsgID();
     data = tcpMessage.getData();
     dStream = new QDataStream(&data, QIODevice::ReadWrite);
-    *dStream >> newMsgID;
-    if (msgID != newMsgID){
-        qDebug() << "error msg ID not consistent";
-    }
+    quint16 temp;
+    *dStream >> temp;
+    *dStream >> temp;
     byteCount = tcpMessage.getByteCount();
 }
 

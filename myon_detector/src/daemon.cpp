@@ -122,13 +122,16 @@ void Daemon::handleSigInt()
 
 
 // begin of the Daemon class
-Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
+Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	float* new_dacThresh, float new_biasVoltage, bool biasPower, bool new_dumpRaw, int new_baudrate,
 	bool new_configGnss, QString new_peerAddress, quint16 new_peerPort,
 	QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, QObject *parent)
 	: QTcpServer(parent)
 {
-	// signal handling
+    qRegisterMetaType<TcpMessage>("TcpMessage");
+    qRegisterMetaType<uint16_t>("uint16_t");
+    qRegisterMetaType<uint8_t>("uint8_t");
+    // signal handling
 	setup_unix_signal_handlers();
 	if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)) {
 		qFatal("Couldn't create HUP socketpair");
@@ -161,7 +164,7 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
 	PigpiodHandler* pigHandler = new PigpiodHandler(gpio_pins, this);
 	if (pigHandler != nullptr) {
         connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
-        connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendAndXorSignal);
+        connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
 	}
 
 	// for i2c devices
@@ -174,7 +177,7 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
 	biasVoltage = new_biasVoltage;
 	biasPowerOn = biasPower;
     pca = new PCA9536();
-	pcaPortMask = new_pcaChannel;
+    pcaPortMask = new_pcaPortMask;
     pcaSelectTimeMeas(pcaPortMask);
 	for (int i = 0; i < 2; i++) {
 		if (dacThresh[i] > 0) {
@@ -258,7 +261,7 @@ Daemon::~Daemon() {
 
 void Daemon::connectToGps() {
 	// before connecting to gps we have to make sure all other programs are closed
-	// and serial echo is off
+    // and serial echo is off
 	if (gpsdevname.isEmpty()) {
 		return;
 	}
@@ -294,7 +297,6 @@ void Daemon::connectToGps() {
 }
 
 void Daemon::connectToServer() {
-    qRegisterMetaType<TcpMessage>("TcpMessage");
 	QThread *tcpThread = new QThread();
 	if (tcpConnection != nullptr) {
 		delete(tcpConnection);
@@ -315,7 +317,6 @@ void Daemon::connectToServer() {
 }
 
 void Daemon::incomingConnection(qintptr socketDescriptor) {
-    qRegisterMetaType<TcpMessage>("TcpMessage");
 	if (verbose > 4) {
 		cout << "incomingConnection" << endl;
 	}
@@ -355,10 +356,10 @@ void Daemon::sendUbxMsgRates() {
 }
 
 void Daemon::sendI2CProperties() {
-	I2cProperty i2cProperty(pcaChannel, dacThresh.at(0), dacThresh.at(1), biasVoltage, biasPowerOn);
+    I2cProperty i2cProperty(pcaPortMask, dacThresh.at(0), dacThresh.at(1), biasVoltage, biasPowerOn);
     TcpMessage tcpMessage(i2cProperties);
     //*(message.dStream) << i2cProperty;
-    *(tcpMessage.dStream) << pcaChannel << dacThresh.at(0) << dacThresh.at(1) << biasVoltage << biasPowerOn;
+    *(tcpMessage.dStream) << pcaPortMask << dacThresh.at(0) << dacThresh.at(1) << biasVoltage << biasPowerOn;
     emit sendTcpMessage(tcpMessage);
 }
 
@@ -387,8 +388,8 @@ void Daemon::dacSetThreshold(uint8_t channel, float threshold) {
 
 void Daemon::setI2CProperties(I2cProperty i2cProperty) {
 	if (i2cProperty.pcaChann >= 0 && i2cProperty.pcaChann < 8) {
-		pcaChannel = i2cProperty.pcaChann;
-		pca->setOutputPorts(pcaChannel);
+        pcaPortMask = i2cProperty.pcaChann;
+        pca->setOutputPorts(pcaPortMask);
 	}
 	if (i2cProperty.thresh1 >= 0 && i2cProperty.thresh1 < 4096) {
 		dacThresh[0] = i2cProperty.thresh1;

@@ -120,6 +120,7 @@ void TcpConnection::onReadyRead() {
     char data[blockSize];
     in->readRawData(data,blockSize);
     QDataStream str(&block,QIODevice::ReadWrite);
+    str << blockSize;
     str.writeRawData(data,blockSize);
     //block.setRawData(data,blockSize); // not sure if it works correctly
     blockSize = 0;

@@ -32,19 +32,19 @@ SOURCES += \
         ../shared/tcpconnection.cpp \
         src/main.cpp \
         src/mainwindow.cpp \
-    ../shared/i2cproperty.cpp \
     ../shared/tcpmessage.cpp \
     src/settings.cpp \
+    ../shared/i2cproperty.cpp
 
 HEADERS += \
         ../shared/tcpconnection.h \
         src/mainwindow.h \
-    ../shared/i2cproperty.h \
     ../shared/tcpmessage.h \
     ../shared/ublox_messages.h \
     src/settings.h \
     ../shared/ubx_msg_key_name_map.h \
-    ../shared/tcpmessage_keys.h
+    ../shared/tcpmessage_keys.h \
+    ../shared/i2cproperty.h
 
 FORMS += \
         src/mainwindow.ui \

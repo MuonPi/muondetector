@@ -20,10 +20,10 @@ class Daemon : public QTcpServer
 	Q_OBJECT
 
 public:
-    Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
-		float *new_dacThresh, float new_biasVoltage, bool biasPower, bool new_dumpRaw, int new_baudrate,
-		bool new_configGnss, QString new_PeerAddress, quint16 new_PpeerPort,
-		QString new_serverAddress, quint16 new_serverPort, bool new_showout, bool new_showin, QObject *parent = 0);
+    Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
+        float *new_dacThresh, float new_biasVoltage, bool biasPower, bool new_dumpRaw, int new_baudrate,
+        bool new_configGnss, QString new_PeerAddress, quint16 new_PpeerPort,
+        QString new_serverAddress, quint16 new_serverPort, bool new_showout, bool new_showin, QObject *parent = 0);
 	~Daemon();
 	void configGps();
 	void loop();
@@ -85,7 +85,7 @@ private:
 	bool biasPowerOn = false;
 	ADS1115 *adc;
     PCA9536 *pca;
-    int pcaChannel;
+    int pcaPortMask;
 	LM75 *lm75;
 	TcpConnection * tcpConnection = nullptr;
 	QMap <uint16_t, int> msgRateCfgs;
