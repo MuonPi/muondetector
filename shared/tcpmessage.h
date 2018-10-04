@@ -1,41 +1,28 @@
 #ifndef TCPMESSAGE_H
 #define TCPMESSAGE_H
-#include <QObject>
-//#include <QByteArray>
-#include <QVector>
+#include <QByteArray>
+#include <QDataStream>
 
-//class  MessageCoder : public QObject{
-//    Q_OBJECT
-//public:
-//MessageCoder(QObject* parent = 0);
+// how is a message coded in TcpMessage?
+// in the data QByteArray:
+// at pos 0: length of message (quint16) -> length of QByteArray - length of this number (sizeof(quint16))
+// at pos 1: tcpMsgID (quint16), shows what kind of message it is
 
-//private:
-//QByteArray block;
-//};
-
-//union MessageContent{
-
-//};
-union MyUnion{
+class TcpMessage
+{
 public:
-    int i;
-    bool b;
-    float f;
+	TcpMessage(quint16 tcpMsgID = 0);
+    TcpMessage(QByteArray& rawdata);
+    TcpMessage(const TcpMessage &tcpMessage);
+    QDataStream *dStream = nullptr;
+	void setMsgID(quint16 tcpMsgID);
+	void setData(QByteArray& data);
+    const QByteArray& getData() const;
+    quint16 getMsgID() const;
+    quint16 getByteCount() const;
+private:
+    quint16 msgID, byteCount;
+    QByteArray data;
 };
-
-struct MessageContent{
-    unsigned int type;
-    MyUnion myUnion;
-    friend QDataStream& operator<<(QDataStream& in, const MessageContent& content);
-    friend QDataStream& operator>>(QDataStream& out, MessageContent& content);
-};
-class TcpMessage{
-public:
-    QVector<MessageContent> data;
-    friend QDataStream& operator<<(QDataStream& in, const TcpMessage& message);
-    friend QDataStream& operator<<(QDataStream& in, TcpMessage& message);
-    friend QDataStream& operator>>(QDataStream& out, TcpMessage& message);
-};
-
 
 #endif // TCPMESSAGE_H

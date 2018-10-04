@@ -11,43 +11,14 @@
 
 using namespace std;
 
-// linux signal handling
-// https://gist.github.com/azadkuh/a2ac6869661ebd3f8588
-// http://doc.qt.io/qt-5/unix-signals.html
-
-/* Signal Handler for SIGINT */
-//void sigintHandler(int sig_num)
-//{
-//    sig_num = 0;
-//    /* Reset handler to catch SIGINT next time.
-//       Refer http://en.cppreference.com/w/c/program/signal */
-//    printf("killing process %d\n",getpid());
-////    signal(SIGINT, SIG_IGN);
-////    printf("\n terminated using Ctrl+C \n");
-//    fflush(stdout);
-//    exit(0);
-//}
-
 int main(int argc, char *argv[])
 {
-	/* Set the SIGINT (Ctrl-C) signal handler to sigintHandler
-	   Refer http://en.cppreference.com/w/c/program/signal */
-	   //    signal(SIGINT, sigintHandler);
-	   //	signal (SIGQUIT, sigintHandler);
-
+    qRegisterMetaType<TcpMessage>("TcpMessage");
 	QCoreApplication a(argc, argv);
 	QCoreApplication::setApplicationName("myon_detector");
-	QCoreApplication::setApplicationVersion("1.0");
+    QCoreApplication::setApplicationVersion("1.0");
 
-	//unix_sig_handler_daemon *d = new unix_sig_handler_daemon();
-	qRegisterMetaType<uint8_t>("uint8_t");
-	qRegisterMetaType<uint16_t>("uint16_t");
-	qRegisterMetaType<uint32_t>("uint32_t");
-	qRegisterMetaType<int32_t>("int32_t");
-	qRegisterMetaType<std::string>("std::string");
-	qRegisterMetaType<QMap<uint16_t, int> >("QMap<uint16_t,int>");
-
-	// command line input management
+    // command line input management
 	QCommandLineParser parser;
 	parser.setApplicationDescription("U-Blox GPS polling and configuration program\n"
 		"with added tcp implementation for synchronising "
@@ -222,17 +193,13 @@ int main(int argc, char *argv[])
 				cout << "wrong input ipAddress, not an ipv4address" << endl;
 			}
 		}
-	}
-	uint8_t pcaChannel = 0x0;
+    }
+	quint8 pcaChannel = 0;
 	if (parser.isSet(pcaChannelOption)) {
-		unsigned int temp = 0x0;
-		temp = parser.value(pcaChannelOption).toUInt(&ok);
-		if (!ok || temp > 255) {
-			pcaChannel = 0x0;
-			cout << "wrong input pcaChannel (maybe not an unsigned integer or too large)" << endl;
-		}
-		else {
-			pcaChannel = (uint8_t)temp;
+		pcaChannel = parser.value(pcaChannelOption).toUInt(&ok);
+		if (!ok) {
+			pcaChannel = 0;
+			cout << "wrong input pcaChannel (maybe not an unsigned integer)" << endl;
 		}
 	}
 	bool showout = false;

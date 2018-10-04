@@ -1,6 +1,6 @@
 #include <settings.h>
 #include <ui_settings.h>
-#include <../shared/ubx_msg_key_name_map.h>
+#include <ubx_msg_key_name_map.h>
 
 Settings::Settings(QWidget *parent) : QDialog(parent),
 settingsUi(new Ui::Settings)

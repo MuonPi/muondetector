@@ -4,8 +4,9 @@
 #include <QNetworkInterface>
 #include <daemon.h>
 #include <pigpiodhandler.h>
-#include <../shared/gpio_pin_definitions.h>
-#include <../shared/ublox_messages.h>
+#include <gpio_pin_definitions.h>
+#include <ublox_messages.h>
+#include <tcpmessage_keys.h>
 
 // for i2cdetect:
 extern "C" {
@@ -121,7 +122,7 @@ void Daemon::handleSigInt()
 
 
 // begin of the Daemon class
-Daemon::Daemon(QString new_gpsdevname, int new_verbose, uint8_t new_pcaChannel,
+Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaChannel,
 	float* new_dacThresh, float new_biasVoltage, bool biasPower, bool new_dumpRaw, int new_baudrate,
 	bool new_configGnss, QString new_peerAddress, quint16 new_peerPort,
 	QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, QObject *parent)
@@ -159,8 +160,8 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, uint8_t new_pcaChannel,
 	const QVector<unsigned int> gpio_pins({ EVT_AND, EVT_XOR });
 	PigpiodHandler* pigHandler = new PigpiodHandler(gpio_pins, this);
 	if (pigHandler != nullptr) {
-		connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
-		connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendAndXorSignal);
+        connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
+        connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendAndXorSignal);
 	}
 
 	// for i2c devices
@@ -172,9 +173,9 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, uint8_t new_pcaChannel,
 	dacThresh.push_back(tempThresh[1]);
 	biasVoltage = new_biasVoltage;
 	biasPowerOn = biasPower;
-	pca = new PCA9536();
+    pca = new PCA9536();
 	pcaPortMask = new_pcaChannel;
-	pcaSelectTimeMeas(pcaPortMask);
+    pcaSelectTimeMeas(pcaPortMask);
 	for (int i = 0; i < 2; i++) {
 		if (dacThresh[i] > 0) {
 			dac->setVoltage(i, dacThresh[i]);
@@ -293,6 +294,7 @@ void Daemon::connectToGps() {
 }
 
 void Daemon::connectToServer() {
+    qRegisterMetaType<TcpMessage>("TcpMessage");
 	QThread *tcpThread = new QThread();
 	if (tcpConnection != nullptr) {
 		delete(tcpConnection);
@@ -303,7 +305,6 @@ void Daemon::connectToServer() {
 	connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
 	connect(tcpThread, &QThread::finished, tcpThread, &QThread::deleteLater);
 	connect(this->thread(), &QThread::finished, tcpThread, &QThread::quit);
-	connect(this, &Daemon::sendFile, tcpConnection, &TcpConnection::sendFile);
 	connect(tcpConnection, &TcpConnection::error, this, &Daemon::displaySocketError);
 	connect(tcpConnection, &TcpConnection::toConsole, this, &Daemon::toConsole);
 	connect(tcpConnection, &TcpConnection::connectionTimeout, this, &Daemon::connectToServer);
@@ -314,6 +315,7 @@ void Daemon::connectToServer() {
 }
 
 void Daemon::incomingConnection(qintptr socketDescriptor) {
+    qRegisterMetaType<TcpMessage>("TcpMessage");
 	if (verbose > 4) {
 		cout << "incomingConnection" << endl;
 	}
@@ -324,37 +326,93 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 	connect(thread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
 	connect(thread, &QThread::finished, thread, &QThread::deleteLater);
 	connect(this->thread(), &QThread::finished, thread, &QThread::quit);
-	//connect(qApp, &QCoreApplication::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
 	connect(this, &Daemon::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
+    connect(this, &Daemon::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
+	connect(tcpConnection, &TcpConnection::receivedTcpMessage, this, &Daemon::receivedTcpMessage);
 	connect(tcpConnection, &TcpConnection::toConsole, this, &Daemon::toConsole);
-	connect(this, &Daemon::i2CProperties, tcpConnection, &TcpConnection::sendI2CProperties);
-	connect(tcpConnection, &TcpConnection::requestI2CProperties, this, &Daemon::sendI2CProperties);
-	connect(tcpConnection, &TcpConnection::i2CProperties, this, &Daemon::setI2CProperties);
-	connect(this, &Daemon::gpioRisingEdge, tcpConnection, &TcpConnection::sendGpioRisingEdge);
-	connect(tcpConnection, &TcpConnection::requestUbxMsgRate, this, &Daemon::sendUbxMsgCfgs);
-	connect(this, &Daemon::ubxMsgRates, tcpConnection, &TcpConnection::sendUbxMsgRates);
-	// connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
-	// why does this not work?? Probably because if QCoreApplication knows when it quits, tcpConnection already deleted :(
 	thread->start();
 }
 
-void Daemon::pcaSelectTimeMeas(uint8_t pcaPorts) {
-	if (pcaPorts > 0b1111) {
-		cout << "there is no valid pca port mask > 0b1111" << endl;
+// ALL FUNCTIONS ABOUT TCPMESSAGE SENDING AND RECEIVING
+void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
+    if (tcpMessage.getMsgID() == i2cProperties) {
+		I2cProperty i2cProperty;
+        *(tcpMessage.dStream) >> i2cProperty;
+		setI2CProperties(i2cProperty);
+	}
+    if (tcpMessage.getMsgID() == i2cRequest) {
+		sendI2CProperties();
+	}
+    if (tcpMessage.getMsgID() == ubxMsgRateRequest) {
+		sendUbxMsgRates();
+	}
+}
+
+void Daemon::sendUbxMsgRates() {
+	TcpMessage tcpMessage(ubxMsgRate);
+    *(tcpMessage.dStream) << msgRateCfgs;
+	emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::sendI2CProperties() {
+	I2cProperty i2cProperty(pcaChannel, dacThresh.at(0), dacThresh.at(1), biasVoltage, biasPowerOn);
+    TcpMessage tcpMessage(i2cProperties);
+    //*(message.dStream) << i2cProperty;
+    *(tcpMessage.dStream) << pcaChannel << dacThresh.at(0) << dacThresh.at(1) << biasVoltage << biasPowerOn;
+    emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::sendGpioPinEvent(uint8_t gpio_pin, uint32_t tick) {
+	TcpMessage tcpMessage(gpioPinSig);
+    *(tcpMessage.dStream) << (quint8)gpio_pin << (quint32)tick;
+	emit sendTcpMessage(tcpMessage);
+}
+
+// ALL FUNCTIONS ABOUT I2C-DEVICES
+void Daemon::pcaSelectTimeMeas(uint8_t channel) {
+	if (channel > 3) {
+		cout << "can there is no channel > 3" << endl;
 		return;
 	}
 	if (!pca) {
 		return;
 	}
-	pca->setOutputPorts(0b1111); // the registry is 8 bits long: ----xxxx where only the lower 4 bits are relevant and define which port is output or not.
-								 // the "setOutputPorts" function sets all ports with '1' as output and '0' as input
-	pca->setOutputState(pcaPorts);// global variable pcaPortMask is set to 0x00 as default in "main.cpp"
+	pca->setOutputPorts(channel);
+	pca->setOutputState(channel);
 }
 
 void Daemon::dacSetThreshold(uint8_t channel, float threshold) {
     dac->setVoltage(channel, threshold);
 }
 
+void Daemon::setI2CProperties(I2cProperty i2cProperty) {
+	if (i2cProperty.pcaChann >= 0 && i2cProperty.pcaChann < 8) {
+		pcaChannel = i2cProperty.pcaChann;
+		pca->setOutputPorts(pcaChannel);
+	}
+	if (i2cProperty.thresh1 >= 0 && i2cProperty.thresh1 < 4096) {
+		dacThresh[0] = i2cProperty.thresh1;
+		dac->setVoltage(0, dacThresh.at(0));
+	}
+	if (i2cProperty.thresh2 >= 0 && i2cProperty.thresh2 < 4096) {
+		dacThresh[1] = i2cProperty.thresh2;
+		dac->setVoltage(1, dacThresh.at(1));
+	}
+	if (i2cProperty.bias_Voltage >= 0. && i2cProperty.bias_Voltage < 4.) {
+		biasVoltage = i2cProperty.bias_Voltage;
+		dac->setVoltage(2, biasVoltage);
+	}
+	biasPowerOn = i2cProperty.bias_powerOn;
+	if (i2cProperty.bias_powerOn) {
+		digitalWrite(UBIAS_EN, 1);
+	}
+	else {
+		digitalWrite(UBIAS_EN, 0);
+	}
+	sendI2CProperties();
+}
+
+// ALL FUNCTIONS ABOUT UBLOX GPS MODULE
 void Daemon::configGps() {
 	// set up ubx as only outPortProtocol
 	//emit UBXSetCfgPrt(1,1); // enables on UART port (1) only the UBX protocol
@@ -442,10 +500,6 @@ void Daemon::pollAllUbxMsgRate() {
 	for (const auto& elem : allMsgCfgID) {
 		emit sendPollUbxMsgRate(elem);
 	}
-}
-
-void Daemon::sendUbxMsgCfgs() {
-	emit ubxMsgRates(msgRateCfgs);
 }
 
 void Daemon::UBXReceivedAckNak(uint16_t ackedMsgID, uint16_t ackedCfgMsgID) {
@@ -551,36 +605,6 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
 	}
 }
 
-void Daemon::setI2CProperties(I2cProperty i2cProperty, bool setProperties) {
-	if (!setProperties) {
-		return;
-	}
-	if (i2cProperty.pcaChann >= 0 && i2cProperty.pcaChann < 8) {
-		pcaPortMask = i2cProperty.pcaChann;
-		pca->setOutputPorts(pcaPortMask);
-	}
-	if (i2cProperty.thresh1 >= 0 && i2cProperty.thresh1 < 4096) {
-		dacThresh[0] = i2cProperty.thresh1;
-		dac->setVoltage(0, dacThresh.at(0));
-	}
-	if (i2cProperty.thresh2 >= 0 && i2cProperty.thresh2 < 4096) {
-		dacThresh[1] = i2cProperty.thresh2;
-		dac->setVoltage(1, dacThresh.at(1));
-	}
-	if (i2cProperty.bias_Voltage >= 0. && i2cProperty.bias_Voltage < 4.) {
-		biasVoltage = i2cProperty.bias_Voltage;
-		dac->setVoltage(2, biasVoltage);
-	}
-	biasPowerOn = i2cProperty.bias_powerOn;
-	if (i2cProperty.bias_powerOn) {
-		digitalWrite(UBIAS_EN, 1);
-	}
-	else {
-		digitalWrite(UBIAS_EN, 0);
-	}
-	sendI2CProperties();
-}
-
 void Daemon::toConsole(QString data) {
 	cout << data << endl;
 }
@@ -593,6 +617,7 @@ void Daemon::gpsConnectionError() {
 
 }
 
+// ALL OTHER UTITLITY FUNCTIONS
 void Daemon::stoppedConnection(QString hostName, quint16 port, quint32 connectionTimeout, quint32 connectionDuration) {
 	cout << "stopped connection with " << hostName << ":" << port << endl;
 	cout << "connection timeout at " << connectionTimeout << "  connection lasted " << connectionDuration << "s" << endl;
@@ -643,15 +668,6 @@ void Daemon::printTimestamp()
 	// 	t2 = std::chrono::duration_cast<std::chrono::seconds>(t1);
 		//double subs=timestamp-(long int)timestamp;
 	cout << secs.count() << "." << setw(6) << setfill('0') << subs.count() << " " << setfill(' ');
-}
-
-void Daemon::sendI2CProperties() {
-	I2cProperty i2cProperty(pcaPortMask, dacThresh.at(0), dacThresh.at(1), biasVoltage, biasPowerOn);
-	emit i2CProperties(i2cProperty);
-}
-
-void Daemon::sendAndXorSignal(uint8_t gpio_pin, uint32_t tick) {
-	emit gpioRisingEdge((quint8)gpio_pin, (quint32)tick);
 }
 
 // some signal handling stuff

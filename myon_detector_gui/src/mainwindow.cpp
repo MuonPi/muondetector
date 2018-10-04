@@ -7,6 +7,7 @@
 #include <QErrorMessage>
 #include <gpio_pin_definitions.h>
 #include <settings.h>
+#include <tcpmessage_keys.h>
 
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
@@ -21,8 +22,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	// initialise all ui elements that will be inactive at start
 	uiSetDisconnectedState();
 
-	// setup ipBox and load addresses etc.
-	addresses = new QStandardItemModel();
+    // setup ipBox and load addresses etc.
+    addresses = new QStandardItemModel(this);
 	loadSettings("ipAddresses.save", addresses);
 	ui->ipBox->setModel(addresses);
 	ui->ipBox->setAutoCompletion(true);
@@ -59,7 +60,8 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::makeConnection(QString ipAddress, quint16 port) {
-	// add popup windows for errors!!!
+    // add popup windows for errors!!!
+    qRegisterMetaType<TcpMessage>("TcpMessage");
 	QThread *tcpThread = new QThread();
 	if (!tcpConnection) {
 		delete(tcpConnection);
@@ -71,20 +73,15 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
 	connect(tcpThread, &QThread::finished, tcpThread, &QThread::deleteLater);
 	connect(tcpConnection, &TcpConnection::connected, this, &MainWindow::connected);
 	connect(this, &MainWindow::closeConnection, tcpConnection, &TcpConnection::closeConnection);
-	connect(tcpConnection, &TcpConnection::stoppedConnection, this, &MainWindow::stoppedConnection);
-	connect(tcpConnection, &TcpConnection::i2CProperties, this, &MainWindow::updateI2CProperties);
-	connect(this, &MainWindow::setI2CProperties, tcpConnection, &TcpConnection::sendI2CProperties);
-	connect(this, &MainWindow::requestI2CProperties, tcpConnection, &TcpConnection::sendI2CPropertiesRequest);
-	connect(tcpConnection, &TcpConnection::gpioRisingEdge, this, &MainWindow::receivedGpioRisingEdge);
-	connect(tcpConnection, &TcpConnection::ubxMsgRates, this, &MainWindow::updateUbxMsgRates);
-	connect(this, &MainWindow::requestUbxMsgRates, tcpConnection, &TcpConnection::sendUbxMsgRatesRequest);
+    connect(tcpConnection, &TcpConnection::stoppedConnection, this, &MainWindow::stoppedConnection);
+    connect(this, &MainWindow::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
+    connect(tcpConnection, &TcpConnection::receivedTcpMessage, this, &MainWindow::receivedTcpMessage);
 	tcpThread->start();
 }
 
 void MainWindow::stoppedConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort,
 	quint32 timeoutTime, quint32 connectionDuration) {
-	connectedToDemon = false;
-	//qDebug() << "received stoppedConnection";
+    connectedToDemon = false;
 	uiSetDisconnectedState();
 }
 
@@ -143,25 +140,55 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
 	}
 }
 
-void MainWindow::updateI2CProperties(I2cProperty i2cProperty, bool setProperties) {
-	if (!setProperties) {
-		biasPowerOn = i2cProperty.bias_powerOn;
-		QVector<float> dacThresh = { i2cProperty.thresh1, i2cProperty.thresh2 };
-		updateUiProperties(i2cProperty.bias_powerOn, 0, (int)(2000 * dacThresh.at(0)), (int)(2000 * dacThresh.at(1)));
-		// uartBufferValue to be replaced with the correct value
+void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
+    quint16 msgID = tcpMessage.getMsgID();
+	if (msgID == gpioPinSig) {
+		quint8 gpioPin;
+		quint32 tick;
+        *(tcpMessage.dStream) >> gpioPin >> tick;
+        receivedGpioRisingEdge(gpioPin, tick);
+		return;
+	}
+	if (msgID == ubxMsgRate) {
+		QMap<uint16_t, int> msgRateCfgs;
+        *(tcpMessage.dStream) >> msgRateCfgs;
+		emit addUbxMsgRates(msgRateCfgs);
+		return;
+	}
+	if (msgID == i2cProperties) {
+		I2cProperty i2cProperty;
+        qDebug() << "received i2cProperty message";
+        *(tcpMessage.dStream) >> i2cProperty.pcaChann >> i2cProperty.thresh1 >>
+                i2cProperty.thresh2 >> i2cProperty.bias_Voltage >> i2cProperty.bias_powerOn;
+        qDebug() << "parsing i2cProperty worked";
+		updateI2CProperties(i2cProperty);
+		return;
 	}
 }
 
-void MainWindow::updateUbxMsgRates(QMap<uint16_t, int> msgRateCfgs) {
-	emit addUbxMsgRates(msgRateCfgs);
+void MainWindow::sendSetI2CProperties(I2cProperty i2cProperty) {
+	TcpMessage tcpMessage(i2cProperties);
+    *(tcpMessage.dStream) << i2cProperty;
+	emit sendTcpMessage(tcpMessage);
 }
 
-void MainWindow::resetAndHit() {
-	ui->ANDHit->setStyleSheet("QLabel {color: white; background-color: darkRed;}");
+void MainWindow::requestI2CProperties() {
+    TcpMessage tcpMessage(i2cRequest);
+    emit sendTcpMessage(tcpMessage);
 }
-void MainWindow::resetXorHit() {
-	ui->XORHit->setStyleSheet("QLabel {color: white; background-color: darkRed;}");
+
+void MainWindow::requestUbxMsgRates() {
+	TcpMessage tcpMessage(ubxMsgRateRequest);
+	emit sendTcpMessage(tcpMessage);
 }
+
+void MainWindow::updateI2CProperties(I2cProperty i2cProperty) {
+	biasPowerOn = i2cProperty.bias_powerOn;
+	QVector<float> dacThresh = { i2cProperty.thresh1, i2cProperty.thresh2 };
+	updateUiProperties(i2cProperty.bias_powerOn, 0, (int)(2000 * dacThresh.at(0)), (int)(2000 * dacThresh.at(1)));
+	// uartBufferValue to be replaced with the correct value
+}
+
 void MainWindow::receivedGpioRisingEdge(quint8 pin, quint32 tick) {
 	if (pin == EVT_AND) {
 		ui->ANDHit->setStyleSheet("QLabel {color: white; background-color: darkGreen;}");
@@ -171,6 +198,13 @@ void MainWindow::receivedGpioRisingEdge(quint8 pin, quint32 tick) {
 		ui->XORHit->setStyleSheet("QLabel {color: white; background-color: darkGreen;}");
 		xorTimer.start();
 	}
+}
+
+void MainWindow::resetAndHit() {
+	ui->ANDHit->setStyleSheet("QLabel {color: white; background-color: darkRed;}");
+}
+void MainWindow::resetXorHit() {
+	ui->XORHit->setStyleSheet("QLabel {color: white; background-color: darkRed;}");
 }
 
 void MainWindow::uiSetDisconnectedState() {
@@ -252,9 +286,12 @@ void MainWindow::updateUiProperties(bool bias_powerOn, int uartBufferValue, int 
 }
 
 void MainWindow::connected() {
-	connectedToDemon = true;
-	uiSetConnectedState();
-	emit requestI2CProperties();
+    connectedToDemon = true;
+    qDebug() << "connected";
+    saveSettings(QString("ipAddresses.save"), addresses);
+    qDebug() << "saveSettings";
+    uiSetConnectedState();
+    requestI2CProperties();
 }
 
 void MainWindow::on_ipButton_clicked()
@@ -269,24 +306,25 @@ void MainWindow::on_ipButton_clicked()
 		return;
 	}
 	QString ipBoxText = ui->ipBox->currentText();
-	QStringList ipAndPort = ipBoxText.split(':');
-	if (ipAndPort.size() != 2) {
-		QString errorMess = "error, size of ipAndPort not 2";
+    QStringList ipAndPort = ipBoxText.split(':');
+    if (ipAndPort.size() > 2 || ipAndPort.size() < 1) {
+        QString errorMess = "error, size of ipAndPort not 1 or 2";
 		errorM.showMessage(errorMess);
-	}
+        return;
+    }
 	QString ipAddress = ipAndPort.at(0);
 	if (ipAddress == "local" || ipAddress == "localhost") {
 		ipAddress = "127.0.0.1";
-	}
+    }
 	QString portString;
-	if (ipAndPort.size() > 1) {
+    if (ipAndPort.size() == 2) {
 		portString = ipAndPort.at(1);
 	}
 	else {
 		portString = "51508";
-	}
-	makeConnection(ipAddress, portString.toUInt());
-	if (!ui->ipBox->currentText().isEmpty() && ui->ipBox->findText(ui->ipBox->currentText()) == -1) {
+    }
+    makeConnection(ipAddress, portString.toUInt());
+    if (!ui->ipBox->currentText().isEmpty() && ui->ipBox->findText(ui->ipBox->currentText()) == -1) {
 		// if text not already in there, put it in there
 		ui->ipBox->addItem(ui->ipBox->currentText());
 	}
@@ -318,8 +356,8 @@ void MainWindow::on_discr1Slider_valueChanged(int value)
 	i2cProperty.bias_powerOn = biasPowerOn;
 	i2cProperty.thresh1 = (float)(value / 2000.0);
 	ui->discr1Edit->setText(QString::number((float)value / 2.0) + "mV");
-	if (!mouseHold) {
-		emit setI2CProperties(i2cProperty);
+    if (!mouseHold) {
+        sendSetI2CProperties(i2cProperty);
 	}
 }
 
@@ -349,14 +387,14 @@ void MainWindow::on_discr2Slider_valueChanged(int value)
 	i2cProperty.bias_powerOn = biasPowerOn;
 	i2cProperty.thresh2 = (float)(value / 2000.0);
 	ui->discr2Edit->setText(QString::number((float)(value / 2.0)) + "mV");
-	if (!mouseHold) {
-		emit setI2CProperties(i2cProperty);
+    if (!mouseHold) {
+        sendSetI2CProperties(i2cProperty);
 	}
 }
 void MainWindow::settings_clicked(bool checked) {
 	Settings *settings = new Settings(this);
-	connect(this, &MainWindow::addUbxMsgRates, settings, &Settings::addUbxMsgRates);
-	emit requestUbxMsgRates();
+    connect(this, &MainWindow::addUbxMsgRates, settings, &Settings::addUbxMsgRates);
+    requestUbxMsgRates();
 	settings->show();
 }
 
@@ -382,6 +420,6 @@ float MainWindow::parseValue(QString text) {
 void MainWindow::on_biasPowerButton_clicked()
 {
 	I2cProperty i2cProperty;
-	i2cProperty.bias_powerOn = !biasPowerOn;
-	emit setI2CProperties(i2cProperty);
+    i2cProperty.bias_powerOn = !biasPowerOn;
+    sendSetI2CProperties(i2cProperty);
 }

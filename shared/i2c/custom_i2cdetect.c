@@ -7,46 +7,47 @@ Now it can be called by the main program and it's the only purpose of custom_i2c
 #include "custom_i2cdetect.h"
 
 int scan_i2c_bus(int file, /*int mode,*/ int first, int last,
-                 bool outputAllAddresses, int expectedAddresses[])
+	bool outputAllAddresses, int expectedAddresses[])
 {
 	// called by i2cdetect() to scan through all busses
 	int i, j;
 	int res;
-    if (outputAllAddresses){
-        printf("     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\n");
-    }
+	if (outputAllAddresses) {
+		printf("     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\n");
+	}
 	int deviceStatus[8];
 	bool deviceError = false;
 	// deviceError set to true means the program should exit with error
 	// because at least one of the devices that should be there is not.
 	// Also should it be printed which devices are not there.
-	for (int k = 0; k<8; k++)
+	for (int k = 0; k < 8; k++)
 	{
 		deviceStatus[k] = 0;
 	}
 	for (i = 0; i < 128; i += 16) {
-        if (outputAllAddresses){
-            printf("%02x: ", i);
-        }
-		for(j = 0; j < 16; j++) {
+		if (outputAllAddresses) {
+			printf("%02x: ", i);
+		}
+		for (j = 0; j < 16; j++) {
 			fflush(stdout);
 
 			/* Skip unwanted addresses */
-			if (i+j < first || i+j > last) {
-                if (outputAllAddresses){
-                    printf("   ");
-                }
+			if (i + j < first || i + j > last) {
+				if (outputAllAddresses) {
+					printf("   ");
+				}
 				continue;
 			}
 
 			/* Set slave address */
-			if (ioctl(file, I2C_SLAVE, i+j) < 0) {
+			if (ioctl(file, I2C_SLAVE, i + j) < 0) {
 				if (errno == EBUSY) {
 					printf("UU ");
 					continue;
-				} else {
+				}
+				else {
 					fprintf(stderr, "Error: Could not set "
-						"address to 0x%02x: %s\n", i+j,
+						"address to 0x%02x: %s\n", i + j,
 						strerror(errno));
 					return -1;
 				}
@@ -55,41 +56,43 @@ int scan_i2c_bus(int file, /*int mode,*/ int first, int last,
 			/* Probe this address */
 			/*switch (mode) {
 			default:*/
-			if ((i+j >= 0x30 && i+j <= 0x37)
-				|| (i+j >= 0x50 && i+j <= 0x5F)){
+			if ((i + j >= 0x30 && i + j <= 0x37)
+				|| (i + j >= 0x50 && i + j <= 0x5F)) {
 				res = i2c_smbus_read_byte(file);
-			}else{
+			}
+			else {
 				res = i2c_smbus_write_quick(file,
-						I2C_SMBUS_WRITE);
+					I2C_SMBUS_WRITE);
 			}
 			//}
 
-            if (outputAllAddresses){
-                if (res<0) {
-                    printf("-- ");
-                    /* there is no device at this address (address is j+i)
-                       so switch j+i and if the address matches one of the expected
-                       addresses used by one of the components on the board
-                       the program should exit with an error
-                    */
+			if (outputAllAddresses) {
+				if (res < 0) {
+					printf("-- ");
+					/* there is no device at this address (address is j+i)
+					   so switch j+i and if the address matches one of the expected
+					   addresses used by one of the components on the board
+					   the program should exit with an error
+					*/
 
-                }else {
-                    printf("%02x ", i+j);
-                }
-            }
+				}
+				else {
+					printf("%02x ", i + j);
+				}
+			}
 		}
-        if (outputAllAddresses){
-            printf("\n");
-        }
-    }
+		if (outputAllAddresses) {
+			printf("\n");
+		}
+	}
 	if (deviceError)
 	{
 		// print missing devices if there are any
 		// and exit with error which is meant by "return 1"
 		printf("\n Following addresses are not connected: \n");
-		for (int k = 0; k<8; k++)
+		for (int k = 0; k < 8; k++)
 		{
-			if (deviceStatus[k]!=0)
+			if (deviceStatus[k] != 0)
 			{
 				switch (deviceStatus[k])
 				{
@@ -120,7 +123,7 @@ int scan_i2c_bus(int file, /*int mode,*/ int first, int last,
 				default:
 					break;
 				}
-				printf(" = %0x \n",+deviceStatus[k]);
+				printf(" = %0x \n", +deviceStatus[k]);
 			}
 		}
 		return 1;
@@ -185,7 +188,7 @@ int scan_i2c_bus(int file, /*int mode,*/ int first, int last,
 /*
  * Print the installed i2c busses. The format is those of Linux 2.4's
  * /proc/bus/i2c for historical compatibility reasons.
- 
+
 static void print_i2c_busses(void)
 {
 	struct i2c_adap *adapters;
@@ -219,14 +222,14 @@ static void print_i2c_busses(void)
 int i2cdetect(bool outputAllAddresses, int expectedAddresses[])
 {
 	// can be called by main program, used to check devices (are all connected devices in place?). Soon to be further improved!
-    //char *end;
-    int /*i2cbus,*/ file, res;
+	//char *end;
+	int /*i2cbus,*/ file, res;
 	char filename[20];
 	unsigned long funcs;
-    //int mode = MODE_AUTO;
+	//int mode = MODE_AUTO;
 	int first = 0x03, last = 0x77;
-    //int flags = 0;
-    //int yes = 1, version = 0, list = 0;
+	//int flags = 0;
+	//int yes = 1, version = 0, list = 0;
 
 	if (I2C_BUS < 0) {
 		//help();
@@ -269,12 +272,12 @@ int i2cdetect(bool outputAllAddresses, int expectedAddresses[])
 	}
 	// from original i2cdetect code, not important
 	*/
-    res = scan_i2c_bus(file, /*mode,*/ first, last,
-                       outputAllAddresses, expectedAddresses);
+	res = scan_i2c_bus(file, /*mode,*/ first, last,
+		outputAllAddresses, expectedAddresses);
 	// res will be either 1 or 0
 	// 0 means all ok
 	// 1 means there are missing devices
 	close(file);
 
-	return(res?1:0);
+	return(res ? 1 : 0);
 }

@@ -3,7 +3,6 @@
 #include <QMainWindow>
 #include <tcpconnection.h>
 #include <QStandardItemModel>
-#include <tcpconnection.h>
 #include <QErrorMessage>
 #include <QTime>
 
@@ -20,19 +19,20 @@ public:
 	~MainWindow();
 
 signals:
-	void closeConnection();
-	void setI2CProperties(I2cProperty i2cProperty, bool setProperties = true);
-	void requestI2CProperties();
-	void requestUbxMsgRates();
 	void addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates);
+	void sendTcpMessage(TcpMessage tcpMessage);
+    void closeConnection();
 
 public slots:
+	void receivedTcpMessage(TcpMessage tcpMessage);
+    void receivedGpioRisingEdge(quint8 pin, quint32 tick);
+	void sendSetI2CProperties(I2cProperty i2cProperty);
+	void requestI2CProperties();
+	void requestUbxMsgRates();
 	void stoppedConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort,
 		quint32 timeoutTime, quint32 connectionDuration);
 	void makeConnection(QString ipAddress, quint16 port);
-	void updateI2CProperties(I2cProperty i2cProperty, bool setProperties);
-	void receivedGpioRisingEdge(quint8 pin, quint32 tick);
-	void updateUbxMsgRates(QMap<uint16_t, int> msgRateCfgs);
+	void updateI2CProperties(I2cProperty i2cProperty);
 
 private slots:
 	void updateUiProperties(bool bias_powerOn, int uartBufferValue = -1, int discr1SliderValue = -1,
