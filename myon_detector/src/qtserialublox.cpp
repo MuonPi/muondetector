@@ -416,6 +416,10 @@ void QtSerialUblox::UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate)
 	*/
 }
 
+void QtSerialUblox::onRequestGpsProperties(){
+
+}
+
 void QtSerialUblox::delay(int millisecondsWait)
 {
 	QEventLoop loop;

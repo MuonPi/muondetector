@@ -21,7 +21,7 @@ class Daemon : public QTcpServer
 
 public:
     Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
-        float *new_dacThresh, float new_biasVoltage, bool biasPower, bool new_dumpRaw, int new_baudrate,
+        float *new_dacThresh, float new_biasVoltage, bool bias_ON, bool new_dumpRaw, int new_baudrate,
         bool new_configGnss, QString new_PeerAddress, quint16 new_PpeerPort,
         QString new_serverAddress, quint16 new_serverPort, bool new_showout, bool new_showin, QObject *parent = 0);
 	~Daemon();
@@ -56,11 +56,8 @@ public slots:
 	void gpsPropertyUpdatedGnss(std::vector<GnssSatellite>,
         std::chrono::duration<double> updateAge);
 	void receivedTcpMessage(TcpMessage tcpMessage);
-	void pollAllUbxMsgRate();
-	void sendUbxMsgRates();
-	void sendI2CProperties();
-	void sendGpioPinEvent(uint8_t gpio_pin, uint32_t tick);
-	void setI2CProperties(I2cProperty i2cProperty);
+    void pollAllUbxMsgRate();
+    void sendGpioPinEvent(uint8_t gpio_pin);
 
 signals:
 	void sendTcpMessage(TcpMessage tcpMessage);
@@ -76,26 +73,33 @@ signals:
 
 private:
 	void incomingConnection(qintptr socketDescriptor) override;
-	void pcaSelectTimeMeas(uint8_t channel); // channel 0 to 3
+    void setPcaChannel(uint8_t channel); // channel 0 to 3
 											 // 0: coincidence ; 1: xor ; 2: discr 1 ; 3: discr 2
-    void dacSetThreshold(uint8_t channel, float threshold); // channel 0 or 1 ; threshold in volts
-	MCP4728 *dac;
-	QVector <float> dacThresh;
-	float biasVoltage;
-	bool biasPowerOn = false;
-	ADS1115 *adc;
-    PCA9536 *pca;
-    int pcaPortMask;
-	LM75 *lm75;
+    void sendPcaChannel();
+    void setDacThresh(uint8_t channel, float threshold); // channel 0 or 1 ; threshold in volts
+    void sendDacThresh(uint8_t channel);
+    void setBiasVoltage(float voltage);
+    void sendBiasVoltage();
+    void sendBiasStatus();
+    void setBiasStatus(bool status);
+    void sendUbxMsgRates();
+    void printTimestamp();
+    void delay(int millisecondsWait);
+    MCP4728 *dac = nullptr;
+    ADS1115 *adc = nullptr;
+    PCA9536 *pca = nullptr;
+    LM75 *lm75 = nullptr;
+    float biasVoltage = 0;
+    bool biasON = false;
+    uint8_t pcaPortMask = 0;
+    QVector <float> dacThresh; // do not give values here because of push_back in constructor of deamon
 	TcpConnection * tcpConnection = nullptr;
 	QMap <uint16_t, int> msgRateCfgs;
 	QtSerialUblox *qtGps = nullptr;
+    QTcpServer *tcpServer = nullptr;
 	QString peerAddress;
 	QHostAddress daemonAddress = QHostAddress::Null;
-	quint16 peerPort, daemonPort;
-	QTcpServer *tcpServer;
-	void printTimestamp();
-	void delay(int millisecondsWait);
+    quint16 peerPort, daemonPort;
 	QString gpsdevname;
 	int verbose, baudrate;
 	int gpsTimeout = 5000;

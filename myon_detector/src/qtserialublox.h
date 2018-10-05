@@ -45,6 +45,7 @@ public slots:
 	// all functions that can be called from other classes through signal/slot mechanics
 	void makeConnection();
 	void onReadyRead();
+    void onRequestGpsProperties();
 	void pollMsgRate(uint16_t msgID);
 	void pollMsg(uint16_t msgID);
 	// for polling the port configuration for specific port set rate to port ID

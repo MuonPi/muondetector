@@ -123,7 +123,7 @@ void Daemon::handleSigInt()
 
 // begin of the Daemon class
 Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
-	float* new_dacThresh, float new_biasVoltage, bool biasPower, bool new_dumpRaw, int new_baudrate,
+    float* new_dacThresh, float new_biasVoltage, bool bias_ON, bool new_dumpRaw, int new_baudrate,
 	bool new_configGnss, QString new_peerAddress, quint16 new_peerPort,
 	QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, QObject *parent)
 	: QTcpServer(parent)
@@ -175,10 +175,10 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	dacThresh.push_back(tempThresh[0]);
 	dacThresh.push_back(tempThresh[1]);
 	biasVoltage = new_biasVoltage;
-	biasPowerOn = biasPower;
+    biasON = bias_ON;
     pca = new PCA9536();
     pcaPortMask = new_pcaPortMask;
-    pcaSelectTimeMeas(pcaPortMask);
+    setPcaChannel(pcaPortMask);
 	for (int i = 0; i < 2; i++) {
 		if (dacThresh[i] > 0) {
 			dac->setVoltage(i, dacThresh[i]);
@@ -199,7 +199,7 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	// for separate raspi pin output states
 	wiringPiSetup();
 	pinMode(UBIAS_EN, 1);
-	if (biasPowerOn) {
+    if (biasON) {
 		digitalWrite(UBIAS_EN, 1);
 	}
 	else {
@@ -336,17 +336,51 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 
 // ALL FUNCTIONS ABOUT TCPMESSAGE SENDING AND RECEIVING
 void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
-    if (tcpMessage.getMsgID() == i2cProperties) {
-		I2cProperty i2cProperty;
-        *(tcpMessage.dStream) >> i2cProperty;
-		setI2CProperties(i2cProperty);
+    if (tcpMessage.getMsgID() == threshSig) {
+        uint8_t channel;
+        float threshold;
+        *(tcpMessage.dStream) >> channel >> threshold;
+        setDacThresh(channel, threshold);
+        return;
 	}
-    if (tcpMessage.getMsgID() == i2cRequest) {
-		sendI2CProperties();
-	}
+    if (tcpMessage.getMsgID() == threshRequestSig){
+        sendDacThresh(0);
+        sendDacThresh(1);
+        return;
+    }
+    if (tcpMessage.getMsgID() == biasVoltageSig){
+        float voltage;
+        *(tcpMessage.dStream) >> voltage;
+        setBiasVoltage(voltage);
+        return;
+    }
+    if (tcpMessage.getMsgID() == biasVoltageRequestSig){
+        sendBiasVoltage();
+        return;
+    }
+    if (tcpMessage.getMsgID() == biasSig){
+        bool status;
+        *(tcpMessage.dStream) >> status;
+        setBiasStatus(status);
+        return;
+    }
+    if (tcpMessage.getMsgID() == biasRequestSig){
+        sendBiasStatus();
+    }
     if (tcpMessage.getMsgID() == ubxMsgRateRequest) {
 		sendUbxMsgRates();
+        return;
 	}
+    if (tcpMessage.getMsgID() == pcaChannelSig){
+        quint8 portMask;
+        *(tcpMessage.dStream) >> portMask;
+        setPcaChannel((uint8_t)portMask);
+        return;
+    }
+    if (tcpMessage.getMsgID() == pcaChannelRequestSig){
+        sendPcaChannel();
+        return;
+    }
 }
 
 void Daemon::sendUbxMsgRates() {
@@ -355,24 +389,45 @@ void Daemon::sendUbxMsgRates() {
 	emit sendTcpMessage(tcpMessage);
 }
 
-void Daemon::sendI2CProperties() {
-    I2cProperty i2cProperty(pcaPortMask, dacThresh.at(0), dacThresh.at(1), biasVoltage, biasPowerOn);
-    TcpMessage tcpMessage(i2cProperties);
-    //*(message.dStream) << i2cProperty;
-    *(tcpMessage.dStream) << pcaPortMask << dacThresh.at(0) << dacThresh.at(1) << biasVoltage << biasPowerOn;
+void Daemon::sendDacThresh(uint8_t channel) {
+    if (channel > 1){ return; }
+    TcpMessage tcpMessage(threshSig);
+    *(tcpMessage.dStream) << (quint8)channel << dacThresh[(int)channel];
     emit sendTcpMessage(tcpMessage);
 }
 
-void Daemon::sendGpioPinEvent(uint8_t gpio_pin, uint32_t tick) {
+void Daemon::sendGpioPinEvent(uint8_t gpio_pin) {
 	TcpMessage tcpMessage(gpioPinSig);
-    *(tcpMessage.dStream) << (quint8)gpio_pin << (quint32)tick;
+    *(tcpMessage.dStream) << (quint8)gpio_pin;
 	emit sendTcpMessage(tcpMessage);
 }
 
-// ALL FUNCTIONS ABOUT I2C-DEVICES
-void Daemon::pcaSelectTimeMeas(uint8_t channel) {
+void Daemon::sendBiasVoltage(){
+    TcpMessage tcpMessage(biasVoltageSig);
+    *(tcpMessage.dStream) << biasVoltage;
+    emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::sendBiasStatus(){
+    TcpMessage tcpMessage(biasSig);
+    *(tcpMessage.dStream) << biasON;
+    emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::sendPcaChannel(){
+    TcpMessage tcpMessage(pcaChannelSig);
+    *(tcpMessage.dStream) << (quint8)pcaPortMask;
+    emit sendTcpMessage(tcpMessage);
+}
+
+// ALL FUNCTIONS ABOUT SETTINGS FOR THE I2C-DEVICES (DAC, ADC, PCA...)
+void Daemon::setPcaChannel(uint8_t channel) {
+    pcaPortMask = channel;
+    if (verbose > 1){
+        qDebug() << "change pcaPortMask to " << channel;
+    }
 	if (channel > 3) {
-		cout << "can there is no channel > 3" << endl;
+        cout << "there is no channel > 3" << endl;
 		return;
 	}
 	if (!pca) {
@@ -380,37 +435,43 @@ void Daemon::pcaSelectTimeMeas(uint8_t channel) {
 	}
 	pca->setOutputPorts(channel);
 	pca->setOutputState(channel);
+    sendPcaChannel();
 }
 
-void Daemon::dacSetThreshold(uint8_t channel, float threshold) {
+void Daemon::setBiasVoltage(float voltage) {
+    biasVoltage = voltage;
+    if (verbose > 1){
+        qDebug() << "change biasVoltage to " << voltage;
+    }
+    dac->setVoltage(2, voltage);
+    sendBiasVoltage();
+}
+
+void Daemon::setBiasStatus(bool status){
+    biasON = status;
+    if (verbose > 1){
+        qDebug() << "change biasStatus to " << status;
+    }
+    if (status) {
+        digitalWrite(UBIAS_EN, 1);
+    }
+    else {
+        digitalWrite(UBIAS_EN, 0);
+    }
+    sendBiasStatus();
+}
+
+void Daemon::setDacThresh(uint8_t channel, float threshold) {
+    if (threshold < 0 || channel > 1) { return; }
+    if (threshold > 40.96){
+        threshold = 40.96;
+    }
+    if (verbose > 1){
+        qDebug() << "change dacThresh " << channel << " to " << threshold;
+    }
+    dacThresh[channel] = threshold;
     dac->setVoltage(channel, threshold);
-}
-
-void Daemon::setI2CProperties(I2cProperty i2cProperty) {
-	if (i2cProperty.pcaChann >= 0 && i2cProperty.pcaChann < 8) {
-        pcaPortMask = i2cProperty.pcaChann;
-        pca->setOutputPorts(pcaPortMask);
-	}
-	if (i2cProperty.thresh1 >= 0 && i2cProperty.thresh1 < 4096) {
-		dacThresh[0] = i2cProperty.thresh1;
-		dac->setVoltage(0, dacThresh.at(0));
-	}
-	if (i2cProperty.thresh2 >= 0 && i2cProperty.thresh2 < 4096) {
-		dacThresh[1] = i2cProperty.thresh2;
-		dac->setVoltage(1, dacThresh.at(1));
-	}
-	if (i2cProperty.bias_Voltage >= 0. && i2cProperty.bias_Voltage < 4.) {
-		biasVoltage = i2cProperty.bias_Voltage;
-		dac->setVoltage(2, biasVoltage);
-	}
-	biasPowerOn = i2cProperty.bias_powerOn;
-	if (i2cProperty.bias_powerOn) {
-		digitalWrite(UBIAS_EN, 1);
-	}
-	else {
-		digitalWrite(UBIAS_EN, 0);
-	}
-	sendI2CProperties();
+    sendDacThresh(channel);
 }
 
 // ALL FUNCTIONS ABOUT UBLOX GPS MODULE

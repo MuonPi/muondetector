@@ -33,8 +33,7 @@ SOURCES += src/main.cpp \
     src/pigpiodhandler.cpp \
     src/daemon.cpp \
     src/custom_io_operators.cpp \
-    ../shared/tcpmessage.cpp \
-    ../shared/i2cproperty.cpp
+    ../shared/tcpmessage.cpp
 
 HEADERS += \
     src/gnsssatellite.h \
@@ -55,8 +54,7 @@ HEADERS += \
     ../shared/ublox_messages.h \
     src/custom_io_operators.h \
     ../shared/tcpmessage.h \
-    ../shared/tcpmessage_keys.h \
-    ../shared/i2cproperty.h
+    ../shared/tcpmessage_keys.h
 
 OBJECTS_DIR += created_files
 

@@ -143,53 +143,66 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
 void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
     quint16 msgID = tcpMessage.getMsgID();
 	if (msgID == gpioPinSig) {
-		quint8 gpioPin;
-		quint32 tick;
-        *(tcpMessage.dStream) >> gpioPin >> tick;
-        receivedGpioRisingEdge(gpioPin, tick);
-		return;
+        quint8 gpioPin;
+        *(tcpMessage.dStream) >> gpioPin;
+        receivedGpioRisingEdge(gpioPin);
+        return;
 	}
 	if (msgID == ubxMsgRate) {
 		QMap<uint16_t, int> msgRateCfgs;
         *(tcpMessage.dStream) >> msgRateCfgs;
 		emit addUbxMsgRates(msgRateCfgs);
 		return;
-	}
-	if (msgID == i2cProperties) {
-		I2cProperty i2cProperty;
-        qDebug() << "received i2cProperty message";
-        *(tcpMessage.dStream) >> i2cProperty.pcaChann >> i2cProperty.thresh1 >>
-                i2cProperty.thresh2 >> i2cProperty.bias_Voltage >> i2cProperty.bias_powerOn;
-        qDebug() << "parsing i2cProperty worked";
-		updateI2CProperties(i2cProperty);
-		return;
-	}
+    }
+    if (msgID == threshSig){
+        quint8 channel;
+        float threshold;
+        *(tcpMessage.dStream) >> channel >> threshold;
+        sliderValues[channel] = (quint16)(2000 * threshold);
+        updateUiProperties();
+        return;
+    }
+    if (msgID == biasVoltageSig){
+        *(tcpMessage.dStream) >> biasVoltage;
+        updateUiProperties();
+        return;
+    }
+    if (msgID == biasSig){
+        *(tcpMessage.dStream) >> biasON;
+        updateUiProperties();
+        return;
+    }
+    if (msgID == pcaChannelSig){
+        *(tcpMessage.dStream) >> pcaPortMask;
+        updateUiProperties();
+        return;
+    }
 }
 
-void MainWindow::sendSetI2CProperties(I2cProperty i2cProperty) {
-	TcpMessage tcpMessage(i2cProperties);
-    *(tcpMessage.dStream) << i2cProperty;
-	emit sendTcpMessage(tcpMessage);
-}
-
-void MainWindow::requestI2CProperties() {
-    TcpMessage tcpMessage(i2cRequest);
+void MainWindow::sendRequest(quint16 requestSig){
+    TcpMessage tcpMessage(requestSig);
     emit sendTcpMessage(tcpMessage);
 }
 
-void MainWindow::requestUbxMsgRates() {
-	TcpMessage tcpMessage(ubxMsgRateRequest);
-	emit sendTcpMessage(tcpMessage);
+void MainWindow::sendSetBiasVoltage(float voltage){
+    TcpMessage tcpMessage(biasVoltageSig);
+    *(tcpMessage.dStream) << voltage;
+    emit sendTcpMessage(tcpMessage);
 }
 
-void MainWindow::updateI2CProperties(I2cProperty i2cProperty) {
-	biasPowerOn = i2cProperty.bias_powerOn;
-	QVector<float> dacThresh = { i2cProperty.thresh1, i2cProperty.thresh2 };
-	updateUiProperties(i2cProperty.bias_powerOn, 0, (int)(2000 * dacThresh.at(0)), (int)(2000 * dacThresh.at(1)));
-	// uartBufferValue to be replaced with the correct value
+void MainWindow::sendSetBiasStatus(bool status){
+    TcpMessage tcpMessage(biasSig);
+    *(tcpMessage.dStream) << status;
+    emit sendTcpMessage(tcpMessage);
 }
 
-void MainWindow::receivedGpioRisingEdge(quint8 pin, quint32 tick) {
+void MainWindow::sendSetThresh(uint8_t channel, float value){
+    TcpMessage tcpMessage(threshSig);
+    *(tcpMessage.dStream) << channel << value;
+    emit sendTcpMessage(tcpMessage);
+}
+
+void MainWindow::receivedGpioRisingEdge(quint8 pin) {
 	if (pin == EVT_AND) {
 		ui->ANDHit->setStyleSheet("QLabel {color: white; background-color: darkGreen;}");
 		andTimer.start();
@@ -247,32 +260,26 @@ void MainWindow::uiSetConnectedState() {
 	ui->bufferUsageLabel->setStyleSheet("QLabel {color: black;}");
 }
 
-void MainWindow::updateUiProperties(bool bias_powerOn, int uartBufferValue, int discr1SliderValue,
-	int discr2SliderValue) {
-	mouseHold = true;
-	if (!(uartBufferValue < 0)) {
-		ui->uartBuffer->setEnabled(true);
-		ui->uartBuffer->setValue(uartBufferValue);
-	}
-	if (!(discr1SliderValue < 0)) {
-		ui->discr1Slider->setEnabled(true);
-		ui->discr1Slider->setValue(discr1SliderValue);
-		ui->discr1Edit->setEnabled(true);
-		ui->discr1Edit->setText(QString::number(discr1SliderValue / 2.0) + "mV");
-	}
-	if (!(discr2SliderValue < 0)) {
-		ui->discr2Slider->setEnabled(true);
-		ui->discr2Slider->setValue(discr2SliderValue);
-		ui->discr2Edit->setEnabled(true);
-		ui->discr2Edit->setText(QString::number(discr2SliderValue / 2.0) + "mV");
-	}
+void MainWindow::updateUiProperties() {
+    mouseHold = true;
+
+    ui->discr1Slider->setEnabled(true);
+    ui->discr1Slider->setValue(sliderValues.at(0));
+    ui->discr1Edit->setEnabled(true);
+    ui->discr1Edit->setText(QString::number(sliderValues.at(0) / 2.0) + "mV");
+
+    ui->discr2Slider->setEnabled(true);
+    ui->discr2Slider->setValue(sliderValues.at(1));
+    ui->discr2Edit->setEnabled(true);
+    ui->discr2Edit->setText(QString::number(sliderValues.at(1) / 2.0) + "mV");
+
 	ui->ANDHit->setEnabled(true);
 	ui->ANDHit->setStyleSheet("QLabel {background-color: darkRed; color: white;}");
 	ui->XORHit->setEnabled(true);
 	ui->XORHit->setStyleSheet("QLabel {background-color: darkRed; color: white;}");
 	ui->biasPowerButton->setEnabled(true);
 	ui->biasPowerLabel->setEnabled(true);
-	if (bias_powerOn) {
+    if (biasON) {
 		ui->biasPowerButton->setText("Disable Bias");
 		ui->biasPowerLabel->setText("Bias ON");
 		ui->biasPowerLabel->setStyleSheet("QLabel {background-color: darkGreen; color: white;}");
@@ -287,11 +294,12 @@ void MainWindow::updateUiProperties(bool bias_powerOn, int uartBufferValue, int 
 
 void MainWindow::connected() {
     connectedToDemon = true;
-    qDebug() << "connected";
     saveSettings(QString("ipAddresses.save"), addresses);
-    qDebug() << "saveSettings";
     uiSetConnectedState();
-    requestI2CProperties();
+    sendRequest(biasVoltageRequestSig);
+    sendRequest(biasRequestSig);
+    sendRequest(threshRequestSig);
+    sendRequest(pcaChannelRequestSig);
 }
 
 void MainWindow::on_ipButton_clicked()
@@ -352,12 +360,10 @@ void MainWindow::on_discr1Edit_editingFinished()
 
 void MainWindow::on_discr1Slider_valueChanged(int value)
 {
-	I2cProperty i2cProperty = I2cProperty();
-	i2cProperty.bias_powerOn = biasPowerOn;
-	i2cProperty.thresh1 = (float)(value / 2000.0);
+    float thresh0 = (float)(value / 2000.0);
 	ui->discr1Edit->setText(QString::number((float)value / 2.0) + "mV");
     if (!mouseHold) {
-        sendSetI2CProperties(i2cProperty);
+        sendSetThresh(0, thresh0);
 	}
 }
 
@@ -383,18 +389,16 @@ void MainWindow::on_discr2Edit_editingFinished()
 
 void MainWindow::on_discr2Slider_valueChanged(int value)
 {
-	I2cProperty i2cProperty = I2cProperty();
-	i2cProperty.bias_powerOn = biasPowerOn;
-	i2cProperty.thresh2 = (float)(value / 2000.0);
+    float thresh1 =  (float)(value / 2000.0);
 	ui->discr2Edit->setText(QString::number((float)(value / 2.0)) + "mV");
     if (!mouseHold) {
-        sendSetI2CProperties(i2cProperty);
+        sendSetThresh(1, thresh1);
 	}
 }
 void MainWindow::settings_clicked(bool checked) {
 	Settings *settings = new Settings(this);
     connect(this, &MainWindow::addUbxMsgRates, settings, &Settings::addUbxMsgRates);
-    requestUbxMsgRates();
+    sendRequest(ubxMsgRateRequest);
 	settings->show();
 }
 
@@ -419,7 +423,5 @@ float MainWindow::parseValue(QString text) {
 
 void MainWindow::on_biasPowerButton_clicked()
 {
-	I2cProperty i2cProperty;
-    i2cProperty.bias_powerOn = !biasPowerOn;
-    sendSetI2CProperties(i2cProperty);
+    sendSetBiasStatus(!biasON);
 }

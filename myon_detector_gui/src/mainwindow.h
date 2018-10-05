@@ -25,18 +25,12 @@ signals:
 
 public slots:
 	void receivedTcpMessage(TcpMessage tcpMessage);
-    void receivedGpioRisingEdge(quint8 pin, quint32 tick);
-	void sendSetI2CProperties(I2cProperty i2cProperty);
-	void requestI2CProperties();
-	void requestUbxMsgRates();
+    void receivedGpioRisingEdge(quint8 pin);
 	void stoppedConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort,
 		quint32 timeoutTime, quint32 connectionDuration);
 	void makeConnection(QString ipAddress, quint16 port);
-	void updateI2CProperties(I2cProperty i2cProperty);
 
 private slots:
-	void updateUiProperties(bool bias_powerOn, int uartBufferValue = -1, int discr1SliderValue = -1,
-		int discr2SliderValue = -1);
 	// only those properties with value >= 0 will be updated!
 	void resetAndHit();
 	void resetXorHit();
@@ -68,8 +62,16 @@ private:
 	void uiSetConnectedState();
 	void uiSetDisconnectedState();
 	float parseValue(QString text);
-	int verbose = 0;
-	bool biasPowerOn = false;
+    void sendRequest(quint16 requestSig);
+    void sendSetBiasVoltage(float voltage);
+    void sendSetBiasStatus(bool status);
+    void sendSetThresh(uint8_t channel, float value);
+    void updateUiProperties();
+    int verbose = 0;
+    float biasVoltage = 0;
+    bool biasON, uiValuesUpToDate = false;
+    quint8 pcaPortMask = 0;
+    QVector<quint16> sliderValues = QVector<quint16>({0,0});
 	QErrorMessage errorM;
 	TcpConnection *tcpConnection = nullptr;
 	QStandardItemModel *addresses;

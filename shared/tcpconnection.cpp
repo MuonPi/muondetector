@@ -103,34 +103,40 @@ void TcpConnection::onReadyRead() {
 		emit toConsole("input stream not yet initialized");
 		return;
 	}
-	if (blockSize == 0) {
-		if (tcpSocket->bytesAvailable() < (int)(sizeof(quint16))) {
-			return;
-		}
-        *in >> blockSize;
-	}
-	if (tcpSocket->bytesAvailable() < blockSize) {
-		return;
-	}
-    if (tcpSocket->bytesAvailable() > blockSize) {
-		emit toConsole(QString(QString::number(tcpSocket->bytesAvailable() - blockSize)
-			+ " more Bytes available than expected by blockSize"));
+    while(tcpSocket->bytesAvailable()!=0){
+        if (blockSize == 0) {
+            if (tcpSocket->bytesAvailable() < (int)(sizeof(quint16))) {
+                return;
+            }
+            *in >> blockSize;
+        }
+        if (tcpSocket->bytesAvailable() < blockSize) {
+            return;
+        }
+//        if (tcpSocket->bytesAvailable() > blockSize) {
+//            emit toConsole(QString(QString::number(tcpSocket->bytesAvailable() - blockSize)
+//                + " more Bytes available than expected by blockSize"));
+//        }
+        //qDebug() << "blockSize: " << blockSize;
+        QByteArray block;
+        char data[blockSize];
+        in->readRawData(data,blockSize);
+        QDataStream str(&block,QIODevice::ReadWrite);
+        str << blockSize;
+        str.writeRawData(data,blockSize);
+        //block.setRawData(data,blockSize); // not sure if it works correctly
+        blockSize = 0;
+        //*in >> block;
+        //qDebug() << block.size()-2 << "Bytes read: "; // -2 because "str << blockSize" makes
+                                                      // uint16_t blockSize itself part of block
+        if (verbose > 1){
+            qDebug() << block;
+        }
+
+        TcpMessage tcpMessage(block);
+        emit receivedTcpMessage(tcpMessage);
+        // emit toConsole("something went wrong with the transmission code");
     }
-    QByteArray block;
-    char data[blockSize];
-    in->readRawData(data,blockSize);
-    QDataStream str(&block,QIODevice::ReadWrite);
-    str << blockSize;
-    str.writeRawData(data,blockSize);
-    //block.setRawData(data,blockSize); // not sure if it works correctly
-    blockSize = 0;
-    //*in >> block;
-    qDebug() << "Bytes read:";
-    qDebug() << block.size();
-    qDebug() << block;
-	TcpMessage tcpMessage(block);
-	emit receivedTcpMessage(tcpMessage);
-	// emit toConsole("something went wrong with the transmission code");
 }
 
 bool TcpConnection::sendTcpMessage(TcpMessage tcpMessage) {
@@ -139,6 +145,9 @@ bool TcpConnection::sendTcpMessage(TcpMessage tcpMessage) {
     QDataStream stream(&block, QIODevice::ReadWrite);
     stream.device()->seek(0);
     stream << (quint16)(block.size() - (int)sizeof(quint16)); // size of payload
+    if (verbose > 1){
+        qDebug() << block;
+    }
     return writeBlock(block);
 }
 
