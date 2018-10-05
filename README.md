@@ -1,5 +1,5 @@
 # myon_detector
-software for a raspberry pi based myon detector system using a ublox gps module for timing.
+software for a [raspberry pi based myon detector system](https://balu.physik.uni-giessen.de:8081/mediawiki/index.php) using a ublox gps module for timing.
 
 Final goal:
 A software solution that can use a Raspberry Pi mini computer and the Ublox m8 gps modules "timemark" feature together with 
