@@ -9,6 +9,7 @@
 #include <qtserialublox.h>
 #include <i2c/i2cdevices.h>
 #include <QSocketNotifier>
+#include <pigpiodhandler.h>
 
 // for sig handling:
 #include <sys/types.h>
@@ -83,6 +84,7 @@ private:
     void sendBiasStatus();
     void setBiasStatus(bool status);
     void sendUbxMsgRates();
+    void sendGpioRate(quint8 whichRate);
     void printTimestamp();
     void delay(int millisecondsWait);
     MCP4728 *dac = nullptr;
@@ -93,7 +95,8 @@ private:
     bool biasON = false;
     uint8_t pcaPortMask = 0;
     QVector <float> dacThresh; // do not give values here because of push_back in constructor of deamon
-	TcpConnection * tcpConnection = nullptr;
+    PigpiodHandler *pigHandler = nullptr;
+    TcpConnection *tcpConnection = nullptr;
 	QMap <uint16_t, int> msgRateCfgs;
 	QtSerialUblox *qtGps = nullptr;
     QTcpServer *tcpServer = nullptr;

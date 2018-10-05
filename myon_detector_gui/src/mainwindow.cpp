@@ -41,13 +41,21 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->ipButton->installEventFilter(this);
 
 	// set timer for and/xor label color change after hit
-	int timerInterval = 80; // in msec
+    int timerInterval = 100; // in msec
 	andTimer.setSingleShot(true);
 	xorTimer.setSingleShot(true);
 	andTimer.setInterval(timerInterval);
 	xorTimer.setInterval(timerInterval);
 	connect(&andTimer, &QTimer::timeout, this, &MainWindow::resetAndHit);
 	connect(&xorTimer, &QTimer::timeout, this, &MainWindow::resetXorHit);
+
+    // set timer for automatic rate poll
+    if (automaticRatePoll){
+        ratePollTimer.setInterval(1000);
+        ratePollTimer.setSingleShot(false);
+        connect(&ratePollTimer, &QTimer::timeout, this, &MainWindow::requestRate);
+        ratePollTimer.start();
+    }
 
 	// set menu bar actions
 	connect(ui->actionsettings, &QAction::triggered, this, &MainWindow::settings_clicked);
@@ -177,6 +185,14 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         updateUiProperties();
         return;
     }
+    if (msgID == gpioRateSig){
+        quint8 whichRate;
+        float rate;
+        *(tcpMessage.dStream) >> whichRate >> rate;
+        qDebug() << whichRate <<" rate: " << rate;
+        updateUiProperties();
+        return;
+    }
 }
 
 void MainWindow::sendRequest(quint16 requestSig){
@@ -199,6 +215,13 @@ void MainWindow::sendSetBiasStatus(bool status){
 void MainWindow::sendSetThresh(uint8_t channel, float value){
     TcpMessage tcpMessage(threshSig);
     *(tcpMessage.dStream) << channel << value;
+    emit sendTcpMessage(tcpMessage);
+}
+
+void MainWindow::requestRate(){
+    quint8 whichRate = 0;
+    TcpMessage tcpMessage(gpioRateRequestSig);
+    *(tcpMessage.dStream) << whichRate;
     emit sendTcpMessage(tcpMessage);
 }
 

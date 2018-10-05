@@ -34,6 +34,7 @@ private slots:
 	// only those properties with value >= 0 will be updated!
 	void resetAndHit();
 	void resetXorHit();
+    void requestRate();
 	void on_ipButton_clicked();
 	void connected();
 
@@ -81,7 +82,8 @@ private:
 	bool eventFilter(QObject *object, QEvent *event);
 	bool connectedToDemon = false;
 	bool mouseHold = false;
-	QTimer andTimer, xorTimer;
+    bool automaticRatePoll = true;
+    QTimer andTimer, xorTimer, ratePollTimer;
 };
 
 #endif // MAINWINDOW_H

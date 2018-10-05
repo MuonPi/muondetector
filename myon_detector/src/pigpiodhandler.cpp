@@ -12,6 +12,11 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
 {
 	lastAndTime.start();
 	lastXorTime.start();
+    for (quint64 i = 0; i < bufferMsecs/bufferResolution; i++){
+        xorCounts.push_back(0);
+        andCounts.push_back(0);
+    }
+    startOfProgram = QTime::currentTime();
 	pi = pigpio_start((char*)"127.0.0.1", (char*)"8888");
 	if (pi < 0) {
 		this->deleteLater();
@@ -36,8 +41,39 @@ void PigpiodHandler::stop() {
 }
 void PigpiodHandler::sendSignal(unsigned int gpio_pin, uint32_t tick) {
 	if (gpio_pin < 256) {
-		emit signal((uint8_t)gpio_pin, tick);
+        emit signal((uint8_t)gpio_pin);
 	}
+}
+float PigpiodHandler::getRate(uint8_t whichRate){
+    bufferIntervalActualisation();
+    float someRate;
+    quint64 counts = 0;
+    if (whichRate==XOR_RATE){
+        for (auto someCounts : xorCounts){
+            counts += someCounts;
+        }
+    }
+    if (whichRate==AND_RATE){
+        for (auto someCounts : andCounts){
+            counts += someCounts;
+        }
+    }
+    if (whichRate==COMBINED_RATE){
+        for (auto someCounts : xorCounts){
+            counts += someCounts;
+        }
+    }
+    someRate = counts*1000.0/(bufferMsecs-bufferResolution+lastInterval.msecsTo(QTime::currentTime()));
+    return someRate;
+}
+void PigpiodHandler::bufferIntervalActualisation(){
+    while (lastInterval.msecsTo(QTime::currentTime()) > bufferResolution){
+        andCounts.pop_back();
+        andCounts.push_front(0);
+        xorCounts.pop_back();
+        xorCounts.push_front(0);
+        lastInterval = lastInterval.addMSecs(bufferResolution);
+    }
 }
 void cbFunction(int user_pi, unsigned int user_gpio,
 	unsigned int level, uint32_t tick) {
@@ -45,8 +81,10 @@ void cbFunction(int user_pi, unsigned int user_gpio,
 		return;
 	}
 	PigpiodHandler* pigpioHandler = pigHandlerAddress;
+    pigpioHandler->bufferIntervalActualisation();
 	if (user_gpio == EVT_AND) {
-		if (pigpioHandler->lastAndTime.elapsed() < 40) {
+        pigpioHandler->andCounts.head()++;
+        if (pigpioHandler->lastAndTime.elapsed() < 30) {
 			return;
 		}
 		else {
@@ -54,7 +92,8 @@ void cbFunction(int user_pi, unsigned int user_gpio,
 		}
 	}
 	if (user_gpio == EVT_XOR) {
-		if (pigpioHandler->lastXorTime.elapsed() < 40) {
+        pigpioHandler->xorCounts.head()++;
+        if (pigpioHandler->lastXorTime.elapsed() < 30) {
 			return;
 		}
 		else {

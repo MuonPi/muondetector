@@ -37,7 +37,7 @@ void TcpConnection::makeConnection()
 // (TcpConnection runs in a separate thread only communicating with main thread through messages)
 {
 	if (verbose > 4) {
-		emit toConsole(QString("client tcpConnection running in thread " + QString("0x%1").arg((int)this->thread())));
+        emit toConsole(QString("client tcpConnection running in thread " + QString("0x%1").arg((intptr_t)this->thread())));
 	}
 	tcpSocket = new QTcpSocket(this);
 	in = new QDataStream();
@@ -65,7 +65,7 @@ void TcpConnection::receiveConnection()
 {   // setting up tcpSocket.
 	// only done once
 	if (verbose > 4) {
-		emit toConsole(QString("client tcpConnection running in thread " + QString("0x%1").arg((int)this->thread())));
+        emit toConsole(QString("client tcpConnection running in thread " + QString("0x%1").arg((intptr_t)this->thread())));
 	}
 	tcpSocket = new QTcpSocket(this);
 	if (!tcpSocket->setSocketDescriptor(socketDescriptor)) {
@@ -87,7 +87,7 @@ void TcpConnection::receiveConnection()
 		firstConnection = time(NULL);
 		lastConnection = firstConnection;
 		emit madeConnection(peerAddress->toString(), peerPort, localAddress->toString(), localPort);
-	}
+    }
 	//startTimePulser();
 }
 

@@ -3,7 +3,6 @@
 #include <QThread>
 #include <QNetworkInterface>
 #include <daemon.h>
-#include <pigpiodhandler.h>
 #include <gpio_pin_definitions.h>
 #include <ublox_messages.h>
 #include <tcpmessage_keys.h>
@@ -129,6 +128,8 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	: QTcpServer(parent)
 {
     qRegisterMetaType<TcpMessage>("TcpMessage");
+    qRegisterMetaType<int32_t>("int32_t");
+    qRegisterMetaType<uint32_t>("uint32_t");
     qRegisterMetaType<uint16_t>("uint16_t");
     qRegisterMetaType<uint8_t>("uint8_t");
     // signal handling
@@ -156,12 +157,12 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	// general
 	verbose = new_verbose;
 	if (verbose > 4) {
-		cout << "daemon running in thread " << QString("0x%1").arg((int)this->thread()) << endl;
+        cout << "daemon running in thread " << QString("0x%1").arg((intptr_t)this->thread()) << endl;
 	}
 
 	// for pigpio signals:
 	const QVector<unsigned int> gpio_pins({ EVT_AND, EVT_XOR });
-	PigpiodHandler* pigHandler = new PigpiodHandler(gpio_pins, this);
+    pigHandler = new PigpiodHandler(gpio_pins, this);
 	if (pigHandler != nullptr) {
         connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
         connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
@@ -336,50 +337,56 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 
 // ALL FUNCTIONS ABOUT TCPMESSAGE SENDING AND RECEIVING
 void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
-    if (tcpMessage.getMsgID() == threshSig) {
+    quint16 msgID = tcpMessage.getMsgID();
+    if (msgID == threshSig) {
         uint8_t channel;
         float threshold;
         *(tcpMessage.dStream) >> channel >> threshold;
         setDacThresh(channel, threshold);
         return;
 	}
-    if (tcpMessage.getMsgID() == threshRequestSig){
+    if (msgID == threshRequestSig){
         sendDacThresh(0);
         sendDacThresh(1);
         return;
     }
-    if (tcpMessage.getMsgID() == biasVoltageSig){
+    if (msgID == biasVoltageSig){
         float voltage;
         *(tcpMessage.dStream) >> voltage;
         setBiasVoltage(voltage);
         return;
     }
-    if (tcpMessage.getMsgID() == biasVoltageRequestSig){
+    if (msgID == biasVoltageRequestSig){
         sendBiasVoltage();
         return;
     }
-    if (tcpMessage.getMsgID() == biasSig){
+    if (msgID == biasSig){
         bool status;
         *(tcpMessage.dStream) >> status;
         setBiasStatus(status);
         return;
     }
-    if (tcpMessage.getMsgID() == biasRequestSig){
+    if (msgID == biasRequestSig){
         sendBiasStatus();
     }
-    if (tcpMessage.getMsgID() == ubxMsgRateRequest) {
+    if (msgID == ubxMsgRateRequest) {
 		sendUbxMsgRates();
         return;
 	}
-    if (tcpMessage.getMsgID() == pcaChannelSig){
+    if (msgID == pcaChannelSig){
         quint8 portMask;
         *(tcpMessage.dStream) >> portMask;
         setPcaChannel((uint8_t)portMask);
         return;
     }
-    if (tcpMessage.getMsgID() == pcaChannelRequestSig){
+    if (msgID == pcaChannelRequestSig){
         sendPcaChannel();
         return;
+    }
+    if (msgID == gpioRateRequestSig){
+        quint8 whichRate;
+        *(tcpMessage.dStream) >> whichRate;
+        sendGpioRate(whichRate);
     }
 }
 
@@ -417,6 +424,15 @@ void Daemon::sendBiasStatus(){
 void Daemon::sendPcaChannel(){
     TcpMessage tcpMessage(pcaChannelSig);
     *(tcpMessage.dStream) << (quint8)pcaPortMask;
+    emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::sendGpioRate(quint8 whichRate){
+    if (pigHandler==nullptr){
+        return;
+    }
+    TcpMessage tcpMessage(gpioRateSig);
+    *(tcpMessage.dStream) << whichRate << pigHandler->getRate(whichRate);
     emit sendTcpMessage(tcpMessage);
 }
 
