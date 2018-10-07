@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>475</width>
-    <height>302</height>
+    <width>518</width>
+    <height>377</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -31,15 +31,39 @@
   <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
+     <property name="sizeConstraint">
+      <enum>QLayout::SetMinimumSize</enum>
+     </property>
      <item>
       <widget class="QLabel" name="label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+         <horstretch>200</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>200</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="baseSize">
+        <size>
+         <width>200</width>
+         <height>0</height>
+        </size>
+       </property>
        <property name="text">
         <string>Ublox signal settings</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QListWidget" name="ubloxSignalStates">
+      <widget class="QTableWidget" name="ubloxSignalStates">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
          <horstretch>0</horstretch>
@@ -48,14 +72,20 @@
        </property>
        <property name="minimumSize">
         <size>
-         <width>240</width>
+         <width>260</width>
+         <height>200</height>
+        </size>
+       </property>
+       <property name="sizeIncrement">
+        <size>
+         <width>0</width>
          <height>0</height>
         </size>
        </property>
        <property name="baseSize">
         <size>
-         <width>240</width>
-         <height>0</height>
+         <width>320</width>
+         <height>200</height>
         </size>
        </property>
       </widget>

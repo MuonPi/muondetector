@@ -83,6 +83,7 @@ private:
     void sendBiasVoltage();
     void sendBiasStatus();
     void setBiasStatus(bool status);
+    void setUbxMsgRates(QMap<uint16_t,int>& ubxMsgRates);
     void sendUbxMsgRates();
     void sendGpioRate(quint8 whichRate);
     void printTimestamp();

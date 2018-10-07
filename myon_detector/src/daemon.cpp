@@ -373,6 +373,11 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
 		sendUbxMsgRates();
         return;
 	}
+    if (msgID == ubxMsgRate){
+        QMap<uint16_t, int> ubxMsgRates;
+        *(tcpMessage.dStream) >> ubxMsgRates;
+        setUbxMsgRates(ubxMsgRates);
+    }
     if (msgID == pcaChannelSig){
         quint8 portMask;
         *(tcpMessage.dStream) >> portMask;
@@ -491,6 +496,12 @@ void Daemon::setDacThresh(uint8_t channel, float threshold) {
     pigHandler->resetBuffer();
     dac->setVoltage(channel, threshold);
     sendDacThresh(channel);
+}
+
+void Daemon::setUbxMsgRates(QMap<uint16_t, int>& ubxMsgRates){
+    for (QMap<uint16_t, int>::iterator it = ubxMsgRates.begin(); it != ubxMsgRates.end(); it++) {
+        emit UBXSetCfgMsgRate(it.key(),1,it.value());
+    }
 }
 
 // ALL FUNCTIONS ABOUT UBLOX GPS MODULE

@@ -2,12 +2,12 @@
 #define SETTINGS_H
 
 #include <QDialog>
-#include <QListWidget>
+#include <QTableWidget>
 
-class UbxMsgRateListItem : public QListWidgetItem
+class UbxMsgRateTableItem : public QTableWidgetItem
 {
 public:
-	using QListWidgetItem::QListWidgetItem;
+    using QTableWidgetItem::QTableWidgetItem;
 	uint16_t key;
 	int rate;
 	QString name;
@@ -24,14 +24,17 @@ public:
 	explicit Settings(QWidget *parent = nullptr);
 
 signals:
+    void sendSetUbxMsgRateChanges(QMap<uint16_t, int> ubxMsgRateChanges);
 
 public slots:
 	void addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates);
+    void onItemChanged(QTableWidgetItem *item);
 private slots:
     void on_buttonBox_accepted();
 
 private:
-	Ui::Settings *settingsUi;
+    Ui::Settings *settingsUi;
+    QMap<uint16_t, int> oldSettings;
 };
 
 #endif // SETTINGS_H

@@ -225,6 +225,12 @@ void MainWindow::sendSetThresh(uint8_t channel, float value){
     emit sendTcpMessage(tcpMessage);
 }
 
+void MainWindow::sendSetUbxMsgRateChanges(QMap<uint16_t, int> changes){
+    TcpMessage tcpMessage(ubxMsgRate);
+    *(tcpMessage.dStream) << changes;
+    emit sendTcpMessage(tcpMessage);
+}
+
 void MainWindow::requestRates(){
     quint8 whichRate = 0;
     TcpMessage xorRateRequest(gpioRateRequestSig);
@@ -432,6 +438,7 @@ void MainWindow::on_discr2Slider_valueChanged(int value)
 void MainWindow::settings_clicked(bool checked) {
 	Settings *settings = new Settings(this);
     connect(this, &MainWindow::addUbxMsgRates, settings, &Settings::addUbxMsgRates);
+    connect(settings, &Settings::sendSetUbxMsgRateChanges, this, &MainWindow::sendSetUbxMsgRateChanges);
     sendRequest(ubxMsgRateRequest);
 	settings->show();
 }
