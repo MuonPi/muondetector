@@ -26,8 +26,6 @@ signals:
 public slots:
 	void receivedTcpMessage(TcpMessage tcpMessage);
     void receivedGpioRisingEdge(quint8 pin);
-	void stoppedConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort,
-		quint32 timeoutTime, quint32 connectionDuration);
 	void makeConnection(QString ipAddress, quint16 port);
 
 private slots:

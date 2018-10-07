@@ -1,4 +1,5 @@
 #include <tcpconnection.h>
+#include <tcpmessage_keys.h>
 #include <QtNetwork>
 #include <iostream>
 #include <QDataStream>
@@ -92,8 +93,9 @@ void TcpConnection::receiveConnection()
 }
 
 void TcpConnection::closeConnection() {
-	//sendCode(quitConnection);
-	this->thread()->quit();
+    TcpMessage quitMessage(quitConnectionSig);
+    sendTcpMessage(quitMessage);
+    this->thread()->quit();
 	return;
 }
 
@@ -169,8 +171,10 @@ bool TcpConnection::writeBlock(const QByteArray &block) {
 			delay(100);
 		}
 	}
-	emit toConsole("tcp unconnected state before wait for bytes written, closing connection");
-	this->thread()->quit();
+    if (verbose > 0){
+        emit toConsole("tcp unconnected state before wait for bytes written, closing connection");
+    }
+    this->thread()->quit();
 	return false;
 }
 

@@ -21,18 +21,22 @@ public:
 		QObject *parent = nullptr);
     void bufferIntervalActualisation();
     QQueue<int> xorCounts, andCounts;
+    // can't make it private because of access of PigpiodHandler with global pointer
     QTime lastAndTime, lastXorTime, startOfProgram, lastInterval;
-
+    float getRate(quint8 whichRate);
+    void resetBuffer();
+    void setBufferTime(int msecs);
+    void setBufferResolution(int msecs);
+    int getCurrentBufferTime();
 signals:
     void signal(uint8_t gpio_pin);
 
 public slots:
     void sendSignal(unsigned int gpio_pin, uint32_t tick);
-    float getRate(quint8 whichRate);
 	void stop();
 private:
     //quint64 xorCounts, andCounts;
-    int bufferMsecs = 1000*120; // 2 minutes
+    int bufferMsecs = 1000*120; // 10 seconds
     int bufferResolution = 500; // 500 msecs resolution
 };
 

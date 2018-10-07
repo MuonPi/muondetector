@@ -460,6 +460,7 @@ void Daemon::setBiasVoltage(float voltage) {
         qDebug() << "change biasVoltage to " << voltage;
     }
     dac->setVoltage(2, voltage);
+    pigHandler->resetBuffer();
     sendBiasVoltage();
 }
 
@@ -474,6 +475,7 @@ void Daemon::setBiasStatus(bool status){
     else {
         digitalWrite(UBIAS_EN, 0);
     }
+    pigHandler->resetBuffer();
     sendBiasStatus();
 }
 
@@ -486,6 +488,7 @@ void Daemon::setDacThresh(uint8_t channel, float threshold) {
         qDebug() << "change dacThresh " << channel << " to " << threshold;
     }
     dacThresh[channel] = threshold;
+    pigHandler->resetBuffer();
     dac->setVoltage(channel, threshold);
     sendDacThresh(channel);
 }

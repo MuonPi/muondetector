@@ -80,17 +80,10 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
 	connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
 	connect(tcpThread, &QThread::finished, tcpThread, &QThread::deleteLater);
 	connect(tcpConnection, &TcpConnection::connected, this, &MainWindow::connected);
-	connect(this, &MainWindow::closeConnection, tcpConnection, &TcpConnection::closeConnection);
-    connect(tcpConnection, &TcpConnection::stoppedConnection, this, &MainWindow::stoppedConnection);
+    connect(this, &MainWindow::closeConnection, tcpConnection, &TcpConnection::closeConnection);
     connect(this, &MainWindow::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
     connect(tcpConnection, &TcpConnection::receivedTcpMessage, this, &MainWindow::receivedTcpMessage);
 	tcpThread->start();
-}
-
-void MainWindow::stoppedConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort,
-	quint32 timeoutTime, quint32 connectionDuration) {
-    connectedToDemon = false;
-	uiSetDisconnectedState();
 }
 
 bool MainWindow::saveSettings(QString fileName, QStandardItemModel *model) {
@@ -192,6 +185,10 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         qDebug() << whichRate <<" rate: " << rate;
         updateUiProperties();
         return;
+    }
+    if (msgID == quitConnectionSig){
+        connectedToDemon = false;
+        uiSetDisconnectedState();
     }
 }
 

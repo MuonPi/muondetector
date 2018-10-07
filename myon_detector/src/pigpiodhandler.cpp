@@ -11,12 +11,10 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
 	: QObject(parent)
 {
 	lastAndTime.start();
-	lastXorTime.start();
-    for (quint64 i = 0; i < bufferMsecs/bufferResolution; i++){
-        xorCounts.push_back(0);
-        andCounts.push_back(0);
-    }
-    startOfProgram = QTime::currentTime();
+    lastXorTime.start();
+    lastInterval = QTime::currentTime();
+    andCounts.push_front(0);
+    xorCounts.push_front(0);
 	pi = pigpio_start((char*)"127.0.0.1", (char*)"8888");
 	if (pi < 0) {
 		this->deleteLater();
@@ -44,33 +42,68 @@ void PigpiodHandler::sendSignal(unsigned int gpio_pin, uint32_t tick) {
         emit signal((uint8_t)gpio_pin);
 	}
 }
+void PigpiodHandler::resetBuffer(){
+    lastInterval = QTime::currentTime();
+    andCounts.clear();
+    andCounts.push_front(0);
+    xorCounts.clear();
+    xorCounts.push_front(0);
+}
+void PigpiodHandler::setBufferTime(int msecs){
+    bufferMsecs = msecs;
+    resetBuffer();
+}
+void PigpiodHandler::setBufferResolution(int msecs){
+    bufferResolution = msecs;
+    resetBuffer();
+}
+int PigpiodHandler::getCurrentBufferTime(){
+    // returns the time in msecs that the buffer had time to build up since last reset
+    // up to a maximum of 'bufferMsecs' defined in pigpiodhandler.h or set by 'setBufferTime(int msecs)'
+    int numberOfEntries = xorCounts.size();
+    if (numberOfEntries != andCounts.size()){
+        qDebug() << "error: size of xorCounts and andCounts are not same... this should not happen!";
+    }
+    return (numberOfEntries*bufferResolution-bufferResolution+lastInterval.msecsTo(QTime::currentTime()));
+}
 float PigpiodHandler::getRate(uint8_t whichRate){
     bufferIntervalActualisation();
     float someRate;
     quint64 counts = 0;
-    if (whichRate==XOR_RATE){
+    if (whichRate==XOR_RATE || whichRate==COMBINED_RATE){
         for (auto someCounts : xorCounts){
             counts += someCounts;
         }
     }
-    if (whichRate==AND_RATE){
+    if (whichRate==AND_RATE || whichRate==COMBINED_RATE){
         for (auto someCounts : andCounts){
             counts += someCounts;
         }
     }
-    if (whichRate==COMBINED_RATE){
-        for (auto someCounts : xorCounts){
-            counts += someCounts;
-        }
-    }
-    someRate = counts*1000.0/(bufferMsecs-bufferResolution+lastInterval.msecsTo(QTime::currentTime()));
+    someRate = (float)counts*1000.0/((float)getCurrentBufferTime());
+    // this rate should be accurate although we may have to check if it makes sense
+    // we also have to consider using another way of time measurement since in this way
+    // we get a problem if the last event is more than 24 Hours from currentTime
     return someRate;
 }
 void PigpiodHandler::bufferIntervalActualisation(){
+    if (lastInterval.msecsTo(QTime::currentTime())<0){
+        // indication of one day lapsed...
+        // dump all rate information and start again!
+        resetBuffer();
+    }
     while (lastInterval.msecsTo(QTime::currentTime()) > bufferResolution){
-        andCounts.pop_back();
+        if (andCounts.isEmpty() || xorCounts.isEmpty()){
+            qDebug() << "error, queue is empty. This should never happen";
+            return;
+        }
+        if (andCounts.size()>=bufferMsecs/bufferResolution){
+            andCounts.pop_back();
+        }
         andCounts.push_front(0);
-        xorCounts.pop_back();
+        if (xorCounts.size()>=bufferMsecs/bufferResolution){
+            xorCounts.pop_back();
+        }
         xorCounts.push_front(0);
         lastInterval = lastInterval.addMSecs(bufferResolution);
     }
@@ -83,7 +116,9 @@ void cbFunction(int user_pi, unsigned int user_gpio,
 	PigpiodHandler* pigpioHandler = pigHandlerAddress;
     pigpioHandler->bufferIntervalActualisation();
 	if (user_gpio == EVT_AND) {
-        pigpioHandler->andCounts.head()++;
+        if (!pigpioHandler->andCounts.isEmpty()){
+            pigpioHandler->andCounts.head()++;
+        }
         if (pigpioHandler->lastAndTime.elapsed() < 30) {
 			return;
 		}
@@ -92,7 +127,9 @@ void cbFunction(int user_pi, unsigned int user_gpio,
 		}
 	}
 	if (user_gpio == EVT_XOR) {
-        pigpioHandler->xorCounts.head()++;
+        if (!pigpioHandler->xorCounts.isEmpty()){
+            pigpioHandler->xorCounts.head()++;
+        }
         if (pigpioHandler->lastXorTime.elapsed() < 30) {
 			return;
 		}
