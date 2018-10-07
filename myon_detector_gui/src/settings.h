@@ -27,6 +27,9 @@ signals:
 
 public slots:
 	void addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates);
+private slots:
+    void on_buttonBox_accepted();
+
 private:
 	Ui::Settings *settingsUi;
 };

@@ -5,7 +5,7 @@
 Settings::Settings(QWidget *parent) : QDialog(parent),
 settingsUi(new Ui::Settings)
 {
-	settingsUi->setupUi(this);
+    settingsUi->setupUi(this);
 }
 
 void Settings::addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates) {
@@ -20,4 +20,9 @@ void Settings::addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates) {
 		item->setText(QString(QString::number(item->rate).rightJustified(3, '0') + " " + item->name));
 		settingsUi->ubloxSignalStates->addItem(item);
 	}
+}
+
+void Settings::on_buttonBox_accepted()
+{
+
 }

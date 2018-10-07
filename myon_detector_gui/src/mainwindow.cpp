@@ -22,6 +22,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	// initialise all ui elements that will be inactive at start
 	uiSetDisconnectedState();
+    setMaxThreshVoltage(1.0);
 
     // setup ipBox and load addresses etc.
     addresses = new QStandardItemModel(this);
@@ -51,9 +52,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // set timer for automatic rate poll
     if (automaticRatePoll){
-        ratePollTimer.setInterval(1000);
+        ratePollTimer.setInterval(3000);
         ratePollTimer.setSingleShot(false);
-        connect(&ratePollTimer, &QTimer::timeout, this, &MainWindow::requestRate);
+        connect(&ratePollTimer, &QTimer::timeout, this, &MainWindow::requestRates);
         ratePollTimer.start();
     }
 
@@ -159,7 +160,11 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         quint8 channel;
         float threshold;
         *(tcpMessage.dStream) >> channel >> threshold;
-        sliderValues[channel] = (quint16)(2000 * threshold);
+        if (threshold > maxThreshVoltage){
+            sendSetThresh(channel,maxThreshVoltage);
+            return;
+        }
+        sliderValues[channel] = (int)(2000 * threshold);
         updateUiProperties();
         return;
     }
@@ -182,7 +187,12 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         quint8 whichRate;
         float rate;
         *(tcpMessage.dStream) >> whichRate >> rate;
-        qDebug() << whichRate <<" rate: " << rate;
+        if (whichRate == 0){
+            ui->rate1->setText(QString::number(rate,'g',3)+"/s");
+        }
+        if (whichRate == 1){
+            ui->rate2->setText(QString::number(rate,'g',3)+"/s");
+        }
         updateUiProperties();
         return;
     }
@@ -215,11 +225,15 @@ void MainWindow::sendSetThresh(uint8_t channel, float value){
     emit sendTcpMessage(tcpMessage);
 }
 
-void MainWindow::requestRate(){
+void MainWindow::requestRates(){
     quint8 whichRate = 0;
-    TcpMessage tcpMessage(gpioRateRequestSig);
-    *(tcpMessage.dStream) << whichRate;
-    emit sendTcpMessage(tcpMessage);
+    TcpMessage xorRateRequest(gpioRateRequestSig);
+    *(xorRateRequest.dStream) << whichRate;
+    emit sendTcpMessage(xorRateRequest);
+    whichRate = 1;
+    TcpMessage andRateRequest(gpioRateRequestSig);
+    *(andRateRequest.dStream) << whichRate;
+    emit sendTcpMessage(andRateRequest);
 }
 
 void MainWindow::receivedGpioRisingEdge(quint8 pin) {
@@ -247,11 +261,8 @@ void MainWindow::uiSetDisconnectedState() {
 	ui->ipButton->setText("connect");
 	ui->ipBox->setEnabled(true);
 	// disable all relevant objects
-	ui->uartBuffer->setValue(0);
-	ui->uartBuffer->setDisabled(true);
 	ui->discr1Label->setStyleSheet("QLabel {color: darkGray;}");
 	ui->discr2Label->setStyleSheet("QLabel {color: darkGray;}");
-	ui->bufferUsageLabel->setStyleSheet("QLabel {color: darkGray;}");
 	ui->discr1Slider->setValue(0);
 	ui->discr1Slider->setDisabled(true);
 	ui->discr1Edit->clear();
@@ -263,7 +274,9 @@ void MainWindow::uiSetDisconnectedState() {
 	ui->ANDHit->setDisabled(true);
 	ui->ANDHit->setStyleSheet("QLabel {color: darkGray;}");
 	ui->XORHit->setDisabled(true);
-	ui->XORHit->setStyleSheet("QLabel {color: darkGray;}");
+    ui->XORHit->setStyleSheet("QLabel {color: darkGray;}");
+    ui->rate1->setDisabled(true);
+    ui->rate2->setDisabled(true);
 	ui->biasPowerLabel->setDisabled(true);
 	ui->biasPowerLabel->setStyleSheet("QLabel {color: darkGray;}");
 	ui->biasPowerButton->setDisabled(true);
@@ -277,7 +290,6 @@ void MainWindow::uiSetConnectedState() {
 	ui->ipBox->setDisabled(true);
 	ui->discr1Label->setStyleSheet("QLabel {color: black;}");
 	ui->discr2Label->setStyleSheet("QLabel {color: black;}");
-	ui->bufferUsageLabel->setStyleSheet("QLabel {color: black;}");
 }
 
 void MainWindow::updateUiProperties() {
@@ -297,6 +309,8 @@ void MainWindow::updateUiProperties() {
 	ui->ANDHit->setStyleSheet("QLabel {background-color: darkRed; color: white;}");
 	ui->XORHit->setEnabled(true);
 	ui->XORHit->setStyleSheet("QLabel {background-color: darkRed; color: white;}");
+    ui->rate1->setEnabled(true);
+    ui->rate2->setEnabled(true);
 	ui->biasPowerButton->setEnabled(true);
 	ui->biasPowerLabel->setEnabled(true);
     if (biasON) {
@@ -421,7 +435,21 @@ void MainWindow::settings_clicked(bool checked) {
     sendRequest(ubxMsgRateRequest);
 	settings->show();
 }
-
+void MainWindow::setMaxThreshVoltage(float voltage){
+    // we have 0.5 mV resolution so we have (int)(mVolts)*2 steps on the slider
+    // the '+0.5' is to round up or down like in mathematics
+    maxThreshVoltage = voltage;
+    int maximum = (int)(voltage*2000+0.5);
+    ui->discr1Slider->setMaximum(maximum);
+    ui->discr2Slider->setMaximum(maximum);
+    int bigger = (sliderValues.at(0)>sliderValues.at(1))?0:1;
+    if( sliderValues.at(bigger) > maximum){
+        sendSetThresh(bigger,voltage);
+        if (sliderValues.at(!bigger) > maximum){
+            sendSetThresh(!bigger,voltage);
+        }
+    }
+}
 float MainWindow::parseValue(QString text) {
 	// ignores everything that is not a number or at least most of it
 	QRegExp alphabetical = QRegExp("[a-z]+[A-Z]+");

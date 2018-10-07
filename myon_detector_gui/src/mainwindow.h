@@ -32,7 +32,7 @@ private slots:
 	// only those properties with value >= 0 will be updated!
 	void resetAndHit();
 	void resetXorHit();
-    void requestRate();
+    void requestRates();
 	void on_ipButton_clicked();
 	void connected();
 
@@ -65,12 +65,14 @@ private:
     void sendSetBiasVoltage(float voltage);
     void sendSetBiasStatus(bool status);
     void sendSetThresh(uint8_t channel, float value);
+    void setMaxThreshVoltage(float voltage);
     void updateUiProperties();
     int verbose = 0;
     float biasVoltage = 0;
     bool biasON, uiValuesUpToDate = false;
     quint8 pcaPortMask = 0;
-    QVector<quint16> sliderValues = QVector<quint16>({0,0});
+    QVector<int> sliderValues = QVector<int>({0,0});
+    float maxThreshVoltage;
 	QErrorMessage errorM;
 	TcpConnection *tcpConnection = nullptr;
 	QStandardItemModel *addresses;
