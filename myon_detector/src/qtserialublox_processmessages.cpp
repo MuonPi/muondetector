@@ -40,7 +40,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 				emit toConsole("received unexpected Ack message\n");
 			}
 			break;
-		}
+        }
 		switch (messageID) {
 		case 0x00:
 			emit UBXReceivedAckNak(msgWaitingForAck->msgID,

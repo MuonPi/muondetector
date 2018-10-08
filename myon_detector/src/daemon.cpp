@@ -501,6 +501,7 @@ void Daemon::setDacThresh(uint8_t channel, float threshold) {
 void Daemon::setUbxMsgRates(QMap<uint16_t, int>& ubxMsgRates){
     for (QMap<uint16_t, int>::iterator it = ubxMsgRates.begin(); it != ubxMsgRates.end(); it++) {
         emit UBXSetCfgMsgRate(it.key(),1,it.value());
+        emit sendPollUbxMsgRate(it.key());
     }
 }
 
