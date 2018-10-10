@@ -41,7 +41,8 @@ signals:
 public slots:
 	void makeConnection();
 	void receiveConnection();
-    void closeConnection();
+    void closeConnection(QString closedAddress);
+    void closeThisConnection();
 	void onReadyRead();
 	/*
 	  void onTimePulse();
