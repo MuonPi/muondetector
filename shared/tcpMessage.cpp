@@ -25,6 +25,12 @@ TcpMessage::TcpMessage(QByteArray& rawdata) {
     *dStream >> msgID;
 }
 
+TcpMessage::~TcpMessage(){
+    if (dStream!=nullptr){
+        delete dStream;
+        dStream = nullptr;
+    }
+}
 
 //TcpMessage::~TcpMessage() {
 //    if (dStream!=nullptr) {

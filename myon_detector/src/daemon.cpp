@@ -257,7 +257,13 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 }
 
 Daemon::~Daemon() {
-	emit aboutToQuit();
+    if (snHup!=nullptr){ delete snHup; snHup = nullptr; }
+    if (snTerm!=nullptr){ delete snTerm; snTerm = nullptr; }
+    if (snInt!=nullptr){ delete snInt; snInt = nullptr; }
+    if (pca!=nullptr){ delete pca; pca = nullptr; }
+    if (dac!=nullptr){ delete dac; dac = nullptr; }
+    if (adc!=nullptr){ delete adc; adc = nullptr; }
+    if (pigHandler!=nullptr){ delete pigHandler; pigHandler = nullptr; }
 }
 
 void Daemon::connectToGps() {
@@ -273,16 +279,17 @@ void Daemon::connectToGps() {
 	prepareSerial.waitForFinished();
 
 	// here is where the magic threading happens look closely
-	qtGps = new QtSerialUblox(gpsdevname, gpsTimeout, baudrate, dumpRaw, verbose, showout, showin);
-	QThread *gpsThread = new QThread();
+    qtGps = new QtSerialUblox(gpsdevname, gpsTimeout, baudrate, dumpRaw, verbose, showout, showin);
+    QThread *gpsThread = new QThread();
 	qtGps->moveToThread(gpsThread);
+    // connect all signals about quitting
+    connect(this, &Daemon::aboutToQuit, gpsThread, &QThread::quit);
+    connect(gpsThread, &QThread::finished, gpsThread, &QThread::deleteLater);
+    connect(gpsThread, &QThread::finished, qtGps, &QtSerialUblox::deleteLater);
 	// connect all signals not coming from Daemon to gps
 	connect(qtGps, &QtSerialUblox::toConsole, this, &Daemon::gpsToConsole);
 	connect(gpsThread, &QThread::started, qtGps, &QtSerialUblox::makeConnection);
-	connect(qtGps, &QtSerialUblox::destroyed, gpsThread, &QThread::quit);
-	connect(gpsThread, &QThread::finished, gpsThread, &QThread::deleteLater);
 	connect(qtGps, &QtSerialUblox::gpsRestart, this, &Daemon::connectToGps);
-	connect(this->thread(), &QThread::finished, gpsThread, &QThread::quit);
 	// connect all command signals for ublox module here
 	connect(this, &Daemon::UBXSetCfgPrt, qtGps, &QtSerialUblox::UBXSetCfgPrt);
 	connect(this, &Daemon::UBXSetCfgMsgRate, qtGps, &QtSerialUblox::UBXSetCfgMsgRate);
@@ -306,7 +313,6 @@ void Daemon::connectToServer() {
 	tcpConnection->moveToThread(tcpThread);
 	connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::makeConnection);
 	connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
-	connect(tcpThread, &QThread::finished, tcpThread, &QThread::deleteLater);
 	connect(this->thread(), &QThread::finished, tcpThread, &QThread::quit);
 	connect(tcpConnection, &TcpConnection::error, this, &Daemon::displaySocketError);
 	connect(tcpConnection, &TcpConnection::toConsole, this, &Daemon::toConsole);
@@ -324,11 +330,12 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 	QThread *thread = new QThread();
 	TcpConnection *tcpConnection = new TcpConnection(socketDescriptor, verbose);
 	tcpConnection->moveToThread(thread);
-	connect(thread, &QThread::started, tcpConnection, &TcpConnection::receiveConnection);
-	connect(thread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
-	connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+    // connect all signals about quitting
+    connect(thread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
 	connect(this->thread(), &QThread::finished, thread, &QThread::quit);
 	connect(this, &Daemon::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
+    // connect all other signals
+    connect(thread, &QThread::started, tcpConnection, &TcpConnection::receiveConnection);
     connect(this, &Daemon::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
 	connect(tcpConnection, &TcpConnection::receivedTcpMessage, this, &Daemon::receivedTcpMessage);
 	connect(tcpConnection, &TcpConnection::toConsole, this, &Daemon::toConsole);
@@ -502,6 +509,7 @@ void Daemon::setUbxMsgRates(QMap<uint16_t, int>& ubxMsgRates){
     for (QMap<uint16_t, int>::iterator it = ubxMsgRates.begin(); it != ubxMsgRates.end(); it++) {
         emit UBXSetCfgMsgRate(it.key(),1,it.value());
         emit sendPollUbxMsgRate(it.key());
+        waitingForAppliedMsgRate++;
     }
 }
 
@@ -609,6 +617,13 @@ void Daemon::UBXReceivedAckNak(uint16_t ackedMsgID, uint16_t ackedCfgMsgID) {
 
 void Daemon::UBXReceivedMsgRateCfg(uint16_t msgID, uint8_t rate) {
 	msgRateCfgs.insert(msgID, rate);
+    waitingForAppliedMsgRate--;
+    if (waitingForAppliedMsgRate<0){
+        waitingForAppliedMsgRate = 0;
+    }
+    if (waitingForAppliedMsgRate==0){
+        sendUbxMsgRates();
+    }
 }
 
 

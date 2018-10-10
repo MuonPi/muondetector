@@ -26,6 +26,7 @@ signals:
 public slots:
 	void receivedTcpMessage(TcpMessage tcpMessage);
     void receivedGpioRisingEdge(quint8 pin);
+    void sendRequestUbxMsgRates();
     void sendSetUbxMsgRateChanges(QMap<uint16_t, int> changes);
 	void makeConnection(QString ipAddress, quint16 port);
 
@@ -55,7 +56,7 @@ private slots:
 
 	void on_discr2Edit_editingFinished();
 
-	void settings_clicked(bool checked);
+    //void settings_clicked(bool checked);
 
 private:
 	Ui::MainWindow *ui;

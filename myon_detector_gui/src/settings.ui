@@ -125,11 +125,17 @@
      </item>
      <item>
       <widget class="QDialogButtonBox" name="buttonBox">
+       <property name="locale">
+        <locale language="English" country="Germany"/>
+       </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
        <property name="standardButtons">
-        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Save</set>
+        <set>QDialogButtonBox::Apply|QDialogButtonBox::Reset</set>
+       </property>
+       <property name="centerButtons">
+        <bool>true</bool>
        </property>
       </widget>
      </item>

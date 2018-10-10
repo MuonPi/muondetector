@@ -99,6 +99,7 @@ private:
     PigpiodHandler *pigHandler = nullptr;
     TcpConnection *tcpConnection = nullptr;
 	QMap <uint16_t, int> msgRateCfgs;
+    int waitingForAppliedMsgRate = 0;
 	QtSerialUblox *qtGps = nullptr;
     QTcpServer *tcpServer = nullptr;
 	QString peerAddress;
@@ -114,9 +115,9 @@ private:
 	static int sigtermFd[2];
 	static int sigintFd[2];
 
-	QSocketNotifier *snHup;
-	QSocketNotifier *snTerm;
-	QSocketNotifier *snInt;
+    QSocketNotifier *snHup = nullptr;
+    QSocketNotifier *snTerm = nullptr;
+    QSocketNotifier *snInt = nullptr;
 };
 
 #endif // DAEMON_H

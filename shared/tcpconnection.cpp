@@ -27,10 +27,10 @@ TcpConnection::TcpConnection(int socketDescriptor, int newVerbose, int newTimeou
 
 TcpConnection::~TcpConnection()
 {
-    if (peerAddress != nullptr) { delete peerAddress; }
-    if (localAddress != nullptr) { delete localAddress; }
-    if (in != nullptr) { delete in; }
-    if (t != nullptr) { delete t; }
+    if (peerAddress != nullptr) { delete peerAddress; localAddress = nullptr;}
+    if (localAddress != nullptr) { delete localAddress; localAddress = nullptr;}
+    if (in != nullptr) { delete in; in = nullptr;}
+    if (t != nullptr) { delete t; t = nullptr;}
 }
 
 void TcpConnection::makeConnection()
@@ -41,7 +41,7 @@ void TcpConnection::makeConnection()
         emit toConsole(QString("client tcpConnection running in thread " + QString("0x%1").arg((intptr_t)this->thread())));
 	}
 	tcpSocket = new QTcpSocket(this);
-	in = new QDataStream();
+    in = new QDataStream();
 	in->setVersion(QDataStream::Qt_4_0);
 	in->setDevice(tcpSocket);
 	connect(tcpSocket, &QTcpSocket::readyRead, this, &TcpConnection::onReadyRead);

@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QTableWidget>
+#include <QtWidgets>
 
 class UbxMsgRateTableItem : public QTableWidgetItem
 {
@@ -25,12 +26,14 @@ public:
 
 signals:
     void sendSetUbxMsgRateChanges(QMap<uint16_t, int> ubxMsgRateChanges);
+    void sendRequestUbxMsgRates();
 
 public slots:
 	void addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates);
     void onItemChanged(QTableWidgetItem *item);
 private slots:
-    void on_buttonBox_accepted();
+
+    void on_buttonBox_clicked(QAbstractButton *button);
 
 private:
     Ui::Settings *settingsUi;

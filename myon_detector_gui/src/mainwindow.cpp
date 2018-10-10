@@ -7,6 +7,7 @@
 #include <QErrorMessage>
 #include <gpio_pin_definitions.h>
 #include <settings.h>
+#include <status.h>
 #include <tcpmessage_keys.h>
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -58,8 +59,18 @@ MainWindow::MainWindow(QWidget *parent) :
         ratePollTimer.start();
     }
 
+    // set all tabs
+    ui->tabWidget->removeTab(0);
+    Status *status = new Status(this);
+    ui->tabWidget->addTab(status,"status");
+    Settings *settings = new Settings(this);
+    ui->tabWidget->addTab(settings,"settings");
+    connect(this, &MainWindow::addUbxMsgRates, settings, &Settings::addUbxMsgRates);
+    connect(settings, &Settings::sendRequestUbxMsgRates, this, &MainWindow::sendRequestUbxMsgRates);
+    connect(settings, &Settings::sendSetUbxMsgRateChanges, this, &MainWindow::sendSetUbxMsgRateChanges);
+    //settings->show();
 	// set menu bar actions
-	connect(ui->actionsettings, &QAction::triggered, this, &MainWindow::settings_clicked);
+    //connect(ui->actionsettings, &QAction::triggered, this, &MainWindow::settings_clicked);
 }
 
 MainWindow::~MainWindow()
@@ -79,7 +90,6 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
 	tcpConnection->moveToThread(tcpThread);
 	connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::makeConnection);
 	connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
-	connect(tcpThread, &QThread::finished, tcpThread, &QThread::deleteLater);
 	connect(tcpConnection, &TcpConnection::connected, this, &MainWindow::connected);
     connect(this, &MainWindow::closeConnection, tcpConnection, &TcpConnection::closeConnection);
     connect(this, &MainWindow::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
@@ -204,6 +214,11 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
 
 void MainWindow::sendRequest(quint16 requestSig){
     TcpMessage tcpMessage(requestSig);
+    emit sendTcpMessage(tcpMessage);
+}
+
+void MainWindow::sendRequestUbxMsgRates(){
+    TcpMessage tcpMessage(ubxMsgRateRequest);
     emit sendTcpMessage(tcpMessage);
 }
 
@@ -340,6 +355,7 @@ void MainWindow::connected() {
     sendRequest(biasRequestSig);
     sendRequest(threshRequestSig);
     sendRequest(pcaChannelRequestSig);
+    sendRequestUbxMsgRates();
 }
 
 void MainWindow::on_ipButton_clicked()
@@ -434,13 +450,6 @@ void MainWindow::on_discr2Slider_valueChanged(int value)
     if (!mouseHold) {
         sendSetThresh(1, thresh1);
 	}
-}
-void MainWindow::settings_clicked(bool checked) {
-	Settings *settings = new Settings(this);
-    connect(this, &MainWindow::addUbxMsgRates, settings, &Settings::addUbxMsgRates);
-    connect(settings, &Settings::sendSetUbxMsgRateChanges, this, &MainWindow::sendSetUbxMsgRateChanges);
-    sendRequest(ubxMsgRateRequest);
-	settings->show();
 }
 void MainWindow::setMaxThreshVoltage(float voltage){
     // we have 0.5 mV resolution so we have (int)(mVolts)*2 steps on the slider

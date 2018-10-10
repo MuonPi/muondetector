@@ -14,6 +14,7 @@ public:
 	TcpMessage(quint16 tcpMsgID = 0);
     TcpMessage(QByteArray& rawdata);
     TcpMessage(const TcpMessage &tcpMessage);
+    ~TcpMessage();
     QDataStream *dStream = nullptr;
 	void setMsgID(quint16 tcpMsgID);
 	void setData(QByteArray& data);

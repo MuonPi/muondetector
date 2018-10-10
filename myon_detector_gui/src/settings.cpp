@@ -12,8 +12,16 @@ settingsUi(new Ui::Settings)
     settingsUi->ubloxSignalStates->setAlternatingRowColors(true);
     settingsUi->ubloxSignalStates->setHorizontalHeaderLabels(QStringList({"Signature","Update Rate"}));
     settingsUi->ubloxSignalStates->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    connect(settingsUi->buttonBox, &QDialogButtonBox::clicked, this, &Settings::on_buttonBox_clicked);
+    settingsUi->buttonBox->button(QDialogButtonBox::Apply)->setEnabled(false);
+    settingsUi->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(false);
+    connect(settingsUi->ubloxSignalStates, &QTableWidget::itemChanged, this, &Settings::onItemChanged);
+    settingsUi->ubloxSignalStates->blockSignals(true);
+    emit sendRequestUbxMsgRates();
 }
 void Settings::onItemChanged(QTableWidgetItem *item){
+    settingsUi->buttonBox->button(QDialogButtonBox::Apply)->setEnabled(true);
+    settingsUi->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(true);
     if (item->column()==0){
         return;
     }
@@ -29,6 +37,10 @@ void Settings::onItemChanged(QTableWidgetItem *item){
     }
 }
 void Settings::addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates) {
+    settingsUi->ubloxSignalStates->clearContents();
+    settingsUi->ubloxSignalStates->setRowCount(0);
+    settingsUi->buttonBox->button(QDialogButtonBox::Apply)->setEnabled(false);
+    settingsUi->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(false);
     oldSettings = ubxMsgRates;
 	for (QMap<uint16_t, int>::iterator it = ubxMsgRates.begin(); it != ubxMsgRates.end(); it++) {
         UbxMsgRateTableItem *item = new UbxMsgRateTableItem();
@@ -47,28 +59,39 @@ void Settings::addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates) {
         settingsUi->ubloxSignalStates->insertRow(settingsUi->ubloxSignalStates->rowCount());
         settingsUi->ubloxSignalStates->setItem(settingsUi->ubloxSignalStates->rowCount()-1,0,item);
         settingsUi->ubloxSignalStates->setItem(settingsUi->ubloxSignalStates->rowCount()-1,1,value);
+        // I don't know why item gets (sometimes) uncheckd when transfered to the TableView
+        // it seems to work now though:
+        item->setCheckState(Qt::CheckState::Checked);
 	}
-    connect(settingsUi->ubloxSignalStates, &QTableWidget::itemChanged, this, &Settings::onItemChanged);
+    settingsUi->ubloxSignalStates->blockSignals(false);
     settingsUi->ubloxSignalStates->resizeColumnsToContents();
     settingsUi->ubloxSignalStates->resizeRowsToContents();
     settingsUi->ubloxSignalStates->setColumnWidth(0,143);
     settingsUi->ubloxSignalStates->setColumnWidth(1,100);
 }
 
-void Settings::on_buttonBox_accepted()
-{
-    QMap<uint16_t, int> changedSettings;
-    for (int i=0; i < settingsUi->ubloxSignalStates->rowCount(); i++){
-        UbxMsgRateTableItem *item = (UbxMsgRateTableItem*)settingsUi->ubloxSignalStates->item(i,0);
-        if (item->checkState()==Qt::Checked){
-            continue;
+void Settings::on_buttonBox_clicked(QAbstractButton *button){
+    if (button == settingsUi->buttonBox->button(QDialogButtonBox::Apply)){
+        settingsUi->ubloxSignalStates->blockSignals(true);
+        QMap<uint16_t, int> changedSettings;
+        for (int i=0; i < settingsUi->ubloxSignalStates->rowCount(); i++){
+            UbxMsgRateTableItem *item = (UbxMsgRateTableItem*)settingsUi->ubloxSignalStates->item(i,0);
+            if (item->checkState()==Qt::Checked){
+                continue;
+            }
+            UbxMsgRateTableItem *value = (UbxMsgRateTableItem*)settingsUi->ubloxSignalStates->item(i,1);
+            bool ok = false;
+            int newRate = value->text().toInt(&ok);
+            if (ok && value->rate != newRate){
+                 changedSettings.insert(value->key, newRate);
+            }
         }
-        UbxMsgRateTableItem *value = (UbxMsgRateTableItem*)settingsUi->ubloxSignalStates->item(i,1);
-        bool ok = false;
-        int newRate = value->text().toInt(&ok);
-        if (ok && value->rate != newRate){
-             changedSettings.insert(value->key, newRate);
-        }
+        emit sendSetUbxMsgRateChanges(changedSettings);
     }
-    emit sendSetUbxMsgRateChanges(changedSettings);
+    if (button == settingsUi->buttonBox->button(QDialogButtonBox::Reset)){
+        settingsUi->buttonBox->button(QDialogButtonBox::Apply)->setEnabled(false);
+        settingsUi->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(false);
+        settingsUi->ubloxSignalStates->blockSignals(true);
+        emit sendRequestUbxMsgRates();
+    }
 }

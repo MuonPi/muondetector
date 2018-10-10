@@ -33,7 +33,8 @@ SOURCES += \
         src/main.cpp \
         src/mainwindow.cpp \
     ../shared/tcpmessage.cpp \
-    src/settings.cpp
+    src/settings.cpp \
+    src/status.cpp
 
 HEADERS += \
         ../shared/tcpconnection.h \
@@ -42,11 +43,13 @@ HEADERS += \
     ../shared/ublox_messages.h \
     src/settings.h \
     ../shared/ubx_msg_key_name_map.h \
-    ../shared/tcpmessage_keys.h
+    ../shared/tcpmessage_keys.h \
+    src/status.h
 
 FORMS += \
         src/mainwindow.ui \
-    src/settings.ui
+    src/settings.ui \
+    src/status.ui
 
 OBJECTS_DIR += created_files
 
