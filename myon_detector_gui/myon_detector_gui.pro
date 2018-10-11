@@ -7,7 +7,8 @@
 QT       += core \
           widgets \
           gui \
-          network \
+          network
+QT       += quickwidgets
 
 #greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -56,3 +57,6 @@ OBJECTS_DIR += created_files
 UI_DIR += created_files
 
 MOC_DIR += created_files
+
+DISTFILES += \
+    src/mymap.qml
