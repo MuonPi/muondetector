@@ -160,10 +160,8 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	// for pigpio signals:
 	const QVector<unsigned int> gpio_pins({ EVT_AND, EVT_XOR });
     pigHandler = new PigpiodHandler(gpio_pins, this);
-	if (pigHandler != nullptr) {
-        connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
-        connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
-	}
+    connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
+    connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
 
 	// for i2c devices
 	lm75 = new LM75();
@@ -280,9 +278,8 @@ void Daemon::connectToGps() {
     QThread *gpsThread = new QThread();
 	qtGps->moveToThread(gpsThread);
     // connect all signals about quitting
-    connect(this, &Daemon::aboutToQuit, gpsThread, &QThread::quit);
+    connect(this, &Daemon::aboutToQuit, qtGps, &QtSerialUblox::deleteLater);
     connect(gpsThread, &QThread::finished, gpsThread, &QThread::deleteLater);
-    connect(gpsThread, &QThread::finished, qtGps, &QtSerialUblox::deleteLater);
 	// connect all signals not coming from Daemon to gps
 	connect(qtGps, &QtSerialUblox::toConsole, this, &Daemon::gpsToConsole);
 	connect(gpsThread, &QThread::started, qtGps, &QtSerialUblox::makeConnection);
@@ -330,6 +327,7 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
     // connect all signals about quitting
     connect(this, &Daemon::aboutToQuit, tcpConnection, &TcpConnection::closeThisConnection);
     connect(this, &Daemon::closeConnection, tcpConnection, &TcpConnection::closeConnection);
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
     // connect all other signals
     connect(thread, &QThread::started, tcpConnection, &TcpConnection::receiveConnection);
     connect(this, &Daemon::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
@@ -473,7 +471,9 @@ void Daemon::setBiasVoltage(float voltage) {
         qDebug() << "change biasVoltage to " << voltage;
     }
     dac->setVoltage(2, voltage);
-    pigHandler->resetBuffer();
+    if (pigHandler!=nullptr){
+        pigHandler->resetBuffer();
+    }
     sendBiasVoltage();
 }
 
@@ -488,7 +488,9 @@ void Daemon::setBiasStatus(bool status){
     else {
         digitalWrite(UBIAS_EN, 0);
     }
-    pigHandler->resetBuffer();
+    if (pigHandler!=nullptr){
+        pigHandler->resetBuffer();
+    }
     sendBiasStatus();
 }
 
@@ -501,7 +503,9 @@ void Daemon::setDacThresh(uint8_t channel, float threshold) {
         qDebug() << "change dacThresh " << channel << " to " << threshold;
     }
     dacThresh[channel] = threshold;
-    pigHandler->resetBuffer();
+    if (pigHandler!=nullptr){
+        pigHandler->resetBuffer();
+    }
     dac->setVoltage(channel, threshold);
     sendDacThresh(channel);
 }
@@ -577,7 +581,7 @@ void Daemon::configGps() {
 	msgRateCfgs.insert(MSG_NAV_SBAS, 255);
 	msgRateCfgs.insert(MSG_NAV_DOP, 101);
 	msgRateCfgs.insert(MSG_NAV_SVINFO, 49);
-	emit UBXSetCfgRate(1000 / measrate, 1); // MSG_CFG_RATE
+    emit UBXSetCfgRate(1000 / measrate, 1); // MSG_RATE
 
 	emit UBXSetCfgMsgRate(MSG_TIM_TM2, 1, 1);	// TIM-TM2
 	emit UBXSetCfgMsgRate(MSG_TIM_TP, 1, 51);	// TIM-TP

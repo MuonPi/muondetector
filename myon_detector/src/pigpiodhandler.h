@@ -34,8 +34,10 @@ signals:
 public slots:
     void sendSignal(unsigned int gpio_pin, uint32_t tick);
 	void stop();
+    bool initialised();
 private:
     //quint64 xorCounts, andCounts;
+    bool isInitialised = false;
     int bufferMsecs = 1000*120; // 10 seconds
     int bufferResolution = 500; // 500 msecs resolution
 };
