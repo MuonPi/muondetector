@@ -76,7 +76,8 @@ void Daemon::handleSigTerm()
 	if (verbose > 1) {
 		cout << "\nSIGTERM received" << endl;
 	}
-    emit aboutToQuit();
+	emit aboutToQuit();
+	this->thread()->quit();
 	exit(0);
 	snTerm->setEnabled(true);
 }
@@ -90,7 +91,8 @@ void Daemon::handleSigHup()
 	if (verbose > 1) {
 		cout << "\nSIGHUP received" << endl;
 	}
-    emit aboutToQuit();
+	emit aboutToQuit();
+	this->thread()->quit();
 	exit(0);
 	snHup->setEnabled(true);
 }
@@ -111,7 +113,8 @@ void Daemon::handleSigInt()
 			qDebug().nospace() << "0x" << hex << (uint8_t)(it.key() >> 8) << " 0x" << hex << (uint8_t)(it.key() & 0xff) << " " << dec << it.value();
 		}
 	}
-    emit aboutToQuit();
+	emit aboutToQuit();
+	this->thread()->quit();
 	exit(0);
 	snInt->setEnabled(true);
 }
@@ -328,8 +331,9 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 	TcpConnection *tcpConnection = new TcpConnection(socketDescriptor, verbose);
 	tcpConnection->moveToThread(thread);
     // connect all signals about quitting
-    connect(this, &Daemon::aboutToQuit, tcpConnection, &TcpConnection::closeThisConnection);
-    connect(this, &Daemon::closeConnection, tcpConnection, &TcpConnection::closeConnection);
+    connect(thread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
+	connect(this->thread(), &QThread::finished, thread, &QThread::quit);
+	connect(this, &Daemon::aboutToQuit, tcpConnection, &TcpConnection::closeConnection);
     // connect all other signals
     connect(thread, &QThread::started, tcpConnection, &TcpConnection::receiveConnection);
     connect(this, &Daemon::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
@@ -395,11 +399,6 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         quint8 whichRate;
         *(tcpMessage.dStream) >> whichRate;
         sendGpioRate(whichRate);
-    }
-    if (msgID == quitConnectionSig){
-        QString closeAddress;
-        *(tcpMessage.dStream) >> closeAddress;
-        emit closeConnection(closeAddress);
     }
 }
 

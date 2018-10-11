@@ -62,7 +62,6 @@ public slots:
 
 signals:
 	void sendTcpMessage(TcpMessage tcpMessage);
-    void closeConnection(QString closeAddress);
 	void aboutToQuit();
 	void sendPollUbxMsgRate(uint16_t msgID);
 	void sendPollUbxMsg(uint16_t msgID);

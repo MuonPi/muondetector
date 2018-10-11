@@ -91,7 +91,7 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
 	connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::makeConnection);
 	connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
 	connect(tcpConnection, &TcpConnection::connected, this, &MainWindow::connected);
-    connect(this, &MainWindow::closeConnection, tcpConnection, &TcpConnection::closeThisConnection);
+    connect(this, &MainWindow::closeConnection, tcpConnection, &TcpConnection::closeConnection);
     connect(this, &MainWindow::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
     connect(tcpConnection, &TcpConnection::receivedTcpMessage, this, &MainWindow::receivedTcpMessage);
 	tcpThread->start();

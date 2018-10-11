@@ -92,20 +92,11 @@ void TcpConnection::receiveConnection()
 	//startTimePulser();
 }
 
-void TcpConnection::closeConnection(QString closedAddress) {
-    if (peerAddress!=nullptr){
-        if (peerAddress->toString()==closedAddress){
-            closeThisConnection();
-        }
-    }
-}
-
-void TcpConnection::closeThisConnection(){
+void TcpConnection::closeConnection() {
     TcpMessage quitMessage(quitConnectionSig);
-    *(quitMessage.dStream) << localAddress->toString();
     sendTcpMessage(quitMessage);
-    this->deleteLater();
-    return;
+    this->thread()->quit();
+	return;
 }
 
 void TcpConnection::onReadyRead() {
