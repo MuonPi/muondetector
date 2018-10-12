@@ -7,7 +7,7 @@ Map::Map(QWidget *parent) :
 {
     mapUi->setupUi(this);
     mapUi->quickWidget->setResizeMode(QQuickWidget::SizeRootObjectToView);
-    mapUi->quickWidget->setSource(QUrl::fromLocalFile("src/mymap.qml"));
+    mapUi->quickWidget->setSource(QUrl::fromLocalFile("qml/mymap.qml"));
 }
 
 Map::~Map()

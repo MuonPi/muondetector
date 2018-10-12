@@ -62,4 +62,4 @@ UI_DIR += created_files
 MOC_DIR += created_files
 
 DISTFILES += \
-    src/mymap.qml
+    qml/mymap.qml
