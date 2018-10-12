@@ -9,7 +9,8 @@ The high time accuracy is needed because it is planned to use multiple stations 
 The software must be easy to use and run in background while synchronizing accumulated data with a server.
 
 
-ATTENTION:  when trying to create Makefile with qmake (qt version 5.7.1 on raspbian) there will probably be an error:
+ATTENTION:  
+            when trying to create Makefile with qmake (qt version 5.7.1 on raspbian) there will probably be an error:
             "Project ERROR: unknown module(s) in QT: serialport"
             there is missing library "libqt5serialport5-dev". To install just get it from repository with apt-get install
 
