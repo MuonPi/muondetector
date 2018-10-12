@@ -1,0 +1,3 @@
+qml-module-qtlocation
+qml-module-qtpositioning
+qml-module-qtquick2

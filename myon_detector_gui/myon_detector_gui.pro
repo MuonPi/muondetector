@@ -35,7 +35,8 @@ SOURCES += \
         src/mainwindow.cpp \
     ../shared/tcpmessage.cpp \
     src/settings.cpp \
-    src/status.cpp
+    src/status.cpp \
+    src/map.cpp
 
 HEADERS += \
         ../shared/tcpconnection.h \
@@ -45,12 +46,14 @@ HEADERS += \
     src/settings.h \
     ../shared/ubx_msg_key_name_map.h \
     ../shared/tcpmessage_keys.h \
-    src/status.h
+    src/status.h \
+    src/map.h
 
 FORMS += \
         src/mainwindow.ui \
     src/settings.ui \
-    src/status.ui
+    src/status.ui \
+    src/map.ui
 
 OBJECTS_DIR += created_files
 

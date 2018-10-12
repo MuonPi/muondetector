@@ -9,7 +9,7 @@
 #include <settings.h>
 #include <status.h>
 #include <tcpmessage_keys.h>
-#include <QQuickWidget>
+#include <map.h>
 
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
@@ -66,8 +66,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tabWidget->addTab(status,"status");
     Settings *settings = new Settings(this);
     ui->tabWidget->addTab(settings,"settings");
-    QQuickWidget *map = new QQuickWidget(this);
-    map->setSource(QUrl("src/mymap.qml"));
+    Map *map = new Map(this);
     ui->tabWidget->addTab(map, "map");
     connect(this, &MainWindow::addUbxMsgRates, settings, &Settings::addUbxMsgRates);
     connect(settings, &Settings::sendRequestUbxMsgRates, this, &MainWindow::sendRequestUbxMsgRates);
