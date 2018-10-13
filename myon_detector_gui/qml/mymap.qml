@@ -17,7 +17,7 @@ Item{
         id: map
         anchors.fill: parent
         plugin: mapPlugin
-        center: QtPositioning.coordinate(59.91, 10.75) // Oslo
+        center: QtPositioning.coordinate(50.569212, 8.673828) // 2. Physikalisches Institut Gießen
         zoomLevel: 14
     }
 }

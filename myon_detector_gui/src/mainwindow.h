@@ -22,6 +22,7 @@ signals:
 	void addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates);
 	void sendTcpMessage(TcpMessage tcpMessage);
     void closeConnection();
+    void gpioRate(quint8 whichrate, float rate);
 
 public slots:
 	void receivedTcpMessage(TcpMessage tcpMessage);

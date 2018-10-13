@@ -38,7 +38,7 @@ public slots:
 private:
     //quint64 xorCounts, andCounts;
     bool isInitialised = false;
-    int bufferMsecs = 1000*120; // 10 seconds
+    int bufferMsecs = 1000*120; // 120 seconds
     int bufferResolution = 500; // 500 msecs resolution
 };
 

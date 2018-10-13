@@ -3,6 +3,9 @@
 # Project created by QtCreator 2018-05-05T16:09:13
 #
 #-------------------------------------------------
+win32{
+include ( C:/Qwt-6.1.3/features/qwt.prf )
+}
 
 QT       += core \
           widgets \
@@ -11,6 +14,7 @@ QT       += core \
 QT       += quickwidgets
 
 #greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+CONFIG += qwt
 
 TARGET = myon_detector_gui
 TEMPLATE = app

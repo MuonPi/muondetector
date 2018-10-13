@@ -200,6 +200,7 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         quint8 whichRate;
         float rate;
         *(tcpMessage.dStream) >> whichRate >> rate;
+        emit gpioRate(whichRate, rate);
         if (whichRate == 0){
             ui->rate1->setText(QString::number(rate,'g',3)+"/s");
         }
