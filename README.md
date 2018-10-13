@@ -10,10 +10,16 @@ The software must be easy to use and run in background while synchronizing accum
 
 
 ATTENTION:  
-            when trying to create Makefile with qmake (qt version 5.7.1 on raspbian) there will probably be an error:
+            when trying to create Makefile with qmake (qt version 5.7.1 on raspbian) there will probably be errors.
+            To install just get it from repository with apt-get install:
+            
             "Project ERROR: unknown module(s) in QT: serialport"
-            there is missing library "libqt5serialport5-dev". To install just get it from repository with apt-get install
+            there is missing library "libqt5serialport5-dev".
 
-            when trying to create Makefile with qmake there will also probably be the error:
-            "Project ERROR: uknown module(s) in QT: quickwidgets"
+            "Project ERROR: unknown module(s) in QT: quickwidgets"
             there is missing library "qtdeclarative5-dev".
+            
+            "Project ERROR: unknown module(s) in QT: svg"
+            there is missing library "libqt5svg5-dev".
+            
+            Also for some plots you need to install "libqwt-qt5-dev".
