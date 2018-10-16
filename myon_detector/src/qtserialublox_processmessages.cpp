@@ -91,7 +91,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 				emit toConsole(QString::fromStdString(tempStream.str()));
 			}
 			//mutex.lock();
-			emit gpsPropertyUpdatedGnss(sats, satList.updateAge());
+            emit gpsPropertyUpdatedGnss(sats, satList.updateAge());
 			satList = sats;
 			//mutex.unlock();
 			//break;
@@ -106,7 +106,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
                 emit toConsole(QString::fromStdString(tempStream.str()));
             }
             geodeticPos = UBXNavPosLLH(msg.data);
-            emit gpsPropertyUpdatedGeodeticPos(geodeticPos, geodeticPos.updateAge());
+            emit gpsPropertyUpdatedGeodeticPos(geodeticPos());
             break;
 		default:
 			if (verbose > 3) {
