@@ -65,6 +65,7 @@ MainWindow::MainWindow(QWidget *parent) :
     Status *status = new Status(this);
     ui->tabWidget->addTab(status,"status");
     Settings *settings = new Settings(this);
+    connect(this, &MainWindow::setUiEnabledStates, settings, &Settings::onUiEnabledStateChange);
     ui->tabWidget->addTab(settings,"settings");
     Map *map = new Map(this);
     ui->tabWidget->addTab(map, "map");
@@ -214,6 +215,12 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         connectedToDemon = false;
         uiSetDisconnectedState();
     }
+    if (msgID == geodeticPosSig){
+        GeodeticPos pos;
+        *(tcpMessage.dStream) >> pos.iTOW >> pos.lon >> pos.lat
+                >> pos.height >> pos.hMSL >> pos.hAcc >> pos.vAcc;
+        emit geodeticPos(pos);
+    }
 }
 
 void MainWindow::sendRequest(quint16 requestSig){
@@ -285,7 +292,7 @@ void MainWindow::uiSetDisconnectedState() {
 	ui->ipStatusLabel->setText("not connected");
 	ui->ipButton->setText("connect");
 	ui->ipBox->setEnabled(true);
-	// disable all relevant objects
+    // disable all relevant objects of mainwindow
 	ui->discr1Label->setStyleSheet("QLabel {color: darkGray;}");
 	ui->discr2Label->setStyleSheet("QLabel {color: darkGray;}");
 	ui->discr1Slider->setValue(0);
@@ -305,6 +312,8 @@ void MainWindow::uiSetDisconnectedState() {
 	ui->biasPowerLabel->setDisabled(true);
 	ui->biasPowerLabel->setStyleSheet("QLabel {color: darkGray;}");
 	ui->biasPowerButton->setDisabled(true);
+    // disable other widgets
+    emit setUiEnabledStates(false);
 }
 
 void MainWindow::uiSetConnectedState() {
@@ -315,6 +324,8 @@ void MainWindow::uiSetConnectedState() {
 	ui->ipBox->setDisabled(true);
 	ui->discr1Label->setStyleSheet("QLabel {color: black;}");
 	ui->discr2Label->setStyleSheet("QLabel {color: black;}");
+    // enable other widgets
+    emit setUiEnabledStates(true);
 }
 
 void MainWindow::updateUiProperties() {

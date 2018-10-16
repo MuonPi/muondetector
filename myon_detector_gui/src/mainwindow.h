@@ -5,6 +5,7 @@
 #include <QStandardItemModel>
 #include <QErrorMessage>
 #include <QTime>
+#include <geodeticpos.h>
 
 namespace Ui {
 	class MainWindow;
@@ -23,6 +24,9 @@ signals:
 	void sendTcpMessage(TcpMessage tcpMessage);
     void closeConnection();
     void gpioRate(quint8 whichrate, float rate);
+    void tcpDisconnected();
+    void setUiEnabledStates(bool enabled);
+    void geodeticPos(GeodeticPos pos);
 
 public slots:
 	void receivedTcpMessage(TcpMessage tcpMessage);
@@ -56,8 +60,6 @@ private slots:
 	void on_biasPowerButton_clicked();
 
 	void on_discr2Edit_editingFinished();
-
-    //void settings_clicked(bool checked);
 
 private:
 	Ui::MainWindow *ui;

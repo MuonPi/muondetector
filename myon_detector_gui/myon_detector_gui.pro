@@ -15,6 +15,7 @@ QT       += quickwidgets
 
 #greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += qwt
+CONFIG += c++11
 
 TARGET = myon_detector_gui
 TEMPLATE = app

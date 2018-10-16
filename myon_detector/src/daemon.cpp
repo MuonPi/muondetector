@@ -125,6 +125,7 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	: QTcpServer(parent)
 {
     qRegisterMetaType<TcpMessage>("TcpMessage");
+    qRegisterMetaType<GeodeticPos>("GeodeticPos");
     qRegisterMetaType<int32_t>("int32_t");
     qRegisterMetaType<uint32_t>("uint32_t");
     qRegisterMetaType<uint16_t>("uint16_t");
@@ -399,6 +400,14 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> closeAddress;
         emit closeConnection(closeAddress);
     }
+}
+
+void Daemon::sendUbxGeodeticPos(GeodeticPos pos){
+    TcpMessage tcpMessage(geodeticPosSig);
+    (*tcpMessage.dStream) << pos.iTOW << pos.lon << pos.lat
+                          << pos.height << pos.hMSL << pos.hAcc
+                          << pos.vAcc;
+    emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::sendUbxMsgRates() {

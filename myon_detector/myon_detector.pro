@@ -54,7 +54,8 @@ HEADERS += \
     ../shared/ublox_messages.h \
     src/custom_io_operators.h \
     ../shared/tcpmessage.h \
-    ../shared/tcpmessage_keys.h
+    ../shared/tcpmessage_keys.h \
+    ../shared/geodeticpos.h
 
 OBJECTS_DIR += created_files
 

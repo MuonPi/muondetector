@@ -7,6 +7,8 @@
 #include <QSerialPort>
 #include <QObject>
 #include <QTimer>
+#include <geodeticpos.h>
+
 
 class QtSerialUblox : public QObject
 {
@@ -40,6 +42,7 @@ signals:
 		char propertyName);
 	void gpsPropertyUpdatedGnss(std::vector<GnssSatellite>,
 		std::chrono::duration<double> updateAge);
+    void gpsPropertyUpdatedGeodeticPos(GeodeticPos pos);
 
 public slots:
 	// all functions that can be called from other classes through signal/slot mechanics
@@ -78,6 +81,7 @@ private:
 	bool UBXTimTM2(const std::string& msg);
 	std::vector<GnssSatellite> UBXNavSat(bool allSats);
 	std::vector<GnssSatellite> UBXNavSat(const std::string& msg, bool allSats);
+    GeodeticPos UBXNavPosLLH(const std::string& msg);
 	bool UBXCfgGNSS();
 	bool UBXCfgNav5();
 	std::vector<std::string> UBXMonVer();
@@ -117,6 +121,7 @@ private:
 	gpsProperty<int32_t> clkBias;
 	gpsProperty<int32_t> clkDrift;
 	gpsProperty<std::vector<GnssSatellite> > satList;
+    gpsProperty<GeodeticPos> geodeticPos;
 	const int	MSGTIMEOUT = 1500;
 	std::queue<gpsTimestamp> fTimestamps;
 	//std::list<UbxMessage> fMessageBuffer;

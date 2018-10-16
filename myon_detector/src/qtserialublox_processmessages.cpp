@@ -99,6 +99,15 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 // 				GnssSatellite::PrintHeader(true);
 // 				for (int i=0; i<sats.size(); i++) sats[i].Print(i, false);
 			break;
+        case 0x02:
+            if (verbose > 3) {
+                tempStream << "received unhandled UBX-NAV-POSLLH message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+                    << " 0x" << std::hex << (int)messageID << ")\n";
+                emit toConsole(QString::fromStdString(tempStream.str()));
+            }
+            geodeticPos = UBXNavPosLLH(msg.data);
+            emit gpsPropertyUpdatedGeodeticPos(geodeticPos, geodeticPos.updateAge());
+            break;
 		default:
 			if (verbose > 3) {
 				tempStream << "received unhandled UBX-NAV message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
@@ -892,6 +901,52 @@ bool QtSerialUblox::UBXCfgNav5()
 	return result;
 }
 */
+
+GeodeticPos QtSerialUblox::UBXNavPosLLH(const string &msg){
+    GeodeticPos pos;
+    // GPS time of week
+    uint32_t iTOW = (unsigned int)msg[0];
+    iTOW += ((unsigned int)msg[1]) << 8;
+    iTOW += ((unsigned int)msg[2]) << 16;
+    iTOW += ((unsigned int)msg[3]) << 24;
+    pos.iTOW = iTOW;
+    // longitude in 1e-7 precision
+    int32_t lon = (int)msg[4];
+    lon += ((int)msg[5]) << 8;
+    lon += ((int)msg[6]) << 16;
+    lon += ((int)msg[7]) << 24;
+    pos.lon = lon;
+    // latitude in 1e-7 precision
+    int32_t lat = (int)msg[8];
+    lat += ((int)msg[9]) << 8;
+    lat += ((int)msg[10]) << 16;
+    lat += ((int)msg[11]) << 24;
+    pos.lat = lat;
+    // height above ellipsoid
+    int32_t height = (int)msg[12];
+    height += ((int)msg[13]) << 8;
+    height += ((int)msg[14]) << 16;
+    height += ((int)msg[15]) << 24;
+    pos.height = height;
+    // height above main sea-level
+    int32_t hMSL = (int)msg[16];
+    hMSL += ((int)msg[17]) << 8;
+    hMSL += ((int)msg[18]) << 16;
+    hMSL += ((int)msg[19]) << 24;
+    pos.height = hMSL;
+    // horizontal accuracy estimate
+    uint32_t hAcc = (unsigned int)msg[20];
+    hAcc += ((unsigned int)msg[21]) << 8;
+    hAcc += ((unsigned int)msg[22]) << 16;
+    hAcc += ((unsigned int)msg[23]) << 24;
+    pos.hAcc = hAcc;
+    uint32_t vAcc = (unsigned int)msg[24];
+    vAcc += ((unsigned int)msg[25]) << 8;
+    vAcc += ((unsigned int)msg[26]) << 16;
+    vAcc += ((unsigned int)msg[27]) << 24;
+    pos.vAcc = vAcc;
+    return pos;
+}
 
 void QtSerialUblox::UBXNavClock(const std::string& msg)
 {

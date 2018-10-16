@@ -12,35 +12,35 @@ settingsUi(new Ui::Settings)
     settingsUi->ubloxSignalStates->setAlternatingRowColors(true);
     settingsUi->ubloxSignalStates->setHorizontalHeaderLabels(QStringList({"Signature","Update Rate"}));
     settingsUi->ubloxSignalStates->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
-    connect(settingsUi->buttonBox, &QDialogButtonBox::clicked, this, &Settings::on_buttonBox_clicked);
-    settingsUi->buttonBox->button(QDialogButtonBox::Apply)->setEnabled(false);
-    settingsUi->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(false);
+    connect(settingsUi->settingsButtonBox, &QDialogButtonBox::clicked, this, &Settings::onSettingsButtonBoxClicked);
     connect(settingsUi->ubloxSignalStates, &QTableWidget::itemChanged, this, &Settings::onItemChanged);
     settingsUi->ubloxSignalStates->blockSignals(true);
+    this->setDisabled(true);
     emit sendRequestUbxMsgRates();
 }
+
 void Settings::onItemChanged(QTableWidgetItem *item){
-    settingsUi->buttonBox->button(QDialogButtonBox::Apply)->setEnabled(true);
-    settingsUi->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(true);
+    settingsUi->settingsButtonBox->button(QDialogButtonBox::Apply)->setEnabled(true);
+    settingsUi->settingsButtonBox->button(QDialogButtonBox::Discard)->setEnabled(true);
     if (item->column()==0){
         return;
     }
-    bool ok1 = false;
-    bool ok2 = false;
-    if (item->text().toInt(&ok1)!=((UbxMsgRateTableItem*)item)->name.toInt(&ok2)){
-        if (!ok1 || !ok2){
-            if (item->text()==((UbxMsgRateTableItem*)item)->name){
-                return;
-            }
+    bool ok = false;
+    if (item->text().toInt(&ok)!=((UbxMsgRateTableItem*)item)->rate){
+        if(!ok){
+            qDebug() << "rate is no integer";
         }
         settingsUi->ubloxSignalStates->item(item->row(),0)->setCheckState(Qt::Unchecked);
+    }else{
+        settingsUi->ubloxSignalStates->item(item->row(),0)->setCheckState(Qt::Checked);
     }
 }
+
 void Settings::addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates) {
     settingsUi->ubloxSignalStates->clearContents();
     settingsUi->ubloxSignalStates->setRowCount(0);
-    settingsUi->buttonBox->button(QDialogButtonBox::Apply)->setEnabled(false);
-    settingsUi->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(false);
+    settingsUi->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(true);
+    settingsUi->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(true);
     oldSettings = ubxMsgRates;
 	for (QMap<uint16_t, int>::iterator it = ubxMsgRates.begin(); it != ubxMsgRates.end(); it++) {
         UbxMsgRateTableItem *item = new UbxMsgRateTableItem();
@@ -70,8 +70,8 @@ void Settings::addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates) {
     settingsUi->ubloxSignalStates->setColumnWidth(1,100);
 }
 
-void Settings::on_buttonBox_clicked(QAbstractButton *button){
-    if (button == settingsUi->buttonBox->button(QDialogButtonBox::Apply)){
+void Settings::onSettingsButtonBoxClicked(QAbstractButton *button){
+    if (button == settingsUi->settingsButtonBox->button(QDialogButtonBox::Apply)){
         settingsUi->ubloxSignalStates->blockSignals(true);
         QMap<uint16_t, int> changedSettings;
         for (int i=0; i < settingsUi->ubloxSignalStates->rowCount(); i++){
@@ -86,12 +86,36 @@ void Settings::on_buttonBox_clicked(QAbstractButton *button){
                  changedSettings.insert(value->key, newRate);
             }
         }
-        emit sendSetUbxMsgRateChanges(changedSettings);
+        if (changedSettings.size()>0){
+            emit sendSetUbxMsgRateChanges(changedSettings);
+        }else{
+            settingsUi->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(true);
+            settingsUi->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(true);
+        }
     }
-    if (button == settingsUi->buttonBox->button(QDialogButtonBox::Reset)){
-        settingsUi->buttonBox->button(QDialogButtonBox::Apply)->setEnabled(false);
-        settingsUi->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(false);
+    if (button == settingsUi->settingsButtonBox->button(QDialogButtonBox::Discard)){
         settingsUi->ubloxSignalStates->blockSignals(true);
         emit sendRequestUbxMsgRates();
     }
+    if (button == settingsUi->settingsButtonBox->button(QDialogButtonBox::RestoreDefaults)){
+        //settingsUi->ubloxSignalStates->blockSignals(true);
+
+    }
+}
+
+void Settings::onUiEnabledStateChange(bool connected){
+    if (connected){
+        this->setEnabled(true);
+        //settingsUi->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(true);
+        //settingsUi->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(true);
+    }else{
+        settingsUi->ubloxSignalStates->clearContents();
+        settingsUi->ubloxSignalStates->setRowCount(0);
+        settingsUi->ubloxSignalStates->blockSignals(true);
+        this->setDisabled(true);
+    }
+}
+
+void Settings::onGeodeticPosReceived(GeodeticPos pos){
+
 }

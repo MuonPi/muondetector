@@ -4,6 +4,7 @@
 #include <string>
 #include <chrono>
 #include <gnsssatellite.h>
+#include <geodeticpos.h>
 #include <sstream>
 #include <string>
 

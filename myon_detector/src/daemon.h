@@ -59,6 +59,7 @@ public slots:
 	void receivedTcpMessage(TcpMessage tcpMessage);
     void pollAllUbxMsgRate();
     void sendGpioPinEvent(uint8_t gpio_pin);
+    void sendUbxGeodeticPos(GeodeticPos pos);
 
 signals:
 	void sendTcpMessage(TcpMessage tcpMessage);
