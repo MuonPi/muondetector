@@ -4,7 +4,6 @@
 #include <QDialog>
 #include <QTableWidget>
 #include <QtWidgets>
-#include <geodeticpos.h>
 
 class UbxMsgRateTableItem : public QTableWidgetItem
 {
@@ -32,7 +31,6 @@ signals:
 public slots:
 	void addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates);
     void onItemChanged(QTableWidgetItem *item);
-    void onGeodeticPosReceived(GeodeticPos pos);
     void onUiEnabledStateChange(bool connected);
 
 private slots:

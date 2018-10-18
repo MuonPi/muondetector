@@ -2,6 +2,7 @@
 #define MAP_H
 
 #include <QWidget>
+#include <geodeticpos.h>
 
 namespace Ui {
 class Map;
@@ -13,10 +14,11 @@ class Map : public QWidget
 
 public:
     explicit Map(QWidget *parent = nullptr);
+    void onGeodeticPosReceived(GeodeticPos pos);
     ~Map();
 
 private:
+    QObject *mapComponent = nullptr;
     Ui::Map *mapUi;
 };
-
 #endif // MAP_H

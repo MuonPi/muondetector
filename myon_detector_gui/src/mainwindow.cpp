@@ -16,6 +16,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui(new Ui::MainWindow)
 {
     qRegisterMetaType<TcpMessage>("TcpMessage");
+    qRegisterMetaType<GeodeticPos>("GeodeticPos");
     ui->setupUi(this);
 	ui->discr1Layout->setAlignment(ui->discr1Slider, Qt::AlignHCenter);
 	ui->discr2Layout->setAlignment(ui->discr2Slider, Qt::AlignHCenter); // aligns the slider in their vertical layout centered
@@ -69,6 +70,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tabWidget->addTab(settings,"settings");
     Map *map = new Map(this);
     ui->tabWidget->addTab(map, "map");
+    connect(this, &MainWindow::geodeticPos, map, &Map::onGeodeticPosReceived);
     connect(this, &MainWindow::addUbxMsgRates, settings, &Settings::addUbxMsgRates);
     connect(settings, &Settings::sendRequestUbxMsgRates, this, &MainWindow::sendRequestUbxMsgRates);
     connect(settings, &Settings::sendSetUbxMsgRateChanges, this, &MainWindow::sendSetUbxMsgRateChanges);

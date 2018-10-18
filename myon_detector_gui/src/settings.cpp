@@ -116,6 +116,3 @@ void Settings::onUiEnabledStateChange(bool connected){
     }
 }
 
-void Settings::onGeodeticPosReceived(GeodeticPos pos){
-
-}

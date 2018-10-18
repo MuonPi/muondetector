@@ -293,6 +293,7 @@ void Daemon::connectToGps() {
 	connect(this, &Daemon::sendPollUbxMsg, qtGps, &QtSerialUblox::pollMsg);
 	connect(qtGps, &QtSerialUblox::UBXReceivedAckNak, this, &Daemon::UBXReceivedAckNak);
 	connect(qtGps, &QtSerialUblox::UBXreceivedMsgRateCfg, this, &Daemon::UBXReceivedMsgRateCfg);
+    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, &Daemon::sendUbxGeodeticPos);
 	connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Daemon::toConsole);
 
 	// after thread start there will be a signal emitted which starts the qtGps makeConnection function

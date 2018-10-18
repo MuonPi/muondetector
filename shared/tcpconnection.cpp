@@ -140,7 +140,7 @@ void TcpConnection::onReadyRead() {
         //*in >> block;
         //qDebug() << block.size()-2 << "Bytes read: "; // -2 because "str << blockSize" makes
                                                       // uint16_t blockSize itself part of block
-        if (verbose > 1){
+        if (verbose > 4){
             qDebug() << block;
         }
 
@@ -156,7 +156,7 @@ bool TcpConnection::sendTcpMessage(TcpMessage tcpMessage) {
     QDataStream stream(&block, QIODevice::ReadWrite);
     stream.device()->seek(0);
     stream << (quint16)(block.size() - (int)sizeof(quint16)); // size of payload
-    if (verbose > 1){
+    if (verbose > 4){
         qDebug() << block;
     }
     return writeBlock(block);
@@ -180,7 +180,7 @@ bool TcpConnection::writeBlock(const QByteArray &block) {
 			delay(100);
 		}
 	}
-    if (verbose > 0){
+    if (verbose > 1){
         emit toConsole("tcp unconnected state before wait for bytes written, closing connection");
     }
     this->thread()->quit();
