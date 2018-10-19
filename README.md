@@ -23,3 +23,5 @@ ATTENTION:
             there is missing library "libqt5svg5-dev".
             
             You also need to install "libqwt-qt5-dev".
+            
+            You may also install "lftp" for uploading acquired data to our server.
