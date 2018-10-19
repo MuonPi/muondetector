@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 	ui->discr1Layout->setAlignment(ui->discr1Slider, Qt::AlignHCenter);
 	ui->discr2Layout->setAlignment(ui->discr2Slider, Qt::AlignHCenter); // aligns the slider in their vertical layout centered
-	QIcon icon("../myon.png");
+    QIcon icon("myon.png");
 	this->setWindowIcon(icon);
 
 	// initialise all ui elements that will be inactive at start

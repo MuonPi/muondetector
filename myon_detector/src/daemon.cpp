@@ -28,7 +28,7 @@ static const QVector<uint16_t> allMsgCfgID({
 		 MSG_NAV_STATUS, MSG_NAV_SVINFO, MSG_NAV_TIMEGPS, MSG_NAV_TIMEUTC, MSG_NAV_VELECEF,
 		 MSG_NAV_VELNED,
 		 MSG_MON_HW, MSG_MON_HW2, MSG_MON_IO, MSG_MON_MSGPP,
-		 MSG_MON_RXBUF, MSG_MON_RXR,MSG_MON_TXBUF
+         MSG_MON_RXBUF, MSG_MON_RXR, MSG_MON_TXBUF
 	});
 // signal handling stuff: put code to execute before shutdown down there
 static int setup_unix_signal_handlers()
@@ -506,8 +506,8 @@ void Daemon::setBiasStatus(bool status){
 
 void Daemon::setDacThresh(uint8_t channel, float threshold) {
     if (threshold < 0 || channel > 1) { return; }
-    if (threshold > 40.96){
-        threshold = 40.96;
+    if (threshold > 4.95){
+        threshold = 4.95;
     }
     if (verbose > 1){
         qDebug() << "change dacThresh " << channel << " to " << threshold;

@@ -24,7 +24,7 @@ Map::~Map()
 }
 
 void Map::onGeodeticPosReceived(GeodeticPos pos){
-    qDebug() << (double)pos.lon*1e-7 << (double)pos.lat*1e-7 << (double)pos.hAcc/1000.0;
+    //qDebug() << (double)pos.lon*1e-7 << (double)pos.lat*1e-7 << (double)pos.hAcc/1000.0;
     if (mapComponent==nullptr){
         return;
     }

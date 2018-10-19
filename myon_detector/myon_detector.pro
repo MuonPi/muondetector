@@ -60,3 +60,6 @@ HEADERS += \
 OBJECTS_DIR += created_files
 
 MOC_DIR += created_files
+
+DISTFILES += upload_script.sh \
+             ubx_rates_config.cfg

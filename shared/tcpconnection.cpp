@@ -130,7 +130,12 @@ void TcpConnection::onReadyRead() {
 //        }
         //qDebug() << "blockSize: " << blockSize;
         QByteArray block;
-        char data[blockSize];
+        char* data;
+        data = (char *) malloc (blockSize);
+        if (data==NULL){
+            qDebug() << "critical error: memory allocation of " << blockSize << " bytes failed. Memory full?";
+            exit(1);
+        }
         in->readRawData(data,blockSize);
         QDataStream str(&block,QIODevice::ReadWrite);
         str << blockSize;
