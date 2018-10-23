@@ -5,7 +5,6 @@
 #include <time.h>
 #include <QTimer>
 #include <QFile>
-#include <i2cproperty.h>
 #include <tcpmessage.h>
 
 class TcpConnection : public QObject

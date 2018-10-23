@@ -1,6 +1,6 @@
 #ifndef UBX_MSG_KEY_NAME_MAP_H
 #define UBX_MSG_KEY_NAME_MAP_H
-#include <../shared/ublox_messages.h>
+#include <ublox_messages.h>
 #include <QString>
 static const QMap<uint16_t, QString> ubxMsgKeyNameMap({
 														 {MSG_ACK,"ACK-ACK"},

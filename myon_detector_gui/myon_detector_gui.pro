@@ -51,6 +51,7 @@ HEADERS += \
         src/mainwindow.h \
     ../shared/tcpmessage.h \
     ../shared/ublox_messages.h \
+    ../shared/gpio_pin_definitions.h \
     src/settings.h \
     ../shared/ubx_msg_key_name_map.h \
     ../shared/tcpmessage_keys.h \

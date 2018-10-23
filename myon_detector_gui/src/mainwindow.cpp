@@ -5,11 +5,11 @@
 #include <QKeyEvent>
 #include <QDebug>
 #include <QErrorMessage>
-#include <gpio_pin_definitions.h>
 #include <settings.h>
 #include <status.h>
 #include <tcpmessage_keys.h>
 #include <map.h>
+#include <gpio_pin_definitions.h>
 
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
