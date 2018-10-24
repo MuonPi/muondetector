@@ -1,0 +1,58 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Format: 1.8
+Date: Wed, 24 Oct 2018 14:55:31 +0200
+Source: muondetector-gui
+Binary: muondetector-gui
+Architecture: source amd64
+Version: 1.0.0
+Distribution: UNRELEASED
+Urgency: medium
+Maintainer: Marvin Peter <marvin.peter@physik.uni-giessen.de>
+Changed-By: Marvin Peter <marvin.peter@physik.uni-giessen.de>
+Description:
+ muondetector-gui - GUI for monitoring and controlling the muondetector-daemon.
+Changes:
+ muondetector-gui (1.0.0) UNRELEASED; urgency=medium
+ .
+   * Initial release.
+Checksums-Sha1:
+ e2d223f7ac0f516336d7b864e9681351365b423d 1933 muondetector-gui_1.0.0.dsc
+ 79c8e307d367130d2d18efc5be1716ee27ca4dea 59335 muondetector-gui_1.0.0.orig.tar.gz
+ bb8f87f770a3ceefa1b3e1f92302703c671b4933 1604 muondetector-gui_1.0.0.debian.tar.xz
+ 583922b6ec156cdce03a079d05823713e54473a6 1569624 muondetector-gui-dbgsym_1.0.0_amd64.ddeb
+ 630494c8e8b80ceb124a4119110dbdd17737c437 11855 muondetector-gui_1.0.0_amd64.buildinfo
+ 42e0a4e2db3bbb36b1c5051d7a3a0c859f6aa211 55840 muondetector-gui_1.0.0_amd64.deb
+Checksums-Sha256:
+ 6088bc4fe8e5cf7988b91d03d471da821af18fd65f2c6e430625c140a4dd4d69 1933 muondetector-gui_1.0.0.dsc
+ eeab285ee19bf9c1735b0fce13efef48a2db444136f74dd8f0a860bf77dd93db 59335 muondetector-gui_1.0.0.orig.tar.gz
+ 32585282756b417fba15e7f9778d05a29d14859b6e97858080812f4209717679 1604 muondetector-gui_1.0.0.debian.tar.xz
+ c2a8b28dfb9df1299246aaf91e3977f2a8ae45e7bda2480650dcee9804b9cffb 1569624 muondetector-gui-dbgsym_1.0.0_amd64.ddeb
+ 059dae8ae81e773bbe2c93a9e96cf376d6e7fc1d37f9873a24d48e35fbfeb6af 11855 muondetector-gui_1.0.0_amd64.buildinfo
+ 92304f89c0ef7f675591b475884d41731099f03908270e1724b7608a416f1656 55840 muondetector-gui_1.0.0_amd64.deb
+Files:
+ 3a421bc0363bc21f2bc8bbdc44bae763 1933 net optional muondetector-gui_1.0.0.dsc
+ 14e8477caa9f9533eff90b96b2ddc4c5 59335 net optional muondetector-gui_1.0.0.orig.tar.gz
+ 15df760756faa7e97915451618094f0f 1604 net optional muondetector-gui_1.0.0.debian.tar.xz
+ 35dcfc7e971608737b4a333bc60167de 1569624 debug optional muondetector-gui-dbgsym_1.0.0_amd64.ddeb
+ ff017d7d035eb17ef53e60a4178e1a0a 11855 net optional muondetector-gui_1.0.0_amd64.buildinfo
+ 3d0aaec686de4af627dcbb6d68ae3646 55840 net optional muondetector-gui_1.0.0_amd64.deb
+
+-----BEGIN PGP SIGNATURE-----
+
+iQJXBAEBCgBBFiEEnFJuXEUAw2ybPs96oJkbKvx6W34FAlvQpFsjHG1hcnZpbi5w
+ZXRlckBwaHlzaWsudW5pLWdpZXNzZW4uZGUACgkQoJkbKvx6W37CcA/+IgSLXnTs
+e+MG8feRlpXzS62oQroCPC9CzdKYh/50d41++llmGoNF5ffPVUJWOP9UDnrn0gQ4
+D73vkK4kBaLBU7IXNF57i4jE0MURl1s19NzdNMh5LT9d2+tDUuCX+/PBwc8yXpFZ
+Rc8DFwGgrYFtFVlj4muDjy2AN+Hz/vgouiIFhox7koCuxTq2IunvRLYEcutIB1zv
+Q0D30a1UuameSdKiUlrrx91OXxaZ0V53zMUP73m0m58B/6HQpsEWMZNUPMXeqwkS
+IHn1SkSY1oStvdPPhnpkvToxZf9Y3Tu1ok7vP/7gmgvietMuHRmQxDbOuC2bkkGc
+5OaOsv1NmCHSNYi6AgbX744Ojfwnj/GXOeC2RHuUVCP9D8OOLuwsyBI4tm2aAZf4
+hr7zeDCl2HSdwW2KEWH1EZXsYLTnNqhWwRJfKaOWj4nLXeE38+sGytJrss2O/g9v
+CdSlumMOGVEBRjjgu6K9WPDFeInBI7FtyFT1Rnv9c7xWBakJJJ5BYg/BOWLCDq76
+mEasiOEg28UtwE4TigLBgV+Jk6KLLvhmz1AXkD/cjWHhvcZ0vgeRmY4ANelvGHpt
+0elFUuM2TwY56aKXhgAAWjxwNtHC7NdXs9l2a4ht5i4x39ehYM/WG20SE/XWZFOQ
+6t5UTEEkpqPNAmutPiYr18EkGmj/xrz4E7o=
+=Lc65
+-----END PGP SIGNATURE-----
