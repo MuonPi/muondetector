@@ -1,5 +1,6 @@
 #ifndef UBLOX_MESSAGES_H
 #define UBLOX_MESSAGES_H
+#include <muondetector_shared_global.h>
 #define UBLOX_VERSION 7
 // not in this list are all msg of types: RXM, LOG, AID and INF
 

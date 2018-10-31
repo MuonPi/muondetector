@@ -1,7 +1,8 @@
 #ifndef GEODETICPOS_H
 #define GEODETICPOS_H
+#include <muondetector_shared_global.h>
 
-struct GeodeticPos {
+struct MUONDETECTORSHARED GeodeticPos {
     uint32_t iTOW;
     int32_t lon; // longitude 1e-7 scaling (increase by 1 means 100 nano degrees)
     int32_t lat; // latitude 1e-7 scaling (increase by 1 means 100 nano degrees)

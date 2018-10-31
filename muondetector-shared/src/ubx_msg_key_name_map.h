@@ -1,8 +1,11 @@
 #ifndef UBX_MSG_KEY_NAME_MAP_H
 #define UBX_MSG_KEY_NAME_MAP_H
-#include <ublox_messages.h>
+#include <muondetector_shared_global.h>
 #include <QString>
-static const QMap<uint16_t, QString> ubxMsgKeyNameMap({
+#include <ublox_messages.h>
+#include <QMap>
+
+const QMap<short unsigned int , QString> ubxMsgKeyNameMap({
 														 {MSG_ACK,"ACK-ACK"},
 														 {MSG_NAK,"ACK-NAK"},
 														 // NAV

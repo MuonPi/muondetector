@@ -1,5 +1,6 @@
 #ifndef TCPMESSAGE_H
 #define TCPMESSAGE_H
+#include <muondetector_shared_global.h>
 #include <QByteArray>
 #include <QDataStream>
 
@@ -8,7 +9,7 @@
 // at pos 0: length of message (quint16) -> length of QByteArray - length of this number (sizeof(quint16))
 // at pos 1: tcpMsgID (quint16), shows what kind of message it is
 
-class TcpMessage
+class MUONDETECTORSHARED TcpMessage
 {
 public:
 	TcpMessage(quint16 tcpMsgID = 0);

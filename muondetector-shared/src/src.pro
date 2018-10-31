@@ -12,10 +12,10 @@ CONFIG += c++11
 CONFIG += warn_on
 CONFIG += release
 
-TARGET = muon-shared
+TARGET = muondetector-shared
 TEMPLATE = lib
 
-DEFINES += SRC_LIBRARY
+DEFINES += MUONDETECTOR_SHARED_LIBRARY
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which has been marked as deprecated (the exact warnings
@@ -41,12 +41,11 @@ SOURCES += \
     tcpmessage.cpp
 
 HEADERS += \
-        src_global.h \ 
     geodeticpos.h \
     gpio_pin_definitions.h \
-    src_global.h \
     tcpconnection.h \
     tcpmessage.h \
     tcpmessage_keys.h \
     ublox_messages.h \
-    ubx_msg_key_name_map.h
+    ubx_msg_key_name_map.h \
+    muondetector_shared_global.h

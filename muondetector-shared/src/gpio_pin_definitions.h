@@ -1,5 +1,6 @@
 #ifndef GPIO_PIN_DEFINITIONS_H
 #define GPIO_PIN_DEFINITIONS_H
+#include <muondetector_shared_global.h>
 
 // define pins on the raspberry pi, UBIAS_EN is the power on/off pin for bias voltage
 // PREAMP_1/2 enables the DC voltage to power the preamp through the signal cable

@@ -1,6 +1,6 @@
 #ifndef TCPMESSAGE_KEYS_H
 #define TCPMESSAGE_KEYS_H
-#include <QtGlobal>
+#include <muondetector_shared_global.h>
 
 // no specific reason but the codes are all prime numbers :)
 static const quint16 ping = 2;

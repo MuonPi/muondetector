@@ -1,13 +1,14 @@
 #ifndef TCPCONNECTION_H
 #define TCPCONNECTION_H
 
+#include <muondetector_shared_global.h>
 #include <QTcpSocket>
+#include <tcpmessage.h>
 #include <time.h>
 #include <QTimer>
 #include <QFile>
-#include <tcpmessage.h>
 
-class TcpConnection : public QObject
+class MUONDETECTORSHARED TcpConnection : public QObject
 {
 	Q_OBJECT
 
