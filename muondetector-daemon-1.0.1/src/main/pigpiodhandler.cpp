@@ -7,6 +7,7 @@ extern "C" {
 }
 
 static int pi = 0;
+const int rateSecondsBuffered = 60*120; // 120 min
 static PigpiodHandler *pigHandlerAddress = nullptr;
 PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
 	: QObject(parent)
@@ -41,40 +42,45 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
 void PigpiodHandler::onBufferRatesTimer(){
     QPointF xorPoint = getRate(XOR_RATE);
     QPointF andPoint = getRate(AND_RATE);
-    qreal x = static_cast<qreal>(startOfProgram.msecsTo(QDateTime::currentDateTimeUtc()));
+    qint64 msecs = startOfProgram.msecsTo(QDateTime::currentDateTimeUtc());
+    qreal x = msecs/1000.0;//static_cast<qreal>(startOfProgram.msecsTo(QDateTime::currentDateTimeUtc()));
     // qreal is usually double or float (on armhf it should be float)
     xorPoint.setX(x);
     andPoint.setX(x);
-    xorBufferedRates.push_front(xorPoint);
-    andBufferedRates.push_front(andPoint);
-    while (xorBufferedRates.size()>rateBufferMaxSize){
-        xorBufferedRates.pop_back();
+    xorBufferedRates.push_back(xorPoint);
+    andBufferedRates.push_back(andPoint);
+    while (xorBufferedRates.first().x() < x-rateSecondsBuffered){
+        xorBufferedRates.pop_front();
     }
-    while (andBufferedRates.size()>rateBufferMaxSize){
-        andBufferedRates.pop_back();
+    while (andBufferedRates.first().x() < x-rateSecondsBuffered){
+        andBufferedRates.pop_front();
     }
 }
 
 QVector<QPointF> PigpiodHandler::getBufferedRates(int number, quint8 whichRate){
     QVector<QPointF> someRates;
-    QVector<QPointF> *bufferedRates;
+    //QVector<QPointF> *bufferedRates;
     if (whichRate == XOR_RATE){
-        bufferedRates = &xorBufferedRates;
+        if (number==0){
+            return xorBufferedRates;
+        }
+        if (number>=xorBufferedRates.size()){
+            return xorBufferedRates;
+        }
+        for (int i = xorBufferedRates.size()-number; i < xorBufferedRates.size(); i++){
+            someRates.push_back(xorBufferedRates.at(i));
+        }
     }
     if (whichRate == AND_RATE){
-        bufferedRates = &andBufferedRates;
-    }
-    if (bufferedRates == nullptr){
-        return QVector<QPointF>();
-    }
-    if (number==0){
-        return *bufferedRates;
-    }
-    if (number>bufferedRates->size()){
-        number = bufferedRates->size();
-    }
-    for (int i = 0; i < number; i++){
-        someRates.push_back(bufferedRates->at(i));
+        if (number==0){
+            return andBufferedRates;
+        }
+        if (number>=andBufferedRates.size()){
+            return andBufferedRates;
+        }
+        for (int i = andBufferedRates.size()-number; i < andBufferedRates.size(); i++){
+            someRates.push_back(andBufferedRates.at(i));
+        }
     }
     return someRates;
 }

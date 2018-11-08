@@ -44,7 +44,6 @@ private slots:
     void onBufferRatesTimer();
 private:
     //quint64 xorCounts, andCounts;
-    const int rateBufferMaxSize = 120;
     QPointF getRate(quint8 whichRate);
     QVector<QPointF> xorBufferedRates;
     QVector<QPointF> andBufferedRates;

@@ -393,8 +393,8 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
     }
     if (msgID == gpioRateRequestSig){
         quint8 whichRate;
-        int number;
-        *(tcpMessage.dStream) >> whichRate >> number;
+        quint16 number;
+        *(tcpMessage.dStream) >> number >> whichRate;
         sendGpioRates(number, whichRate);
     }
     if (msgID == quitConnectionSig){

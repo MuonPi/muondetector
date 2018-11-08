@@ -15,8 +15,8 @@ int main(int argc, char *argv[])
 {
     qRegisterMetaType<TcpMessage>("TcpMessage");
 	QCoreApplication a(argc, argv);
-	QCoreApplication::setApplicationName("myon_detector");
-    QCoreApplication::setApplicationVersion("1.0");
+    QCoreApplication::setApplicationName("muondetector-daemon");
+    QCoreApplication::setApplicationVersion("1.0.1");
 
     // command line input management
 	QCommandLineParser parser;
