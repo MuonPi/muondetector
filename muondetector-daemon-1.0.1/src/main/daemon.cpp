@@ -174,8 +174,8 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	biasVoltage = new_biasVoltage;
     biasON = bias_ON;
     pca = new PCA9536();
-    pcaPortMask = new_pcaPortMask;
-    setPcaChannel(pcaPortMask);
+    pca->setOutputPorts(0x03);
+    setPcaChannel(new_pcaPortMask);
 	for (int i = 0; i < 2; i++) {
 		if (dacThresh[i] > 0) {
 			dac->setVoltage(i, dacThresh[i]);
@@ -471,7 +471,6 @@ void Daemon::setPcaChannel(uint8_t channel) {
 	if (!pca) {
 		return;
 	}
-	pca->setOutputPorts(channel);
 	pca->setOutputState(channel);
     sendPcaChannel();
 }
