@@ -22,6 +22,6 @@ ATTENTION:
             "Project ERROR: unknown module(s) in QT: svg"
             there is missing library "libqt5svg5-dev".
             
-            You also need to install "libqwt-qt5-dev".
+            You also need to install "libqwt-qt5-dev" or "libqwt-dev".
             
             You may also install "lftp" for uploading acquired data to our server.
