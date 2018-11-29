@@ -54,7 +54,7 @@ public slots:
 	// for polling the port configuration for specific port set rate to port ID
 	void handleError(QSerialPort::SerialPortError serialPortError);
 	void UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate);
-	void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
+    void UBXSetCfgRate(uint16_t measRate, uint16_t navRate);
 	void UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask);
 	void ackTimeout();
 	// outPortMask is something like 1 for only UBX protocol or 0b11 for UBX and NMEA

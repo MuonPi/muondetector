@@ -275,7 +275,7 @@ void QtSerialUblox::calcChkSum(const std::string& buf, unsigned char* chkA, unsi
 	}
 }
 
-void QtSerialUblox::UBXSetCfgRate(uint8_t measRate, uint8_t navRate)
+void QtSerialUblox::UBXSetCfgRate(uint16_t measRate, uint16_t navRate)
 {
 	if (verbose > 4) {
 		emit toConsole(QString("Ublox UBXsetCfgRate running in thread " + QString("0x%1\n")

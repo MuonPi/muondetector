@@ -576,8 +576,7 @@ void Daemon::configGps() {
 
 	// set protocol configuration for ports
 	// msgRateCfgs: -1 means unknown, 0 means off, some positive value means update time
-	const int measrate = 10;
-	msgRateCfgs.insert(MSG_CFG_RATE, measrate);
+    msgRateCfgs.insert(MSG_CFG_RATE, measrate);
 	msgRateCfgs.insert(MSG_TIM_TM2, 1);
 	msgRateCfgs.insert(MSG_TIM_TP, 51);
 	msgRateCfgs.insert(MSG_NAV_TIMEUTC, 20);
@@ -591,7 +590,7 @@ void Daemon::configGps() {
 	msgRateCfgs.insert(MSG_NAV_SBAS, 255);
 	msgRateCfgs.insert(MSG_NAV_DOP, 101);
 	msgRateCfgs.insert(MSG_NAV_SVINFO, 49);
-    emit UBXSetCfgRate(1000 / measrate, 1); // MSG_RATE
+    emit UBXSetCfgRate(10, 1); // MSG_RATE
 
 	emit UBXSetCfgMsgRate(MSG_TIM_TM2, 1, 1);	// TIM-TM2
 	emit UBXSetCfgMsgRate(MSG_TIM_TP, 1, 51);	// TIM-TP
