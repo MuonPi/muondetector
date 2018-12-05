@@ -8,6 +8,9 @@ Therefore the software has to communicate with the ublox gps module through a se
 The high time accuracy is needed because it is planned to use multiple stations for measuring muons.
 The software must be easy to use and run in background while synchronizing accumulated data with a server.
 
+You can download the binaries (.deb packages inside of "install ready" folder) and just install them with "sudo apt install <filename>"
+or on debian jessie "sudo gdebi <filename>". You will have to install the "libmuondetector-shared" library first before you can install
+the gui or the daemon.
 
 ATTENTION:  
             when trying to create Makefile with qmake (qt version 5.7.1 on raspbian) there will probably be errors.
