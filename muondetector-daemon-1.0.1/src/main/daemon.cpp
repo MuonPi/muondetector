@@ -12,8 +12,11 @@ extern "C" {
 #include <custom_i2cdetect.h>
 }
 
-using namespace std;
+#define DAC_BIAS 2 // channel of the dac where bias voltage is set
+#define DAC_TH1 0 // channel of the dac where threshold 1 is set
+#define DAC_TH2 1 // channel of the dac where threshold 2 is set
 
+using namespace std;
 
 static const QVector<uint16_t> allMsgCfgID({
 	//   MSG_CFG_ANT, MSG_CFG_CFG, MSG_CFG_DAT, MSG_CFG_DOSC,
@@ -176,13 +179,14 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
     pca = new PCA9536();
     pca->setOutputPorts(0x03);
     setPcaChannel(new_pcaPortMask);
-	for (int i = 0; i < 2; i++) {
-		if (dacThresh[i] > 0) {
-			dac->setVoltage(i, dacThresh[i]);
-		}
-	}
+    if (dacThresh[0] > 0) {
+        dac->setVoltage(DAC_TH1, dacThresh[0]);
+    }
+    if (dacThresh[1] > 0) {
+        dac->setVoltage(DAC_TH2, dacThresh[1]);
+    }
 	if (biasVoltage > 0) {
-		dac->setVoltage(2, biasVoltage);
+        dac->setVoltage(DAC_BIAS, biasVoltage);
 	}
 
 	// for gps module
@@ -480,7 +484,7 @@ void Daemon::setBiasVoltage(float voltage) {
     if (verbose > 1){
         qDebug() << "change biasVoltage to " << voltage;
     }
-    dac->setVoltage(2, voltage);
+    dac->setVoltage(DAC_BIAS, voltage);
     if (pigHandler!=nullptr){
         pigHandler->resetBuffer();
     }
@@ -576,6 +580,7 @@ void Daemon::configGps() {
 
 	// set protocol configuration for ports
 	// msgRateCfgs: -1 means unknown, 0 means off, some positive value means update time
+    int measrate = 10;
     msgRateCfgs.insert(MSG_CFG_RATE, measrate);
 	msgRateCfgs.insert(MSG_TIM_TM2, 1);
 	msgRateCfgs.insert(MSG_TIM_TP, 51);
