@@ -10,6 +10,7 @@
 #include <i2c/i2cdevices.h>
 #include <QSocketNotifier>
 #include <pigpiodhandler.h>
+#include <filehandler.h>
 
 // for sig handling:
 #include <sys/types.h>
@@ -112,7 +113,10 @@ private:
 	int gpsTimeout = 5000;
 	bool dumpRaw, configGnss, showout, showin;
 
-	// signal handling
+    // data handling
+    FileHandler *fileHandler = nullptr;
+
+    // signal handling
 	static int sighupFd[2];
 	static int sigtermFd[2];
 	static int sigintFd[2];

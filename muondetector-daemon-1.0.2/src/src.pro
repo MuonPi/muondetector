@@ -2,7 +2,7 @@ QT -= gui
 QT += core
 QT += network
 QT += serialport
-VERSION = 1.0.1
+VERSION = 1.0.2
 CONFIG += c++11 console
 CONFIG -= app_bundle
 
@@ -28,7 +28,7 @@ INCLUDEPATH +=  . \
     main \
     main/i2c
 
-INCLUDEPATH += ../../muondetector-shared-1.0.0/src/
+INCLUDEPATH += ../../muondetector-shared-1.0.2/src/
 
 LIBS += -L/usr/lib/muondetector-shared -lmuondetector-shared
 DEPENDPATH += /usr/lib/muondetector-shared
@@ -46,6 +46,7 @@ SOURCES += main/main.cpp \
     main/pigpiodhandler.cpp \
     main/daemon.cpp \
     main/custom_io_operators.cpp \
+    main/filehandler.cpp
 
 HEADERS += \
     main/gnsssatellite.h \
@@ -60,6 +61,7 @@ HEADERS += \
     main/pigpiodhandler.h \
     main/daemon.h \
     main/ublox_structs.h \
-    main/custom_io_operators.h
+    main/custom_io_operators.h \
+    main/filehandler.h
 
 DISTFILES += ubx_rates_config.cfg

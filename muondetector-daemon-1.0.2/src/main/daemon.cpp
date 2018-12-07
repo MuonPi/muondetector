@@ -161,6 +161,10 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
         cout << "daemon running in thread " << QString("0x%1").arg((intptr_t)this->thread()) << endl;
 	}
 
+    if (fileHandler = nullptr){
+        fileHandler = new FileHandler();
+    }
+
 	// for pigpio signals:
 	const QVector<unsigned int> gpio_pins({ EVT_AND, EVT_XOR });
     pigHandler = new PigpiodHandler(gpio_pins, this);
@@ -743,6 +747,7 @@ void Daemon::gpsToConsole(QString data) {
 void Daemon::gpsConnectionError() {
 
 }
+
 
 // ALL OTHER UTITLITY FUNCTIONS
 void Daemon::stoppedConnection(QString hostName, quint16 port, quint32 connectionTimeout, quint32 connectionDuration) {
