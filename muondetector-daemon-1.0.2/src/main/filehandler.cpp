@@ -71,7 +71,8 @@ bool FileHandler::uploadDataFile(QString fileName){
     QStringList arguments("-p 35221"
                           "-u <user>,<pass>"
                           "balu.physik.uni-giessen.de:/cosmicshower/<mac-address>"
-                          ("-e put "+fileName));
+						 );
+	arguments.append("-e put "+fileName);
     lftpProcess.setArguments(arguments);
     lftpProcess.start();
 }
