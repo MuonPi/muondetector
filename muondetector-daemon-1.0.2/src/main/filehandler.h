@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QQueue>
 #include <QDateTime>
+#include <QStandardPaths>
 
 class FileHandler : public QObject
 {
@@ -17,13 +18,15 @@ private:
     // save and send data everyday
     QFile *dataFile = nullptr; // the file currently written to.
     QString dataConfigFileName = "dataFileInformation.conf";
-    QString dataFolderPath = "~/muondetector-daemon/data";
+    QString configFolderName = ".muondetector-daemon/";
+    QString muondetectorConfigPath;
     QQueue<QString> files; // first file name is always the current working file name
     bool openDataFile(); // reads the config file and opens the correct data file to write to
     bool readFileInformation();
     bool uploadDataFile(QString fileName); // sends a data file with some filename via lftp script to the server
     bool switchToNewDataFile(QString fileName = ""); // closes the old file and opens a new one, changing "dataConfig.conf" to the new file
     void closeDataFile();
+    QString getMacAddress();
     QString createFileName(); // creates a fileName based on date time and mac address
     quint32 fileSize;
     QDateTime lastUploadDateTime;

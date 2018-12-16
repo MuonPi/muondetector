@@ -3,6 +3,8 @@
 #include <QDebug>
 #include <QProcess>
 #include <QNetworkInterface>
+#include <QNetworkSession>
+#include <QNetworkConfigurationManager>
 #include <QTimer>
 #include <QDir>
 
@@ -13,15 +15,17 @@ FileHandler::FileHandler(QString dataFolder, QString configFileName, quint32 fil
         dataConfigFileName = configFileName;
     }
     if (dataFolder != ""){
-        dataFolderPath = dataFolder;
+        configFolderName = dataFolder;
     }
     QDir temp;
-    if (!temp.exists(dataFolderPath)){
-        temp.mkpath(dataFolderPath);
-    }
-    QDir pathDir(dataFolderPath);
-    if (!pathDir.exists()){
-        qDebug() << "could not create folder " << dataFolderPath;
+    QString fullPath = temp.homePath()+"/"+configFolderName;
+    muondetectorConfigPath = fullPath;
+    fullPath+="data";
+    if (!temp.exists(fullPath)){
+        temp.mkpath(fullPath);
+        if (!temp.exists(fullPath)){
+            qDebug() << "could not create folder " << fullPath;
+        }
     }
     QTimer *uploadReminder = new QTimer(this);
     uploadReminder->setInterval(60*1000*15); // every 15 minutes or so
@@ -29,22 +33,23 @@ FileHandler::FileHandler(QString dataFolder, QString configFileName, quint32 fil
     connect(uploadReminder, &QTimer::timeout, this, &FileHandler::onUploadRemind);
     fileSize = fileSizeMB;
     openDataFile();
-    qDebug() << "initialisation of filehandler ok";
-    switchToNewDataFile("testFile");
-    qDebug() << "switch file does not crash";
-    writeToDataFile("this is a test file, please ignore this message");
-    qDebug() << "writing to data file seems to work";
+    QString testFilePath = muondetectorConfigPath+"data/"+"testFile";
+    switchToNewDataFile(testFilePath);
+    writeToDataFile("this is a test file, please ignore this message\n");
     switchToNewDataFile();
-    qDebug() << "miep";
-    if (uploadDataFile("testFile")){
-
+    if (uploadDataFile(testFilePath)){
+        qDebug() << "upload not crashing";
     }
-    qDebug() << "upload not crashing";
     uploadReminder->start();
 }
 
 bool FileHandler::readFileInformation(){
-    QFile *configFile = new QFile(dataConfigFileName);
+    if (muondetectorConfigPath==""){
+        qDebug() << "folder path not existent";
+        return false;
+    }
+    QString configFilePath = muondetectorConfigPath+dataConfigFileName;
+    QFile *configFile = new QFile(configFilePath);
     if (!configFile->open(QIODevice::ReadWrite)){
         qDebug() << "open "<<dataConfigFileName<<" failed";
         return false;
@@ -108,9 +113,11 @@ bool FileHandler::uploadDataFile(QString fileName){
     lftpProcess.start();
     const int timeout = 300000;
     if (!lftpProcess.waitForFinished(timeout)){
+        qDebug() << lftpProcess.readAll();
         qDebug() << "lftp timeout after " << timeout/1000 << "s";
         return false;
     }
+    qDebug() << lftpProcess.readAll();
     if (lftpProcess.exitStatus()==-1){
         qDebug() << "lftp returned exit status -1";
         return false;
@@ -119,7 +126,7 @@ bool FileHandler::uploadDataFile(QString fileName){
 }
 
 void FileHandler::closeDataFile(){
-    dataFile-> close();
+    dataFile->close();
     delete dataFile;
     dataFile = nullptr;
 }
@@ -139,12 +146,15 @@ bool FileHandler::switchToNewDataFile(QString fileName){
     if (!openDataFile()){
         return false;
     }
-    QFile *configFile = new QFile(dataConfigFileName);
+    QString configFilePath = muondetectorConfigPath+dataConfigFileName;
+    QFile *configFile = new QFile(configFilePath);
     configFile->open(QIODevice::ReadWrite | QIODevice::Truncate);
+    configFile->resize(0);
     QTextStream *configStream = new QTextStream(configFile);
     for (auto file : files){
-        *configStream << file;
+        *configStream << file << "\n";
     }
+    configFile->close();
     delete configStream;
     configStream = nullptr;
     delete configFile;
@@ -152,13 +162,57 @@ bool FileHandler::switchToNewDataFile(QString fileName){
     return true;
 }
 
+QString FileHandler::getMacAddress(){
+    QNetworkConfiguration nc;
+    QNetworkConfigurationManager ncm;
+    QList<QNetworkConfiguration> configsForEth,configsForWLAN,allConfigs;
+    // getting all the configs we can
+    foreach (nc,ncm.allConfigurations(QNetworkConfiguration::Active))
+    {
+        if(nc.type() == QNetworkConfiguration::InternetAccessPoint)
+        {
+            // selecting the bearer type here
+            if(nc.bearerType() == QNetworkConfiguration::BearerWLAN)
+            {
+                configsForWLAN.append(nc);
+            }
+            if(nc.bearerType() == QNetworkConfiguration::BearerEthernet)
+            {
+                configsForEth.append(nc);
+            }
+        }
+    }
+    // further in the code WLAN's and Eth's were treated differently
+    allConfigs.append(configsForWLAN);
+    allConfigs.append(configsForEth);
+    QString MAC;
+    foreach(nc,allConfigs)
+    {
+        QNetworkSession networkSession(nc);
+        QNetworkInterface netInterface = networkSession.interface();
+        // these last two conditions are for omiting the virtual machines' MAC
+        // works pretty good since no one changes their adapter name
+        if(!(netInterface.flags() & QNetworkInterface::IsLoopBack)
+                && !netInterface.humanReadableName().toLower().contains("vmware")
+                && !netInterface.humanReadableName().toLower().contains("virtual"))
+        {
+            MAC = QString(netInterface.hardwareAddress());
+            break;
+        }
+    }
+    return MAC;
+}
+
 QString FileHandler::createFileName(){
     // creates a fileName based on date time and mac address
-    QNetworkInterface interface;
-    QString macAddress = interface.hardwareAddress();
+    if (muondetectorConfigPath==""){
+        qDebug() << "could not open data folder";
+        return "";
+    }
+    QString macAddress = "macaddress";
     QDateTime dateTime = QDateTime::currentDateTimeUtc();
-    QString fileName = (macAddress+"-"+dateTime.toString("yyyyMMdd-hh:mm:ss"));
-    fileName = dataFolderPath+"/"+fileName;
+    QString fileName = (macAddress+"_"+dateTime.toString("yyyy-MM-dd_hh:mm:ss"));
+    fileName = muondetectorConfigPath+"data/"+fileName;
     return fileName;
 }
 
