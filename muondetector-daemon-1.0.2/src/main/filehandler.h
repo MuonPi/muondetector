@@ -3,20 +3,21 @@
 #include <QFile>
 #include <QObject>
 #include <QQueue>
-
+#include <QDateTime>
 
 class FileHandler : public QObject
 {
     Q_OBJECT
 
 public:
-    FileHandler(QString configFileName = "", QObject *parent = nullptr);
+    FileHandler(QString dataFolder = "", QString configFileName = "", quint32 fileSizeMB = 500, QObject *parent = nullptr);
     bool writeToDataFile(QString data); // writes data to the file opened in "dataFile"
 
 private:
     // save and send data everyday
     QFile *dataFile = nullptr; // the file currently written to.
     QString dataConfigFileName = "dataFileInformation.conf";
+    QString dataFolderPath = "~/muondetector-daemon/data";
     QQueue<QString> files; // first file name is always the current working file name
     bool openDataFile(); // reads the config file and opens the correct data file to write to
     bool readFileInformation();
@@ -24,6 +25,12 @@ private:
     bool switchToNewDataFile(QString fileName = ""); // closes the old file and opens a new one, changing "dataConfig.conf" to the new file
     void closeDataFile();
     QString createFileName(); // creates a fileName based on date time and mac address
+    quint32 fileSize;
+    QDateTime lastUploadDateTime;
+    QTime dailyUploadTime;
+
+private slots:
+    void onUploadRemind();
 };
 
 #endif // FILEHANDLER_H

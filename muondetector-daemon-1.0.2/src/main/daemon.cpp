@@ -160,10 +160,11 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	if (verbose > 4) {
         cout << "daemon running in thread " << QString("0x%1").arg((intptr_t)this->thread()) << endl;
 	}
-
-    if (fileHandler = nullptr){
+    qDebug() << "until creation of fileHandler object";
+    if (fileHandler == nullptr){
         fileHandler = new FileHandler();
     }
+    qDebug() << "after creation of fileHandler object";
 
 	// for pigpio signals:
 	const QVector<unsigned int> gpio_pins({ EVT_AND, EVT_XOR });
