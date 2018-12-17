@@ -7,6 +7,7 @@
 #include <QNetworkConfigurationManager>
 #include <QTimer>
 #include <QDir>
+#include <QCryptographicHash>
 
 FileHandler::FileHandler(QString dataFolder, QString configFileName, quint32 fileSizeMB, QObject *parent)
     : QObject(parent)
@@ -20,7 +21,9 @@ FileHandler::FileHandler(QString dataFolder, QString configFileName, quint32 fil
     QDir temp;
     QString fullPath = temp.homePath()+"/"+configFolderName;
     muondetectorConfigPath = fullPath;
-    fullPath+="data";
+    QCryptographicHash hashFunction();
+    fullPath += QString::fromStdString(hashFunction.hash(getMacAddress(), QCryptographicHash::Sha3_512).toStdString());
+    fullPath += "/";
     if (!temp.exists(fullPath)){
         temp.mkpath(fullPath);
         if (!temp.exists(fullPath)){
@@ -33,7 +36,7 @@ FileHandler::FileHandler(QString dataFolder, QString configFileName, quint32 fil
     connect(uploadReminder, &QTimer::timeout, this, &FileHandler::onUploadRemind);
     fileSize = fileSizeMB;
     openDataFile();
-    QString testFilePath = muondetectorConfigPath+"data/"+"testFile";
+    QString testFilePath = muondetectorConfigPath+"testFile";
     switchToNewDataFile(testFilePath);
     writeToDataFile("this is a test file, please ignore this message\n");
     switchToNewDataFile();
@@ -105,10 +108,13 @@ bool FileHandler::writeToDataFile(QString data){
 bool FileHandler::uploadDataFile(QString fileName){
     QProcess lftpProcess(this);
     lftpProcess.setProgram("lftp");
-    QStringList arguments({"-p 35221",
-                          "-u <user>,<pass>",
+    QStringList arguments({"-p",
+                           "35221",
+                           "-u",
+                           "<user>,<pass>",
                           "balu.physik.uni-giessen.de:/cosmicshower/<mac-address>",
-                          QString("-e put "+fileName)});
+                          "-e",
+                           QString("put "+fileName)});
     lftpProcess.setArguments(arguments);
     lftpProcess.start();
     const int timeout = 300000;
