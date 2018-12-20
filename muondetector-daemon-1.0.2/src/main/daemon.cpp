@@ -303,6 +303,9 @@ void Daemon::connectToGps() {
 	connect(qtGps, &QtSerialUblox::UBXreceivedMsgRateCfg, this, &Daemon::UBXReceivedMsgRateCfg);
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, &Daemon::sendUbxGeodeticPos);
 	connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Daemon::toConsole);
+    if (fileHandler != nullptr){
+        connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
+    }
 
 	// after thread start there will be a signal emitted which starts the qtGps makeConnection function
 	gpsThread->start();
@@ -585,21 +588,21 @@ void Daemon::configGps() {
 	// set protocol configuration for ports
 	// msgRateCfgs: -1 means unknown, 0 means off, some positive value means update time
     int measrate = 10;
-    msgRateCfgs.insert(MSG_CFG_RATE, measrate);
-	msgRateCfgs.insert(MSG_TIM_TM2, 1);
-	msgRateCfgs.insert(MSG_TIM_TP, 51);
-	msgRateCfgs.insert(MSG_NAV_TIMEUTC, 20);
-	msgRateCfgs.insert(MSG_MON_HW, 47);
+    // msgRateCfgs.insert(MSG_CFG_RATE, measrate);
+    // msgRateCfgs.insert(MSG_TIM_TM2, 1);
+    // msgRateCfgs.insert(MSG_TIM_TP, 51);
+    // msgRateCfgs.insert(MSG_NAV_TIMEUTC, 20);
+    // msgRateCfgs.insert(MSG_MON_HW, 47);
 	// msgRateCfgs.insert(MSG_NAV_SAT, 59);
-	msgRateCfgs.insert(MSG_NAV_TIMEGPS, 61);
-	msgRateCfgs.insert(MSG_NAV_SOL, 67);
-	msgRateCfgs.insert(MSG_NAV_STATUS, 71);
-	msgRateCfgs.insert(MSG_NAV_CLOCK, 89);
-	msgRateCfgs.insert(MSG_MON_TXBUF, 97);
-	msgRateCfgs.insert(MSG_NAV_SBAS, 255);
-	msgRateCfgs.insert(MSG_NAV_DOP, 101);
-	msgRateCfgs.insert(MSG_NAV_SVINFO, 49);
-    emit UBXSetCfgRate(10, 1); // MSG_RATE
+    // msgRateCfgs.insert(MSG_NAV_TIMEGPS, 61);
+    // msgRateCfgs.insert(MSG_NAV_SOL, 67);
+    // msgRateCfgs.insert(MSG_NAV_STATUS, 71);
+    // msgRateCfgs.insert(MSG_NAV_CLOCK, 89);
+    // msgRateCfgs.insert(MSG_MON_TXBUF, 97);
+    // msgRateCfgs.insert(MSG_NAV_SBAS, 255);
+    // msgRateCfgs.insert(MSG_NAV_DOP, 101);
+    // msgRateCfgs.insert(MSG_NAV_SVINFO, 49);
+    emit UBXSetCfgRate(1000/measrate, 1); // MSG_RATE
 
 	emit UBXSetCfgMsgRate(MSG_TIM_TM2, 1, 1);	// TIM-TM2
 	emit UBXSetCfgMsgRate(MSG_TIM_TP, 1, 51);	// TIM-TP

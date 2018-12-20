@@ -21,9 +21,11 @@ FileHandler::FileHandler(QString dataFolder, QString configFileName, quint32 fil
     QDir temp;
     QString fullPath = temp.homePath()+"/"+configFolderName;
     muondetectorConfigPath = fullPath;
-    QCryptographicHash hashFunction();
-    fullPath += QString::fromStdString(hashFunction.hash(getMacAddress(), QCryptographicHash::Sha3_512).toStdString());
+    QCryptographicHash hashFunction(QCryptographicHash::Sha3_256);
+    hashedMacAddress = QString(hashFunction.hash(getMacAddressByteArray(), QCryptographicHash::Sha3_256).toHex());
+    fullPath += hashedMacAddress;
     fullPath += "/";
+    dataFolderPath = fullPath;
     if (!temp.exists(fullPath)){
         temp.mkpath(fullPath);
         if (!temp.exists(fullPath)){
@@ -54,6 +56,8 @@ bool FileHandler::readFileInformation(){
     QString configFilePath = muondetectorConfigPath+dataConfigFileName;
     QFile *configFile = new QFile(configFilePath);
     if (!configFile->open(QIODevice::ReadWrite)){
+        delete configFile;
+        configFile = nullptr;
         qDebug() << "open "<<dataConfigFileName<<" failed";
         return false;
     }
@@ -68,11 +72,17 @@ bool FileHandler::readFileInformation(){
         files.push_back(fileName);
     }
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    delete configStream;
-    configStream = nullptr;
-    configFile->close();
-    delete configFile;
-    configFile = nullptr;
+    if (configFile->isOpen()){
+        configFile->close();
+    }
+    if (configStream != nullptr){
+        delete configStream;
+        configStream = nullptr;
+    }
+    if (configFile != nullptr){
+        delete configFile;
+        configFile = nullptr;
+    }
     return true;
 }
 
@@ -85,7 +95,10 @@ bool FileHandler::openDataFile(){
         readFileInformation();
     }
     if (files.empty()){
-        files.push_back(createFileName());
+        QString temp = createFileName();
+        if (!files.contains(temp)){
+            files.push_back(createFileName());
+        }
     }
     QString fileName = files.first(); // current working file name is first in the queue
     dataFile = new QFile(fileName);
@@ -96,13 +109,12 @@ bool FileHandler::openDataFile(){
     return true;
 }
 
-bool FileHandler::writeToDataFile(QString data){
+void FileHandler::writeToDataFile(QString data){
     if (dataFile == nullptr){
-        return false;
+        return;
     }
     QTextStream out(dataFile);
     out << data;
-    return true;
 }
 
 bool FileHandler::uploadDataFile(QString fileName){
@@ -120,10 +132,10 @@ bool FileHandler::uploadDataFile(QString fileName){
     const int timeout = 300000;
     if (!lftpProcess.waitForFinished(timeout)){
         qDebug() << lftpProcess.readAll();
-        qDebug() << "lftp timeout after " << timeout/1000 << "s";
+        qDebug() << "lftp not installed or timed out after "<< timeout/1000<< " s";
         return false;
     }
-    qDebug() << lftpProcess.readAll();
+    //qDebug() << "lftp log: "<< lftpProcess.readAll();
     if (lftpProcess.exitStatus()==-1){
         qDebug() << "lftp returned exit status -1";
         return false;
@@ -132,9 +144,13 @@ bool FileHandler::uploadDataFile(QString fileName){
 }
 
 void FileHandler::closeDataFile(){
-    dataFile->close();
-    delete dataFile;
-    dataFile = nullptr;
+    if (dataFile->isOpen()){
+        dataFile->close();
+    }
+    if (dataFile != nullptr){
+        delete dataFile;
+        dataFile = nullptr;
+    }
 }
 
 bool FileHandler::switchToNewDataFile(QString fileName){
@@ -142,7 +158,9 @@ bool FileHandler::switchToNewDataFile(QString fileName){
         return false;
     }
     if (files.empty()){
-        readFileInformation();
+        if (!readFileInformation()){
+            return false;
+        }
     }
     closeDataFile();
     if(fileName == ""){
@@ -150,6 +168,7 @@ bool FileHandler::switchToNewDataFile(QString fileName){
     }
     files.push_front(fileName);
     if (!openDataFile()){
+        closeDataFile();
         return false;
     }
     QString configFilePath = muondetectorConfigPath+dataConfigFileName;
@@ -160,11 +179,17 @@ bool FileHandler::switchToNewDataFile(QString fileName){
     for (auto file : files){
         *configStream << file << "\n";
     }
-    configFile->close();
-    delete configStream;
-    configStream = nullptr;
-    delete configFile;
-    configFile = nullptr;
+    if (configFile->isOpen()){
+        configFile->close();
+    }
+    if (configStream != nullptr){
+        delete configStream;
+        configStream = nullptr;
+    }
+    if (configFile != nullptr){
+        delete configFile;
+        configFile = nullptr;
+    }
     return true;
 }
 
@@ -209,16 +234,19 @@ QString FileHandler::getMacAddress(){
     return MAC;
 }
 
+QByteArray FileHandler::getMacAddressByteArray(){
+    return QByteArray::fromStdString(getMacAddress().toStdString());
+}
+
 QString FileHandler::createFileName(){
     // creates a fileName based on date time and mac address
     if (muondetectorConfigPath==""){
         qDebug() << "could not open data folder";
         return "";
     }
-    QString macAddress = "macaddress";
     QDateTime dateTime = QDateTime::currentDateTimeUtc();
-    QString fileName = (macAddress+"_"+dateTime.toString("yyyy-MM-dd_hh:mm:ss"));
-    fileName = muondetectorConfigPath+"data/"+fileName;
+    QString fileName = (dateTime.toString("yyyy-MM-dd_hh:mm:ss"));
+    fileName = muondetectorConfigPath+hashedMacAddress+"/"+fileName;
     return fileName;
 }
 

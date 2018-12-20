@@ -7,14 +7,14 @@ extern "C" {
 }
 
 static int pi = 0;
-const int rateSecondsBuffered = 60*120; // 120 min
+const int rateSecondsBuffered = 15*60; // 15 min
 static PigpiodHandler *pigHandlerAddress = nullptr;
 PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
 	: QObject(parent)
 {
     startOfProgram = QDateTime::currentDateTimeUtc();
-    lastAndTime.start();
-    lastXorTime.start();
+    lastAndTime = QTime::currentTime();
+    lastXorTime = QTime::currentTime();
     lastInterval = QTime::currentTime();
     andCounts.push_front(0);
     xorCounts.push_front(0);
@@ -43,18 +43,19 @@ void PigpiodHandler::onBufferRatesTimer(){
     QPointF xorPoint = getRate(XOR_RATE);
     QPointF andPoint = getRate(AND_RATE);
     qint64 msecs = startOfProgram.msecsTo(QDateTime::currentDateTimeUtc());
-    qreal x = msecs/1000.0;//static_cast<qreal>(startOfProgram.msecsTo(QDateTime::currentDateTimeUtc()));
+    qreal x = ((qreal)msecs)/1000.0;//static_cast<qreal>(startOfProgram.msecsTo(QDateTime::currentDateTimeUtc()));
     // qreal is usually double or float (on armhf it should be float)
     xorPoint.setX(x);
     andPoint.setX(x);
     xorBufferedRates.push_back(xorPoint);
     andBufferedRates.push_back(andPoint);
-    while (xorBufferedRates.first().x() < x-rateSecondsBuffered){
+    while (xorBufferedRates.first().x() < x-(qreal)rateSecondsBuffered){
         xorBufferedRates.pop_front();
     }
-    while (andBufferedRates.first().x() < x-rateSecondsBuffered){
+    while (andBufferedRates.first().x() < x-(qreal)rateSecondsBuffered){
         andBufferedRates.pop_front();
     }
+    // qDebug() << "bufferedLengths = " << andBufferedRates.size() << " " << xorBufferedRates.size();
 }
 
 QVector<QPointF> PigpiodHandler::getBufferedRates(int number, quint8 whichRate){
@@ -126,6 +127,13 @@ int PigpiodHandler::getCurrentBufferTime(){
     int numberOfEntries = xorCounts.size();
     if (numberOfEntries != andCounts.size()){
         qDebug() << "error: size of xorCounts and andCounts are not same... this should not happen!";
+        while (xorCounts.size() > andCounts.size()){
+            xorCounts.pop_back();
+        }
+        while (xorCounts.size() < andCounts.size()){
+            andCounts.pop_back();
+        }
+        numberOfEntries = xorCounts.size();
     }
     return (numberOfEntries*bufferResolution-bufferResolution+lastInterval.msecsTo(QTime::currentTime()));
 }

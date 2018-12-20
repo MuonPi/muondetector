@@ -43,6 +43,7 @@ signals:
 	void gpsPropertyUpdatedGnss(std::vector<GnssSatellite>,
 		std::chrono::duration<double> updateAge);
     void gpsPropertyUpdatedGeodeticPos(GeodeticPos pos);
+    void timTM2(QString timTM2String);
 
 public slots:
 	// all functions that can be called from other classes through signal/slot mechanics
