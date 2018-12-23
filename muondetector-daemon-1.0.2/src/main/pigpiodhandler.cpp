@@ -106,6 +106,9 @@ void PigpiodHandler::sendSignal(unsigned int gpio_pin, uint32_t tick) {
         emit signal((uint8_t)gpio_pin);
 	}
 }
+void PigpiodHandler::sendSamplingTrigger() {
+        emit samplingTrigger();
+}
 void PigpiodHandler::resetBuffer(){
     lastInterval = QTime::currentTime();
     andCounts.clear();
@@ -198,7 +201,7 @@ void cbFunction(int user_pi, unsigned int user_gpio,
             else {
                 pigpioHandler->lastAndTime.restart();
             }
-        }
+        } 
         if (user_gpio == EVT_XOR) {
             if (!pigpioHandler->xorCounts.isEmpty()){
                 pigpioHandler->xorCounts.head()++;
@@ -209,7 +212,10 @@ void cbFunction(int user_pi, unsigned int user_gpio,
             else {
                 pigpioHandler->lastXorTime.restart();
             }
-        }
+        } 
+        if (user_gpio == EVT_XOR || user_gpio == EVT_AND) {
+			pigpioHandler->sendSamplingTrigger();
+		}
         if (pi != user_pi) {
             // put some error here for the case pi is not the same as before initialized
         }

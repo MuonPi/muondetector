@@ -35,9 +35,11 @@ public:
     int getCurrentBufferTime();
 signals:
     void signal(uint8_t gpio_pin);
+    void samplingTrigger();
 
 public slots:
     void sendSignal(unsigned int gpio_pin, uint32_t tick);
+    void sendSamplingTrigger();
 	void stop();
     bool initialised();
 private slots:

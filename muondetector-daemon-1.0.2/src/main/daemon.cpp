@@ -169,11 +169,15 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
     pigHandler = new PigpiodHandler(gpio_pins, this);
     connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
     connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
+    connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdcEvent);
 
 	// for i2c devices
 	lm75 = new LM75();
 	adc = new ADS1115();
 	dac = new MCP4728();
+	adc->setPga(ADS1115::PGA2V);
+	adc->setRate(ADS1115::RATE475);
+	adc->setAGC(false);
 	float *tempThresh = new_dacThresh;
 	dacThresh.push_back(tempThresh[0]);
 	dacThresh.push_back(tempThresh[1]);
@@ -191,6 +195,7 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	if (biasVoltage > 0) {
         dac->setVoltage(DAC_BIAS, biasVoltage);
 	}
+
 
 	// for gps module
 	gpsdevname = new_gpsdevname;
@@ -466,6 +471,16 @@ void Daemon::sendGpioRates(int number, quint8 whichRate){
     }
     TcpMessage tcpMessage(gpioRateSig);
     *(tcpMessage.dStream) << whichRate << pigHandler->getBufferedRates(number,whichRate);
+    emit sendTcpMessage(tcpMessage);
+}
+void Daemon::sampleAdcEvent(){
+    if (pigHandler==nullptr){
+        return;
+    }
+    TcpMessage tcpMessage(adcSampleSig);
+    float_t val0 = adc->readVoltage(0);
+    float_t val1 = adc->readVoltage(1);
+    *(tcpMessage.dStream) << val0 << val1;
     emit sendTcpMessage(tcpMessage);
 }
 
