@@ -479,8 +479,7 @@ void Daemon::sampleAdcEvent(){
     }
     TcpMessage tcpMessage(adcSampleSig);
     float_t val0 = adc->readVoltage(0);
-    float_t val1 = adc->readVoltage(1);
-    *(tcpMessage.dStream) << val0 << val1;
+    *(tcpMessage.dStream) << val0;
     emit sendTcpMessage(tcpMessage);
 }
 
@@ -532,8 +531,8 @@ void Daemon::setBiasStatus(bool status){
 
 void Daemon::setDacThresh(uint8_t channel, float threshold) {
     if (threshold < 0 || channel > 1) { return; }
-    if (threshold > 4.95){
-        threshold = 4.95;
+    if (threshold > 4.095){
+        threshold = 4.095;
     }
     if (verbose > 1){
         qDebug() << "change dacThresh " << channel << " to " << threshold;
