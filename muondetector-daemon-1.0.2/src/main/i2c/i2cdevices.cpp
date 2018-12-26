@@ -487,7 +487,7 @@ bool MCP4728::setValue(uint8_t channel, uint16_t value, uint8_t gain, bool toEEP
 		// error number of bits exceeding 12
 		return false;
 	}
-	channel = channel & 3;
+	channel = channel & 0x03;
 	uint8_t buf[3];
 	if (toEEPROM) {
 		buf[0] = 0b01011001;
@@ -504,6 +504,34 @@ bool MCP4728::setValue(uint8_t channel, uint16_t value, uint8_t gain, bool toEEP
 		return false;
 	}
 	return true;
+}
+
+bool MCP4728::readChannel(uint8_t channel, DacChannel& channelData)
+{
+	if (channel > 3) {
+		// error: channel index exceeding 3
+		return false;
+	}
+	uint8_t buf[24];
+	if (read(buf, 24) != 24) {
+		// somehow did not read exact same amount of bytes as it should
+		return false;
+	}
+
+	channelData.vref=(buf[channel*6+1]&0x80)?VREF_2V:VREF_VDD;
+	channelData.pd=(buf[channel*6+1]&0x60)>>5;
+	channelData.gain=(buf[channel*6+1]&0x10)?GAIN2:GAIN1;
+	channelData.value=(uint16_t)(buf[channel*6+1]&0x0f)<<8;
+	channelData.value|=(uint16_t)(buf[channel*6+2]&0xff);
+	return true;
+}
+const float MCP4728::VDD = 3.3;	// change, if device powered with different voltage
+float MCP4728::code2voltage(const DacChannel& channelData)
+{
+	float vref =  (channelData.vref == VREF_2V)?2.048:VDD;
+	float voltage = vref*channelData.value/4096;
+	if (channelData.gain==GAIN2 && channelData.vref != VREF_VDD) voltage*=2.;
+	return voltage;
 }
 
 bool PCA9536::setOutputPorts(uint8_t portMask) {

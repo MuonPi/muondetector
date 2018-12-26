@@ -124,6 +124,8 @@ public:
 
 	inline void setPga(CFG_PGA pga) { fPga[0] = fPga[1] = fPga[2] = fPga[3] = pga; }
 	inline void setPga(unsigned int pga) { setPga((CFG_PGA)pga); }
+	inline void setPga(uint8_t channel, CFG_PGA pga) { if (channel>3) return; fPga[channel] = pga; }
+	inline void setPga(uint8_t channel, uint8_t pga) { setPga(channel, (CFG_PGA)pga); }
 	inline CFG_PGA getPga(int ch) const { return fPga[ch]; }
 	inline void setAGC(bool state) { fAGC = state; }
 	inline bool getAGC() const { return fAGC; }
@@ -172,12 +174,27 @@ public:
 	//enum CFG_CHANNEL {CH_A=0, CH_B, CH_C, CH_D};
 	//enum POWER_DOWN {NORM=0, LOAD1, LOAD2, LOAD3};  // at Power Down mode the output is loaded with 1k, 100k, 500k
 													// to ground to power down the circuit
+	const static float VDD;	// change, if device powered with different voltage
 	enum CFG_GAIN { GAIN1 = 0, GAIN2 = 1 };
+	enum CFG_VREF { VREF_VDD = 0, VREF_2V = 1 };
+
+	struct DacChannel {
+		uint8_t pd=0x00;
+		CFG_GAIN gain=GAIN1;
+		CFG_VREF vref=VREF_VDD;
+		bool toEEPROM = false;
+		uint16_t value = 0;
+	};
+
 	MCP4728() : i2cDevice(0x60) {}
 	MCP4728(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
 	MCP4728(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
 	bool setVoltage(uint8_t channel, float voltage, bool toEEPROM = false);
 	bool setValue(uint8_t channel, uint16_t value, uint8_t gain = GAIN1, bool toEEPROM = false);
+	bool setValue(uint8_t channel, const DacChannel& channelData);
+	bool readChannel(uint8_t channel, DacChannel& channelData);
+	
+	static float code2voltage(const DacChannel& channelData);
 };
 
 class PCA9536 : public i2cDevice {

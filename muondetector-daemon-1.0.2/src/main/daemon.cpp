@@ -169,13 +169,14 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
     pigHandler = new PigpiodHandler(gpio_pins, this);
     connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
     connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
-    connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdcEvent);
+    connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
 
 	// for i2c devices
 	lm75 = new LM75();
 	adc = new ADS1115();
 	dac = new MCP4728();
-	adc->setPga(ADS1115::PGA2V);
+	adc->setPga(ADS1115::PGA4V);
+	adc->setPga(0, ADS1115::PGA2V);
 	adc->setRate(ADS1115::RATE475);
 	adc->setAGC(false);
 	float *tempThresh = new_dacThresh;
@@ -413,6 +414,19 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> number >> whichRate;
         sendGpioRates(number, whichRate);
     }
+    if (msgID == dacRequestSig){
+        quint8 channel;
+        *(tcpMessage.dStream) >> channel;
+        MCP4728::DacChannel channelData;
+        dac->readChannel(channel, channelData);
+		float voltage = MCP4728::code2voltage(channelData);
+        sendDacReadbackValue(channel, voltage);
+    }
+    if (msgID == adcSampleRequestSig){
+        quint8 channel;
+        *(tcpMessage.dStream) >> channel;
+        sampleAdcEvent(channel);
+    }
     if (msgID == quitConnectionSig){
         QString closeAddress;
         *(tcpMessage.dStream) >> closeAddress;
@@ -438,6 +452,14 @@ void Daemon::sendDacThresh(uint8_t channel) {
     if (channel > 1){ return; }
     TcpMessage tcpMessage(threshSig);
     *(tcpMessage.dStream) << (quint8)channel << dacThresh[(int)channel];
+    emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::sendDacReadbackValue(uint8_t channel, float voltage) {
+    if (channel > 3){ return; }
+    
+    TcpMessage tcpMessage(dacReadbackSig);
+    *(tcpMessage.dStream) << (quint8)channel << voltage;
     emit sendTcpMessage(tcpMessage);
 }
 
@@ -473,19 +495,22 @@ void Daemon::sendGpioRates(int number, quint8 whichRate){
     *(tcpMessage.dStream) << whichRate << pigHandler->getBufferedRates(number,whichRate);
     emit sendTcpMessage(tcpMessage);
 }
-void Daemon::sampleAdcEvent(){
-    if (pigHandler==nullptr){
+void Daemon::sampleAdc0Event(){
+	sampleAdcEvent(0);
+}
+
+void Daemon::sampleAdcEvent(uint8_t channel){
+    if (adc==nullptr){
         return;
     }
     TcpMessage tcpMessage(adcSampleSig);
-    float_t val0 = adc->readVoltage(0);
-    *(tcpMessage.dStream) << val0;
+    float value = adc->readVoltage(channel);
+    *(tcpMessage.dStream) << (quint8)channel << value;
     emit sendTcpMessage(tcpMessage);
 }
 
 // ALL FUNCTIONS ABOUT SETTINGS FOR THE I2C-DEVICES (DAC, ADC, PCA...)
 void Daemon::setPcaChannel(uint8_t channel) {
-    pcaPortMask = channel;
     if (verbose > 1){
         qDebug() << "change pcaPortMask to " << channel;
     }
@@ -496,6 +521,7 @@ void Daemon::setPcaChannel(uint8_t channel) {
 	if (!pca) {
 		return;
 	}
+    pcaPortMask = channel;
 	pca->setOutputState(channel);
     sendPcaChannel();
 }

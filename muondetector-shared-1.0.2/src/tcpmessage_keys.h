@@ -22,6 +22,11 @@ static const quint16 gpioRateSig = 53;
 static const quint16 gpioRateSettings = 59;
 static const quint16 geodeticPosSig = 61;
 static const quint16 adcSampleSig = 67;
+static const quint16 adcSampleRequestSig = 71;
+static const quint16 dacReadbackSig = 73;
+static const quint16 dacRequestSig = 79;
+static const quint16 gainSig = 83;
+static const quint16 gainRequestSig = 89;
 
 // next prime numbers: 61 67 71 73 79 83 89 97 101 103 107
 

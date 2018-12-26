@@ -61,7 +61,8 @@ public slots:
     void pollAllUbxMsgRate();
     void sendGpioPinEvent(uint8_t gpio_pin);
     void sendUbxGeodeticPos(GeodeticPos pos);
-    void sampleAdcEvent();
+    void sampleAdc0Event();
+    void sampleAdcEvent(uint8_t channel);
 
 signals:
 	void sendTcpMessage(TcpMessage tcpMessage);
@@ -83,6 +84,7 @@ private:
     void sendPcaChannel();
     void setDacThresh(uint8_t channel, float threshold); // channel 0 or 1 ; threshold in volts
     void sendDacThresh(uint8_t channel);
+    void sendDacReadbackValue(uint8_t channel, float voltage);
     void setBiasVoltage(float voltage);
     void sendBiasVoltage();
     void sendBiasStatus();
