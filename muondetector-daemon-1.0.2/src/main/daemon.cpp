@@ -176,7 +176,7 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	adc = new ADS1115();
 	dac = new MCP4728();
 	adc->setPga(ADS1115::PGA4V);
-	adc->setPga(0, ADS1115::PGA2V);
+	//adc->setPga(0, ADS1115::PGA2V);
 	adc->setRate(ADS1115::RATE475);
 	adc->setAGC(false);
 	float *tempThresh = new_dacThresh;
@@ -215,11 +215,15 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	else {
 		digitalWrite(UBIAS_EN, 0);
 	}
+	preampStatus[0]=preampStatus[1]=true;
 	pinMode(PREAMP_1, 1);
-	digitalWrite(PREAMP_1, 1);
+	digitalWrite(PREAMP_1, preampStatus[0]);
 	pinMode(PREAMP_2, 1);
-	digitalWrite(PREAMP_2, 1);
-
+	digitalWrite(PREAMP_2, preampStatus[1]);
+	gainSwitch=false;
+	pinMode(GAIN_HL, 1);
+	digitalWrite(GAIN_HL, gainSwitch);
+	
 	// for tcp connection with fileServer
 	peerPort = new_peerPort;
 	if (peerPort == 0) {
@@ -366,8 +370,8 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         return;
 	}
     if (msgID == threshRequestSig){
-        sendDacThresh(0);
-        sendDacThresh(1);
+        sendDacThresh(DAC_TH1);
+        sendDacThresh(DAC_TH2);
         return;
     }
     if (msgID == biasVoltageSig){
@@ -388,6 +392,33 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
     }
     if (msgID == biasRequestSig){
         sendBiasStatus();
+    }
+    if (msgID == preampSig){
+        quint8 channel;
+        bool status;
+        *(tcpMessage.dStream) >> channel >> status;
+        if (channel==0) {
+			preampStatus[0]=status;
+			digitalWrite(PREAMP_1, (uint8_t)status);
+		} else if (channel==1) {
+			preampStatus[1]=status;
+			digitalWrite(PREAMP_2, (uint8_t)status);
+		}
+        return;
+    }
+    if (msgID == preampRequestSig){
+        sendPreampStatus(0);
+        sendPreampStatus(1);
+    }
+    if (msgID == gainSwitchSig){
+        bool status;
+        *(tcpMessage.dStream) >> status;
+		gainSwitch=status;
+		digitalWrite(GAIN_HL, (uint8_t)status);
+        return;
+    }
+    if (msgID == gainSwitchRequestSig){
+        sendGainSwitchStatus();
     }
     if (msgID == ubxMsgRateRequest) {
 		sendUbxMsgRates();
@@ -478,6 +509,19 @@ void Daemon::sendBiasVoltage(){
 void Daemon::sendBiasStatus(){
     TcpMessage tcpMessage(biasSig);
     *(tcpMessage.dStream) << biasON;
+    emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::sendGainSwitchStatus(){
+    TcpMessage tcpMessage(gainSwitchSig);
+    *(tcpMessage.dStream) << gainSwitch;
+    emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::sendPreampStatus(uint8_t channel) {
+    if (channel > 1){ return; }
+    TcpMessage tcpMessage(preampSig);
+    *(tcpMessage.dStream) << (quint8)channel << preampStatus [channel];
     emit sendTcpMessage(tcpMessage);
 }
 

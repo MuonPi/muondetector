@@ -88,8 +88,10 @@ private:
     void setBiasVoltage(float voltage);
     void sendBiasVoltage();
     void sendBiasStatus();
+    void sendGainSwitchStatus();
     void setBiasStatus(bool status);
-    void setUbxMsgRates(QMap<uint16_t,int>& ubxMsgRates);
+    void sendPreampStatus(uint8_t channel);
+	void setUbxMsgRates(QMap<uint16_t,int>& ubxMsgRates);
     void sendUbxMsgRates();
     void sendGpioRates(int number = 0, quint8 whichRate = 0);
     void printTimestamp();
@@ -100,6 +102,8 @@ private:
     LM75 *lm75 = nullptr;
     float biasVoltage = 0;
     bool biasON = false;
+    bool gainSwitch = false;
+    bool preampStatus[2];
     uint8_t pcaPortMask = 0;
     QVector <float> dacThresh; // do not give values here because of push_back in constructor of deamon
     PigpiodHandler *pigHandler = nullptr;
