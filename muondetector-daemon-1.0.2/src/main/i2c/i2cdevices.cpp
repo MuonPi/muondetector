@@ -21,6 +21,7 @@ unsigned long int i2cDevice::fGlobalNrBytesWritten = 0;
 
 
 const double ADS1115::PGAGAINS[6] = { 6.144, 4.096, 2.048, 1.024, 0.512, 0.256 };
+const float MCP4728::VDD = 3.3;	// change, if device powered with different voltage
 const double HMC5883::GAIN[8] = { 0.73, 0.92, 1.22, 1.52, 2.27, 2.56, 3.03, 4.35 };
 
 
@@ -72,6 +73,12 @@ i2cDevice::~i2cDevice() {
 	//destructor of the opening part from above
 	if (fHandle > 0) fNrDevices--;
 	close(fHandle);
+}
+
+bool i2cDevice::devicePresent()
+{
+	uint8_t dummy;
+	return readByte(0,&dummy);
 }
 
 void i2cDevice::setAddress(uint8_t address) {		        //pointer to our device on the i2c-bus
@@ -216,8 +223,8 @@ int8_t i2cDevice::readBits(uint8_t regAddr, uint8_t bitStart, uint8_t length, ui
  * @param data Container for byte value read from device
  * @return Status of read operation (true = success)
  */
-int8_t i2cDevice::readByte(uint8_t regAddr, uint8_t *data) {
-	return readBytes(regAddr, 1, data);
+bool i2cDevice::readByte(uint8_t regAddr, uint8_t *data) {
+	return (readBytes(regAddr, 1, data) == 1);
 }
 
 /** Read multiple bytes from an 8-bit device register.
@@ -226,7 +233,7 @@ int8_t i2cDevice::readByte(uint8_t regAddr, uint8_t *data) {
  * @param data Buffer to store read data in
  * @return Number of bytes read (-1 indicates failure)
  */
-int8_t i2cDevice::readBytes(uint8_t regAddr, uint8_t length, uint8_t *data) {
+int16_t i2cDevice::readBytes(uint8_t regAddr, uint16_t length, uint8_t *data) {
 	// not used?! int8_t count = 0;
 //    int fd = open("/dev/i2c-1", O_RDWR);
 	return readReg(regAddr, data, length);
@@ -291,13 +298,13 @@ bool i2cDevice::writeByte(uint8_t regAddr, uint8_t data) {
  * @param data Buffer to copy new data from
  * @return Status of operation (true = success)
  */
-bool i2cDevice::writeBytes(uint8_t regAddr, uint8_t length, uint8_t* data) {
+bool i2cDevice::writeBytes(uint8_t regAddr, uint16_t length, uint8_t* data) {
 	//     int8_t count = 0;
 	//     uint8_t buf[128];
 	//     int fd;
 
 	int n = writeReg(regAddr, data, length);
-	return n == length;
+	return (n == length);
 }
 
 /** Write multiple words to a 16-bit device register.
@@ -306,9 +313,9 @@ bool i2cDevice::writeBytes(uint8_t regAddr, uint8_t length, uint8_t* data) {
  * @param data Buffer to copy new data from
  * @return Status of operation (true = success)
  */
-bool i2cDevice::writeWords(uint8_t regAddr, uint8_t length, uint16_t* data) {
+bool i2cDevice::writeWords(uint8_t regAddr, uint16_t length, uint16_t* data) {
 	int8_t count = 0;
-	uint8_t buf[128];
+	uint8_t buf[512];
 
 	// Should do potential byteswap and call writeBytes() really, but that
 	// messes with the callers buffer
@@ -343,7 +350,6 @@ bool i2cDevice::writeWord(uint8_t regAddr, uint16_t data) {
 	return writeWords(regAddr, 1, &data);
 }
 
-
 void i2cDevice::startTimer() {
 	gettimeofday(&fT1, NULL);
 }
@@ -359,7 +365,9 @@ void i2cDevice::stopTimer() {
 }
 
 
-
+/*
+ * ADS1115 4ch 16 bit ADC
+ */
 int16_t ADS1115::readADC(unsigned int channel)
 {
 	uint8_t writeBuf[3];		// Buffer to store the 3 bytes that we write to the I2C device
@@ -372,7 +380,7 @@ int16_t ADS1115::readADC(unsigned int channel)
 	startTimer();
 
 	// These three bytes are written to the ADS1115 to set the config register and start a conversion 
-	writeBuf[0] = 1;		// This sets the pointer register so that the following two bytes write to the config register
+	writeBuf[0] = 0x01;		// This sets the pointer register so that the following two bytes write to the config register
 	writeBuf[1] = 0x80 | 0x40; // OS bit, single ended mode channels
 	writeBuf[1] |= (channel & 0x03) << 4; // channel select
 	writeBuf[1] |= 0x01; // single shot mode
@@ -427,6 +435,12 @@ int16_t ADS1115::readADC(unsigned int channel)
 	return val;
 }
 
+bool ADS1115::devicePresent()
+{
+	uint8_t buf[2];
+	return (read(buf, 2)==2);	// Read the config register into readBuf	
+}
+
 double ADS1115::readVoltage(unsigned int channel)
 {
 	double voltage = 0.;
@@ -463,6 +477,10 @@ void ADS1115::readVoltage(unsigned int channel, int16_t& adc, double& voltage)
 	return;
 }
 
+
+/*
+ * MCP4728 4 ch 12 bit DAC
+ */
 bool MCP4728::setVoltage(uint8_t channel, float voltage, bool toEEPROM) {
 	// Vout = (2.048V * Dn) / 4096 * Gx <= VDD
 	if (voltage < 0) {
@@ -487,6 +505,7 @@ bool MCP4728::setValue(uint8_t channel, uint16_t value, uint8_t gain, bool toEEP
 		// error number of bits exceeding 12
 		return false;
 	}
+	startTimer();
 	channel = channel & 0x03;
 	uint8_t buf[3];
 	if (toEEPROM) {
@@ -502,7 +521,9 @@ bool MCP4728::setValue(uint8_t channel, uint16_t value, uint8_t gain, bool toEEP
 	if (write(buf, 3) != 3) {
 		// somehow did not write exact same amount of bytes as it should
 		return false;
+		stopTimer();
 	}
+	stopTimer();
 	return true;
 }
 
@@ -525,7 +546,7 @@ bool MCP4728::readChannel(uint8_t channel, DacChannel& channelData)
 	channelData.value|=(uint16_t)(buf[channel*6+2]&0xff);
 	return true;
 }
-const float MCP4728::VDD = 3.3;	// change, if device powered with different voltage
+
 float MCP4728::code2voltage(const DacChannel& channelData)
 {
 	float vref =  (channelData.vref == VREF_2V)?2.048:VDD;
@@ -534,6 +555,9 @@ float MCP4728::code2voltage(const DacChannel& channelData)
 	return voltage;
 }
 
+/*
+ * PCA9536 4 pin I/O expander
+ */
 bool PCA9536::setOutputPorts(uint8_t portMask) {
 	unsigned char data = ~portMask;
 	if (1 != writeReg(CONFIG_REG, &data, 1)) {
@@ -553,10 +577,10 @@ bool PCA9536::setOutputState(uint8_t portMask) {
  * LM75 Temperature Sensor
  */
 
-signed int LM75::readRaw()
+int16_t LM75::readRaw()
 {
 	uint8_t readBuf[2];		// 2 byte buffer to store the data read from the I2C device  
-	signed int val;			// Stores the 16 bit value of our ADC conversion
+	int16_t val;			// Stores the 16 bit value of our ADC conversion
 
 
 	startTimer();
@@ -566,15 +590,17 @@ signed int LM75::readRaw()
 
 	read(readBuf, 2);	// Read the config register into readBuf
 
-	int8_t temperature0 = (int8_t)readBuf[0];
+	//int8_t temperature0 = (int8_t)readBuf[0];
 
 	// We extract the first bit and right shift 7 seven bit positions.
 	// Why? Because we don't care about the bits 6,5,4,3,2,1 and 0.
 //  int8_t temperature1 = (readBuf[1] & 0x80) >> 7; // is either zero or one
-	int8_t temperature1 = (readBuf[1] & 0xf8) >> 3;
+//	int8_t temperature1 = (readBuf[1] & 0xf8) >> 3;
+	//int8_t temperature1 = (readBuf[1] & 0xff);
 
-	val = (temperature0 << 5) | temperature1;
+	//val = (temperature0 << 8) | temperature1;
 	//val = readBuf[0] << 1 | (readBuf[1] >> 7);	// Combine the two bytes of readBuf into a single 16 bit result 
+	val=((int16_t)readBuf[0] << 8) | readBuf[1];
 	fLastRawValue = val;
 
 	stopTimer();
@@ -582,9 +608,19 @@ signed int LM75::readRaw()
 	return val;
 }
 
+bool LM75::devicePresent()
+{
+	uint8_t readBuf[2];		// 2 byte buffer to store the data read from the I2C device  
+	readBuf[0] = 0;
+	readBuf[1] = 0;
+
+	int n=read(readBuf, 2);	// Read the data register into readBuf
+	return (n==2);
+}
+
 double LM75::getTemperature()
 {
-	return (double)readRaw() / 32.;
+	return (double)readRaw() / 256.;
 }
 
 
@@ -802,17 +838,33 @@ void X9119::writeDataReg(uint8_t reg, unsigned int value)
 uint8_t EEPROM24AA02::readByte(uint8_t addr)
 {
 	uint8_t val = 0;
+	startTimer();
 	/*int n=*/readReg(addr, &val, 1);	// Read the data at address location
   //  printf( "%d bytes read\n",n);
+	stopTimer();
 	return val;
 }
 
+bool EEPROM24AA02::readByte(uint8_t addr, uint8_t* value)
+{
+	startTimer();
+	int n=readReg(addr, value, 1);	// Read the data at address location
+  //  printf( "%d bytes read\n",n);
+	stopTimer();
+	return (n==1);
+}
+
+/*
+bool EEPROM24AA02::devicePresent()
+{
+	uint8_t dummy;
+	return readByte(0,&dummy);
+}
+*/
 
 void EEPROM24AA02::writeByte(uint8_t addr, uint8_t data)
 {
-	uint8_t writeBuf[2];		// Buffer to store the 3 bytes that we write to the I2C device
-  //  uint8_t readBuf[16];		// 2 byte buffer to store the data read from the I2C device  
-  //  uint8_t val;			// Stores the 16 bit value of our ADC conversion
+	uint8_t writeBuf[2];		// Buffer to store the 2 bytes that we write to the I2C device
 
 	writeBuf[0] = addr;		// address of data byte
 	writeBuf[1] = data;		// data byte
@@ -824,16 +876,37 @@ void EEPROM24AA02::writeByte(uint8_t addr, uint8_t data)
 
 	usleep(5000);
 	stopTimer();
-
-	//  readBuf[0]= 0;		
-
-	//  int n=read(&val, 1);	// Read the data at address location
-	//  printf( "%d bytes read\n",n);
-
-	//  val = readBuf[0];
-
-	//  return val;
 }
+
+/** Write multiple bytes to starting from given address into EEPROM memory.
+ * @param addr First register address to write to
+ * @param length Number of bytes to write
+ * @param data Buffer to copy new data from
+ * @return Status of operation (true = success)
+ * @note this is an overloaded function to the one from the i2cdevice base class in order to 
+ * prevent sequential write operations crossing page boundaries of the EEPROM. This function conforms to
+ * the page-wise sequential write (c.f. http://ww1.microchip.com/downloads/en/devicedoc/21709c.pdf  p.7).
+ */
+bool EEPROM24AA02::writeBytes(uint8_t addr, uint16_t length, uint8_t* data) {
+
+	static const uint8_t PAGESIZE=8;
+	bool success = true;
+	startTimer();
+	for (uint16_t i=0; i<length; ) {
+		uint8_t currAddr = addr+i;
+		// determine, how many bytes left on current page
+		uint8_t pageRemainder = PAGESIZE-currAddr%PAGESIZE;
+		if (currAddr+pageRemainder>=length) pageRemainder = length-currAddr;
+		int n = writeReg(currAddr, &data[i], pageRemainder);
+		usleep(5000);
+		i+=pageRemainder;
+		success = success && (n==pageRemainder);
+	}
+	stopTimer();
+	return success;
+}
+
+
 
 /*
 * SHT21 Temperature&Humidity Sensor

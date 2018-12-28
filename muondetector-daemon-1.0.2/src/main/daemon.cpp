@@ -6,6 +6,7 @@
 #include <gpio_pin_definitions.h>
 #include <ublox_messages.h>
 #include <tcpmessage_keys.h>
+#include <iomanip>      // std::setfill, std::setw
 
 // for i2cdetect:
 extern "C" {
@@ -173,7 +174,27 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 
 	// for i2c devices
 	lm75 = new LM75();
+	if (lm75->devicePresent()) {
+		if (verbose>2) {
+			cout<<"LM75 device is present."<<endl;
+			cout<<"temperature is "<<lm75->getTemperature()<<" centigrades Celsius"<<endl;
+			cout<<"readout took "<<lm75->getLastTimeInterval()<<" ms"<<endl;
+		}
+	} else {
+		cerr<<"LM75 device NOT present!"<<endl;
+	}
 	adc = new ADS1115();
+	if (adc->devicePresent()) {
+		if (verbose>2) {
+			cout<<"ADS1115 device is present."<<endl;
+			cout<<"ch0: "<<adc->readADC(0)<<" ch1: "<<adc->readADC(1)
+			<<" ch2: "<<adc->readADC(2)<<" ch3: "<<adc->readADC(3)<<endl;
+			cout<<"readout took "<<adc->getLastTimeInterval()<<" ms"<<endl;
+		}
+	} else {
+		cerr<<"ADS1115 device NOT present!"<<endl;
+	}
+	
 	dac = new MCP4728();
 	adc->setPga(ADS1115::PGA4V);
 	//adc->setPga(0, ADS1115::PGA2V);
@@ -184,6 +205,8 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	dacThresh.push_back(tempThresh[1]);
 	biasVoltage = new_biasVoltage;
     biasON = bias_ON;
+    
+    // PCA9536 4 bit I/O I2C device used for selecting the UBX timing input
     pca = new PCA9536();
     pca->setOutputPorts(0x03);
     setPcaChannel(new_pcaPortMask);
@@ -197,7 +220,25 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
         dac->setVoltage(DAC_BIAS, biasVoltage);
 	}
 
-
+	// EEPROM
+	eep = new EEPROM24AA02();
+	if (eep==nullptr) return;
+	if (eep->devicePresent()) {
+		if (verbose>2) {
+			cout<<"eep device is present."<<endl;
+			readEeprom();
+			if (1==0) {
+				uint8_t buf[256];
+				for (int i=0; i<256; i++) buf[i]=i;
+				if (!eep->writeBytes(0, 256, buf)) cerr<<"error: write to eeprom failed!"<<endl;
+				if (verbose>2) cout<<"eep write took "<<eep->getLastTimeInterval()<<" ms"<<endl;
+				readEeprom();
+			}
+		}
+	} else {
+		cerr<<"eeprom device NOT present!"<<endl;
+	}
+	
 	// for gps module
 	gpsdevname = new_gpsdevname;
 	dumpRaw = new_dumpRaw;
@@ -276,6 +317,7 @@ Daemon::~Daemon() {
     if (pca!=nullptr){ delete pca; pca = nullptr; }
     if (dac!=nullptr){ delete dac; dac = nullptr; }
     if (adc!=nullptr){ delete adc; adc = nullptr; }
+    if (eep!=nullptr){ delete eep; eep = nullptr; }
     if (pigHandler!=nullptr){ delete pigHandler; pigHandler = nullptr; }
     if (fileHandler!=nullptr){ delete fileHandler; fileHandler = nullptr; }
 }
@@ -458,6 +500,9 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> channel;
         sampleAdcEvent(channel);
     }
+    if (msgID == temperatureRequestSig){
+        getTemperature();
+    }
     if (msgID == quitConnectionSig){
         QString closeAddress;
         *(tcpMessage.dStream) >> closeAddress;
@@ -553,6 +598,16 @@ void Daemon::sampleAdcEvent(uint8_t channel){
     emit sendTcpMessage(tcpMessage);
 }
 
+void Daemon::getTemperature(){
+    if (lm75==nullptr){
+        return;
+    }
+    TcpMessage tcpMessage(temperatureSig);
+    float value = lm75->getTemperature();
+    *(tcpMessage.dStream) << value;
+    emit sendTcpMessage(tcpMessage);
+}
+
 // ALL FUNCTIONS ABOUT SETTINGS FOR THE I2C-DEVICES (DAC, ADC, PCA...)
 void Daemon::setPcaChannel(uint8_t channel) {
     if (verbose > 1){
@@ -613,6 +668,30 @@ void Daemon::setDacThresh(uint8_t channel, float threshold) {
     }
     dac->setVoltage(channel, threshold);
     sendDacThresh(channel);
+}
+
+bool Daemon::readEeprom()
+{
+	if (eep==nullptr) return false;
+	if (eep->devicePresent()) {
+		if (verbose>2) cout<<"eep device is present."<<endl;
+	} else {
+		cerr<<"eeprom device NOT present!"<<endl;
+		return false;
+	}
+	uint16_t n=256;
+	uint8_t buf[256];
+	for (int i=0; i<n; i++) buf[i]=0;
+	bool retval=eep->readBytes(0,n,buf);
+	cout<<"*** EEPROM content ***"<<endl;
+	for (int j=0; j<16; j++) {
+		cout<<hex<<std::setfill ('0') << std::setw (2)<<j*16<<": ";
+		for (int i=0; i<16; i++) {
+			cout<<hex<<std::setfill ('0') << std::setw (2)<<(int)buf[j*16+i]<<" ";
+		}
+		cout<<endl;
+	}
+	return retval;
 }
 
 void Daemon::setUbxMsgRates(QMap<uint16_t, int>& ubxMsgRates){

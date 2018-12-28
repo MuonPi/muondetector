@@ -39,7 +39,7 @@ public:
 	inline unsigned int getNrBytesWritten() { return fNrBytesWritten; }
 	inline unsigned int getGlobalNrBytesRead() { return fGlobalNrBytesRead; }
 	inline unsigned int getGlobalNrBytesWritten() { return fGlobalNrBytesWritten; }
-
+	virtual bool devicePresent();
 	inline double getLastTimeInterval() { return fLastTimeInterval; }
 
 	inline void setDebugLevel(int level) { fDebugLevel = level; }
@@ -77,13 +77,13 @@ public:
 
 	int8_t readBit(uint8_t regAddr, uint8_t bitNum, uint8_t *data);
 	int8_t readBits(uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t *data);
-	int8_t readByte(uint8_t regAddr, uint8_t *data);
-	int8_t readBytes(uint8_t regAddr, uint8_t length, uint8_t *data);
+	bool readByte(uint8_t regAddr, uint8_t *data);
+	int16_t readBytes(uint8_t regAddr, uint16_t length, uint8_t *data);
 	bool writeBit(uint8_t regAddr, uint8_t bitNum, uint8_t data);
 	bool writeBits(uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t data);
 	bool writeByte(uint8_t regAddr, uint8_t data);
-	bool writeBytes(uint8_t regAddr, uint8_t length, uint8_t* data);
-	bool writeWords(uint8_t regAddr, uint8_t length, uint16_t* data);
+	bool writeBytes(uint8_t regAddr, uint16_t length, uint8_t* data);
+	bool writeWords(uint8_t regAddr, uint16_t length, uint16_t* data);
 	bool writeWord(uint8_t regAddr, uint16_t data);
 
 
@@ -95,7 +95,7 @@ protected:
 	unsigned long int fNrBytesRead;
 	static unsigned long int fGlobalNrBytesRead;
 	static unsigned long int fGlobalNrBytesWritten;
-	double fLastTimeInterval;
+	double fLastTimeInterval; // the last time measurement's result is stored here
 	struct timeval fT1, fT2;
 	int fDebugLevel;
 
@@ -105,7 +105,7 @@ protected:
 };
 
 
-
+/* ADS1115: 4(2) ch, 16 bit ADC  */
 class ADS1115 : public i2cDevice {
 public:
 	enum CFG_CHANNEL { CH0 = 0, CH1, CH2, CH3 };
@@ -135,7 +135,7 @@ public:
 	double readVoltage(unsigned int channel);
 	void readVoltage(unsigned int channel, double& voltage);
 	void readVoltage(unsigned int channel, int16_t& adc, double& voltage);
-
+	bool devicePresent();
 	inline unsigned int getReadWaitDelay() const { return fReadWaitDelay; }
 
 protected:
@@ -155,11 +155,11 @@ protected:
 	}
 };
 
-
+/* ADS1015: 4(2) ch, 12 bit ADC  */
 class ADS1015 : public ADS1115 {
 public:
 	using ADS1115::ADS1115;
-	enum CFG_RATE { RATE8 = 0, RATE16, RATE32, RATE64, RATE128, RATE250, RATE475, RATE860 };
+	enum CFG_RATE { RATE128 = 0, RATE250, RATE490, RATE920, RATE1600, RATE2400, RATE3300 };
 };
 
 
@@ -197,6 +197,7 @@ public:
 	static float code2voltage(const DacChannel& channelData);
 };
 
+
 class PCA9536 : public i2cDevice {
 	// the device supports reading the incoming logic levels of the pins if set to input in the configuration register (will probably not use this feature)
 	// the device supports polarity inversion (by configuring the polarity inversino register) (will probably not use this feature)
@@ -210,12 +211,14 @@ public:
 	bool setOutputState(uint8_t portMask);
 };
 
+
 class LM75 : public i2cDevice {
 public:
-	LM75() : i2cDevice(0x4c) {}
+	LM75() : i2cDevice(0x4f) {}
 	LM75(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
 	LM75(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
-	signed int readRaw();
+	bool devicePresent();
+	int16_t readRaw();
 	double getTemperature();
 
 private:
@@ -251,10 +254,16 @@ public:
 	EEPROM24AA02(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
 	EEPROM24AA02(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
 
+	//bool devicePresent();
 	uint8_t readByte(uint8_t addr);
+	bool readByte(uint8_t addr, uint8_t* value);
+	//the readBytes function is already defined in the base class
+	//int8_t readBytes(uint8_t regAddr, uint16_t length, uint8_t *data);
 	void writeByte(uint8_t addr, uint8_t data);
+	bool writeBytes(uint8_t addr, uint16_t length, uint8_t* data);
 private:
 };
+
 
 class SHT21 : public i2cDevice {
 public:

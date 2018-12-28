@@ -29,6 +29,9 @@ static const quint16 gainSwitchSig = 83;
 static const quint16 gainSwitchRequestSig = 89;
 static const quint16 preampSig = 97;
 static const quint16 preampRequestSig = 101;
+static const quint16 temperatureSig = 103;
+static const quint16 temperatureRequestSig = 107;
+
 
 
 // next prime numbers: 61 67 71 73 79 83 89 97 101 103 107

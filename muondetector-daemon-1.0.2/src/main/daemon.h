@@ -63,7 +63,8 @@ public slots:
     void sendUbxGeodeticPos(GeodeticPos pos);
     void sampleAdc0Event();
     void sampleAdcEvent(uint8_t channel);
-
+	void getTemperature();
+	
 signals:
 	void sendTcpMessage(TcpMessage tcpMessage);
     void closeConnection(QString closeAddress);
@@ -94,12 +95,15 @@ private:
 	void setUbxMsgRates(QMap<uint16_t,int>& ubxMsgRates);
     void sendUbxMsgRates();
     void sendGpioRates(int number = 0, quint8 whichRate = 0);
+    bool readEeprom();
+    
     void printTimestamp();
     void delay(int millisecondsWait);
     MCP4728 *dac = nullptr;
     ADS1115 *adc = nullptr;
     PCA9536 *pca = nullptr;
     LM75 *lm75 = nullptr;
+	EEPROM24AA02 *eep = nullptr;
     float biasVoltage = 0;
     bool biasON = false;
     bool gainSwitch = false;
