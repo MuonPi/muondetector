@@ -24,7 +24,7 @@
 #include <utility>
 
 // max allowed timing error of a single station in ns
-#define MAX_ERR_LIMIT 10000.
+#define MAX_ERR_LIMIT 100000.
 
 using namespace std;
 
@@ -360,7 +360,7 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 						coincidents++;
 					}
 					rewriteToVectors.push_back(i);
-					output << ts_diff_ns(values[max(i,indexSmallest)][iterator[max(i,indexSmallest)]].ts, values[min(i,indexSmallest)][iterator[min(i,indexSmallest)]].ts) << "   ";
+					output << ts_diff_ns(values[min(i,indexSmallest)][iterator[min(i,indexSmallest)]].ts, values[max(i,indexSmallest)][iterator[max(i,indexSmallest)]].ts) << "   ";
 					//output << indexSmallest << "-" << i <<"  ";
 					output << (int)sqrt(err1*err1+err2*err2)<< "    err: "<<err1 << " " << err2 <<" ns  ";
 					output << "    len: "<<len1 << " " << len2 <<" ns  ";

@@ -1,0 +1,18 @@
+reset
+
+n=15;
+max_err=200;
+
+delta_t(x) = ( curr_dt = x - old_t, old_t = x, curr_dt)
+old_t = 0
+curr_dt = 0
+CMA_old=0
+CMA_new=0
+CMA(x) = ( CMA_old=CMA_new, CMA_new=(abs(x-CMA_old)<800)?(x+n*CMA_old)/(n+1):CMA_old, x)
+
+#plot "compare_decay_10000ns.txt" u 3:($4-old_t<-1000?delta_t($4):1/0):5 w yerrorbars
+#plot "compare_decay_10000ns.txt" u 3:((delta_t($4)<-1000)?curr_dt:1/0):5 w yerrorbars
+#"compare_decay_10000ns.txt" u 3:((delta_t($4)>1000)?curr_dt:1/0):5 w yerrorbars
+plot "compare_decay_10000ns.txt" u 3:($5<max_err?((CMA($4)-CMA_new<-500)?$4-CMA_new:1/0):1/0):5 w yerrorbars
+pause -1
+
