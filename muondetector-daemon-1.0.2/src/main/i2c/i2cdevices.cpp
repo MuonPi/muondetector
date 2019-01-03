@@ -9,7 +9,8 @@
 #include <inttypes.h>  	    // uint8_t, etc
 //#include <linux/i2c.h> // I2C bus definitions for linux like systems
 //#include <linux/i2c-dev.h> // I2C bus definitions for linux like systems
-#include <i2cdevices.h>
+#include <algorithm>
+#include "i2cdevices.h"
 
 #define DEFAULT_DEBUG_LEVEL 0
 
@@ -18,7 +19,7 @@ using namespace std;
 unsigned int i2cDevice::fNrDevices = 0;
 unsigned long int i2cDevice::fGlobalNrBytesRead = 0;
 unsigned long int i2cDevice::fGlobalNrBytesWritten = 0;
-
+std::vector<i2cDevice*> i2cDevice::fGlobalDeviceList;
 
 const double ADS1115::PGAGAINS[6] = { 6.144, 4.096, 2.048, 1.024, 0.512, 0.256 };
 const float MCP4728::VDD = 3.3;	// change, if device powered with different voltage
@@ -34,6 +35,7 @@ i2cDevice::i2cDevice() {
 	fNrBytesWritten = 0;
 	fAddress = 0;
 	fDebugLevel = DEFAULT_DEBUG_LEVEL;
+	fGlobalDeviceList.push_back(this);
 }
 
 i2cDevice::i2cDevice(const char* busAddress = "/dev/i2c-1") {
@@ -45,6 +47,7 @@ i2cDevice::i2cDevice(const char* busAddress = "/dev/i2c-1") {
 	fNrBytesWritten = 0;
 	fAddress = 0;
 	fDebugLevel = DEFAULT_DEBUG_LEVEL;
+	fGlobalDeviceList.push_back(this);
 }
 
 i2cDevice::i2cDevice(uint8_t slaveAddress) : fAddress(slaveAddress) {
@@ -56,6 +59,7 @@ i2cDevice::i2cDevice(uint8_t slaveAddress) : fAddress(slaveAddress) {
 	fNrBytesRead = 0;
 	fNrBytesWritten = 0;
 	fDebugLevel = DEFAULT_DEBUG_LEVEL;
+	fGlobalDeviceList.push_back(this);
 }
 
 i2cDevice::i2cDevice(const char* busAddress, uint8_t slaveAddress) : fAddress(slaveAddress) {
@@ -67,12 +71,16 @@ i2cDevice::i2cDevice(const char* busAddress, uint8_t slaveAddress) : fAddress(sl
 	fNrBytesRead = 0;
 	fNrBytesWritten = 0;
 	fDebugLevel = DEFAULT_DEBUG_LEVEL;
+	fGlobalDeviceList.push_back(this);
 }
 
 i2cDevice::~i2cDevice() {
 	//destructor of the opening part from above
 	if (fHandle > 0) fNrDevices--;
 	close(fHandle);
+	std::vector<i2cDevice*>::iterator it;
+	it = std::find(fGlobalDeviceList.begin(), fGlobalDeviceList.end(), this);
+	if (it!=fGlobalDeviceList.end()) fGlobalDeviceList.erase(it);
 }
 
 bool i2cDevice::devicePresent()
@@ -381,7 +389,8 @@ int16_t ADS1115::readADC(unsigned int channel)
 
 	// These three bytes are written to the ADS1115 to set the config register and start a conversion 
 	writeBuf[0] = 0x01;		// This sets the pointer register so that the following two bytes write to the config register
-	writeBuf[1] = 0x80 | 0x40; // OS bit, single ended mode channels
+	writeBuf[1] = 0x80;		// OS bit
+	if (!fDiffMode) writeBuf[1] |= 0x40; // single ended mode channels
 	writeBuf[1] |= (channel & 0x03) << 4; // channel select
 	writeBuf[1] |= 0x01; // single shot mode
 	writeBuf[1] |= ((uint8_t)fPga[channel]) << 1; // PGA gain select
@@ -431,6 +440,7 @@ int16_t ADS1115::readADC(unsigned int channel)
 	fLastADCValue = val;
 
 	stopTimer();
+	fLastConvTime = fLastTimeInterval;
 
 	return val;
 }
@@ -527,23 +537,39 @@ bool MCP4728::setValue(uint8_t channel, uint16_t value, uint8_t gain, bool toEEP
 	return true;
 }
 
+bool MCP4728::devicePresent()
+{
+	uint8_t buf[24];
+	startTimer();
+	// perform a read sequence of all registers as described in datasheet
+	return (read(buf, 24) == 24);
+	stopTimer();
+}
+
 bool MCP4728::readChannel(uint8_t channel, DacChannel& channelData)
 {
 	if (channel > 3) {
 		// error: channel index exceeding 3
 		return false;
 	}
+	
+	startTimer();
+	
 	uint8_t buf[24];
 	if (read(buf, 24) != 24) {
 		// somehow did not read exact same amount of bytes as it should
+		stopTimer();
 		return false;
 	}
-
-	channelData.vref=(buf[channel*6+1]&0x80)?VREF_2V:VREF_VDD;
-	channelData.pd=(buf[channel*6+1]&0x60)>>5;
-	channelData.gain=(buf[channel*6+1]&0x10)?GAIN2:GAIN1;
-	channelData.value=(uint16_t)(buf[channel*6+1]&0x0f)<<8;
-	channelData.value|=(uint16_t)(buf[channel*6+2]&0xff);
+	uint8_t offs=(channelData.eeprom==false)?1:4;
+	channelData.vref=(buf[channel*6+offs]&0x80)?VREF_2V:VREF_VDD;
+	channelData.pd=(buf[channel*6+offs]&0x60)>>5;
+	channelData.gain=(buf[channel*6+offs]&0x10)?GAIN2:GAIN1;
+	channelData.value=(uint16_t)(buf[channel*6+offs]&0x0f)<<8;
+	channelData.value|=(uint16_t)(buf[channel*6+offs+1]&0xff);
+	
+	stopTimer();
+	
 	return true;
 }
 
@@ -560,17 +586,35 @@ float MCP4728::code2voltage(const DacChannel& channelData)
  */
 bool PCA9536::setOutputPorts(uint8_t portMask) {
 	unsigned char data = ~portMask;
+	startTimer();
 	if (1 != writeReg(CONFIG_REG, &data, 1)) {
 		return false;
 	}
+	stopTimer();
 	return true;
 }
 
 bool PCA9536::setOutputState(uint8_t portMask) {
+	startTimer();
 	if (1 != writeReg(OUTPUT_REG, &portMask, 1)) {
 		return false;
 	}
+	stopTimer();
 	return true;
+}
+
+uint8_t PCA9536::getInputState() {
+	uint8_t inport=0x00;
+	startTimer();
+	readReg(INPUT_REG, &inport, 1);
+	stopTimer();
+	return inport & 0x0f;
+}
+
+bool PCA9536::devicePresent() {
+	uint8_t inport=0x00;
+	// read input port
+	return (1==readReg(INPUT_REG, &inport, 1));
 }
 
 /*

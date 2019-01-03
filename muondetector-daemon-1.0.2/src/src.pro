@@ -46,7 +46,8 @@ SOURCES += main/main.cpp \
     main/pigpiodhandler.cpp \
     main/daemon.cpp \
     main/custom_io_operators.cpp \
-    main/filehandler.cpp
+    main/filehandler.cpp \
+    main/calibration.cpp
 
 HEADERS += \
     main/gnsssatellite.h \
@@ -62,6 +63,7 @@ HEADERS += \
     main/daemon.h \
     main/ublox_structs.h \
     main/custom_io_operators.h \
-    main/filehandler.h
+    main/filehandler.h \
+    main/calibration.h
 
 DISTFILES += ubx_rates_config.cfg

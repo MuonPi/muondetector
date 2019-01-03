@@ -5,6 +5,7 @@
 #include <inttypes.h>  	    // uint8_t, etc
 #include <linux/i2c-dev.h> // I2C bus definitions for linux like systems
 #include <sys/time.h>                // for gettimeofday()
+#include <vector>
 
 #ifndef _I2CDEVICES_H_
 #define _I2CDEVICES_H_
@@ -30,15 +31,16 @@ public:
 	i2cDevice(const char* busAddress);
 	i2cDevice(uint8_t slaveAddress);
 	i2cDevice(const char* busAddress, uint8_t slaveAddress);
-	~i2cDevice();
+	virtual ~i2cDevice();
 
 	void setAddress(uint8_t address);
 	inline uint8_t getAddress() const { return fAddress; }
-	inline unsigned int getNrDevices() { return fNrDevices; }
+	static unsigned int getNrDevices() { return fNrDevices; }
 	inline unsigned int getNrBytesRead() { return fNrBytesRead; }
 	inline unsigned int getNrBytesWritten() { return fNrBytesWritten; }
-	inline unsigned int getGlobalNrBytesRead() { return fGlobalNrBytesRead; }
-	inline unsigned int getGlobalNrBytesWritten() { return fGlobalNrBytesWritten; }
+	static unsigned int getGlobalNrBytesRead() { return fGlobalNrBytesRead; }
+	static unsigned int getGlobalNrBytesWritten() { return fGlobalNrBytesWritten; }
+	static std::vector<i2cDevice*>& getGlobalDeviceList() { return fGlobalDeviceList; }
 	virtual bool devicePresent();
 	inline double getLastTimeInterval() { return fLastTimeInterval; }
 
@@ -102,6 +104,7 @@ protected:
 	// fuctions for measuring time intervals
 	void startTimer();
 	void stopTimer();
+	static std::vector<i2cDevice*> fGlobalDeviceList;
 };
 
 
@@ -109,6 +112,7 @@ protected:
 class ADS1115 : public i2cDevice {
 public:
 	enum CFG_CHANNEL { CH0 = 0, CH1, CH2, CH3 };
+	enum CFG_DIFF_CHANNEL { CH0_1 = 0, CH0_3, CH1_3, CH2_3 };
 	enum CFG_RATE { RATE8 = 0, RATE16, RATE32, RATE64, RATE128, RATE250, RATE475, RATE860 };
 	enum CFG_PGA { PGA6V = 0, PGA4V = 1, PGA2V = 2, PGA1V = 3, PGA512MV = 4, PGA256MV = 5 };
 	static const double PGAGAINS[6];
@@ -136,6 +140,7 @@ public:
 	void readVoltage(unsigned int channel, double& voltage);
 	void readVoltage(unsigned int channel, int16_t& adc, double& voltage);
 	bool devicePresent();
+	void setDiffMode(bool mode) { fDiffMode=mode; }
 	inline unsigned int getReadWaitDelay() const { return fReadWaitDelay; }
 
 protected:
@@ -145,8 +150,9 @@ protected:
 	unsigned int fLastADCValue;
 	double fLastVoltage;
 	unsigned int fReadWaitDelay;	// conversion wait time in us
-	bool fAGC;
-
+	bool fAGC;	// software agc which switches over to a better pga setting if voltage too low/high
+	bool fDiffMode=false;	// measure differential input signals (true) or single ended (false=default)
+	
 	inline void init() {
 		fPga[0] = fPga[1] = fPga[2] = fPga[3] = PGA4V;
 		fReadWaitDelay = READ_WAIT_DELAY_INIT;
@@ -182,13 +188,14 @@ public:
 		uint8_t pd=0x00;
 		CFG_GAIN gain=GAIN1;
 		CFG_VREF vref=VREF_VDD;
-		bool toEEPROM = false;
+		bool eeprom = false;
 		uint16_t value = 0;
 	};
 
 	MCP4728() : i2cDevice(0x60) {}
 	MCP4728(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
 	MCP4728(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
+	bool devicePresent();
 	bool setVoltage(uint8_t channel, float voltage, bool toEEPROM = false);
 	bool setValue(uint8_t channel, uint16_t value, uint8_t gain = GAIN1, bool toEEPROM = false);
 	bool setValue(uint8_t channel, const DacChannel& channelData);
@@ -202,13 +209,15 @@ class PCA9536 : public i2cDevice {
 	// the device supports reading the incoming logic levels of the pins if set to input in the configuration register (will probably not use this feature)
 	// the device supports polarity inversion (by configuring the polarity inversino register) (will probably not use this feature)
 public:
-	enum CFG_REG { INPUT_REG = 0, OUTPUT_REG, POLARITY_INVERSION, CONFIG_REG };
+	enum CFG_REG { INPUT_REG = 0x00, OUTPUT_REG=0x01, POLARITY_INVERSION=0x02, CONFIG_REG=0x03 };
 	enum CFG_PORT { C0 = 0, C1 = 2, C3 = 4, C4 = 8 };
 	PCA9536() : i2cDevice(0x41) {}
 	PCA9536(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
 	PCA9536(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
 	bool setOutputPorts(uint8_t portMask);
 	bool setOutputState(uint8_t portMask);
+	uint8_t getInputState();
+	bool devicePresent();
 };
 
 

@@ -1,5 +1,6 @@
 #include <QtNetwork>
 #include <chrono>
+#include <time.h>
 #include <QThread>
 #include <QNetworkInterface>
 #include <daemon.h>
@@ -187,19 +188,44 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	if (adc->devicePresent()) {
 		if (verbose>2) {
 			cout<<"ADS1115 device is present."<<endl;
+			cout<<"single ended channels:"<<endl;
 			cout<<"ch0: "<<adc->readADC(0)<<" ch1: "<<adc->readADC(1)
 			<<" ch2: "<<adc->readADC(2)<<" ch3: "<<adc->readADC(3)<<endl;
+			adc->setDiffMode(true);
+			cout<<"diff channels:"<<endl;
+			cout<<"ch0-1: "<<adc->readADC(0)<<" ch0-3: "<<adc->readADC(1)
+			<<" ch1-3: "<<adc->readADC(2)<<" ch2-3: "<<adc->readADC(3)<<endl;
+			adc->setDiffMode(false);
 			cout<<"readout took "<<adc->getLastTimeInterval()<<" ms"<<endl;
 		}
 	} else {
 		cerr<<"ADS1115 device NOT present!"<<endl;
 	}
 	
-	dac = new MCP4728();
 	adc->setPga(ADS1115::PGA4V);
 	//adc->setPga(0, ADS1115::PGA2V);
 	adc->setRate(ADS1115::RATE475);
 	adc->setAGC(false);
+
+	dac = new MCP4728();
+	if (dac->devicePresent()) {
+		if (verbose>2) {
+			cout<<"MCP4728 device is present."<<endl;
+			cout<<"DAC registers / output voltages:"<<endl;
+			for (int i=0; i<4; i++) {
+				MCP4728::DacChannel dacChannel;
+				MCP4728::DacChannel eepromChannel;
+				eepromChannel.eeprom=true;
+				dac->readChannel(i, dacChannel);
+				dac->readChannel(i, eepromChannel);
+				cout<<"  ch"<<i<<": "<<dacChannel.value<<" = "<<MCP4728::code2voltage(dacChannel)<<" V"
+				"  (stored: "<<eepromChannel.value<<" = "<<MCP4728::code2voltage(eepromChannel)<<" V)"<<endl;
+			}
+			cout<<"readout took "<<dac->getLastTimeInterval()<<" ms"<<endl;
+		}
+	} else {
+		cerr<<"MCP4728 device NOT present!"<<endl;
+	}
 	float *tempThresh = new_dacThresh;
 	dacThresh.push_back(tempThresh[0]);
 	dacThresh.push_back(tempThresh[1]);
@@ -208,8 +234,18 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
     
     // PCA9536 4 bit I/O I2C device used for selecting the UBX timing input
     pca = new PCA9536();
-    pca->setOutputPorts(0x03);
-    setPcaChannel(new_pcaPortMask);
+	if (pca->devicePresent()) {
+		if (verbose>2) {
+			cout<<"PCA9536 device is present."<<endl;
+			cout<<" inputs: 0x"<<hex<<(int)pca->getInputState()<<endl;
+			cout<<"readout took "<<dec<<pca->getLastTimeInterval()<<" ms"<<endl;
+		}
+		pca->setOutputPorts(0x03);
+		setPcaChannel(new_pcaPortMask);
+	} else {
+		cerr<<"PCA9536 device NOT present!"<<endl;
+	}
+    
     if (dacThresh[0] > 0) {
         dac->setVoltage(DAC_TH1, dacThresh[0]);
     }
@@ -220,13 +256,16 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
         dac->setVoltage(DAC_BIAS, biasVoltage);
 	}
 
-	// EEPROM
+	// EEPROM 24AA02 type
 	eep = new EEPROM24AA02();
-	if (eep==nullptr) return;
+	calib = new Calibration(eep);
 	if (eep->devicePresent()) {
+		calib->readFromEeprom();
 		if (verbose>2) {
 			cout<<"eep device is present."<<endl;
 			readEeprom();
+			
+			
 			if (1==0) {
 				uint8_t buf[256];
 				for (int i=0; i<256; i++) buf[i]=i;
@@ -234,9 +273,34 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 				if (verbose>2) cout<<"eep write took "<<eep->getLastTimeInterval()<<" ms"<<endl;
 				readEeprom();
 			}
+			if (1==0) {
+				calib->printBuffer();
+				calib->setVersion(0x01);
+				calib->setCalibFlags(0x01);
+				calib->setFeatureFlags(0x00);
+				calib->setDate(time(NULL));
+				calib->printBuffer();
+				//calib->writeToEeprom();
+				readEeprom();
+			}
 		}
 	} else {
 		cerr<<"eeprom device NOT present!"<<endl;
+	}
+	
+	// for diagnostics:
+	// print out some i2c device statistics
+	if (1==0) {
+		cout<<"Nr. of invoked I2C devices (plain count): "<<i2cDevice::getNrDevices()<<endl;
+		cout<<"Nr. of invoked I2C devices (gl. device list's size): "<<i2cDevice::getGlobalDeviceList().size()<<endl;
+		cout<<"Nr. of bytes read on I2C bus: "<<i2cDevice::getGlobalNrBytesRead()<<endl;
+		cout<<"Nr. of bytes written on I2C bus: "<<i2cDevice::getGlobalNrBytesWritten()<<endl;
+		cout<<"list of device addresses: ";
+		for (int i=0; i<i2cDevice::getGlobalDeviceList().size(); i++)
+		{
+			cout<<"0x"<<hex<<(int)i2cDevice::getGlobalDeviceList()[i]->getAddress()<<" ";
+		}
+		cout<<endl;
 	}
 	
 	// for gps module
@@ -318,6 +382,7 @@ Daemon::~Daemon() {
     if (dac!=nullptr){ delete dac; dac = nullptr; }
     if (adc!=nullptr){ delete adc; adc = nullptr; }
     if (eep!=nullptr){ delete eep; eep = nullptr; }
+    if (calib!=nullptr){ delete calib; calib = nullptr; }
     if (pigHandler!=nullptr){ delete pigHandler; pigHandler = nullptr; }
     if (fileHandler!=nullptr){ delete fileHandler; fileHandler = nullptr; }
 }
@@ -682,7 +747,7 @@ bool Daemon::readEeprom()
 	uint16_t n=256;
 	uint8_t buf[256];
 	for (int i=0; i<n; i++) buf[i]=0;
-	bool retval=eep->readBytes(0,n,buf);
+	bool retval=(eep->readBytes(0,n,buf)==n);
 	cout<<"*** EEPROM content ***"<<endl;
 	for (int j=0; j<16; j++) {
 		cout<<hex<<std::setfill ('0') << std::setw (2)<<j*16<<": ";

@@ -7,10 +7,11 @@
 #include <tcpconnection.h>
 #include <custom_io_operators.h>
 #include <qtserialublox.h>
-#include <i2c/i2cdevices.h>
 #include <QSocketNotifier>
 #include <pigpiodhandler.h>
 #include <filehandler.h>
+#include "i2c/i2cdevices.h"
+#include "calibration.h"
 
 // for sig handling:
 #include <sys/types.h>
@@ -135,6 +136,8 @@ private:
     QSocketNotifier *snHup = nullptr;
     QSocketNotifier *snTerm = nullptr;
     QSocketNotifier *snInt = nullptr;
+    
+    Calibration *calib = nullptr;
 };
 
 #endif // DAEMON_H
