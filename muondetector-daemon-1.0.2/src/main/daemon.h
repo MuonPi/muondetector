@@ -96,6 +96,7 @@ private:
 	void setUbxMsgRates(QMap<uint16_t,int>& ubxMsgRates);
     void sendUbxMsgRates();
     void sendGpioRates(int number = 0, quint8 whichRate = 0);
+    void sendI2cStats();
     bool readEeprom();
     
     void printTimestamp();

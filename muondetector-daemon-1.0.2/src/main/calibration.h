@@ -83,7 +83,6 @@ private:
 	CalibEntry<uint16_t,ADDR_VDIV> vdiv_ratio=1100; // voltage divider ratio of current sense leads in 1/100 units (10.4 => 1040)
 	CalibEntry<float,ADDR_COEFF0> coeff0=0;
 	CalibEntry<float,ADDR_COEFF1> coeff1=1.0;
-	
 };
 
 #endif // CALIBRATION_H

@@ -10,6 +10,7 @@
 //#include <linux/i2c.h> // I2C bus definitions for linux like systems
 //#include <linux/i2c-dev.h> // I2C bus definitions for linux like systems
 #include <algorithm>
+#include <iostream>
 #include "i2cdevices.h"
 
 #define DEFAULT_DEBUG_LEVEL 0
@@ -537,13 +538,45 @@ bool MCP4728::setValue(uint8_t channel, uint16_t value, uint8_t gain, bool toEEP
 	return true;
 }
 
+bool MCP4728::setChannel(uint8_t channel, const DacChannel& channelData)
+{
+	if (channelData.value > 0xfff) {
+		//channelData.value = 0xfff;
+		// error number of bits exceeding 12
+		return false;
+	}
+	startTimer();
+	channel = channel & 0x03;
+	uint8_t buf[3];
+	if (channelData.eeprom) {
+		buf[0] = 0b01011001;
+	}
+	else {
+		buf[0] = 0b01000001;
+	}
+	buf[0] |= (channel << 1); // 01000/01011 (multiwrite/singlewrite command) DAC1 DAC0 (channel) UDAC bit =1
+	buf[1] = ((uint8_t)channelData.vref) << 7; // Vref PD1 PD0 Gx (gain) D11 D10 D9 D8
+	buf[1] |= (channelData.pd & 0x03) << 5;
+	buf[1] |= (uint8_t)((channelData.value & 0xf00) >> 8);
+	buf[1] |= (uint8_t)(channelData.gain & 0x01) << 4;
+	buf[2] = (uint8_t)(channelData.value & 0xff); 	// D7 D6 D5 D4 D3 D2 D1 D0
+	if (write(buf, 3) != 3) {
+		// somehow did not write exact same amount of bytes as it should
+		return false;
+	}
+	stopTimer();
+	return true;
+}
+
 bool MCP4728::devicePresent()
 {
 	uint8_t buf[24];
 	startTimer();
 	// perform a read sequence of all registers as described in datasheet
-	return (read(buf, 24) == 24);
+	int n=read(buf, 24);
 	stopTimer();
+	return (n==24);
+	
 }
 
 bool MCP4728::readChannel(uint8_t channel, DacChannel& channelData)
@@ -657,7 +690,6 @@ bool LM75::devicePresent()
 	uint8_t readBuf[2];		// 2 byte buffer to store the data read from the I2C device  
 	readBuf[0] = 0;
 	readBuf[1] = 0;
-
 	int n=read(readBuf, 2);	// Read the data register into readBuf
 	return (n==2);
 }
@@ -1333,8 +1365,9 @@ double BMP180::getPressure(uint8_t oss) {
 */
 bool BME280::init()
 {
-	uint8_t val = 0;
+	fTitle = "BME180";
 
+	uint8_t val = 0;
 	fCalibrationValid = false;
 
 	// chip id reg

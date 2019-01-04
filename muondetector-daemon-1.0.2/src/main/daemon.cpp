@@ -204,7 +204,8 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	
 	adc->setPga(ADS1115::PGA4V);
 	//adc->setPga(0, ADS1115::PGA2V);
-	adc->setRate(ADS1115::RATE475);
+//	adc->setRate(0x06);  // ADS1115::RATE475
+	adc->setRate(0x07);  // ADS1115::RATE860
 	adc->setAGC(false);
 
 	dac = new MCP4728();
@@ -295,12 +296,13 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 		cout<<"Nr. of invoked I2C devices (gl. device list's size): "<<i2cDevice::getGlobalDeviceList().size()<<endl;
 		cout<<"Nr. of bytes read on I2C bus: "<<i2cDevice::getGlobalNrBytesRead()<<endl;
 		cout<<"Nr. of bytes written on I2C bus: "<<i2cDevice::getGlobalNrBytesWritten()<<endl;
-		cout<<"list of device addresses: ";
-		for (int i=0; i<i2cDevice::getGlobalDeviceList().size(); i++)
+		cout<<"list of device addresses: "<<endl;
+		for (uint8_t i=0; i<i2cDevice::getGlobalDeviceList().size(); i++)
 		{
-			cout<<"0x"<<hex<<(int)i2cDevice::getGlobalDeviceList()[i]->getAddress()<<" ";
+			cout<<(int)i+1<<" 0x"<<hex<<(int)i2cDevice::getGlobalDeviceList()[i]->getAddress()<<" "<<i2cDevice::getGlobalDeviceList()[i]->getTitle();
+			if (i2cDevice::getGlobalDeviceList()[i]->devicePresent()) cout<<" present"<<endl;
+			else cout<<" missing"<<endl;
 		}
-		cout<<endl;
 	}
 	
 	// for gps module
@@ -568,12 +570,33 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
     if (msgID == temperatureRequestSig){
         getTemperature();
     }
+    if (msgID == i2cStatsRequestSig){
+        sendI2cStats();
+    }
     if (msgID == quitConnectionSig){
         QString closeAddress;
         *(tcpMessage.dStream) >> closeAddress;
         emit closeConnection(closeAddress);
     }
 }
+
+void Daemon::sendI2cStats() {
+	TcpMessage tcpMessage(i2cStatsSig);
+	quint8 nrDevices=i2cDevice::getGlobalDeviceList().size();
+	quint32 bytesRead = i2cDevice::getGlobalNrBytesRead();
+	quint32 bytesWritten = i2cDevice::getGlobalNrBytesWritten();
+    *(tcpMessage.dStream) << nrDevices << bytesRead << bytesWritten;
+
+	for (uint8_t i=0; i<i2cDevice::getGlobalDeviceList().size(); i++)
+	{
+		uint8_t addr = i2cDevice::getGlobalDeviceList()[i]->getAddress();
+		QString title = QString::fromStdString(i2cDevice::getGlobalDeviceList()[i]->getTitle());
+		bool present = i2cDevice::getGlobalDeviceList()[i]->devicePresent();
+		*(tcpMessage.dStream) << addr << title << present;
+	}
+	emit sendTcpMessage(tcpMessage);
+}
+
 
 void Daemon::sendUbxGeodeticPos(GeodeticPos pos){
     TcpMessage tcpMessage(geodeticPosSig);

@@ -6,6 +6,7 @@
 #include <linux/i2c-dev.h> // I2C bus definitions for linux like systems
 #include <sys/time.h>                // for gettimeofday()
 #include <vector>
+#include <string>
 
 #ifndef _I2CDEVICES_H_
 #define _I2CDEVICES_H_
@@ -46,6 +47,9 @@ public:
 
 	inline void setDebugLevel(int level) { fDebugLevel = level; }
 	inline int getDebugLevel() { return fDebugLevel; }
+
+	void setTitle(const std::string& a_title) { fTitle = a_title; }
+	const std::string& getTitle() const { return fTitle; }
 
 	// read nBytes bytes into buffer buf
 	// return value:
@@ -100,11 +104,12 @@ protected:
 	double fLastTimeInterval; // the last time measurement's result is stored here
 	struct timeval fT1, fT2;
 	int fDebugLevel;
+	static std::vector<i2cDevice*> fGlobalDeviceList;
+	std::string fTitle="I2C device";
 
 	// fuctions for measuring time intervals
 	void startTimer();
 	void stopTimer();
-	static std::vector<i2cDevice*> fGlobalDeviceList;
 };
 
 
@@ -113,7 +118,7 @@ class ADS1115 : public i2cDevice {
 public:
 	enum CFG_CHANNEL { CH0 = 0, CH1, CH2, CH3 };
 	enum CFG_DIFF_CHANNEL { CH0_1 = 0, CH0_3, CH1_3, CH2_3 };
-	enum CFG_RATE { RATE8 = 0, RATE16, RATE32, RATE64, RATE128, RATE250, RATE475, RATE860 };
+//	enum CFG_RATE { RATE8 = 0, RATE16, RATE32, RATE64, RATE128, RATE250, RATE475, RATE860 };
 	enum CFG_PGA { PGA6V = 0, PGA4V = 1, PGA2V = 2, PGA1V = 3, PGA512MV = 4, PGA256MV = 5 };
 	static const double PGAGAINS[6];
 
@@ -133,8 +138,8 @@ public:
 	inline CFG_PGA getPga(int ch) const { return fPga[ch]; }
 	inline void setAGC(bool state) { fAGC = state; }
 	inline bool getAGC() const { return fAGC; }
-	inline void setRate(CFG_RATE rate) { fRate = rate; }
-	inline CFG_RATE getRate() const { return fRate; }
+	inline void setRate(unsigned int rate) { fRate = rate & 0x07; }
+	inline unsigned int getRate() const { return fRate; }
 	int16_t readADC(unsigned int channel);
 	double readVoltage(unsigned int channel);
 	void readVoltage(unsigned int channel, double& voltage);
@@ -145,7 +150,7 @@ public:
 
 protected:
 	CFG_PGA fPga[4];
-	CFG_RATE fRate;
+	unsigned int fRate;
 	unsigned int fLastConvTime;
 	unsigned int fLastADCValue;
 	double fLastVoltage;
@@ -153,11 +158,12 @@ protected:
 	bool fAGC;	// software agc which switches over to a better pga setting if voltage too low/high
 	bool fDiffMode=false;	// measure differential input signals (true) or single ended (false=default)
 	
-	inline void init() {
+	inline virtual void init() {
 		fPga[0] = fPga[1] = fPga[2] = fPga[3] = PGA4V;
 		fReadWaitDelay = READ_WAIT_DELAY_INIT;
-		fRate = RATE8;
+		fRate = 0x00;  // RATE8
 		fAGC = false;
+		fTitle = "ADS1115";
 	}
 };
 
@@ -165,13 +171,19 @@ protected:
 class ADS1015 : public ADS1115 {
 public:
 	using ADS1115::ADS1115;
-	enum CFG_RATE { RATE128 = 0, RATE250, RATE490, RATE920, RATE1600, RATE2400, RATE3300 };
+//	enum CFG_RATE { RATE128 = 0, RATE250, RATE490, RATE920, RATE1600, RATE2400, RATE3300 };
+	
+protected:
+	inline void init() {
+		ADS1115::init();
+		fTitle = "ADS1015";
+	}
 };
 
 
 class MCP4728 : public i2cDevice {
 	// the DAC supports writing to input register but not sending latch bit to update the output register
-	// here we will always send the "UDAC" (latch) bit because we don't neet this functionality
+	// here we will always send the "UDAC" (latch) bit because we don't need this functionality
 	// MCP4728 listens to I2C Generall Call Commands
 	// reset, wake-up, software update, read address bits
 	// reset is "0x00 0x06"
@@ -184,6 +196,8 @@ public:
 	enum CFG_GAIN { GAIN1 = 0, GAIN2 = 1 };
 	enum CFG_VREF { VREF_VDD = 0, VREF_2V = 1 };
 
+	// struct that characterizes one dac output channel
+	// setting the eeprom flag enables access to the eeprom registers instead of the dac output registers
 	struct DacChannel {
 		uint8_t pd=0x00;
 		CFG_GAIN gain=GAIN1;
@@ -192,13 +206,13 @@ public:
 		uint16_t value = 0;
 	};
 
-	MCP4728() : i2cDevice(0x60) {}
-	MCP4728(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
-	MCP4728(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
+	MCP4728() : i2cDevice(0x60) { fTitle = "MCP4728"; }
+	MCP4728(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) { fTitle = "MCP4728"; }
+	MCP4728(uint8_t slaveAddress) : i2cDevice(slaveAddress) { fTitle = "MCP4728"; }
 	bool devicePresent();
 	bool setVoltage(uint8_t channel, float voltage, bool toEEPROM = false);
 	bool setValue(uint8_t channel, uint16_t value, uint8_t gain = GAIN1, bool toEEPROM = false);
-	bool setValue(uint8_t channel, const DacChannel& channelData);
+	bool setChannel(uint8_t channel, const DacChannel& channelData);
 	bool readChannel(uint8_t channel, DacChannel& channelData);
 	
 	static float code2voltage(const DacChannel& channelData);
@@ -211,9 +225,9 @@ class PCA9536 : public i2cDevice {
 public:
 	enum CFG_REG { INPUT_REG = 0x00, OUTPUT_REG=0x01, POLARITY_INVERSION=0x02, CONFIG_REG=0x03 };
 	enum CFG_PORT { C0 = 0, C1 = 2, C3 = 4, C4 = 8 };
-	PCA9536() : i2cDevice(0x41) {}
-	PCA9536(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
-	PCA9536(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
+	PCA9536() : i2cDevice(0x41) { fTitle = "PCA9536"; }
+	PCA9536(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) { fTitle = "PCA9536"; }
+	PCA9536(uint8_t slaveAddress) : i2cDevice(slaveAddress) { fTitle = "PCA9536"; }
 	bool setOutputPorts(uint8_t portMask);
 	bool setOutputState(uint8_t portMask);
 	uint8_t getInputState();
@@ -223,9 +237,9 @@ public:
 
 class LM75 : public i2cDevice {
 public:
-	LM75() : i2cDevice(0x4f) {}
-	LM75(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
-	LM75(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
+	LM75() : i2cDevice(0x4f) { fTitle = "LM75A"; }
+	LM75(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) { fTitle = "LM75A"; }
+	LM75(uint8_t slaveAddress) : i2cDevice(slaveAddress) { fTitle = "LM75A"; }
 	bool devicePresent();
 	int16_t readRaw();
 	double getTemperature();
@@ -241,9 +255,9 @@ private:
 class X9119 : public i2cDevice {
 public:
 
-	X9119() : i2cDevice(0x28) {}
-	X9119(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
-	X9119(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
+	X9119() : i2cDevice(0x28) { fTitle = "X9119"; }
+	X9119(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) { fTitle = "X9119"; }
+	X9119(uint8_t slaveAddress) : i2cDevice(slaveAddress) { fTitle = "X9119"; }
 
 	unsigned int readWiperReg();
 	unsigned int readWiperReg2();
@@ -259,9 +273,9 @@ private:
 
 class EEPROM24AA02 : public i2cDevice {
 public:
-	EEPROM24AA02() : i2cDevice(0x50) {}
-	EEPROM24AA02(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
-	EEPROM24AA02(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
+	EEPROM24AA02() : i2cDevice(0x50) { fTitle = "24AA02"; }
+	EEPROM24AA02(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) { fTitle = "24AA02"; }
+	EEPROM24AA02(uint8_t slaveAddress) : i2cDevice(slaveAddress) { fTitle = "24AA02"; }
 
 	//bool devicePresent();
 	uint8_t readByte(uint8_t addr);
@@ -276,9 +290,9 @@ private:
 
 class SHT21 : public i2cDevice {
 public:
-	SHT21() : i2cDevice(0x40) {}
-	SHT21(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
-	SHT21(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
+	SHT21() : i2cDevice(0x40) { fTitle = "SHT21"; }
+	SHT21(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) { fTitle = "SHT21"; }
+	SHT21(uint8_t slaveAddress) : i2cDevice(slaveAddress) { fTitle = "SHT21"; }
 
 	uint16_t readUT();  //read temperature; nothing gets passed
 	uint16_t readUH();   //read humidity;  nothing gets passed
@@ -293,12 +307,13 @@ private:
 	bool checksumCorrect(uint8_t data[]); // expects 3 byte long data array; Source: https://www2.htw-dresden.de/~wiki_sn/index.php/SHT21
 };
 
+
 class BMP180 : public i2cDevice {
 public:
 
-	BMP180() : i2cDevice(0x77) {}
-	BMP180(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
-	BMP180(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
+	BMP180() : i2cDevice(0x77) { fTitle = "BMP180"; }
+	BMP180(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) { fTitle = "BMP180"; }
+	BMP180(uint8_t slaveAddress) : i2cDevice(slaveAddress) { fTitle = "BMP180"; }
 
 	bool init();
 	void readCalibParameters();
@@ -315,6 +330,7 @@ private:
 	signed int fCalibParameters[11];
 
 };
+
 
 class BME280 : public i2cDevice { // t_max = 112.8 ms for all three measurements at max oversampling
 public:
@@ -354,14 +370,15 @@ private:
 	uint16_t fCalibParameters[18];	// 18x 16-Bit words in 36 8-Bit registers
 };
 
+
 class HMC5883 : public i2cDevice {
 public:
 
 	// Resolution for the 8 gain settings in mG/LSB
 	static const double GAIN[8];
-	HMC5883() : i2cDevice(0x1e) {}
-	HMC5883(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {}
-	HMC5883(uint8_t slaveAddress) : i2cDevice(slaveAddress) {}
+	HMC5883() : i2cDevice(0x1e) { fTitle = "HMC5883"; }
+	HMC5883(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) { fTitle = "HMC5883"; }
+	HMC5883(uint8_t slaveAddress) : i2cDevice(slaveAddress) { fTitle = "HMC5883"; }
 
 	bool init();
 	// gain range 0..7
