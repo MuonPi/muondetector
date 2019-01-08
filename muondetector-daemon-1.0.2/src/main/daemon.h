@@ -97,6 +97,7 @@ private:
     void sendUbxMsgRates();
     void sendGpioRates(int number = 0, quint8 whichRate = 0);
     void sendI2cStats();
+    void sendCalib();
     bool readEeprom();
     
     void printTimestamp();
@@ -138,7 +139,7 @@ private:
     QSocketNotifier *snTerm = nullptr;
     QSocketNotifier *snInt = nullptr;
     
-    Calibration *calib = nullptr;
+    ShowerDetectorCalib *calib = nullptr;
 };
 
 #endif // DAEMON_H

@@ -5,9 +5,12 @@
 #include <QNetworkInterface>
 #include <daemon.h>
 #include <gpio_pin_definitions.h>
+//#include <calib_struct.h>
 #include <ublox_messages.h>
 #include <tcpmessage_keys.h>
 #include <iomanip>      // std::setfill, std::setw
+#include <locale>
+#include <iostream>
 
 // for i2cdetect:
 extern "C" {
@@ -35,6 +38,15 @@ static const QVector<uint16_t> allMsgCfgID({
 		 MSG_MON_HW, MSG_MON_HW2, MSG_MON_IO, MSG_MON_MSGPP,
          MSG_MON_RXBUF, MSG_MON_RXR, MSG_MON_TXBUF
 	});
+
+
+QDataStream& operator << (QDataStream& out, const CalibStruct& calib)
+{
+	out << QString::fromStdString(calib.name) << QString::fromStdString(calib.type)
+	 << (quint16)calib.address << QString::fromStdString(calib.value);
+    return out;
+}
+
 // signal handling stuff: put code to execute before shutdown down there
 static int setup_unix_signal_handlers()
 {
@@ -129,12 +141,21 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, QObject *parent)
 	: QTcpServer(parent)
 {
+
+	// first, we must set the locale to be independent of the number format of the system's locale.
+	// We rely on parsing floating point numbers with a decimal point (not a komma) which might fail if not setting the classic locale
+	//	std::locale::global( std::locale( std::cout.getloc(), new punct_facet<char, '.'>) ) );
+	//	std::locale mylocale( std::locale( std::cout.getloc(), new punct_facet<char, '.'>) );
+	std::locale::global(std::locale::classic());
+
     qRegisterMetaType<TcpMessage>("TcpMessage");
     qRegisterMetaType<GeodeticPos>("GeodeticPos");
     qRegisterMetaType<int32_t>("int32_t");
     qRegisterMetaType<uint32_t>("uint32_t");
     qRegisterMetaType<uint16_t>("uint16_t");
     qRegisterMetaType<uint8_t>("uint8_t");
+    qRegisterMetaType<CalibStruct>("CalibStruct");
+    
     // signal handling
 	setup_unix_signal_handlers();
 	if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)) {
@@ -259,13 +280,13 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 
 	// EEPROM 24AA02 type
 	eep = new EEPROM24AA02();
-	calib = new Calibration(eep);
+	calib = new ShowerDetectorCalib(eep);
 	if (eep->devicePresent()) {
+//		readEeprom();
 		calib->readFromEeprom();
-		if (verbose>2) {
+		if (verbose>0) {
 			cout<<"eep device is present."<<endl;
 			readEeprom();
-			
 			
 			if (1==0) {
 				uint8_t buf[256];
@@ -275,14 +296,24 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 				readEeprom();
 			}
 			if (1==0) {
-				calib->printBuffer();
-				calib->setVersion(0x01);
-				calib->setCalibFlags(0x01);
-				calib->setFeatureFlags(0x00);
-				calib->setDate(time(NULL));
+				calib->printCalibList();
+				calib->readFromEeprom();
+				calib->printCalibList();
+/*
+				calib->setCalibItem("VERSION", (uint8_t)1);
+				calib->setCalibItem("DATE", (uint32_t)time(NULL));
+				calib->setCalibItem("CALIB_FLAGS", (uint8_t)1);
+				calib->setCalibItem("FEATURE_FLAGS", (uint8_t)1);
+				calib->setCalibItem("RSENSE", (uint16_t)205);
+				calib->setCalibItem("COEFF0", (float)3.1415926535);
+				calib->setCalibItem("COEFF1", (float)-1.23456e-4);
+
+				calib->printCalibList();
+				calib->updateBuffer();
 				calib->printBuffer();
 				//calib->writeToEeprom();
 				readEeprom();
+*/
 			}
 		}
 	} else {
@@ -573,6 +604,9 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
     if (msgID == i2cStatsRequestSig){
         sendI2cStats();
     }
+    if (msgID == calibRequestSig){
+        sendCalib();
+    }
     if (msgID == quitConnectionSig){
         QString closeAddress;
         *(tcpMessage.dStream) >> closeAddress;
@@ -593,6 +627,18 @@ void Daemon::sendI2cStats() {
 		QString title = QString::fromStdString(i2cDevice::getGlobalDeviceList()[i]->getTitle());
 		bool present = i2cDevice::getGlobalDeviceList()[i]->devicePresent();
 		*(tcpMessage.dStream) << addr << title << present;
+	}
+	emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::sendCalib() {
+	TcpMessage tcpMessage(calibSetSig);
+	bool valid=calib->isValid();
+	bool eepValid=calib->isEepromValid();
+    int nrPars = calib->getCalibList().size();
+    *(tcpMessage.dStream) << valid << eepValid << nrPars;
+    for (int i=0; i<nrPars; i++) {
+		*(tcpMessage.dStream) << calib->getCalibItem(i);
 	}
 	emit sendTcpMessage(tcpMessage);
 }

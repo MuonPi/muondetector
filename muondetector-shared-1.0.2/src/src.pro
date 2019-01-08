@@ -48,4 +48,5 @@ HEADERS += \
     tcpmessage_keys.h \
     ublox_messages.h \
     ubx_msg_key_name_map.h \
-    muondetector_shared_global.h
+    muondetector_shared_global.h \
+    calib_struct.h
