@@ -101,7 +101,7 @@ bool ShowerDetectorCalib::readFromEeprom()
 			//float val = 0.;
 			// use of std::to_string() is not recommended, since it messes with the locale's setting, e.g. the decimal separator
 			//it->value = std::to_string(val);
-			ostr << std::setprecision(8) << std::scientific << val;
+			ostr << std::setprecision(7) << std::scientific << val;
 			it->value = ostr.str();
 		} else if (str=="INT8") {
 			int8_t val = AS_I8(fEepBuffer[it->address]);
@@ -216,7 +216,7 @@ void ShowerDetectorCalib::setCalibItem<float>(const std::string& name, float val
 //	if (const_cast<const CalibStruct&>(item) != InvalidCalibStruct) { 
 	if (item.name == name) { 
 		std::ostringstream ostr;
-		ostr<<std::setprecision(8);
+		ostr<<std::setprecision(7);
 		ostr << std::scientific << (double)value;
 		item.value = ostr.str();
 		setCalibItem(name, item);

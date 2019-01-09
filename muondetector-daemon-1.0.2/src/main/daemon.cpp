@@ -284,9 +284,12 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	if (eep->devicePresent()) {
 //		readEeprom();
 		calib->readFromEeprom();
-		if (verbose>0) {
+		if (verbose>1) {
 			cout<<"eep device is present."<<endl;
 			readEeprom();
+			calib->readFromEeprom();
+			uint64_t id=calib->getSerialID();
+			cout<<"unique ID: 0x"<<hex<<id<<dec<<endl;
 			
 			if (1==0) {
 				uint8_t buf[256];
@@ -295,10 +298,9 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 				if (verbose>2) cout<<"eep write took "<<eep->getLastTimeInterval()<<" ms"<<endl;
 				readEeprom();
 			}
-			if (1==0) {
+			if (1==1) {
 				calib->printCalibList();
-				calib->readFromEeprom();
-				calib->printCalibList();
+
 /*
 				calib->setCalibItem("VERSION", (uint8_t)1);
 				calib->setCalibItem("DATE", (uint32_t)time(NULL));
@@ -307,13 +309,14 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 				calib->setCalibItem("RSENSE", (uint16_t)205);
 				calib->setCalibItem("COEFF0", (float)3.1415926535);
 				calib->setCalibItem("COEFF1", (float)-1.23456e-4);
-
+				calib->setCalibItem("WRITE_CYCLES", (uint32_t)5);
+*/
 				calib->printCalibList();
 				calib->updateBuffer();
 				calib->printBuffer();
 				//calib->writeToEeprom();
 				readEeprom();
-*/
+
 			}
 		}
 	} else {
