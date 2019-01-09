@@ -69,6 +69,7 @@ void ShowerDetectorCalib::setCalibItem(const std::string& name, const CalibStruc
 bool ShowerDetectorCalib::readFromEeprom()
 {
 	if (fEeprom == nullptr) return false;
+	//if (!fEeprom->devicePresent()) return false;
 	const uint16_t n=256;
 	for (int i=0; i<n; i++) fEepBuffer[i]=0;
 	bool success=(fEeprom->readBytes(0,n,fEepBuffer)==n);

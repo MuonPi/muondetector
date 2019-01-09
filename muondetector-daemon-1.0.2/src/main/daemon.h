@@ -65,6 +65,8 @@ public slots:
     void sampleAdc0Event();
     void sampleAdcEvent(uint8_t channel);
 	void getTemperature();
+	void scanI2cBus();
+
 	
 signals:
 	void sendTcpMessage(TcpMessage tcpMessage);

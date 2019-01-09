@@ -64,6 +64,8 @@ public:
 
 private:
 	void init() {
+		const uint16_t n=256;
+		for (int i=0; i<n; i++) fEepBuffer[i]=0;
 		buildCalibList();
 		if (fEeprom != nullptr) {
 			fEepromValid = fEeprom->devicePresent() && readFromEeprom();
@@ -93,23 +95,7 @@ private:
 		std::istringstream istr(valstr);
 		istr >> value;
 	}
-/*
-	void getValueFromString(const std::string& valstr, unsigned int& value) { 
-		//value = std::stoi(valstr, nullptr);
-		std::istringstream istr(valstr);
-		istr >> value;
-	}
-	void getValueFromString(const std::string& valstr, int& value) { 
-		//value = std::stoi(valstr, nullptr); 
-		std::istringstream istr(valstr);
-		istr >> value;
-	}
-	void getValueFromString(const std::string& valstr, float& value) { 
-		//value = std::stof(valstr, nullptr); 
-		std::istringstream istr(valstr);
-		istr >> value;
-	}
-*/		
+
 	std::vector<CalibStruct> fCalibList;
 	EEPROM24AA02 *fEeprom = nullptr;
 	uint8_t fEepBuffer[256];

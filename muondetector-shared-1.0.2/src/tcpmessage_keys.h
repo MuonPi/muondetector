@@ -31,15 +31,17 @@ static const quint16 preampSig = 97;
 static const quint16 preampRequestSig = 101;
 static const quint16 temperatureSig = 103;
 static const quint16 temperatureRequestSig = 107;
-// not implemented from here on yet
-static const quint16 dacSetEepromSig = 109;
-static const quint16 dacRequestEepromSig = 113;
 static const quint16 calibSetSig = 127;
 static const quint16 calibRequestSig = 131;
 static const quint16 i2cStatsSig = 137;
 static const quint16 i2cStatsRequestSig = 139;
+// not implemented from here on yet
+static const quint16 dacSetEepromSig = 109;
+static const quint16 dacRequestEepromSig = 113;
 static const quint16 gpsStatsSig = 149;
 static const quint16 gpsStatsRequestSig = 151;
+static const quint16 calibWriteEepromSig = 157;
+static const quint16 i2cScanBusRequestSig = 163;
 
 
 

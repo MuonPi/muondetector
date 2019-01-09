@@ -607,6 +607,10 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
     if (msgID == i2cStatsRequestSig){
         sendI2cStats();
     }
+        if (msgID == i2cScanBusRequestSig){
+        scanI2cBus();
+        sendI2cStats();
+    }
     if (msgID == calibRequestSig){
         sendCalib();
     }
@@ -615,6 +619,22 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> closeAddress;
         emit closeConnection(closeAddress);
     }
+}
+
+void Daemon::scanI2cBus() {
+	for (uint8_t addr=1; addr<0x7f; addr++)
+	{
+		bool alreadyThere = false;
+		for (uint8_t i=0; i<i2cDevice::getGlobalDeviceList().size(); i++) {
+			if (addr==i2cDevice::getGlobalDeviceList()[i]->getAddress()) {
+				alreadyThere=true;
+				break;
+			}
+		}
+		if (alreadyThere) continue;
+		i2cDevice* dev = new i2cDevice(addr);
+		if (!dev->devicePresent()) delete dev;
+	}
 }
 
 void Daemon::sendI2cStats() {
@@ -638,8 +658,9 @@ void Daemon::sendCalib() {
 	TcpMessage tcpMessage(calibSetSig);
 	bool valid=calib->isValid();
 	bool eepValid=calib->isEepromValid();
-    int nrPars = calib->getCalibList().size();
-    *(tcpMessage.dStream) << valid << eepValid << nrPars;
+    quint16 nrPars = calib->getCalibList().size();
+    quint64 id = calib->getSerialID();
+    *(tcpMessage.dStream) << valid << eepValid << id << nrPars;
     for (int i=0; i<nrPars; i++) {
 		*(tcpMessage.dStream) << calib->getCalibItem(i);
 	}
