@@ -28,6 +28,10 @@ struct TPH {
 class i2cDevice {
 
 public:
+
+	enum MODE { MODE_NONE=0, MODE_NORMAL=0x01, MODE_FORCE=0x02,
+				MODE_UNREACHABLE=0x04, MODE_FAILED=0x08 };
+
 	i2cDevice();
 	i2cDevice(const char* busAddress);
 	i2cDevice(uint8_t slaveAddress);
@@ -35,18 +39,20 @@ public:
 	virtual ~i2cDevice();
 
 	void setAddress(uint8_t address);
-	inline uint8_t getAddress() const { return fAddress; }
+	uint8_t getAddress() const { return fAddress; }
 	static unsigned int getNrDevices() { return fNrDevices; }
-	inline unsigned int getNrBytesRead() { return fNrBytesRead; }
-	inline unsigned int getNrBytesWritten() { return fNrBytesWritten; }
+	unsigned int getNrBytesRead() { return fNrBytesRead; }
+	unsigned int getNrBytesWritten() { return fNrBytesWritten; }
 	static unsigned int getGlobalNrBytesRead() { return fGlobalNrBytesRead; }
 	static unsigned int getGlobalNrBytesWritten() { return fGlobalNrBytesWritten; }
 	static std::vector<i2cDevice*>& getGlobalDeviceList() { return fGlobalDeviceList; }
 	virtual bool devicePresent();
-	inline double getLastTimeInterval() { return fLastTimeInterval; }
+	uint8_t getStatus() const { return fMode; }
+	
+	double getLastTimeInterval() { return fLastTimeInterval; }
 
-	inline void setDebugLevel(int level) { fDebugLevel = level; }
-	inline int getDebugLevel() { return fDebugLevel; }
+	void setDebugLevel(int level) { fDebugLevel = level; }
+	int getDebugLevel() { return fDebugLevel; }
 
 	void setTitle(const std::string& a_title) { fTitle = a_title; }
 	const std::string& getTitle() const { return fTitle; }
@@ -92,6 +98,8 @@ public:
 	bool writeWords(uint8_t regAddr, uint16_t length, uint16_t* data);
 	bool writeWord(uint8_t regAddr, uint16_t data);
 
+	void getCapabilities();
+
 
 protected:
 	int fHandle;
@@ -106,6 +114,7 @@ protected:
 	int fDebugLevel;
 	static std::vector<i2cDevice*> fGlobalDeviceList;
 	std::string fTitle="I2C device";
+	uint8_t fMode = MODE_NONE;
 
 	// fuctions for measuring time intervals
 	void startTimer();
@@ -397,7 +406,21 @@ private:
 	bool fCalibrationValid;
 	unsigned int fGain;
 	signed int fCalibParameters[11];
-
 };
+
+
+/* Ublox GPS receiver, I2C interface */
+class UbloxI2c : public i2cDevice {
+public:
+	UbloxI2c() : i2cDevice(0x42) { fTitle = "UBLOX I2C"; }
+	UbloxI2c(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) { fTitle = "UBLOX I2C"; }
+	UbloxI2c(uint8_t slaveAddress) : i2cDevice(slaveAddress) { fTitle = "UBLOX I2C"; }
+	bool devicePresent();
+	std::string getData();
+	bool getTxBufCount(uint16_t& nrBytes);
+
+private:
+};
+
 
 #endif // _I2CDEVICES_H_

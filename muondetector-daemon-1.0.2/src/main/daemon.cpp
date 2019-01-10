@@ -323,9 +323,34 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 		cerr<<"eeprom device NOT present!"<<endl;
 	}
 	
+	ubloxI2c = new UbloxI2c(0x42);
+	if (ubloxI2c->devicePresent()) {
+		if (verbose>1) {
+			cout<<"ublox I2C device interface is present."<<endl;
+			uint16_t bufcnt = 0;
+			bool ok = ubloxI2c->getTxBufCount(bufcnt);
+			if (ok) cout<<"bytes in TX buf: "<<bufcnt<<endl;
+/*			unsigned long int argh=0;
+			while (argh++<100UL) {
+				bufcnt = 0;
+				ok = ubloxI2c->getTxBufCount(bufcnt);
+				if (ok) cout<<"bytes in TX buf: "<<hex<<bufcnt<<dec<<endl;
+				std::string str=ubloxI2c->getData();
+				cout<<"string length: "<<str.size()<<endl;
+				usleep(200000L);
+			}
+			ubloxI2c->getData();
+			ok = ubloxI2c->getTxBufCount(bufcnt);
+			if (ok) cout<<"bytes in TX buf: "<<bufcnt<<endl;
+*/
+		}
+	} else {
+		cerr<<"ublox I2C device interface NOT present!"<<endl;
+	}
+	
 	// for diagnostics:
 	// print out some i2c device statistics
-	if (1==0) {
+	if (1==1) {
 		cout<<"Nr. of invoked I2C devices (plain count): "<<i2cDevice::getNrDevices()<<endl;
 		cout<<"Nr. of invoked I2C devices (gl. device list's size): "<<i2cDevice::getGlobalDeviceList().size()<<endl;
 		cout<<"Nr. of bytes read on I2C bus: "<<i2cDevice::getGlobalNrBytesRead()<<endl;
@@ -337,6 +362,7 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 			if (i2cDevice::getGlobalDeviceList()[i]->devicePresent()) cout<<" present"<<endl;
 			else cout<<" missing"<<endl;
 		}
+		lm75->getCapabilities();
 	}
 	
 	// for gps module
@@ -648,8 +674,8 @@ void Daemon::sendI2cStats() {
 	{
 		uint8_t addr = i2cDevice::getGlobalDeviceList()[i]->getAddress();
 		QString title = QString::fromStdString(i2cDevice::getGlobalDeviceList()[i]->getTitle());
-		bool present = i2cDevice::getGlobalDeviceList()[i]->devicePresent();
-		*(tcpMessage.dStream) << addr << title << present;
+		uint8_t status = i2cDevice::getGlobalDeviceList()[i]->getStatus();
+		*(tcpMessage.dStream) << addr << title << status;
 	}
 	emit sendTcpMessage(tcpMessage);
 }

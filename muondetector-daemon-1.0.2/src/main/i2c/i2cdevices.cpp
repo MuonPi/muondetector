@@ -11,6 +11,7 @@
 //#include <linux/i2c-dev.h> // I2C bus definitions for linux like systems
 #include <algorithm>
 #include <iostream>
+#include <iterator>
 #include "i2cdevices.h"
 
 #define DEFAULT_DEBUG_LEVEL 0
@@ -40,39 +41,46 @@ i2cDevice::i2cDevice() {
 }
 
 i2cDevice::i2cDevice(const char* busAddress = "/dev/i2c-1") {
+	fNrBytesRead = 0;
+	fNrBytesWritten = 0;
+	fDebugLevel = DEFAULT_DEBUG_LEVEL;
 	//opening the devicefile from the i2c driversection (open the device i2c)
 	//"/dev/i2c-0" or "../i2c-1" for linux system. In our case 
 	fHandle = open(busAddress, O_RDWR);
-	if (fHandle > 0) fNrDevices++;
-	fNrBytesRead = 0;
-	fNrBytesWritten = 0;
-	fAddress = 0;
-	fDebugLevel = DEFAULT_DEBUG_LEVEL;
-	fGlobalDeviceList.push_back(this);
+	if (fHandle > 0) {
+		fNrDevices++;
+		fGlobalDeviceList.push_back(this);
+	} else fMode=MODE_FAILED;
 }
 
 i2cDevice::i2cDevice(uint8_t slaveAddress) : fAddress(slaveAddress) {
+	fNrBytesRead = 0;
+	fNrBytesWritten = 0;
+	fDebugLevel = DEFAULT_DEBUG_LEVEL;
 	//opening the devicefile from the i2c driversection (open the device i2c)
 	//"/dev/i2c-0" or "../i2c-1" for linux system. In our case 
 	fHandle = open("/dev/i2c-1", O_RDWR);
-	ioctl(fHandle, I2C_SLAVE, fAddress);
-	if (fHandle > 0) fNrDevices++;
-	fNrBytesRead = 0;
-	fNrBytesWritten = 0;
-	fDebugLevel = DEFAULT_DEBUG_LEVEL;
-	fGlobalDeviceList.push_back(this);
+	if (fHandle > 0) {
+		//ioctl(fHandle, I2C_SLAVE, fAddress);
+		setAddress(slaveAddress);
+		fNrDevices++;
+		fGlobalDeviceList.push_back(this);
+	} else fMode=MODE_FAILED;
 }
 
 i2cDevice::i2cDevice(const char* busAddress, uint8_t slaveAddress) : fAddress(slaveAddress) {
-	//opening the devicefile from the i2c driversection (open the device i2c)
-	//"/dev/i2c-0" or "../i2c-1" for linux system. In our case 
-	fHandle = open(busAddress, O_RDWR);
-	ioctl(fHandle, I2C_SLAVE, fAddress);
-	if (fHandle > 0) fNrDevices++;
 	fNrBytesRead = 0;
 	fNrBytesWritten = 0;
 	fDebugLevel = DEFAULT_DEBUG_LEVEL;
-	fGlobalDeviceList.push_back(this);
+	//opening the devicefile from the i2c driversection (open the device i2c)
+	//"/dev/i2c-0" or "../i2c-1" for linux system. In our case 
+	fHandle = open(busAddress, O_RDWR);
+	if (fHandle > 0) {
+		//ioctl(fHandle, I2C_SLAVE, fAddress);
+		setAddress(slaveAddress);
+		fNrDevices++;
+		fGlobalDeviceList.push_back(this);
+	} else fMode=MODE_FAILED;
 }
 
 i2cDevice::~i2cDevice() {
@@ -84,39 +92,74 @@ i2cDevice::~i2cDevice() {
 	if (it!=fGlobalDeviceList.end()) fGlobalDeviceList.erase(it);
 }
 
+void i2cDevice::getCapabilities()
+{
+	unsigned long funcs;
+	int res = ioctl(fHandle, I2C_FUNCS, &funcs);
+	if (res<0) cerr<<"error retrieving function capabilities from I2C interface."<<endl;
+	else {
+		cout<<"I2C adapter capabilities: 0x"<<hex<<funcs<<dec<<endl;
+	}
+}
+
 bool i2cDevice::devicePresent()
 {
 	uint8_t dummy;
-	return readByte(0,&dummy);
+	return (read(&dummy,1)==1);
 }
 
 void i2cDevice::setAddress(uint8_t address) {		        //pointer to our device on the i2c-bus
 	fAddress = address;
-	ioctl(fHandle, I2C_SLAVE, fAddress);	//i.g. Specify the address of the I2C Slave to communicate with
-						//for example adress in our case "0x48" for the ads1115
+	int res = ioctl(fHandle, I2C_SLAVE, fAddress);	//i.g. Specify the address of the I2C Slave to communicate with
+	if (res<0) {
+		res = ioctl(fHandle, I2C_SLAVE_FORCE, fAddress);
+		if (res<0) {
+			fMode=MODE_FAILED;
+		} else fMode=MODE_FORCE;
+	} else {
+		fMode=MODE_NORMAL;
+	}
+	//     if (ioctl(fd, I2C_SLAVE, devAddr) < 0) {
+	//         fprintf(stderr, "Failed to select device: %s\n", strerror(errno));
+	//         close(fd);
+	//         return(-1);
+	//     }
+					
 }
 
 int i2cDevice::read(uint8_t* buf, int nBytes) {		//defines a function with a pointer buf as buffer and the number of bytes which 
-							//we want to read.
+	//we want to read.
+	if (fHandle<=0) return 0;
 	int nread = ::read(fHandle, buf, nBytes);		//"::" declares that the functions does not call itself again, but instead
 	if (nread > 0) {
 		fNrBytesRead += nread;
 		fGlobalNrBytesRead += nread;
+		fMode &= ~((uint8_t)MODE_UNREACHABLE);
+	} else if (nread<=0) {
+		fMode |= MODE_UNREACHABLE;
 	}
 	return nread;				//uses the read funktion with the set parameters of the bool function
 }
 
 int i2cDevice::write(uint8_t* buf, int nBytes) {
+	if (fHandle<=0) return 0;
 	int nwritten = ::write(fHandle, buf, nBytes);
 	if (nwritten > 0) {
 		fNrBytesWritten += nwritten;
 		fGlobalNrBytesWritten += nwritten;
+		fMode &= ~((uint8_t)MODE_UNREACHABLE);
+	} else if (nwritten<=0) {
+		fMode |= MODE_UNREACHABLE;
 	}
 	return nwritten;
 }
 
 int i2cDevice::writeReg(uint8_t reg, uint8_t* buf, int nBytes)
 {
+	// the i2c_smbus_*_i2c_block_data functions are better but allow
+	// block sizes of up to 32 bytes only
+	//i2c_smbus_write_i2c_block_data(int file, reg, nBytes, buf);
+	
 	uint8_t writeBuf[nBytes + 1];
 
 	writeBuf[0] = reg;		// first byte is register address
@@ -157,38 +200,16 @@ int i2cDevice::writeReg(uint8_t reg, uint8_t* buf, int nBytes)
 
 int i2cDevice::readReg(uint8_t reg, uint8_t* buf, int nBytes)
 {
+	// the i2c_smbus_*_i2c_block_data functions are better but allow
+	// block sizes of up to 32 bytes only
+	//i2c_smbus_write_i2c_block_data(int file, reg, nBytes, buf);
+	//int _n = i2c_smbus_read_i2c_block_data(fHandle, reg, (uint8_t)nBytes, buf);
+	//return _n;
+	
 	int n = write(&reg, 1);
 	if (n != 1) return -1;
 	n = read(buf, nBytes);
 	return n;
-
-	//     if (fd < 0) {
-	//         fprintf(stderr, "Failed to open device: %s\n", strerror(errno));
-	//         return(-1);
-	//     }
-	//     if (ioctl(fd, I2C_SLAVE, devAddr) < 0) {
-	//         fprintf(stderr, "Failed to select device: %s\n", strerror(errno));
-	//         close(fd);
-	//         return(-1);
-	//     }
-	//     if (write(fd, &regAddr, 1) != 1) {
-	//         fprintf(stderr, "Failed to write reg: %s\n", strerror(errno));
-	//         close(fd);
-	//         return(-1);
-	//     }
-	//     count = read(fd, data, length);
-	//     if (count < 0) {
-	//         fprintf(stderr, "Failed to read device(%d): %s\n", count, ::strerror(errno));
-	//         close(fd);
-	//         return(-1);
-	//     } else if (count != length) {
-	//         fprintf(stderr, "Short read  from device, expected %d, got %d\n", length, count);
-	//         close(fd);
-	//         return(-1);
-	//     }
-	//     close(fd);
-
-
 }
 
 /** Read a single bit from an 8-bit device register.
@@ -2046,3 +2067,47 @@ bool HMC5883::calibrate(int &x, int &y, int &z)
 	/*n=*/writeReg(0x00, &cmd, 1);
 	return true;
 }
+
+
+/* Ublox GPS receiver, I2C interface */
+bool UbloxI2c::devicePresent()
+{
+	uint8_t dummy;
+	return (1==readReg(0xff, &dummy, 1));
+//	return getTxBufCount(dummy);
+}
+
+std::string UbloxI2c::getData()
+{
+	uint16_t nrBytes = 0;
+	if (!getTxBufCount(nrBytes)) return "";
+	if (nrBytes==0) return "";
+	uint8_t reg=0xff;
+	int n=write(&reg, 1);
+	if (n!=1) return "";
+	uint8_t buf[128];
+	if (nrBytes>128) nrBytes=128;
+	n = read(buf, nrBytes);
+	if (n!=nrBytes) return "";
+	std::string str(nrBytes, ' ');
+	std::transform(&buf[0], &buf[nrBytes], str.begin(), [](uint8_t c) { return (unsigned char)c; } );
+	return str;
+//	std::copy(buf[0], buf[nrBytes-1], std::back_inserter(str));
+}
+
+bool UbloxI2c::getTxBufCount(uint16_t& nrBytes)
+{
+	startTimer();
+	uint8_t reg=0xfd;
+	uint8_t buf[2];
+	int n=write(&reg, 1);
+	if (n!=1) return false;
+	n=read(buf, 2);	// Read the data at TX buf counter location
+	stopTimer();
+	if (n!=2) return false;
+	uint16_t temp = buf[1];
+	temp |= (uint16_t)buf[0]<<8;
+	nrBytes = temp;
+	return true;
+}
+
