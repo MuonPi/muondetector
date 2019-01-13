@@ -49,4 +49,5 @@ HEADERS += \
     ublox_messages.h \
     ubx_msg_key_name_map.h \
     muondetector_shared_global.h \
-    calib_struct.h
+    calib_struct.h \
+    gnsssatellite.h

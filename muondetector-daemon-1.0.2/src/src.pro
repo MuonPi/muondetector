@@ -50,7 +50,7 @@ SOURCES += main/main.cpp \
     main/calibration.cpp
 
 HEADERS += \
-    main/gnsssatellite.h \
+#    main/gnsssatellite.h \
     main/unixtime_from_gps.h \
     main/time_from_rtc.h \
     main/qtserialublox.h \

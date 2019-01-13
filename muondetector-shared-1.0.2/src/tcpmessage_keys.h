@@ -35,13 +35,13 @@ static const quint16 calibSetSig = 127;
 static const quint16 calibRequestSig = 131;
 static const quint16 i2cStatsSig = 137;
 static const quint16 i2cStatsRequestSig = 139;
+static const quint16 calibWriteEepromSig = 157;
+static const quint16 i2cScanBusRequestSig = 163;
 // not implemented from here on yet
 static const quint16 dacSetEepromSig = 109;
 static const quint16 dacRequestEepromSig = 113;
-static const quint16 gpsStatsSig = 149;
-static const quint16 gpsStatsRequestSig = 151;
-static const quint16 calibWriteEepromSig = 157;
-static const quint16 i2cScanBusRequestSig = 163;
+static const quint16 gpsSatsSig = 149;
+//static const quint16 gpsSatsRequestSig = 151;
 
 
 

@@ -47,6 +47,15 @@ QDataStream& operator << (QDataStream& out, const CalibStruct& calib)
     return out;
 }
 
+QDataStream& operator << (QDataStream& out, const GnssSatellite& sat)
+{
+	out << sat.fGnssId << sat.fSatId << sat.fCnr << sat.fElev << sat.fAzim
+		<< sat.fPrRes << sat.fQuality << sat.fQuality << sat.fOrbitSource
+		<< sat.fUsed << sat.fDiffCorr << sat.fSmoothed;
+	return out;
+}
+
+
 // signal handling stuff: put code to execute before shutdown down there
 static int setup_unix_signal_handlers()
 {
@@ -155,7 +164,8 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
     qRegisterMetaType<uint16_t>("uint16_t");
     qRegisterMetaType<uint8_t>("uint8_t");
     qRegisterMetaType<CalibStruct>("CalibStruct");
-    
+	qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
+	qRegisterMetaType<std::chrono::duration<double>>("std::chrono::duration<double>");
     // signal handling
 	setup_unix_signal_handlers();
 	if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)) {
@@ -188,7 +198,7 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
     }
 
 	// for pigpio signals:
-	const QVector<unsigned int> gpio_pins({ EVT_AND, EVT_XOR });
+	const QVector<unsigned int> gpio_pins({ EVT_AND, EVT_XOR, ADC_READY, TIMEPULSE });
     pigHandler = new PigpiodHandler(gpio_pins, this);
     connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
     connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
@@ -207,8 +217,21 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	}
 	adc = new ADS1115();
 	if (adc->devicePresent()) {
+		adc->setPga(ADS1115::PGA4V);
+		//adc->setPga(0, ADS1115::PGA2V);
+//		adc->setRate(0x06);  // ADS1115::RATE475
+		adc->setRate(0x07);  // ADS1115::RATE860
+		adc->setAGC(false);
+		if (!adc->setDataReadyPinMode()) {
+			cerr<<"error: failed setting data ready pin mode (setting thresh regs)"<<endl;
+		}
+		
 		if (verbose>2) {
 			cout<<"ADS1115 device is present."<<endl;
+			bool ok=adc->setLowThreshold(0b00000000);
+			ok = ok && adc->setHighThreshold(0b10000000);
+			if (ok) cout<<"successfully setting threshold registers"<<endl;
+			else cerr<<"error: failed setting threshold registers"<<endl;
 			cout<<"single ended channels:"<<endl;
 			cout<<"ch0: "<<adc->readADC(0)<<" ch1: "<<adc->readADC(1)
 			<<" ch2: "<<adc->readADC(2)<<" ch3: "<<adc->readADC(3)<<endl;
@@ -223,11 +246,6 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 		cerr<<"ADS1115 device NOT present!"<<endl;
 	}
 	
-	adc->setPga(ADS1115::PGA4V);
-	//adc->setPga(0, ADS1115::PGA2V);
-//	adc->setRate(0x06);  // ADS1115::RATE475
-	adc->setRate(0x07);  // ADS1115::RATE860
-	adc->setAGC(false);
 
 	dac = new MCP4728();
 	if (dac->devicePresent()) {
@@ -350,7 +368,7 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
 	
 	// for diagnostics:
 	// print out some i2c device statistics
-	if (1==1) {
+	if (1==0) {
 		cout<<"Nr. of invoked I2C devices (plain count): "<<i2cDevice::getNrDevices()<<endl;
 		cout<<"Nr. of invoked I2C devices (gl. device list's size): "<<i2cDevice::getGlobalDeviceList().size()<<endl;
 		cout<<"Nr. of bytes read on I2C bus: "<<i2cDevice::getGlobalNrBytesRead()<<endl;
@@ -481,6 +499,7 @@ void Daemon::connectToGps() {
 	connect(qtGps, &QtSerialUblox::UBXReceivedAckNak, this, &Daemon::UBXReceivedAckNak);
 	connect(qtGps, &QtSerialUblox::UBXreceivedMsgRateCfg, this, &Daemon::UBXReceivedMsgRateCfg);
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, &Daemon::sendUbxGeodeticPos);
+    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, this, &Daemon::gpsPropertyUpdatedGnss);
 	connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Daemon::toConsole);
     if (fileHandler != nullptr){
         connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
@@ -1003,8 +1022,8 @@ void Daemon::UBXReceivedMsgRateCfg(uint16_t msgID, uint8_t rate) {
 void Daemon::gpsPropertyUpdatedGnss(std::vector<GnssSatellite> data,
 	std::chrono::duration<double> lastUpdated) {
 	//if (listSats){
-	if (verbose > 3) {
-		vector<GnssSatellite> sats = data;
+	vector<GnssSatellite> sats = data;
+	if (verbose > 1) {
 		bool allSats = true;
 		if (!allSats) {
 			std::sort(sats.begin(), sats.end(), GnssSatellite::sortByCnr);
@@ -1021,6 +1040,14 @@ void Daemon::gpsPropertyUpdatedGnss(std::vector<GnssSatellite> data,
 			sats[i].Print(i, false);
 		}
 	}
+    int N=sats.size();
+    TcpMessage tcpMessage(gpsSatsSig);
+    (*tcpMessage.dStream) << N;
+    for (int i=0; i<N; i++) {
+		(*tcpMessage.dStream)<< sats [i];
+	}
+    emit sendTcpMessage(tcpMessage);
+
 }
 void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double> updateAge,
 	char propertyName) {

@@ -82,6 +82,8 @@ private:
 	bool UBXTimTM2(const std::string& msg);
 	std::vector<GnssSatellite> UBXNavSat(bool allSats);
 	std::vector<GnssSatellite> UBXNavSat(const std::string& msg, bool allSats);
+	std::vector<GnssSatellite> UBXNavSVinfo(bool allSats);
+	std::vector<GnssSatellite> UBXNavSVinfo(const std::string& msg, bool allSats);
     GeodeticPos UBXNavPosLLH(const std::string& msg);
 	bool UBXCfgGNSS();
 	bool UBXCfgNav5();

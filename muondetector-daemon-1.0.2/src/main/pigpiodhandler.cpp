@@ -2,6 +2,8 @@
 #include <QDebug>
 #include <gpio_pin_definitions.h>
 #include <exception>
+#include <iostream>
+
 extern "C" {
 #include <pigpiod_if2.h>
 }
@@ -25,7 +27,9 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
     pigHandlerAddress = this;
     for (auto& gpio_pin : gpio_pins) {
         set_mode(pi, gpio_pin, PI_INPUT);
+        if (gpio_pin==ADC_READY) set_pull_up_down(pi, gpio_pin, PI_PUD_UP);
         callback(pi, gpio_pin, RISING_EDGE, cbFunction);
+//        callback(pi, gpio_pin, FALLING_EDGE, cbFunction);
         //        if (value==pigif_bad_malloc||
         //            value==pigif_dublicate_callback||
         //            value==pigif_bad_callback){
@@ -212,10 +216,13 @@ void cbFunction(int user_pi, unsigned int user_gpio,
             else {
                 pigpioHandler->lastXorTime.restart();
             }
+            //std::cout<<"XOR event"<<std::endl;
         } 
         if (user_gpio == EVT_XOR || user_gpio == EVT_AND) {
 			pigpioHandler->sendSamplingTrigger();
-		}
+		} 
+		//else if (user_gpio == ADC_READY) std::cout<<"ADC conv ready"<<std::endl;
+		//else if (user_gpio == TIMEPULSE) std::cout<<"Timepulse"<<std::endl;
         if (pi != user_pi) {
             // put some error here for the case pi is not the same as before initialized
         }

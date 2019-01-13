@@ -77,16 +77,32 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 			break;
 		case 0x22:
 			if (verbose > 3) {
-				tempStream << "received unhandled UBX-NAV-CLOCK message (0x" << std::hex << std::setfill('0') << std::setw(2)
+				tempStream << "received UBX-NAV-CLOCK message (0x" << std::hex << std::setfill('0') << std::setw(2)
 					<< (int)classID << " 0x" << std::hex << (int)messageID << ")\n";
 				emit toConsole(QString::fromStdString(tempStream.str()));
 			}
 			UBXNavClock(msg.data);
 			break;
+		case 0x30:
+			sats = UBXNavSVinfo(msg.data, true);
+			if (verbose > 3) {
+				tempStream << "received UBX-NAV-SVINFO message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+					<< " 0x" << std::hex << (int)messageID << ")\n";
+				emit toConsole(QString::fromStdString(tempStream.str()));
+			}
+			//mutex.lock();
+            emit gpsPropertyUpdatedGnss(sats, satList.updateAge());
+			satList = sats;
+			//mutex.unlock();
+			//break;
+//				tempStream<<"Satellite List: "<<sats.size()<<" sats received"<<endl;
+// 				GnssSatellite::PrintHeader(true);
+// 				for (int i=0; i<sats.size(); i++) sats[i].Print(i, false);
+			break;
 		case 0x35:
 			sats = UBXNavSat(msg.data, true);
 			if (verbose > 3) {
-				tempStream << "received unhandled UBX-NAV-SAT message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+				tempStream << "received UBX-NAV-SAT message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
 					<< " 0x" << std::hex << (int)messageID << ")\n";
 				emit toConsole(QString::fromStdString(tempStream.str()));
 			}
@@ -666,55 +682,6 @@ std::vector<GnssSatellite> QtSerialUblox::UBXNavSat(bool allSats)
 	//if (!ok) return satList;
 
 	return UBXNavSat(answer, allSats);
-
-	// parse all fields
-	// GPS time of week
-	uint32_t iTOW = (int)answer[0];
-	iTOW += ((int)answer[1]) << 8;
-	iTOW += ((int)answer[2]) << 16;
-	iTOW += ((int)answer[3]) << 24;
-	// version
-	uint8_t version = answer[4];
-	uint8_t numSvs = answer[5];
-
-	int N = (answer.size() - 8) / 12;
-
-	if (verbose > 1) {
-		std::stringstream tempStream;
-		//std::string temp;
-		tempStream << "*** UBX-NAV-SAT message:" << endl;
-		tempStream << " iTOW          : " << dec << iTOW / 1000 << " s" << endl;
-		tempStream << " version       : " << dec << (int)version << endl;
-		tempStream << " Nr of sats    : " << (int)numSvs << "  (nr of sections=" << N << ")\n";
-		tempStream << "   Sat Data :\n";
-		//tempStream >> temp;
-		emit toConsole(QString::fromStdString(tempStream.str()));
-	}
-	int goodSats = 0;
-	for (int i = 0; i < N; i++) {
-		GnssSatellite sat(answer.substr(8 + 12 * i, 12));
-		if (sat.getCnr() > 0) goodSats++;
-		satList.push_back(sat);
-	}
-	if (!allSats) {
-		sort(satList.begin(), satList.end(), GnssSatellite::sortByCnr);
-		while (satList.back().getCnr() == 0 && satList.size() > 0) satList.pop_back();
-	}
-
-	if (verbose > 0) {
-		std::string temp;
-		GnssSatellite::PrintHeader(true);
-		for (vector<GnssSatellite>::iterator it = satList.begin(); it != satList.end(); it++) {
-			it->Print(distance(satList.begin(), it), false);
-		}
-		std::stringstream tempStream;
-		tempStream << "   --------------------------------------------------------------------\n";
-		if (verbose > 1) {
-			tempStream << " Nr of avail sats : \n" << goodSats;
-		}
-		emit toConsole(QString::fromStdString(tempStream.str()));
-	}
-	return satList;
 }
 
 std::vector<GnssSatellite> QtSerialUblox::UBXNavSat(const std::string& msg, bool allSats)
@@ -747,7 +714,35 @@ std::vector<GnssSatellite> QtSerialUblox::UBXNavSat(const std::string& msg, bool
 	}
 	uint8_t goodSats = 0;
 	for (int i = 0; i < N; i++) {
-		GnssSatellite sat(msg.substr(8 + 12 * i, 12));
+		//GnssSatellite sat(msg.substr(8 + 12 * i, 12));
+		int n=8+i*12;
+		uint32_t flags;
+	
+		uint8_t gnssId = msg[n+0];
+		uint8_t satId = msg[n+1];
+		uint8_t cnr = msg[n+2];
+		int8_t elev = msg[n+3];
+		int16_t azim = msg[n+4];
+		azim += msg[n+5] << 8;
+		int16_t _prRes = msg[n+6];
+		_prRes += msg[n+7] << 8;
+		float prRes = _prRes / 10.;
+
+		flags = (int)msg[n+8];
+		flags += ((int)msg[n+9]) << 8;
+		flags += ((int)msg[n+10]) << 16;
+		flags += ((int)msg[n+11]) << 24;
+/*
+		fQuality = (int)(flags & 0x07);
+		if (flags & 0x08) fUsed = true; else fUsed = false;
+		fHealth = (int)(flags >> 4 & 0x03);
+		fOrbitSource = (flags >> 8 & 0x07);
+		fSmoothed = (flags & 0x80);
+		fDiffCorr = (flags & 0x40);
+*/		
+		if (gnssId>7) gnssId=7;
+		GnssSatellite sat(gnssId, satId, cnr, elev, azim, prRes, flags); 
+		
 		if (sat.getCnr() > 0) goodSats++;
 		satList.push_back(sat);
 	}
@@ -763,6 +758,101 @@ std::vector<GnssSatellite> QtSerialUblox::UBXNavSat(const std::string& msg, bool
 	//mutex.unlock();
 
 	if (verbose) {
+		std::string temp;
+		GnssSatellite::PrintHeader(true);
+		for (vector<GnssSatellite>::iterator it = satList.begin(); it != satList.end(); it++) {
+			it->Print(distance(satList.begin(), it), false);
+		}
+		std::stringstream tempStream;
+		tempStream << "   --------------------------------------------------------------------\n";
+		if (verbose > 1) {
+			tempStream << " Nr of avail sats : " << goodSats << "\n";
+		}
+		emit toConsole(QString::fromStdString(tempStream.str()));
+	}
+	return satList;
+}
+
+std::vector<GnssSatellite> QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
+{
+	std::vector<GnssSatellite> satList;
+	// UBX-NAV-SVINFO: satellite information
+	// parse all fields
+	// GPS time of week
+	uint32_t iTOW = (int)msg[0];
+	iTOW += ((int)msg[1]) << 8;
+	iTOW += ((int)msg[2]) << 16;
+	iTOW += ((int)msg[3]) << 24;
+	// version
+	uint8_t numSvs = msg[4];
+	uint8_t globFlags = msg[5];
+
+	int N = (msg.size() - 8) / 12;
+
+	if (verbose > 2) {
+		std::stringstream tempStream;
+		//std::string temp;
+		tempStream << setfill(' ') << setw(3);
+		tempStream << "*** UBX-NAV-SVINFO message:" << endl;
+		tempStream << " iTOW          : " << dec << iTOW / 1000 << " s" << endl;
+		tempStream << " global flags  : 0x" << hex << (int)globFlags <<dec<< endl;
+		tempStream << " Nr of sats    : " << (int)numSvs << "  (nr of sections=" << N << ")\n";
+		tempStream << "   Sat Data :\n";
+		//tempStream >> temp;
+		emit toConsole(QString::fromStdString(tempStream.str()));
+	}
+	uint8_t goodSats = 0;
+	for (int i = 0; i < N; i++) {
+
+		int n=8+i*12;
+		uint8_t chId = msg[n+0];
+		uint8_t satId = msg[n+1];
+		uint8_t flags = msg[n+2];
+		uint8_t quality = msg[n+3];
+		uint8_t cnr = msg[n+4];
+		int8_t elev = msg[n+5];
+		int16_t azim = msg[n+6];
+		azim += msg[n+7] << 8;
+		int32_t prRes = msg[n+8];
+		prRes += msg[n+9] << 8;
+		prRes += msg[n+10] << 16;
+		prRes += msg[n+11] << 24;
+
+		bool used = false;
+		if (flags & 0x01) used = true;
+		uint8_t health = (flags >> 4 & 0x01);
+		uint8_t orbitSource = (flags & 0x04) >> 2 |  (flags & 0x08) >> 2 | (flags & 0x20) >> 3 | (flags & 0x40) >> 3;
+		bool smoothed = (flags & 0x80);
+		bool diffCorr = (flags & 0x02);
+//{ " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS" };
+		int gnssId=7;
+		if (satId<33) gnssId=0;
+		else if (satId<65) gnssId=3;
+		else if (satId<97 || satId==255) gnssId=6;
+		else if (satId<159) gnssId=1;
+		else if (satId<164) gnssId=3;
+		else if (satId<183) gnssId=4;
+		else if (satId<198) gnssId=5;
+		else if (satId<247) gnssId=2;
+		
+		GnssSatellite sat(	gnssId, satId, cnr, elev, azim, 0.01*prRes, 
+							quality, health, orbitSource, used, diffCorr, smoothed);
+//		GnssSatellite sat;
+		if (sat.getCnr() > 0) goodSats++;
+		satList.push_back(sat);
+	}
+	if (!allSats) {
+		sort(satList.begin(), satList.end(), GnssSatellite::sortByCnr);
+		while (satList.back().getCnr() == 0 && satList.size() > 0) satList.pop_back();
+	}
+
+	//  nrSats = satList.size();
+	//mutex.lock();
+	emit gpsPropertyUpdatedUint8(goodSats, nrSats.updateAge(), 's');
+	nrSats = goodSats;
+	//mutex.unlock();
+
+	if (verbose>1) {
 		std::string temp;
 		GnssSatellite::PrintHeader(true);
 		for (vector<GnssSatellite>::iterator it = satList.begin(); it != satList.end(); it++) {

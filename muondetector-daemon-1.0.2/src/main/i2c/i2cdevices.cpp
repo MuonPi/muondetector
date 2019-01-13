@@ -417,7 +417,9 @@ int16_t ADS1115::readADC(unsigned int channel)
 	writeBuf[1] |= 0x01; // single shot mode
 	writeBuf[1] |= ((uint8_t)fPga[channel]) << 1; // PGA gain select
 
-	writeBuf[2] = 0x03;  		// This sets the 8 LSBs of the config register (bits 7-0)
+	// This sets the 8 LSBs of the config register (bits 7-0)
+//	writeBuf[2] = 0x03;  // disable ALERT/RDY pin
+	writeBuf[2] = 0x00;  // enable ALERT/RDY pin
 	writeBuf[2] |= ((uint8_t)fDataRate) << 5;
 
 
@@ -455,7 +457,7 @@ int16_t ADS1115::readADC(unsigned int channel)
 	//   }
 	  //else fReadWaitDelay--;
 
-	  // Set pointer register to 0 to read from the conversion register
+	// Set pointer register to 0 to read from the conversion register
 	readReg(0x00, readBuf, 2);		// Read the contents of the conversion register into readBuf
 
 	val = readBuf[0] << 8 | readBuf[1];	// Combine the two bytes of readBuf into a single 16 bit result 
@@ -467,10 +469,76 @@ int16_t ADS1115::readADC(unsigned int channel)
 	return val;
 }
 
+bool ADS1115::setLowThreshold(int16_t thr)
+{
+	uint8_t writeBuf[3];	// Buffer to store the 3 bytes that we write to the I2C device
+	uint8_t readBuf[2];		// 2 byte buffer to store the data read from the I2C device  
+	startTimer();
+
+	// These three bytes are written to the ADS1115 to set the Lo_thresh register
+	writeBuf[0] = 0x02;		// This sets the pointer register to Lo_thresh register
+	writeBuf[1] = (thr & 0xff00)>>8;		
+	writeBuf[2] |= (thr & 0x00ff);		
+
+	// Initialize the buffer used to read data from the ADS1115 to 0
+	readBuf[0] = 0;
+	readBuf[1] = 0;
+
+	// Write writeBuf to the ADS1115, the 3 specifies the number of bytes we are writing,
+	// this sets the Lo_thresh register
+	int n=write(writeBuf, 3);
+	if (n!=3) return false;
+	n=read(readBuf, 2);	// Read the same register into readBuf for verification
+	if (n!=2) return false;
+	
+	if ((readBuf[0]!=writeBuf[1]) || (readBuf[1]!=writeBuf[2])) return false;
+	stopTimer();
+	return true;
+}
+
+bool ADS1115::setHighThreshold(int16_t thr)
+{
+	uint8_t writeBuf[3];	// Buffer to store the 3 bytes that we write to the I2C device
+	uint8_t readBuf[2];		// 2 byte buffer to store the data read from the I2C device  
+	startTimer();
+
+	// These three bytes are written to the ADS1115 to set the Hi_thresh register
+	writeBuf[0] = 0x03;		// This sets the pointer register to Hi_thresh register
+	writeBuf[1] = (thr & 0xff00)>>8;		
+	writeBuf[2] |= (thr & 0x00ff);		
+
+	// Initialize the buffer used to read data from the ADS1115 to 0
+	readBuf[0] = 0;
+	readBuf[1] = 0;
+
+	// Write writeBuf to the ADS1115, the 3 specifies the number of bytes we are writing,
+	// this sets the Hi_thresh register
+	int n=write(writeBuf, 3);
+	if (n!=3) return false;
+	
+	n=read(readBuf, 2);	// Read the same register into readBuf for verification
+	if (n!=2) return false;
+	
+	if ((readBuf[0]!=writeBuf[1]) || (readBuf[1]!=writeBuf[2])) return false;
+	stopTimer();
+	return true;
+}
+
+bool ADS1115::setDataReadyPinMode()
+{
+	// c.f. datasheet, par. 9.3.8, p. 19 
+	// set MSB of Lo_thresh reg to 0
+	// set MSB of Hi_thresh reg to 1
+	// set COMP_QUE[1:0] to any value other than '11' (default value)
+	bool ok = setLowThreshold(0b00000000);
+	ok = ok && setHighThreshold(0b11111111);
+	return ok;
+}
+
 bool ADS1115::devicePresent()
 {
 	uint8_t buf[2];
-	return (read(buf, 2)==2);	// Read the config register into readBuf	
+	return (read(buf, 2)==2);	// Read the currently selected register into readBuf	
 }
 
 double ADS1115::readVoltage(unsigned int channel)
