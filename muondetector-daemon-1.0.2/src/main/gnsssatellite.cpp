@@ -1,4 +1,8 @@
 #include <gnsssatellite.h>
+//#include <custom_io_operators.h>
+#include <iostream>
+#include <iomanip>
+
 using namespace std;
 
 

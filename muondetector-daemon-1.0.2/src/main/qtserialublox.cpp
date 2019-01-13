@@ -1,5 +1,7 @@
 #include <qtserialublox.h>
 #include <sstream>
+#include <iostream>
+#include <iomanip>
 #include <QEventLoop>
 #include <ublox_messages.h>
 using namespace std;

@@ -1,7 +1,9 @@
 #include <sstream>
+#include <iomanip>
 #include <QThread>
 #include <qtserialublox.h>
 #include <unixtime_from_gps.h>
+#include <custom_io_operators.h>
 
 using namespace std;
 
