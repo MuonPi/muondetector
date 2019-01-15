@@ -46,7 +46,7 @@ public:
 	friend QDataStream& operator >> (QDataStream& in, GnssSatellite& sat);
 
 
-private:
+public:
 	int fGnssId=0, fSatId=0, fCnr=0, fElev=0, fAzim=0;
 	float fPrRes=0.;
 	int fQuality=0, fHealth=0;
