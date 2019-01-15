@@ -44,6 +44,8 @@ signals:
 		std::chrono::duration<double> updateAge);
     void gpsPropertyUpdatedGeodeticPos(GeodeticPos pos);
     void timTM2(QString timTM2String);
+    void gpsVersion(const std::string& swVersion, const std::string& hwVersion);
+    void gpsMonHW(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags);
 
 public slots:
 	// all functions that can be called from other classes through signal/slot mechanics
@@ -93,6 +95,7 @@ private:
 	void UBXNavTimeUTC(const std::string& msg);
 	void UBXMonHW(const std::string& msg);
 	void UBXMonTx(const std::string& msg);
+	void UBXMonVer(const std::string& msg);
 
 
 	// all global variables used in QtSerialUblox class until UbxMessage was created

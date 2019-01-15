@@ -35,7 +35,7 @@ static const QVector<uint16_t> allMsgCfgID({
 		 MSG_NAV_POSECEF, MSG_NAV_POSLLH, MSG_NAV_PVT, MSG_NAV_SBAS, MSG_NAV_SOL,
 		 MSG_NAV_STATUS, MSG_NAV_SVINFO, MSG_NAV_TIMEGPS, MSG_NAV_TIMEUTC, MSG_NAV_VELECEF,
 		 MSG_NAV_VELNED,
-		 MSG_MON_HW, MSG_MON_HW2, MSG_MON_IO, MSG_MON_MSGPP,
+		 MSG_MON_VER, MSG_MON_HW, MSG_MON_HW2, MSG_MON_IO, MSG_MON_MSGPP,
          MSG_MON_RXBUF, MSG_MON_RXR, MSG_MON_TXBUF
 	});
 
@@ -50,7 +50,7 @@ QDataStream& operator << (QDataStream& out, const CalibStruct& calib)
 QDataStream& operator << (QDataStream& out, const GnssSatellite& sat)
 {
 	out << sat.fGnssId << sat.fSatId << sat.fCnr << sat.fElev << sat.fAzim
-		<< sat.fPrRes << sat.fQuality << sat.fQuality << sat.fOrbitSource
+		<< sat.fPrRes << sat.fQuality << sat.fHealth << sat.fOrbitSource
 		<< sat.fUsed << sat.fDiffCorr << sat.fSmoothed;
 	return out;
 }
@@ -500,6 +500,9 @@ void Daemon::connectToGps() {
 	connect(qtGps, &QtSerialUblox::UBXreceivedMsgRateCfg, this, &Daemon::UBXReceivedMsgRateCfg);
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, &Daemon::sendUbxGeodeticPos);
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, this, &Daemon::gpsPropertyUpdatedGnss);
+    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedUint32, this, &Daemon::gpsPropertyUpdatedUint32);
+    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedUint8, this, &Daemon::gpsPropertyUpdatedUint8);
+    connect(qtGps, &QtSerialUblox::gpsMonHW, this, &Daemon::gpsMonHWUpdated);
 	connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Daemon::toConsole);
     if (fileHandler != nullptr){
         connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
@@ -974,6 +977,7 @@ void Daemon::configGps() {
 	emit UBXSetCfgMsgRate(MSG_TIM_TP, 1, 51);	// TIM-TP
 	emit UBXSetCfgMsgRate(MSG_NAV_TIMEUTC, 1, 20);	// NAV-TIMEUTC
 	emit UBXSetCfgMsgRate(MSG_MON_HW, 1, 47);	// MON-HW
+	emit UBXSetCfgMsgRate(MSG_MON_VER, 1, 254);	// MON-VER
 	//emit UBXSetCfgMsgRate(MSG_NAV_SAT, 1, 59);	// NAV-SAT (don't know why it does not work,
 	// probably also configured with UBX-CFG-INFO...
 	emit UBXSetCfgMsgRate(MSG_NAV_TIMEGPS, 1, 61);	// NAV-TIMEGPS
@@ -1018,6 +1022,13 @@ void Daemon::UBXReceivedMsgRateCfg(uint16_t msgID, uint8_t rate) {
     }
 }
 
+void Daemon::gpsMonHWUpdated(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags)
+{
+    TcpMessage tcpMessage(gpsMonHWSig);
+    (*tcpMessage.dStream) << (quint16)noise << (quint16)agc << (quint8) antStatus
+    << (quint8)antPower << (quint8)jamInd << (quint8)flags;
+    emit sendTcpMessage(tcpMessage);
+}
 
 void Daemon::gpsPropertyUpdatedGnss(std::vector<GnssSatellite> data,
 	std::chrono::duration<double> lastUpdated) {
@@ -1051,26 +1062,39 @@ void Daemon::gpsPropertyUpdatedGnss(std::vector<GnssSatellite> data,
 }
 void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double> updateAge,
 	char propertyName) {
+	TcpMessage* tcpMessage;
 	switch (propertyName) {
 	case 's':
-		cout << std::chrono::system_clock::now()
-			- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
-			<< "Nr of available satellites: " << data << endl;
+		if (verbose>2)
+			cout << std::chrono::system_clock::now()
+				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
+				<< "Nr of available satellites: " << (int)data << endl;
 		break;
 	case 'e':
-		cout << std::chrono::system_clock::now()
-			- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
-			<< "quant error: " << data << " ps" << endl;
+		if (verbose>2)
+			cout << std::chrono::system_clock::now()
+				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
+				<< "quant error: " << (int)data << " ps" << endl;
 		break;
 	case 'b':
-		cout << std::chrono::system_clock::now()
-			- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
-			<< "TX buf usage: " << data << " %" << endl;
+		if (verbose>2)
+			cout << std::chrono::system_clock::now()
+				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
+				<< "TX buf usage: " << (int)data << " %" << endl;
+		tcpMessage = new TcpMessage(gpsTxBufSig);
+		*(tcpMessage->dStream) << (quint8)data;
+		emit sendTcpMessage(*tcpMessage);
+		delete tcpMessage;
 		break;
 	case 'p':
-		cout << std::chrono::system_clock::now()
-			- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
-			<< "TX buf peak usage: " << data << " %" << endl;
+		if (verbose>2)
+			cout << std::chrono::system_clock::now()
+				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
+				<< "TX buf peak usage: " << (int)data << " %" << endl;
+		tcpMessage = new TcpMessage(gpsTxBufPeakSig);
+		*(tcpMessage->dStream) << (quint8)data;
+		emit sendTcpMessage(*tcpMessage);
+		delete tcpMessage;
 		break;
 	default:
 		break;
@@ -1079,16 +1103,28 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
 
 void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> updateAge,
 	char propertyName) {
+	TcpMessage* tcpMessage;
 	switch (propertyName) {
 	case 'a':
-		cout << std::chrono::system_clock::now()
-			- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
-			<< "time accuracy: " << data << " ns" << endl;
+		if (verbose>2)
+			cout << std::chrono::system_clock::now()
+				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
+				<< "time accuracy: " << data << " ns" << endl;
+		tcpMessage = new TcpMessage(gpsTimeAccSig);
+		*(tcpMessage->dStream) << (quint32)data;
+		emit sendTcpMessage(*tcpMessage);
+		delete tcpMessage;
+			
 		break;
 	case 'c':
-		cout << std::chrono::system_clock::now()
-			- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
-			<< "rising edge counter: " << data << endl;
+		if (verbose>2)
+			cout << std::chrono::system_clock::now()
+				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
+				<< "rising edge counter: " << data << endl;
+		tcpMessage = new TcpMessage(gpsIntCounterSig);
+		*(tcpMessage->dStream) << (quint32)data;
+		emit sendTcpMessage(*tcpMessage);
+		delete tcpMessage;
 		break;
 	default:
 		break;

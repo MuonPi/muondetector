@@ -58,6 +58,7 @@ public slots:
 		char propertyName);
 	void gpsPropertyUpdatedGnss(std::vector<GnssSatellite>,
         std::chrono::duration<double> updateAge);
+    void gpsMonHWUpdated(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags);
 	void receivedTcpMessage(TcpMessage tcpMessage);
     void pollAllUbxMsgRate();
     void sendGpioPinEvent(uint8_t gpio_pin);

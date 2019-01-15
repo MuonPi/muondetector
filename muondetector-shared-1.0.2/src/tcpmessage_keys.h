@@ -37,10 +37,15 @@ static const quint16 i2cStatsSig = 137;
 static const quint16 i2cStatsRequestSig = 139;
 static const quint16 calibWriteEepromSig = 157;
 static const quint16 i2cScanBusRequestSig = 163;
+static const quint16 gpsSatsSig = 149;
+static const quint16 gpsTimeAccSig = 157;
+static const quint16 gpsIntCounterSig = 163;
+static const quint16 gpsTxBufSig = 167;
+static const quint16 gpsTxBufPeakSig = 173;
+static const quint16 gpsMonHWSig = 179;
 // not implemented from here on yet
 static const quint16 dacSetEepromSig = 109;
 static const quint16 dacRequestEepromSig = 113;
-static const quint16 gpsSatsSig = 149;
 //static const quint16 gpsSatsRequestSig = 151;
 
 

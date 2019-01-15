@@ -217,6 +217,14 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 			}
 			UBXMonHW(msg.data);
 			break;
+		case 0x04:
+			if (verbose > 3) {
+				tempStream << "received UBX-MON-VER message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+					<< " 0x" << std::hex << (int)messageID << ")\n";
+				emit toConsole(QString::fromStdString(tempStream.str()));
+			}
+			UBXMonVer(msg.data);
+			break;
 		default:
 			if (verbose > 3) {
 				tempStream << "received unhandled UBX-MON message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
@@ -551,9 +559,9 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 	accEst += ((int)msg[27]) << 24;
 
 	//mutex.lock();
-	emit gpsPropertyUpdatedUint32(accEst, timeAccuracy.updateAge(), 'a');
+//	emit gpsPropertyUpdatedUint32(accEst, timeAccuracy.updateAge(), 'a');
 	timeAccuracy = accEst;
-	timeAccuracy.lastUpdate = std::chrono::system_clock::now();
+//	timeAccuracy.lastUpdate = std::chrono::system_clock::now();
 	//mutex.unlock();
 
 	double sr = towMsR / 1000.;
@@ -673,7 +681,7 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 
 	return true;
 }
-
+/*
 std::vector<GnssSatellite> QtSerialUblox::UBXNavSat(bool allSats)
 {
 	std::string answer;
@@ -685,7 +693,7 @@ std::vector<GnssSatellite> QtSerialUblox::UBXNavSat(bool allSats)
 
 	return UBXNavSat(answer, allSats);
 }
-
+*/
 std::vector<GnssSatellite> QtSerialUblox::UBXNavSat(const std::string& msg, bool allSats)
 {
 	std::vector<GnssSatellite> satList;
@@ -823,6 +831,7 @@ std::vector<GnssSatellite> QtSerialUblox::UBXNavSVinfo(const std::string& msg, b
 		bool used = false;
 		if (flags & 0x01) used = true;
 		uint8_t health = (flags >> 4 & 0x01);
+		health+=1;
 		uint8_t orbitSource = (flags & 0x04) >> 2 |  (flags & 0x08) >> 2 | (flags & 0x20) >> 3 | (flags & 0x40) >> 3;
 		bool smoothed = (flags & 0x80);
 		bool diffCorr = (flags & 0x02);
@@ -839,7 +848,6 @@ std::vector<GnssSatellite> QtSerialUblox::UBXNavSVinfo(const std::string& msg, b
 		
 		GnssSatellite sat(	gnssId, satId, cnr, elev, azim, 0.01*prRes, 
 							quality, health, orbitSource, used, diffCorr, smoothed);
-//		GnssSatellite sat;
 		if (sat.getCnr() > 0) goodSats++;
 		satList.push_back(sat);
 	}
@@ -1298,7 +1306,12 @@ void QtSerialUblox::UBXMonHW(const std::string& msg)
 	agcCnt += ((int)msg[19]) << 8;
 	agc = agcCnt;
 
+	uint8_t antStatus = msg[20];
+	uint8_t antPower = msg[21];
+
 	uint8_t flags = (int)msg[22];
+	
+	uint8_t jamInd = msg[45];
 
 	// meaning of columns:
 	// 01 21 - signature of NAV-TIMEUTC message
@@ -1309,10 +1322,12 @@ void QtSerialUblox::UBXMonHW(const std::string& msg)
 
 	if (verbose > 1) {
 		std::stringstream tempStream;
-		//std::string temp;
 		tempStream << "*** UBX-MON-HW message:" << endl;
 		tempStream << " noise            : " << dec << noisePerMS << " dBc" << endl;
 		tempStream << " agcCnt (0..8192) : " << dec << agcCnt << endl;
+		tempStream << " antenna status   : " << dec << (int)antStatus << endl;
+		tempStream << " antenna power    : " << dec << (int)antPower << endl;
+		tempStream << " jamming indicator: " << dec << (int)jamInd << endl;
 		tempStream << " flags             : ";
 		for (int i = 7; i >= 0; i--) if (flags & 1 << i) tempStream << i; else tempStream << "-";
 		tempStream << endl;
@@ -1320,12 +1335,34 @@ void QtSerialUblox::UBXMonHW(const std::string& msg)
 		tempStream << "   safe boot        : " << string((flags & 2) ? "yes" : "no") << endl;
 		tempStream << "   jamming state    : " << (int)((flags & 0x0c) >> 2) << endl;
 		tempStream << "   Xtal absent      : " << string((flags & 0x10) ? "yes" : "no");
-		//tempStream >> temp;
 		tempStream << "\n";
 		emit toConsole(QString::fromStdString(tempStream.str()));
 	}
+	emit gpsMonHW(noisePerMS, agcCnt, antStatus, antPower, jamInd, flags);
 }
 
+void QtSerialUblox::UBXMonVer(const std::string& msg)
+{
+	// parse all fields
+	std::string hwString = "";
+	std::string swString = "";
+	
+	for (int i=0; msg[i]!=0 && i<30; i++) {
+		swString+=(char)msg[i];
+	} 
+	for (int i=30; msg[i]!=0 && i<40; i++) {
+		hwString+=(char)msg[i];
+	} 
+	
+	if (verbose > 1) {
+		std::stringstream tempStream;
+		tempStream << "*** UBX-MON-VER message:" << endl;
+		tempStream << " sw version  : " << swString << endl;
+		tempStream << " hw version  : " << hwString << endl;
+		emit toConsole(QString::fromStdString(tempStream.str()));
+	}
+	emit gpsVersion(swString, hwString);
+}
 
 void QtSerialUblox::UBXMonTx(const std::string& msg)
 {
