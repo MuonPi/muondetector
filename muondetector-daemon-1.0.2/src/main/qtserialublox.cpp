@@ -6,6 +6,7 @@
 #include <ublox_messages.h>
 using namespace std;
 
+#define MAX_SEND_RETRIES 5
 
 static std::string toStdString(unsigned char* data, int dataSize) {
 	std::stringstream tempStream;
@@ -64,13 +65,23 @@ void QtSerialUblox::sendQueuedMsg(bool afterTimeout) {
 		if (!msgWaitingForAck) {
 			return;
 		}
+		if (++sendRetryCounter >= MAX_SEND_RETRIES) {
+			sendRetryCounter=0;
+			ackTimer->stop();
+			delete msgWaitingForAck;
+			msgWaitingForAck = 0;
+			if (verbose > 2) emit toConsole("sendQueuedMsg: deleted message after 5 timeouts\n");
+			sendQueuedMsg();
+			return;
+		}
 		ackTimer->start(timeout);
 		sendUBX(*msgWaitingForAck);
+		if (verbose > 2) emit toConsole("sendQueuedMsg: repeated resend after timeout\n");
 		return;
 	}
 	if (outMsgBuffer.empty()) { return; }
 	if (msgWaitingForAck) {
-		if (verbose > 0) {
+		if (verbose > 2) {
 			emit toConsole("tried to send queued message but ack for previous message not yet received\n");
 		}
 		return;
@@ -80,6 +91,7 @@ void QtSerialUblox::sendQueuedMsg(bool afterTimeout) {
 	ackTimer->setSingleShot(true);
 	ackTimer->start(timeout);
 	sendUBX(*msgWaitingForAck);
+	if (verbose > 2) emit toConsole("sendQueuedMsg: sent fresh message\n");
 	outMsgBuffer.pop();
 }
 
@@ -197,7 +209,7 @@ bool QtSerialUblox::scanUnknownMessage(string &buffer, UbxMessage &message)
 	return false;
 }
 
-bool QtSerialUblox::sendUBX(uint16_t msgID, std::string& payload, uint16_t nBytes)
+bool QtSerialUblox::sendUBX(uint16_t msgID, const std::string& payload, uint16_t nBytes)
 {
 	//    std::cout << "0x"<< std::setfill('0') << std::setw(2) << std::hex << ((msgID & 0xff00) >> 8)
 	//                     << std::setfill('0') << std::setw(2) << std::hex << (msgID & 0xff);
@@ -469,6 +481,14 @@ void QtSerialUblox::pollMsg(uint16_t msgID) {
 		break;
 	default:
 		// for most messages the poll msg is just the message without payload
+		msg.msgID = msgID;
+		msg.data = "";
+/*		outMsgBuffer.push(msg);
+		if (!msgWaitingForAck) {
+			sendQueuedMsg();
+		}
+*/
+		sendUBX(msg);
 		break;
 	}
 }

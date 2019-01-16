@@ -63,6 +63,7 @@ public slots:
     void pollAllUbxMsgRate();
     void sendGpioPinEvent(uint8_t gpio_pin);
     void sendUbxGeodeticPos(GeodeticPos pos);
+    void UBXReceivedVersion(const QString& swString, const QString& hwString);
     void sampleAdc0Event();
     void sampleAdcEvent(uint8_t channel);
 	void getTemperature();
@@ -75,6 +76,7 @@ signals:
 	void aboutToQuit();
 	void sendPollUbxMsgRate(uint16_t msgID);
 	void sendPollUbxMsg(uint16_t msgID);
+	void sendUbxMsg(uint16_t msgID, const std::string& data, uint8_t size);
 	// difference between msgRate and msg is that CFG-MSG (0x0601) alone is used
 	// to set/get the rate for every message so the msgID must be wrapped to the data
     // of a message of type CFG-MSG first

@@ -44,7 +44,7 @@ signals:
 		std::chrono::duration<double> updateAge);
     void gpsPropertyUpdatedGeodeticPos(GeodeticPos pos);
     void timTM2(QString timTM2String);
-    void gpsVersion(const std::string& swVersion, const std::string& hwVersion);
+    void gpsVersion(const QString& swVersion, const QString& hwVersion);
     void gpsMonHW(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags);
 
 public slots:
@@ -54,6 +54,8 @@ public slots:
     void onRequestGpsProperties();
 	void pollMsgRate(uint16_t msgID);
 	void pollMsg(uint16_t msgID);
+	void sendMsg(uint16_t msgID, const std::string& payload, uint16_t nrBytes)
+	{ sendUBX(msgID, payload, nrBytes); }
 	// for polling the port configuration for specific port set rate to port ID
 	void handleError(QSerialPort::SerialPortError serialPortError);
 	void UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate);
@@ -68,7 +70,7 @@ private:
 	// and scanning raw data up to the point where "UbxMessage" object is generated
 	bool scanUnknownMessage(std::string &buffer, UbxMessage &message);
 	void calcChkSum(const std::string &buf, unsigned char* chkA, unsigned char* chkB);
-	bool sendUBX(uint16_t msgID, std::string& payload, uint16_t nBytes);
+	bool sendUBX(uint16_t msgID, const std::string& payload, uint16_t nBytes);
 	bool sendUBX(uint16_t msgID, unsigned char* payload, uint16_t nBytes);
 	bool sendUBX(UbxMessage &msg);
 	void sendQueuedMsg(bool afterTimeout = false);
@@ -87,8 +89,8 @@ private:
 	std::vector<GnssSatellite> UBXNavSVinfo(bool allSats);
 	std::vector<GnssSatellite> UBXNavSVinfo(const std::string& msg, bool allSats);
     GeodeticPos UBXNavPosLLH(const std::string& msg);
-	bool UBXCfgGNSS();
-	bool UBXCfgNav5();
+	void UBXCfgGNSS(const std::string &msg);
+	void UBXCfgNav5(const std::string &msg);
 	std::vector<std::string> UBXMonVer();
 	void UBXNavClock(const std::string& msg);
 	void UBXNavTimeGPS(const std::string& msg);
@@ -113,6 +115,7 @@ private:
 	std::queue <UbxMessage> outMsgBuffer;
 	UbxMessage *msgWaitingForAck = 0;
 	QTimer *ackTimer;
+	int sendRetryCounter=0;
 
 	// all global variables used for keeping track of satellites and statistics (gpsProperty)
 	gpsProperty<int> leapSeconds;

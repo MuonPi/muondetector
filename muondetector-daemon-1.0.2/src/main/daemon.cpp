@@ -34,8 +34,8 @@ static const QVector<uint16_t> allMsgCfgID({
 		 MSG_NAV_CLOCK, MSG_NAV_DGPS, MSG_NAV_AOPSTATUS, MSG_NAV_DOP,
 		 MSG_NAV_POSECEF, MSG_NAV_POSLLH, MSG_NAV_PVT, MSG_NAV_SBAS, MSG_NAV_SOL,
 		 MSG_NAV_STATUS, MSG_NAV_SVINFO, MSG_NAV_TIMEGPS, MSG_NAV_TIMEUTC, MSG_NAV_VELECEF,
-		 MSG_NAV_VELNED,
-		 MSG_MON_VER, MSG_MON_HW, MSG_MON_HW2, MSG_MON_IO, MSG_MON_MSGPP,
+		 MSG_NAV_VELNED, /* MSG_NAV_SAT, */
+		 MSG_MON_HW, MSG_MON_HW2, MSG_MON_IO, MSG_MON_MSGPP,
          MSG_MON_RXBUF, MSG_MON_RXR, MSG_MON_TXBUF
 	});
 
@@ -166,6 +166,7 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
     qRegisterMetaType<CalibStruct>("CalibStruct");
 	qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
 	qRegisterMetaType<std::chrono::duration<double>>("std::chrono::duration<double>");
+	qRegisterMetaType<std::string>("std::string");
     // signal handling
 	setup_unix_signal_handlers();
 	if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)) {
@@ -496,6 +497,7 @@ void Daemon::connectToGps() {
 	connect(this, &Daemon::UBXSetCfgRate, qtGps, &QtSerialUblox::UBXSetCfgRate);
 	connect(this, &Daemon::sendPollUbxMsgRate, qtGps, &QtSerialUblox::pollMsgRate);
 	connect(this, &Daemon::sendPollUbxMsg, qtGps, &QtSerialUblox::pollMsg);
+	connect(this, &Daemon::sendUbxMsg, qtGps, &QtSerialUblox::sendMsg);
 	connect(qtGps, &QtSerialUblox::UBXReceivedAckNak, this, &Daemon::UBXReceivedAckNak);
 	connect(qtGps, &QtSerialUblox::UBXreceivedMsgRateCfg, this, &Daemon::UBXReceivedMsgRateCfg);
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, &Daemon::sendUbxGeodeticPos);
@@ -503,6 +505,7 @@ void Daemon::connectToGps() {
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedUint32, this, &Daemon::gpsPropertyUpdatedUint32);
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedUint8, this, &Daemon::gpsPropertyUpdatedUint8);
     connect(qtGps, &QtSerialUblox::gpsMonHW, this, &Daemon::gpsMonHWUpdated);
+    connect(qtGps, &QtSerialUblox::gpsVersion, this, &Daemon::UBXReceivedVersion);
 	connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Daemon::toConsole);
     if (fileHandler != nullptr){
         connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
@@ -547,7 +550,20 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
     connect(this, &Daemon::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
 	connect(tcpConnection, &TcpConnection::receivedTcpMessage, this, &Daemon::receivedTcpMessage);
 	connect(tcpConnection, &TcpConnection::toConsole, this, &Daemon::toConsole);
+//	connect(tcpConnection, &TcpConnection::madeConnection, this, [this](QString, quint16, QString , quint16) { emit sendPollUbxMsg(MSG_MON_VER); });
 	thread->start();
+//	madeConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort);
+//	const char buf[12]= { 0,0,22,1,6,1,4,0,1,0,0,1 };
+	const char buf[20]= { 0,0,22,2, 5,0,1,0,0,0,0,0, 6,1,4,0,1,0,0,1 };
+	string str(buf,20);
+	/*
+	for (int i=0; i<12; i++) cout<<"0x"<<hex<<(unsigned int)str[i]<<" ";
+	cout<<endl;
+	*/
+	//emit sendUbxMsg(MSG_CFG_GNSS, str, str.size());
+	emit sendPollUbxMsg(MSG_MON_VER);
+	emit sendPollUbxMsg(MSG_CFG_GNSS);
+	emit sendPollUbxMsg(MSG_CFG_NAV5);
 }
 
 // ALL FUNCTIONS ABOUT TCPMESSAGE SENDING AND RECEIVING
@@ -973,11 +989,11 @@ void Daemon::configGps() {
     // msgRateCfgs.insert(MSG_NAV_SVINFO, 49);
     emit UBXSetCfgRate(1000/measrate, 1); // MSG_RATE
 
+	//emit sendPollUbxMsg(MSG_MON_VER);
 	emit UBXSetCfgMsgRate(MSG_TIM_TM2, 1, 1);	// TIM-TM2
 	emit UBXSetCfgMsgRate(MSG_TIM_TP, 1, 51);	// TIM-TP
 	emit UBXSetCfgMsgRate(MSG_NAV_TIMEUTC, 1, 20);	// NAV-TIMEUTC
 	emit UBXSetCfgMsgRate(MSG_MON_HW, 1, 47);	// MON-HW
-	emit UBXSetCfgMsgRate(MSG_MON_VER, 1, 254);	// MON-VER
 	//emit UBXSetCfgMsgRate(MSG_NAV_SAT, 1, 59);	// NAV-SAT (don't know why it does not work,
 	// probably also configured with UBX-CFG-INFO...
 	emit UBXSetCfgMsgRate(MSG_NAV_TIMEGPS, 1, 61);	// NAV-TIMEGPS
@@ -990,6 +1006,7 @@ void Daemon::configGps() {
 	emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 49);	// NAV-SVINFO
 	// this poll is for checking the port cfg (which protocols are enabled etc.)
 	emit sendPollUbxMsg(MSG_CFG_PRT);
+	//emit sendPollUbxMsg(MSG_MON_VER);
 	//emit sendPoll()
 }
 
@@ -1147,6 +1164,14 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
 	default:
 		break;
 	}
+}
+
+
+void Daemon::UBXReceivedVersion(const QString& swString, const QString& hwString)
+{
+    TcpMessage tcpMessage(gpsVersionSig);
+    (*tcpMessage.dStream) << swString << hwString;
+    emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::toConsole(QString data) {

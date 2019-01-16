@@ -57,6 +57,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 		ackTimer->stop();
 		delete msgWaitingForAck;
 		msgWaitingForAck = 0;
+		if (verbose > 2) emit toConsole("processMessage: deleted message after ACK/NACK\n");
 		sendQueuedMsg();
 		break;
 	case 0x01: // UBX-NAV
@@ -154,6 +155,23 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 				(uint8_t)(msg.data[2 + usedPort])
 			);
 			// 2: port 0 (i2c); 3: port 1 (uart); 4: port 2 (usb); 5: port 3 (isp)
+			break;
+		case 0x24: // UBX-CFG-NAV5
+			if (verbose > 3) {
+				tempStream << "received UBX-CFG-NAV5 message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+					<< " 0x" << std::hex << (int)messageID << ")\n";
+				emit toConsole(QString::fromStdString(tempStream.str()));
+			}
+			UBXCfgNav5(msg.data);
+			break;
+		case 0x3e: // UBX-CFG-GNSS
+			if (verbose > 3) {
+				tempStream << "received UBX-CFG-GNSS message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+					<< " 0x" << std::hex << (int)messageID << ")\n";
+				emit toConsole(QString::fromStdString(tempStream.str()));
+			}
+			UBXCfgGNSS(msg.data);
+			break;
 		default:
 			if (verbose > 1) {
 				tempStream << "received UBX-CFG message:";
@@ -280,7 +298,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 		break;
 	}
 }
-
+/*
 bool QtSerialUblox::UBXNavClock(uint32_t& itow, int32_t& bias, int32_t& drift,
 	uint32_t& tAccuracy, uint32_t& fAccuracy)
 {
@@ -346,7 +364,9 @@ bool QtSerialUblox::UBXNavClock(uint32_t& itow, int32_t& bias, int32_t& drift,
 	}
 	return true;
 }
+*/
 
+/*
 bool QtSerialUblox::UBXTimTP(uint32_t& itow, int32_t& quantErr, uint16_t& weekNr)
 {
 	std::string answer;
@@ -385,7 +405,6 @@ bool QtSerialUblox::UBXTimTP(uint32_t& itow, int32_t& quantErr, uint16_t& weekNr
 
 	if (verbose > 1) {
 		std::stringstream tempStream;
-		//std::string temp;
 		tempStream << "*** UBX-TIM-TP message:" << endl;
 		tempStream << " tow s            : " << dec << towMS / 1000. << " s" << endl;
 		tempStream << " tow sub s        : " << dec << towSubMS << " = " << (long int)(sr*1e9 + towSubMS + 0.5) << " ns" << endl;
@@ -396,22 +415,12 @@ bool QtSerialUblox::UBXTimTP(uint32_t& itow, int32_t& quantErr, uint16_t& weekNr
 		tempStream << endl;
 		tempStream << " refInfo          : ";
 		for (int i = 7; i >= 0; i--) if (refInfo & 1 << i) tempStream << i; else tempStream << "-";
-		//tempStream >> temp;
 		tempStream << "\n";
 		emit toConsole(QString::fromStdString(tempStream.str()));
 	}
 	return true;
 }
-
-bool QtSerialUblox::UBXTimTP()
-{
-	std::string answer;
-	// UBX-TIM-TP: time pulse timedata
-	//bool ok = pollUBX(MSG_TIM_TP, answer, MSGTIMEOUT);
-	//if (!ok) return ok;
-	UBXTimTP(answer);
-	return true;
-}
+*/
 
 bool QtSerialUblox::UBXTimTP(const std::string& msg)
 {
@@ -681,19 +690,8 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 
 	return true;
 }
-/*
-std::vector<GnssSatellite> QtSerialUblox::UBXNavSat(bool allSats)
-{
-	std::string answer;
-	std::vector<GnssSatellite> satList;
-	// UBX-NAV-SAT: satellite information
-	//bool ok = pollUBX(MSG_NAV_SAT, answer, MSGTIMEOUT);
-	//  bool ok=pollUBX(0x0d, 0x03, 0, answer, MSGTIMEOUT);
-	//if (!ok) return satList;
 
-	return UBXNavSat(answer, allSats);
-}
-*/
+
 std::vector<GnssSatellite> QtSerialUblox::UBXNavSat(const std::string& msg, bool allSats)
 {
 	std::vector<GnssSatellite> satList;
@@ -879,25 +877,23 @@ std::vector<GnssSatellite> QtSerialUblox::UBXNavSVinfo(const std::string& msg, b
 }
 
 
-bool QtSerialUblox::UBXCfgGNSS()
+void QtSerialUblox::UBXCfgGNSS(const string &msg)
 {
-	std::string answer;
 	// UBX-CFG-GNSS: GNSS configuration
-	//bool ok = pollUBX(MSG_CFG_GNSS, answer, MSGTIMEOUT);
-	//if (!ok) return false;
 	// parse all fields
 	// version
-	uint8_t version = answer[0];
-	uint8_t numTrkChHw = answer[1];
-	uint8_t numTrkChUse = answer[2];
-	uint8_t numConfigBlocks = answer[3];
+// send:
+// "0,0,ff,1,6,5,ff,0,1,0,0,0"
+	uint8_t version = msg[0];
+	uint8_t numTrkChHw = msg[1];
+	uint8_t numTrkChUse = msg[2];
+	uint8_t numConfigBlocks = msg[3];
 
-	int N = (answer.size() - 4) / 8;
+	int N = (msg.size() - 4) / 8;
 
-	//  if (verbose>1)
+	if (verbose>2)
 	{
 		std::stringstream tempStream;
-		//std::string temp;
 		tempStream << "*** UBX CFG-GNSS message:" << endl;
 		tempStream << " version                    : " << dec << (int)version << endl;
 		tempStream << " nr of hw tracking channels : " << dec << (int)numTrkChHw << endl;
@@ -905,64 +901,53 @@ bool QtSerialUblox::UBXCfgGNSS()
 		tempStream << " Nr of config blocks        : " << (int)numConfigBlocks
 			<< "  (nr of sections=" << N << ")";
 		tempStream << "  Config Data :\n";
-		//tempStream >> temp;
 		emit toConsole(QString::fromStdString(tempStream.str()));
 	}
 	for (int i = 0; i < N; i++) {
-		uint8_t gnssID = answer[4 + 8 * i];
-		uint8_t resTrkCh = answer[5 + 8 * i];
-		uint8_t maxTrkCh = answer[6 + 8 * i];
-		uint32_t flags = answer[8 + 8 * i];
-		flags |= (int)answer[9 + 8 * i] << 8;
-		flags |= (int)answer[10 + 8 * i] << 16;
-		flags |= (int)answer[11 + 8 * i] << 24;
-		//    if (verbose>1)
+		uint8_t gnssID = msg[4 + 8 * i];
+		uint8_t resTrkCh = msg[5 + 8 * i];
+		uint8_t maxTrkCh = msg[6 + 8 * i];
+		uint32_t flags = msg[8 + 8 * i];
+		flags |= (int)msg[9 + 8 * i] << 8;
+		flags |= (int)msg[10 + 8 * i] << 16;
+		flags |= (int)msg[11 + 8 * i] << 24;
+		if (verbose>2)
 		{
 			std::stringstream tempStream;
-			//std::string temp;
-			//mutex.lock();
 			tempStream << "   " << i << ":   GNSS name : "
 				<< GnssSatellite::GNSS_ID_STRING[gnssID] << endl;
-			//mutex.unlock();
 			tempStream << "      reserved (min) tracking channels  : "
 				<< dec << (int)resTrkCh << endl;
 			tempStream << "      max nr of tracking channels used : "
 				<< dec << (int)maxTrkCh << endl;
 			tempStream << "      flags  : " << std::hex << (int)flags << "\n";
-			//tempStream >> temp;
 			emit toConsole(QString::fromStdString(tempStream.str()));
 		}
 	}
-	return true;
 }
 
-bool QtSerialUblox::UBXCfgNav5()
+void QtSerialUblox::UBXCfgNav5(const string &msg)
 {
-	std::string answer;
 	// UBX CFG-NAV5: satellite information
-	//bool ok = pollUBX(MSG_CFG_NAV5, answer, MSGTIMEOUT);
-	//if (!ok) return false;
 	// parse all fields
-	// version
-	uint16_t mask = answer[0];
-	mask |= (int)answer[1] << 8;
-	uint8_t dynModel = answer[2];
-	uint8_t fixMode = answer[3];
-	int32_t fixedAlt = answer[4];
-	fixedAlt |= (int)answer[5] << 8;
-	fixedAlt |= (int)answer[6] << 16;
-	fixedAlt |= (int)answer[7] << 24;
-	uint32_t fixedAltVar = answer[8];
-	fixedAltVar |= (int)answer[9] << 8;
-	fixedAltVar |= (int)answer[10] << 16;
-	fixedAltVar |= (int)answer[11] << 24;
-	int8_t minElev = answer[12];
+	uint16_t mask = msg[0];
+	mask |= (int)msg[1] << 8;
+	uint8_t dynModel = msg[2];
+	uint8_t fixMode = msg[3];
+	int32_t fixedAlt = msg[4];
+	fixedAlt |= (int)msg[5] << 8;
+	fixedAlt |= (int)msg[6] << 16;
+	fixedAlt |= (int)msg[7] << 24;
+	uint32_t fixedAltVar = msg[8];
+	fixedAltVar |= (int)msg[9] << 8;
+	fixedAltVar |= (int)msg[10] << 16;
+	fixedAltVar |= (int)msg[11] << 24;
+	int8_t minElev = msg[12];
 
 
-	//  if (verbose>1)
+	if (verbose>2)
 	{
 		std::stringstream tempStream;
-		//std::string temp;
 		tempStream << "*** UBX CFG-NAV5 message:" << endl;
 		tempStream << " mask               : " << std::hex << (int)mask << endl;
 		tempStream << " dynamic model used : " << dec << (int)dynModel << endl;
@@ -970,38 +955,9 @@ bool QtSerialUblox::UBXCfgNav5()
 		tempStream << " fixed Alt          : " << (double)fixedAlt*0.01 << " m" << endl;
 		tempStream << " fixed Alt Var      : " << (double)fixedAltVar*0.0001 << " m^2" << endl;
 		tempStream << " min elevation      : " << dec << (int)minElev << " deg\n";
-		//tempStream >> temp;
 		emit toConsole(QString::fromStdString(tempStream.str()));
 	}
-	return true;
 }
-
-/*std::vector<std::string> QtSerialUblox::UBXMonVer()
-{
-	std::string answer;
-	std::vector<std::string> result;
-	// UBX CFG-NAV5: satellite information
-	bool ok = pollUBX(MSG_MON_VER, answer, MSGTIMEOUT);
-	if (!ok) return result;
-	// parse all fields
-	// version
-	cout << "*** UBX MON-VER message:" << endl;
-	//  cout<<answer<<endl;
-	std::string::size_type i = 0;
-	while (i != std::string::npos && i < answer.size()) {
-		std::string s = answer.substr(i, answer.find((char)0x00, i + 1) - i + 1);
-		while (s.size() && s[0] == 0x00) {
-			s.erase(0, 1);
-		}
-		if (s.size()) {
-			result.push_back(s);
-			emit toConsole(QString::fromStdString(s));
-		}
-		i = answer.find((char)0x00, i + 1);
-	}
-	return result;
-}
-*/
 
 GeodeticPos QtSerialUblox::UBXNavPosLLH(const string &msg){
     GeodeticPos pos;
@@ -1361,8 +1317,26 @@ void QtSerialUblox::UBXMonVer(const std::string& msg)
 		tempStream << " hw version  : " << hwString << endl;
 		emit toConsole(QString::fromStdString(tempStream.str()));
 	}
-	emit gpsVersion(swString, hwString);
+	
+	std::vector<std::string> result;
+	std::string::size_type i = 0;
+	while (i != std::string::npos && i < msg.size()) {
+		std::string s = msg.substr(i, msg.find((char)0x00, i + 1) - i + 1);
+		while (s.size() && s[0] == 0x00) {
+			s.erase(0, 1);
+		}
+		if (s.size()) {
+			result.push_back(s);
+			if (verbose > 2) {
+				emit toConsole(QString::fromStdString(s)+"\n");
+			}
+		}
+		i = msg.find((char)0x00, i + 1);
+	}
+
+	emit gpsVersion(QString::fromStdString(swString), QString::fromStdString(hwString));
 }
+
 
 void QtSerialUblox::UBXMonTx(const std::string& msg)
 {
