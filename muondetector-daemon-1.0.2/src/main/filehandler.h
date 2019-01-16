@@ -27,7 +27,7 @@ private:
     QString currentWorkingFilePath;
     QString username;
     QString password;
-    QStringList notUploadedFilesPaths;
+    QStringList notUploadedFilesNames;
     bool saveLoginData(QString username, QString password);
     bool readLoginData();
     bool openDataFile(); // reads the config file and opens the correct data file to write to

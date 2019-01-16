@@ -30,7 +30,7 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
     QDir temp;
     QString fullPath = temp.homePath()+"/"+mainDataFolderName;
     QCryptographicHash hashFunction(QCryptographicHash::Sha3_256);
-    hashedMacAddress = QString(hashFunction.hash(getMacAddressByteArray(), QCryptographicHash::Sha3_256).toHex());
+    hashedMacAddress = QString(hashFunction.hash(getMacAddressByteArray(), QCryptographicHash::Sha3_224).toHex());
     fullPath += hashedMacAddress;
     configPath = fullPath+"/";
     configFilePath = fullPath + "/currentWorkingFileInformation.conf";
@@ -42,20 +42,25 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
             qDebug() << "could not create folder " << fullPath;
         }
     }
+    QString uploadedFiles = configPath+"uploadedFiles/";
+    if (!temp.exists(uploadedFiles)){
+        temp.mkpath(uploadedFiles);
+        if (!temp.exists(uploadedFiles)){
+            qDebug() << "could not create folder " << uploadedFiles;
+        }
+    }
     QTimer *uploadReminder = new QTimer(this);
     uploadReminder->setInterval(60*1000*15); // every 15 minutes or so
     uploadReminder->setSingleShot(false);
     connect(uploadReminder, &QTimer::timeout, this, &FileHandler::onUploadRemind);
     fileSize = fileSizeMB;
     openDataFile();
-    switchToNewDataFile();
-    uploadRecentDataFiles();
     uploadReminder->start();
 }
 
 bool FileHandler::readFileInformation(){
     QDir directory(dataFolderPath);
-    notUploadedFilesPaths = directory.entryList(QStringList() << "*.dat",QDir::Files);
+    notUploadedFilesNames = directory.entryList(QStringList() << "*.dat",QDir::Files);
     QFile configFile(configFilePath);
     if (!configFile.open(QIODevice::ReadWrite)){
         qDebug() << "file open failed in 'ReadWrite' mode at location " << configFilePath;
@@ -76,7 +81,7 @@ bool FileHandler::openDataFile(){
     }
     if (currentWorkingFilePath==""){
         currentWorkingFilePath=createFileName();
-        while (notUploadedFilesPaths.contains(currentWorkingFilePath)){
+        while (notUploadedFilesNames.contains(QFileInfo(currentWorkingFilePath).fileName())){
             currentWorkingFilePath = createFileName();
         }
         QFile configFile(configFilePath);
@@ -107,38 +112,37 @@ void FileHandler::writeToDataFile(QString data){
 bool FileHandler::uploadDataFile(QString fileName){
     QProcess lftpProcess(this);
     lftpProcess.setProgram("lftp");
-    QStringList arguments({"-p",
-                           "35221",
-                           "-u",
-                           QString(username+","+password),
-                           QString("balu.physik.uni-giessen.de:/cosmicshower/"+hashedMacAddress),
-                           "-e",
-                           QString("put "+fileName)});
+    QStringList arguments;
+    arguments << "-p" << "35221";
+    arguments << "-u" << QString(username+","+password);
+    arguments << "balu.physik.uni-giessen.de:/cosmicshower";
+    arguments << "-e" << QString("mkdir "+hashedMacAddress+" ; cd "+hashedMacAddress+" && put "+fileName+" ; exit");
     lftpProcess.setArguments(arguments);
     lftpProcess.start();
     const int timeout = 300000;
     if (!lftpProcess.waitForFinished(timeout)){
-        qDebug() << lftpProcess.readAll();
+        qDebug() << lftpProcess.readAllStandardOutput();
+        qDebug() << lftpProcess.readAllStandardError();
         qDebug() << "lftp not installed or timed out after "<< timeout/1000<< " s";
         return false;
     }
-    //qDebug() << "lftp log: "<< lftpProcess.readAll();
-    if (lftpProcess.exitStatus()==-1){
-        qDebug() << "lftp returned exit status -1";
+    if (lftpProcess.exitStatus()!=0){
+        qDebug() << "lftp returned exit status other than 0";
         return false;
     }
-    qDebug() << "lftp returned exit status " << lftpProcess.exitStatus();
     return true;
 }
 
 bool FileHandler::uploadRecentDataFiles(){
     readFileInformation();
-    for (auto &filePath : notUploadedFilesPaths){
+    for (auto &fileName : notUploadedFilesNames){
+        QString filePath = dataFolderPath+fileName;
         if (filePath!=currentWorkingFilePath){
+            qDebug() << "attempt to upload " << filePath;
             if (!uploadDataFile(filePath)){
                 return false;
             }
-            QFile::rename(filePath,QString(configPath+"uploadedFiles/"+QFileInfo(filePath).fileName()));
+            QFile::rename(filePath,QString(configPath+"uploadedFiles/"+fileName));
         }
     }
     return true;
@@ -165,6 +169,9 @@ bool FileHandler::switchToNewDataFile(QString fileName){
     }
     closeDataFile();
     currentWorkingFilePath = fileName;
+    if (currentWorkingFilePath==""){
+        currentWorkingFilePath = createFileName();
+    }
     if (!openDataFile()){
         closeDataFile();
         return false;
@@ -233,7 +240,7 @@ QString FileHandler::createFileName(){
     }
     QDateTime dateTime = QDateTime::currentDateTimeUtc();
     QString fileName = (dateTime.toString("yyyy-MM-dd_hh-mm-ss"));
-    fileName = dataFolderPath+fileName;
+    fileName = dataFolderPath+fileName+".dat";
     return fileName;
 }
 
