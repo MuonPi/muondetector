@@ -11,7 +11,7 @@ class FileHandler : public QObject
     Q_OBJECT
 
 public:
-    FileHandler(QString dataFolder = "", QString configFileName = "", quint32 fileSizeMB = 500, QObject *parent = nullptr);
+    FileHandler(QString userName, QString passWord, QString dataPath = "", quint32 fileSizeMB = 500, QObject *parent = nullptr);
 
 public slots:
     void writeToDataFile(QString data); // writes data to the file opened in "dataFile"
@@ -19,21 +19,27 @@ public slots:
 private:
     // save and send data everyday
     QFile *dataFile = nullptr; // the file currently written to.
-    QString dataConfigFileName = "dataFileInformation.conf";
-    QString configFolderName = ".muondetector-daemon/";
-    QString muondetectorConfigPath;
+    QString mainDataFolderName = ".muondetector-daemon/";
     QString hashedMacAddress;
+    QString configFilePath;
+    QString configPath;
     QString dataFolderPath;
-    QQueue<QString> files; // first file name is always the current working file name
+    QString currentWorkingFilePath;
+    QString username;
+    QString password;
+    QStringList notUploadedFilesPaths;
+    bool saveLoginData(QString username, QString password);
+    bool readLoginData();
     bool openDataFile(); // reads the config file and opens the correct data file to write to
     bool readFileInformation();
     bool uploadDataFile(QString fileName); // sends a data file with some filename via lftp script to the server
+    bool uploadRecentDataFiles();
     bool switchToNewDataFile(QString fileName = ""); // closes the old file and opens a new one, changing "dataConfig.conf" to the new file
     void closeDataFile();
     QString getMacAddress();
     QByteArray getMacAddressByteArray();
     QString createFileName(); // creates a fileName based on date time and mac address
-    quint32 fileSize;
+    quint32 fileSize; // in MB
     QDateTime lastUploadDateTime;
     QTime dailyUploadTime;
 

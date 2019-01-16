@@ -144,7 +144,7 @@ void Daemon::handleSigInt()
 
 
 // begin of the Daemon class
-Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
+Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
     float* new_dacThresh, float new_biasVoltage, bool bias_ON, bool new_dumpRaw, int new_baudrate,
 	bool new_configGnss, QString new_peerAddress, quint16 new_peerPort,
 	QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, QObject *parent)
@@ -194,7 +194,7 @@ Daemon::Daemon(QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
         cout << "daemon running in thread " << QString("0x%1").arg((intptr_t)this->thread()) << endl;
 	}
     if (fileHandler == nullptr){
-        fileHandler = new FileHandler();
+        fileHandler = new FileHandler(username, password);
     }
 
 	// for pigpio signals:

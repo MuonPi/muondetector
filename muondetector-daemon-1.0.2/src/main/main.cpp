@@ -5,11 +5,60 @@
 #include <QCommandLineParser>
 #include <QObject>
 #include <QHostAddress>
+#include <termios.h>
+#include <unistd.h>
+#include <iostream>
 
 #include <custom_io_operators.h>
 #include <daemon.h>
 
 using namespace std;
+
+int getch() {
+    int ch;
+    struct termios t_old, t_new;
+
+    tcgetattr(STDIN_FILENO, &t_old);
+    t_new = t_old;
+    t_new.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &t_new);
+
+    ch = getchar();
+
+    tcsetattr(STDIN_FILENO, TCSANOW, &t_old);
+    return ch;
+}
+
+string getpass(const char *prompt, bool show_asterisk)
+{
+  const char BACKSPACE=127;
+  const char RETURN=10;
+
+  string password;
+  unsigned char ch=0;
+  ch=getch();
+  cout <<prompt<<endl;
+  while((ch=getch())!=RETURN)
+    {
+       if(ch==BACKSPACE)
+         {
+            if(password.length()!=0)
+              {
+                 if(show_asterisk)
+                 cout <<"\b \b";
+                 password.resize(password.length()-1);
+              }
+         }
+       else
+         {
+             password+=ch;
+             if(show_asterisk)
+                 cout <<'*';
+         }
+    }
+  cout << endl;
+  return password;
+}
 
 int main(int argc, char *argv[])
 {
@@ -29,6 +78,11 @@ int main(int argc, char *argv[])
 	// add module path for example /dev/gps0 or /dev/ttyAMA0
 	parser.addPositionalArgument("device", QCoreApplication::translate("main", "Path to gps device\n"
 		"for example: /dev/ttyAMA0"));
+
+    // lftp settings option
+    QCommandLineOption lftpSettingsOption(QStringList() << "lftp-login",
+                                          QCoreApplication::translate("main", "ask for login to the online server"));
+    parser.addOption(lftpSettingsOption);
 
 	// verbosity option
 	QCommandLineOption verbosityOption(QStringList() << "e" << "verbose",
@@ -134,7 +188,7 @@ int main(int argc, char *argv[])
 	else {
 		cout << "no device selected, will not connect to gps module" << endl;
 	}
-	bool ok;
+    bool ok;
 	int verbose = 0;
 	if (parser.isSet(verbosityOption)) {
 		verbose = parser.value(verbosityOption).toInt(&ok);
@@ -235,7 +289,14 @@ int main(int argc, char *argv[])
 	if (parser.isSet(biasPowerOnOff)) {
 		biasPower = true;
 	}
-	Daemon daemon(gpsdevname, verbose, pcaChannel, dacThresh, biasVoltage, biasPower, dumpRaw,
+    string username = "coshowacc";
+    string password;
+    if (parser.isSet(lftpSettingsOption)){
+        cout << "To set the login for the ftp-server, please enter user name:"<<endl;
+        cin >> username;
+        password = getpass("please enter password:",true);
+    }
+    Daemon daemon(QString::fromStdString(username), QString::fromStdString(password), gpsdevname, verbose, pcaChannel, dacThresh, biasVoltage, biasPower, dumpRaw,
 		baudrate, showGnssConfig, peerAddress, peerPort, daemonAddress, daemonPort, showout, showin);
 	return a.exec();
 }
