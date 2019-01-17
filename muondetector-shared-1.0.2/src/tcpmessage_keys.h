@@ -44,6 +44,7 @@ static const quint16 gpsTxBufSig = 167;
 static const quint16 gpsTxBufPeakSig = 173;
 static const quint16 gpsMonHWSig = 179;
 static const quint16 gpsVersionSig = 181;
+static const quint16 gpsFixSig = 191;
 // not implemented from here on yet
 static const quint16 dacSetEepromSig = 109;
 static const quint16 dacRequestEepromSig = 113;

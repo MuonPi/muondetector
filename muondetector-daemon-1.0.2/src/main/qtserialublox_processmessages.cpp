@@ -24,21 +24,25 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 			emit toConsole("received UBX-ACK message but data is corrupted\n");
 			break;
 		}
-		if (verbose > 3) {
-			tempStream << "received UBX-ACK message about msgID: 0x"
-				<< std::setfill('0') << std::setw(2) << std::hex << (int)msg.data[0] << " 0x"
+		if (!msgWaitingForAck) {
+			if (verbose > 2) {
+				tempStream << "received Ack message but no message is waiting for Ack (msgID: 0x";
+				tempStream << std::setfill('0') << std::setw(2) << std::hex << (int)msg.data[0] << " 0x"
+				<< std::setfill('0') << std::setw(2) << std::hex << (int)msg.data[1] << ")\n";
+				emit toConsole(QString::fromStdString(tempStream.str()));
+			}
+			break;
+		}
+		if (verbose > 2) {
+			if (messageID==1) tempStream << "received UBX-ACK-ACK message about msgID: 0x";
+			else tempStream << "received UBX-ACK-NACK message about msgID: 0x";
+			tempStream << std::setfill('0') << std::setw(2) << std::hex << (int)msg.data[0] << " 0x"
 				<< std::setfill('0') << std::setw(2) << std::hex << (int)msg.data[1] << "\n";
 			emit toConsole(QString::fromStdString(tempStream.str()));
 		}
 		ackedMsgID = (uint16_t)(msg.data[0]) << 8 | msg.data[1];
-		if (!msgWaitingForAck) {
-			if (verbose > 1) {
-				emit toConsole("received Ack message but no message is waiting for Ack\n");
-			}
-			break;
-		}
 		if (ackedMsgID != msgWaitingForAck->msgID) {
-			if (verbose > 1) {
+			if (verbose > 2) {
 				emit toConsole("received unexpected Ack message\n");
 			}
 			break;
@@ -62,6 +66,14 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 		break;
 	case 0x01: // UBX-NAV
 		switch (messageID) {
+		case 0x03:
+			if (verbose > 3) {
+				tempStream << "received UBX-NAV-STATUS message (0x" << std::hex << std::setfill('0') << std::setw(2)
+					<< (int)classID << " 0x" << std::hex << (int)messageID << ")\n";
+				emit toConsole(QString::fromStdString(tempStream.str()));
+			}
+			UBXNavStatus(msg.data);
+			break;
 		case 0x20:
 			if (verbose > 3) {
 				tempStream << "received UBX-NAV-TIMEGPS message (0x" << std::hex << std::setfill('0') << std::setw(2)
@@ -891,7 +903,7 @@ void QtSerialUblox::UBXCfgGNSS(const string &msg)
 
 	int N = (msg.size() - 4) / 8;
 
-	if (verbose>2)
+	if (verbose>1)
 	{
 		std::stringstream tempStream;
 		tempStream << "*** UBX CFG-GNSS message:" << endl;
@@ -911,7 +923,7 @@ void QtSerialUblox::UBXCfgGNSS(const string &msg)
 		flags |= (int)msg[9 + 8 * i] << 8;
 		flags |= (int)msg[10 + 8 * i] << 16;
 		flags |= (int)msg[11 + 8 * i] << 24;
-		if (verbose>2)
+		if (verbose>1)
 		{
 			std::stringstream tempStream;
 			tempStream << "   " << i << ":   GNSS name : "
@@ -944,8 +956,7 @@ void QtSerialUblox::UBXCfgNav5(const string &msg)
 	fixedAltVar |= (int)msg[11] << 24;
 	int8_t minElev = msg[12];
 
-
-	if (verbose>2)
+	if (verbose>1)
 	{
 		std::stringstream tempStream;
 		tempStream << "*** UBX CFG-NAV5 message:" << endl;
@@ -955,6 +966,46 @@ void QtSerialUblox::UBXCfgNav5(const string &msg)
 		tempStream << " fixed Alt          : " << (double)fixedAlt*0.01 << " m" << endl;
 		tempStream << " fixed Alt Var      : " << (double)fixedAltVar*0.0001 << " m^2" << endl;
 		tempStream << " min elevation      : " << dec << (int)minElev << " deg\n";
+		emit toConsole(QString::fromStdString(tempStream.str()));
+	}
+}
+
+
+void QtSerialUblox::UBXNavStatus(const string &msg)
+{
+	// UBX-NAV_STATUS: RX status information
+	// parse all fields
+	uint32_t iTOW = (int)msg[0];
+	iTOW += ((int)msg[1]) << 8;
+	iTOW += ((int)msg[2]) << 16;
+	iTOW += ((int)msg[3]) << 24;
+
+	uint8_t gpsFix = msg[4];
+	uint8_t flags = msg[5];
+	uint8_t fixStat = msg[6];
+	uint8_t flags2 = msg[7];
+	uint32_t ttff = msg[8];
+	ttff |= (int)msg[9] << 8;
+	ttff |= (int)msg[10] << 16;
+	ttff |= (int)msg[11] << 24;
+	uint32_t msss = msg[12];
+	msss |= (int)msg[13] << 8;
+	msss |= (int)msg[14] << 16;
+	msss |= (int)msg[15] << 24;
+
+	emit gpsPropertyUpdatedUint8(gpsFix, fix.updateAge(), 'f');
+	fix = gpsFix;
+
+	if (verbose>1)
+	{
+		std::stringstream tempStream;
+		tempStream << "*** UBX NAV-STATUS message:" << endl;
+		tempStream << " iTOW             : " << dec << iTOW / 1000 << " s" << endl;
+		tempStream << " gpsFix           : " << dec << (int)gpsFix << endl;
+		tempStream << " time to first fix: " << dec << (float)ttff/1000. << " s" << endl;
+		tempStream << " uptime           : " << dec << (float)msss/1000. << " s" << endl;
+		tempStream << " flags            : " << hex << "0x"<<(int)flags << endl;
+		tempStream << " flags2           : " << hex << "0x"<<(int)flags2 << endl;
 		emit toConsole(QString::fromStdString(tempStream.str()));
 	}
 }

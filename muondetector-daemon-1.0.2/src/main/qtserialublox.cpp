@@ -70,18 +70,18 @@ void QtSerialUblox::sendQueuedMsg(bool afterTimeout) {
 			ackTimer->stop();
 			delete msgWaitingForAck;
 			msgWaitingForAck = 0;
-			if (verbose > 2) emit toConsole("sendQueuedMsg: deleted message after 5 timeouts\n");
+			if (verbose > 1) emit toConsole("sendQueuedMsg: deleted message after 5 timeouts\n");
 			sendQueuedMsg();
 			return;
 		}
 		ackTimer->start(timeout);
 		sendUBX(*msgWaitingForAck);
-		if (verbose > 2) emit toConsole("sendQueuedMsg: repeated resend after timeout\n");
+		if (verbose > 1) emit toConsole("sendQueuedMsg: repeated resend after timeout\n");
 		return;
 	}
 	if (outMsgBuffer.empty()) { return; }
 	if (msgWaitingForAck) {
-		if (verbose > 2) {
+		if (verbose > 1) {
 			emit toConsole("tried to send queued message but ack for previous message not yet received\n");
 		}
 		return;
@@ -483,7 +483,8 @@ void QtSerialUblox::pollMsg(uint16_t msgID) {
 		// for most messages the poll msg is just the message without payload
 		msg.msgID = msgID;
 		msg.data = "";
-/*		outMsgBuffer.push(msg);
+/*
+		outMsgBuffer.push(msg);
 		if (!msgWaitingForAck) {
 			sendQueuedMsg();
 		}

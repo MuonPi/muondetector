@@ -8,7 +8,7 @@
 #include <QTimer>
 #include <QDir>
 #include <QCryptographicHash>
-#include <crypto++/aes.h>
+//#include <crypto++/aes.h>
 
 FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, quint32 fileSizeMB, QObject *parent)
     : QObject(parent)

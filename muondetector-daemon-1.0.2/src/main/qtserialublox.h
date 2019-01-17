@@ -54,8 +54,17 @@ public slots:
     void onRequestGpsProperties();
 	void pollMsgRate(uint16_t msgID);
 	void pollMsg(uint16_t msgID);
-	void sendMsg(uint16_t msgID, const std::string& payload, uint16_t nrBytes)
-	{ sendUBX(msgID, payload, nrBytes); }
+	void enqueueMsg(uint16_t msgID, const std::string& payload)
+	{ 
+		//sendUBX(msgID, payload, nrBytes);
+		UbxMessage newMessage;
+		newMessage.msgID = msgID;
+		newMessage.data = payload;
+		outMsgBuffer.push(newMessage);
+		if (!msgWaitingForAck) {
+			sendQueuedMsg();
+		}
+	}
 	// for polling the port configuration for specific port set rate to port ID
 	void handleError(QSerialPort::SerialPortError serialPortError);
 	void UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate);
@@ -95,6 +104,7 @@ private:
 	void UBXNavClock(const std::string& msg);
 	void UBXNavTimeGPS(const std::string& msg);
 	void UBXNavTimeUTC(const std::string& msg);
+	void UBXNavStatus(const std::string &msg);
 	void UBXMonHW(const std::string& msg);
 	void UBXMonTx(const std::string& msg);
 	void UBXMonVer(const std::string& msg);
@@ -121,6 +131,7 @@ private:
 	gpsProperty<int> leapSeconds;
 	gpsProperty<double> noise;
 	gpsProperty<double> agc;
+	gpsProperty<uint8_t> fix;
 	gpsProperty<uint8_t> nrSats;
 	gpsProperty<uint8_t> TPQuantErr;
 	gpsProperty<uint8_t> txBufUsage;

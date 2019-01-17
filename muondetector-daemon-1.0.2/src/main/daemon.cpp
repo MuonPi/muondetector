@@ -497,7 +497,7 @@ void Daemon::connectToGps() {
 	connect(this, &Daemon::UBXSetCfgRate, qtGps, &QtSerialUblox::UBXSetCfgRate);
 	connect(this, &Daemon::sendPollUbxMsgRate, qtGps, &QtSerialUblox::pollMsgRate);
 	connect(this, &Daemon::sendPollUbxMsg, qtGps, &QtSerialUblox::pollMsg);
-	connect(this, &Daemon::sendUbxMsg, qtGps, &QtSerialUblox::sendMsg);
+	connect(this, &Daemon::sendUbxMsg, qtGps, &QtSerialUblox::enqueueMsg);
 	connect(qtGps, &QtSerialUblox::UBXReceivedAckNak, this, &Daemon::UBXReceivedAckNak);
 	connect(qtGps, &QtSerialUblox::UBXreceivedMsgRateCfg, this, &Daemon::UBXReceivedMsgRateCfg);
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, &Daemon::sendUbxGeodeticPos);
@@ -553,14 +553,17 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 //	connect(tcpConnection, &TcpConnection::madeConnection, this, [this](QString, quint16, QString , quint16) { emit sendPollUbxMsg(MSG_MON_VER); });
 	thread->start();
 //	madeConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort);
-//	const char buf[12]= { 0,0,22,1,6,1,4,0,1,0,0,1 };
-	const char buf[20]= { 0,0,22,2, 5,0,1,0,0,0,0,0, 6,1,4,0,1,0,0,1 };
-	string str(buf,20);
+	const char buf[12]= { 0,0,0xff,1,6,8,0xff,0,1,0,0,0 }; //Glonass on
+//	const char buf[12]= { 0,0,0xff,1,0,10,0xff,0,0,0,0,0 }; // GPS on/off
+//	const char buf[12]= { 0,0,0xff,1,1,1,4,0,1,0,0,0 }; // SBAS on/off
+//	const char buf[12]= { 0,0,0xff,1,5,1,4,0,1,0,0,0 }; // QZSS
+//	const char buf[20]= { 0,0,0xff,2, 5,0,1,0,0,0,0,0, 6,1,4,0,1,0,0,1 };
+	string str(buf,12);
 	/*
 	for (int i=0; i<12; i++) cout<<"0x"<<hex<<(unsigned int)str[i]<<" ";
 	cout<<endl;
 	*/
-	//emit sendUbxMsg(MSG_CFG_GNSS, str, str.size());
+	//emit sendUbxMsg(MSG_CFG_GNSS, str);
 	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_CFG_GNSS);
 	emit sendPollUbxMsg(MSG_CFG_NAV5);
@@ -1109,6 +1112,16 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "TX buf peak usage: " << (int)data << " %" << endl;
 		tcpMessage = new TcpMessage(gpsTxBufPeakSig);
+		*(tcpMessage->dStream) << (quint8)data;
+		emit sendTcpMessage(*tcpMessage);
+		delete tcpMessage;
+		break;
+	case 'f':
+		if (verbose>2)
+			cout << std::chrono::system_clock::now()
+				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
+				<< "Fix value: " << (int)data << endl;
+		tcpMessage = new TcpMessage(gpsFixSig);
 		*(tcpMessage->dStream) << (quint8)data;
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
