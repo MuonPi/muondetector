@@ -8,7 +8,23 @@
 #include <QTimer>
 #include <QDir>
 #include <QCryptographicHash>
-//#include <crypto++/aes.h>
+#include <crypto++/aes.h>
+#include <crypto++/modes.h>
+#include <crypto++/filters.h>
+#include <crypto++/osrng.h>
+#include <crypto++/hex.h>
+#include <crypto++/sha3.h>
+
+using namespace CryptoPP;
+
+static std::string SHA256HashString(std::string aString){
+    std::string digest;
+    CryptoPP::SHA256 hash;
+
+    CryptoPP::StringSource foo(aString, true,
+    new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(digest)));
+    return digest;
+}
 
 FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, quint32 fileSizeMB, QObject *parent)
     : QObject(parent)
@@ -258,6 +274,54 @@ void FileHandler::onUploadRemind(){
 }
 
 bool FileHandler::saveLoginData(QString username, QString password){
+    AutoSeededRandomPool rnd;
+    // Generate a random key
+    // SecByteBlock key(0x00, AES::DEFAULT_KEYLENGTH);
+    // rnd.GenerateBlock( key, key.size() );
+    //std::string keyBytes = SHA256HashString(getMacAddress().toStdString());
+    //byte *keyByteArray = (byte *)(keyBytes.c_str());
+    //size_t keyLen = std::strlen((char*)keyByteArray)+1;
+    //qDebug() << "KeyLength: " << keyLen;
+
+    std::string plainText = QString(username+";"+password).toStdString();
+    std::string keyText;
+    std::string encrypted;
+    std::string recovered;
+
+    // Generate a random IV
+    SecByteBlock iv(AES::BLOCKSIZE);
+    rnd.GenerateBlock(iv, iv.size());
+
+    keyText = SHA256HashString(getMacAddress().toStdString());
+    qDebug() << "key length = " << keyText.size();
+    qDebug() << "macAddressHashed = " << QByteArray::fromStdString(keyText).toHex();
+    qDebug() << "plainText = " << QString::fromStdString(plainText);
+    SecByteBlock key((const byte*)keyText.data(),keyText.size());
+
+    //////////////////////////////////////////////////////////////////////////
+    // Encrypt
+
+    CFB_Mode<AES>::Encryption cfbEncryption;
+    cfbEncryption.SetKeyWithIV(key, key.size(), iv, iv.size());
+    //cfbEncryption.ProcessData(cypheredText, plainText, messageLen);
+
+    StringSource encryptor(plainText, true,
+                           new StreamTransformationFilter(cfbEncryption,
+                                                          new StringSink(encrypted)));
+
+    //////////////////////////////////////////////////////////////////////////
+    // Decrypt
+    qDebug() << "encrypted = " << QString::fromStdString(encrypted);
+    CFB_Mode<AES>::Decryption cfbDecryption;
+    cfbDecryption.SetKeyWithIV(key, key.size(), iv, iv.size());
+    //cfbDecryption.ProcessData(plainText, cypheredText, messageLen);
+
+    StringSource decryptor(encrypted, true,
+                           new StreamTransformationFilter(cfbDecryption,
+                                                          new StringSink(recovered)));
+
+    qDebug() << "recovered = " << QString::fromStdString(recovered);
+
     return true;
 }
 bool FileHandler::readLoginData(){
