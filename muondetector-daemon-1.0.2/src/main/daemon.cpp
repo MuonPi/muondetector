@@ -47,6 +47,20 @@ QDataStream& operator << (QDataStream& out, const CalibStruct& calib)
     return out;
 }
 
+QDataStream & operator >> (QDataStream& in, CalibStruct& calib)
+{
+	QString s1,s2,s3;
+	quint16 u;
+	in >> s1 >> s2;
+	in >> u;
+	in >> s3;
+	calib.name = s1.toStdString();
+	calib.type = s2.toStdString();
+	calib.address = (uint16_t)u;
+	calib.value = s3.toStdString();
+	return in;
+}
+
 QDataStream& operator << (QDataStream& out, const GnssSatellite& sat)
 {
 	out << sat.fGnssId << sat.fSatId << sat.fCnr << sat.fElev << sat.fAzim
@@ -673,6 +687,17 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
     if (msgID == calibRequestSig){
         sendCalib();
     }
+    if (msgID == calibSetSig){
+        std::vector<CalibStruct> calibs;
+        quint8 nrEntries=0;
+        *(tcpMessage.dStream) >> nrEntries;
+        for (int i=0; i<nrEntries; i++) {
+			CalibStruct item;
+			*(tcpMessage.dStream) >> item;
+			calibs.push_back(item);
+		}
+		receivedCalibItems(calibs);
+    }
     if (msgID == quitConnectionSig){
         QString closeAddress;
         *(tcpMessage.dStream) >> closeAddress;
@@ -724,6 +749,12 @@ void Daemon::sendCalib() {
 		*(tcpMessage.dStream) << calib->getCalibItem(i);
 	}
 	emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::receivedCalibItems(const std::vector<CalibStruct>& newCalibs) {
+    for (int i=0; i<newCalibs.size(); i++) {
+		calib->setCalibItem(newCalibs[i].name, newCalibs[i]);
+	}
 }
 
 
@@ -992,6 +1023,7 @@ void Daemon::configGps() {
 	emit UBXSetCfgMsgRate(MSG_TIM_TP, 1, 0);	// TIM-TP
 	emit UBXSetCfgMsgRate(MSG_NAV_TIMEUTC, 1, 20);	// NAV-TIMEUTC
 	emit UBXSetCfgMsgRate(MSG_MON_HW, 1, 47);	// MON-HW
+	emit UBXSetCfgMsgRate(MSG_NAV_POSLLH, 1, 53);	// MON-HW
 	//emit UBXSetCfgMsgRate(MSG_NAV_SAT, 1, 59);	// NAV-SAT (don't know why it does not work,
 	// probably also configured with UBX-CFG-INFO...
 	emit UBXSetCfgMsgRate(MSG_NAV_TIMEGPS, 1, 61);	// NAV-TIMEGPS

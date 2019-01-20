@@ -105,6 +105,7 @@ private:
     void sendI2cStats();
     void sendCalib();
     bool readEeprom();
+    void receivedCalibItems(const std::vector<CalibStruct>& newCalibs);
     
     void printTimestamp();
     void delay(int millisecondsWait);
