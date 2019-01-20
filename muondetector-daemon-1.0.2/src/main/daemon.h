@@ -63,7 +63,7 @@ public slots:
     void pollAllUbxMsgRate();
     void sendGpioPinEvent(uint8_t gpio_pin);
     void sendUbxGeodeticPos(GeodeticPos pos);
-    void UBXReceivedVersion(const QString& swString, const QString& hwString);
+    void UBXReceivedVersion(const QString& swString, const QString& hwString, const QString& protString);
     void sampleAdc0Event();
     void sampleAdcEvent(uint8_t channel);
 	void getTemperature();
@@ -83,6 +83,7 @@ signals:
 	void UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate);
 	void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
 	void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
+	void UBXSetDynModel(uint8_t model);
 
 private:
 	void incomingConnection(qintptr socketDescriptor) override;

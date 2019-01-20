@@ -1,9 +1,11 @@
 #include <sstream>
 #include <iomanip>
+#include <cctype>
 #include <QThread>
 #include <qtserialublox.h>
 #include <unixtime_from_gps.h>
 #include <custom_io_operators.h>
+#include <ublox_messages.h>
 
 using namespace std;
 
@@ -132,7 +134,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 			break;
         case 0x02:
             if (verbose > 3) {
-                tempStream << "received unhandled UBX-NAV-POSLLH message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+                tempStream << "received UBX-NAV-POSLLH message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
                     << " 0x" << std::hex << (int)messageID << ")\n";
                 emit toConsole(QString::fromStdString(tempStream.str()));
             }
@@ -186,7 +188,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 			break;
 		default:
 			if (verbose > 1) {
-				tempStream << "received UBX-CFG message:";
+				tempStream << "received unhandled UBX-CFG message:";
 				for (std::string::size_type i = 0; i < msg.data.size(); i++) {
 					tempStream << " 0x" << std::setfill('0') << std::setw(2) << std::hex << (int)msg.data[i];
 				}
@@ -246,6 +248,14 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 				emit toConsole(QString::fromStdString(tempStream.str()));
 			}
 			UBXMonHW(msg.data);
+			break;
+		case 0x0b:
+			if (verbose > 3) {
+				tempStream << "received UBX-MON-HW2 message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+					<< " 0x" << std::hex << (int)messageID << ")\n";
+				emit toConsole(QString::fromStdString(tempStream.str()));
+			}
+			UBXMonHW2(msg.data);
 			break;
 		case 0x04:
 			if (verbose > 3) {
@@ -310,129 +320,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 		break;
 	}
 }
-/*
-bool QtSerialUblox::UBXNavClock(uint32_t& itow, int32_t& bias, int32_t& drift,
-	uint32_t& tAccuracy, uint32_t& fAccuracy)
-{
-	// why tAccuracy?
-	tAccuracy = 0;
-	std::string answer;
-	// UBX-NAV-CLOCK: clock solution
-	//bool ok = pollUBX(MSG_NAV_CLOCK, answer, MSGTIMEOUT);
-	//if (!ok) return ok;
-	//return true;
-	// parse all fields
-	// GPS time of week
-	uint32_t iTOW = (int)answer[0];
-	iTOW += ((int)answer[1]) << 8;
-	iTOW += ((int)answer[2]) << 16;
-	iTOW += ((int)answer[3]) << 24;
-	itow = iTOW / 1000;
-	// clock bias
-	if (verbose > 3) {
-		std::stringstream tempStream;
-		//std::string temp;
-		tempStream << "clkB[0]=" << std::hex << (int)answer[4] << endl;
-		tempStream << "clkB[1]=" << std::hex << (int)answer[5] << endl;
-		tempStream << "clkB[2]=" << std::hex << (int)answer[6] << endl;
-		tempStream << "clkB[3]=" << std::hex << (int)answer[7] << endl;
-		//tempStream >> temp;
-		emit toConsole(QString::fromStdString(tempStream.str()));
-	}
-	int32_t clkB = (int)answer[4];
-	clkB += ((int)answer[5]) << 8;
-	clkB += ((int)answer[6]) << 16;
-	clkB += ((int)answer[7]) << 24;
-	bias = clkB;
-	// clock drift
-	int32_t clkD = (int)answer[8];
-	clkD += ((int)answer[9]) << 8;
-	clkD += ((int)answer[10]) << 16;
-	clkD += ((int)answer[11]) << 24;
-	drift = clkD;
-	// time accuracy estimate
-	uint32_t tAcc = (int)answer[12];
-	tAcc += ((int)answer[13]) << 8;
-	tAcc += ((int)answer[14]) << 16;
-	tAcc += ((int)answer[15]) << 24;
-	//  tAccuracy=tAcc;
-	  // freq accuracy estimate
-	uint32_t fAcc = (int)answer[16];
-	fAcc += ((int)answer[17]) << 8;
-	fAcc += ((int)answer[18]) << 16;
-	fAcc += ((int)answer[19]) << 24;
-	fAccuracy = fAcc;
-	if (verbose > 1) {
-		std::stringstream tempStream;
-		//std::string temp;
-		tempStream << "*** UBX-NAV-CLOCK message:" << endl;
-		tempStream << " iTOW          : " << dec << iTOW / 1000 << " s" << endl;
-		tempStream << " clock bias    : " << dec << clkB << " ns" << endl;
-		tempStream << " clock drift   : " << dec << clkD << " ns/s" << endl;
-		tempStream << " time accuracy : " << dec << tAcc << " ns" << endl;
-		tempStream << " freq accuracy : " << dec << fAcc << " ps/s\n" << endl;
-		//tempStream >> temp;
-		emit toConsole(QString::fromStdString(tempStream.str()));
-	}
-	return true;
-}
-*/
 
-/*
-bool QtSerialUblox::UBXTimTP(uint32_t& itow, int32_t& quantErr, uint16_t& weekNr)
-{
-	std::string answer;
-	// UBX-TIM-TP: time pulse timedata
-	//bool ok = pollUBX(MSG_TIM_TP, answer, MSGTIMEOUT);
-	//if (!ok) return ok;
-	// parse all fields
-	// TP time of week, ms
-	uint32_t towMS = (int)answer[0];
-	towMS += ((int)answer[1]) << 8;
-	towMS += ((int)answer[2]) << 16;
-	towMS += ((int)answer[3]) << 24;
-	// TP time of week, sub ms
-	uint32_t towSubMS = (int)answer[4];
-	towSubMS += ((int)answer[5]) << 8;
-	towSubMS += ((int)answer[6]) << 16;
-	towSubMS += ((int)answer[7]) << 24;
-	itow = towMS / 1000;
-	// quantization error
-	int32_t qErr = (int)answer[8];
-	qErr += ((int)answer[9]) << 8;
-	qErr += ((int)answer[10]) << 16;
-	qErr += ((int)answer[11]) << 24;
-	quantErr = qErr;
-	// week number
-	uint16_t week = (int)answer[12];
-	week += ((int)answer[13]) << 8;
-	weekNr = week;
-	// flags
-	uint8_t flags = answer[14];
-	// ref info
-	uint8_t refInfo = answer[15];
-
-	double sr = towMS / 1000.;
-	sr = sr - towMS / 1000;
-
-	if (verbose > 1) {
-		std::stringstream tempStream;
-		tempStream << "*** UBX-TIM-TP message:" << endl;
-		tempStream << " tow s            : " << dec << towMS / 1000. << " s" << endl;
-		tempStream << " tow sub s        : " << dec << towSubMS << " = " << (long int)(sr*1e9 + towSubMS + 0.5) << " ns" << endl;
-		tempStream << " quantization err : " << dec << qErr << " ps" << endl;
-		tempStream << " week nr          : " << dec << week << endl;
-		tempStream << " flags            : ";
-		for (int i = 7; i >= 0; i--) if (flags & 1 << i) tempStream << i; else tempStream << "-";
-		tempStream << endl;
-		tempStream << " refInfo          : ";
-		for (int i = 7; i >= 0; i--) if (refInfo & 1 << i) tempStream << i; else tempStream << "-";
-		tempStream << "\n";
-		emit toConsole(QString::fromStdString(tempStream.str()));
-	}
-	return true;
-}
-*/
 
 bool QtSerialUblox::UBXTimTP(const std::string& msg)
 {
@@ -697,7 +585,7 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 	//mutex.lock();
 	emit gpsPropertyUpdatedUint32(count, eventCounter.updateAge(), 'c');
 	eventCounter = count;
-	fTimestamps.push(ts);
+	//fTimestamps.push(ts);
 	//mutex.unlock();
 
 	return true;
@@ -955,6 +843,9 @@ void QtSerialUblox::UBXCfgNav5(const string &msg)
 	fixedAltVar |= (int)msg[10] << 16;
 	fixedAltVar |= (int)msg[11] << 24;
 	int8_t minElev = msg[12];
+	uint8_t cnoThreshNumSVs = msg[24];
+	uint8_t cnoThresh = msg[25];
+	
 
 	if (verbose>1)
 	{
@@ -966,10 +857,29 @@ void QtSerialUblox::UBXCfgNav5(const string &msg)
 		tempStream << " fixed Alt          : " << (double)fixedAlt*0.01 << " m" << endl;
 		tempStream << " fixed Alt Var      : " << (double)fixedAltVar*0.0001 << " m^2" << endl;
 		tempStream << " min elevation      : " << dec << (int)minElev << " deg\n";
+		tempStream << " cnoThresh required for fix : " << dec << (int)cnoThresh << " dBHz\n";
+		tempStream << " min nr of SVs having cnoThresh for fix : " << dec << (int)cnoThreshNumSVs<<endl;
 		emit toConsole(QString::fromStdString(tempStream.str()));
 	}
 }
 
+void QtSerialUblox::setDynamicModel(uint8_t model){
+	// strings for CFG-GNSS
+//	const char buf[12]= { 0,0,0xff,1,6,8,0xff,0,1,0,0,0 }; //Glonass on
+//	const char buf[12]= { 0,0,0xff,1,0,10,0xff,0,0,0,0,0 }; // GPS on/off
+//	const char buf[12]= { 0,0,0xff,1,1,1,4,0,1,0,0,0 }; // SBAS on/off
+//	const char buf[12]= { 0,0,0xff,1,5,1,4,0,1,0,0,0 }; // QZSS
+//	const char buf[20]= { 0,0,0xff,2, 5,0,1,0,0,0,0,0, 6,1,4,0,1,0,0,1 };
+//	string str(buf,12);
+
+// strings for CFG-NAV5
+	char buf[36];
+	buf[0]=0x01;
+	buf[1]=0x00;
+	buf[2]=model; // dyn Model
+	string str(buf,36);
+	enqueueMsg(MSG_CFG_NAV5, str);
+}
 
 void QtSerialUblox::UBXNavStatus(const string &msg)
 {
@@ -1048,6 +958,7 @@ GeodeticPos QtSerialUblox::UBXNavPosLLH(const string &msg){
     hAcc += ((unsigned int)msg[22]) << 16;
     hAcc += ((unsigned int)msg[23]) << 24;
     pos.hAcc = hAcc;
+    // vertical accuracy estimate
     uint32_t vAcc = (unsigned int)msg[24];
     vAcc += ((unsigned int)msg[25]) << 8;
     vAcc += ((unsigned int)msg[26]) << 16;
@@ -1348,6 +1259,40 @@ void QtSerialUblox::UBXMonHW(const std::string& msg)
 	emit gpsMonHW(noisePerMS, agcCnt, antStatus, antPower, jamInd, flags);
 }
 
+void QtSerialUblox::UBXMonHW2(const std::string& msg)
+{
+	// parse all fields
+	// I/Q offset and magnitude information of front-end
+	int8_t ofsI = (int8_t)msg[0];
+	uint8_t magI = msg[1];
+	int8_t ofsQ = (int8_t)msg[2];
+	uint8_t magQ = msg[3];
+
+	uint8_t cfgSrc = msg[4];
+	uint32_t lowLevCfg = msg[8];
+	lowLevCfg |= msg[9]<<8;
+	lowLevCfg |= msg[10]<<16;
+	lowLevCfg |= msg[11]<<24;
+
+	uint32_t postStatus = msg[20];
+	postStatus |= msg[21]<<8;
+	postStatus |= msg[22]<<16;
+	postStatus |= msg[23]<<24;
+
+	if (verbose > 1) {
+		std::stringstream tempStream;
+		tempStream << "*** UBX-MON-HW2 message:" << endl;
+		tempStream << " I offset         : " << dec << (int)ofsI << endl;
+		tempStream << " I magnitude      : " << dec << (int)magI << endl;
+		tempStream << " Q offset         : " << dec << (int)ofsQ << endl;
+		tempStream << " Q magnitude      : " << dec << (int)magQ << endl;
+		tempStream << " config source    : " << hex << cfgSrc << endl;
+		tempStream << " POST status word : " << hex << postStatus << dec << endl;
+		emit toConsole(QString::fromStdString(tempStream.str()));
+	}
+//	emit gpsMonHW(noisePerMS, agcCnt, antStatus, antPower, jamInd, flags);
+}
+
 void QtSerialUblox::UBXMonVer(const std::string& msg)
 {
 	// parse all fields
@@ -1378,14 +1323,25 @@ void QtSerialUblox::UBXMonVer(const std::string& msg)
 		}
 		if (s.size()) {
 			result.push_back(s);
+			size_t n = s.find("PROTVER",0);
+			if (n!=std::string::npos) {
+				std::string str = s.substr(7,s.size()-7);
+				while (str.size() && str[0]==' ') str.erase(0,1);
+				while (str.size() && (str[str.size()-1]==' ' || !std::isgraph(static_cast<unsigned char>(str[str.size()-1])) )) str.erase(str.size()-1,1);
+				fProtVersionString = str;
+				if (verbose > 3) 
+					emit toConsole("catched PROTVER string: '"+QString::fromStdString(fProtVersionString)+"'\n");
+				float nr=QtSerialUblox::getProtVersion();
+				if (verbose > 3) emit toConsole("ver: "+QString::number(nr)+"\n");
+			}
 			if (verbose > 2) {
 				emit toConsole(QString::fromStdString(s)+"\n");
 			}
 		}
 		i = msg.find((char)0x00, i + 1);
 	}
-
-	emit gpsVersion(QString::fromStdString(swString), QString::fromStdString(hwString));
+//	return result;
+	emit gpsVersion(QString::fromStdString(swString), QString::fromStdString(hwString), QString::fromStdString(fProtVersionString));
 }
 
 

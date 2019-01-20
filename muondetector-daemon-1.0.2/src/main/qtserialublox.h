@@ -7,6 +7,7 @@
 #include <QSerialPort>
 #include <QObject>
 #include <QTimer>
+#include <QLocale>
 #include <geodeticpos.h>
 
 
@@ -44,7 +45,7 @@ signals:
 		std::chrono::duration<double> updateAge);
     void gpsPropertyUpdatedGeodeticPos(GeodeticPos pos);
     void timTM2(QString timTM2String);
-    void gpsVersion(const QString& swVersion, const QString& hwVersion);
+    void gpsVersion(const QString& swVersion, const QString& hwVersion, const QString& protVersion);
     void gpsMonHW(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags);
 
 public slots:
@@ -73,7 +74,19 @@ public slots:
 	void ackTimeout();
 	// outPortMask is something like 1 for only UBX protocol or 0b11 for UBX and NMEA
 
-
+	void setDynamicModel(uint8_t model);
+	static const std::string& getProtVersionString() { return fProtVersionString; }
+	static float getProtVersion() { 
+		//QLocale::setDefault(QLocale(QLocale::English, QLocale::UnitedStates));
+		/*QLocale english(QLocale(QLocale::English, QLocale::UnitedStates));
+		return english.toFloat(fProtVersionString); */
+		return std::stod(fProtVersionString);
+	}
+	/*
+	float getProtVersion();
+	int getProtVersionMajor();
+	int getProtVersionMinor();
+	*/
 private:
 	// all functions for sending and receiving raw data used by other functions in "public slots" section
 	// and scanning raw data up to the point where "UbxMessage" object is generated
@@ -106,6 +119,7 @@ private:
 	void UBXNavTimeUTC(const std::string& msg);
 	void UBXNavStatus(const std::string &msg);
 	void UBXMonHW(const std::string& msg);
+	void UBXMonHW2(const std::string& msg);
 	void UBXMonTx(const std::string& msg);
 	void UBXMonVer(const std::string& msg);
 
@@ -145,6 +159,7 @@ private:
 	const int	MSGTIMEOUT = 1500;
 	std::queue<gpsTimestamp> fTimestamps;
 	//std::list<UbxMessage> fMessageBuffer;
+	static std::string fProtVersionString;
 };
 
 #endif // QTSERIALUBLOX_H
