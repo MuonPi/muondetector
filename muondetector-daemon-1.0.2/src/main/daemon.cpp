@@ -507,6 +507,7 @@ void Daemon::connectToGps() {
     connect(qtGps, &QtSerialUblox::gpsMonHW, this, &Daemon::gpsMonHWUpdated);
     connect(qtGps, &QtSerialUblox::gpsVersion, this, &Daemon::UBXReceivedVersion);
 	connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Daemon::toConsole);
+	connect(this, &Daemon::UBXSetDynModel, qtGps, &QtSerialUblox::setDynamicModel);
     if (fileHandler != nullptr){
         connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
     }
@@ -553,17 +554,8 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 //	connect(tcpConnection, &TcpConnection::madeConnection, this, [this](QString, quint16, QString , quint16) { emit sendPollUbxMsg(MSG_MON_VER); });
 	thread->start();
 //	madeConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort);
-	const char buf[12]= { 0,0,0xff,1,6,8,0xff,0,1,0,0,0 }; //Glonass on
-//	const char buf[12]= { 0,0,0xff,1,0,10,0xff,0,0,0,0,0 }; // GPS on/off
-//	const char buf[12]= { 0,0,0xff,1,1,1,4,0,1,0,0,0 }; // SBAS on/off
-//	const char buf[12]= { 0,0,0xff,1,5,1,4,0,1,0,0,0 }; // QZSS
-//	const char buf[20]= { 0,0,0xff,2, 5,0,1,0,0,0,0,0, 6,1,4,0,1,0,0,1 };
-	string str(buf,12);
-	/*
-	for (int i=0; i<12; i++) cout<<"0x"<<hex<<(unsigned int)str[i]<<" ";
-	cout<<endl;
-	*/
-	//emit sendUbxMsg(MSG_CFG_GNSS, str);
+	
+	
 	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_CFG_GNSS);
 	emit sendPollUbxMsg(MSG_CFG_NAV5);
@@ -932,6 +924,9 @@ void Daemon::configGps() {
 	// set up ubx as only outPortProtocol
 	//emit UBXSetCfgPrt(1,1); // enables on UART port (1) only the UBX protocol
 	emit UBXSetCfgPrt(1, PROTO_UBX);
+	// set dynamic model: Stationary
+	emit UBXSetDynModel(2);
+
 	// deactivate all NMEA messages: (port 6 means ALL ports)
 	// not needed because of deactivation of all NMEA messages with "UBXSetCfgPrt"
 //    msgRateCfgs.insert(MSG_NMEA_DTM,0);
@@ -994,7 +989,7 @@ void Daemon::configGps() {
 
 	//emit sendPollUbxMsg(MSG_MON_VER);
 	emit UBXSetCfgMsgRate(MSG_TIM_TM2, 1, 1);	// TIM-TM2
-	emit UBXSetCfgMsgRate(MSG_TIM_TP, 1, 51);	// TIM-TP
+	emit UBXSetCfgMsgRate(MSG_TIM_TP, 1, 0);	// TIM-TP
 	emit UBXSetCfgMsgRate(MSG_NAV_TIMEUTC, 1, 20);	// NAV-TIMEUTC
 	emit UBXSetCfgMsgRate(MSG_MON_HW, 1, 47);	// MON-HW
 	//emit UBXSetCfgMsgRate(MSG_NAV_SAT, 1, 59);	// NAV-SAT (don't know why it does not work,
@@ -1003,9 +998,9 @@ void Daemon::configGps() {
 	emit UBXSetCfgMsgRate(MSG_NAV_SOL, 1, 67);	// NAV-SOL
 	emit UBXSetCfgMsgRate(MSG_NAV_STATUS, 1, 71);	// NAV-STATUS
 	emit UBXSetCfgMsgRate(MSG_NAV_CLOCK, 1, 89);	// NAV-CLOCK
-	emit UBXSetCfgMsgRate(MSG_MON_TXBUF, 1, 97);	// MON-TXBUF
-	emit UBXSetCfgMsgRate(MSG_NAV_SBAS, 1, 255);	// NAV-SBAS
-	emit UBXSetCfgMsgRate(MSG_NAV_DOP, 1, 101);	// NAV-DOP
+	emit UBXSetCfgMsgRate(MSG_MON_TXBUF, 1, 63);	// MON-TXBUF
+	emit UBXSetCfgMsgRate(MSG_NAV_SBAS, 1, 0);	// NAV-SBAS
+	emit UBXSetCfgMsgRate(MSG_NAV_DOP, 1, 0);	// NAV-DOP
 	emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 49);	// NAV-SVINFO
 	// this poll is for checking the port cfg (which protocols are enabled etc.)
 	emit sendPollUbxMsg(MSG_CFG_PRT);
@@ -1180,10 +1175,10 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
 }
 
 
-void Daemon::UBXReceivedVersion(const QString& swString, const QString& hwString)
+void Daemon::UBXReceivedVersion(const QString& swString, const QString& hwString, const QString& protString)
 {
     TcpMessage tcpMessage(gpsVersionSig);
-    (*tcpMessage.dStream) << swString << hwString;
+    (*tcpMessage.dStream) << swString << hwString << protString;
     emit sendTcpMessage(tcpMessage);
 }
 

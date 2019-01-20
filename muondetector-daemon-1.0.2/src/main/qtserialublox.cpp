@@ -4,9 +4,13 @@
 #include <iomanip>
 #include <QEventLoop>
 #include <ublox_messages.h>
+
 using namespace std;
 
 #define MAX_SEND_RETRIES 5
+
+string QtSerialUblox::fProtVersionString = "";
+
 
 static std::string toStdString(unsigned char* data, int dataSize) {
 	std::stringstream tempStream;
