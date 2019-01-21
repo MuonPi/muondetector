@@ -31,13 +31,15 @@ const double HMC5883::GAIN[8] = { 0.73, 0.92, 1.22, 1.52, 2.27, 2.56, 3.03, 4.35
 i2cDevice::i2cDevice() {
 	//opening the devicefile from the i2c driversection (open the device i2c)
 	//"/dev/i2c-0" or "../i2c-1" for linux system. In our case 
-	fHandle = open("/dev/i2c-1", O_RDWR);
-	if (fHandle > 0) fNrDevices++;
 	fNrBytesRead = 0;
 	fNrBytesWritten = 0;
 	fAddress = 0;
 	fDebugLevel = DEFAULT_DEBUG_LEVEL;
-	fGlobalDeviceList.push_back(this);
+	fHandle = open("/dev/i2c-1", O_RDWR);
+	if (fHandle > 0) {
+		fNrDevices++;
+		fGlobalDeviceList.push_back(this);
+	} else fMode=MODE_FAILED;
 }
 
 i2cDevice::i2cDevice(const char* busAddress = "/dev/i2c-1") {
@@ -621,9 +623,9 @@ bool MCP4728::setValue(uint8_t channel, uint16_t value, uint8_t gain, bool toEEP
 	if (write(buf, 3) != 3) {
 		// somehow did not write exact same amount of bytes as it should
 		return false;
-		stopTimer();
 	}
 	stopTimer();
+	fLastConvTime = fLastTimeInterval;
 	return true;
 }
 

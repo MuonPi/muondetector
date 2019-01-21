@@ -124,11 +124,18 @@ bool ShowerDetectorCalib::readFromEeprom()
 bool ShowerDetectorCalib::writeToEeprom()
 {
 	if (!fEepromValid) return false;
+	// before we write to eeprom, increase the write cycle counter
+	CalibStruct item = getCalibItem("WRITE_CYCLES");
+	uint32_t cycleCounter;
+	getValueFromString(item.value, cycleCounter);
+	cycleCounter++;
+	setCalibItem("WRITE_CYCLES", cycleCounter);
+	// write content of all calib parameters to buffer before actually writing to the eep		
 	updateBuffer();
 //	if (!isUpdated()) return true;
 	bool success = fEeprom->writeBytes(0, 256, fEepBuffer);
 	if (!success) { cerr<<"error: write to eeprom failed!"<<endl; return false; }
-	if (fVerbose>0) cout<<"eep write took "<<fEeprom->getLastTimeInterval()<<" ms"<<endl;
+	if (fVerbose>1) cout<<"eep write took "<<fEeprom->getLastTimeInterval()<<" ms"<<endl;
 	// reset update flags of all properties since we just wrote them freshly into the EEPROM
 	return true;
 }
