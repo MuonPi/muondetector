@@ -228,6 +228,8 @@ public:
 	bool readChannel(uint8_t channel, DacChannel& channelData);
 	
 	static float code2voltage(const DacChannel& channelData);
+private:
+	unsigned int fLastConvTime;
 };
 
 
