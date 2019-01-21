@@ -687,6 +687,10 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
     if (msgID == calibRequestSig){
         sendCalib();
     }
+    if (msgID == calibWriteEepromSig){
+        if (calib!=nullptr) calib->writeToEeprom();
+        sendCalib();
+    }
     if (msgID == calibSetSig){
         std::vector<CalibStruct> calibs;
         quint8 nrEntries=0;
