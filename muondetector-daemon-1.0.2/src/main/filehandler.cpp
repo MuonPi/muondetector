@@ -73,7 +73,7 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
     uploadReminder->setSingleShot(false);
     connect(uploadReminder, &QTimer::timeout, this, &FileHandler::onUploadRemind);
     fileSize = fileSizeMB;
-    openDataFile();
+    openFiles();
     uploadReminder->start();
 }
 
@@ -86,22 +86,36 @@ bool FileHandler::readFileInformation(){
         return false;
     }
     QTextStream in(&configFile);
-    currentWorkingFilePath = in.readAll();
+    currentWorkingFilePath = in.readLine();
+    currentWorkingLogPath = in.readLine();
     return true;
 }
 
+// SLOTS
+void FileHandler::gpsVersion(const QString& swVersion, const QString& hwVersion, const QString& protVersion){
+
+}
+void FileHandler::gpsMonHW(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags){
+
+}
+
+
 // DATA SAVING
-bool FileHandler::openDataFile(){
-    if (dataFile != nullptr){
+bool FileHandler::openFiles(){
+    if (dataFile != nullptr || logFile != nullptr){
         return false;
     }
-    if (currentWorkingFilePath==""){
+    if (currentWorkingFilePath==""||currentWorkingLogPath==""){
         readFileInformation();
     }
     if (currentWorkingFilePath==""){
-        currentWorkingFilePath=createFileName();
+        QString fileNamePart = createFileName();
+        currentWorkingFilePath = dataFolderPath+"data_"+fileNamePart;
+        currentWorkingLogPath = dataFolderPath+"log_"+fileNamePart;
         while (notUploadedFilesNames.contains(QFileInfo(currentWorkingFilePath).fileName())){
-            currentWorkingFilePath = createFileName();
+            fileNamePart = createFileName();
+            currentWorkingFilePath = dataFolderPath+"data_"+fileNamePart;
+            currentWorkingLogPath = dataFolderPath+"log_"+fileNamePart;
         }
         QFile configFile(configFilePath);
         if (!configFile.open(QIODevice::ReadWrite)){
@@ -110,11 +124,16 @@ bool FileHandler::openDataFile(){
         }
         configFile.resize(0);
         QTextStream out(&configFile);
-        out << currentWorkingFilePath;
+        out << currentWorkingFilePath << endl << currentWorkingLogPath << endl;
     }
     dataFile = new QFile(currentWorkingFilePath);
     if (!dataFile->open(QIODevice::ReadWrite | QIODevice::Append)) {
         qDebug() << "file open failed in 'ReadWrite' mode at location " << currentWorkingFilePath;
+        return false;
+    }
+    logFile = new QFile(currentWorkingLogPath);
+    if (!logFile->open(QIODevice::ReadWrite | QIODevice::Append)) {
+        qDebug() << "file open failed in 'ReadWrite' mode at location " << currentWorkingLogPath;
         return false;
     }
     return true;
@@ -126,6 +145,14 @@ void FileHandler::writeToDataFile(QString data){
     }
     QTextStream out(dataFile);
     out << data;
+}
+
+void FileHandler::writeToLogFile(QString log) {
+    if (logFile == nullptr){
+        return;
+    }
+    QTextStream out(logFile);
+    out << log;
 }
 
 bool FileHandler::uploadDataFile(QString fileName){
@@ -156,7 +183,7 @@ bool FileHandler::uploadRecentDataFiles(){
     readFileInformation();
     for (auto &fileName : notUploadedFilesNames){
         QString filePath = dataFolderPath+fileName;
-        if (filePath!=currentWorkingFilePath){
+        if (filePath!=currentWorkingFilePath&&filePath!=currentWorkingLogPath){
             qDebug() << "attempt to upload " << filePath;
             if (!uploadDataFile(filePath)){
                 return false;
@@ -167,32 +194,42 @@ bool FileHandler::uploadRecentDataFiles(){
     return true;
 }
 
-void FileHandler::closeDataFile(){
+void FileHandler::closeFiles(){
     if (dataFile->isOpen()){
         dataFile->close();
+    }
+    if (logFile->isOpen()){
+        logFile->close();
     }
     if (dataFile != nullptr){
         delete dataFile;
         dataFile = nullptr;
     }
+    if (logFile != nullptr){
+        delete logFile;
+        logFile = nullptr;
+    }
 }
 
-bool FileHandler::switchToNewDataFile(QString fileName){
+bool FileHandler::switchFiles(QString fileName){
     if (dataFile == nullptr){
         return false;
     }
-    if (currentWorkingFilePath==""){
+    if (currentWorkingFilePath==""||currentWorkingLogPath==""){
         if (!readFileInformation()){
             return false;
         }
     }
-    closeDataFile();
-    currentWorkingFilePath = fileName;
-    if (currentWorkingFilePath==""){
-        currentWorkingFilePath = createFileName();
+    closeFiles();
+    currentWorkingFilePath = "data_"+fileName;
+    currentWorkingLogPath = "log_"+fileName;
+    if (currentWorkingFilePath==""||currentWorkingLogPath==""){
+        QString fileNamePart = createFileName();
+        currentWorkingFilePath = dataFolderPath+"data_"+fileNamePart;
+        currentWorkingLogPath = dataFolderPath+"log_"+fileNamePart;
     }
-    if (!openDataFile()){
-        closeDataFile();
+    if (!openFiles()){
+        closeFiles();
         return false;
     }
     QFile configFile(configFilePath);
@@ -259,7 +296,7 @@ QString FileHandler::createFileName(){
     }
     QDateTime dateTime = QDateTime::currentDateTimeUtc();
     QString fileName = (dateTime.toString("yyyy-MM-dd_hh-mm-ss"));
-    fileName = dataFolderPath+fileName+".dat";
+    fileName = fileName+".dat";
     return fileName;
 }
 
@@ -269,9 +306,10 @@ void FileHandler::onUploadRemind(){
     }
     QDateTime todaysRegularUploadTime = QDateTime(QDate::currentDate(),dailyUploadTime,Qt::TimeSpec::UTC);
     if (dataFile->size()>(1024*1024*fileSize)){
-        switchToNewDataFile();
+        switchFiles();
     }
     if (lastUploadDateTime<todaysRegularUploadTime){
+        switchFiles();
         uploadRecentDataFiles();
     }
 }

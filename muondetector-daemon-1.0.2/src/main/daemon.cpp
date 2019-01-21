@@ -756,7 +756,7 @@ void Daemon::sendCalib() {
 }
 
 void Daemon::receivedCalibItems(const std::vector<CalibStruct>& newCalibs) {
-    for (int i=0; i<newCalibs.size(); i++) {
+    for (unsigned int i=0; i<newCalibs.size(); i++) {
 		calib->setCalibItem(newCalibs[i].name, newCalibs[i]);
 	}
 }
@@ -856,6 +856,9 @@ void Daemon::getTemperature(){
     }
     TcpMessage tcpMessage(temperatureSig);
     float value = lm75->getTemperature();
+    if (fileHandler!=nullptr){
+        fileHandler->temperature = value;
+    }
     *(tcpMessage.dStream) << value;
     emit sendTcpMessage(tcpMessage);
 }
@@ -874,6 +877,9 @@ void Daemon::setPcaChannel(uint8_t channel) {
 	}
     pcaPortMask = channel;
 	pca->setOutputState(channel);
+    if (fileHandler!=nullptr){
+        fileHandler->pcaChannel = (quint8)channel;
+    }
     sendPcaChannel();
 }
 
