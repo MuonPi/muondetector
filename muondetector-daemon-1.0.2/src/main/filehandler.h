@@ -22,6 +22,7 @@ private:
     QString mainDataFolderName = ".muondetector-daemon/";
     QString hashedMacAddress;
     QString configFilePath;
+    QString loginDataFilePath;
     QString configPath;
     QString dataFolderPath;
     QString currentWorkingFilePath;

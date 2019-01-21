@@ -32,17 +32,6 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
     if (dataPath != ""){
         mainDataFolderName = dataPath;
     }
-    if (userName!=""||passWord!=""){
-        username=userName;
-        password=passWord;
-        if(!saveLoginData(userName,passWord)){
-            qDebug() << "could not save login data";
-        }
-    }else{
-        if (!readLoginData()){
-            qDebug() << "could not read login data from file";
-        }
-    }
     QDir temp;
     QString fullPath = temp.homePath()+"/"+mainDataFolderName;
     QCryptographicHash hashFunction(QCryptographicHash::Sha3_256);
@@ -50,6 +39,7 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
     fullPath += hashedMacAddress;
     configPath = fullPath+"/";
     configFilePath = fullPath + "/currentWorkingFileInformation.conf";
+    loginDataFilePath = fullPath + "/loginData.save";
     fullPath += "/notUploadedFiles/";
     dataFolderPath = fullPath;
     if (!temp.exists(fullPath)){
@@ -65,6 +55,19 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
             qDebug() << "could not create folder " << uploadedFiles;
         }
     }
+
+    if (userName!=""||passWord!=""){
+        username=userName;
+        password=passWord;
+        if(!saveLoginData(userName,passWord)){
+            qDebug() << "could not save login data";
+        }
+    }else{
+        if (!readLoginData()){
+            qDebug() << "could not read login data from file";
+        }
+    }
+
     QTimer *uploadReminder = new QTimer(this);
     uploadReminder->setInterval(60*1000*15); // every 15 minutes or so
     uploadReminder->setSingleShot(false);
@@ -274,29 +277,28 @@ void FileHandler::onUploadRemind(){
 }
 
 bool FileHandler::saveLoginData(QString username, QString password){
-    AutoSeededRandomPool rnd;
-    // Generate a random key
-    // SecByteBlock key(0x00, AES::DEFAULT_KEYLENGTH);
-    // rnd.GenerateBlock( key, key.size() );
-    //std::string keyBytes = SHA256HashString(getMacAddress().toStdString());
-    //byte *keyByteArray = (byte *)(keyBytes.c_str());
-    //size_t keyLen = std::strlen((char*)keyByteArray)+1;
-    //qDebug() << "KeyLength: " << keyLen;
+    QFile loginDataFile(loginDataFilePath);
+    if(!loginDataFile.open(QIODevice::ReadWrite)){
+        qDebug() << "could not open login data save file";
+        return false;
+    }
+    loginDataFile.resize(0);
 
+    AutoSeededRandomPool rnd;
     std::string plainText = QString(username+";"+password).toStdString();
     std::string keyText;
     std::string encrypted;
-    std::string recovered;
+
+    keyText = SHA256HashString(getMacAddress().toStdString());
+    SecByteBlock key((const byte*)keyText.data(),keyText.size());
 
     // Generate a random IV
     SecByteBlock iv(AES::BLOCKSIZE);
     rnd.GenerateBlock(iv, iv.size());
 
-    keyText = SHA256HashString(getMacAddress().toStdString());
-    qDebug() << "key length = " << keyText.size();
-    qDebug() << "macAddressHashed = " << QByteArray::fromStdString(keyText).toHex();
-    qDebug() << "plainText = " << QString::fromStdString(plainText);
-    SecByteBlock key((const byte*)keyText.data(),keyText.size());
+    //qDebug() << "key length = " << keyText.size();
+    //qDebug() << "macAddressHashed = " << QByteArray::fromStdString(keyText).toHex();
+    //qDebug() << "plainText = " << QString::fromStdString(plainText);
 
     //////////////////////////////////////////////////////////////////////////
     // Encrypt
@@ -308,10 +310,39 @@ bool FileHandler::saveLoginData(QString username, QString password){
     StringSource encryptor(plainText, true,
                            new StreamTransformationFilter(cfbEncryption,
                                                           new StringSink(encrypted)));
+    //qDebug() << "encrypted = " << QByteArray::fromStdString(encrypted).toHex();
+    // write encrypted message and IV to file
+    loginDataFile.write((const char*)iv.data(),iv.size());
+    loginDataFile.write(encrypted.c_str());
+    return true;
+}
+bool FileHandler::readLoginData(){
+    QFile loginDataFile(loginDataFilePath);
+    if(!loginDataFile.open(QIODevice::ReadWrite)){
+        qDebug() << "could not open login data save file";
+        return false;
+    }
+
+    std::string keyText;
+    std::string encrypted;
+    std::string recovered;
+
+    keyText = SHA256HashString(getMacAddress().toStdString());
+    SecByteBlock key((const byte*)keyText.data(),keyText.size());
+
+    // read encrypted message and IV from file
+    SecByteBlock iv(AES::BLOCKSIZE);
+    char ivData[AES::BLOCKSIZE];
+    if (int read = loginDataFile.read(ivData,AES::BLOCKSIZE)!=AES::BLOCKSIZE){
+        qDebug() << "read " << read << " bytes but should read " << AES::BLOCKSIZE << " bytes";
+        return false;
+    }
+    iv.Assign((byte*)ivData, AES::BLOCKSIZE);
+    encrypted = loginDataFile.readAll().toStdString();
+    //qDebug() << "encrypted = " << QByteArray::fromStdString(encrypted).toHex();
 
     //////////////////////////////////////////////////////////////////////////
     // Decrypt
-    qDebug() << "encrypted = " << QString::fromStdString(encrypted);
     CFB_Mode<AES>::Decryption cfbDecryption;
     cfbDecryption.SetKeyWithIV(key, key.size(), iv, iv.size());
     //cfbDecryption.ProcessData(plainText, cypheredText, messageLen);
@@ -320,10 +351,10 @@ bool FileHandler::saveLoginData(QString username, QString password){
                            new StreamTransformationFilter(cfbDecryption,
                                                           new StringSink(recovered)));
 
-    qDebug() << "recovered = " << QString::fromStdString(recovered);
-
-    return true;
-}
-bool FileHandler::readLoginData(){
+    //qDebug() << "recovered = " << QString::fromStdString(recovered);
+    QString recoverdQString = QString::fromStdString(recovered);
+    QStringList loginData = recoverdQString.split(';',QString::SkipEmptyParts);
+    username = loginData.at(0);
+    password = loginData.at(1);
     return true;
 }

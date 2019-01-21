@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
 	if (parser.isSet(biasPowerOnOff)) {
 		biasPower = true;
 	}
-    string username = "coshowacc";
+    string username;
     string password;
     if (parser.isSet(lftpSettingsOption)){
         cout << "To set the login for the ftp-server, please enter user name:"<<endl;
