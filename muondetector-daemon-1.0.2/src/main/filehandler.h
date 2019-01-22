@@ -17,11 +17,10 @@ public:
 
 public slots:
     void writeToDataFile(QString data); // writes data to the file opened in "dataFile"
-    void writeToLogFile(QString log); // writes log information to logFile
-    void gpsVersion(const QString& swVersion, const QString& hwVersion, const QString& protVersion);
-    void gpsMonHW(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags);
+    void onReceivedLogParameter(QString log);
 
 private:
+    void writeToLogFile(QString log); // writes log information to logFile
     // save and send data everyday
     QFile *dataFile = nullptr; // the file date is currently written to. (timestamps)
     QFile *logFile = nullptr; // the file log information is written to.
@@ -53,6 +52,7 @@ private:
 
 private slots:
     void onUploadRemind();
+
 };
 
 #endif // FILEHANDLER_H

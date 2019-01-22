@@ -17,6 +17,9 @@
 
 using namespace CryptoPP;
 
+
+const int timeout = 600000;
+
 static std::string SHA256HashString(std::string aString){
     std::string digest;
     CryptoPP::SHA256 hash;
@@ -29,6 +32,8 @@ static std::string SHA256HashString(std::string aString){
 FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, quint32 fileSizeMB, QObject *parent)
     : QObject(parent)
 {
+    lastUploadDateTime = QDateTime(QDate::currentDate(),QTime(0,0,0,0),Qt::TimeSpec::UTC);
+    dailyUploadTime = QTime(11,11,11,111);
     if (dataPath != ""){
         mainDataFolderName = dataPath;
     }
@@ -69,7 +74,7 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
     }
 
     QTimer *uploadReminder = new QTimer(this);
-    uploadReminder->setInterval(60*1000*15); // every 15 minutes or so
+    uploadReminder->setInterval(60*1000*5); // every 5 minutes or so
     uploadReminder->setSingleShot(false);
     connect(uploadReminder, &QTimer::timeout, this, &FileHandler::onUploadRemind);
     fileSize = fileSizeMB;
@@ -86,19 +91,22 @@ bool FileHandler::readFileInformation(){
         return false;
     }
     QTextStream in(&configFile);
-    currentWorkingFilePath = in.readLine();
-    currentWorkingLogPath = in.readLine();
+    if(configFile.size()==0){
+        return true;
+    }
+    if (!in.atEnd()){
+        currentWorkingFilePath = in.readLine();
+    }
+    if (!in.atEnd()){
+        currentWorkingLogPath = in.readLine();
+    }
     return true;
 }
 
 // SLOTS
-void FileHandler::gpsVersion(const QString& swVersion, const QString& hwVersion, const QString& protVersion){
+void FileHandler::onReceivedLogParameter(QString log){
 
 }
-void FileHandler::gpsMonHW(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags){
-
-}
-
 
 // DATA SAVING
 bool FileHandler::openFiles(){
@@ -108,7 +116,10 @@ bool FileHandler::openFiles(){
     if (currentWorkingFilePath==""||currentWorkingLogPath==""){
         readFileInformation();
     }
-    if (currentWorkingFilePath==""){
+    bool newFilePair = false;
+    if (currentWorkingFilePath==""||currentWorkingLogPath==""){
+        newFilePair = true;
+        switchFiles();
         QString fileNamePart = createFileName();
         currentWorkingFilePath = dataFolderPath+"data_"+fileNamePart;
         currentWorkingLogPath = dataFolderPath+"log_"+fileNamePart;
@@ -135,6 +146,13 @@ bool FileHandler::openFiles(){
     if (!logFile->open(QIODevice::ReadWrite | QIODevice::Append)) {
         qDebug() << "file open failed in 'ReadWrite' mode at location " << currentWorkingLogPath;
         return false;
+    }
+    // write header
+    if (newFilePair){
+        QTextStream dataOut(dataFile);
+        dataOut << "#rising               falling               accEst valid timebase utc\n";
+        QTextStream logOut(logFile);
+        logOut << "#temperature ... etc.\n";
     }
     return true;
 }
@@ -164,8 +182,8 @@ bool FileHandler::uploadDataFile(QString fileName){
     arguments << "balu.physik.uni-giessen.de:/cosmicshower";
     arguments << "-e" << QString("mkdir "+hashedMacAddress+" ; cd "+hashedMacAddress+" && put "+fileName+" ; exit");
     lftpProcess.setArguments(arguments);
+    qDebug() << lftpProcess.arguments();
     lftpProcess.start();
-    const int timeout = 300000;
     if (!lftpProcess.waitForFinished(timeout)){
         qDebug() << lftpProcess.readAllStandardOutput();
         qDebug() << lftpProcess.readAllStandardError();
@@ -195,31 +213,23 @@ bool FileHandler::uploadRecentDataFiles(){
 }
 
 void FileHandler::closeFiles(){
-    if (dataFile->isOpen()){
-        dataFile->close();
-    }
-    if (logFile->isOpen()){
-        logFile->close();
-    }
-    if (dataFile != nullptr){
+    if (dataFile!=nullptr){
+        if (dataFile->isOpen()){
+            dataFile->close();
+        }
         delete dataFile;
         dataFile = nullptr;
     }
     if (logFile != nullptr){
+        if (logFile->isOpen()){
+            logFile->close();
+        }
         delete logFile;
         logFile = nullptr;
     }
 }
 
 bool FileHandler::switchFiles(QString fileName){
-    if (dataFile == nullptr){
-        return false;
-    }
-    if (currentWorkingFilePath==""||currentWorkingLogPath==""){
-        if (!readFileInformation()){
-            return false;
-        }
-    }
     closeFiles();
     currentWorkingFilePath = "data_"+fileName;
     currentWorkingLogPath = "log_"+fileName;
@@ -239,7 +249,7 @@ bool FileHandler::switchFiles(QString fileName){
     }
     configFile.resize(0);
     QTextStream out(&configFile);
-    out << currentWorkingFilePath;
+    out << currentWorkingFilePath << endl << currentWorkingLogPath << endl;
     return true;
 }
 
@@ -308,9 +318,10 @@ void FileHandler::onUploadRemind(){
     if (dataFile->size()>(1024*1024*fileSize)){
         switchFiles();
     }
-    if (lastUploadDateTime<todaysRegularUploadTime){
+    if (lastUploadDateTime<todaysRegularUploadTime&&QDateTime::currentDateTimeUtc()>todaysRegularUploadTime){
         switchFiles();
         uploadRecentDataFiles();
+        lastUploadDateTime = QDateTime::currentDateTimeUtc();
     }
 }
 
