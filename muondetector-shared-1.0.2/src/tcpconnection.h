@@ -66,8 +66,7 @@ private:
 	int pingInterval;
 	int socketDescriptor;
     quint16 blockSize = 0;
-	QHostAddress *peerAddress = nullptr;
-	QHostAddress *localAddress = nullptr;
+    QString peerAddress, localAddress;
 	//    quint16 fileCounter = -1;
 	//    QFile *file = nullptr;
 	QDataStream *in = nullptr;

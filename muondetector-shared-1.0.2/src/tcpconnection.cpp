@@ -27,8 +27,6 @@ TcpConnection::TcpConnection(int socketDescriptor, int newVerbose, int newTimeou
 
 TcpConnection::~TcpConnection()
 {
-    if (peerAddress != nullptr) { delete peerAddress; localAddress = nullptr;}
-    if (localAddress != nullptr) { delete localAddress; localAddress = nullptr;}
     if (in != nullptr) { delete in; in = nullptr;}
     if (t != nullptr) { delete t; t = nullptr;}
 }
@@ -55,9 +53,15 @@ void TcpConnection::makeConnection()
 		return;
 	}
 	emit connected();
-	peerAddress = new QHostAddress(tcpSocket->peerAddress());
+    peerAddress = tcpSocket->peerAddress().toString();
+    if(peerAddress!=""){
+        peerAddress = peerAddress.split(':').last();
+    }
+    localAddress = tcpSocket->localAddress().toString();
+    if(localAddress!=""){
+        localAddress = localAddress.split(':').last();
+    }
 	peerPort = tcpSocket->peerPort();
-	localAddress = new QHostAddress(tcpSocket->localAddress());
 	localPort = tcpSocket->localPort();
 	//startTimePulser();
 }
@@ -73,28 +77,32 @@ void TcpConnection::receiveConnection()
 		emit error(tcpSocket->error(), tcpSocket->errorString());
 		this->thread()->quit();
 		return;
-	}
-	else {
-		peerAddress = new QHostAddress(tcpSocket->peerAddress());
-		peerPort = tcpSocket->peerPort();
-		localAddress = new QHostAddress(tcpSocket->localAddress());
-		localPort = tcpSocket->localPort();
-		lastConnection = time(NULL);
-		//connect(tcpSocket, &QTcpSocket::disconnected, this, &TcpConnection::onSocketDisconnected);
-		in = new QDataStream();
-		in->setVersion(QDataStream::Qt_4_0);
-		in->setDevice(tcpSocket);
-		connect(tcpSocket, &QTcpSocket::readyRead, this, &TcpConnection::onReadyRead);
-		firstConnection = time(NULL);
-		lastConnection = firstConnection;
-		emit madeConnection(peerAddress->toString(), peerPort, localAddress->toString(), localPort);
     }
+    peerAddress = tcpSocket->peerAddress().toString();
+    if(peerAddress!=""){
+        peerAddress = peerAddress.split(':').last();
+    }
+    localAddress = tcpSocket->localAddress().toString();
+    if(localAddress!=""){
+        localAddress = localAddress.split(':').last();
+    }
+    peerPort = tcpSocket->peerPort();
+    localPort = tcpSocket->localPort();
+    lastConnection = time(NULL);
+    //connect(tcpSocket, &QTcpSocket::disconnected, this, &TcpConnection::onSocketDisconnected);
+    in = new QDataStream();
+    in->setVersion(QDataStream::Qt_4_0);
+    in->setDevice(tcpSocket);
+    connect(tcpSocket, &QTcpSocket::readyRead, this, &TcpConnection::onReadyRead);
+    firstConnection = time(NULL);
+    lastConnection = firstConnection;
+    emit madeConnection(peerAddress, peerPort, localAddress, localPort);
 	//startTimePulser();
 }
 
 void TcpConnection::closeConnection(QString closedAddress) {
-    if (peerAddress!=nullptr){
-        if (peerAddress->toString()==closedAddress){
+    if (peerAddress!=""){
+        if (peerAddress==closedAddress){
             closeThisConnection();
         }
     }
@@ -102,9 +110,10 @@ void TcpConnection::closeConnection(QString closedAddress) {
 
 void TcpConnection::closeThisConnection(){
     TcpMessage quitMessage(quitConnectionSig);
-    *(quitMessage.dStream) << localAddress->toString();
+    *(quitMessage.dStream) << localAddress;
     sendTcpMessage(quitMessage);
     this->deleteLater();
+    this->thread()->quit();
     return;
 }
 

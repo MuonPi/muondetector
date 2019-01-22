@@ -223,7 +223,7 @@ bool FileHandler::switchFiles(QString fileName){
     closeFiles();
     currentWorkingFilePath = "data_"+fileName;
     currentWorkingLogPath = "log_"+fileName;
-    if (currentWorkingFilePath==""||currentWorkingLogPath==""){
+    if (fileName==""){
         QString fileNamePart = createFileName();
         currentWorkingFilePath = dataFolderPath+"data_"+fileNamePart;
         currentWorkingLogPath = dataFolderPath+"log_"+fileNamePart;
