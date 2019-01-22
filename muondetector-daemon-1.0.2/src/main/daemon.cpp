@@ -203,13 +203,18 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 
 	// set all variables
 
+    // create fileHandler
+    QThread *fileHandlerThread = new QThread();
+    fileHandler = new FileHandler(username, password);
+    fileHandler->moveToThread(fileHandlerThread);
+    connect(this, &Daemon::aboutToQuit, fileHandler, &FileHandler::deleteLater);
+    connect(fileHandlerThread, &QThread::finished, fileHandlerThread, &QThread::deleteLater);
+    fileHandlerThread->start();
+
 	// general
 	verbose = new_verbose;
 	if (verbose > 4) {
         cout << "daemon running in thread " << QString("0x%1").arg((intptr_t)this->thread()) << endl;
-	}
-    if (fileHandler == nullptr){
-        fileHandler = new FileHandler(username, password);
     }
 
 	// for pigpio signals:
@@ -479,7 +484,6 @@ Daemon::~Daemon() {
     if (eep!=nullptr){ delete eep; eep = nullptr; }
     if (calib!=nullptr){ delete calib; calib = nullptr; }
     if (pigHandler!=nullptr){ delete pigHandler; pigHandler = nullptr; }
-    if (fileHandler!=nullptr){ delete fileHandler; fileHandler = nullptr; }
 }
 
 void Daemon::connectToGps() {
@@ -525,7 +529,6 @@ void Daemon::connectToGps() {
     if (fileHandler != nullptr){
         connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
     }
-
 	// after thread start there will be a signal emitted which starts the qtGps makeConnection function
 	gpsThread->start();
 }
@@ -856,9 +859,6 @@ void Daemon::getTemperature(){
     }
     TcpMessage tcpMessage(temperatureSig);
     float value = lm75->getTemperature();
-    if (fileHandler!=nullptr){
-        fileHandler->temperature = value;
-    }
     *(tcpMessage.dStream) << value;
     emit sendTcpMessage(tcpMessage);
 }
@@ -876,10 +876,7 @@ void Daemon::setPcaChannel(uint8_t channel) {
 		return;
 	}
     pcaPortMask = channel;
-	pca->setOutputState(channel);
-    if (fileHandler!=nullptr){
-        fileHandler->pcaChannel = (quint8)channel;
-    }
+    pca->setOutputState(channel);
     sendPcaChannel();
 }
 
@@ -1224,11 +1221,11 @@ void Daemon::UBXReceivedVersion(const QString& swString, const QString& hwString
     emit sendTcpMessage(tcpMessage);
 }
 
-void Daemon::toConsole(QString data) {
+void Daemon::toConsole(const QString &data) {
 	cout << data << endl;
 }
 
-void Daemon::gpsToConsole(QString data) {
+void Daemon::gpsToConsole(const QString &data) {
 	cout << data << flush;
 }
 

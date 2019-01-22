@@ -16,7 +16,7 @@ public:
     quint8 pcaChannel = 0;
 
 public slots:
-    void writeToDataFile(QString data); // writes data to the file opened in "dataFile"
+    void writeToDataFile(const QString& data); // writes data to the file opened in "dataFile"
     void onReceivedLogParameter(QString log);
 
 private:

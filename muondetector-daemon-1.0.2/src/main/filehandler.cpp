@@ -157,7 +157,7 @@ bool FileHandler::openFiles(){
     return true;
 }
 
-void FileHandler::writeToDataFile(QString data){
+void FileHandler::writeToDataFile(const QString &data){
     if (dataFile == nullptr){
         return;
     }

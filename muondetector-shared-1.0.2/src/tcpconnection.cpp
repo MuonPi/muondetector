@@ -185,7 +185,7 @@ bool TcpConnection::writeBlock(const QByteArray &block) {
 	for (int i = 0; i < 3; i++) {
 		if (!tcpSocket->state() == QTcpSocket::UnconnectedState) {
 			if (!tcpSocket->waitForBytesWritten(timeout)) {
-				emit toConsole("wait for bytes written timeout");
+                //emit toConsole("wait for bytes written timeout");
 				return false;
 			}
 			return true;

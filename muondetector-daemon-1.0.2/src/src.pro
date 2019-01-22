@@ -65,6 +65,7 @@ HEADERS += \
     main/ublox_structs.h \
     main/custom_io_operators.h \
     main/filehandler.h \
-    main/calibration.h
+    main/calibration.h \
+    main/logparameter.h
 
 DISTFILES += ubx_rates_config.cfg

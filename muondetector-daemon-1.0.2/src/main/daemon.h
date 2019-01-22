@@ -44,8 +44,8 @@ public slots:
 	void connectToServer();
 	void displaySocketError(int socketError, QString message);
 	void displayError(QString message);
-	void toConsole(QString data);
-	void gpsToConsole(QString data);
+    void toConsole(const QString& data);
+    void gpsToConsole(const QString& data);
 	void stoppedConnection(QString hostName, quint16 port, quint32 connectionTimeout, quint32 connectionDuration);
 	void UBXReceivedAckNak(uint16_t ackedMsgID, uint16_t ackedCfgMsgID);
 	void UBXReceivedMsgRateCfg(uint16_t msgID, uint8_t rate);
@@ -135,7 +135,7 @@ private:
 	int gpsTimeout = 5000;
 	bool dumpRaw, configGnss, showout, showin;
 
-    // data handling
+    // file handling
     FileHandler *fileHandler = nullptr;
 
     // signal handling
