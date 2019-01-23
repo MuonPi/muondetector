@@ -21,6 +21,8 @@ extern "C" {
 #define DAC_TH1 0 // channel of the dac where threshold 1 is set
 #define DAC_TH2 1 // channel of the dac where threshold 2 is set
 
+// REMEMBER: "emit" keyword is just syntactic sugar and not needed AT ALL ... learned it after 1 year *clap* *clap*
+
 using namespace std;
 
 static const QVector<uint16_t> allMsgCfgID({
@@ -208,6 +210,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     fileHandler = new FileHandler(username, password);
     fileHandler->moveToThread(fileHandlerThread);
     connect(this, &Daemon::aboutToQuit, fileHandler, &FileHandler::deleteLater);
+    connect(this, &Daemon::logParameter, fileHandler, &FileHandler::onReceivedLogParameter);
     connect(fileHandlerThread, &QThread::finished, fileHandlerThread, &QThread::deleteLater);
     fileHandlerThread->start();
 
@@ -526,6 +529,22 @@ void Daemon::connectToGps() {
     connect(qtGps, &QtSerialUblox::gpsVersion, this, &Daemon::UBXReceivedVersion);
 	connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Daemon::toConsole);
 	connect(this, &Daemon::UBXSetDynModel, qtGps, &QtSerialUblox::setDynamicModel);
+
+    // connect fileHandler related stuff
+    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, [this](GeodeticPos pos){
+        LogParameter log("geodeticPos",QString("%1 %2 %3 %4 %5 %6 %7").arg(pos.iTOW).arg(pos.lon).arg(pos.lat).arg(pos.height).arg(pos.hMSL).arg(pos.hAcc).arg(pos.vAcc));
+        this->logParameter(log);
+    });
+    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, [this](std::vector<GnssSatellite> satlist, std::chrono::duration<double> updateAge){
+        for (auto sat : satlist){
+            LogParameter log("gnss",QString("%1 %2 %3 %4").arg(sat.fSatId)); // HERE CONTINUE TO IMPLEMENT !!! NOT FINISHED !!!
+            this->logParameter(log);
+        }
+    });
+    connect(qtGps, &QtSerialUblox::gpsMonHW, [this](uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags){
+        LogParameter log("gpsMonHw",QString("%1 %2 %3 %4 %5 %6").arg(noise).arg(agc).arg(antStatus).arg(antPower).arg(jamInd).arg(flags));
+        this->logParameter(log);
+    });
     if (fileHandler != nullptr){
         connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
     }

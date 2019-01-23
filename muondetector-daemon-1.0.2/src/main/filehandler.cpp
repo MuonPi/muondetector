@@ -18,7 +18,9 @@
 using namespace CryptoPP;
 
 
-const int timeout = 600000;
+const int timeout = 600000; // in msecs
+const int uploadReminderInterval = 5; // in minutes
+const int logReminderInterval = 5; // in minutes
 
 static std::string SHA256HashString(std::string aString){
     std::string digest;
@@ -29,6 +31,55 @@ static std::string SHA256HashString(std::string aString){
     return digest;
 }
 
+static QString getMacAddress(){
+    QNetworkConfiguration nc;
+    QNetworkConfigurationManager ncm;
+    QList<QNetworkConfiguration> configsForEth,configsForWLAN,allConfigs;
+    // getting all the configs we can
+    foreach (nc,ncm.allConfigurations(QNetworkConfiguration::Active))
+    {
+        if(nc.type() == QNetworkConfiguration::InternetAccessPoint)
+        {
+            // selecting the bearer type here
+            if(nc.bearerType() == QNetworkConfiguration::BearerWLAN)
+            {
+                configsForWLAN.append(nc);
+            }
+            if(nc.bearerType() == QNetworkConfiguration::BearerEthernet)
+            {
+                configsForEth.append(nc);
+            }
+        }
+    }
+    // further in the code WLAN's and Eth's were treated differently
+    allConfigs.append(configsForWLAN);
+    allConfigs.append(configsForEth);
+    QString MAC;
+    foreach(nc,allConfigs)
+    {
+        QNetworkSession networkSession(nc);
+        QNetworkInterface netInterface = networkSession.interface();
+        // these last two conditions are for omiting the virtual machines' MAC
+        // works pretty good since no one changes their adapter name
+        if(!(netInterface.flags() & QNetworkInterface::IsLoopBack)
+                && !netInterface.humanReadableName().toLower().contains("vmware")
+                && !netInterface.humanReadableName().toLower().contains("virtual"))
+        {
+            MAC = QString(netInterface.hardwareAddress());
+            break;
+        }
+    }
+    return MAC;
+}
+
+static QByteArray getMacAddressByteArray(){
+    return QByteArray::fromStdString(getMacAddress().toStdString());
+}
+
+static QString dateStringNow(){
+    return QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd_hh-mm-ss");
+}
+
 FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, quint32 fileSizeMB, QObject *parent)
     : QObject(parent)
 {
@@ -37,6 +88,7 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
     if (dataPath != ""){
         mainDataFolderName = dataPath;
     }
+    fileSize = fileSizeMB;
     QDir temp;
     QString fullPath = temp.homePath()+"/"+mainDataFolderName;
     QCryptographicHash hashFunction(QCryptographicHash::Sha3_256);
@@ -72,40 +124,46 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
             qDebug() << "could not read login data from file";
         }
     }
-
+    // set upload reminder
     QTimer *uploadReminder = new QTimer(this);
-    uploadReminder->setInterval(60*1000*5); // every 5 minutes or so
+    uploadReminder->setInterval(60*1000*uploadReminderInterval); // every 5 minutes or so
     uploadReminder->setSingleShot(false);
     connect(uploadReminder, &QTimer::timeout, this, &FileHandler::onUploadRemind);
-    fileSize = fileSizeMB;
-    openFiles();
     uploadReminder->start();
-}
-
-bool FileHandler::readFileInformation(){
-    QDir directory(dataFolderPath);
-    notUploadedFilesNames = directory.entryList(QStringList() << "*.dat",QDir::Files);
-    QFile configFile(configFilePath);
-    if (!configFile.open(QIODevice::ReadWrite)){
-        qDebug() << "file open failed in 'ReadWrite' mode at location " << configFilePath;
-        return false;
-    }
-    QTextStream in(&configFile);
-    if(configFile.size()==0){
-        return true;
-    }
-    if (!in.atEnd()){
-        currentWorkingFilePath = in.readLine();
-    }
-    if (!in.atEnd()){
-        currentWorkingLogPath = in.readLine();
-    }
-    return true;
+    // set log reminder
+    QTimer *logReminder = new QTimer(this);
+    logReminder->setInterval(60*1000*logReminderInterval);
+    uploadReminder->setSingleShot(false);
+    connect(logReminder, &QTimer::timeout, this, &FileHandler::onLogRemind);
+    logReminder->start();
+    // open files that are currently written
+    openFiles();
 }
 
 // SLOTS
-void FileHandler::onReceivedLogParameter(QString log){
+void FileHandler::onReceivedLogParameter(LogParameter log){
+    writeToLogFile(QString(log.name()+" "+log.value()+" "+dateStringNow()));
+    log.setUpdatedRecently(true);
+    logData.insert(log.name(),log);
+}
 
+void FileHandler::onLogRemind(){
+
+}
+
+void FileHandler::onUploadRemind(){
+    if (dataFile==nullptr){
+        return;
+    }
+    QDateTime todaysRegularUploadTime = QDateTime(QDate::currentDate(),dailyUploadTime,Qt::TimeSpec::UTC);
+    if (dataFile->size()>(1024*1024*fileSize)){
+        switchFiles();
+    }
+    if (lastUploadDateTime<todaysRegularUploadTime&&QDateTime::currentDateTimeUtc()>todaysRegularUploadTime){
+        switchFiles();
+        uploadRecentDataFiles();
+        lastUploadDateTime = QDateTime::currentDateTimeUtc();
+    }
 }
 
 // DATA SAVING
@@ -157,61 +215,6 @@ bool FileHandler::openFiles(){
     return true;
 }
 
-void FileHandler::writeToDataFile(const QString &data){
-    if (dataFile == nullptr){
-        return;
-    }
-    QTextStream out(dataFile);
-    out << data;
-}
-
-void FileHandler::writeToLogFile(QString log) {
-    if (logFile == nullptr){
-        return;
-    }
-    QTextStream out(logFile);
-    out << log;
-}
-
-bool FileHandler::uploadDataFile(QString fileName){
-    QProcess lftpProcess(this);
-    lftpProcess.setProgram("lftp");
-    QStringList arguments;
-    arguments << "-p" << "35221";
-    arguments << "-u" << QString(username+","+password);
-    arguments << "balu.physik.uni-giessen.de:/cosmicshower";
-    arguments << "-e" << QString("mkdir "+hashedMacAddress+" ; cd "+hashedMacAddress+" && put "+fileName+" ; exit");
-    lftpProcess.setArguments(arguments);
-    qDebug() << lftpProcess.arguments();
-    lftpProcess.start();
-    if (!lftpProcess.waitForFinished(timeout)){
-        qDebug() << lftpProcess.readAllStandardOutput();
-        qDebug() << lftpProcess.readAllStandardError();
-        qDebug() << "lftp not installed or timed out after "<< timeout/1000<< " s";
-        return false;
-    }
-    if (lftpProcess.exitStatus()!=0){
-        qDebug() << "lftp returned exit status other than 0";
-        return false;
-    }
-    return true;
-}
-
-bool FileHandler::uploadRecentDataFiles(){
-    readFileInformation();
-    for (auto &fileName : notUploadedFilesNames){
-        QString filePath = dataFolderPath+fileName;
-        if (filePath!=currentWorkingFilePath&&filePath!=currentWorkingLogPath){
-            qDebug() << "attempt to upload " << filePath;
-            if (!uploadDataFile(filePath)){
-                return false;
-            }
-            QFile::rename(filePath,QString(configPath+"uploadedFiles/"+fileName));
-        }
-    }
-    return true;
-}
-
 void FileHandler::closeFiles(){
     if (dataFile!=nullptr){
         if (dataFile->isOpen()){
@@ -253,49 +256,41 @@ bool FileHandler::switchFiles(QString fileName){
     return true;
 }
 
-QString FileHandler::getMacAddress(){
-    QNetworkConfiguration nc;
-    QNetworkConfigurationManager ncm;
-    QList<QNetworkConfiguration> configsForEth,configsForWLAN,allConfigs;
-    // getting all the configs we can
-    foreach (nc,ncm.allConfigurations(QNetworkConfiguration::Active))
-    {
-        if(nc.type() == QNetworkConfiguration::InternetAccessPoint)
-        {
-            // selecting the bearer type here
-            if(nc.bearerType() == QNetworkConfiguration::BearerWLAN)
-            {
-                configsForWLAN.append(nc);
-            }
-            if(nc.bearerType() == QNetworkConfiguration::BearerEthernet)
-            {
-                configsForEth.append(nc);
-            }
-        }
+bool FileHandler::readFileInformation(){
+    QDir directory(dataFolderPath);
+    notUploadedFilesNames = directory.entryList(QStringList() << "*.dat",QDir::Files);
+    QFile configFile(configFilePath);
+    if (!configFile.open(QIODevice::ReadWrite)){
+        qDebug() << "file open failed in 'ReadWrite' mode at location " << configFilePath;
+        return false;
     }
-    // further in the code WLAN's and Eth's were treated differently
-    allConfigs.append(configsForWLAN);
-    allConfigs.append(configsForEth);
-    QString MAC;
-    foreach(nc,allConfigs)
-    {
-        QNetworkSession networkSession(nc);
-        QNetworkInterface netInterface = networkSession.interface();
-        // these last two conditions are for omiting the virtual machines' MAC
-        // works pretty good since no one changes their adapter name
-        if(!(netInterface.flags() & QNetworkInterface::IsLoopBack)
-                && !netInterface.humanReadableName().toLower().contains("vmware")
-                && !netInterface.humanReadableName().toLower().contains("virtual"))
-        {
-            MAC = QString(netInterface.hardwareAddress());
-            break;
-        }
+    QTextStream in(&configFile);
+    if(configFile.size()==0){
+        return true;
     }
-    return MAC;
+    if (!in.atEnd()){
+        currentWorkingFilePath = in.readLine();
+    }
+    if (!in.atEnd()){
+        currentWorkingLogPath = in.readLine();
+    }
+    return true;
 }
 
-QByteArray FileHandler::getMacAddressByteArray(){
-    return QByteArray::fromStdString(getMacAddress().toStdString());
+void FileHandler::writeToDataFile(const QString &data){
+    if (dataFile == nullptr){
+        return;
+    }
+    QTextStream out(dataFile);
+    out << data;
+}
+
+void FileHandler::writeToLogFile(QString log) {
+    if (logFile == nullptr){
+        return;
+    }
+    QTextStream out(logFile);
+    out << log;
 }
 
 QString FileHandler::createFileName(){
@@ -304,26 +299,53 @@ QString FileHandler::createFileName(){
         qDebug() << "could not open data folder";
         return "";
     }
-    QDateTime dateTime = QDateTime::currentDateTimeUtc();
-    QString fileName = (dateTime.toString("yyyy-MM-dd_hh-mm-ss"));
+    QString fileName = dateStringNow();
     fileName = fileName+".dat";
     return fileName;
 }
 
-void FileHandler::onUploadRemind(){
-    if (dataFile==nullptr){
-        return;
+// upload related stuff
+
+bool FileHandler::uploadDataFile(QString fileName){
+    QProcess lftpProcess(this);
+    lftpProcess.setProgram("lftp");
+    QStringList arguments;
+    arguments << "-p" << "35221";
+    arguments << "-u" << QString(username+","+password);
+    arguments << "balu.physik.uni-giessen.de:/cosmicshower";
+    arguments << "-e" << QString("mkdir "+hashedMacAddress+" ; cd "+hashedMacAddress+" && put "+fileName+" ; exit");
+    lftpProcess.setArguments(arguments);
+    qDebug() << lftpProcess.arguments();
+    lftpProcess.start();
+    if (!lftpProcess.waitForFinished(timeout)){
+        qDebug() << lftpProcess.readAllStandardOutput();
+        qDebug() << lftpProcess.readAllStandardError();
+        qDebug() << "lftp not installed or timed out after "<< timeout/1000<< " s";
+        return false;
     }
-    QDateTime todaysRegularUploadTime = QDateTime(QDate::currentDate(),dailyUploadTime,Qt::TimeSpec::UTC);
-    if (dataFile->size()>(1024*1024*fileSize)){
-        switchFiles();
+    if (lftpProcess.exitStatus()!=0){
+        qDebug() << "lftp returned exit status other than 0";
+        return false;
     }
-    if (lastUploadDateTime<todaysRegularUploadTime&&QDateTime::currentDateTimeUtc()>todaysRegularUploadTime){
-        switchFiles();
-        uploadRecentDataFiles();
-        lastUploadDateTime = QDateTime::currentDateTimeUtc();
-    }
+    return true;
 }
+
+bool FileHandler::uploadRecentDataFiles(){
+    readFileInformation();
+    for (auto &fileName : notUploadedFilesNames){
+        QString filePath = dataFolderPath+fileName;
+        if (filePath!=currentWorkingFilePath&&filePath!=currentWorkingLogPath){
+            qDebug() << "attempt to upload " << filePath;
+            if (!uploadDataFile(filePath)){
+                return false;
+            }
+            QFile::rename(filePath,QString(configPath+"uploadedFiles/"+fileName));
+        }
+    }
+    return true;
+}
+
+// crypto related stuff
 
 bool FileHandler::saveLoginData(QString username, QString password){
     QFile loginDataFile(loginDataFilePath);

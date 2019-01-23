@@ -5,6 +5,8 @@
 #include <QQueue>
 #include <QDateTime>
 #include <QStandardPaths>
+#include <logparameter.h>
+#include <QMap>
 
 class FileHandler : public QObject
 {
@@ -17,11 +19,12 @@ public:
 
 public slots:
     void writeToDataFile(const QString& data); // writes data to the file opened in "dataFile"
-    void onReceivedLogParameter(QString log);
+    void onReceivedLogParameter(LogParameter log);
 
 private:
     void writeToLogFile(QString log); // writes log information to logFile
     // save and send data everyday
+    QMap<QString, LogParameter> logData;
     QFile *dataFile = nullptr; // the file date is currently written to. (timestamps)
     QFile *logFile = nullptr; // the file log information is written to.
     QString mainDataFolderName = ".muondetector-daemon/";
@@ -43,8 +46,6 @@ private:
     bool uploadRecentDataFiles();
     bool switchFiles(QString fileName = ""); // closes the old file and opens a new one, changing "dataConfig.conf" to the new file
     void closeFiles();
-    QString getMacAddress();
-    QByteArray getMacAddressByteArray();
     QString createFileName(); // creates a fileName based on date time and mac address
     quint32 fileSize; // in MB
     QDateTime lastUploadDateTime;
@@ -52,7 +53,7 @@ private:
 
 private slots:
     void onUploadRemind();
-
+    void onLogRemind();
 };
 
 #endif // FILEHANDLER_H

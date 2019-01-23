@@ -12,6 +12,7 @@
 #include <filehandler.h>
 #include "i2c/i2cdevices.h"
 #include "calibration.h"
+#include <logparameter.h>
 
 // for sig handling:
 #include <sys/types.h>
@@ -73,6 +74,7 @@ public slots:
 signals:
 	void sendTcpMessage(TcpMessage tcpMessage);
     void closeConnection(QString closeAddress);
+    void logParameter(LogParameter log);
 	void aboutToQuit();
 	void sendPollUbxMsgRate(uint16_t msgID);
 	void sendPollUbxMsg(uint16_t msgID);
