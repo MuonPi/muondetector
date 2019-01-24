@@ -183,6 +183,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
 	qRegisterMetaType<std::chrono::duration<double>>("std::chrono::duration<double>");
 	qRegisterMetaType<std::string>("std::string");
+    qRegisterMetaType<LogParameter>("LogParameter");
     // signal handling
 	setup_unix_signal_handlers();
 	if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)) {
