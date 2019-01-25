@@ -40,11 +40,12 @@ private:
     QStringList notUploadedFilesNames;
     bool saveLoginData(QString username, QString password);
     bool readLoginData();
-    bool openFiles(); // reads the config file and opens the correct data file to write to
+    bool openFiles(bool writeHeader = false); // reads the config file and opens the correct data file to write to
     bool readFileInformation();
     bool uploadDataFile(QString fileName); // sends a data file with some filename via lftp script to the server
     bool uploadRecentDataFiles();
     bool switchFiles(QString fileName = ""); // closes the old file and opens a new one, changing "dataConfig.conf" to the new file
+    bool writeConfigFile();
     void closeFiles();
     QString createFileName(); // creates a fileName based on date time and mac address
     quint32 fileSize; // in MB

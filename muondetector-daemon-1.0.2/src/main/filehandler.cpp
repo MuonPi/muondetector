@@ -142,7 +142,7 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
 
 // SLOTS
 void FileHandler::onReceivedLogParameter(LogParameter log){
-    writeToLogFile(QString(log.name()+" "+log.value()+" "+dateStringNow()));
+    writeToLogFile(QString(log.name()+" "+log.value()+" "+dateStringNow()+"\n"));
     log.setUpdatedRecently(true);
     logData.insert(log.name(),log);
 }
@@ -167,17 +167,15 @@ void FileHandler::onUploadRemind(){
 }
 
 // DATA SAVING
-bool FileHandler::openFiles(){
+bool FileHandler::openFiles(bool writeHeader){
     if (dataFile != nullptr || logFile != nullptr){
-        return false;
+        closeFiles();
     }
     if (currentWorkingFilePath==""||currentWorkingLogPath==""){
         readFileInformation();
     }
-    bool newFilePair = false;
     if (currentWorkingFilePath==""||currentWorkingLogPath==""){
-        newFilePair = true;
-        switchFiles();
+        writeHeader=true;
         QString fileNamePart = createFileName();
         currentWorkingFilePath = dataFolderPath+"data_"+fileNamePart;
         currentWorkingLogPath = dataFolderPath+"log_"+fileNamePart;
@@ -186,14 +184,7 @@ bool FileHandler::openFiles(){
             currentWorkingFilePath = dataFolderPath+"data_"+fileNamePart;
             currentWorkingLogPath = dataFolderPath+"log_"+fileNamePart;
         }
-        QFile configFile(configFilePath);
-        if (!configFile.open(QIODevice::ReadWrite)){
-            qDebug() << "file open failed in 'ReadWrite' mode at location " << configFilePath;
-            return false;
-        }
-        configFile.resize(0);
-        QTextStream out(&configFile);
-        out << currentWorkingFilePath << endl << currentWorkingLogPath << endl;
+        writeConfigFile();
     }
     dataFile = new QFile(currentWorkingFilePath);
     if (!dataFile->open(QIODevice::ReadWrite | QIODevice::Append)) {
@@ -206,7 +197,7 @@ bool FileHandler::openFiles(){
         return false;
     }
     // write header
-    if (newFilePair){
+    if (writeHeader){
         QTextStream dataOut(dataFile);
         dataOut << "#rising               falling               accEst valid timebase utc\n";
         QTextStream logOut(logFile);
@@ -232,19 +223,7 @@ void FileHandler::closeFiles(){
     }
 }
 
-bool FileHandler::switchFiles(QString fileName){
-    closeFiles();
-    currentWorkingFilePath = "data_"+fileName;
-    currentWorkingLogPath = "log_"+fileName;
-    if (fileName==""){
-        QString fileNamePart = createFileName();
-        currentWorkingFilePath = dataFolderPath+"data_"+fileNamePart;
-        currentWorkingLogPath = dataFolderPath+"log_"+fileNamePart;
-    }
-    if (!openFiles()){
-        closeFiles();
-        return false;
-    }
+bool FileHandler::writeConfigFile(){
     QFile configFile(configFilePath);
     if (!configFile.open(QIODevice::ReadWrite | QIODevice::Truncate)){
         qDebug() << "file open failed in 'ReadWrite' mode at location " << configFilePath;
@@ -254,6 +233,22 @@ bool FileHandler::switchFiles(QString fileName){
     QTextStream out(&configFile);
     out << currentWorkingFilePath << endl << currentWorkingLogPath << endl;
     return true;
+}
+
+bool FileHandler::switchFiles(QString fileName){
+    closeFiles();
+    currentWorkingFilePath = "data_"+fileName;
+    currentWorkingLogPath = "log_"+fileName;
+    if (fileName==""){
+        QString fileNamePart = createFileName();
+        currentWorkingFilePath = dataFolderPath+"data_"+fileNamePart;
+        currentWorkingLogPath = dataFolderPath+"log_"+fileNamePart;
+    }
+    writeConfigFile();
+    if (!openFiles(true)){
+        closeFiles();
+        return false;
+    }
 }
 
 bool FileHandler::readFileInformation(){

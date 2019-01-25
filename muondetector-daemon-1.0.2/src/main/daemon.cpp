@@ -208,6 +208,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 
     // create fileHandler
     QThread *fileHandlerThread = new QThread();
+
     fileHandler = new FileHandler(username, password);
     fileHandler->moveToThread(fileHandlerThread);
     connect(this, &Daemon::aboutToQuit, fileHandler, &FileHandler::deleteLater);
@@ -533,19 +534,29 @@ void Daemon::connectToGps() {
 
     // connect fileHandler related stuff
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, [this](GeodeticPos pos){
-        LogParameter log("geodeticPos",QString("%1 %2 %3 %4 %5 %6 %7").arg(pos.iTOW).arg(pos.lon).arg(pos.lat).arg(pos.height).arg(pos.hMSL).arg(pos.hAcc).arg(pos.vAcc));
+        LogParameter log(QString("geodeticPos"),QString("%1 %2 %3 %4 %5 %6 %7").arg(pos.iTOW).arg(pos.lon).arg(pos.lat).arg(pos.height).arg(pos.hMSL).arg(pos.hAcc).arg(pos.vAcc));
         this->logParameter(log);
     });
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, [this](std::vector<GnssSatellite> satlist, std::chrono::duration<double> updateAge){
+        int allSats, usedSats;
         for (auto sat : satlist){
-            LogParameter log("gnss",QString("%1 %2 %3 %4").arg(sat.fSatId)); // HERE CONTINUE TO IMPLEMENT !!! NOT FINISHED !!!
-            this->logParameter(log);
+            allSats++;
+            if (sat.fUsed){
+                usedSats++;
+            }
         }
-    });
-    connect(qtGps, &QtSerialUblox::gpsMonHW, [this](uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags){
-        LogParameter log("gpsMonHw",QString("%1 %2 %3 %4 %5 %6").arg(noise).arg(agc).arg(antStatus).arg(antPower).arg(jamInd).arg(flags));
+        LogParameter log(QString("sats"),QString("%1").arg(allSats)); // HERE CONTINUE TO IMPLEMENT !!! NOT FINISHED !!!
+        this->logParameter(log);
+        log.setName(QString("usedSats"));
+        log.setValue(QString("%1").arg(usedSats));
         this->logParameter(log);
     });
+    /*
+    connect(qtGps, &QtSerialUblox::gpsMonHW, [this](uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags){
+        LogParameter log("sat",QString("%1 %2 %3 %4 %5 %6").arg(noise).arg(agc).arg(antStatus).arg(antPower).arg(jamInd).arg(flags));
+        this->logParameter(log);
+    });
+    */
     if (fileHandler != nullptr){
         connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
     }
