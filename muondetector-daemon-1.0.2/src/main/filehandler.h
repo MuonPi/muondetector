@@ -17,6 +17,9 @@ public:
     float temperature = 0.0;
     quint8 pcaChannel = 0;
 
+signals:
+	void logIntervalSignal();
+
 public slots:
     void writeToDataFile(const QString& data); // writes data to the file opened in "dataFile"
     void onReceivedLogParameter(const LogParameter& log);

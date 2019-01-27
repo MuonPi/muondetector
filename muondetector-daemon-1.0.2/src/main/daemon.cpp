@@ -228,6 +228,13 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
     connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
     connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
+	
+	connect(fileHandler, &FileHandler::logIntervalSignal, [this]() {
+		double xorRate = pigHandler->getBufferedRates(0, XOR_RATE).back().y();
+		logParameter(LogParameter("rateXOR", QString::number(xorRate)+" Hz"));
+		double andRate = pigHandler->getBufferedRates(0, AND_RATE).back().y();
+		logParameter(LogParameter("rateAND", QString::number(andRate)+" Hz"));
+	});
 
 	// for i2c devices
 	lm75 = new LM75();
@@ -565,6 +572,8 @@ void Daemon::connectToGps() {
         this->logParameter(log);
 */
     });
+
+
     
     if (fileHandler != nullptr){
         connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);

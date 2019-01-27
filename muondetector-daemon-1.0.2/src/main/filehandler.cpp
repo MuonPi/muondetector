@@ -20,7 +20,7 @@ using namespace CryptoPP;
 
 const int timeout = 600000; // in msecs
 const int uploadReminderInterval = 5; // in minutes
-const int logReminderInterval = 5; // in minutes
+const int logReminderInterval = 1; // in minutes
 
 static std::string SHA256HashString(std::string aString){
     std::string digest;
@@ -143,14 +143,14 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
 // SLOTS
 void FileHandler::onReceivedLogParameter(const LogParameter& log){
     writeToLogFile(dateStringNow()+" "+QString(log.name()+" "+log.value()+"\n"));
-    LogParameter localLog(log);
-    localLog.setUpdatedRecently(true);
-    
-    logData.insert(log.name(),localLog);
+//    LogParameter localLog(log);
+//    localLog.setUpdatedRecently(true);
+    logData.insert(log.name(),log);
+    logData[log.name()].setUpdatedRecently(true);
 }
 
 void FileHandler::onLogRemind(){
-
+	emit logIntervalSignal();
 }
 
 void FileHandler::onUploadRemind(){
@@ -251,6 +251,7 @@ bool FileHandler::switchFiles(QString fileName){
         closeFiles();
         return false;
     }
+    return true;
 }
 
 bool FileHandler::readFileInformation(){
