@@ -141,10 +141,12 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
 }
 
 // SLOTS
-void FileHandler::onReceivedLogParameter(LogParameter log){
-    writeToLogFile(QString(log.name()+" "+log.value()+" "+dateStringNow()+"\n"));
-    log.setUpdatedRecently(true);
-    logData.insert(log.name(),log);
+void FileHandler::onReceivedLogParameter(const LogParameter& log){
+    writeToLogFile(dateStringNow()+" "+QString(log.name()+" "+log.value()+"\n"));
+    LogParameter localLog(log);
+    localLog.setUpdatedRecently(true);
+    
+    logData.insert(log.name(),localLog);
 }
 
 void FileHandler::onLogRemind(){
@@ -280,7 +282,7 @@ void FileHandler::writeToDataFile(const QString &data){
     out << data;
 }
 
-void FileHandler::writeToLogFile(QString log) {
+void FileHandler::writeToLogFile(const QString& log) {
     if (logFile == nullptr){
         return;
     }

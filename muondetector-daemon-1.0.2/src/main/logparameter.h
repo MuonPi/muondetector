@@ -4,7 +4,7 @@
 struct LogParameter{
 public:
     LogParameter()=default;
-    LogParameter(const QString& name, const QString& value, const bool updatedRecently = false){
+    LogParameter(const QString& name, const QString& value, bool updatedRecently = false){
         updated = updatedRecently;
         a_name = name;
         a_value = value;}
@@ -12,9 +12,9 @@ public:
     void setName(const QString& name) {a_name = name;}
     void setValue(const QString& value) {a_value = value;}
 
-    const QString value() {return (const QString)a_value;}
-    const QString name() {return (const QString)a_value;}
-    const bool updatedRecently() {return (const bool)updated;}
+    const QString& value() const {return a_value;}
+    const QString& name() const {return a_name;}
+    bool updatedRecently() const {return updated;}
 
 private:
     QString a_name, a_value;

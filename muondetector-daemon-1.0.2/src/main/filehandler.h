@@ -19,10 +19,10 @@ public:
 
 public slots:
     void writeToDataFile(const QString& data); // writes data to the file opened in "dataFile"
-    void onReceivedLogParameter(LogParameter log);
+    void onReceivedLogParameter(const LogParameter& log);
 
 private:
-    void writeToLogFile(QString log); // writes log information to logFile
+    void writeToLogFile(const QString& log); // writes log information to logFile
     // save and send data everyday
     QMap<QString, LogParameter> logData;
     QFile *dataFile = nullptr; // the file date is currently written to. (timestamps)

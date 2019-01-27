@@ -534,29 +534,38 @@ void Daemon::connectToGps() {
 
     // connect fileHandler related stuff
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, [this](GeodeticPos pos){
+		logParameter(LogParameter("geoLongitude", QString::number(1e-7*pos.lon,'f',5)+" deg"));
+		logParameter(LogParameter("geoLatitude", QString::number(1e-7*pos.lat,'f',5)+" deg"));
+		logParameter(LogParameter("geoHeightMSL", QString::number(1e-3*pos.hMSL,'f',2)+" m"));
+		logParameter(LogParameter("geoHorAccuracy", QString::number(1e-3*pos.hAcc,'f',2)+" m"));
+		logParameter(LogParameter("geoVertAccuracy", QString::number(1e-3*pos.vAcc,'f',2)+" m"));
+/*
         LogParameter log(QString("geodeticPos"),QString("%1 %2 %3 %4 %5 %6 %7").arg(pos.iTOW).arg(pos.lon).arg(pos.lat).arg(pos.height).arg(pos.hMSL).arg(pos.hAcc).arg(pos.vAcc));
         this->logParameter(log);
+*/
     });
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, [this](std::vector<GnssSatellite> satlist, std::chrono::duration<double> updateAge){
-        int allSats, usedSats;
+        int allSats=0, usedSats=0;
         for (auto sat : satlist){
-            allSats++;
-            if (sat.fUsed){
-                usedSats++;
-            }
+            if (sat.fCnr>0) allSats++;
+            if (sat.fUsed) usedSats++;
         }
-        LogParameter log(QString("sats"),QString("%1").arg(allSats)); // HERE CONTINUE TO IMPLEMENT !!! NOT FINISHED !!!
-        this->logParameter(log);
-        log.setName(QString("usedSats"));
-        log.setValue(QString("%1").arg(usedSats));
-        this->logParameter(log);
+        logParameter(LogParameter("sats",QString("%1").arg(allSats)));
+        logParameter(LogParameter("usedSats",QString("%1").arg(usedSats)));
     });
-    /*
+    
     connect(qtGps, &QtSerialUblox::gpsMonHW, [this](uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags){
+		logParameter(LogParameter("preampNoise", QString::number(-noise)+" dBHz"));
+		logParameter(LogParameter("preampAGC", QString::number(agc)));
+		logParameter(LogParameter("antennaStatus", QString::number(antStatus)));
+		logParameter(LogParameter("antennaPower", QString::number(antPower)));
+		logParameter(LogParameter("jammingLevel", QString::number(jamInd/2.55,'f',1)+" %"));
+/*
         LogParameter log("sat",QString("%1 %2 %3 %4 %5 %6").arg(noise).arg(agc).arg(antStatus).arg(antPower).arg(jamInd).arg(flags));
         this->logParameter(log);
+*/
     });
-    */
+    
     if (fileHandler != nullptr){
         connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
     }
@@ -1061,7 +1070,7 @@ void Daemon::configGps() {
 	emit UBXSetCfgMsgRate(MSG_TIM_TP, 1, 0);	// TIM-TP
 	emit UBXSetCfgMsgRate(MSG_NAV_TIMEUTC, 1, 20);	// NAV-TIMEUTC
 	emit UBXSetCfgMsgRate(MSG_MON_HW, 1, 47);	// MON-HW
-	emit UBXSetCfgMsgRate(MSG_NAV_POSLLH, 1, 53);	// MON-HW
+	emit UBXSetCfgMsgRate(MSG_NAV_POSLLH, 1, 127);	// MON-POSLLH
 	//emit UBXSetCfgMsgRate(MSG_NAV_SAT, 1, 59);	// NAV-SAT (don't know why it does not work,
 	// probably also configured with UBX-CFG-INFO...
 	emit UBXSetCfgMsgRate(MSG_NAV_TIMEGPS, 1, 61);	// NAV-TIMEGPS

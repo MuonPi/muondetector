@@ -25,7 +25,7 @@ static const std::vector<std::tuple<std::string, std::string, std::string>> CALI
 													{"FEATURE_FLAGS", "UINT8",  "0"} ,
 													{"CALIB_FLAGS", "UINT8", "0"} ,
 													{"DATE", "UINT32", "0"} ,
-													{"RSENSE", "UINT16", "200"} ,
+													{"RSENSE", "UINT16", "100"} ,
 													{"VDIV", "UINT16", "1100"} ,
 													{"COEFF0", "FLOAT", "0.0"} ,
 													{"COEFF1", "FLOAT", "1.0"} ,
