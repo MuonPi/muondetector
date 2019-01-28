@@ -108,6 +108,7 @@ private:
     void sendCalib();
     bool readEeprom();
     void receivedCalibItems(const std::vector<CalibStruct>& newCalibs);
+    void logBiasValues();
     
     void printTimestamp();
     void delay(int millisecondsWait);

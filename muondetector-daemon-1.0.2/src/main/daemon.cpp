@@ -483,6 +483,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 			logParameter(LogParameter("biasDAC", QString::number(biasVoltage)+" V"));
 		}
 		if (pca && pca->devicePresent()) logParameter(LogParameter("interruptInputSwitch", "0x"+QString::number(pcaPortMask,16)));
+		logBiasValues();
 	});
 
 
@@ -495,6 +496,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	}
 	pollAllUbxMsgRate();
 }
+
 
 Daemon::~Daemon() {
     if (snHup!=nullptr){ delete snHup; snHup = nullptr; }
@@ -1379,4 +1381,44 @@ void Daemon::termSignalHandler(int)
 void Daemon::intSignalHandler(int) {
 	char a = 1;
 	::write(sigintFd[0], &a, sizeof(a));
+}
+
+void Daemon::logBiasValues()
+{
+	double v1=0.,v2=0.;
+	if (adc && adc->devicePresent()) {
+		v1=adc->readVoltage(2);
+		v2=adc->readVoltage(3);
+		if (calib && calib->getCalibItem("VDIV").name=="VDIV") {
+			CalibStruct vdivItem=calib->getCalibItem("VDIV");
+			std::istringstream istr(vdivItem.value);
+			double vdiv;
+			istr >> vdiv;
+			vdiv/=100.;
+			logParameter(LogParameter("vbias1", QString::number(v1*vdiv)+" V"));
+			logParameter(LogParameter("vbias2", QString::number(v2*vdiv)+" V"));
+            double ubias=v2*vdiv;
+			
+			CalibStruct flagItem=calib->getCalibItem("CALIB_FLAGS");
+			uint8_t calFlags;
+			istr=std::istringstream(flagItem.value);
+            istr >> calFlags;
+            if (calFlags & CalibStruct::CALIBFLAGS_CURRENT_COEFFS) {
+				double islope,ioffs,rsense;
+				istr=std::istringstream(calib->getCalibItem("COEFF2").value);
+				istr >> ioffs;
+				istr=std::istringstream(calib->getCalibItem("COEFF3").value);
+				istr >> islope;
+				istr=std::istringstream(calib->getCalibItem("RSENSE").value);
+				istr >> rsense;
+				rsense /= 10.*1000.; // yields Rsense in MOhm
+				double icorr = ubias*islope+ioffs;
+				double ibias = (v1-v2)*vdiv/rsense-icorr;
+				logParameter(LogParameter("ibias", QString::number(ibias)+" uA"));
+			}
+		} else {
+			logParameter(LogParameter("vadc3", QString::number(v1)+" V"));
+			logParameter(LogParameter("vadc4", QString::number(v2)+" V"));
+		}
+	}
 }
