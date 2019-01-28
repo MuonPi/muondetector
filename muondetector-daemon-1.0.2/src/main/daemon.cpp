@@ -229,12 +229,6 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
     connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
 	
-	connect(fileHandler, &FileHandler::logIntervalSignal, [this]() {
-		double xorRate = pigHandler->getBufferedRates(0, XOR_RATE).back().y();
-		logParameter(LogParameter("rateXOR", QString::number(xorRate)+" Hz"));
-		double andRate = pigHandler->getBufferedRates(0, AND_RATE).back().y();
-		logParameter(LogParameter("rateAND", QString::number(andRate)+" Hz"));
-	});
 
 	// for i2c devices
 	lm75 = new LM75();
@@ -475,6 +469,22 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		}
 	}
 	flush(cout);
+
+	// connect to the regular log timer signal to log several non-regularly polled parameters
+	connect(fileHandler, &FileHandler::logIntervalSignal, [this]() {
+		double xorRate = pigHandler->getBufferedRates(0, XOR_RATE).back().y();
+		logParameter(LogParameter("rateXOR", QString::number(xorRate)+" Hz"));
+		double andRate = pigHandler->getBufferedRates(0, AND_RATE).back().y();
+		logParameter(LogParameter("rateAND", QString::number(andRate)+" Hz"));
+		if (lm75 && lm75->devicePresent()) logParameter(LogParameter("temperature", QString::number(lm75->getTemperature())+" degC"));
+		if (dac && dac->devicePresent()) {
+			logParameter(LogParameter("thresh1", QString::number(dacThresh[0])+" V"));
+			logParameter(LogParameter("thresh2", QString::number(dacThresh[1])+" V"));
+			logParameter(LogParameter("biasDAC", QString::number(biasVoltage)+" V"));
+		}
+		if (pca && pca->devicePresent()) logParameter(LogParameter("interruptInputSwitch", "0x"+QString::number(pcaPortMask,16)));
+	});
+
 
 	// start tcp connection and gps module connection
 	//connectToServer();
@@ -1077,12 +1087,12 @@ void Daemon::configGps() {
 	//emit sendPollUbxMsg(MSG_MON_VER);
 	emit UBXSetCfgMsgRate(MSG_TIM_TM2, 1, 1);	// TIM-TM2
 	emit UBXSetCfgMsgRate(MSG_TIM_TP, 1, 0);	// TIM-TP
-	emit UBXSetCfgMsgRate(MSG_NAV_TIMEUTC, 1, 20);	// NAV-TIMEUTC
+	emit UBXSetCfgMsgRate(MSG_NAV_TIMEUTC, 1, 91);	// NAV-TIMEUTC
 	emit UBXSetCfgMsgRate(MSG_MON_HW, 1, 47);	// MON-HW
 	emit UBXSetCfgMsgRate(MSG_NAV_POSLLH, 1, 127);	// MON-POSLLH
 	//emit UBXSetCfgMsgRate(MSG_NAV_SAT, 1, 59);	// NAV-SAT (don't know why it does not work,
 	// probably also configured with UBX-CFG-INFO...
-	emit UBXSetCfgMsgRate(MSG_NAV_TIMEGPS, 1, 61);	// NAV-TIMEGPS
+	emit UBXSetCfgMsgRate(MSG_NAV_TIMEGPS, 1, 0);	// NAV-TIMEGPS
 	emit UBXSetCfgMsgRate(MSG_NAV_SOL, 1, 67);	// NAV-SOL
 	emit UBXSetCfgMsgRate(MSG_NAV_STATUS, 1, 71);	// NAV-STATUS
 	emit UBXSetCfgMsgRate(MSG_NAV_CLOCK, 1, 89);	// NAV-CLOCK
@@ -1092,7 +1102,7 @@ void Daemon::configGps() {
 	emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 49);	// NAV-SVINFO
 	// this poll is for checking the port cfg (which protocols are enabled etc.)
 	emit sendPollUbxMsg(MSG_CFG_PRT);
-	//emit sendPollUbxMsg(MSG_MON_VER);
+	emit sendPollUbxMsg(MSG_MON_VER);
 	//emit sendPoll()
 }
 
@@ -1188,6 +1198,7 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
 		*(tcpMessage->dStream) << (quint8)data;
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
+		logParameter(LogParameter("TXBufUsage", QString::number(data)+" %"));
 		break;
 	case 'p':
 		if (verbose>2)
@@ -1198,6 +1209,7 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
 		*(tcpMessage->dStream) << (quint8)data;
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
+		logParameter(LogParameter("maxTXBufUsage", QString::number(data)+" %"));
 		break;
 	case 'f':
 		if (verbose>2)
@@ -1208,6 +1220,7 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
 		*(tcpMessage->dStream) << (quint8)data;
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
+		logParameter(LogParameter("fixStatus", QString::number(data)));
 		break;
 	default:
 		break;
@@ -1227,7 +1240,7 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
 		*(tcpMessage->dStream) << (quint32)data;
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
-			
+		logParameter(LogParameter("timeAccuracy", QString::number(data)+" ns"));
 		break;
 	case 'c':
 		if (verbose>2)
@@ -1251,11 +1264,13 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
 		cout << std::chrono::system_clock::now()
 			- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 			<< "clock drift: " << data << " ns/s" << endl;
+		logParameter(LogParameter("clockDrift", QString::number(data)+" ns/s"));
 		break;
 	case 'b':
 		cout << std::chrono::system_clock::now()
 			- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 			<< "clock bias: " << data << " ns" << endl;
+		logParameter(LogParameter("clockBias", QString::number(data)+" ns"));
 		break;
 	default:
 		break;
@@ -1268,6 +1283,9 @@ void Daemon::UBXReceivedVersion(const QString& swString, const QString& hwString
     TcpMessage tcpMessage(gpsVersionSig);
     (*tcpMessage.dStream) << swString << hwString << protString;
     emit sendTcpMessage(tcpMessage);
+	logParameter(LogParameter("UBX_SW_Version", swString));
+	logParameter(LogParameter("UBX_HW_Version", hwString));
+	logParameter(LogParameter("UBX_Prot_Version", protString));
 }
 
 void Daemon::toConsole(const QString &data) {
