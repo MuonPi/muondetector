@@ -151,6 +151,7 @@ private:
 	gpsProperty<uint8_t> txBufUsage;
 	gpsProperty<uint8_t> txBufPeakUsage;
 	gpsProperty<uint32_t> timeAccuracy;
+	gpsProperty<uint32_t> freqAccuracy;
 	gpsProperty<uint32_t> eventCounter;
 	gpsProperty<int32_t> clkBias;
 	gpsProperty<int32_t> clkDrift;

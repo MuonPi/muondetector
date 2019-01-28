@@ -1017,6 +1017,13 @@ void QtSerialUblox::UBXNavClock(const std::string& msg)
 	fAcc += ((int)msg[19]) << 24;
 	//uint32_t fAccuracy = fAcc;
 
+	emit gpsPropertyUpdatedUint32(tAcc, timeAccuracy.updateAge(), 'a');
+	timeAccuracy = tAcc;
+	timeAccuracy.lastUpdate = std::chrono::system_clock::now();
+
+	emit gpsPropertyUpdatedUint32(fAcc, freqAccuracy.updateAge(), 'f');
+	freqAccuracy = fAcc;
+	freqAccuracy.lastUpdate = std::chrono::system_clock::now();
 	// meaning of columns:
 	// 01 22 - signature of NAV-CLOCK message
 	// second in current week (s), clock bias (ns), clock drift (ns/s), time accuracy (ns), freq accuracy (ps/s)

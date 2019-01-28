@@ -543,6 +543,7 @@ void Daemon::connectToGps() {
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, &Daemon::sendUbxGeodeticPos);
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, this, &Daemon::gpsPropertyUpdatedGnss);
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedUint32, this, &Daemon::gpsPropertyUpdatedUint32);
+    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedInt32, this, &Daemon::gpsPropertyUpdatedInt32);
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedUint8, this, &Daemon::gpsPropertyUpdatedUint8);
     connect(qtGps, &QtSerialUblox::gpsMonHW, this, &Daemon::gpsMonHWUpdated);
     connect(qtGps, &QtSerialUblox::gpsVersion, this, &Daemon::UBXReceivedVersion);
@@ -1087,19 +1088,19 @@ void Daemon::configGps() {
 	//emit sendPollUbxMsg(MSG_MON_VER);
 	emit UBXSetCfgMsgRate(MSG_TIM_TM2, 1, 1);	// TIM-TM2
 	emit UBXSetCfgMsgRate(MSG_TIM_TP, 1, 0);	// TIM-TP
-	emit UBXSetCfgMsgRate(MSG_NAV_TIMEUTC, 1, 91);	// NAV-TIMEUTC
+	emit UBXSetCfgMsgRate(MSG_NAV_TIMEUTC, 1, 131);	// NAV-TIMEUTC
 	emit UBXSetCfgMsgRate(MSG_MON_HW, 1, 47);	// MON-HW
 	emit UBXSetCfgMsgRate(MSG_NAV_POSLLH, 1, 127);	// MON-POSLLH
 	//emit UBXSetCfgMsgRate(MSG_NAV_SAT, 1, 59);	// NAV-SAT (don't know why it does not work,
 	// probably also configured with UBX-CFG-INFO...
 	emit UBXSetCfgMsgRate(MSG_NAV_TIMEGPS, 1, 0);	// NAV-TIMEGPS
-	emit UBXSetCfgMsgRate(MSG_NAV_SOL, 1, 67);	// NAV-SOL
+	emit UBXSetCfgMsgRate(MSG_NAV_SOL, 1, 167);	// NAV-SOL
 	emit UBXSetCfgMsgRate(MSG_NAV_STATUS, 1, 71);	// NAV-STATUS
-	emit UBXSetCfgMsgRate(MSG_NAV_CLOCK, 1, 89);	// NAV-CLOCK
-	emit UBXSetCfgMsgRate(MSG_MON_TXBUF, 1, 63);	// MON-TXBUF
+	emit UBXSetCfgMsgRate(MSG_NAV_CLOCK, 1, 189);	// NAV-CLOCK
+	emit UBXSetCfgMsgRate(MSG_MON_TXBUF, 1, 31);	// MON-TXBUF
 	emit UBXSetCfgMsgRate(MSG_NAV_SBAS, 1, 0);	// NAV-SBAS
 	emit UBXSetCfgMsgRate(MSG_NAV_DOP, 1, 0);	// NAV-DOP
-	emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 49);	// NAV-SVINFO
+	emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 65);	// NAV-SVINFO
 	// this poll is for checking the port cfg (which protocols are enabled etc.)
 	emit sendPollUbxMsg(MSG_CFG_PRT);
 	emit sendPollUbxMsg(MSG_MON_VER);
@@ -1242,6 +1243,13 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
 		delete tcpMessage;
 		logParameter(LogParameter("timeAccuracy", QString::number(data)+" ns"));
 		break;
+	case 'f':
+		if (verbose>2)
+			cout << std::chrono::system_clock::now()
+				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
+				<< "frequency accuracy: " << data << " ps/s" << endl;
+		logParameter(LogParameter("freqAccuracy", QString::number(data)+" ps/s"));
+		break;
 	case 'c':
 		if (verbose>2)
 			cout << std::chrono::system_clock::now()
@@ -1261,15 +1269,17 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
 	char propertyName) {
 	switch (propertyName) {
 	case 'd':
-		cout << std::chrono::system_clock::now()
-			- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
-			<< "clock drift: " << data << " ns/s" << endl;
+		if (verbose>2)
+			cout << std::chrono::system_clock::now()
+				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
+				<< "clock drift: " << data << " ns/s" << endl;
 		logParameter(LogParameter("clockDrift", QString::number(data)+" ns/s"));
 		break;
 	case 'b':
-		cout << std::chrono::system_clock::now()
-			- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
-			<< "clock bias: " << data << " ns" << endl;
+		if (verbose>2)
+			cout << std::chrono::system_clock::now()
+				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
+				<< "clock bias: " << data << " ns" << endl;
 		logParameter(LogParameter("clockBias", QString::number(data)+" ns"));
 		break;
 	default:
