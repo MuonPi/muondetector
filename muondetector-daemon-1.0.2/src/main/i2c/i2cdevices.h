@@ -159,11 +159,12 @@ public:
 	void setDiffMode(bool mode) { fDiffMode=mode; }
 	bool setDataReadyPinMode();
 	unsigned int getReadWaitDelay() const { return fReadWaitDelay; }
+	double getLastConvTime() const { return fLastConvTime; }
 
 protected:
 	CFG_PGA fPga[4];
 	unsigned int fRate;
-	unsigned int fLastConvTime;
+	double fLastConvTime;
 	unsigned int fLastADCValue;
 	double fLastVoltage;
 	unsigned int fReadWaitDelay;	// conversion wait time in us

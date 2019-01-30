@@ -48,7 +48,6 @@ static const quint16 gpsIntCounterSig = 193;
 // not implemented from here on yet
 static const quint16 dacSetEepromSig = 109;
 static const quint16 dacRequestEepromSig = 113;
-//static const quint16 gpsSatsRequestSig = 151;
 
 
 

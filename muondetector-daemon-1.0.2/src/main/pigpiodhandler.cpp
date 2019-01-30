@@ -8,6 +8,10 @@ extern "C" {
 #include <pigpiod_if2.h>
 }
 
+
+const static int eventCountDeadTime = 30;
+const static int adcSampleDeadTime = 10;
+
 static int pi = 0;
 const int rateSecondsBuffered = 15*60; // 15 min
 static PigpiodHandler *pigHandlerAddress = nullptr;
@@ -18,6 +22,7 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
     lastAndTime = QTime::currentTime();
     lastXorTime = QTime::currentTime();
     lastInterval = QTime::currentTime();
+    lastSamplingTime = QTime::currentTime();
     andCounts.push_front(0);
     xorCounts.push_front(0);
     pi = pigpio_start((char*)"127.0.0.1", (char*)"8888");
@@ -187,6 +192,7 @@ void PigpiodHandler::bufferIntervalActualisation(){
         lastInterval = lastInterval.addMSecs(bufferResolution);
     }
 }
+
 void cbFunction(int user_pi, unsigned int user_gpio,
 	unsigned int level, uint32_t tick) {
 	if (pigHandlerAddress == nullptr) {
@@ -194,23 +200,37 @@ void cbFunction(int user_pi, unsigned int user_gpio,
     }
     PigpiodHandler* pigpioHandler = pigHandlerAddress;
     try{
-        pigpioHandler->bufferIntervalActualisation();
-        if (user_gpio == EVT_AND) {
+		if (user_gpio == ADC_READY) {
+//			std::cout<<"ADC conv ready"<<std::endl;
+			return;
+		} else if (user_gpio == TIMEPULSE) {
+//			std::cout<<"Timepulse"<<std::endl;
+			//return;
+		} else if (user_gpio == EVT_AND) {
+			pigpioHandler->bufferIntervalActualisation();
             if (!pigpioHandler->andCounts.isEmpty()){
                 pigpioHandler->andCounts.head()++;
             }
-            if (pigpioHandler->lastAndTime.elapsed() < 30) {
+			if (pigpioHandler->lastSamplingTime.elapsed()>=adcSampleDeadTime) {
+				pigpioHandler->sendSamplingTrigger();
+				pigpioHandler->lastSamplingTime.restart();
+			}
+            if (pigpioHandler->lastAndTime.elapsed() < eventCountDeadTime) {
                 return;
             }
             else {
                 pigpioHandler->lastAndTime.restart();
             }
-        } 
-        if (user_gpio == EVT_XOR) {
+        } else if (user_gpio == EVT_XOR) {
+			pigpioHandler->bufferIntervalActualisation();
             if (!pigpioHandler->xorCounts.isEmpty()){
                 pigpioHandler->xorCounts.head()++;
             }
-            if (pigpioHandler->lastXorTime.elapsed() < 30) {
+			if (pigpioHandler->lastSamplingTime.elapsed()>=adcSampleDeadTime) {
+				pigpioHandler->sendSamplingTrigger();
+				pigpioHandler->lastSamplingTime.restart();
+			}
+            if (pigpioHandler->lastXorTime.elapsed() < eventCountDeadTime) {
                 return;
             }
             else {
@@ -218,11 +238,7 @@ void cbFunction(int user_pi, unsigned int user_gpio,
             }
             //std::cout<<"XOR event"<<std::endl;
         } 
-        if (user_gpio == EVT_XOR || user_gpio == EVT_AND) {
-			pigpioHandler->sendSamplingTrigger();
-		} 
-		//else if (user_gpio == ADC_READY) std::cout<<"ADC conv ready"<<std::endl;
-		//else if (user_gpio == TIMEPULSE) std::cout<<"Timepulse"<<std::endl;
+
         if (pi != user_pi) {
             // put some error here for the case pi is not the same as before initialized
         }

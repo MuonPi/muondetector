@@ -26,6 +26,8 @@ public:
     QQueue<int> xorCounts, andCounts;
     // can't make it private because of access of PigpiodHandler with global pointer
     QTime lastAndTime, lastXorTime, lastInterval;
+  	QTime lastSamplingTime;
+
     QDateTime startOfProgram; // the exact time when the program starts (Utc)
     QVector<QPointF> getBufferedRates(int number, quint8 whichRate); // get last <number> entries of
                                                                      // buffered rates. If 0: get all.

@@ -223,7 +223,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     }
 
 	// for pigpio signals:
-	const QVector<unsigned int> gpio_pins({ EVT_AND, EVT_XOR, ADC_READY, TIMEPULSE });
+	const QVector<unsigned int> gpio_pins({ EVT_AND, EVT_XOR, /*ADC_READY,*/ TIMEPULSE });
     pigHandler = new PigpiodHandler(gpio_pins, this);
     connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
     connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
@@ -471,7 +471,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	flush(cout);
 
 	// connect to the regular log timer signal to log several non-regularly polled parameters
-	connect(fileHandler, &FileHandler::logIntervalSignal, [this]() {
+	connect(fileHandler, &FileHandler::logIntervalSignal, this, [this]() {
 		double xorRate = pigHandler->getBufferedRates(0, XOR_RATE).back().y();
 		logParameter(LogParameter("rateXOR", QString::number(xorRate)+" Hz"));
 		double andRate = pigHandler->getBufferedRates(0, AND_RATE).back().y();
@@ -484,6 +484,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		}
 		if (pca && pca->devicePresent()) logParameter(LogParameter("interruptInputSwitch", "0x"+QString::number(pcaPortMask,16)));
 		logBiasValues();
+		if (adc) logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms"));
 	});
 
 
@@ -553,7 +554,7 @@ void Daemon::connectToGps() {
 	connect(this, &Daemon::UBXSetDynModel, qtGps, &QtSerialUblox::setDynamicModel);
 
     // connect fileHandler related stuff
-    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, [this](GeodeticPos pos){
+    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, [this](GeodeticPos pos){
 		logParameter(LogParameter("geoLongitude", QString::number(1e-7*pos.lon,'f',5)+" deg"));
 		logParameter(LogParameter("geoLatitude", QString::number(1e-7*pos.lat,'f',5)+" deg"));
 		logParameter(LogParameter("geoHeightMSL", QString::number(1e-3*pos.hMSL,'f',2)+" m"));
@@ -564,7 +565,7 @@ void Daemon::connectToGps() {
         this->logParameter(log);
 */
     });
-    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, [this](std::vector<GnssSatellite> satlist, std::chrono::duration<double> updateAge){
+    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, this, [this](std::vector<GnssSatellite> satlist, std::chrono::duration<double> updateAge){
         int allSats=0, usedSats=0;
         for (auto sat : satlist){
             if (sat.fCnr>0) allSats++;
@@ -574,7 +575,7 @@ void Daemon::connectToGps() {
         logParameter(LogParameter("usedSats",QString("%1").arg(usedSats)));
     });
     
-    connect(qtGps, &QtSerialUblox::gpsMonHW, [this](uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags){
+    connect(qtGps, &QtSerialUblox::gpsMonHW, this, [this](uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags){
 		logParameter(LogParameter("preampNoise", QString::number(-noise)+" dBHz"));
 		logParameter(LogParameter("preampAGC", QString::number(agc)));
 		logParameter(LogParameter("antennaStatus", QString::number(antStatus)));
@@ -647,7 +648,9 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         uint8_t channel;
         float threshold;
         *(tcpMessage.dStream) >> channel >> threshold;
-        setDacThresh(channel, threshold);
+        if (threshold<0.001)
+			cout<<"Warning: setting DAC "<<channel<<" to 0!"<<endl;
+        else setDacThresh(channel, threshold);
         return;
 	}
     if (msgID == threshRequestSig){
