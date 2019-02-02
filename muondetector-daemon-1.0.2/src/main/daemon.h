@@ -86,6 +86,7 @@ signals:
 	void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
 	void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
 	void UBXSetDynModel(uint8_t model);
+	void resetUbxDevice(uint32_t flags);
 
 private:
 	void incomingConnection(qintptr socketDescriptor) override;

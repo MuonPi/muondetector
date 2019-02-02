@@ -33,6 +33,7 @@ static const QVector<uint16_t> allMsgCfgID({
 	//   MSG_CFG_ODO, MSG_CFG_PM2, MSG_CFG_PMS, MSG_CFG_PRT, MSG_CFG_PWR,
 	//   MSG_CFG_RATE, MSG_CFG_RINV, MSG_CFG_RST, MSG_CFG_RXM, MSG_CFG_SBAS,
 	//   MSG_CFG_SMGR, MSG_CFG_TMODE2, MSG_CFG_TP5, MSG_CFG_TXSLOT, MSG_CFG_USB
+		 MSG_TIM_TM2,MSG_TIM_TP,
 		 MSG_NAV_CLOCK, MSG_NAV_DGPS, MSG_NAV_AOPSTATUS, MSG_NAV_DOP,
 		 MSG_NAV_POSECEF, MSG_NAV_POSLLH, MSG_NAV_PVT, MSG_NAV_SBAS, MSG_NAV_SOL,
 		 MSG_NAV_STATUS, MSG_NAV_SVINFO, MSG_NAV_TIMEGPS, MSG_NAV_TIMEUTC, MSG_NAV_VELECEF,
@@ -552,6 +553,7 @@ void Daemon::connectToGps() {
     connect(qtGps, &QtSerialUblox::gpsVersion, this, &Daemon::UBXReceivedVersion);
 	connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Daemon::toConsole);
 	connect(this, &Daemon::UBXSetDynModel, qtGps, &QtSerialUblox::setDynamicModel);
+	connect(this, &Daemon::resetUbxDevice, qtGps, &QtSerialUblox::UBXReset);
 
     // connect fileHandler related stuff
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, [this](GeodeticPos pos){
@@ -639,6 +641,7 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_CFG_GNSS);
 	emit sendPollUbxMsg(MSG_CFG_NAV5);
+	pollAllUbxMsgRate();
 }
 
 // ALL FUNCTIONS ABOUT TCPMESSAGE SENDING AND RECEIVING
@@ -706,6 +709,15 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
     }
     if (msgID == ubxMsgRateRequest) {
 		sendUbxMsgRates();
+        return;
+	}
+    if (msgID == ubxResetSig) {
+		uint32_t resetFlags = QtSerialUblox::RESET_WARM | QtSerialUblox::RESET_SW;
+		emit resetUbxDevice(resetFlags);
+        return;
+	}
+    if (msgID == ubxConfigureDefaultSig) {
+		configGps();
         return;
 	}
     if (msgID == ubxMsgRate){
@@ -1389,7 +1401,7 @@ void Daemon::intSignalHandler(int) {
 void Daemon::logBiasValues()
 {
 	double v1=0.,v2=0.;
-	if (adc && adc->devicePresent()) {
+	if (adc && (adc->getStatus() & ~i2cDevice::MODE_UNREACHABLE) && (adc->getStatus() & (i2cDevice::MODE_NORMAL | i2cDevice::MODE_FORCE))) {
 		v1=adc->readVoltage(2);
 		v2=adc->readVoltage(3);
 		if (calib && calib->getCalibItem("VDIV").name=="VDIV") {
