@@ -665,7 +665,7 @@ std::vector<GnssSatellite> QtSerialUblox::UBXNavSat(const std::string& msg, bool
 	nrSats = goodSats;
 	//mutex.unlock();
 
-	if (verbose) {
+	if (verbose>1) {
 		std::string temp;
 		GnssSatellite::PrintHeader(true);
 		for (vector<GnssSatellite>::iterator it = satList.begin(); it != satList.end(); it++) {
@@ -697,7 +697,7 @@ std::vector<GnssSatellite> QtSerialUblox::UBXNavSVinfo(const std::string& msg, b
 
 	int N = (msg.size() - 8) / 12;
 
-	if (verbose > 2) {
+	if (verbose > 1) {
 		std::stringstream tempStream;
 		//std::string temp;
 		tempStream << setfill(' ') << setw(3);
@@ -1333,7 +1333,7 @@ void QtSerialUblox::UBXMonVer(const std::string& msg)
 			size_t n = s.find("PROTVER",0);
 			if (n!=std::string::npos) {
 				std::string str = s.substr(7,s.size()-7);
-				while (str.size() && str[0]==' ') str.erase(0,1);
+				while (str.size() && !isdigit(str[0])) str.erase(0,1);
 				while (str.size() && (str[str.size()-1]==' ' || !std::isgraph(static_cast<unsigned char>(str[str.size()-1])) )) str.erase(str.size()-1,1);
 				fProtVersionString = str;
 				if (verbose > 3) 

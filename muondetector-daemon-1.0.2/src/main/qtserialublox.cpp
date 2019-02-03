@@ -128,7 +128,7 @@ void QtSerialUblox::onReadyRead() {
 	buffer += temp.toStdString();
 	//cout << QString(temp).toStdString();
 	UbxMessage message;
-	if (scanUnknownMessage(buffer, message)) {
+	while (scanUnknownMessage(buffer, message)) {
 		// so it found a message therefore we can now process the message
 		if (showin) {
 			std::stringstream tempStream;
@@ -496,4 +496,19 @@ void QtSerialUblox::pollMsg(uint16_t msgID) {
 		sendUBX(msg);
 		break;
 	}
+}
+
+float QtSerialUblox::getProtVersion() { 
+		//QLocale::setDefault(QLocale(QLocale::English, QLocale::UnitedStates));
+		/*QLocale english(QLocale(QLocale::English, QLocale::UnitedStates));
+		return english.toFloat(fProtVersionString); */
+		//return 0.;
+		double verValue = 0.;
+		try {
+			verValue = std::stod(fProtVersionString);
+		} catch (std::exception& e)
+    {
+//        emit toConsole("Exception catched : " + QString(e.what()));
+    }
+		return verValue;
 }

@@ -76,12 +76,7 @@ public slots:
 
 	void setDynamicModel(uint8_t model);
 	static const std::string& getProtVersionString() { return fProtVersionString; }
-	static float getProtVersion() { 
-		//QLocale::setDefault(QLocale(QLocale::English, QLocale::UnitedStates));
-		/*QLocale english(QLocale(QLocale::English, QLocale::UnitedStates));
-		return english.toFloat(fProtVersionString); */
-		return std::stod(fProtVersionString);
-	}
+	static float getProtVersion();
 	/*
 	float getProtVersion();
 	int getProtVersionMajor();

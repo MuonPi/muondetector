@@ -25,7 +25,7 @@ extern "C" {
 
 using namespace std;
 
-static const QVector<uint16_t> allMsgCfgID({
+static QVector<uint16_t> allMsgCfgID({
 	//   MSG_CFG_ANT, MSG_CFG_CFG, MSG_CFG_DAT, MSG_CFG_DOSC,
 	//   MSG_CFG_DYNSEED, MSG_CFG_ESRC, MSG_CFG_FIXSEED, MSG_CFG_GEOFENCE,
 	//   MSG_CFG_GNSS, MSG_CFG_INF, MSG_CFG_ITFM, MSG_CFG_LOGFILTER,
@@ -313,13 +313,13 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	}
     
     if (dacThresh[0] > 0) {
-        dac->setVoltage(DAC_TH1, dacThresh[0]);
+        if (dac->devicePresent()) dac->setVoltage(DAC_TH1, dacThresh[0]);
     }
     if (dacThresh[1] > 0) {
-        dac->setVoltage(DAC_TH2, dacThresh[1]);
+        if (dac->devicePresent()) dac->setVoltage(DAC_TH2, dacThresh[1]);
     }
 	if (biasVoltage > 0) {
-        dac->setVoltage(DAC_BIAS, biasVoltage);
+        if (dac->devicePresent()) dac->setVoltage(DAC_BIAS, biasVoltage);
 	}
 
 	// EEPROM 24AA02 type
@@ -639,6 +639,7 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_CFG_GNSS);
 	emit sendPollUbxMsg(MSG_CFG_NAV5);
+	pollAllUbxMsgRate();
 }
 
 // ALL FUNCTIONS ABOUT TCPMESSAGE SENDING AND RECEIVING
@@ -733,8 +734,9 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         quint8 channel;
         *(tcpMessage.dStream) >> channel;
         MCP4728::DacChannel channelData;
-        dac->readChannel(channel, channelData);
-		float voltage = MCP4728::code2voltage(channelData);
+        if (!dac->devicePresent()) return;
+	dac->readChannel(channel, channelData);
+	float voltage = MCP4728::code2voltage(channelData);
         sendDacReadbackValue(channel, voltage);
     }
     if (msgID == adcSampleRequestSig){
@@ -912,6 +914,7 @@ void Daemon::sampleAdcEvent(uint8_t channel){
     if (adc==nullptr){
         return;
     }
+    if (adc->getStatus() & i2cDevice::MODE_UNREACHABLE) return;
     TcpMessage tcpMessage(adcSampleSig);
     float value = adc->readVoltage(channel);
     *(tcpMessage.dStream) << (quint8)channel << value;
@@ -923,6 +926,7 @@ void Daemon::getTemperature(){
         return;
     }
     TcpMessage tcpMessage(temperatureSig);
+    if (lm75->getStatus() & i2cDevice::MODE_UNREACHABLE) return;
     float value = lm75->getTemperature();
     *(tcpMessage.dStream) << value;
     emit sendTcpMessage(tcpMessage);
@@ -937,7 +941,7 @@ void Daemon::setPcaChannel(uint8_t channel) {
         cout << "there is no channel > 3" << endl;
 		return;
 	}
-	if (!pca) {
+	if (!pca || !pca->devicePresent()) {
 		return;
 	}
     pcaPortMask = channel;
@@ -950,7 +954,7 @@ void Daemon::setBiasVoltage(float voltage) {
     if (verbose > 1){
         qDebug() << "change biasVoltage to " << voltage;
     }
-    dac->setVoltage(DAC_BIAS, voltage);
+    if (dac && dac->devicePresent()) dac->setVoltage(DAC_BIAS, voltage);
     if (pigHandler!=nullptr){
         pigHandler->resetBuffer();
     }
@@ -986,7 +990,7 @@ void Daemon::setDacThresh(uint8_t channel, float threshold) {
     if (pigHandler!=nullptr){
         pigHandler->resetBuffer();
     }
-    dac->setVoltage(channel, threshold);
+    if (dac->devicePresent()) dac->setVoltage(channel, threshold);
     sendDacThresh(channel);
 }
 
@@ -1027,6 +1031,9 @@ void Daemon::configGps() {
 	// set up ubx as only outPortProtocol
 	//emit UBXSetCfgPrt(1,1); // enables on UART port (1) only the UBX protocol
 	emit UBXSetCfgPrt(1, PROTO_UBX);
+
+	emit sendPollUbxMsg(MSG_MON_VER);
+
 	// set dynamic model: Stationary
 	emit UBXSetDynModel(2);
 
@@ -1096,7 +1103,6 @@ void Daemon::configGps() {
 	emit UBXSetCfgMsgRate(MSG_NAV_TIMEUTC, 1, 131);	// NAV-TIMEUTC
 	emit UBXSetCfgMsgRate(MSG_MON_HW, 1, 47);	// MON-HW
 	emit UBXSetCfgMsgRate(MSG_NAV_POSLLH, 1, 127);	// MON-POSLLH
-	//emit UBXSetCfgMsgRate(MSG_NAV_SAT, 1, 59);	// NAV-SAT (don't know why it does not work,
 	// probably also configured with UBX-CFG-INFO...
 	emit UBXSetCfgMsgRate(MSG_NAV_TIMEGPS, 1, 0);	// NAV-TIMEGPS
 	emit UBXSetCfgMsgRate(MSG_NAV_SOL, 1, 167);	// NAV-SOL
@@ -1105,11 +1111,21 @@ void Daemon::configGps() {
 	emit UBXSetCfgMsgRate(MSG_MON_TXBUF, 1, 31);	// MON-TXBUF
 	emit UBXSetCfgMsgRate(MSG_NAV_SBAS, 1, 0);	// NAV-SBAS
 	emit UBXSetCfgMsgRate(MSG_NAV_DOP, 1, 0);	// NAV-DOP
-	emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 65);	// NAV-SVINFO
 	// this poll is for checking the port cfg (which protocols are enabled etc.)
 	emit sendPollUbxMsg(MSG_CFG_PRT);
+
+	emit sendPollUbxMsg(MSG_MON_VER);
+	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_MON_VER);
 	//emit sendPoll()
+/*
+	if (QtSerialUblox::getProtVersion()>15.0) {
+		emit UBXSetCfgMsgRate(MSG_NAV_SAT, 1, 69);	// NAV-SAT (don't know why it does not work,
+		emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 0);
+		cout<<"prot Version: "<<QtSerialUblox::getProtVersion()<<endl;
+	} else emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 69);	// NAV-SVINFO
+	cout<<"prot Version: "<<QtSerialUblox::getProtVersion()<<endl;
+*/
 }
 
 void Daemon::pollAllUbxMsgRate() {
@@ -1153,7 +1169,7 @@ void Daemon::gpsPropertyUpdatedGnss(std::vector<GnssSatellite> data,
 	std::chrono::duration<double> lastUpdated) {
 	//if (listSats){
 	vector<GnssSatellite> sats = data;
-	if (verbose > 1) {
+	if (verbose > 2) {
 		bool allSats = true;
 		if (!allSats) {
 			std::sort(sats.begin(), sats.end(), GnssSatellite::sortByCnr);
@@ -1295,12 +1311,24 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
 
 void Daemon::UBXReceivedVersion(const QString& swString, const QString& hwString, const QString& protString)
 {
+    static bool initialVersionInfo = true;
     TcpMessage tcpMessage(gpsVersionSig);
     (*tcpMessage.dStream) << swString << hwString << protString;
     emit sendTcpMessage(tcpMessage);
 	logParameter(LogParameter("UBX_SW_Version", swString));
 	logParameter(LogParameter("UBX_HW_Version", hwString));
 	logParameter(LogParameter("UBX_Prot_Version", protString));
+	if (initialVersionInfo) {
+		if (QtSerialUblox::getProtVersion()>15.0) {
+			if (std::find(allMsgCfgID.begin(), allMsgCfgID.end(), MSG_NAV_SAT)==allMsgCfgID.end()) {
+				allMsgCfgID.push_back(MSG_NAV_SAT);
+			}
+			emit UBXSetCfgMsgRate(MSG_NAV_SAT, 1, 69);	// NAV-SAT 
+			emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 0);
+		} else emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 69);	// NAV-SVINFO
+		//cout<<"prot Version: "<<QtSerialUblox::getProtVersion()<<endl;
+	}
+	initialVersionInfo = false;
 }
 
 void Daemon::toConsole(const QString &data) {
