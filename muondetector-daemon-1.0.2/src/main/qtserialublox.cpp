@@ -434,6 +434,22 @@ void QtSerialUblox::UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate)
 	*/
 }
 
+void QtSerialUblox::UBXReset(uint32_t resetFlags)
+{
+	uint16_t navBbrMask = (resetFlags & 0xffff0000) >> 16;
+	uint8_t resetMode = resetFlags & 0xff;
+	unsigned char data[4];
+	data[0]=navBbrMask & 0xff;
+	data [1]=(navBbrMask & 0xff00)>>8;
+	data[2]=resetMode;
+	data[3]=0;
+	
+	UbxMessage newMessage;
+	newMessage.msgID = MSG_CFG_RST;
+	newMessage.data = toStdString(data, 4);
+	sendUBX(newMessage);
+}
+
 void QtSerialUblox::onRequestGpsProperties(){
 
 }

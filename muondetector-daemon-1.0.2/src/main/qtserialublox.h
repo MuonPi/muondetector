@@ -16,6 +16,10 @@ class QtSerialUblox : public QObject
 	Q_OBJECT
 
 public:
+	
+	enum {	RESET_HOT=0x00000000, RESET_WARM=0x00010000, RESET_COLD=0xFFFF0000, 
+			RESET_HW=0x000000, RESET_SW=0x00000001, RESET_SW_GNSS=0x00000002, RESET_HW_AFTER_SHUTDOWN=0x00000004, GNSS_STOP=0x00000008, GNSS_START=0x00000009 };
+
 	explicit QtSerialUblox(const QString serialPortName, int newTimeout, int baudRate,
 		bool newDumpRaw, int newVerbose, bool newShowout, bool newShowin, QObject *parent = 0);
 
@@ -71,6 +75,7 @@ public slots:
 	void UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate);
     void UBXSetCfgRate(uint16_t measRate, uint16_t navRate);
 	void UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask);
+	void UBXReset(uint32_t resetFlags = RESET_WARM | RESET_SW);
 	void ackTimeout();
 	// outPortMask is something like 1 for only UBX protocol or 0b11 for UBX and NMEA
 

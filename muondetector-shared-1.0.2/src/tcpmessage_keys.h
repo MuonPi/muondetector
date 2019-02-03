@@ -45,6 +45,8 @@ static const quint16 gpsMonHWSig = 179;
 static const quint16 gpsVersionSig = 181;
 static const quint16 gpsFixSig = 191;
 static const quint16 gpsIntCounterSig = 193;
+static const quint16 ubxResetSig = 197;
+static const quint16 ubxConfigureDefaultSig = 199;
 // not implemented from here on yet
 static const quint16 dacSetEepromSig = 109;
 static const quint16 dacRequestEepromSig = 113;
