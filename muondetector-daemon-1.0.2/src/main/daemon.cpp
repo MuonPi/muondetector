@@ -714,10 +714,12 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
     if (msgID == ubxResetSig) {
 		uint32_t resetFlags = QtSerialUblox::RESET_WARM | QtSerialUblox::RESET_SW;
 		emit resetUbxDevice(resetFlags);
+		pollAllUbxMsgRate();
         return;
 	}
     if (msgID == ubxConfigureDefaultSig) {
 		configGps();
+		pollAllUbxMsgRate();
         return;
 	}
     if (msgID == ubxMsgRate){
@@ -1280,6 +1282,10 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
 			cout << std::chrono::system_clock::now()
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "frequency accuracy: " << data << " ps/s" << endl;
+		tcpMessage = new TcpMessage(gpsFreqAccSig);
+		*(tcpMessage->dStream) << (quint32)data;
+		emit sendTcpMessage(*tcpMessage);
+		delete tcpMessage;
 		logParameter(LogParameter("freqAccuracy", QString::number(data)+" ps/s"));
 		break;
 	case 'c':

@@ -47,6 +47,7 @@ static const quint16 gpsFixSig = 191;
 static const quint16 gpsIntCounterSig = 193;
 static const quint16 ubxResetSig = 197;
 static const quint16 ubxConfigureDefaultSig = 199;
+static const quint16 gpsFreqAccSig = 211;
 // not implemented from here on yet
 static const quint16 dacSetEepromSig = 109;
 static const quint16 dacRequestEepromSig = 113;
