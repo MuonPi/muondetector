@@ -485,7 +485,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		}
 		if (pca && pca->devicePresent()) logParameter(LogParameter("interruptInputSwitch", "0x"+QString::number(pcaPortMask,16)));
 		logBiasValues();
-		if (adc) logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms"));
+		if (adc && !(adc->getStatus() & i2cDevice::MODE_UNREACHABLE)) logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms"));
 	});
 
 
@@ -1043,10 +1043,10 @@ void Daemon::configGps() {
 	//emit UBXSetCfgPrt(1,1); // enables on UART port (1) only the UBX protocol
 	emit UBXSetCfgPrt(1, PROTO_UBX);
 
-	emit sendPollUbxMsg(MSG_MON_VER);
-
 	// set dynamic model: Stationary
 	emit UBXSetDynModel(2);
+
+	emit sendPollUbxMsg(MSG_MON_VER);
 
 	// deactivate all NMEA messages: (port 6 means ALL ports)
 	// not needed because of deactivation of all NMEA messages with "UBXSetCfgPrt"
@@ -1128,6 +1128,8 @@ void Daemon::configGps() {
 	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_MON_VER);
+	
+	configGpsForVersion();	
 	//emit sendPoll()
 /*
 	if (QtSerialUblox::getProtVersion()>15.0) {
@@ -1137,6 +1139,18 @@ void Daemon::configGps() {
 	} else emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 69);	// NAV-SVINFO
 	cout<<"prot Version: "<<QtSerialUblox::getProtVersion()<<endl;
 */
+}
+
+void Daemon::configGpsForVersion() {
+	if (QtSerialUblox::getProtVersion()<=0.1) return;
+	if (QtSerialUblox::getProtVersion()>15.0) {
+		if (std::find(allMsgCfgID.begin(), allMsgCfgID.end(), MSG_NAV_SAT)==allMsgCfgID.end()) {
+			allMsgCfgID.push_back(MSG_NAV_SAT);
+		}
+		emit UBXSetCfgMsgRate(MSG_NAV_SAT, 1, 69);	// NAV-SAT 
+		emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 0);
+	} else emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 69);	// NAV-SVINFO
+	//cout<<"prot Version: "<<QtSerialUblox::getProtVersion()<<endl;
 }
 
 void Daemon::pollAllUbxMsgRate() {
@@ -1330,14 +1344,7 @@ void Daemon::UBXReceivedVersion(const QString& swString, const QString& hwString
 	logParameter(LogParameter("UBX_HW_Version", hwString));
 	logParameter(LogParameter("UBX_Prot_Version", protString));
 	if (initialVersionInfo) {
-		if (QtSerialUblox::getProtVersion()>15.0) {
-			if (std::find(allMsgCfgID.begin(), allMsgCfgID.end(), MSG_NAV_SAT)==allMsgCfgID.end()) {
-				allMsgCfgID.push_back(MSG_NAV_SAT);
-			}
-			emit UBXSetCfgMsgRate(MSG_NAV_SAT, 1, 69);	// NAV-SAT 
-			emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 0);
-		} else emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 69);	// NAV-SVINFO
-		//cout<<"prot Version: "<<QtSerialUblox::getProtVersion()<<endl;
+		configGpsForVersion();
 	}
 	initialVersionInfo = false;
 }
@@ -1428,7 +1435,7 @@ void Daemon::intSignalHandler(int) {
 void Daemon::logBiasValues()
 {
 	double v1=0.,v2=0.;
-	if (adc && (adc->getStatus() & ~i2cDevice::MODE_UNREACHABLE) && (adc->getStatus() & (i2cDevice::MODE_NORMAL | i2cDevice::MODE_FORCE))) {
+	if (adc && (!(adc->getStatus() & i2cDevice::MODE_UNREACHABLE)) && (adc->getStatus() & (i2cDevice::MODE_NORMAL | i2cDevice::MODE_FORCE))) {
 		v1=adc->readVoltage(2);
 		v2=adc->readVoltage(3);
 		if (calib && calib->getCalibItem("VDIV").name=="VDIV") {

@@ -30,6 +30,7 @@ public:
         QString new_serverAddress, quint16 new_serverPort, bool new_showout, bool new_showin, QObject *parent = 0);
 	~Daemon();
 	void configGps();
+	void configGpsForVersion();
 	void loop();
 	static void hupSignalHandler(int);
 	static void termSignalHandler(int);

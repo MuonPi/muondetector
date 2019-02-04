@@ -469,7 +469,7 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 
 	//mutex.lock();
 //	emit gpsPropertyUpdatedUint32(accEst, timeAccuracy.updateAge(), 'a');
-	timeAccuracy = accEst;
+//	timeAccuracy = accEst;
 //	timeAccuracy.lastUpdate = std::chrono::system_clock::now();
 	//mutex.unlock();
 
