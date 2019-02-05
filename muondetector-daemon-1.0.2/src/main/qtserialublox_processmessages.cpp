@@ -1293,11 +1293,11 @@ void QtSerialUblox::UBXMonHW2(const std::string& msg)
 		tempStream << " I magnitude      : " << dec << (int)magI << endl;
 		tempStream << " Q offset         : " << dec << (int)ofsQ << endl;
 		tempStream << " Q magnitude      : " << dec << (int)magQ << endl;
-		tempStream << " config source    : " << hex << cfgSrc << endl;
+		tempStream << " config source    : " << hex << (int)cfgSrc << endl;
 		tempStream << " POST status word : " << hex << postStatus << dec << endl;
 		emit toConsole(QString::fromStdString(tempStream.str()));
 	}
-//	emit gpsMonHW(noisePerMS, agcCnt, antStatus, antPower, jamInd, flags);
+	emit gpsMonHW2(ofsI,magI,ofsQ,magQ,cfgSrc);
 }
 
 void QtSerialUblox::UBXMonVer(const std::string& msg)

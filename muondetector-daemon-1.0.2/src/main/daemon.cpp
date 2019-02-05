@@ -180,6 +180,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     qRegisterMetaType<uint32_t>("uint32_t");
     qRegisterMetaType<uint16_t>("uint16_t");
     qRegisterMetaType<uint8_t>("uint8_t");
+    qRegisterMetaType<int8_t>("int8_t");
     qRegisterMetaType<CalibStruct>("CalibStruct");
 	qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
 	qRegisterMetaType<std::chrono::duration<double>>("std::chrono::duration<double>");
@@ -550,6 +551,7 @@ void Daemon::connectToGps() {
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedInt32, this, &Daemon::gpsPropertyUpdatedInt32);
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedUint8, this, &Daemon::gpsPropertyUpdatedUint8);
     connect(qtGps, &QtSerialUblox::gpsMonHW, this, &Daemon::gpsMonHWUpdated);
+    connect(qtGps, &QtSerialUblox::gpsMonHW2, this, &Daemon::gpsMonHW2Updated);
     connect(qtGps, &QtSerialUblox::gpsVersion, this, &Daemon::UBXReceivedVersion);
 	connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Daemon::toConsole);
 	connect(this, &Daemon::UBXSetDynModel, qtGps, &QtSerialUblox::setDynamicModel);
@@ -1189,6 +1191,14 @@ void Daemon::gpsMonHWUpdated(uint16_t noise, uint16_t agc, uint8_t antStatus, ui
     TcpMessage tcpMessage(gpsMonHWSig);
     (*tcpMessage.dStream) << (quint16)noise << (quint16)agc << (quint8) antStatus
     << (quint8)antPower << (quint8)jamInd << (quint8)flags;
+    emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::gpsMonHW2Updated(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t magQ, uint8_t cfgSrc)
+{
+    TcpMessage tcpMessage(gpsMonHW2Sig);
+    (*tcpMessage.dStream) << (qint8)ofsI << (quint8)magI << (qint8)ofsQ
+    << (quint8)magQ << (quint8)cfgSrc;
     emit sendTcpMessage(tcpMessage);
 }
 
