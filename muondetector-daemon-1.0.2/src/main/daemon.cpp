@@ -183,6 +183,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     qRegisterMetaType<int8_t>("int8_t");
     qRegisterMetaType<CalibStruct>("CalibStruct");
 	qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
+	qRegisterMetaType<std::vector<GnssConfigStruct>>("std::vector<GnssConfigStruct>");
 	qRegisterMetaType<std::chrono::duration<double>>("std::chrono::duration<double>");
 	qRegisterMetaType<std::string>("std::string");
     qRegisterMetaType<LogParameter>("LogParameter");
@@ -559,8 +560,10 @@ void Daemon::connectToGps() {
     connect(qtGps, &QtSerialUblox::gpsMonHW2, this, &Daemon::gpsMonHW2Updated);
     connect(qtGps, &QtSerialUblox::gpsVersion, this, &Daemon::UBXReceivedVersion);
 	connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Daemon::toConsole);
+    connect(qtGps, &QtSerialUblox::UBXReceivedGnssConfig, this, &Daemon::onUBXReceivedGnssConfig);
 	connect(this, &Daemon::UBXSetDynModel, qtGps, &QtSerialUblox::setDynamicModel);
 	connect(this, &Daemon::resetUbxDevice, qtGps, &QtSerialUblox::UBXReset);
+	connect(this, &Daemon::setGnssConfig, qtGps, &QtSerialUblox::onSetGnssConfig);
 
     // connect fileHandler related stuff
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, [this](GeodeticPos pos){
@@ -791,6 +794,20 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
 			calibs.push_back(item);
 		}
 		receivedCalibItems(calibs);
+    }
+    if (msgID == gnssConfigSig){
+        std::vector<GnssConfigStruct> configs;
+        int nrEntries=0;
+        *(tcpMessage.dStream) >> nrEntries;
+        for (int i=0; i<nrEntries; i++) {
+			GnssConfigStruct config;
+			*(tcpMessage.dStream) >> config.gnssId >> config.resTrkCh >>
+                config.maxTrkCh >> config.flags;
+			configs.push_back(config);
+		}
+		emit setGnssConfig(configs);
+		usleep(150000L);
+		emit sendPollUbxMsg(MSG_CFG_GNSS);
     }
     if (msgID == quitConnectionSig){
         QString closeAddress;
@@ -1235,8 +1252,22 @@ void Daemon::gpsPropertyUpdatedGnss(std::vector<GnssSatellite> data,
 		(*tcpMessage.dStream)<< sats [i];
 	}
     emit sendTcpMessage(tcpMessage);
-
 }
+
+void Daemon::onUBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssConfigStruct>& gnssConfigs) {
+	if (verbose > 2) {
+		// put some verbose output here
+	}
+    int N=gnssConfigs.size();
+    TcpMessage tcpMessage(gnssConfigSig);
+    (*tcpMessage.dStream) << (int)numTrkCh << N;
+    for (int i=0; i<N; i++) {
+		(*tcpMessage.dStream)<<gnssConfigs[i].gnssId<<gnssConfigs[i].resTrkCh<<
+		gnssConfigs[i].maxTrkCh<<gnssConfigs[i].flags;
+	}
+    emit sendTcpMessage(tcpMessage);
+}
+
 void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double> updateAge,
 	char propertyName) {
 	TcpMessage* tcpMessage;

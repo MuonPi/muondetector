@@ -803,28 +803,59 @@ void QtSerialUblox::UBXCfgGNSS(const string &msg)
 		tempStream << "  Config Data :\n";
 		emit toConsole(QString::fromStdString(tempStream.str()));
 	}
+	std::vector<GnssConfigStruct> configs;
+	
 	for (int i = 0; i < N; i++) {
-		uint8_t gnssID = msg[4 + 8 * i];
-		uint8_t resTrkCh = msg[5 + 8 * i];
-		uint8_t maxTrkCh = msg[6 + 8 * i];
-		uint32_t flags = msg[8 + 8 * i];
-		flags |= (int)msg[9 + 8 * i] << 8;
-		flags |= (int)msg[10 + 8 * i] << 16;
-		flags |= (int)msg[11 + 8 * i] << 24;
+		GnssConfigStruct config;
+		config.gnssId = msg[4 + 8 * i];
+		config.resTrkCh = msg[5 + 8 * i];
+		config.maxTrkCh = msg[6 + 8 * i];
+		config.flags = msg[8 + 8 * i];
+		config.flags |= (int)msg[9 + 8 * i] << 8;
+		config.flags |= (int)msg[10 + 8 * i] << 16;
+		config.flags |= (int)msg[11 + 8 * i] << 24;
 		if (verbose>1)
 		{
 			std::stringstream tempStream;
 			tempStream << "   " << i << ":   GNSS name : "
-				<< GnssSatellite::GNSS_ID_STRING[gnssID] << endl;
+				<< GnssSatellite::GNSS_ID_STRING[config.gnssId] << endl;
 			tempStream << "      reserved (min) tracking channels  : "
-				<< dec << (int)resTrkCh << endl;
+				<< dec << (int)config.resTrkCh << endl;
 			tempStream << "      max nr of tracking channels used : "
-				<< dec << (int)maxTrkCh << endl;
-			tempStream << "      flags  : " << std::hex << (int)flags << "\n";
+				<< dec << (int)config.maxTrkCh << endl;
+			tempStream << "      flags  : " << std::hex << (int)config.flags << "\n";
 			emit toConsole(QString::fromStdString(tempStream.str()));
 		}
+		configs.push_back(config);
 	}
+	emit UBXReceivedGnssConfig(numTrkChHw, configs);
 }
+
+void QtSerialUblox::onSetGnssConfig(const std::vector<GnssConfigStruct>& gnssConfigs) {
+	
+	const int N=gnssConfigs.size();
+	unsigned char data[4+8*N];
+	data[0]=0;
+	data[1]=0;
+	data[2]=0xff;
+	data[3]=(uint8_t)N;
+	
+	for (int i=0; i<N; i++) {
+		data[4 + 8 * i]=gnssConfigs[i].gnssId;
+		data[5 + 8 * i]=gnssConfigs[i].resTrkCh;
+		data[6 + 8 * i]=gnssConfigs[i].maxTrkCh;
+		data[8 + 8 * i]=gnssConfigs[i].flags && 0xff;
+		data[9 + 8 * i]=(gnssConfigs[i].flags>>8) && 0xff;
+		data[10 + 8 * i]=(gnssConfigs[i].flags>>16) && 0xff;
+		data[11 + 8 * i]=(gnssConfigs[i].flags>>24) && 0xff;
+	}
+
+	UbxMessage newMessage;
+	newMessage.msgID = MSG_CFG_GNSS;
+	newMessage.data = toStdString(data, 4+8*N);
+	sendUBX(newMessage);
+}
+
 
 void QtSerialUblox::UBXCfgNav5(const string &msg)
 {

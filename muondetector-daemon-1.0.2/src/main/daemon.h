@@ -60,6 +60,7 @@ public slots:
 		char propertyName);
 	void gpsPropertyUpdatedGnss(std::vector<GnssSatellite>,
         std::chrono::duration<double> updateAge);
+    void onUBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssConfigStruct>& gnssConfigs);
     void gpsMonHWUpdated(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags);
 	void gpsMonHW2Updated(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t magQ, uint8_t cfgSrc);
 	void receivedTcpMessage(TcpMessage tcpMessage);
@@ -89,7 +90,8 @@ signals:
 	void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
 	void UBXSetDynModel(uint8_t model);
 	void resetUbxDevice(uint32_t flags);
-
+	void setGnssConfig(const std::vector<GnssConfigStruct>& gnssConfigs);
+	
 private:
 	void incomingConnection(qintptr socketDescriptor) override;
     void setPcaChannel(uint8_t channel); // channel 0 to 3

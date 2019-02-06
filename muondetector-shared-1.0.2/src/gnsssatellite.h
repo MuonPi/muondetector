@@ -6,6 +6,14 @@
 #ifndef GNSSSATELLITE_H
 #define GNSSSATELLITE_H
 
+struct GnssConfigStruct {
+	uint8_t gnssId;
+	uint8_t resTrkCh;
+	uint8_t maxTrkCh;
+	uint32_t flags;
+};
+
+
 class GnssSatellite {
 public:
 	GnssSatellite() {}

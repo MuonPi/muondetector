@@ -12,7 +12,7 @@ using namespace std;
 string QtSerialUblox::fProtVersionString = "";
 
 
-static std::string toStdString(unsigned char* data, int dataSize) {
+std::string QtSerialUblox::toStdString(unsigned char* data, int dataSize) {
 	std::stringstream tempStream;
 	for (int i = 0; i < dataSize; i++) {
 		tempStream << data[i];

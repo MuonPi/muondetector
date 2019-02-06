@@ -52,6 +52,7 @@ signals:
     void gpsVersion(const QString& swVersion, const QString& hwVersion, const QString& protVersion);
     void gpsMonHW(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags);
 	void gpsMonHW2(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t magQ, uint8_t cfgSrc);
+	void UBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssConfigStruct>& gnssConfigs);
 	
 public slots:
 	// all functions that can be called from other classes through signal/slot mechanics
@@ -77,6 +78,7 @@ public slots:
     void UBXSetCfgRate(uint16_t measRate, uint16_t navRate);
 	void UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask);
 	void UBXReset(uint32_t resetFlags = RESET_WARM | RESET_SW);
+	void onSetGnssConfig(const std::vector<GnssConfigStruct>& gnssConfigs);
 	void ackTimeout();
 	// outPortMask is something like 1 for only UBX protocol or 0b11 for UBX and NMEA
 
@@ -123,6 +125,8 @@ private:
 	void UBXMonHW2(const std::string& msg);
 	void UBXMonTx(const std::string& msg);
 	void UBXMonVer(const std::string& msg);
+
+	static std::string toStdString(unsigned char* data, int dataSize);
 
 
 	// all global variables used in QtSerialUblox class until UbxMessage was created
