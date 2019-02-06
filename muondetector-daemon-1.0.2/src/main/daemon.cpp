@@ -1139,6 +1139,7 @@ void Daemon::configGps() {
 	emit UBXSetCfgMsgRate(MSG_TIM_TP, 1, 0);	// TIM-TP
 	emit UBXSetCfgMsgRate(MSG_NAV_TIMEUTC, 1, 131);	// NAV-TIMEUTC
 	emit UBXSetCfgMsgRate(MSG_MON_HW, 1, 47);	// MON-HW
+	emit UBXSetCfgMsgRate(MSG_MON_HW2, 1, 49);	// MON-HW
 	emit UBXSetCfgMsgRate(MSG_NAV_POSLLH, 1, 127);	// MON-POSLLH
 	// probably also configured with UBX-CFG-INFO...
 	emit UBXSetCfgMsgRate(MSG_NAV_TIMEGPS, 1, 0);	// NAV-TIMEGPS
@@ -1347,6 +1348,17 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
 		logParameter(LogParameter("freqAccuracy", QString::number(data)+" ps/s"));
+		break;
+	case 'u':
+		if (verbose>2)
+			cout << std::chrono::system_clock::now()
+				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
+				<< "Ublox uptime: " << data << " s" << endl;
+		tcpMessage = new TcpMessage(gpsUptimeSig);
+		*(tcpMessage->dStream) << (quint32)data;
+		emit sendTcpMessage(*tcpMessage);
+		delete tcpMessage;
+		logParameter(LogParameter("ubloxUptime", QString::number(data)+" s"));
 		break;
 	case 'c':
 		if (verbose>2)
