@@ -226,10 +226,15 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 
 	// for pigpio signals:
 	const QVector<unsigned int> gpio_pins({ EVT_AND, EVT_XOR, /*ADC_READY,*/ TIMEPULSE });
-    pigHandler = new PigpiodHandler(gpio_pins, this);
+    pigHandler = new PigpiodHandler(gpio_pins);
     connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
     connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
     connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
+    /* looks good but using QPointer should be safer
+     * connect(pigHandler, &PigpiodHandler::destroyed, this, [this](){pigHandler = nullptr;});
+    */
+    // test if "aboutToQuit" is called everytime
+    //connect(this, &Daemon::aboutToQuit, [this](){this->toConsole("aboutToQuit called and signal emitted\n");});
 	
 
 	// for i2c devices

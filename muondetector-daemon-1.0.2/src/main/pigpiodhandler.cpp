@@ -3,6 +3,7 @@
 #include <gpio_pin_definitions.h>
 #include <exception>
 #include <iostream>
+#include <QPointer>
 
 extern "C" {
 #include <pigpiod_if2.h>
@@ -13,8 +14,8 @@ const static int eventCountDeadTime = 30;
 const static int adcSampleDeadTime = 10;
 
 static int pi = 0;
-const int rateSecondsBuffered = 15*60; // 15 min
-static PigpiodHandler *pigHandlerAddress = nullptr;
+const static int rateSecondsBuffered = 15*60; // 15 min
+static QPointer<PigpiodHandler> pigHandlerAddress = 0; // QPointer automatically clears itself if pigHandler object is destroyed
 PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
 	: QObject(parent)
 {
@@ -25,11 +26,11 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
     lastSamplingTime = QTime::currentTime();
     andCounts.push_front(0);
     xorCounts.push_front(0);
+    pigHandlerAddress = this;
     pi = pigpio_start((char*)"127.0.0.1", (char*)"8888");
     if (pi < 0) {
         return;
     }
-    pigHandlerAddress = this;
     for (auto& gpio_pin : gpio_pins) {
         set_mode(pi, gpio_pin, PI_INPUT);
         if (gpio_pin==ADC_READY) set_pull_up_down(pi, gpio_pin, PI_PUD_UP);
@@ -64,7 +65,6 @@ void PigpiodHandler::onBufferRatesTimer(){
     while (andBufferedRates.first().x() < x-(qreal)rateSecondsBuffered){
         andBufferedRates.pop_front();
     }
-    // qDebug() << "bufferedLengths = " << andBufferedRates.size() << " " << xorBufferedRates.size();
 }
 
 QVector<QPointF> PigpiodHandler::getBufferedRates(int number, quint8 whichRate){
@@ -106,6 +106,7 @@ void PigpiodHandler::stop() {
     isInitialised=false;
 	pigpio_stop(pi);
 	pigHandlerAddress = nullptr;
+    this->deleteLater();
 }
 
 // internal functions:
@@ -138,7 +139,6 @@ int PigpiodHandler::getCurrentBufferTime(){
     // up to a maximum of 'bufferMsecs' defined in pigpiodhandler.h or set by 'setBufferTime(int msecs)'
     int numberOfEntries = xorCounts.size();
     if (numberOfEntries != andCounts.size()){
-        qDebug() << "error: size of xorCounts and andCounts are not same... this should not happen!";
         while (xorCounts.size() > andCounts.size()){
             xorCounts.pop_back();
         }
@@ -195,10 +195,11 @@ void PigpiodHandler::bufferIntervalActualisation(){
 
 void cbFunction(int user_pi, unsigned int user_gpio,
 	unsigned int level, uint32_t tick) {
-	if (pigHandlerAddress == nullptr) {
-		return;
+    if (pigHandlerAddress.isNull()) {
+        pigpio_stop(pi);
+        return;
     }
-    PigpiodHandler* pigpioHandler = pigHandlerAddress;
+    QPointer<PigpiodHandler> pigpioHandler = pigHandlerAddress;
     try{
 		if (user_gpio == ADC_READY) {
 //			std::cout<<"ADC conv ready"<<std::endl;
@@ -248,7 +249,8 @@ void cbFunction(int user_pi, unsigned int user_gpio,
     }
     catch (std::exception& e)
     {
-        pigpioHandler = nullptr;
+        pigpioHandler = 0;
+        pigpio_stop(pi);
         qDebug() << "Exception catched : " << e.what();
     }
 }
