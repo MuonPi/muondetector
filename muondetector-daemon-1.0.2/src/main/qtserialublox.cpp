@@ -450,6 +450,43 @@ void QtSerialUblox::UBXReset(uint32_t resetFlags)
 	sendUBX(newMessage);
 }
 
+void QtSerialUblox::UBXSetMinMaxSVs(uint8_t minSVs, uint8_t maxSVs)
+{
+	uint16_t mask1 = 0x04;
+	unsigned char data[40];
+	data[2]=0x04; // MinMax flag in mask 1
+	data[3]=0x00; // all other flags are zero
+	data[4]=0; data[5]=0; data[6]=0; data[7]=0;
+	data[10]=minSVs;
+	data[11]=maxSVs;
+	
+	enqueueMsg(MSG_CFG_NAVX5, toStdString(data, 40));
+/*
+	UbxMessage newMessage;
+	newMessage.msgID = MSG_CFG_NAVX5;
+	newMessage.data = toStdString(data, 40);
+	sendUBX(newMessage);
+*/
+}
+
+void QtSerialUblox::UBXSetMinCNO(uint8_t minCNO)
+{
+	unsigned char data[40];
+	data[2]=0x08; // minCNO flag in mask 1
+	data[3]=0x00; // all other flags are zero
+	data[4]=0; data[5]=0; data[6]=0; data[7]=0;
+	data[12]=minCNO;
+	
+	enqueueMsg(MSG_CFG_NAVX5, toStdString(data, 40));
+/*
+	UbxMessage newMessage;
+	newMessage.msgID = MSG_CFG_NAVX5;
+	newMessage.data = toStdString(data, 40);
+	sendUBX(newMessage);
+*/
+}
+
+
 void QtSerialUblox::onRequestGpsProperties(){
 
 }

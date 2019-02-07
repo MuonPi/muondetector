@@ -564,6 +564,8 @@ void Daemon::connectToGps() {
 	connect(this, &Daemon::UBXSetDynModel, qtGps, &QtSerialUblox::setDynamicModel);
 	connect(this, &Daemon::resetUbxDevice, qtGps, &QtSerialUblox::UBXReset);
 	connect(this, &Daemon::setGnssConfig, qtGps, &QtSerialUblox::onSetGnssConfig);
+	connect(this, &Daemon::UBXSetMinMaxSVs, qtGps, &QtSerialUblox::UBXSetMinMaxSVs);
+	connect(this, &Daemon::UBXSetMinCNO, qtGps, &QtSerialUblox::UBXSetMinCNO);
 
     // connect fileHandler related stuff
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, [this](GeodeticPos pos){
@@ -651,6 +653,7 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_CFG_GNSS);
 	emit sendPollUbxMsg(MSG_CFG_NAV5);
+	emit sendPollUbxMsg(MSG_CFG_NAVX5);
 	pollAllUbxMsgRate();
 }
 
@@ -1071,7 +1074,7 @@ void Daemon::configGps() {
 
 	// set dynamic model: Stationary
 	emit UBXSetDynModel(2);
-
+	
 	emit sendPollUbxMsg(MSG_MON_VER);
 
 	// deactivate all NMEA messages: (port 6 means ALL ports)
@@ -1155,8 +1158,10 @@ void Daemon::configGps() {
 	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_MON_VER);
+	//emit UBXSetMinCNO(7);
+	emit sendPollUbxMsg(MSG_CFG_NAVX5);
 	
-	configGpsForVersion();	
+	configGpsForVersion();
 	//emit sendPoll()
 /*
 	if (QtSerialUblox::getProtVersion()>15.0) {

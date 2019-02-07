@@ -178,6 +178,14 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 			}
 			UBXCfgNav5(msg.data);
 			break;
+		case 0x23: // UBX-CFG-NAVX5
+			if (verbose > 3) {
+				tempStream << "received UBX-CFG-NAVX5 message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+					<< " 0x" << std::hex << (int)messageID << ")\n";
+				emit toConsole(QString::fromStdString(tempStream.str()));
+			}
+			UBXCfgNavX5(msg.data);
+			break;
 		case 0x3e: // UBX-CFG-GNSS
 			if (verbose > 3) {
 				tempStream << "received UBX-CFG-GNSS message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
@@ -855,10 +863,13 @@ void QtSerialUblox::onSetGnssConfig(const std::vector<GnssConfigStruct>& gnssCon
 		data[11 + 8 * i]=(flags>>24) & 0xff;
 	}
 
+	enqueueMsg(MSG_CFG_GNSS, toStdString(data, 4+8*N));
+/*
 	UbxMessage newMessage;
 	newMessage.msgID = MSG_CFG_GNSS;
 	newMessage.data = toStdString(data, 4+8*N);
 	sendUBX(newMessage);
+*/
 }
 
 
@@ -1451,4 +1462,36 @@ void QtSerialUblox::UBXMonTx(const std::string& msg)
 		//tempStream >> temp;
 		emit toConsole(QString::fromStdString(tempStream.str()));
 	}
+}
+
+void QtSerialUblox::UBXCfgNavX5(const std::string& msg)
+{
+	// parse all fields
+	uint8_t version = msg[0];
+	uint16_t mask1 = msg[1];
+	mask1 |= msg[2]<<8;
+	uint8_t minSVs = msg[10];
+	uint8_t maxSVs = msg[11];
+	uint8_t minCNO = msg[12];
+	uint8_t iniFix3D = msg[14];
+	uint16_t wknRollover = msg[18];
+	wknRollover |= msg[19]<<8;
+	uint8_t usePPP = msg[26];
+	uint8_t aopCfg = msg[27];
+	uint16_t aopOrbMaxErr = msg[30];
+	aopOrbMaxErr |= msg[31]<<8;
+	if (verbose > 1) {
+		std::stringstream tempStream;
+		tempStream << "*** UBX-MON-NAVX5 message:" << endl;
+		tempStream << " msg version      : " << dec << (int)version << endl;
+		tempStream << " min nr of SVs    : " << dec << (int)minSVs << endl;
+		tempStream << " max nr of SVs    : " << dec << (int)maxSVs << endl;
+		tempStream << " min CNR for nav  : " << dec << (int)minCNO << endl;
+		tempStream << " initial 3D fix   : " << dec << (int)iniFix3D << endl;
+		tempStream << " GPS week rollover: " << dec << (int)wknRollover << endl;
+		tempStream << " AssistNow config : " << dec << (int)aopCfg << endl;
+		tempStream << " max AssistNow orbit error : " << (int)aopOrbMaxErr << endl;
+		emit toConsole(QString::fromStdString(tempStream.str()));
+	}
+	//emit gpsMonHW2(ofsI,magI,ofsQ,magQ,cfgSrc);
 }

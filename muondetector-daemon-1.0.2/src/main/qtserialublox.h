@@ -79,6 +79,8 @@ public slots:
 	void UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask);
 	void UBXReset(uint32_t resetFlags = RESET_WARM | RESET_SW);
 	void onSetGnssConfig(const std::vector<GnssConfigStruct>& gnssConfigs);
+	void UBXSetMinMaxSVs(uint8_t minSVs, uint8_t maxSVs);
+	void UBXSetMinCNO(uint8_t minCNO);
 	void ackTimeout();
 	// outPortMask is something like 1 for only UBX protocol or 0b11 for UBX and NMEA
 
@@ -125,6 +127,7 @@ private:
 	void UBXMonHW2(const std::string& msg);
 	void UBXMonTx(const std::string& msg);
 	void UBXMonVer(const std::string& msg);
+	void UBXCfgNavX5(const std::string& msg);
 
 	static std::string toStdString(unsigned char* data, int dataSize);
 

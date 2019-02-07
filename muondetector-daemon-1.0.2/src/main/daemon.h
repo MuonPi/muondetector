@@ -91,6 +91,8 @@ signals:
 	void UBXSetDynModel(uint8_t model);
 	void resetUbxDevice(uint32_t flags);
 	void setGnssConfig(const std::vector<GnssConfigStruct>& gnssConfigs);
+	void UBXSetMinMaxSVs(uint8_t minSVs, uint8_t maxSVs);
+	void UBXSetMinCNO(uint8_t minCNO);
 	
 private:
 	void incomingConnection(qintptr socketDescriptor) override;
