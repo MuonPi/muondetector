@@ -738,7 +738,12 @@ std::vector<GnssSatellite> QtSerialUblox::UBXNavSVinfo(const std::string& msg, b
 		if (flags & 0x01) used = true;
 		uint8_t health = (flags >> 4 & 0x01);
 		health+=1;
-		uint8_t orbitSource = (flags & 0x04) >> 2 |  (flags & 0x08) >> 2 | (flags & 0x20) >> 3 | (flags & 0x40) >> 3;
+		uint8_t orbitSource = 0;
+		if (flags & 0x04) {
+			if (flags & 0x08) orbitSource = 1;
+			else if (flags & 0x20) orbitSource = 2;
+			else if (flags & 0x40) orbitSource = 3;
+		}
 		bool smoothed = (flags & 0x80);
 		bool diffCorr = (flags & 0x02);
 //{ " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS" };
