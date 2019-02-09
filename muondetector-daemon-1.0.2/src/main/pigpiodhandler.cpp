@@ -49,6 +49,28 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
     bufferRatesTimer.start();
 }
 
+void PigpiodHandler::setInput(unsigned int gpio) {
+    if (isInitialised) set_mode(pi, gpio, PI_INPUT);
+}
+
+void PigpiodHandler::setOutput(unsigned int gpio) {
+    if (isInitialised) set_mode(pi, gpio, PI_OUTPUT);
+}
+
+void PigpiodHandler::setPullUp(unsigned int gpio) {
+    if (isInitialised) set_pull_up_down(pi, gpio, PI_PUD_UP);
+}
+
+void PigpiodHandler::setPullDown(unsigned int gpio) {
+    if (isInitialised) set_pull_up_down(pi, gpio, PI_PUD_DOWN);
+}
+
+void PigpiodHandler::setGpioState(unsigned int gpio, bool state) {
+    if (isInitialised) {
+        gpio_write(pi, gpio, (state)?1:0);
+    }
+}
+
 void PigpiodHandler::onBufferRatesTimer(){
     QPointF xorPoint = getRate(XOR_RATE);
     QPointF andPoint = getRate(AND_RATE);
