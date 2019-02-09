@@ -743,6 +743,7 @@ std::vector<GnssSatellite> QtSerialUblox::UBXNavSVinfo(const std::string& msg, b
 			if (flags & 0x08) orbitSource = 1;
 			else if (flags & 0x20) orbitSource = 2;
 			else if (flags & 0x40) orbitSource = 3;
+			else orbitSource=7;  // set orbit source field to "other"
 		}
 		bool smoothed = (flags & 0x80);
 		bool diffCorr = (flags & 0x02);
