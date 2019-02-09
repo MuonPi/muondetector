@@ -75,27 +75,32 @@ public slots:
 
 	
 signals:
-	void sendTcpMessage(TcpMessage tcpMessage);
+    void sendTcpMessage(TcpMessage tcpMessage);
     void closeConnection(QString closeAddress);
     void logParameter(LogParameter log);
-	void aboutToQuit();
-	void sendPollUbxMsgRate(uint16_t msgID);
-	void sendPollUbxMsg(uint16_t msgID);
-	void sendUbxMsg(uint16_t msgID, const std::string& data);
-	// difference between msgRate and msg is that CFG-MSG (0x0601) alone is used
-	// to set/get the rate for every message so the msgID must be wrapped to the data
+    void aboutToQuit();
+    void sendPollUbxMsgRate(uint16_t msgID);
+    void sendPollUbxMsg(uint16_t msgID);
+    void sendUbxMsg(uint16_t msgID, const std::string& data);
+    // difference between msgRate and msg is that CFG-MSG (0x0601) alone is used
+    // to set/get the rate for every message so the msgID must be wrapped to the data
     // of a message of type CFG-MSG first
-	void UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate);
-	void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
-	void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
-	void UBXSetDynModel(uint8_t model);
-	void resetUbxDevice(uint32_t flags);
-	void setGnssConfig(const std::vector<GnssConfigStruct>& gnssConfigs);
-	void UBXSetMinMaxSVs(uint8_t minSVs, uint8_t maxSVs);
-	void UBXSetMinCNO(uint8_t minCNO);
+    void UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate);
+    void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
+    void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
+    void UBXSetDynModel(uint8_t model);
+    void resetUbxDevice(uint32_t flags);
+    void setGnssConfig(const std::vector<GnssConfigStruct>& gnssConfigs);
+    void UBXSetMinMaxSVs(uint8_t minSVs, uint8_t maxSVs);
+    void UBXSetMinCNO(uint8_t minCNO);
+    void GpioSetInput(unsigned int gpio);
+    void GpioSetOutput(unsigned int gpio);
+    void GpioSetPullUp(unsigned int gpio);
+    void GpioSetPullDown(unsigned int gpio);
+    void GpioSetState(unsigned int gpio, bool state);
 	
 private:
-	void incomingConnection(qintptr socketDescriptor) override;
+    void incomingConnection(qintptr socketDescriptor) override;
     void setPcaChannel(uint8_t channel); // channel 0 to 3
 											 // 0: coincidence ; 1: xor ; 2: discr 1 ; 3: discr 2
     void sendPcaChannel();

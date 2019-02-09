@@ -44,6 +44,11 @@ public slots:
     void sendSamplingTrigger();
 	void stop();
     bool initialised();
+    void setInput(unsigned int gpio);
+    void setOutput(unsigned int gpio);
+    void setPullUp(unsigned int gpio);
+    void setPullDown(unsigned int gpio);
+    void setGpioState(unsigned int gpio, bool state);
 private slots:
     void onBufferRatesTimer();
 private:

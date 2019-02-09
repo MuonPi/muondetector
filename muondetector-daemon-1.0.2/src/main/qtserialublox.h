@@ -58,20 +58,10 @@ public slots:
 	// all functions that can be called from other classes through signal/slot mechanics
 	void makeConnection();
 	void onReadyRead();
-    void onRequestGpsProperties();
+	void onRequestGpsProperties();
 	void pollMsgRate(uint16_t msgID);
 	void pollMsg(uint16_t msgID);
-	void enqueueMsg(uint16_t msgID, const std::string& payload)
-	{ 
-		//sendUBX(msgID, payload, nrBytes);
-		UbxMessage newMessage;
-		newMessage.msgID = msgID;
-		newMessage.data = payload;
-		outMsgBuffer.push(newMessage);
-		if (!msgWaitingForAck) {
-			sendQueuedMsg();
-		}
-	}
+	void enqueueMsg(uint16_t msgID, const std::string& payload);
 	// for polling the port configuration for specific port set rate to port ID
 	void handleError(QSerialPort::SerialPortError serialPortError);
 	void UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate);
@@ -102,6 +92,7 @@ private:
 	bool sendUBX(UbxMessage &msg);
 	void sendQueuedMsg(bool afterTimeout = false);
 	void delay(int millisecondsWait);
+//	void enqueueMsg(const UbxMessage& msg);
 
 	// all functions only used for processing and showing "UbxMessage"
 	void processMessage(const UbxMessage& msg);

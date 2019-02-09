@@ -6,7 +6,8 @@
 // PREAMP_1/2 enables the DC voltage to power the preamp through the signal cable
 // Attention: the GPIO pin definitions are referring to wiringPi standard except the EVT input pins
 // which are in pigpio standard
-#define UBIAS_EN 7  // pigpio 4
+//#define UBIAS_EN 4  // pigpio
+#define UBIAS_EN 7  // wiringpi
 #define PREAMP_1 28  // pigpio 20
 #define PREAMP_2 29  // pigpio 21
 #define EVT_AND 5

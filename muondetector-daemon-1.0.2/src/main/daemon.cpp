@@ -229,6 +229,11 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	const QVector<unsigned int> gpio_pins({ EVT_AND, EVT_XOR, /*ADC_READY,*/ TIMEPULSE });
     pigHandler = new PigpiodHandler(gpio_pins);
     connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
+    connect(this, &Daemon::GpioSetOutput, pigHandler, &PigpiodHandler::setOutput);
+    connect(this, &Daemon::GpioSetInput, pigHandler, &PigpiodHandler::setInput);
+    connect(this, &Daemon::GpioSetPullUp, pigHandler, &PigpiodHandler::setPullUp);
+    connect(this, &Daemon::GpioSetPullDown, pigHandler, &PigpiodHandler::setPullDown);
+	connect(this, &Daemon::GpioSetState, pigHandler, &PigpiodHandler::setGpioState);
     connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
     connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
     /* looks good but using QPointer should be safer
@@ -426,6 +431,10 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	showin = new_showin;
 
 	// for separate raspi pin output states
+/*
+    emit GpioSetOutput(UBIAS_EN);
+	emit GpioSetState(UBIAS_EN, biasON);
+*/
 	wiringPiSetup();
 	pinMode(UBIAS_EN, 1);
     if (biasON) {
@@ -434,6 +443,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	else {
 		digitalWrite(UBIAS_EN, 0);
 	}
+
 	preampStatus[0]=preampStatus[1]=true;
 	pinMode(PREAMP_1, 1);
 	digitalWrite(PREAMP_1, preampStatus[0]);
@@ -1006,12 +1016,15 @@ void Daemon::setBiasStatus(bool status){
     if (verbose > 1){
         qDebug() << "change biasStatus to " << status;
     }
+    //emit GpioSetState(UBIAS_EN, status);
+
     if (status) {
         digitalWrite(UBIAS_EN, 1);
     }
     else {
         digitalWrite(UBIAS_EN, 0);
     }
+
     if (pigHandler!=nullptr){
         pigHandler->resetBuffer();
     }
@@ -1158,7 +1171,7 @@ void Daemon::configGps() {
 	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_MON_VER);
-	//emit UBXSetMinCNO(7);
+	//emit UBXSetMinCNO(5);
 	emit sendPollUbxMsg(MSG_CFG_NAVX5);
 	
 	configGpsForVersion();
@@ -1234,7 +1247,7 @@ void Daemon::gpsPropertyUpdatedGnss(std::vector<GnssSatellite> data,
 	std::chrono::duration<double> lastUpdated) {
 	//if (listSats){
 	vector<GnssSatellite> sats = data;
-	if (verbose > 2) {
+	if (verbose > 3) {
 		bool allSats = true;
 		if (!allSats) {
 			std::sort(sats.begin(), sats.end(), GnssSatellite::sortByCnr);
