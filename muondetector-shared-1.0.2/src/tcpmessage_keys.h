@@ -51,13 +51,17 @@ static const quint16 gpsFreqAccSig = 211;
 static const quint16 gpsMonHW2Sig = 213;
 static const quint16 gnssConfigSig = 221;
 static const quint16 gpsUptimeSig = 223;
+static const quint16 gpsCfgTP5Sig = 227;
 // not implemented from here on yet
 static const quint16 dacSetEepromSig = 109;
 static const quint16 dacRequestEepromSig = 113;
 
 
 
-// next prime numbers: 61 67 71 73 79 83 89 97 101 103 107 109 113 127 131 137 139 149 151 157 163 167 173 179 181 191 193 197 199 211
+// next prime numbers:
+// 61 67 71 73 79 83 89 97 
+// 101 103 107 109 113 127 131 137 139 149 151 157 163 167 173 179 181 191 193 197 199 
+// 211
 
 
 #endif // TCPMESSAGE_KEYS_H

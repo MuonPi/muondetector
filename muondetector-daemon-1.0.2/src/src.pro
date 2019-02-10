@@ -62,7 +62,7 @@ HEADERS += \
 #   main/i2c/linux/i2c-dev.h \
     main/pigpiodhandler.h \
     main/daemon.h \
-    main/ublox_structs.h \
+#    main/ublox_structs.h \
     main/custom_io_operators.h \
     main/filehandler.h \
     main/calibration.h \

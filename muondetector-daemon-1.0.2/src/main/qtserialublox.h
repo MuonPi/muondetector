@@ -9,7 +9,7 @@
 #include <QTimer>
 #include <QLocale>
 #include <geodeticpos.h>
-
+#include <gnsssatellite.h>
 
 class QtSerialUblox : public QObject
 {
@@ -53,6 +53,7 @@ signals:
     void gpsMonHW(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags);
 	void gpsMonHW2(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t magQ, uint8_t cfgSrc);
 	void UBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssConfigStruct>& gnssConfigs);
+	void UBXReceivedTP5(const UbxTimePulseStruct& tp);
 	
 public slots:
 	// all functions that can be called from other classes through signal/slot mechanics
@@ -71,6 +72,8 @@ public slots:
 	void onSetGnssConfig(const std::vector<GnssConfigStruct>& gnssConfigs);
 	void UBXSetMinMaxSVs(uint8_t minSVs, uint8_t maxSVs);
 	void UBXSetMinCNO(uint8_t minCNO);
+	void UBXSetCfgTP5(const UbxTimePulseStruct& tp);
+	
 	void ackTimeout();
 	// outPortMask is something like 1 for only UBX protocol or 0b11 for UBX and NMEA
 
@@ -119,6 +122,8 @@ private:
 	void UBXMonTx(const std::string& msg);
 	void UBXMonVer(const std::string& msg);
 	void UBXCfgNavX5(const std::string& msg);
+	void UBXCfgAnt(const std::string& msg);
+	void UBXCfgTP5(const std::string& msg);
 
 	static std::string toStdString(unsigned char* data, int dataSize);
 
