@@ -55,4 +55,18 @@ private:
 	T value;
 };
 
+
+struct UbxTimePulseStruct {
+	uint8_t tpIndex=0;
+	uint8_t version=0;
+	int16_t antCableDelay=0;
+	int16_t rfGroupDelay = 0;
+	uint32_t freqPeriod = 0;
+	uint32_t freqPeriodLock = 0;
+	uint32_t pulseLenRatio = 0;
+	uint32_t pulseLenRatioLock = 0;
+	int32_t userConfigDelay = 0;
+	uint32_t flags = 0;
+};
+
 #endif // UBLOX_STRUCTS_H

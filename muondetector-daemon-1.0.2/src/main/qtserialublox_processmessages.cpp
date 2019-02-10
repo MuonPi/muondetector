@@ -173,6 +173,14 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 			);
 			// 2: port 0 (i2c); 3: port 1 (uart); 4: port 2 (usb); 5: port 3 (isp)
 			break;
+		case 0x13: // UBX-CFG-ANT
+			if (verbose > 2) {
+				tempStream << "received UBX-CFG-ANT message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+					<< " 0x" << std::hex << (int)messageID << ")\n";
+				emit toConsole(QString::fromStdString(tempStream.str()));
+			}
+			UBXCfgAnt(msg.data);
+			break;
 		case 0x24: // UBX-CFG-NAV5
 			if (verbose > 2) {
 				tempStream << "received UBX-CFG-NAV5 message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
@@ -188,6 +196,14 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 				emit toConsole(QString::fromStdString(tempStream.str()));
 			}
 			UBXCfgNavX5(msg.data);
+			break;
+		case 0x31: // UBX-CFG-TP5
+			if (verbose > 2) {
+				tempStream << "received UBX-CFG-TP5 message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+					<< " 0x" << std::hex << (int)messageID << ")\n";
+				emit toConsole(QString::fromStdString(tempStream.str()));
+			}
+			UBXCfgTP5(msg.data);
 			break;
 		case 0x3e: // UBX-CFG-GNSS
 			if (verbose > 2) {
@@ -540,20 +556,19 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 			timeBase = "unknown";
 		}
 		tempStream << "   time base            : " << timeBase << "\n";
-		//tempStream >> temp;
 		emit toConsole(QString::fromStdString(tempStream.str()));
 	}
 	else if (verbose > 0) {
 		// output is: rising falling accEst valid timeBase utcAvailable
 		std::stringstream tempStream;
-		if (((flags & 0x80) >> 7) == 1) {
+		if (flags & 0x80) {
 			// if new rising edge
 			tempStream << unixtime_from_gps(wnR, towMsR / 1000, (long int)(sr*1e9 + towSubMsR));
 		}
 		else {
 			tempStream << "..................... ";
 		}
-		if (((flags & 0x4) >> 2) == 1) {
+		if (flags & 0x04) {
 			// if new falling edge
 			tempStream << unixtime_from_gps(wnF, towMsF / 1000, (long int)(sr*1e9 + towSubMsF));
 		}
@@ -566,7 +581,7 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 			<< " " << setfill('0') << setw(2) << ((flags & 0x18) >> 3)
 			<< " " << ((flags & 0x20) >> 5) << endl;
 		emit toConsole(QString::fromStdString(tempStream.str()));
-        emit timTM2(QString::fromStdString(tempStream.str()));
+		emit timTM2(QString::fromStdString(tempStream.str()));
 	}
 
 	struct timespec ts_r = unixtime_from_gps(wnR, towMsR / 1000, (long int)(sr*1e9 + towSubMsR)/*, this->leapSeconds()*/);
@@ -586,12 +601,9 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 	if (flags & 0x80) {
 		// new rising edge detected
 		ts.rising = true;
-
-
 	} if (flags & 0x04) {
 		// new falling edge detected
 		ts.falling = true;
-
 	}
 	//mutex.lock();
 	emit gpsPropertyUpdatedUint32(count, eventCounter.updateAge(), 'c');
@@ -1498,4 +1510,142 @@ void QtSerialUblox::UBXCfgNavX5(const std::string& msg)
 		emit toConsole(QString::fromStdString(tempStream.str()));
 	}
 	//emit gpsMonHW2(ofsI,magI,ofsQ,magQ,cfgSrc);
+}
+
+void QtSerialUblox::UBXCfgAnt(const std::string& msg)
+{
+	// parse all fields
+	uint16_t flags = msg[0];
+	flags |= msg[1]<<8;
+	uint16_t pins = msg[2];
+	pins |= msg[3]<<8;
+	if (verbose > 2) {
+		std::stringstream tempStream;
+		tempStream << "*** UBX-CFG-ANT message:" << endl;
+		tempStream << " flags                     : 0x" << hex << (int)flags << dec << endl;
+		tempStream << " ant supply control signal : " << string((flags&0x01)?"on":"off") << endl;
+		tempStream << " short detection           : " << string((flags&0x02)?"on":"off") << endl;
+		tempStream << " open detection            : " << string((flags&0x04)?"on":"off") << endl;
+		tempStream << " pwr down on short         : " << string((flags&0x08)?"on":"off") << endl;
+		tempStream << " auto recovery from short  : " << string((flags&0x10)?"on":"off") << endl;
+		tempStream << " supply switch pin         : " << (int)(pins&0x1f) << endl;
+		tempStream << " short detection pin       : " << (int)((pins>>5)&0x1f) << endl;
+		tempStream << " open detection pin        : " << (int)((pins>>10)&0x1f) << endl;
+		
+		emit toConsole(QString::fromStdString(tempStream.str()));
+	}
+	//emit gpsMonHW2(ofsI,magI,ofsQ,magQ,cfgSrc);
+}
+
+void QtSerialUblox::UBXCfgTP5(const std::string& msg)
+{
+	UbxTimePulseStruct tp;
+	// parse all fields
+	tp.tpIndex = msg[0];
+	tp.version = msg[1];
+	tp.antCableDelay = msg[4];
+	tp.antCableDelay |= msg[5]<<8;
+	tp.rfGroupDelay = msg[6];
+	tp.rfGroupDelay |= msg[7]<<8;
+	tp.freqPeriod = msg[8];
+	tp.freqPeriod |= msg[9]<<8;
+	tp.freqPeriod |= msg[10]<<16;
+	tp.freqPeriod |= msg[11]<<24;
+	tp.freqPeriodLock = msg[12];
+	tp.freqPeriodLock |= msg[13]<<8;
+	tp.freqPeriodLock |= msg[14]<<16;
+	tp.freqPeriodLock |= msg[15]<<24;
+	tp.pulseLenRatio = msg[16];
+	tp.pulseLenRatio |= msg[17]<<8;
+	tp.pulseLenRatio |= msg[18]<<16;
+	tp.pulseLenRatio |= msg[19]<<24;
+	tp.pulseLenRatioLock = msg[20];
+	tp.pulseLenRatioLock |= msg[21]<<8;
+	tp.pulseLenRatioLock |= msg[22]<<16;
+	tp.pulseLenRatioLock |= msg[23]<<24;
+	tp.userConfigDelay = msg[24];
+	tp.userConfigDelay |= msg[25]<<8;
+	tp.userConfigDelay |= msg[26]<<16;
+	tp.userConfigDelay |= msg[27]<<24;
+	tp.flags = msg[28];
+	tp.flags |= msg[29]<<8;
+	tp.flags |= msg[30]<<16;
+	tp.flags |= msg[31]<<24;
+	bool isFreq = tp.flags & 0x08;
+	bool isLength = tp.flags & 0x10;
+	
+	if (verbose > 2) {
+		std::stringstream tempStream;
+		tempStream << "*** UBX-CFG-TP5 message:" << endl;
+		tempStream << " message version           : " << dec << (int)tp.version << endl;
+		tempStream << " time pulse index          : " << dec << (int)tp.tpIndex << endl;
+		tempStream << " ant cable delay           : " << dec << (int)tp.antCableDelay << " ns" << endl;
+		tempStream << " rf group delay            : " << dec << (int)tp.rfGroupDelay << " ns" << endl;
+		tempStream << " user config delay         : " << dec << (int)tp.userConfigDelay << " ns" << endl;
+		if (isFreq) {
+		tempStream << " pulse frequency           : " << dec << (int)tp.freqPeriod << " Hz" << endl;
+		tempStream << " locked pulse frequency    : " << dec << (int)tp.freqPeriodLock << " Hz" << endl;
+		} else {
+		tempStream << " pulse period              : " << dec << (int)tp.freqPeriod << " us" << endl;
+		tempStream << " locked pulse period       : " << dec << (int)tp.freqPeriodLock << " us" << endl;
+		}
+		if (isLength) {
+		tempStream << " pulse length              : " << dec << (int)tp.pulseLenRatio << " us" << endl;
+		tempStream << " locked pulse length       : " << dec << (int)tp.pulseLenRatioLock << " us" << endl;
+		} else {
+		tempStream << " pulse duty cycle          : " << dec << (double)tp.pulseLenRatio/((uint64_t)1<<32) << endl;
+		tempStream << " locked pulse duty cycle   : " << dec << (double)tp.pulseLenRatioLock/((uint64_t)1<<32) << endl;
+		}
+		tempStream << " flags                     : 0x" << hex << (int)tp.flags << dec << endl;
+		tempStream << " tp active                 : " << string((tp.flags&0x01)?"yes":"no") << endl;
+		
+		tempStream << " lockGpsFreq               : " << string((tp.flags&0x02)?"on":"off") << endl;
+		tempStream << " lockedOtherSet            : " << string((tp.flags&0x04)?"on":"off") << endl;
+		tempStream << " isFreq                    : " << string((tp.flags&0x08)?"on":"off") << endl;
+		tempStream << " isLength                  : " << string((tp.flags&0x10)?"on":"off") << endl;
+		tempStream << " alignToTow                : " << string((tp.flags&0x20)?"on":"off") << endl;
+		tempStream << " polarity                  : " << string((tp.flags&0x40)?"rising":"falling") << endl;
+		tempStream << " time grid                 : " << string((tp.flags&0x80)?"GPS":"UTC") << endl;
+		
+		emit toConsole(QString::fromStdString(tempStream.str()));
+	}
+	emit UBXReceivedTP5(tp);
+}
+
+void QtSerialUblox::UBXSetCfgTP5(const UbxTimePulseStruct& tp)
+{
+	unsigned char msg[32];
+
+	msg[0] = tp.tpIndex;
+	msg[1]=0;
+	msg[4]=tp.antCableDelay & 0xff;
+	msg[5]=(tp.antCableDelay >> 8) & 0xff;
+	msg[6]=tp.rfGroupDelay & 0xff;
+	msg[7]=(tp.rfGroupDelay >> 8) & 0xff;
+	msg[8]=tp.freqPeriod & 0xff;
+	msg[9]=(tp.freqPeriod>>8) & 0xff;
+	msg[10]=(tp.freqPeriod>>16) & 0xff;
+	msg[11]=(tp.freqPeriod>>24) & 0xff;
+	msg[12]=tp.freqPeriodLock & 0xff;
+	msg[13]=(tp.freqPeriodLock>>8) & 0xff;
+	msg[14]=(tp.freqPeriodLock>>16) & 0xff;
+	msg[15]=(tp.freqPeriodLock>>24) & 0xff;
+	msg[16]=tp.pulseLenRatio & 0xff;
+	msg[17]=(tp.pulseLenRatio>>8) & 0xff;
+	msg[18]=(tp.pulseLenRatio>>16) & 0xff;
+	msg[19]=(tp.pulseLenRatio>>24) & 0xff;
+	msg[20]=tp.pulseLenRatioLock & 0xff;
+	msg[21]=(tp.pulseLenRatioLock>>8) & 0xff;
+	msg[22]=(tp.pulseLenRatioLock>>16) & 0xff;
+	msg[23]=(tp.pulseLenRatioLock>>24) & 0xff;
+	msg[24]=tp.userConfigDelay & 0xff;
+	msg[25]=(tp.userConfigDelay >> 8) & 0xff;
+	msg[26]=(tp.userConfigDelay >> 16) & 0xff;
+	msg[27]=(tp.userConfigDelay >> 24) & 0xff;
+	msg[28]=tp.flags & 0xff;
+	msg[29]=(tp.flags >> 8) & 0xff;
+	msg[30]=(tp.flags >> 16) & 0xff;
+	msg[31]=(tp.flags >> 24) & 0xff;
+
+	enqueueMsg(MSG_CFG_TP5, toStdString(msg, 32));
 }

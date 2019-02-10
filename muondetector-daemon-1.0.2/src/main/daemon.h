@@ -37,41 +37,42 @@ public:
 	static void intSignalHandler(int);
 
 public slots:
-	// Qt signal handlers.
-	void handleSigHup();
-	void handleSigTerm();
-	void handleSigInt();
-	// others
-	void connectToGps();
-	void connectToServer();
-	void displaySocketError(int socketError, QString message);
-	void displayError(QString message);
+    // Qt signal handlers.
+    void handleSigHup();
+    void handleSigTerm();
+    void handleSigInt();
+    // others
+    void connectToGps();
+    void connectToServer();
+    void displaySocketError(int socketError, QString message);
+    void displayError(QString message);
     void toConsole(const QString& data);
     void gpsToConsole(const QString& data);
-	void stoppedConnection(QString hostName, quint16 port, quint32 connectionTimeout, quint32 connectionDuration);
-	void UBXReceivedAckNak(uint16_t ackedMsgID, uint16_t ackedCfgMsgID);
-	void UBXReceivedMsgRateCfg(uint16_t msgID, uint8_t rate);
-	void gpsConnectionError();
-	void gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double> updateAge,
+    void stoppedConnection(QString hostName, quint16 port, quint32 connectionTimeout, quint32 connectionDuration);
+    void UBXReceivedAckNak(uint16_t ackedMsgID, uint16_t ackedCfgMsgID);
+    void UBXReceivedMsgRateCfg(uint16_t msgID, uint8_t rate);
+    void gpsConnectionError();
+    void gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double> updateAge,
 		char propertyName);
-	void gpsPropertyUpdatedUint32(uint32_t data, std::chrono::duration<double> updateAge,
+    void gpsPropertyUpdatedUint32(uint32_t data, std::chrono::duration<double> updateAge,
 		char propertyName);
-	void gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double> updateAge,
+    void gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double> updateAge,
 		char propertyName);
-	void gpsPropertyUpdatedGnss(std::vector<GnssSatellite>,
+    void gpsPropertyUpdatedGnss(std::vector<GnssSatellite>,
         std::chrono::duration<double> updateAge);
     void onUBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssConfigStruct>& gnssConfigs);
+    void onUBXReceivedTP5(const UbxTimePulseStruct& tp);
     void gpsMonHWUpdated(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags);
-	void gpsMonHW2Updated(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t magQ, uint8_t cfgSrc);
-	void receivedTcpMessage(TcpMessage tcpMessage);
+    void gpsMonHW2Updated(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t magQ, uint8_t cfgSrc);
+    void receivedTcpMessage(TcpMessage tcpMessage);
     void pollAllUbxMsgRate();
     void sendGpioPinEvent(uint8_t gpio_pin);
     void sendUbxGeodeticPos(GeodeticPos pos);
     void UBXReceivedVersion(const QString& swString, const QString& hwString, const QString& protString);
     void sampleAdc0Event();
     void sampleAdcEvent(uint8_t channel);
-	void getTemperature();
-	void scanI2cBus();
+    void getTemperature();
+    void scanI2cBus();
 
 	
 signals:
@@ -98,6 +99,7 @@ signals:
     void GpioSetPullUp(unsigned int gpio);
     void GpioSetPullDown(unsigned int gpio);
     void GpioSetState(unsigned int gpio, bool state);
+    void UBXSetCfgTP5(const UbxTimePulseStruct& tp);
 	
 private:
     void incomingConnection(qintptr socketDescriptor) override;

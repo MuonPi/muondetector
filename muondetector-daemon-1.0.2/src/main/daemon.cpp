@@ -72,6 +72,13 @@ QDataStream& operator << (QDataStream& out, const GnssSatellite& sat)
 	return out;
 }
 
+QDataStream& operator << (QDataStream& out, const UbxTimePulseStruct& tp)
+{
+	out << tp.tpIndex << tp.version << tp.antCableDelay << tp.rfGroupDelay
+	<< tp.freqPeriod << tp.freqPeriodLock << tp.pulseLenRatio << tp.pulseLenRatioLock
+	<< tp.userConfigDelay << tp.flags;
+    return out;
+}
 
 // signal handling stuff: put code to execute before shutdown down there
 static int setup_unix_signal_handlers()
@@ -187,6 +194,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	qRegisterMetaType<std::chrono::duration<double>>("std::chrono::duration<double>");
 	qRegisterMetaType<std::string>("std::string");
     qRegisterMetaType<LogParameter>("LogParameter");
+    qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
     // signal handling
 	setup_unix_signal_handlers();
 	if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)) {
@@ -571,9 +579,11 @@ void Daemon::connectToGps() {
     connect(qtGps, &QtSerialUblox::gpsVersion, this, &Daemon::UBXReceivedVersion);
 	connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Daemon::toConsole);
     connect(qtGps, &QtSerialUblox::UBXReceivedGnssConfig, this, &Daemon::onUBXReceivedGnssConfig);
+    connect(qtGps, &QtSerialUblox::UBXReceivedTP5, this, &Daemon::onUBXReceivedTP5);
 	connect(this, &Daemon::UBXSetDynModel, qtGps, &QtSerialUblox::setDynamicModel);
 	connect(this, &Daemon::resetUbxDevice, qtGps, &QtSerialUblox::UBXReset);
 	connect(this, &Daemon::setGnssConfig, qtGps, &QtSerialUblox::onSetGnssConfig);
+	connect(this, &Daemon::UBXSetCfgTP5, qtGps, &QtSerialUblox::UBXSetCfgTP5);
 	connect(this, &Daemon::UBXSetMinMaxSVs, qtGps, &QtSerialUblox::UBXSetMinMaxSVs);
 	connect(this, &Daemon::UBXSetMinCNO, qtGps, &QtSerialUblox::UBXSetMinCNO);
 
@@ -663,6 +673,7 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_CFG_GNSS);
 	emit sendPollUbxMsg(MSG_CFG_NAV5);
+	emit sendPollUbxMsg(MSG_CFG_TP5);
 	emit sendPollUbxMsg(MSG_CFG_NAVX5);
 	pollAllUbxMsgRate();
 }
@@ -1173,6 +1184,8 @@ void Daemon::configGps() {
 	emit sendPollUbxMsg(MSG_MON_VER);
 	//emit UBXSetMinCNO(5);
 	emit sendPollUbxMsg(MSG_CFG_NAVX5);
+	emit sendPollUbxMsg(MSG_CFG_ANT);
+	emit sendPollUbxMsg(MSG_CFG_TP5);
 	
 	configGpsForVersion();
 	//emit sendPoll()
@@ -1284,6 +1297,15 @@ void Daemon::onUBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssCon
 		(*tcpMessage.dStream)<<gnssConfigs[i].gnssId<<gnssConfigs[i].resTrkCh<<
 		gnssConfigs[i].maxTrkCh<<gnssConfigs[i].flags;
 	}
+    emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::onUBXReceivedTP5(const UbxTimePulseStruct& tp) {
+	if (verbose > 2) {
+		// put some verbose output here
+	}
+    TcpMessage tcpMessage(gpsCfgTP5Sig);
+    (*tcpMessage.dStream) << tp;
     emit sendTcpMessage(tcpMessage);
 }
 
