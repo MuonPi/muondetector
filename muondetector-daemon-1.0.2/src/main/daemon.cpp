@@ -1182,6 +1182,8 @@ void Daemon::configGps() {
 	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_MON_VER);
+	emit sendPollUbxMsg(MSG_CFG_GNSS);
+
 	//emit UBXSetMinCNO(5);
 	emit sendPollUbxMsg(MSG_CFG_NAVX5);
 	emit sendPollUbxMsg(MSG_CFG_ANT);
