@@ -313,12 +313,12 @@ bool FileHandler::uploadDataFile(QString fileName){
     arguments << "balu.physik.uni-giessen.de:/cosmicshower";
     arguments << "-e" << QString("mkdir "+hashedMacAddress+" ; cd "+hashedMacAddress+" && put "+fileName+" ; exit");
     lftpProcess.setArguments(arguments);
-    qDebug() << lftpProcess.arguments();
+    //qDebug() << lftpProcess.arguments();
     lftpProcess.start();
     if (!lftpProcess.waitForFinished(timeout)){
-        qDebug() << lftpProcess.readAllStandardOutput();
-        qDebug() << lftpProcess.readAllStandardError();
-        qDebug() << "lftp not installed or timed out after "<< timeout/1000<< " s";
+        //qDebug() << lftpProcess.readAllStandardOutput();
+        //qDebug() << lftpProcess.readAllStandardError();
+        //qDebug() << "lftp not installed or timed out after "<< timeout/1000<< " s";
         return false;
     }
     if (lftpProcess.exitStatus()!=0){
@@ -333,7 +333,7 @@ bool FileHandler::uploadRecentDataFiles(){
     for (auto &fileName : notUploadedFilesNames){
         QString filePath = dataFolderPath+fileName;
         if (filePath!=currentWorkingFilePath&&filePath!=currentWorkingLogPath){
-            qDebug() << "attempt to upload " << filePath;
+            //qDebug() << "attempt to upload " << filePath;
             if (!uploadDataFile(filePath)){
                 return false;
             }

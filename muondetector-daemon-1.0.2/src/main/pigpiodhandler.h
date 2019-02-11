@@ -23,15 +23,13 @@ public:
 	explicit PigpiodHandler(QVector<unsigned int> gpio_pins = DEFAULT_VECTOR,
 		QObject *parent = nullptr);
     void bufferIntervalActualisation();
-    QQueue<int> xorCounts, andCounts;
+    QList<quint64> xorCounts, andCounts;
     // can't make it private because of access of PigpiodHandler with global pointer
-    QTime lastAndTime, lastXorTime, lastInterval;
-  	QTime lastSamplingTime;
 
+    QDateTime lastInterval, lastAndTime, lastXorTime, lastSamplingTime;
     QDateTime startOfProgram; // the exact time when the program starts (Utc)
     QVector<QPointF> getBufferedRates(int number, quint8 whichRate); // get last <number> entries of
                                                                      // buffered rates. If 0: get all.
-    void resetBuffer();
     void setBufferTime(int msecs);
     void setBufferResolution(int msecs);
     int getCurrentBufferTime();
@@ -40,8 +38,8 @@ signals:
     void samplingTrigger();
 
 public slots:
+    void resetBuffer();
     void sendSignal(unsigned int gpio_pin, uint32_t tick);
-    void sendSamplingTrigger();
 	void stop();
     bool initialised();
     void setInput(unsigned int gpio);
@@ -52,14 +50,15 @@ public slots:
 private slots:
     void onBufferRatesTimer();
 private:
+    void resetCounts();
     //quint64 xorCounts, andCounts;
-    QPointF getRate(quint8 whichRate);
+    float getRate(quint8 whichRate);
     QVector<QPointF> xorBufferedRates;
     QVector<QPointF> andBufferedRates;
     QTimer bufferRatesTimer;
     bool isInitialised = false;
-    int bufferMsecs = 1000*120; // 120 seconds
-    int bufferResolution = 500; // 500 msecs resolution
+    qint64 bufferMsecs = 1000*60; // 60 seconds
+    qint64 bufferResolution = 500; // 500 msecs resolution
 };
 
 
