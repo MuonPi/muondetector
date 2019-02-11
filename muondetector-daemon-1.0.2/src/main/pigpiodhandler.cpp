@@ -20,10 +20,10 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
 	: QObject(parent)
 {
     startOfProgram = QDateTime::currentDateTimeUtc();
-    lastAndTime = QTime::currentTime();
-    lastXorTime = QTime::currentTime();
-    lastInterval = QTime::currentTime();
-    lastSamplingTime = QTime::currentTime();
+    lastAndTime = startOfProgram;
+    lastXorTime = startOfProgram;
+    lastInterval = startOfProgram;
+    lastSamplingTime = startOfProgram;
     andCounts.push_front(0);
     xorCounts.push_front(0);
     pigHandlerAddress = this;
@@ -72,20 +72,23 @@ void PigpiodHandler::setGpioState(unsigned int gpio, bool state) {
 }
 
 void PigpiodHandler::onBufferRatesTimer(){
-    QPointF xorPoint = getRate(XOR_RATE);
-    QPointF andPoint = getRate(AND_RATE);
+    QPointF xorPoint(0.0, (qreal)getRate(XOR_RATE));
+    QPointF andPoint(0.0, (qreal)getRate(AND_RATE));
     qint64 msecs = startOfProgram.msecsTo(QDateTime::currentDateTimeUtc());
+    if (msecs <= 0){
+        qDebug() << "the start-time of the program is in the future. Error.";
+    }
     qreal x = ((qreal)msecs)/1000.0;//static_cast<qreal>(startOfProgram.msecsTo(QDateTime::currentDateTimeUtc()));
     // qreal is usually double or float (on armhf it should be float)
     xorPoint.setX(x);
     andPoint.setX(x);
     xorBufferedRates.push_back(xorPoint);
     andBufferedRates.push_back(andPoint);
-    while (xorBufferedRates.first().x() < x-(qreal)rateSecondsBuffered){
-        xorBufferedRates.pop_front();
+    while (xorBufferedRates.first().x() < (x-(qreal)rateSecondsBuffered)){
+        xorBufferedRates.removeFirst();
     }
-    while (andBufferedRates.first().x() < x-(qreal)rateSecondsBuffered){
-        andBufferedRates.pop_front();
+    while (andBufferedRates.first().x() < (x-(qreal)rateSecondsBuffered)){
+        andBufferedRates.removeFirst();
     }
 }
 
@@ -100,7 +103,9 @@ QVector<QPointF> PigpiodHandler::getBufferedRates(int number, quint8 whichRate){
             return xorBufferedRates;
         }
         for (int i = xorBufferedRates.size()-number; i < xorBufferedRates.size(); i++){
-            someRates.push_back(xorBufferedRates.at(i));
+            if (i>=0){
+                someRates.push_back(xorBufferedRates.at(i));
+            }
         }
     }
     if (whichRate == AND_RATE){
@@ -111,7 +116,9 @@ QVector<QPointF> PigpiodHandler::getBufferedRates(int number, quint8 whichRate){
             return andBufferedRates;
         }
         for (int i = andBufferedRates.size()-number; i < andBufferedRates.size(); i++){
-            someRates.push_back(andBufferedRates.at(i));
+            if (i>=0){
+                someRates.push_back(andBufferedRates.at(i));
+            }
         }
     }
     return someRates;
@@ -138,11 +145,16 @@ void PigpiodHandler::sendSignal(unsigned int gpio_pin, uint32_t tick) {
         emit signal((uint8_t)gpio_pin);
 	}
 }
-void PigpiodHandler::sendSamplingTrigger() {
-        emit samplingTrigger();
-}
+
 void PigpiodHandler::resetBuffer(){
-    lastInterval = QTime::currentTime();
+    resetCounts();
+    andBufferedRates.clear();
+    xorBufferedRates.clear();
+    bufferRatesTimer.start();
+}
+
+void PigpiodHandler::resetCounts(){
+    lastInterval = QDateTime::currentDateTimeUtc();
     andCounts.clear();
     andCounts.push_front(0);
     xorCounts.clear();
@@ -150,28 +162,29 @@ void PigpiodHandler::resetBuffer(){
 }
 void PigpiodHandler::setBufferTime(int msecs){
     bufferMsecs = msecs;
-    resetBuffer();
+    resetCounts();
 }
 void PigpiodHandler::setBufferResolution(int msecs){
     bufferResolution = msecs;
-    resetBuffer();
+    resetCounts();
 }
 int PigpiodHandler::getCurrentBufferTime(){
     // returns the time in msecs that the buffer had time to build up since last reset
     // up to a maximum of 'bufferMsecs' defined in pigpiodhandler.h or set by 'setBufferTime(int msecs)'
     int numberOfEntries = xorCounts.size();
     if (numberOfEntries != andCounts.size()){
+        qDebug() << "size of and-/xor-counters not equal but this should be prevented by bufferIntervalActualisation";
         while (xorCounts.size() > andCounts.size()){
-            xorCounts.pop_back();
+            xorCounts.removeLast();
         }
         while (xorCounts.size() < andCounts.size()){
-            andCounts.pop_back();
+            andCounts.removeLast();
         }
         numberOfEntries = xorCounts.size();
     }
-    return (numberOfEntries*bufferResolution-bufferResolution+lastInterval.msecsTo(QTime::currentTime()));
+    return (numberOfEntries*bufferResolution-bufferResolution+lastInterval.msecsTo(QDateTime::currentDateTimeUtc()));
 }
-QPointF PigpiodHandler::getRate(quint8 whichRate){
+float PigpiodHandler::getRate(quint8 whichRate){
     bufferIntervalActualisation();
     float someRate;
     quint64 counts = 0;
@@ -189,26 +202,20 @@ QPointF PigpiodHandler::getRate(quint8 whichRate){
     // this rate should be accurate although we may have to check if it makes sense
     // we also have to consider using another way of time measurement since in this way
     // we get a problem if the last event is more than 24 Hours from currentTime
-    QPointF somePoint(0, someRate);
-    return somePoint;
+    return someRate;
 }
 void PigpiodHandler::bufferIntervalActualisation(){
-    if (lastInterval.msecsTo(QTime::currentTime())<0){
-        // indication of one day lapsed...
-        // dump all rate information and start again!
-        resetBuffer();
-    }
-    while (lastInterval.msecsTo(QTime::currentTime()) > bufferResolution){
+    while (lastInterval.msecsTo(QDateTime::currentDateTimeUtc()) > bufferResolution){
         if (andCounts.isEmpty() || xorCounts.isEmpty()){
             qDebug() << "error, queue is empty. This should never happen";
             return;
         }
-        if (andCounts.size()>=bufferMsecs/bufferResolution){
-            andCounts.pop_back();
+        while (andCounts.size()>=bufferMsecs/bufferResolution){
+            andCounts.removeLast();
         }
         andCounts.push_front(0);
-        if (xorCounts.size()>=bufferMsecs/bufferResolution){
-            xorCounts.pop_back();
+        while (xorCounts.size()>=bufferMsecs/bufferResolution){
+            xorCounts.removeLast();
         }
         xorCounts.push_front(0);
         lastInterval = lastInterval.addMSecs(bufferResolution);
@@ -222,42 +229,44 @@ void cbFunction(int user_pi, unsigned int user_gpio,
         return;
     }
     QPointer<PigpiodHandler> pigpioHandler = pigHandlerAddress;
+    QDateTime now = QDateTime::currentDateTimeUtc();
     try{
 		if (user_gpio == ADC_READY) {
 //			std::cout<<"ADC conv ready"<<std::endl;
 			return;
-		} else if (user_gpio == TIMEPULSE) {
+        }
+        if (user_gpio == TIMEPULSE) {
 //			std::cout<<"Timepulse"<<std::endl;
 			//return;
-		} else if (user_gpio == EVT_AND) {
+        }
+        if (user_gpio == EVT_AND || user_gpio == EVT_XOR){
+            if (pigpioHandler->lastSamplingTime.msecsTo(now)>=adcSampleDeadTime) {
+                pigpioHandler->samplingTrigger();
+                pigpioHandler->lastSamplingTime = now;
+            }
+        }
+        if (user_gpio == EVT_AND) {
 			pigpioHandler->bufferIntervalActualisation();
             if (!pigpioHandler->andCounts.isEmpty()){
-                pigpioHandler->andCounts.head()++;
+                pigpioHandler->andCounts.first() = pigpioHandler->andCounts.first() +1;
             }
-			if (pigpioHandler->lastSamplingTime.elapsed()>=adcSampleDeadTime) {
-				pigpioHandler->sendSamplingTrigger();
-				pigpioHandler->lastSamplingTime.restart();
-			}
-            if (pigpioHandler->lastAndTime.elapsed() < eventCountDeadTime) {
+            if (pigpioHandler->lastAndTime.msecsTo(now) < eventCountDeadTime) {
                 return;
             }
             else {
-                pigpioHandler->lastAndTime.restart();
+                pigpioHandler->lastAndTime = now;
             }
-        } else if (user_gpio == EVT_XOR) {
+        }
+        if (user_gpio == EVT_XOR) {
 			pigpioHandler->bufferIntervalActualisation();
             if (!pigpioHandler->xorCounts.isEmpty()){
-                pigpioHandler->xorCounts.head()++;
+                pigpioHandler->xorCounts.first() = pigpioHandler->xorCounts.first() +1;
             }
-			if (pigpioHandler->lastSamplingTime.elapsed()>=adcSampleDeadTime) {
-				pigpioHandler->sendSamplingTrigger();
-				pigpioHandler->lastSamplingTime.restart();
-			}
-            if (pigpioHandler->lastXorTime.elapsed() < eventCountDeadTime) {
+            if (pigpioHandler->lastXorTime.msecsTo(now) < eventCountDeadTime) {
                 return;
             }
             else {
-                pigpioHandler->lastXorTime.restart();
+                pigpioHandler->lastXorTime = now;
             }
             //std::cout<<"XOR event"<<std::endl;
         } 

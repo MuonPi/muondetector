@@ -777,6 +777,10 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> number >> whichRate;
         sendGpioRates(number, whichRate);
     }
+    if (msgID == resetRateSig){
+        pigHandler->resetBuffer();
+        return;
+    }
     if (msgID == dacRequestSig){
         quint8 channel;
         *(tcpMessage.dStream) >> channel;
