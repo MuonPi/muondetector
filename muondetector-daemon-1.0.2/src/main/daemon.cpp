@@ -80,6 +80,14 @@ QDataStream& operator << (QDataStream& out, const UbxTimePulseStruct& tp)
     return out;
 }
 
+QDataStream& operator >> (QDataStream& in, UbxTimePulseStruct& tp)
+{
+    in >> tp.tpIndex >> tp.version >> tp.antCableDelay >> tp.rfGroupDelay
+	>> tp.freqPeriod >> tp.freqPeriodLock >> tp.pulseLenRatio >> tp.pulseLenRatioLock
+	>> tp.userConfigDelay >> tp.flags;
+    return in;
+}
+
 // signal handling stuff: put code to execute before shutdown down there
 static int setup_unix_signal_handlers()
 {
@@ -834,9 +842,17 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
 			configs.push_back(config);
 		}
 		emit setGnssConfig(configs);
-		usleep(150000L);
+		//usleep(150000L);
 		emit sendPollUbxMsg(MSG_CFG_GNSS);
     }
+    if (msgID == gpsCfgTP5Sig){
+		UbxTimePulseStruct tp;
+		*(tcpMessage.dStream) >> tp;
+        emit UBXSetCfgTP5(tp);
+        emit sendPollUbxMsg(MSG_CFG_TP5);
+        return;
+    }
+
     if (msgID == quitConnectionSig){
         QString closeAddress;
         *(tcpMessage.dStream) >> closeAddress;
