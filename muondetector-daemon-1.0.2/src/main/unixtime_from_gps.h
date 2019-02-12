@@ -19,12 +19,12 @@ static timespec unixtime_from_gps(int week_nr, long int s_of_week, long int ns /
 	long GpsDays = 1024 * 7;
 	time.tm_mday += GpsDays;
 	mktime(&time);
-	GpsDays = ((GpsCycle * 1024) + (week_nr - 1024)) * 7 + (s_of_week / 86400L);
+    GpsDays = ((GpsCycle * 1024) + (week_nr - 1024)) * 7 + (s_of_week / 86400L);
 	//  time.tm_mday+=10000;
 	time.tm_mday += GpsDays;
 	mktime(&time);
 
-	long int sod = s_of_week - ((long int)(s_of_week / 86400L)) * 86400L;
+    long int sod = s_of_week - ((long int)(s_of_week / 86400L)) * 86400L;
 	//  printf("s of d: %ld\n",msod/1000);
 	time.tm_hour = sod / 3600;
 	time.tm_min = sod / 60 - time.tm_hour * 60;

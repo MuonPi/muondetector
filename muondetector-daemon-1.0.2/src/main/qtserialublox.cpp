@@ -38,8 +38,8 @@ void QtSerialUblox::makeConnection() {
 	if (verbose > 3) {
 		emit toConsole(QString("gps running in thread " + QString("0x%1\n").arg((int)this->thread())));
 	}
-	if (serialPort) {
-		delete(serialPort);
+    if (!serialPort.isNull()) {
+        serialPort.clear();
 	}
 	serialPort = new QSerialPort(_portName);
 	serialPort->setBaudRate(_baudRate);
@@ -49,7 +49,7 @@ void QtSerialUblox::makeConnection() {
 			.arg(_portName)
 			.arg(serialPort->errorString())
 			.arg(timeout));
-		delete serialPort;
+        serialPort.clear();
 		delay(timeout);
 		emit gpsRestart();
 		this->deleteLater();
@@ -66,14 +66,14 @@ void QtSerialUblox::makeConnection() {
 
 void QtSerialUblox::sendQueuedMsg(bool afterTimeout) {
 	if (afterTimeout) {
-		if (!msgWaitingForAck) {
+        if (msgWaitingForAck==nullptr) {
 			return;
 		}
 		if (++sendRetryCounter >= MAX_SEND_RETRIES) {
 			sendRetryCounter=0;
 			ackTimer->stop();
-			delete msgWaitingForAck;
-			msgWaitingForAck = 0;
+            delete msgWaitingForAck;
+            msgWaitingForAck = nullptr;
 			if (verbose > 1) emit toConsole("sendQueuedMsg: deleted message after 5 timeouts\n");
 			sendQueuedMsg();
 			return;
@@ -100,7 +100,7 @@ void QtSerialUblox::sendQueuedMsg(bool afterTimeout) {
 }
 
 void QtSerialUblox::ackTimeout() {
-	if (!msgWaitingForAck) {
+    if (msgWaitingForAck==nullptr) {
 		return;
 	}
 	if (verbose > 1) {

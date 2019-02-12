@@ -1,6 +1,7 @@
 #ifndef QTSERIALUBLOX_H
 #define QTSERIALUBLOX_H
 
+#include <QPointer>
 #include <ublox_structs.h>
 #include <queue>
 #include <string>
@@ -129,7 +130,7 @@ private:
 
 
 	// all global variables used in QtSerialUblox class until UbxMessage was created
-	QSerialPort *serialPort = nullptr;
+    QPointer<QSerialPort> serialPort;
 	QString _portName;
 	std::string buffer = "";
 	int _baudRate = 0;
@@ -141,8 +142,8 @@ private:
 	bool showout = false; // if true show the ubx messages sent to the gps board as hex
 	bool showin = false;
 	std::queue <UbxMessage> outMsgBuffer;
-	UbxMessage *msgWaitingForAck = 0;
-	QTimer *ackTimer;
+    UbxMessage* msgWaitingForAck = nullptr;
+    QPointer<QTimer> ackTimer;
 	int sendRetryCounter=0;
 
 	// all global variables used for keeping track of satellites and statistics (gpsProperty)

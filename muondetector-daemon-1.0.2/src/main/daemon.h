@@ -2,6 +2,7 @@
 #define DAEMON_H
 
 #include <QObject>
+#include <QPointer>
 #include <QTcpServer>
 #include <wiringPi.h>
 #include <tcpconnection.h>
@@ -126,24 +127,24 @@ private:
     
     void printTimestamp();
     void delay(int millisecondsWait);
-    MCP4728 *dac = nullptr;
-    ADS1115 *adc = nullptr;
-    PCA9536 *pca = nullptr;
-    LM75 *lm75 = nullptr;
-	EEPROM24AA02 *eep = nullptr;
-	UbloxI2c *ubloxI2c = nullptr;
+    MCP4728* dac = nullptr;
+    ADS1115* adc = nullptr;
+    PCA9536* pca = nullptr;
+    LM75* lm75 = nullptr;
+    EEPROM24AA02* eep = nullptr;
+    UbloxI2c* ubloxI2c = nullptr;
     float biasVoltage = 0;
     bool biasON = false;
     bool gainSwitch = false;
     bool preampStatus[2];
     uint8_t pcaPortMask = 0;
     QVector <float> dacThresh; // do not give values here because of push_back in constructor of deamon
-    PigpiodHandler *pigHandler = nullptr;
-    TcpConnection *tcpConnection = nullptr;
+    QPointer<PigpiodHandler> pigHandler;
+    QPointer<TcpConnection> tcpConnection;
 	QMap <uint16_t, int> msgRateCfgs;
     int waitingForAppliedMsgRate = 0;
-	QtSerialUblox *qtGps = nullptr;
-    QTcpServer *tcpServer = nullptr;
+    QPointer<QtSerialUblox> qtGps;
+    QPointer<QTcpServer> tcpServer;
 	QString peerAddress;
 	QHostAddress daemonAddress = QHostAddress::Null;
     quint16 peerPort, daemonPort;
@@ -153,18 +154,18 @@ private:
 	bool dumpRaw, configGnss, showout, showin;
 
     // file handling
-    FileHandler *fileHandler = nullptr;
+    QPointer<FileHandler> fileHandler;
 
     // signal handling
 	static int sighupFd[2];
 	static int sigtermFd[2];
 	static int sigintFd[2];
 
-    QSocketNotifier *snHup = nullptr;
-    QSocketNotifier *snTerm = nullptr;
-    QSocketNotifier *snInt = nullptr;
+    QPointer<QSocketNotifier> snHup;
+    QPointer<QSocketNotifier> snTerm;
+    QPointer<QSocketNotifier> snInt;
     
-    ShowerDetectorCalib *calib = nullptr;
+    ShowerDetectorCalib* calib = nullptr;
 };
 
 #endif // DAEMON_H

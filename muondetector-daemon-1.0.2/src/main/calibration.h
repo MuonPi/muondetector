@@ -3,6 +3,7 @@
 
 // for sig handling:
 #include <sys/types.h>
+#include <QObject>
 #include <vector>
 #include <tuple>
 #include <sstream>
@@ -40,9 +41,10 @@ static const std::vector<std::tuple<std::string, std::string, std::string>> CALI
 													
 
 class ShowerDetectorCalib {
+
 public:
 	ShowerDetectorCalib() { init(); }
-	ShowerDetectorCalib(EEPROM24AA02 *eep) : fEeprom(eep) { init(); }
+    ShowerDetectorCalib(EEPROM24AA02 *eep) : fEeprom(eep) { init(); }
 
 	bool readFromEeprom();
 	bool writeToEeprom();

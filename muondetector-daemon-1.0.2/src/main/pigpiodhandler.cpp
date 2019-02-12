@@ -15,7 +15,72 @@ const static int adcSampleDeadTime = 10;
 
 static int pi = 0;
 const static int rateSecondsBuffered = 15*60; // 15 min
-static QPointer<PigpiodHandler> pigHandlerAddress = 0; // QPointer automatically clears itself if pigHandler object is destroyed
+static QPointer<PigpiodHandler> pigHandlerAddress; // QPointer automatically clears itself if pigHandler object is destroyed
+
+static void cbFunction(int user_pi, unsigned int user_gpio,
+    unsigned int level, uint32_t tick) {
+    if (pigHandlerAddress.isNull()) {
+        pigpio_stop(pi);
+        return;
+    }
+    QPointer<PigpiodHandler> pigpioHandler = pigHandlerAddress;
+    QDateTime now = QDateTime::currentDateTimeUtc();
+    try{
+        if (user_gpio == ADC_READY) {
+//			std::cout<<"ADC conv ready"<<std::endl;
+            return;
+        }
+        if (user_gpio == TIMEPULSE) {
+//			std::cout<<"Timepulse"<<std::endl;
+            //return;
+        }
+        if (user_gpio == EVT_AND || user_gpio == EVT_XOR){
+            if (pigpioHandler->lastSamplingTime.msecsTo(now)>=adcSampleDeadTime) {
+                pigpioHandler->samplingTrigger();
+                pigpioHandler->lastSamplingTime = now;
+            }
+        }
+        if (user_gpio == EVT_AND) {
+            pigpioHandler->bufferIntervalActualisation();
+            if (!pigpioHandler->andCounts.isEmpty()){
+                pigpioHandler->andCounts.first() = pigpioHandler->andCounts.first() +1;
+            }
+            if (pigpioHandler->lastAndTime.msecsTo(now) < eventCountDeadTime) {
+                return;
+            }
+            else {
+                pigpioHandler->lastAndTime = now;
+            }
+        }
+        if (user_gpio == EVT_XOR) {
+            pigpioHandler->bufferIntervalActualisation();
+            if (!pigpioHandler->xorCounts.isEmpty()){
+                pigpioHandler->xorCounts.first() = pigpioHandler->xorCounts.first() +1;
+            }
+            if (pigpioHandler->lastXorTime.msecsTo(now) < eventCountDeadTime) {
+                return;
+            }
+            else {
+                pigpioHandler->lastXorTime = now;
+            }
+            //std::cout<<"XOR event"<<std::endl;
+        }
+
+        if (pi != user_pi) {
+            // put some error here for the case pi is not the same as before initialized
+        }
+        // level gives the information if it is up or down (only important if trigger is
+        // at both: rising and falling edge)
+        pigpioHandler->sendSignal(user_gpio, tick);
+    }
+    catch (std::exception& e)
+    {
+        pigpioHandler = 0;
+        pigpio_stop(pi);
+        qDebug() << "Exception catched : " << e.what();
+    }
+}
+
 PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
 	: QObject(parent)
 {
@@ -219,69 +284,5 @@ void PigpiodHandler::bufferIntervalActualisation(){
         }
         xorCounts.push_front(0);
         lastInterval = lastInterval.addMSecs(bufferResolution);
-    }
-}
-
-void cbFunction(int user_pi, unsigned int user_gpio,
-	unsigned int level, uint32_t tick) {
-    if (pigHandlerAddress.isNull()) {
-        pigpio_stop(pi);
-        return;
-    }
-    QPointer<PigpiodHandler> pigpioHandler = pigHandlerAddress;
-    QDateTime now = QDateTime::currentDateTimeUtc();
-    try{
-		if (user_gpio == ADC_READY) {
-//			std::cout<<"ADC conv ready"<<std::endl;
-			return;
-        }
-        if (user_gpio == TIMEPULSE) {
-//			std::cout<<"Timepulse"<<std::endl;
-			//return;
-        }
-        if (user_gpio == EVT_AND || user_gpio == EVT_XOR){
-            if (pigpioHandler->lastSamplingTime.msecsTo(now)>=adcSampleDeadTime) {
-                pigpioHandler->samplingTrigger();
-                pigpioHandler->lastSamplingTime = now;
-            }
-        }
-        if (user_gpio == EVT_AND) {
-			pigpioHandler->bufferIntervalActualisation();
-            if (!pigpioHandler->andCounts.isEmpty()){
-                pigpioHandler->andCounts.first() = pigpioHandler->andCounts.first() +1;
-            }
-            if (pigpioHandler->lastAndTime.msecsTo(now) < eventCountDeadTime) {
-                return;
-            }
-            else {
-                pigpioHandler->lastAndTime = now;
-            }
-        }
-        if (user_gpio == EVT_XOR) {
-			pigpioHandler->bufferIntervalActualisation();
-            if (!pigpioHandler->xorCounts.isEmpty()){
-                pigpioHandler->xorCounts.first() = pigpioHandler->xorCounts.first() +1;
-            }
-            if (pigpioHandler->lastXorTime.msecsTo(now) < eventCountDeadTime) {
-                return;
-            }
-            else {
-                pigpioHandler->lastXorTime = now;
-            }
-            //std::cout<<"XOR event"<<std::endl;
-        } 
-
-        if (pi != user_pi) {
-            // put some error here for the case pi is not the same as before initialized
-        }
-        // level gives the information if it is up or down (only important if trigger is
-        // at both: rising and falling edge)
-        pigpioHandler->sendSignal(user_gpio, tick);
-    }
-    catch (std::exception& e)
-    {
-        pigpioHandler = 0;
-        pigpio_stop(pi);
-        qDebug() << "Exception catched : " << e.what();
     }
 }
