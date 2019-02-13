@@ -23,7 +23,7 @@ public:
 	: name(s.name), type(s.type), address(s.address), value(s.value) 
 	{ }
 	friend QDataStream& operator << (QDataStream& out, const CalibStruct& calib);
-	friend QDataStream & operator >> (QDataStream & in, CalibStruct& calib);
+    friend QDataStream& operator >> (QDataStream& in, CalibStruct& calib);
 	std::string name="";
 	std::string type="";
 	uint16_t address=0;

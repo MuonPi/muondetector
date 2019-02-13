@@ -7,6 +7,7 @@
 #include <time.h>
 #include <QTimer>
 #include <QFile>
+#include <QPointer>
 
 class MUONDETECTORSHARED TcpConnection : public QObject
 {
@@ -69,13 +70,13 @@ private:
     QString peerAddress, localAddress;
 	//    quint16 fileCounter = -1;
 	//    QFile *file = nullptr;
-	QDataStream *in = nullptr;
-	QTcpSocket *tcpSocket = nullptr;
+    QDataStream *in = nullptr;
+    QTcpSocket *tcpSocket = nullptr;
 	QString hostName;
 	quint16 port;
 	quint16 peerPort;
 	quint16 localPort;
-	QTimer *t = nullptr;
+    QPointer<QTimer> t;
 	time_t lastConnection;
 	time_t firstConnection;
 };

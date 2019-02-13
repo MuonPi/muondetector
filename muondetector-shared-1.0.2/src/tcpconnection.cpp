@@ -27,8 +27,10 @@ TcpConnection::TcpConnection(int socketDescriptor, int newVerbose, int newTimeou
 
 TcpConnection::~TcpConnection()
 {
-    if (in != nullptr) { delete in; in = nullptr;}
-    if (t != nullptr) { delete t; t = nullptr;}
+    if (in!=nullptr){ delete in; in = nullptr; }
+    if (!t.isNull()){
+        t.clear();
+    }
 }
 
 void TcpConnection::makeConnection()
