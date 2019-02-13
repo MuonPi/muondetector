@@ -13,8 +13,6 @@
 #define AND_RATE 1
 #define COMBINED_RATE 2
 
-static void cbFunction(int user_pi, unsigned int user_gpio,
-	unsigned int level, uint32_t tick);
 static QVector<unsigned int> DEFAULT_VECTOR;
 class PigpiodHandler : public QObject
 {

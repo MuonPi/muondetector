@@ -83,8 +83,8 @@ QDataStream& operator << (QDataStream& out, const UbxTimePulseStruct& tp)
 QDataStream& operator >> (QDataStream& in, UbxTimePulseStruct& tp)
 {
     in >> tp.tpIndex >> tp.version >> tp.antCableDelay >> tp.rfGroupDelay
-	>> tp.freqPeriod >> tp.freqPeriodLock >> tp.pulseLenRatio >> tp.pulseLenRatioLock
-	>> tp.userConfigDelay >> tp.flags;
+    >> tp.freqPeriod >> tp.freqPeriodLock >> tp.pulseLenRatio >> tp.pulseLenRatioLock
+    >> tp.userConfigDelay >> tp.flags;
     return in;
 }
 
@@ -177,9 +177,9 @@ void Daemon::handleSigInt()
 
 // begin of the Daemon class
 Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
-    float* new_dacThresh, float new_biasVoltage, bool bias_ON, bool new_dumpRaw, int new_baudrate,
-	bool new_configGnss, QString new_peerAddress, quint16 new_peerPort,
-	QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, QObject *parent)
+    float *new_dacThresh, float new_biasVoltage, bool bias_ON, bool new_dumpRaw, int new_baudrate,
+    bool new_configGnss, QString new_peerAddress, quint16 new_peerPort,
+    QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, QObject *parent)
 	: QTcpServer(parent)
 {
 
@@ -534,15 +534,15 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 
 
 Daemon::~Daemon() {
-    if (snHup!=nullptr){ delete snHup; snHup = nullptr; }
-    if (snTerm!=nullptr){ delete snTerm; snTerm = nullptr; }
-    if (snInt!=nullptr){ delete snInt; snInt = nullptr; }
+    snHup.clear();
+    snTerm.clear();
+    snInt.clear();
     if (pca!=nullptr){ delete pca; pca = nullptr; }
     if (dac!=nullptr){ delete dac; dac = nullptr; }
     if (adc!=nullptr){ delete adc; adc = nullptr; }
     if (eep!=nullptr){ delete eep; eep = nullptr; }
     if (calib!=nullptr){ delete calib; calib = nullptr; }
-    if (pigHandler!=nullptr){ delete pigHandler; pigHandler = nullptr; }
+    pigHandler.clear();
 }
 
 void Daemon::connectToGps() {
@@ -640,8 +640,8 @@ void Daemon::connectToGps() {
 
 void Daemon::connectToServer() {
 	QThread *tcpThread = new QThread();
-	if (tcpConnection != nullptr) {
-		delete(tcpConnection);
+    if (!tcpConnection.isNull()) {
+        tcpConnection.clear();
 	}
 	tcpConnection = new TcpConnection(peerAddress, peerPort, verbose);
 	tcpConnection->moveToThread(tcpThread);
@@ -842,17 +842,16 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
 			configs.push_back(config);
 		}
 		emit setGnssConfig(configs);
-		//usleep(150000L);
+		usleep(150000L);
 		emit sendPollUbxMsg(MSG_CFG_GNSS);
     }
     if (msgID == gpsCfgTP5Sig){
-		UbxTimePulseStruct tp;
-		*(tcpMessage.dStream) >> tp;
+        UbxTimePulseStruct tp;
+        *(tcpMessage.dStream) >> tp;
         emit UBXSetCfgTP5(tp);
         emit sendPollUbxMsg(MSG_CFG_TP5);
         return;
     }
-
     if (msgID == quitConnectionSig){
         QString closeAddress;
         *(tcpMessage.dStream) >> closeAddress;
@@ -1198,16 +1197,15 @@ void Daemon::configGps() {
 	emit UBXSetCfgMsgRate(MSG_NAV_DOP, 1, 0);	// NAV-DOP
 	// this poll is for checking the port cfg (which protocols are enabled etc.)
 	emit sendPollUbxMsg(MSG_CFG_PRT);
-
 	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_MON_VER);
-	emit sendPollUbxMsg(MSG_CFG_GNSS);
-
+    emit sendPollUbxMsg(MSG_CFG_GNSS);
 	//emit UBXSetMinCNO(5);
 	emit sendPollUbxMsg(MSG_CFG_NAVX5);
 	emit sendPollUbxMsg(MSG_CFG_ANT);
 	emit sendPollUbxMsg(MSG_CFG_TP5);
+
 	sendBiasStatus();
 	sendBiasVoltage();
 	sendDacThresh(0);

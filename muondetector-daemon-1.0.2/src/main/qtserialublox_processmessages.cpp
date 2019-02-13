@@ -500,11 +500,11 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 //	timeAccuracy.lastUpdate = std::chrono::system_clock::now();
 	//mutex.unlock();
 
-	double sr = towMsR / 1000.;
-	sr = sr - towMsR / 1000;
+    double sr = towMsR / 1000.;
+    sr = sr - towMsR / 1000;
 	//  sr*=1000.;
-	double sf = towMsF / 1000.;
-	sf = sf - towMsF / 1000;
+    double sf = towMsF / 1000.;
+    sf = sf - towMsF / 1000;
 	//  sf*=1000.;
 	//  cout<<"sr="<<sr<<" sf="<<sf<<endl;
 
@@ -584,8 +584,8 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 		emit timTM2(QString::fromStdString(tempStream.str()));
 	}
 
-	struct timespec ts_r = unixtime_from_gps(wnR, towMsR / 1000, (long int)(sr*1e9 + towSubMsR)/*, this->leapSeconds()*/);
-	struct timespec ts_f = unixtime_from_gps(wnF, towMsF / 1000, (long int)(sf*1e9 + towSubMsF)/*, this->leapSeconds()*/);
+    struct timespec ts_r = unixtime_from_gps(wnR, towMsR / 1000, (long int)(sr*1e9 + towSubMsR)/*, this->leapSeconds()*/);
+    struct timespec ts_f = unixtime_from_gps(wnF, towMsF / 1000, (long int)(sf*1e9 + towSubMsF)/*, this->leapSeconds()*/);
 
 	struct gpsTimestamp ts;
 	ts.rising_time = ts_r;
@@ -756,7 +756,6 @@ std::vector<GnssSatellite> QtSerialUblox::UBXNavSVinfo(const std::string& msg, b
 			if (flags & 0x08) orbitSource = 1;
 			else if (flags & 0x20) orbitSource = 2;
 			else if (flags & 0x40) orbitSource = 3;
-			else orbitSource=7;  // set orbit source field to "other"
 		}
 		bool smoothed = (flags & 0x80);
 		bool diffCorr = (flags & 0x02);
