@@ -1208,6 +1208,10 @@ void Daemon::configGps() {
 	emit sendPollUbxMsg(MSG_CFG_NAVX5);
 	emit sendPollUbxMsg(MSG_CFG_ANT);
 	emit sendPollUbxMsg(MSG_CFG_TP5);
+	sendBiasStatus();
+	sendBiasVoltage();
+	sendDacThresh(0);
+	sendDacThresh(1);
 	
 	configGpsForVersion();
 	//emit sendPoll()

@@ -1606,7 +1606,24 @@ void QtSerialUblox::UBXCfgTP5(const std::string& msg)
 		tempStream << " isLength                  : " << string((tp.flags&0x10)?"on":"off") << endl;
 		tempStream << " alignToTow                : " << string((tp.flags&0x20)?"on":"off") << endl;
 		tempStream << " polarity                  : " << string((tp.flags&0x40)?"rising":"falling") << endl;
-		tempStream << " time grid                 : " << string((tp.flags&0x80)?"GPS":"UTC") << endl;
+		tempStream << " time grid                 : ";
+		if (getProtVersion()<16)  tempStream<< string((tp.flags&0x80)?"GPS":"UTC") << endl;
+		else {
+			int timeGrid = (tp.flags & UbxTimePulseStruct::GRID_UTC_GPS)>>7;
+			switch (timeGrid) {
+				case 0: tempStream<<"UTC"<<endl;
+						break;
+				case 1: tempStream<<"GPS"<<endl;
+						break;
+				case 2: tempStream<<"Glonass"<<endl;
+						break;
+				case 3: tempStream<<"BeiDou"<<endl;
+						break;
+				case 4: tempStream<<"Galileo"<<endl;
+						break;
+				default:tempStream<<"unknown"<<endl;
+			}
+		}
 		
 		emit toConsole(QString::fromStdString(tempStream.str()));
 	}
