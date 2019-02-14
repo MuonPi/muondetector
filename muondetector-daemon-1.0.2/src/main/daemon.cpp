@@ -322,9 +322,31 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		cerr<<"MCP4728 device NOT present!"<<endl;
 	}
 	float *tempThresh = new_dacThresh;
+	for (int i=std::min(DAC_TH1, DAC_TH2); i<=std::max(DAC_TH1, DAC_TH2); i++) {
+		if (tempThresh[i]<0. && dac->devicePresent()) {
+			MCP4728::DacChannel dacChannel;
+			MCP4728::DacChannel eepromChannel;
+			eepromChannel.eeprom=true;
+			dac->readChannel(i, dacChannel);
+			dac->readChannel(i, eepromChannel);
+			tempThresh[i]=MCP4728::code2voltage(dacChannel);
+			//tempThresh[i]=code2voltage(eepromChannel);
+		}
+	}
 	dacThresh.push_back(tempThresh[0]);
 	dacThresh.push_back(tempThresh[1]);
+	
 	biasVoltage = new_biasVoltage;
+	if (biasVoltage<0. && dac->devicePresent()) {
+		MCP4728::DacChannel dacChannel;
+		MCP4728::DacChannel eepromChannel;
+		eepromChannel.eeprom=true;
+		dac->readChannel(DAC_BIAS, dacChannel);
+		dac->readChannel(DAC_BIAS, eepromChannel);
+		biasVoltage=MCP4728::code2voltage(dacChannel);
+		//tempThresh[i]=code2voltage(eepromChannel);
+	}
+	
     biasON = bias_ON;
     
     // PCA9536 4 bit I/O I2C device used for selecting the UBX timing input

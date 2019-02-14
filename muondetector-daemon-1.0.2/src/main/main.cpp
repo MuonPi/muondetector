@@ -261,27 +261,27 @@ int main(int argc, char *argv[])
 	bool showin = false;
 	showin = parser.isSet(showinOption);
 	float dacThresh[2];
-	dacThresh[0] = 0;
+	dacThresh[0] = -1.;
 	if (parser.isSet(discr1Option)) {
 		dacThresh[0] = parser.value(discr1Option).toFloat(&ok);
 		if (!ok) {
-			dacThresh[0] = 0;
+			dacThresh[0] = -1.;
 			cout << "wrong input discr1 (maybe not a float)" << endl;
 		}
 	}
-	dacThresh[1] = 0;
+	dacThresh[1] = -1.;
 	if (parser.isSet(discr2Option)) {
 		dacThresh[1] = parser.value(discr2Option).toFloat(&ok);
 		if (!ok) {
-			dacThresh[1] = 0;
+			dacThresh[1] = -1.;
 			cout << "wrong input discr2 (maybe not a float)" << endl;
 		}
 	}
-	float biasVoltage = -1;
+	float biasVoltage = -1.;
 	if (parser.isSet(biasVoltageOption)) {
 		biasVoltage = parser.value(biasVoltageOption).toFloat(&ok);
 		if (!ok) {
-			biasVoltage = -1;
+			biasVoltage = -1.;
 			cout << "wrong input biasVoltage (maybe not a float)" << endl;
 		}
 	}
