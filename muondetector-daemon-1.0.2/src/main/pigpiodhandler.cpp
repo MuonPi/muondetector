@@ -199,7 +199,7 @@ void PigpiodHandler::stop() {
     }
     isInitialised=false;
 	pigpio_stop(pi);
-	pigHandlerAddress = nullptr;
+    pigHandlerAddress.clear();
     this->deleteLater();
 }
 
