@@ -363,14 +363,10 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		cerr<<"PCA9536 device NOT present!"<<endl;
 	}
     
-    if (dacThresh[0] > 0) {
-        if (dac->devicePresent()) dac->setVoltage(DAC_TH1, dacThresh[0]);
-    }
-    if (dacThresh[1] > 0) {
-        if (dac->devicePresent()) dac->setVoltage(DAC_TH2, dacThresh[1]);
-    }
-	if (biasVoltage > 0) {
-        if (dac->devicePresent()) dac->setVoltage(DAC_BIAS, biasVoltage);
+    if (dac->devicePresent()) {
+		if (dacThresh[0] > 0) dac->setVoltage(DAC_TH1, dacThresh[0]);
+		if (dacThresh[1] > 0) dac->setVoltage(DAC_TH2, dacThresh[1]);
+		if (biasVoltage > 0) dac->setVoltage(DAC_BIAS, biasVoltage);
 	}
 
 	// EEPROM 24AA02 type
