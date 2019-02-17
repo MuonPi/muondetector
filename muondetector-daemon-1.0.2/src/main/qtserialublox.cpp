@@ -498,6 +498,25 @@ void QtSerialUblox::UBXSetMinCNO(uint8_t minCNO)
 */
 }
 
+void QtSerialUblox::UBXSetAopCfg(bool enable, uint16_t maxOrbErr)
+{
+	unsigned char data[40];
+	data[2]=0x00; // aop flag in mask 2
+	data[3]=0x40; // all other flags are zero
+	data[4]=0; data[5]=0; data[6]=0; data[7]=0;
+
+	data[27]=(uint8_t)enable;	
+	data[30]=maxOrbErr & 0xff;
+	data[31]=(maxOrbErr>>8) & 0xff;
+
+	enqueueMsg(MSG_CFG_NAVX5, toStdString(data, 40));
+/*
+	UbxMessage newMessage;
+	newMessage.msgID = MSG_CFG_NAVX5;
+	newMessage.data = toStdString(data, 40);
+	sendUBX(newMessage);
+*/
+}
 
 void QtSerialUblox::onRequestGpsProperties(){
 

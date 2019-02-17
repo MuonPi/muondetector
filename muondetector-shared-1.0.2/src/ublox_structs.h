@@ -57,8 +57,8 @@ private:
 
 
 struct UbxTimePulseStruct {
-    enum { ACTIVE=0x01, LOCK_GPS=0x02, LOCK_OTHER=0x04, IS_FREQ=0x08, IS_LENGTH=0x10, ALIGN_TO_TOW=0x20, POLARITY=0x40, GRID_UTC_GPS=0x780  };
-    uint8_t tpIndex=0;
+	enum { ACTIVE=0x01, LOCK_GPS=0x02, LOCK_OTHER=0x04, IS_FREQ=0x08, IS_LENGTH=0x10, ALIGN_TO_TOW=0x20, POLARITY=0x40, GRID_UTC_GPS=0x780  };
+	uint8_t tpIndex=0;
 	uint8_t version=0;
 	int16_t antCableDelay=0;
 	int16_t rfGroupDelay = 0;
@@ -68,6 +68,10 @@ struct UbxTimePulseStruct {
 	uint32_t pulseLenRatioLock = 0;
 	int32_t userConfigDelay = 0;
 	uint32_t flags = 0;
+};
+
+struct UbxDopStruct {
+	uint16_t gDOP=0, pDOP=0, tDOP=0, vDOP=0, hDOP=0, nDOP=0, eDOP=0;
 };
 
 #endif // UBLOX_STRUCTS_H

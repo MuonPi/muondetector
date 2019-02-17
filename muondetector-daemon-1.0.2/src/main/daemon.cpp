@@ -203,6 +203,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	qRegisterMetaType<std::string>("std::string");
     qRegisterMetaType<LogParameter>("LogParameter");
     qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
+    qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
     // signal handling
 	setup_unix_signal_handlers();
 	if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)) {
@@ -612,6 +613,7 @@ void Daemon::connectToGps() {
 	connect(this, &Daemon::UBXSetCfgTP5, qtGps, &QtSerialUblox::UBXSetCfgTP5);
 	connect(this, &Daemon::UBXSetMinMaxSVs, qtGps, &QtSerialUblox::UBXSetMinMaxSVs);
 	connect(this, &Daemon::UBXSetMinCNO, qtGps, &QtSerialUblox::UBXSetMinCNO);
+	connect(this, &Daemon::UBXSetAopCfg, qtGps, &QtSerialUblox::UBXSetAopCfg);
 
     // connect fileHandler related stuff
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, [this](GeodeticPos pos){
@@ -626,13 +628,15 @@ void Daemon::connectToGps() {
 */
     });
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, this, [this](std::vector<GnssSatellite> satlist, std::chrono::duration<double> updateAge){
-        int allSats=0, usedSats=0;
+        int allSats=0, usedSats=0, maxCnr=0;
         for (auto sat : satlist){
             if (sat.fCnr>0) allSats++;
             if (sat.fUsed) usedSats++;
+	    if (sat.fCnr>maxCnr) maxCnr=sat.fCnr;
         }
         logParameter(LogParameter("sats",QString("%1").arg(allSats)));
         logParameter(LogParameter("usedSats",QString("%1").arg(usedSats)));
+        logParameter(LogParameter("maxCNR",QString("%1").arg(maxCnr)));
     });
     
     connect(qtGps, &QtSerialUblox::gpsMonHW, this, [this](uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags){
@@ -641,12 +645,12 @@ void Daemon::connectToGps() {
 		logParameter(LogParameter("antennaStatus", QString::number(antStatus)));
 		logParameter(LogParameter("antennaPower", QString::number(antPower)));
 		logParameter(LogParameter("jammingLevel", QString::number(jamInd/2.55,'f',1)+" %"));
-/*
-        LogParameter log("sat",QString("%1 %2 %3 %4 %5 %6").arg(noise).arg(agc).arg(antStatus).arg(antPower).arg(jamInd).arg(flags));
-        this->logParameter(log);
-*/
     });
 
+    connect(qtGps, &QtSerialUblox::UBXReceivedDops, this, [this](const UbxDopStruct& dops){
+	logParameter(LogParameter("positionDOP", QString::number(dops.pDOP/100.)));
+	logParameter(LogParameter("timeDOP", QString::number(dops.tDOP/100.)));
+    });
 
     
     if (fileHandler != nullptr){
@@ -1142,6 +1146,8 @@ void Daemon::configGps() {
 	// set dynamic model: Stationary
 	emit UBXSetDynModel(2);
 	
+	emit UBXSetAopCfg(true);
+	
 	emit sendPollUbxMsg(MSG_MON_VER);
 
 	// deactivate all NMEA messages: (port 6 means ALL ports)
@@ -1216,9 +1222,9 @@ void Daemon::configGps() {
 	emit UBXSetCfgMsgRate(MSG_NAV_SOL, 1, 167);	// NAV-SOL
 	emit UBXSetCfgMsgRate(MSG_NAV_STATUS, 1, 71);	// NAV-STATUS
 	emit UBXSetCfgMsgRate(MSG_NAV_CLOCK, 1, 189);	// NAV-CLOCK
-	emit UBXSetCfgMsgRate(MSG_MON_TXBUF, 1, 31);	// MON-TXBUF
+	emit UBXSetCfgMsgRate(MSG_MON_TXBUF, 1, 51);	// MON-TXBUF
 	emit UBXSetCfgMsgRate(MSG_NAV_SBAS, 1, 0);	// NAV-SBAS
-	emit UBXSetCfgMsgRate(MSG_NAV_DOP, 1, 0);	// NAV-DOP
+	emit UBXSetCfgMsgRate(MSG_NAV_DOP, 1, 254);	// NAV-DOP
 	// this poll is for checking the port cfg (which protocols are enabled etc.)
 	emit sendPollUbxMsg(MSG_CFG_PRT);
 	emit sendPollUbxMsg(MSG_MON_VER);
@@ -1231,15 +1237,6 @@ void Daemon::configGps() {
 	emit sendPollUbxMsg(MSG_CFG_TP5);
 
 	configGpsForVersion();
-	//emit sendPoll()
-/*
-	if (QtSerialUblox::getProtVersion()>15.0) {
-		emit UBXSetCfgMsgRate(MSG_NAV_SAT, 1, 69);	// NAV-SAT (don't know why it does not work,
-		emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 0);
-		cout<<"prot Version: "<<QtSerialUblox::getProtVersion()<<endl;
-	} else emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 69);	// NAV-SVINFO
-	cout<<"prot Version: "<<QtSerialUblox::getProtVersion()<<endl;
-*/
 }
 
 void Daemon::configGpsForVersion() {
