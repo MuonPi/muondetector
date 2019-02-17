@@ -1197,7 +1197,7 @@ void Daemon::configGps() {
 
 	// set protocol configuration for ports
 	// msgRateCfgs: -1 means unknown, 0 means off, some positive value means update time
-    int measrate = 20;
+    int measrate = 10;
     // msgRateCfgs.insert(MSG_CFG_RATE, measrate);
     // msgRateCfgs.insert(MSG_TIM_TM2, 1);
     // msgRateCfgs.insert(MSG_TIM_TP, 51);
