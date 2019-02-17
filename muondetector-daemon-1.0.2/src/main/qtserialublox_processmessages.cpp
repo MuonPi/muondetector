@@ -79,6 +79,14 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 			}
 			UBXNavStatus(msg.data);
 			break;
+		case 0x04:
+			if (verbose > 2) {
+				tempStream << "received UBX-NAV-DOP message (0x" << std::hex << std::setfill('0') << std::setw(2)
+					<< (int)classID << " 0x" << std::hex << (int)messageID << ")\n";
+				emit toConsole(QString::fromStdString(tempStream.str()));
+			}
+			UBXNavDOP(msg.data);
+			break;
 		case 0x20:
 			if (verbose > 2) {
 				tempStream << "received UBX-NAV-TIMEGPS message (0x" << std::hex << std::setfill('0') << std::setw(2)
@@ -111,7 +119,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 				emit toConsole(QString::fromStdString(tempStream.str()));
 			}
 			//mutex.lock();
-            emit gpsPropertyUpdatedGnss(sats, satList.updateAge());
+			emit gpsPropertyUpdatedGnss(sats, satList.updateAge());
 			satList = sats;
 			//mutex.unlock();
 			//break;
@@ -127,7 +135,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 				emit toConsole(QString::fromStdString(tempStream.str()));
 			}
 			//mutex.lock();
-            emit gpsPropertyUpdatedGnss(sats, satList.updateAge());
+			emit gpsPropertyUpdatedGnss(sats, satList.updateAge());
 			satList = sats;
 			//mutex.unlock();
 			//break;
@@ -135,15 +143,15 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 // 				GnssSatellite::PrintHeader(true);
 // 				for (int i=0; i<sats.size(); i++) sats[i].Print(i, false);
 			break;
-        case 0x02:
-            if (verbose > 2) {
-                tempStream << "received UBX-NAV-POSLLH message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
-                    << " 0x" << std::hex << (int)messageID << ")\n";
-                emit toConsole(QString::fromStdString(tempStream.str()));
-            }
-            geodeticPos = UBXNavPosLLH(msg.data);
-            emit gpsPropertyUpdatedGeodeticPos(geodeticPos());
-            break;
+		case 0x02:
+			if (verbose > 2) {
+				tempStream << "received UBX-NAV-POSLLH message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+					<< " 0x" << std::hex << (int)messageID << ")\n";
+				emit toConsole(QString::fromStdString(tempStream.str()));
+			}
+			geodeticPos = UBXNavPosLLH(msg.data);
+			emit gpsPropertyUpdatedGeodeticPos(geodeticPos());
+			break;
 		default:
 			if (verbose > 2) {
 				tempStream << "received unhandled UBX-NAV message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
@@ -166,62 +174,62 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 		break;
 	case 0x06: // UBX-CFG
 		switch (messageID) {
-		case 0x01: // UBX-CFG-MSG   (message configuration)
-			emit UBXreceivedMsgRateCfg(
-				(((uint16_t)msg.data[0]) << 8) | ((uint16_t)msg.data[1]),
-				(uint8_t)(msg.data[2 + usedPort])
-			);
-			// 2: port 0 (i2c); 3: port 1 (uart); 4: port 2 (usb); 5: port 3 (isp)
-			break;
-		case 0x13: // UBX-CFG-ANT
-			if (verbose > 2) {
-				tempStream << "received UBX-CFG-ANT message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
-					<< " 0x" << std::hex << (int)messageID << ")\n";
-				emit toConsole(QString::fromStdString(tempStream.str()));
-			}
-			UBXCfgAnt(msg.data);
-			break;
-		case 0x24: // UBX-CFG-NAV5
-			if (verbose > 2) {
-				tempStream << "received UBX-CFG-NAV5 message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
-					<< " 0x" << std::hex << (int)messageID << ")\n";
-				emit toConsole(QString::fromStdString(tempStream.str()));
-			}
-			UBXCfgNav5(msg.data);
-			break;
-		case 0x23: // UBX-CFG-NAVX5
-			if (verbose > 2) {
-				tempStream << "received UBX-CFG-NAVX5 message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
-					<< " 0x" << std::hex << (int)messageID << ")\n";
-				emit toConsole(QString::fromStdString(tempStream.str()));
-			}
-			UBXCfgNavX5(msg.data);
-			break;
-		case 0x31: // UBX-CFG-TP5
-			if (verbose > 2) {
-				tempStream << "received UBX-CFG-TP5 message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
-					<< " 0x" << std::hex << (int)messageID << ")\n";
-				emit toConsole(QString::fromStdString(tempStream.str()));
-			}
-			UBXCfgTP5(msg.data);
-			break;
-		case 0x3e: // UBX-CFG-GNSS
-			if (verbose > 2) {
-				tempStream << "received UBX-CFG-GNSS message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
-					<< " 0x" << std::hex << (int)messageID << ")\n";
-				emit toConsole(QString::fromStdString(tempStream.str()));
-			}
-			UBXCfgGNSS(msg.data);
-			break;
-		default:
-			if (verbose > 2) {
-				tempStream << "received unhandled UBX-CFG message:";
-				for (std::string::size_type i = 0; i < msg.data.size(); i++) {
-					tempStream << " 0x" << std::setfill('0') << std::setw(2) << std::hex << (int)msg.data[i];
+			case 0x01: // UBX-CFG-MSG   (message configuration)
+				emit UBXreceivedMsgRateCfg(
+					(((uint16_t)msg.data[0]) << 8) | ((uint16_t)msg.data[1]),
+					(uint8_t)(msg.data[2 + usedPort])
+				);
+				// 2: port 0 (i2c); 3: port 1 (uart); 4: port 2 (usb); 5: port 3 (isp)
+				break;
+			case 0x13: // UBX-CFG-ANT
+				if (verbose > 2) {
+					tempStream << "received UBX-CFG-ANT message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+						<< " 0x" << std::hex << (int)messageID << ")\n";
+					emit toConsole(QString::fromStdString(tempStream.str()));
 				}
-				tempStream << "\n";
-				emit toConsole(QString::fromStdString(tempStream.str()));
-			}
+				UBXCfgAnt(msg.data);
+				break;
+			case 0x24: // UBX-CFG-NAV5
+				if (verbose > 2) {
+					tempStream << "received UBX-CFG-NAV5 message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+						<< " 0x" << std::hex << (int)messageID << ")\n";
+					emit toConsole(QString::fromStdString(tempStream.str()));
+				}
+				UBXCfgNav5(msg.data);
+				break;
+			case 0x23: // UBX-CFG-NAVX5
+				if (verbose > 2) {
+					tempStream << "received UBX-CFG-NAVX5 message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+						<< " 0x" << std::hex << (int)messageID << ")\n";
+					emit toConsole(QString::fromStdString(tempStream.str()));
+				}
+				UBXCfgNavX5(msg.data);
+				break;
+			case 0x31: // UBX-CFG-TP5
+				if (verbose > 2) {
+					tempStream << "received UBX-CFG-TP5 message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+						<< " 0x" << std::hex << (int)messageID << ")\n";
+					emit toConsole(QString::fromStdString(tempStream.str()));
+				}
+				UBXCfgTP5(msg.data);
+				break;
+			case 0x3e: // UBX-CFG-GNSS
+				if (verbose > 2) {
+					tempStream << "received UBX-CFG-GNSS message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+						<< " 0x" << std::hex << (int)messageID << ")\n";
+					emit toConsole(QString::fromStdString(tempStream.str()));
+				}
+				UBXCfgGNSS(msg.data);
+				break;
+			default:
+				if (verbose > 2) {
+					tempStream << "received unhandled UBX-CFG message:";
+					for (std::string::size_type i = 0; i < msg.data.size(); i++) {
+						tempStream << " 0x" << std::setfill('0') << std::setw(2) << std::hex << (int)msg.data[i];
+					}
+					tempStream << "\n";
+					emit toConsole(QString::fromStdString(tempStream.str()));
+				}
 		}
 		break;
 	case 0x10: // UBX-ESF
@@ -260,44 +268,44 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 		break;
 	case 0x0a: // UBX-MON
 		switch (messageID) {
-		case 0x08:
-			if (verbose > 2) {
-				tempStream << "received UBX-MON-TXBUF message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
-					<< " 0x" << std::hex << (int)messageID << ")\n";
-				emit toConsole(QString::fromStdString(tempStream.str()));
-			}
-			UBXMonTx(msg.data);
-			break;
-		case 0x09:
-			if (verbose > 2) {
-				tempStream << "received UBX-MON-HW message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
-					<< " 0x" << std::hex << (int)messageID << ")\n";
-				emit toConsole(QString::fromStdString(tempStream.str()));
-			}
-			UBXMonHW(msg.data);
-			break;
-		case 0x0b:
-			if (verbose > 2) {
-				tempStream << "received UBX-MON-HW2 message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
-					<< " 0x" << std::hex << (int)messageID << ")\n";
-				emit toConsole(QString::fromStdString(tempStream.str()));
-			}
-			UBXMonHW2(msg.data);
-			break;
-		case 0x04:
-			if (verbose > 2) {
-				tempStream << "received UBX-MON-VER message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
-					<< " 0x" << std::hex << (int)messageID << ")\n";
-				emit toConsole(QString::fromStdString(tempStream.str()));
-			}
-			UBXMonVer(msg.data);
-			break;
-		default:
-			if (verbose > 2) {
-				tempStream << "received unhandled UBX-MON message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
-					<< " 0x" << std::hex << (int)messageID << ")\n";
-				emit toConsole(QString::fromStdString(tempStream.str()));
-			}
+			case 0x08:
+				if (verbose > 2) {
+					tempStream << "received UBX-MON-TXBUF message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+						<< " 0x" << std::hex << (int)messageID << ")\n";
+					emit toConsole(QString::fromStdString(tempStream.str()));
+				}
+				UBXMonTx(msg.data);
+				break;
+			case 0x09:
+				if (verbose > 2) {
+					tempStream << "received UBX-MON-HW message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+						<< " 0x" << std::hex << (int)messageID << ")\n";
+					emit toConsole(QString::fromStdString(tempStream.str()));
+				}
+				UBXMonHW(msg.data);
+				break;
+			case 0x0b:
+				if (verbose > 2) {
+					tempStream << "received UBX-MON-HW2 message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+						<< " 0x" << std::hex << (int)messageID << ")\n";
+					emit toConsole(QString::fromStdString(tempStream.str()));
+				}
+				UBXMonHW2(msg.data);
+				break;
+			case 0x04:
+				if (verbose > 2) {
+					tempStream << "received UBX-MON-VER message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+						<< " 0x" << std::hex << (int)messageID << ")\n";
+					emit toConsole(QString::fromStdString(tempStream.str()));
+				}
+				UBXMonVer(msg.data);
+				break;
+			default:
+				if (verbose > 2) {
+					tempStream << "received unhandled UBX-MON message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+						<< " 0x" << std::hex << (int)messageID << ")\n";
+					emit toConsole(QString::fromStdString(tempStream.str()));
+				}
 		}
 		break;
 	case 0x27: // UBX-SEC
@@ -446,7 +454,6 @@ bool QtSerialUblox::UBXTimTP(const std::string& msg)
 			utcStd = "unknown";
 		}
 		tempStream << "  UTC standard  : " << utcStd << "\n";
-		//tempStream >> temp;
 		emit toConsole(QString::fromStdString(tempStream.str()));
 	}
 	return true;
@@ -584,8 +591,8 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 		emit timTM2(QString::fromStdString(tempStream.str()));
 	}
 
-    struct timespec ts_r = unixtime_from_gps(wnR, towMsR / 1000, (long int)(sr*1e9 + towSubMsR)/*, this->leapSeconds()*/);
-    struct timespec ts_f = unixtime_from_gps(wnF, towMsF / 1000, (long int)(sf*1e9 + towSubMsF)/*, this->leapSeconds()*/);
+	struct timespec ts_r = unixtime_from_gps(wnR, towMsR / 1000, (long int)(sr*1e9 + towSubMsR)/*, this->leapSeconds()*/);
+	struct timespec ts_f = unixtime_from_gps(wnF, towMsF / 1000, (long int)(sf*1e9 + towSubMsF)/*, this->leapSeconds()*/);
 
 	struct gpsTimestamp ts;
 	ts.rising_time = ts_r;
@@ -696,7 +703,7 @@ std::vector<GnssSatellite> QtSerialUblox::UBXNavSat(const std::string& msg, bool
 		}
 		std::stringstream tempStream;
 		tempStream << "   --------------------------------------------------------------------\n";
-		tempStream << " Nr of avail sats : " << goodSats << "\n";
+		tempStream << " Nr of avail sats : " << (int)goodSats << "\n";
 		emit toConsole(QString::fromStdString(tempStream.str()));
 	}
 	return satList;
@@ -1016,7 +1023,7 @@ GeodeticPos QtSerialUblox::UBXNavPosLLH(const string &msg){
     hMSL += ((int)msg[17]) << 8;
     hMSL += ((int)msg[18]) << 16;
     hMSL += ((int)msg[19]) << 24;
-    pos.height = hMSL;
+    pos.hMSL = hMSL;
     // horizontal accuracy estimate
     uint32_t hAcc = (unsigned int)msg[20];
     hAcc += ((unsigned int)msg[21]) << 8;
@@ -1499,14 +1506,14 @@ void QtSerialUblox::UBXCfgNavX5(const std::string& msg)
 	if (verbose > 2) {
 		std::stringstream tempStream;
 		tempStream << "*** UBX-MON-NAVX5 message:" << endl;
-		tempStream << " msg version      : " << dec << (int)version << endl;
-		tempStream << " min nr of SVs    : " << dec << (int)minSVs << endl;
-		tempStream << " max nr of SVs    : " << dec << (int)maxSVs << endl;
-		tempStream << " min CNR for nav  : " << dec << (int)minCNO << endl;
-		tempStream << " initial 3D fix   : " << dec << (int)iniFix3D << endl;
-		tempStream << " GPS week rollover: " << dec << (int)wknRollover << endl;
-		tempStream << " AssistNow config : " << dec << (int)aopCfg << endl;
-		tempStream << " max AssistNow orbit error : " << (int)aopOrbMaxErr << endl;
+		tempStream << " msg version         : " << dec << (int)version << endl;
+		tempStream << " min nr of SVs       : " << dec << (int)minSVs << endl;
+		tempStream << " max nr of SVs       : " << dec << (int)maxSVs << endl;
+		tempStream << " min CNR for nav     : " << dec << (int)minCNO << endl;
+		tempStream << " initial 3D fix      : " << dec << (int)iniFix3D << endl;
+		tempStream << " GPS week rollover   : " << dec << (int)wknRollover << endl;
+		tempStream << " AOP auton config    : " << dec << (int)aopCfg << endl;
+		tempStream << " max AOP orbit error : " << (int)aopOrbMaxErr << " m" << endl;
 		emit toConsole(QString::fromStdString(tempStream.str()));
 	}
 	//emit gpsMonHW2(ofsI,magI,ofsQ,magQ,cfgSrc);
@@ -1665,4 +1672,55 @@ void QtSerialUblox::UBXSetCfgTP5(const UbxTimePulseStruct& tp)
 	msg[31]=(tp.flags >> 24) & 0xff;
 
 	enqueueMsg(MSG_CFG_TP5, toStdString(msg, 32));
+}
+
+void QtSerialUblox::UBXNavDOP(const string &msg)
+{
+	// UBX-NAV-DOP: dilution of precision values
+	UbxDopStruct d;
+	
+	// parse all fields
+	uint32_t iTOW = (int)msg[0];
+	iTOW += ((int)msg[1]) << 8;
+	iTOW += ((int)msg[2]) << 16;
+	iTOW += ((int)msg[3]) << 24;
+
+	// geometric DOP
+	d.gDOP = msg[4];
+	d.gDOP |= msg[5] << 8;
+	// position DOP
+	d.pDOP = msg[6];
+	d.pDOP |= msg[7] << 8;
+	// time DOP
+	d.tDOP = msg[8];
+	d.tDOP |= msg[9] << 8;
+	// vertical DOP
+	d.vDOP = msg[10];
+	d.vDOP |= msg[11] << 8;
+	// horizontal DOP
+	d.hDOP = msg[12];
+	d.hDOP |= msg[13] << 8;
+	// northing DOP
+	d.nDOP = msg[14];
+	d.nDOP |= msg[15] << 8;
+	// easting DOP
+	d.eDOP = msg[16];
+	d.eDOP |= msg[17] << 8;
+	
+	emit UBXReceivedDops(d);
+	
+	if (verbose>3)
+	{
+		std::stringstream tempStream;
+		tempStream << "*** UBX NAV-DOP message:" << endl;
+		tempStream << " iTOW             : " << dec << iTOW / 1000 << " s" << endl;
+		tempStream << " geometric DOP    : " << dec << d.gDOP/100. << endl;
+		tempStream << " position DOP     : " << dec << d.pDOP/100. << endl;
+		tempStream << " time DOP         : " << dec << d.tDOP/100. << endl;
+		tempStream << " vertical DOP     : " << dec << d.vDOP/100. << endl;
+		tempStream << " horizontal DOP   : " << dec << d.hDOP/100. << endl;
+		tempStream << " northing DOP     : " << dec << d.nDOP/100. << endl;
+		tempStream << " easting DOP      : " << dec << d.eDOP/100. << endl;
+		emit toConsole(QString::fromStdString(tempStream.str()));
+	}
 }

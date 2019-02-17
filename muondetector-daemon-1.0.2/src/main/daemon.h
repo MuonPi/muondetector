@@ -101,6 +101,7 @@ signals:
     void GpioSetPullDown(unsigned int gpio);
     void GpioSetState(unsigned int gpio, bool state);
     void UBXSetCfgTP5(const UbxTimePulseStruct& tp);
+    void UBXSetAopCfg(bool enable=true, uint16_t maxOrbErr=0);
 	
 private:
     void incomingConnection(qintptr socketDescriptor) override;
