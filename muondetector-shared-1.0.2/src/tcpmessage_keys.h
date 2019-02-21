@@ -53,6 +53,7 @@ static const quint16 gnssConfigSig = 221;
 static const quint16 gpsUptimeSig = 223;
 static const quint16 gpsCfgTP5Sig = 227;
 static const quint16 resetRateSig = 229;
+static const quint16 histogramSig = 233;
 // not implemented from here on yet
 static const quint16 dacSetEepromSig = 109;
 static const quint16 dacRequestEepromSig = 113;

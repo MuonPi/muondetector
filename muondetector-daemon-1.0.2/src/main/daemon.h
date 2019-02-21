@@ -14,6 +14,7 @@
 #include "i2c/i2cdevices.h"
 #include "calibration.h"
 #include <logparameter.h>
+#include <histogram.h>
 
 // for sig handling:
 #include <sys/types.h>
@@ -122,6 +123,7 @@ private:
     void sendGpioRates(int number = 0, quint8 whichRate = 0);
     void sendI2cStats();
     void sendCalib();
+    void sendHistogram(const Histogram& hist);
     bool readEeprom();
     void receivedCalibItems(const std::vector<CalibStruct>& newCalibs);
     void logBiasValues();
@@ -167,6 +169,8 @@ private:
     QPointer<QSocketNotifier> snInt;
     
     ShowerDetectorCalib* calib = nullptr;
+    
+    Histogram geoHeightHisto;
 };
 
 #endif // DAEMON_H
