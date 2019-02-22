@@ -34,8 +34,11 @@ public:
 		if (bin>=0 && bin<fNrBins) fHistogramMap[bin]=value;
 	}
 	double getBinContent(int bin) const {
-		if (bin>=0 && bin<fNrBins) return fHistogramMap.at(bin);
-		else return double();
+		if (bin>=0 && bin<fNrBins) {
+			try {
+				return fHistogramMap.at(bin);
+			} catch (...) {	return double(); }
+		} else return double();
 	}
 	double getMean() {
 		double sum = 0., entries=0.;
