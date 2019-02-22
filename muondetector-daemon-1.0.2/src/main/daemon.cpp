@@ -625,8 +625,9 @@ void Daemon::connectToGps() {
 	connect(this, &Daemon::UBXSetAopCfg, qtGps, &QtSerialUblox::UBXSetAopCfg);
 
     // connect fileHandler related stuff
-    geoHeightHisto.setMax(1000.);
-    geoHeightHisto.setNrBins(10000);
+    geoHeightHisto.setMin(100.);
+    geoHeightHisto.setMax(300.);
+    geoHeightHisto.setNrBins(1000);
     geoHeightHisto.setName("geoHeight");
     geoHeightHisto.clear();
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, [this](GeodeticPos pos){

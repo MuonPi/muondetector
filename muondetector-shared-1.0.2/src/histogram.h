@@ -70,17 +70,18 @@ public:
 	friend QDataStream& operator << (QDataStream& out, const Histogram& h);
 	friend QDataStream& operator >> (QDataStream& in, Histogram& h);
 
+	const std::string& getName() const { return fName; }
 private:
 	int value2Bin(double value) {
 		double range=fMax-fMin;
 		if (range<=0.) return -1;	
-		int bin=value/range*fNrBins+0.5;
+		int bin=(value-fMin)/range*fNrBins+0.5;
 		return bin;
 	}
 	double bin2Value(int bin) {
 		double range=fMax-fMin;
 		if (range<=0.) return -1;	
-		double value=range*(bin)/fNrBins;
+		double value=range*(bin)/fNrBins+fMin;
 		return value;
 	}
 	std::string fName = "defaultHisto";
