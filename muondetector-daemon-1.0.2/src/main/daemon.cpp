@@ -94,6 +94,7 @@ QDataStream& operator << (QDataStream& out, const Histogram& h)
 	for (int i=0; i<h.fNrBins; i++) {
 		out << h.getBinContent(i);
 	}
+	out << QString::fromStdString(h.fUnit);
     return out;
 }
 
@@ -552,7 +553,6 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 			sendHistogram(adcSampleTimeHisto);
 			sendHistogram(pulseHeightHisto);
 		}
-		
 	});
 
 
@@ -638,12 +638,29 @@ void Daemon::connectToGps() {
 		logParameter(LogParameter("geoLongitude", QString::number(1e-7*pos.lon,'f',5)+" deg"));
 		logParameter(LogParameter("geoLatitude", QString::number(1e-7*pos.lat,'f',5)+" deg"));
 		logParameter(LogParameter("geoHeightMSL", QString::number(1e-3*pos.hMSL,'f',2)+" m"));
-		double heightWeight=1000./((pos.vAcc>0)?pos.vAcc:1e12);
-		geoHeightHisto.fill(1e-3*pos.hMSL /*, heightWeight */);
-		this->sendHistogram(geoHeightHisto);
 		logParameter(LogParameter("meanGeoHeightMSL", QString::number(geoHeightHisto.getMean(),'f',2)+" m"));
 		logParameter(LogParameter("geoHorAccuracy", QString::number(1e-3*pos.hAcc,'f',2)+" m"));
 		logParameter(LogParameter("geoVertAccuracy", QString::number(1e-3*pos.vAcc,'f',2)+" m"));
+		double heightWeight=1000./((pos.vAcc>0)?pos.vAcc:1e12);
+		if (1e-3*pos.vAcc<50.) {
+			if (1e-3*pos.hMSL>geoHeightHisto.getMax() || 1e-3*pos.hMSL<geoHeightHisto.getMin()) {
+				rescaleHisto(geoHeightHisto, 1e-3*pos.hMSL, 200);
+			}
+			geoHeightHisto.fill(1e-3*pos.hMSL /*, heightWeight */);
+			this->sendHistogram(geoHeightHisto);
+		}
+		if (1e-3*pos.hAcc<50.) {
+			if (1e-7*pos.lon>geoLonHisto.getMax() || 1e-7*pos.lon<geoLonHisto.getMin()) {
+				rescaleHisto(geoLonHisto, 1e-7*pos.lon, 0.002);
+			}
+			geoLonHisto.fill(1e-7*pos.lon /*, heightWeight */);
+			if (1e-7*pos.lat>geoLatHisto.getMax() || 1e-7*pos.lat<geoLatHisto.getMin()) {
+				rescaleHisto(geoLatHisto, 1e-7*pos.lat, 0.002);
+			}
+			geoLatHisto.fill(1e-7*pos.lat /*, heightWeight */);
+			this->sendHistogram(geoLonHisto);
+			this->sendHistogram(geoLatHisto);
+		}
     });
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, this, [this](std::vector<GnssSatellite> satlist, std::chrono::duration<double> updateAge){
         int allSats=0, usedSats=0, maxCnr=0;
@@ -734,15 +751,22 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 
 
 void Daemon::setupHistos() {
-/*    geoHeightHisto.setMin(100.);
-    geoHeightHisto.setMax(300.);
-    geoHeightHisto.setNrBins(1000);
-    geoHeightHisto.setName("geoHeight");
-    geoHeightHisto.clear();
-*/
-	geoHeightHisto=Histogram("geoHeight",1000,100.,300.);
+	geoHeightHisto=Histogram("geoHeight",200,0.,1.);
+	geoHeightHisto.setUnit("m");
+	geoLonHisto=Histogram("geoLongitude",200,0.,1.);
+	geoLonHisto.setUnit("deg");
+	geoLatHisto=Histogram("geoLatitude",200,0.,1.);
+	geoLatHisto.setUnit("deg");
 	pulseHeightHisto=Histogram("pulseHeight",200,0.,4.1);
+	pulseHeightHisto.setUnit("V");
 	adcSampleTimeHisto=Histogram("adcSampleTime",100,0.,20.);
+	adcSampleTimeHisto.setUnit("ms");
+}
+
+void Daemon::rescaleHisto(Histogram& hist, double center, double width) {
+	hist.setMin(center-width/2.);
+	hist.setMax(center+width/2.);
+	hist.clear();
 }
 
 // ALL FUNCTIONS ABOUT TCPMESSAGE SENDING AND RECEIVING

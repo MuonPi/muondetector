@@ -16,6 +16,7 @@ public:
     ~Histogram() { fHistogramMap.clear(); }
 	void clear() { fHistogramMap.clear(); fUnderflow=fOverflow=0.; }
 	void setName(const std::string& name) { fName=name; }
+	void setUnit(const std::string& unit) { fUnit=unit; }
 	void setNrBins(int bins) { fNrBins = bins; clear(); }
 	int getNrBins() const { return fNrBins; }
 	void setMin(double val) { fMin=val; }
@@ -36,7 +37,9 @@ public:
 	double getBinContent(int bin) const {
 		if (bin>=0 && bin<fNrBins) {
 			try {
-				return fHistogramMap.at(bin);
+				auto it=fHistogramMap.find(bin);
+				if (it!=fHistogramMap.end()) return fHistogramMap.at(bin);
+				else return double();
 			} catch (...) {	return double(); }
 		} else return double();
 	}
@@ -47,6 +50,18 @@ public:
 			sum+=bin2Value(entry.first)*entry.second;
 		}
 		if (entries>0.)	return sum/entries;
+		else return 0.;
+	}
+	
+	double getRMS() {
+		double mean=getMean();
+		double sum = 0., entries=0.;
+		for (const auto &entry : fHistogramMap) {
+			entries+=entry.second;
+			double dx=bin2Value(entry.first)-mean;
+			sum+=dx*dx*entry.second;
+		}
+		if (entries>1.)	return sqrt(sum/(entries-1.));
 		else return 0.;
 	}
 	double getUnderflow() const { return fUnderflow; }
@@ -71,6 +86,7 @@ public:
 	friend QDataStream& operator >> (QDataStream& in, Histogram& h);
 
 	const std::string& getName() const { return fName; }
+	const std::string& getUnit() const { return fUnit; }
 private:
 	int value2Bin(double value) {
 		double range=fMax-fMin;
@@ -85,6 +101,7 @@ private:
 		return value;
 	}
 	std::string fName = "defaultHisto";
+	std::string fUnit = "A.U.";
 	int fNrBins=100;
 	double fMin=0.0;
 	double fMax=1.0;

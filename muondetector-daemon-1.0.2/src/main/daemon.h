@@ -128,6 +128,7 @@ private:
     void receivedCalibItems(const std::vector<CalibStruct>& newCalibs);
     void logBiasValues();
     void setupHistos();
+    void rescaleHisto(Histogram& hist, double center, double width);
     
     void printTimestamp();
     void delay(int millisecondsWait);
@@ -171,7 +172,8 @@ private:
     
     ShowerDetectorCalib* calib = nullptr;
     
-    Histogram geoHeightHisto, pulseHeightHisto, adcSampleTimeHisto;
+    Histogram geoHeightHisto, geoLonHisto, geoLatHisto,
+     pulseHeightHisto, adcSampleTimeHisto;
 };
 
 #endif // DAEMON_H
