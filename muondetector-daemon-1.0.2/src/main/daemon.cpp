@@ -546,9 +546,18 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		}
 		if (pca && pca->devicePresent()) logParameter(LogParameter("interruptInputSwitch", "0x"+QString::number(pcaPortMask,16)));
 		logBiasValues();
-		if (adc && !(adc->getStatus() & i2cDevice::MODE_UNREACHABLE)) logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms"));
+		if (adc && !(adc->getStatus() & i2cDevice::MODE_UNREACHABLE)) {
+			logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms"));
+			adcSampleTimeHisto.fill(adc->getLastConvTime());
+			sendHistogram(adcSampleTimeHisto);
+			sendHistogram(pulseHeightHisto);
+		}
+		
 	});
 
+
+	// set up histograms
+	setupHistos();
 
 	// start tcp connection and gps module connection
 	//connectToServer();
@@ -625,16 +634,12 @@ void Daemon::connectToGps() {
 	connect(this, &Daemon::UBXSetAopCfg, qtGps, &QtSerialUblox::UBXSetAopCfg);
 
     // connect fileHandler related stuff
-    geoHeightHisto.setMin(100.);
-    geoHeightHisto.setMax(300.);
-    geoHeightHisto.setNrBins(1000);
-    geoHeightHisto.setName("geoHeight");
-    geoHeightHisto.clear();
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, [this](GeodeticPos pos){
 		logParameter(LogParameter("geoLongitude", QString::number(1e-7*pos.lon,'f',5)+" deg"));
 		logParameter(LogParameter("geoLatitude", QString::number(1e-7*pos.lat,'f',5)+" deg"));
 		logParameter(LogParameter("geoHeightMSL", QString::number(1e-3*pos.hMSL,'f',2)+" m"));
-		geoHeightHisto.fill(1e-3*pos.hMSL);
+		double heightWeight=1000./((pos.vAcc>0)?pos.vAcc:1e12);
+		geoHeightHisto.fill(1e-3*pos.hMSL /*, heightWeight */);
 		this->sendHistogram(geoHeightHisto);
 		logParameter(LogParameter("meanGeoHeightMSL", QString::number(geoHeightHisto.getMean(),'f',2)+" m"));
 		logParameter(LogParameter("geoHorAccuracy", QString::number(1e-3*pos.hAcc,'f',2)+" m"));
@@ -725,6 +730,19 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 	sendDacThresh(1);
 
 	pollAllUbxMsgRate();
+}
+
+
+void Daemon::setupHistos() {
+/*    geoHeightHisto.setMin(100.);
+    geoHeightHisto.setMax(300.);
+    geoHeightHisto.setNrBins(1000);
+    geoHeightHisto.setName("geoHeight");
+    geoHeightHisto.clear();
+*/
+	geoHeightHisto=Histogram("geoHeight",1000,100.,300.);
+	pulseHeightHisto=Histogram("pulseHeight",200,0.,4.1);
+	adcSampleTimeHisto=Histogram("adcSampleTime",100,0.,20.);
 }
 
 // ALL FUNCTIONS ABOUT TCPMESSAGE SENDING AND RECEIVING
@@ -1034,7 +1052,16 @@ void Daemon::sendGpioRates(int number, quint8 whichRate){
     emit sendTcpMessage(tcpMessage);
 }
 void Daemon::sampleAdc0Event(){
-	sampleAdcEvent(0);
+    const uint8_t channel=0;
+    if (adc==nullptr){
+        return;
+    }
+    if (adc->getStatus() & i2cDevice::MODE_UNREACHABLE) return;
+    TcpMessage tcpMessage(adcSampleSig);
+    float value = adc->readVoltage(channel);
+    *(tcpMessage.dStream) << (quint8)channel << value;
+    emit sendTcpMessage(tcpMessage);
+    pulseHeightHisto.fill(value);
 }
 
 void Daemon::sampleAdcEvent(uint8_t channel){
