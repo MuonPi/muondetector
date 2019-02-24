@@ -23,6 +23,8 @@ public:
 	double getMin() const { return fMin; }
 	void setMax(double val) { fMax=val; }
 	double getMax() const { return fMax; }
+	double getRange() const { return fMax-fMin; }
+	double getCenter() const { return 0.5*getRange()+fMin; }
 	void fill(double x, double mult = 1.) {
 		int bin=value2Bin(x);
 		if (bin<0) {

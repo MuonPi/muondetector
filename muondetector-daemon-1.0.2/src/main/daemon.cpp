@@ -641,13 +641,19 @@ void Daemon::connectToGps() {
 		logParameter(LogParameter("meanGeoHeightMSL", QString::number(geoHeightHisto.getMean(),'f',2)+" m"));
 		logParameter(LogParameter("geoHorAccuracy", QString::number(1e-3*pos.hAcc,'f',2)+" m"));
 		logParameter(LogParameter("geoVertAccuracy", QString::number(1e-3*pos.vAcc,'f',2)+" m"));
-		double heightWeight=1000./((pos.vAcc>0)?pos.vAcc:1e12);
+		
 		if (1e-3*pos.vAcc<50.) {
 			if (1e-3*pos.hMSL>geoHeightHisto.getMax() || 1e-3*pos.hMSL<geoHeightHisto.getMin()) {
 				rescaleHisto(geoHeightHisto, 1e-3*pos.hMSL, 200);
+				rescaleHisto(weightedGeoHeightHisto, 1e-3*pos.hMSL, 200);
 			}
 			geoHeightHisto.fill(1e-3*pos.hMSL /*, heightWeight */);
 			this->sendHistogram(geoHeightHisto);
+			if (currentDOP.vDOP>0) {
+				double heightWeight=100./currentDOP.vDOP;
+				weightedGeoHeightHisto.fill(1e-3*pos.hMSL , heightWeight );
+				this->sendHistogram(weightedGeoHeightHisto);
+			}
 		}
 		if (1e-3*pos.hAcc<50.) {
 			if (1e-7*pos.lon>geoLonHisto.getMax() || 1e-7*pos.lon<geoLonHisto.getMin()) {
@@ -683,6 +689,7 @@ void Daemon::connectToGps() {
     });
 
     connect(qtGps, &QtSerialUblox::UBXReceivedDops, this, [this](const UbxDopStruct& dops){
+	currentDOP=dops;
 	logParameter(LogParameter("positionDOP", QString::number(dops.pDOP/100.)));
 	logParameter(LogParameter("timeDOP", QString::number(dops.tDOP/100.)));
     });
@@ -757,6 +764,8 @@ void Daemon::setupHistos() {
 	geoLonHisto.setUnit("deg");
 	geoLatHisto=Histogram("geoLatitude",200,0.,1.);
 	geoLatHisto.setUnit("deg");
+	weightedGeoHeightHisto=Histogram("weightedGeoHeight",200,0.,1.);
+	weightedGeoHeightHisto.setUnit("m");
 	pulseHeightHisto=Histogram("pulseHeight",200,0.,4.1);
 	pulseHeightHisto.setUnit("V");
 	adcSampleTimeHisto=Histogram("adcSampleTime",100,0.,20.);

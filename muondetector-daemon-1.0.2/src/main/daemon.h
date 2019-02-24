@@ -173,7 +173,9 @@ private:
     ShowerDetectorCalib* calib = nullptr;
     
     Histogram geoHeightHisto, geoLonHisto, geoLatHisto,
+     weightedGeoHeightHisto,
      pulseHeightHisto, adcSampleTimeHisto;
+    UbxDopStruct currentDOP;
 };
 
 #endif // DAEMON_H
