@@ -618,6 +618,8 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 	//fTimestamps.push(ts);
 	//mutex.unlock();
 
+	emit UBXReceivedTimeTM2(ts.rising_time, ts.falling_time, accEst, ts.valid, (flags & 0x18) >> 3, flags & 0x20);
+
 	return true;
 }
 

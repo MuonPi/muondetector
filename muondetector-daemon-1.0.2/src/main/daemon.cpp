@@ -214,6 +214,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     qRegisterMetaType<LogParameter>("LogParameter");
     qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
     qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
+    qRegisterMetaType<timespec>("timespec");
     // signal handling
 	setup_unix_signal_handlers();
 	if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)) {
@@ -549,9 +550,11 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		logBiasValues();
 		if (adc && !(adc->getStatus() & i2cDevice::MODE_UNREACHABLE)) {
 			logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms"));
+			checkRescaleHisto(adcSampleTimeHisto, adc->getLastConvTime());
 			adcSampleTimeHisto.fill(adc->getLastConvTime());
 			sendHistogram(adcSampleTimeHisto);
 			sendHistogram(pulseHeightHisto);
+			sendHistogram(tpLengthHisto);
 		}
 	});
 
@@ -632,6 +635,7 @@ void Daemon::connectToGps() {
 	connect(this, &Daemon::UBXSetMinMaxSVs, qtGps, &QtSerialUblox::UBXSetMinMaxSVs);
 	connect(this, &Daemon::UBXSetMinCNO, qtGps, &QtSerialUblox::UBXSetMinCNO);
 	connect(this, &Daemon::UBXSetAopCfg, qtGps, &QtSerialUblox::UBXSetAopCfg);
+    connect(qtGps, &QtSerialUblox::UBXReceivedTimeTM2, this, &Daemon::onUBXReceivedTimeTM2);
 
     // connect fileHandler related stuff
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, [this](GeodeticPos pos){
@@ -642,27 +646,21 @@ void Daemon::connectToGps() {
 		logParameter(LogParameter("geoHorAccuracy", QString::number(1e-3*pos.hAcc,'f',2)+" m"));
 		logParameter(LogParameter("geoVertAccuracy", QString::number(1e-3*pos.vAcc,'f',2)+" m"));
 		
-		if (1e-3*pos.vAcc<50.) {
-			if (1e-3*pos.hMSL>geoHeightHisto.getMax() || 1e-3*pos.hMSL<geoHeightHisto.getMin()) {
-				rescaleHisto(geoHeightHisto, 1e-3*pos.hMSL, 200);
-				rescaleHisto(weightedGeoHeightHisto, 1e-3*pos.hMSL, 200);
-			}
+		if (1e-3*pos.vAcc<100.) {
+			checkRescaleHisto(geoHeightHisto, 1e-3*pos.hMSL);
 			geoHeightHisto.fill(1e-3*pos.hMSL /*, heightWeight */);
 			this->sendHistogram(geoHeightHisto);
 			if (currentDOP.vDOP>0) {
 				double heightWeight=100./currentDOP.vDOP;
+				checkRescaleHisto(weightedGeoHeightHisto, 1e-3*pos.hMSL);
 				weightedGeoHeightHisto.fill(1e-3*pos.hMSL , heightWeight );
 				this->sendHistogram(weightedGeoHeightHisto);
 			}
 		}
-		if (1e-3*pos.hAcc<50.) {
-			if (1e-7*pos.lon>geoLonHisto.getMax() || 1e-7*pos.lon<geoLonHisto.getMin()) {
-				rescaleHisto(geoLonHisto, 1e-7*pos.lon, 0.002);
-			}
+		if (1e-3*pos.hAcc<100.) {
+			checkRescaleHisto(geoLonHisto, 1e-7*pos.lon);
 			geoLonHisto.fill(1e-7*pos.lon /*, heightWeight */);
-			if (1e-7*pos.lat>geoLatHisto.getMax() || 1e-7*pos.lat<geoLatHisto.getMin()) {
-				rescaleHisto(geoLatHisto, 1e-7*pos.lat, 0.002);
-			}
+			checkRescaleHisto(geoLatHisto, 1e-7*pos.lat);
 			geoLatHisto.fill(1e-7*pos.lat /*, heightWeight */);
 			this->sendHistogram(geoLonHisto);
 			this->sendHistogram(geoLatHisto);
@@ -758,24 +756,60 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 
 
 void Daemon::setupHistos() {
-	geoHeightHisto=Histogram("geoHeight",200,0.,1.);
+	geoHeightHisto=Histogram("geoHeight",200,0.,200.);
 	geoHeightHisto.setUnit("m");
-	geoLonHisto=Histogram("geoLongitude",200,0.,1.);
+	geoLonHisto=Histogram("geoLongitude",200,0.,0.003);
 	geoLonHisto.setUnit("deg");
-	geoLatHisto=Histogram("geoLatitude",200,0.,1.);
+	geoLatHisto=Histogram("geoLatitude",200,0.,0.003);
 	geoLatHisto.setUnit("deg");
-	weightedGeoHeightHisto=Histogram("weightedGeoHeight",200,0.,1.);
+	weightedGeoHeightHisto=Histogram("weightedGeoHeight",200,0.,200.);
 	weightedGeoHeightHisto.setUnit("m");
-	pulseHeightHisto=Histogram("pulseHeight",200,0.,4.1);
+	pulseHeightHisto=Histogram("pulseHeight",200,0.,4.0);
 	pulseHeightHisto.setUnit("V");
-	adcSampleTimeHisto=Histogram("adcSampleTime",100,0.,20.);
+	adcSampleTimeHisto=Histogram("adcSampleTime",100,0.,10.);
 	adcSampleTimeHisto.setUnit("ms");
+	tpLengthHisto=Histogram("TPLength",100,0.,99.);
+	tpLengthHisto.setUnit("ns");
 }
 
 void Daemon::rescaleHisto(Histogram& hist, double center, double width) {
 	hist.setMin(center-width/2.);
 	hist.setMax(center+width/2.);
 	hist.clear();
+}
+
+void Daemon::rescaleHisto(Histogram& hist, double center) {
+	double width=hist.getMax()-hist.getMin();
+	rescaleHisto(hist, center, width);
+}
+
+void Daemon::checkRescaleHisto(Histogram& hist, double newValue) {
+	// Strategy: check if more than 10% of all entries in underflow/overflow
+	// set new center to old mean
+	// set center to newValue if histo empty or only underflow/overflow filled
+	// histo will not be filled with supplied value, it has to be done externally
+	double entries=hist.getEntries();
+	// do nothing if histo is empty
+	if (entries<1.) {
+		return;
+		rescaleHisto(hist, newValue);
+	}
+	double ufl=hist.getUnderflow();
+	double ofl=hist.getOverflow();
+	entries-=ufl+ofl;
+	if (ufl>0. && ofl>0. && (ufl+ofl)>0.05*entries) {
+		// range is too small, onderflow and overflow have more than 5% of all entries
+		double range=hist.getMax()-hist.getMin();
+		rescaleHisto(hist, hist.getMean(), 1.1*range);
+	} else if (ufl>0.05*entries) {
+//		if (entries<1.) rescaleHisto(hist, hist.getMin()-(hist.getMax()-hist.getMin())/2.);
+		if (entries<1.) rescaleHisto(hist, newValue);
+		else rescaleHisto(hist, hist.getMean());
+	} else if (ofl>0.05*entries) {
+//		if (entries<1.) rescaleHisto(hist, hist.getMax()+(hist.getMax()-hist.getMin())/2.);
+		if (entries<1.) rescaleHisto(hist, newValue);
+		else rescaleHisto(hist, hist.getMean());
+	}
 }
 
 // ALL FUNCTIONS ABOUT TCPMESSAGE SENDING AND RECEIVING
@@ -799,6 +833,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         float voltage;
         *(tcpMessage.dStream) >> voltage;
         setBiasVoltage(voltage);
+        pulseHeightHisto.clear();
         return;
     }
     if (msgID == biasVoltageRequestSig){
@@ -809,6 +844,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         bool status;
         *(tcpMessage.dStream) >> status;
         setBiasStatus(status);
+        pulseHeightHisto.clear();
         return;
     }
     if (msgID == biasRequestSig){
@@ -821,6 +857,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         if (channel==0) {
 			preampStatus[0]=status;
 			digitalWrite(PREAMP_1, (uint8_t)status);
+			pulseHeightHisto.clear();
 		} else if (channel==1) {
 			preampStatus[1]=status;
 			digitalWrite(PREAMP_2, (uint8_t)status);
@@ -836,7 +873,8 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> status;
 		gainSwitch=status;
 		digitalWrite(GAIN_HL, (uint8_t)status);
-        return;
+		pulseHeightHisto.clear();
+		return;
     }
     if (msgID == gainSwitchRequestSig){
         sendGainSwitchStatus();
@@ -865,6 +903,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         quint8 portMask;
         *(tcpMessage.dStream) >> portMask;
         setPcaChannel((uint8_t)portMask);
+        tpLengthHisto.clear();
         return;
     }
     if (msgID == pcaChannelRequestSig){
@@ -881,14 +920,14 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         pigHandler->resetBuffer();
         return;
     }
-    if (msgID == dacRequestSig){
-        quint8 channel;
-        *(tcpMessage.dStream) >> channel;
-        MCP4728::DacChannel channelData;
-        if (!dac->devicePresent()) return;
-	dac->readChannel(channel, channelData);
-	float voltage = MCP4728::code2voltage(channelData);
-        sendDacReadbackValue(channel, voltage);
+	if (msgID == dacRequestSig){
+		quint8 channel;
+		*(tcpMessage.dStream) >> channel;
+		MCP4728::DacChannel channelData;
+		if (!dac->devicePresent()) return;
+		dac->readChannel(channel, channelData);
+		float voltage = MCP4728::code2voltage(channelData);
+		sendDacReadbackValue(channel, voltage);
     }
     if (msgID == adcSampleRequestSig){
         quint8 channel;
@@ -1692,5 +1731,15 @@ void Daemon::logBiasValues()
 			logParameter(LogParameter("vadc3", QString::number(v1)+" V"));
 			logParameter(LogParameter("vadc4", QString::number(v2)+" V"));
 		}
+	}
+}
+
+void Daemon::onUBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t accEst, bool valid, uint8_t timeBase, bool utcAvailable)
+{
+	long double dts=(falling.tv_sec-rising.tv_sec)*1e9;
+	dts+=(falling.tv_nsec-rising.tv_nsec);
+	if (dts>0.) {
+		checkRescaleHisto(tpLengthHisto, dts);
+		tpLengthHisto.fill(dts);
 	}
 }

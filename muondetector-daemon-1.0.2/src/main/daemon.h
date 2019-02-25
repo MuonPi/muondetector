@@ -75,7 +75,7 @@ public slots:
     void sampleAdcEvent(uint8_t channel);
     void getTemperature();
     void scanI2cBus();
-
+    void onUBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t accEst, bool valid, uint8_t timeBase, bool utcAvailable);
 	
 signals:
     void sendTcpMessage(TcpMessage tcpMessage);
@@ -129,6 +129,8 @@ private:
     void logBiasValues();
     void setupHistos();
     void rescaleHisto(Histogram& hist, double center, double width);
+    void rescaleHisto(Histogram& hist, double center);
+    void checkRescaleHisto(Histogram& hist, double newValue);
     
     void printTimestamp();
     void delay(int millisecondsWait);
@@ -174,7 +176,8 @@ private:
     
     Histogram geoHeightHisto, geoLonHisto, geoLatHisto,
      weightedGeoHeightHisto,
-     pulseHeightHisto, adcSampleTimeHisto;
+     pulseHeightHisto, adcSampleTimeHisto,
+     tpLengthHisto;
     UbxDopStruct currentDOP;
 };
 
