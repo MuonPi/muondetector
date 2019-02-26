@@ -39,6 +39,11 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
                 pigpioHandler->samplingTrigger();
                 pigpioHandler->lastSamplingTime = now;
             }
+			
+			quint64 nsecsElapsed=pigpioHandler->elapsedEventTimer.nsecsElapsed();
+			pigpioHandler->elapsedEventTimer.start();
+			emit pigpioHandler->eventInterval(nsecsElapsed);
+			
         }
         if (user_gpio == EVT_AND) {
             pigpioHandler->bufferIntervalActualisation();
@@ -89,6 +94,7 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
     lastXorTime = startOfProgram;
     lastInterval = startOfProgram;
     lastSamplingTime = startOfProgram;
+    elapsedEventTimer.start();
     andCounts.push_front(0);
     xorCounts.push_front(0);
     pigHandlerAddress = this;
