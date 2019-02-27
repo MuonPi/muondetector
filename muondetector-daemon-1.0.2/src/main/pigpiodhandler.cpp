@@ -23,6 +23,8 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
         pigpio_stop(pi);
         return;
     }
+    static uint32_t lastTick=0;
+    
     QPointer<PigpiodHandler> pigpioHandler = pigHandlerAddress;
     QDateTime now = QDateTime::currentDateTimeUtc();
     try{
@@ -42,7 +44,9 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
 			
 			quint64 nsecsElapsed=pigpioHandler->elapsedEventTimer.nsecsElapsed();
 			pigpioHandler->elapsedEventTimer.start();
-			emit pigpioHandler->eventInterval(nsecsElapsed);
+			//emit pigpioHandler->eventInterval(nsecsElapsed);
+			emit pigpioHandler->eventInterval((tick-lastTick)*1000);
+			lastTick=tick;
 			
         }
         if (user_gpio == EVT_AND) {
