@@ -264,6 +264,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	connect(this, &Daemon::GpioSetState, pigHandler, &PigpiodHandler::setGpioState);
     connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
     connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
+	connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) { eventIntervalHisto.fill(1e-6*nsecs); } );
+	connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) { eventIntervalShortHisto.fill((double)nsecs/1000.); } );
     /* looks good but using QPointer should be safer
      * connect(pigHandler, &PigpiodHandler::destroyed, this, [this](){pigHandler = nullptr;});
     */
@@ -554,8 +556,11 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 			adcSampleTimeHisto.fill(adc->getLastConvTime());
 			sendHistogram(adcSampleTimeHisto);
 			sendHistogram(pulseHeightHisto);
-			sendHistogram(tpLengthHisto);
 		}
+		sendHistogram(tpLengthHisto);
+		sendHistogram(eventIntervalHisto);
+		sendHistogram(eventIntervalShortHisto);
+		sendHistogram(ubxTimeIntervalHisto);
 	});
 
 
@@ -768,8 +773,14 @@ void Daemon::setupHistos() {
 	pulseHeightHisto.setUnit("V");
 	adcSampleTimeHisto=Histogram("adcSampleTime",100,0.,10.);
 	adcSampleTimeHisto.setUnit("ms");
-	tpLengthHisto=Histogram("TPLength",100,0.,99.);
+	tpLengthHisto=Histogram("TPLength",100,50.,149.);
 	tpLengthHisto.setUnit("ns");
+	eventIntervalHisto=Histogram("gpioEventInterval",400,0.,1100.);
+	eventIntervalHisto.setUnit("ms");
+	eventIntervalShortHisto=Histogram("gpioEventIntervalShort",1000,0.,10000.);
+	eventIntervalShortHisto.setUnit("us");
+	ubxTimeIntervalHisto=Histogram("UbxEventInterval",300,0.,1100.);
+	ubxTimeIntervalHisto.setUnit("ms");
 }
 
 void Daemon::rescaleHisto(Histogram& hist, double center, double width) {
@@ -1742,4 +1753,8 @@ void Daemon::onUBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t ac
 		checkRescaleHisto(tpLengthHisto, dts);
 		tpLengthHisto.fill(dts);
 	}
+	long double interval=(rising.tv_sec-lastTimestamp.tv_sec)*1e9;
+	interval+=(rising.tv_nsec-lastTimestamp.tv_nsec);
+	ubxTimeIntervalHisto.fill(1e-6*interval);
+	lastTimestamp=rising;
 }

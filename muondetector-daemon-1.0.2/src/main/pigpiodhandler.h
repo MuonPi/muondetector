@@ -8,6 +8,7 @@
 #include <QQueue>
 #include <QTimer>
 #include <QDateTime>
+#include <QElapsedTimer>
 
 #define XOR_RATE 0
 #define AND_RATE 1
@@ -26,6 +27,7 @@ public:
 
     QDateTime lastInterval, lastAndTime, lastXorTime, lastSamplingTime;
     QDateTime startOfProgram; // the exact time when the program starts (Utc)
+    QElapsedTimer elapsedEventTimer;
     QVector<QPointF> getBufferedRates(int number, quint8 whichRate); // get last <number> entries of
                                                                      // buffered rates. If 0: get all.
     void setBufferTime(int msecs);
@@ -34,6 +36,7 @@ public:
 signals:
     void signal(uint8_t gpio_pin);
     void samplingTrigger();
+	void eventInterval(quint64 nsecs);
 
 public slots:
     void resetBuffer();
