@@ -89,7 +89,8 @@ public:
 
 	const std::string& getName() const { return fName; }
 	const std::string& getUnit() const { return fUnit; }
-private:
+
+protected:
 	int value2Bin(double value) {
 		double range=fMax-fMin;
 		if (range<=0.) return -1;	
@@ -99,7 +100,7 @@ private:
 	double bin2Value(int bin) {
 		double range=fMax-fMin;
 		if (range<=0.) return -1;	
-		double value=range*(bin)/fNrBins+fMin;
+		double value=range*bin/(fNrBins-1)+fMin;
 		return value;
 	}
 	std::string fName = "defaultHisto";
