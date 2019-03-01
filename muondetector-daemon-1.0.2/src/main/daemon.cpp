@@ -265,7 +265,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
     connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
 	connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) { eventIntervalHisto.fill(1e-6*nsecs); } );
-	connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) { eventIntervalShortHisto.fill((double)nsecs/1000.); } );
+	connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) 
+	{ if (nsecs/1000<=eventIntervalShortHisto.getMax()) eventIntervalShortHisto.fill((double)nsecs/1000.); } );
     /* looks good but using QPointer should be safer
      * connect(pigHandler, &PigpiodHandler::destroyed, this, [this](){pigHandler = nullptr;});
     */
@@ -761,25 +762,25 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 
 
 void Daemon::setupHistos() {
-	geoHeightHisto=Histogram("geoHeight",200,0.,200.);
+	geoHeightHisto=Histogram("geoHeight",200,0.,199.);
 	geoHeightHisto.setUnit("m");
 	geoLonHisto=Histogram("geoLongitude",200,0.,0.003);
 	geoLonHisto.setUnit("deg");
 	geoLatHisto=Histogram("geoLatitude",200,0.,0.003);
 	geoLatHisto.setUnit("deg");
-	weightedGeoHeightHisto=Histogram("weightedGeoHeight",200,0.,200.);
+	weightedGeoHeightHisto=Histogram("weightedGeoHeight",200,0.,199.);
 	weightedGeoHeightHisto.setUnit("m");
 	pulseHeightHisto=Histogram("pulseHeight",200,0.,4.0);
 	pulseHeightHisto.setUnit("V");
-	adcSampleTimeHisto=Histogram("adcSampleTime",100,0.,10.);
+	adcSampleTimeHisto=Histogram("adcSampleTime",100,0.,9.9);
 	adcSampleTimeHisto.setUnit("ms");
 	tpLengthHisto=Histogram("TPLength",100,50.,149.);
 	tpLengthHisto.setUnit("ns");
 	eventIntervalHisto=Histogram("gpioEventInterval",400,0.,1100.);
 	eventIntervalHisto.setUnit("ms");
-	eventIntervalShortHisto=Histogram("gpioEventIntervalShort",1000,0.,10000.);
+	eventIntervalShortHisto=Histogram("gpioEventIntervalShort",50,0.,49.);
 	eventIntervalShortHisto.setUnit("us");
-	ubxTimeIntervalHisto=Histogram("UbxEventInterval",300,0.,1100.);
+	ubxTimeIntervalHisto=Histogram("UbxEventInterval",200,0.,1100.);
 	ubxTimeIntervalHisto.setUnit("ms");
 }
 
