@@ -15,6 +15,9 @@
 #include "calibration.h"
 #include <logparameter.h>
 #include <histogram.h>
+#include <QPointF>
+#include <QTimer>
+#include <time.h>
 
 // for sig handling:
 #include <sys/types.h>
@@ -104,6 +107,9 @@ signals:
     void UBXSetCfgTP5(const UbxTimePulseStruct& tp);
     void UBXSetAopCfg(bool enable=true, uint16_t maxOrbErr=0);
 	
+private slots:
+    void onRateBufferReminder();
+
 private:
     void incomingConnection(qintptr socketDescriptor) override;
     void setPcaChannel(uint8_t channel); // channel 0 to 3
@@ -134,6 +140,11 @@ private:
     
     void printTimestamp();
     void delay(int millisecondsWait);
+
+    void rateCounterIntervalActualisation();
+    qreal getRateFromCounts(quint8 which_rate);
+    void clearRates();
+
     MCP4728* dac = nullptr;
     ADS1115* adc = nullptr;
     PCA9536* pca = nullptr;
@@ -172,13 +183,20 @@ private:
     QPointer<QSocketNotifier> snTerm;
     QPointer<QSocketNotifier> snInt;
     
+    // others
     ShowerDetectorCalib* calib = nullptr;
-    
+
     Histogram geoHeightHisto, geoLonHisto, geoLatHisto,
      weightedGeoHeightHisto,
      pulseHeightHisto, adcSampleTimeHisto,
      tpLengthHisto, eventIntervalHisto, eventIntervalShortHisto, 
      ubxTimeIntervalHisto;
+    QVector<QPointF> xorRatePoints, andRatePoints;
+    timespec startOfProgram, lastRateInterval;
+    quint32 rateBufferTime = 120*60*1000; // in ms: 120 min
+    quint32 rateBufferInterval = 2000; // in ms: 2 seconds
+    QTimer rateBufferReminder;
+    QList<quint64> andCounts,xorCounts;
     UbxDopStruct currentDOP;
     timespec lastTimestamp = { 0, 0 };
 };
