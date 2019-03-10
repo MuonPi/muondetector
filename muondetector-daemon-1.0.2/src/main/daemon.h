@@ -177,8 +177,8 @@ private:
     Histogram geoHeightHisto, geoLonHisto, geoLatHisto,
      weightedGeoHeightHisto,
      pulseHeightHisto, adcSampleTimeHisto,
-     tpLengthHisto, eventIntervalHisto, eventIntervalShortHisto, 
-     ubxTimeIntervalHisto;
+     ubxTimeLengthHisto, eventIntervalHisto, eventIntervalShortHisto, 
+     ubxTimeIntervalHisto, tpTimeDiffHisto;
     UbxDopStruct currentDOP;
     timespec lastTimestamp = { 0, 0 };
 };

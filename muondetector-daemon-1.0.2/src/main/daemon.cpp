@@ -267,6 +267,18 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) { eventIntervalHisto.fill(1e-6*nsecs); } );
 	connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) 
 	{ if (nsecs/1000<=eventIntervalShortHisto.getMax()) eventIntervalShortHisto.fill((double)nsecs/1000.); } );
+	connect(pigHandler, &PigpiodHandler::timePulseDiff, this, [this](qint32 usecs) 
+	{ 	checkRescaleHisto(tpTimeDiffHisto, usecs);
+		tpTimeDiffHisto.fill((double)usecs);
+		/*cout<<"TP time diff: "<<usecs<<" us"<<endl;*/
+	} );
+	
+	struct timespec ts_res;
+	clock_getres(CLOCK_REALTIME, &ts_res);
+	if (verbose) {
+		cout<<"the timing resolution of the system clock is "<<ts_res.tv_nsec<<" ns"<<endl;
+	}
+	
     /* looks good but using QPointer should be safer
      * connect(pigHandler, &PigpiodHandler::destroyed, this, [this](){pigHandler = nullptr;});
     */
@@ -558,10 +570,11 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 			sendHistogram(adcSampleTimeHisto);
 			sendHistogram(pulseHeightHisto);
 		}
-		sendHistogram(tpLengthHisto);
+		sendHistogram(ubxTimeLengthHisto);
 		sendHistogram(eventIntervalHisto);
 		sendHistogram(eventIntervalShortHisto);
 		sendHistogram(ubxTimeIntervalHisto);
+		sendHistogram(tpTimeDiffHisto);
 	});
 
 
@@ -671,6 +684,7 @@ void Daemon::connectToGps() {
 			this->sendHistogram(geoLonHisto);
 			this->sendHistogram(geoLatHisto);
 		}
+		
     });
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, this, [this](std::vector<GnssSatellite> satlist, std::chrono::duration<double> updateAge){
         int allSats=0, usedSats=0, maxCnr=0;
@@ -774,14 +788,16 @@ void Daemon::setupHistos() {
 	pulseHeightHisto.setUnit("V");
 	adcSampleTimeHisto=Histogram("adcSampleTime",100,0.,9.9);
 	adcSampleTimeHisto.setUnit("ms");
-	tpLengthHisto=Histogram("TPLength",100,50.,149.);
-	tpLengthHisto.setUnit("ns");
+	ubxTimeLengthHisto=Histogram("UbxEventLength",100,50.,149.);
+	ubxTimeLengthHisto.setUnit("ns");
 	eventIntervalHisto=Histogram("gpioEventInterval",400,0.,1100.);
 	eventIntervalHisto.setUnit("ms");
 	eventIntervalShortHisto=Histogram("gpioEventIntervalShort",50,0.,49.);
 	eventIntervalShortHisto.setUnit("us");
 	ubxTimeIntervalHisto=Histogram("UbxEventInterval",200,0.,1100.);
 	ubxTimeIntervalHisto.setUnit("ms");
+	tpTimeDiffHisto=Histogram("TPTimeDiff",200,-999.,1000.);
+	tpTimeDiffHisto.setUnit("us");
 }
 
 void Daemon::rescaleHisto(Histogram& hist, double center, double width) {
@@ -915,7 +931,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         quint8 portMask;
         *(tcpMessage.dStream) >> portMask;
         setPcaChannel((uint8_t)portMask);
-        tpLengthHisto.clear();
+        ubxTimeLengthHisto.clear();
         return;
     }
     if (msgID == pcaChannelRequestSig){
@@ -1751,8 +1767,8 @@ void Daemon::onUBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t ac
 	long double dts=(falling.tv_sec-rising.tv_sec)*1e9;
 	dts+=(falling.tv_nsec-rising.tv_nsec);
 	if (dts>0.) {
-		checkRescaleHisto(tpLengthHisto, dts);
-		tpLengthHisto.fill(dts);
+		checkRescaleHisto(ubxTimeLengthHisto, dts);
+		ubxTimeLengthHisto.fill(dts);
 	}
 	long double interval=(rising.tv_sec-lastTimestamp.tv_sec)*1e9;
 	interval+=(rising.tv_nsec-lastTimestamp.tv_nsec);
