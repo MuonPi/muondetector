@@ -25,6 +25,14 @@ extern "C" {
 
 using namespace std;
 
+int64_t msecdiff(timespec &ts, timespec &st){
+    int64_t diff;
+    diff = (int64_t)ts.tv_sec - (int64_t)st.tv_sec;
+    diff *= 1000;
+    diff += ((int64_t)ts.tv_nsec-(int64_t)st.tv_nsec)/1000000;
+    return diff;
+}
+
 static QVector<uint16_t> allMsgCfgID({
 	//   MSG_CFG_ANT, MSG_CFG_CFG, MSG_CFG_DAT, MSG_CFG_DOSC,
 	//   MSG_CFG_DYNSEED, MSG_CFG_ESRC, MSG_CFG_FIXSEED, MSG_CFG_GEOFENCE,
@@ -256,6 +264,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	// for pigpio signals:
 	const QVector<unsigned int> gpio_pins({ EVT_AND, EVT_XOR, /*ADC_READY,*/ TIMEPULSE });
     pigHandler = new PigpiodHandler(gpio_pins);
+    QThread *pigThread = new QThread();
+    pigHandler->moveToThread(pigThread);
     connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
     connect(this, &Daemon::GpioSetOutput, pigHandler, &PigpiodHandler::setOutput);
     connect(this, &Daemon::GpioSetInput, pigHandler, &PigpiodHandler::setInput);
@@ -284,7 +294,29 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     */
     // test if "aboutToQuit" is called everytime
     //connect(this, &Daemon::aboutToQuit, [this](){this->toConsole("aboutToQuit called and signal emitted\n");});
-	
+    connect(pigThread, &QThread::finished, pigHandler, &PigpiodHandler::deleteLater);
+    timespec_get(&lastRateInterval, TIME_UTC);
+    startOfProgram = lastRateInterval;
+    connect(pigHandler, &PigpiodHandler::signal, this, [this](uint8_t gpio_pin){  
+        rateCounterIntervalActualisation();
+        if (gpio_pin==EVT_XOR){
+            quint64 value = xorCounts.back();
+            xorCounts.pop_back();
+            value++;
+            xorCounts.push_back(value);
+        }
+        if (gpio_pin==EVT_AND){
+            quint64 value = andCounts.back();
+            andCounts.pop_back();
+            value++;
+            andCounts.push_back(value);
+        }
+    });
+    pigThread->start();
+    rateBufferReminder.setInterval(rateBufferInterval);
+    rateBufferReminder.setSingleShot(false);
+    connect(&rateBufferReminder, &QTimer::timeout, this, &Daemon::onRateBufferReminder);
+    rateBufferReminder.start();
 
 	// for i2c devices
 	lm75 = new LM75();
@@ -551,9 +583,15 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 
 	// connect to the regular log timer signal to log several non-regularly polled parameters
 	connect(fileHandler, &FileHandler::logIntervalSignal, this, [this]() {
-		double xorRate = pigHandler->getBufferedRates(0, XOR_RATE).back().y();
+        double xorRate = 0.0;
+        if (!xorRatePoints.isEmpty()){
+            xorRate = xorRatePoints.back().y();
+        }
 		logParameter(LogParameter("rateXOR", QString::number(xorRate)+" Hz"));
-		double andRate = pigHandler->getBufferedRates(0, AND_RATE).back().y();
+        double andRate = 0.0;
+        if (!andRatePoints.isEmpty()){
+            andRate = andRatePoints.back().y();
+        }
 		logParameter(LogParameter("rateAND", QString::number(andRate)+" Hz"));
 		if (lm75 && lm75->devicePresent()) logParameter(LogParameter("temperature", QString::number(lm75->getTemperature())+" degC"));
 		if (dac && dac->devicePresent()) {
@@ -945,7 +983,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         sendGpioRates(number, whichRate);
     }
     if (msgID == resetRateSig){
-        pigHandler->resetBuffer();
+        clearRates();
         return;
     }
 	if (msgID == dacRequestSig){
@@ -1143,12 +1181,96 @@ void Daemon::sendPcaChannel(){
     emit sendTcpMessage(tcpMessage);
 }
 
+void Daemon::rateCounterIntervalActualisation(){
+    if (xorCounts.isEmpty()){
+        xorCounts.push_back(0);
+    }
+    if (andCounts.isEmpty()){
+        andCounts.push_back(0);
+    }
+    timespec now;
+    timespec_get(&now, TIME_UTC);
+    int64_t diff = msecdiff(now,lastRateInterval);
+    while(diff>1000){
+        xorCounts.push_back(0);
+        andCounts.push_back(0);
+        while (xorCounts.size()>(120*120)){
+            xorCounts.pop_front();
+        }
+        while (andCounts.size()>(120*120)){
+            andCounts.pop_front();
+        }
+        lastRateInterval.tv_sec += 1;
+        diff = msecdiff(now,lastRateInterval);
+    }
+}
+
+void Daemon::clearRates(){
+    xorCounts.clear();
+    xorCounts.push_back(0);
+    andCounts.clear();
+    andCounts.push_back(0);
+    xorRatePoints.clear();
+    andRatePoints.clear();
+}
+
+qreal Daemon::getRateFromCounts(quint8 which_rate){
+    rateCounterIntervalActualisation();
+    QList<quint64> *counts;
+    if (which_rate==XOR_RATE){
+        counts = &xorCounts;
+    }else if( which_rate == AND_RATE){
+        counts = &andCounts;
+    }else{
+        return -1.0;
+    }
+    quint64 sum = 0;
+    for (auto count : *counts){
+        sum += count;
+    }
+    timespec now;
+    timespec_get(&now, TIME_UTC);
+    qreal timeInterval = (qreal)(500*(counts->size()-1)+(qreal)msecdiff(now,lastRateInterval));
+    return (sum/timeInterval);
+}
+
+void Daemon::onRateBufferReminder(){
+    qreal msecsSinceStart = (qreal)msecdiff(lastRateInterval,startOfProgram);
+    qreal xorRate = getRateFromCounts(XOR_RATE);
+    qreal andRate = getRateFromCounts(AND_RATE);
+    QPointF xorPoint(msecsSinceStart, xorRate);
+    QPointF andPoint(msecsSinceStart, andRate);
+    xorRatePoints.append(xorPoint);
+    andRatePoints.append(andPoint);
+    while (xorRatePoints.size()>rateBufferTime/rateBufferInterval){
+        xorRatePoints.pop_front();
+    }
+    while (andRatePoints.size()>rateBufferTime/rateBufferInterval){
+        andRatePoints.pop_front();
+    }
+}
+
 void Daemon::sendGpioRates(int number, quint8 whichRate){
     if (pigHandler==nullptr){
         return;
     }
     TcpMessage tcpMessage(gpioRateSig);
-    *(tcpMessage.dStream) << whichRate << pigHandler->getBufferedRates(number,whichRate);
+    QVector<QPointF> *ratePoints;
+    if (whichRate==XOR_RATE){
+         ratePoints = &xorRatePoints;
+    }else if(whichRate==AND_RATE){
+        ratePoints = &andRatePoints;
+    }else{
+        return;
+    }
+    QVector<QPointF> someRates;
+    if (number >= ratePoints->size() || number == 0){
+        number = ratePoints->size()-1;
+    }
+    for (unsigned int i = 0; i<number; i++){
+        someRates.push_front(ratePoints->at(ratePoints->size()-1-i));
+    }
+    *(tcpMessage.dStream) << whichRate << someRates;
     emit sendTcpMessage(tcpMessage);
 }
 void Daemon::sampleAdc0Event(){
@@ -1209,9 +1331,7 @@ void Daemon::setBiasVoltage(float voltage) {
         qDebug() << "change biasVoltage to " << voltage;
     }
     if (dac && dac->devicePresent()) dac->setVoltage(DAC_BIAS, voltage);
-    if (pigHandler!=nullptr){
-        pigHandler->resetBuffer();
-    }
+    clearRates();
     sendBiasVoltage();
 }
 
@@ -1228,10 +1348,7 @@ void Daemon::setBiasStatus(bool status){
     else {
         digitalWrite(UBIAS_EN, 0);
     }
-
-    if (pigHandler!=nullptr){
-        pigHandler->resetBuffer();
-    }
+    clearRates();
     sendBiasStatus();
 }
 
@@ -1244,9 +1361,7 @@ void Daemon::setDacThresh(uint8_t channel, float threshold) {
         qDebug() << "change dacThresh " << channel << " to " << threshold;
     }
     dacThresh[channel] = threshold;
-    if (pigHandler!=nullptr){
-        pigHandler->resetBuffer();
-    }
+    clearRates();
     if (dac->devicePresent()) dac->setVoltage(channel, threshold);
     sendDacThresh(channel);
 }

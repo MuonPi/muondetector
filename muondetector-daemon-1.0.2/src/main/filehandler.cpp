@@ -305,11 +305,14 @@ QString FileHandler::createFileName(){
 // upload related stuff
 
 bool FileHandler::uploadDataFile(QString fileName){
+    std::string setEnvironmentPw = "LFTP_PASSWORD="+password.toStdString();
+    system(setEnvironmentPw.c_str());
     QProcess lftpProcess(this);
     lftpProcess.setProgram("lftp");
     QStringList arguments;
+    arguments << "--env-password";
     arguments << "-p" << "35221";
-    arguments << "-u" << QString(username+","+password);
+    arguments << "-u" << QString(username);
     arguments << "balu.physik.uni-giessen.de:/cosmicshower";
     arguments << "-e" << QString("mkdir "+hashedMacAddress+" ; cd "+hashedMacAddress+" && put "+fileName+" ; exit");
     lftpProcess.setArguments(arguments);
@@ -319,12 +322,15 @@ bool FileHandler::uploadDataFile(QString fileName){
         //qDebug() << lftpProcess.readAllStandardOutput();
         //qDebug() << lftpProcess.readAllStandardError();
         //qDebug() << "lftp not installed or timed out after "<< timeout/1000<< " s";
+        system("unset LFTP_PASSWORD");
         return false;
     }
     if (lftpProcess.exitStatus()!=0){
         qDebug() << "lftp returned exit status other than 0";
+        system("unset LFTP_PASSWORD");
         return false;
     }
+    system("unset LFTP_PASSWORD");
     return true;
 }
 
