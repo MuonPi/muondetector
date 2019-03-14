@@ -1231,15 +1231,16 @@ qreal Daemon::getRateFromCounts(quint8 which_rate){
     timespec now;
     timespec_get(&now, TIME_UTC);
     qreal timeInterval = (qreal)(500*(counts->size()-1)+(qreal)msecdiff(now,lastRateInterval));
-    return (sum/timeInterval);
+    qreal rate = sum/timeInterval*1000;
+    return (rate);
 }
 
 void Daemon::onRateBufferReminder(){
-    qreal msecsSinceStart = (qreal)msecdiff(lastRateInterval,startOfProgram);
+    qreal secsSinceStart = 0.001*(qreal)msecdiff(lastRateInterval,startOfProgram);
     qreal xorRate = getRateFromCounts(XOR_RATE);
     qreal andRate = getRateFromCounts(AND_RATE);
-    QPointF xorPoint(msecsSinceStart, xorRate);
-    QPointF andPoint(msecsSinceStart, andRate);
+    QPointF xorPoint(secsSinceStart, xorRate);
+    QPointF andPoint(secsSinceStart, andRate);
     xorRatePoints.append(xorPoint);
     andRatePoints.append(andPoint);
     while (xorRatePoints.size()>rateBufferTime/rateBufferInterval){
