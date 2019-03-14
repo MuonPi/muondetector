@@ -297,7 +297,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     connect(pigThread, &QThread::finished, pigHandler, &PigpiodHandler::deleteLater);
     timespec_get(&lastRateInterval, TIME_UTC);
     startOfProgram = lastRateInterval;
-    connect(pigHandler, &PigpiodHandler::signal, this, [this](uint8_t gpio_pin){  
+    connect(pigHandler, &PigpiodHandler::signal, this, [this](uint8_t gpio_pin){
         rateCounterIntervalActualisation();
         if (gpio_pin==EVT_XOR){
             quint64 value = xorCounts.back();
@@ -1230,7 +1230,7 @@ qreal Daemon::getRateFromCounts(quint8 which_rate){
     }
     timespec now;
     timespec_get(&now, TIME_UTC);
-    qreal timeInterval = (qreal)(500*(counts->size()-1)+(qreal)msecdiff(now,lastRateInterval));
+    qreal timeInterval = (qreal)(1000*(counts->size()-1)+(qreal)msecdiff(now,lastRateInterval));
     qreal rate = sum/timeInterval*1000;
     return (rate);
 }
