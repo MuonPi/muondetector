@@ -1268,8 +1268,10 @@ void Daemon::sendGpioRates(int number, quint8 whichRate){
     if (number >= ratePoints->size() || number == 0){
         number = ratePoints->size()-1;
     }
-    for (unsigned int i = 0; i<number; i++){
-        someRates.push_front(ratePoints->at(ratePoints->size()-1-i));
+    if (!ratePoints->isEmpty()){
+        for (unsigned int i = 0; i<number; i++){
+            someRates.push_front(ratePoints->at(ratePoints->size()-1-i));
+        }
     }
     *(tcpMessage.dStream) << whichRate << someRates;
     emit sendTcpMessage(tcpMessage);
