@@ -44,6 +44,7 @@ SOURCES += main/main.cpp \
     main/i2c/i2cdevices.cpp \
     main/i2c/custom_i2cdetect.c \
     main/i2c/i2cbusses.c \
+    main/i2c/Adafruit_GFX.cpp \
     main/pigpiodhandler.cpp \
     main/daemon.cpp \
     main/custom_io_operators.cpp \
@@ -59,6 +60,7 @@ HEADERS += \
     main/i2c/custom_i2cdetect.h \
     main/i2c/i2cbusses.h \
     main/i2c/i2cdevices.h \
+    main/i2c/Adafruit_GFX.h \
 #   main/i2c/linux/i2c-dev.h \
     main/pigpiodhandler.h \
     main/daemon.h \

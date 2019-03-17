@@ -498,6 +498,38 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		cerr<<"ublox I2C device interface NOT present!"<<endl;
 	}
 	
+	oled = new Adafruit_SSD1306(0x3c);
+	if (oled->devicePresent()) {
+		if (verbose>1) {
+			cout<<"I2C OLED display is present."<<endl;
+		}
+		oled->begin();
+		oled->clearDisplay();
+		
+		// text display tests
+		oled->setTextSize(1);
+		oled->setTextColor(Adafruit_SSD1306::WHITE);
+		oled->setCursor(0,2);
+		oled->print("*Cosmic Shower Det.*\n");
+		oled->print("V 1.0.2\n");
+		//  display.setTextColor(BLACK, WHITE); // 'inverted' text
+/*
+		struct timespec tNow;
+		clock_gettime(CLOCK_REALTIME, &tNow);
+  
+		oled->printf("time:\n%ld.%06d\n", tNow.tv_sec, tNow.tv_nsec/1000L);
+		oled->printf("  %02d s", tNow.tv_sec%60);
+		oled->drawHorizontalBargraph(0,24,128,8,1, (tNow.tv_sec%60)*10/6);
+*/
+		//  display.setTextSize(1);
+		//  display.setTextColor(WHITE);
+		//  display.printf("0x%8X\n", 0xDEADBEEF);
+		oled->display();
+		usleep(500000L);
+	} else {
+		cerr<<"I2C OLED display NOT present!"<<endl;
+	}
+	
 	// for diagnostics:
 	// print out some i2c device statistics
 	if (1==0) {
@@ -613,6 +645,16 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		sendHistogram(eventIntervalShortHisto);
 		sendHistogram(ubxTimeIntervalHisto);
 		sendHistogram(tpTimeDiffHisto);
+		
+		if (oled->devicePresent()) {
+		  oled->clearDisplay();
+		  oled->setCursor(0,2);
+		  oled->print("*Cosmic Shower Det.*\n\n");
+		  oled->printf("rate (XOR) %4.2f 1/s\n", getRateFromCounts(XOR_RATE));
+		  oled->printf("rate (AND) %4.2f 1/s\n", getRateFromCounts(AND_RATE));
+		  oled->printf("temp %4.2f %cC\n", lm75->getTemperature(),248);
+		  oled->display();
+		}
 	});
 
 

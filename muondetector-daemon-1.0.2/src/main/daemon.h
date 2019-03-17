@@ -151,6 +151,7 @@ private:
     LM75* lm75 = nullptr;
     EEPROM24AA02* eep = nullptr;
     UbloxI2c* ubloxI2c = nullptr;
+    Adafruit_SSD1306* oled = nullptr;
     float biasVoltage = 0.;
     bool biasON = false;
     bool gainSwitch = false;
