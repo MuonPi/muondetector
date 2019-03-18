@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<TcpMessage>("TcpMessage");
 	QCoreApplication a(argc, argv);
     QCoreApplication::setApplicationName("muondetector-daemon");
-    QCoreApplication::setApplicationVersion("1.0.1");
+    QCoreApplication::setApplicationVersion("1.0.3");
 
     // command line input management
 	QCommandLineParser parser;

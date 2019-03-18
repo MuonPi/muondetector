@@ -2,7 +2,7 @@ QT -= gui
 QT += core
 QT += network
 QT += serialport
-VERSION = 1.0.2
+VERSION = 1.0.3
 CONFIG += c++11 console
 CONFIG -= app_bundle
 
@@ -28,7 +28,7 @@ INCLUDEPATH +=  . \
     main \
     main/i2c
 
-INCLUDEPATH += ../../muondetector-shared-1.0.2/src/
+INCLUDEPATH += ../../muondetector-shared/src/
 
 LIBS += -L/usr/lib/muondetector-shared -lmuondetector-shared
 DEPENDPATH += /usr/lib/muondetector-shared
