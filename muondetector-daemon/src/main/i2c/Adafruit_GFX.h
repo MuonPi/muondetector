@@ -24,6 +24,9 @@
 #define _ADAFRUIT_GFX_H
 
 #include <stdint.h>
+#include <cstdarg>
+#include <stdlib.h>
+
 #define swap(a, b) { int16_t t = a; a = b; b = t; }
 
 //class Adafruit_GFX : public Print {

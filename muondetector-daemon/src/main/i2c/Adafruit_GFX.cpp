@@ -26,7 +26,6 @@
 #include <Adafruit_GFX.h>
 #include <glcdfont.c>
 #include <cstring>
-#include <cstdarg>
 
 void Adafruit_GFX::constructor(int16_t w, int16_t h) 
 {
