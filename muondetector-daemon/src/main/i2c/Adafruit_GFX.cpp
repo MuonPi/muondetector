@@ -23,8 +23,8 @@
 
  ******************************************************************/
 
-#include "./Adafruit_GFX.h"
-#include "./glcdfont.c"
+#include <Adafruit_GFX.h>
+#include <glcdfont.c>
 
 void Adafruit_GFX::constructor(int16_t w, int16_t h) 
 {
