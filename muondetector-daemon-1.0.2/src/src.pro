@@ -35,7 +35,8 @@ DEPENDPATH += /usr/lib/muondetector-shared
 
 LIBS += -lwiringPi \
         -lpigpiod_if2 \
-        -lcrypto++
+        -lcrypto++ \
+        -lrt
 
 SOURCES += main/main.cpp \
     main/gnsssatellite.cpp \
