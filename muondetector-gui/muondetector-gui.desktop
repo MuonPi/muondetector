@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.2
+Type=Application
+Terminal=false
+Name=muondetector-gui
+Exec=/usr/bin/muondetector-gui
+Comment=Graphical user interface for a muon detector board for raspberry pi
+Icon=/usr/share/pixmaps/muon.ico
+StartupNotify=false
+Categories=Science;Physics;

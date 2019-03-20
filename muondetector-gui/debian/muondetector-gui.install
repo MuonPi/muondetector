@@ -1,0 +1,5 @@
+bin/muondetector-gui usr/bin
+muondetector-gui.desktop usr/share/applications
+src/muon.ico usr/share/pixmaps
+src/qml/mymap.qml usr/share/muondetector-gui/qml
+src/man/man1/muondetector-gui.1.gz usr/share/man/man1

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>I2cForm</class>
+ <widget class="QWidget" name="I2cForm">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>432</width>
+    <height>445</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_3">
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="statisticsGroupBox">
+     <property name="title">
+      <string>Statistics</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QLabel" name="nrDevicesLabel">
+          <property name="text">
+           <string>Nr. of devices:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="bytesReadLabel">
+          <property name="text">
+           <string>total bytes read: </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="bytesWrittenLabel">
+          <property name="text">
+           <string>total bytes written:</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QGroupBox" name="devicesGroupBox">
+     <property name="title">
+      <string>I2C devices</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QTableWidget" name="devicesTableWidget">
+        <property name="autoFillBackground">
+         <bool>true</bool>
+        </property>
+        <property name="alternatingRowColors">
+         <bool>true</bool>
+        </property>
+        <property name="sortingEnabled">
+         <bool>false</bool>
+        </property>
+        <column>
+         <property name="text">
+          <string>Address</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Designation</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Status</string>
+         </property>
+        </column>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QPushButton" name="statsQueryPushButton">
+     <property name="text">
+      <string>Read</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QPushButton" name="scanBusPushButton">
+     <property name="text">
+      <string>Scan Bus for extra devices</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
