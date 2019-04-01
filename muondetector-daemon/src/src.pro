@@ -42,7 +42,7 @@ SOURCES += main/main.cpp \
     main/qtserialublox.cpp \
     main/qtserialublox_processmessages.cpp \
     main/i2c/i2cdevices.cpp \
-    main/i2c/custom_i2cdetect.c \
+#    main/i2c/custom_i2cdetect.c \
     main/i2c/i2cbusses.c \
     main/i2c/Adafruit_GFX.cpp \
     main/pigpiodhandler.cpp \
@@ -58,7 +58,7 @@ HEADERS += \
     main/time_from_rtc.h \
     main/qtserialublox.h \
     main/i2c/addresses.h \
-    main/i2c/custom_i2cdetect.h \
+#    main/i2c/custom_i2cdetect.h \
     main/i2c/i2cbusses.h \
     main/i2c/i2cdevices.h \
     main/i2c/Adafruit_GFX.h \

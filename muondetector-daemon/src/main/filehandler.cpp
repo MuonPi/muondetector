@@ -13,7 +13,8 @@
 #include <crypto++/filters.h>
 #include <crypto++/osrng.h>
 #include <crypto++/hex.h>
-#include <crypto++/sha3.h>
+//#include <crypto++/sha3.h>
+#include <crypto++/sha.h>
 
 using namespace CryptoPP;
 
@@ -73,7 +74,9 @@ static QString getMacAddress(){
 }
 
 static QByteArray getMacAddressByteArray(){
-    return QByteArray::fromStdString(getMacAddress().toStdString());
+    //QString::fromLocal8Bit(temp.data()).toStdString();
+    return QByteArray(getMacAddress().toStdString().c_str());
+    //return QByteArray::fromStdString(getMacAddress().toStdString());
 }
 
 static QString dateStringNow(){
@@ -413,7 +416,9 @@ bool FileHandler::readLoginData(){
         return false;
     }
     iv.Assign((byte*)ivData, AES::BLOCKSIZE);
-    encrypted = loginDataFile.readAll().toStdString();
+//    encrypted = loginDataFile.readAll().toStdString();
+    encrypted = QString::fromLocal8Bit(loginDataFile.readAll()).toStdString();
+//    QString::fromLocal8Bit(temp.data()).toStdString()
     //qDebug() << "encrypted = " << QByteArray::fromStdString(encrypted).toHex();
 
     //////////////////////////////////////////////////////////////////////////

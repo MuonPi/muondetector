@@ -22,17 +22,17 @@ static const CalibStruct InvalidCalibStruct = CalibStruct( "", "", 0, "" );
 // meaning of entries (columns is:
 // <item name> <item type> <default value>
 static const std::vector<std::tuple<std::string, std::string, std::string>> CALIBITEMS = { 
-													{"VERSION", "UINT8",  "1"} ,
-													{"FEATURE_FLAGS", "UINT8",  "0"} ,
-													{"CALIB_FLAGS", "UINT8", "0"} ,
-													{"DATE", "UINT32", "0"} ,
-													{"RSENSE", "UINT16", "100"} ,
-													{"VDIV", "UINT16", "1100"} ,
-													{"COEFF0", "FLOAT", "0.0"} ,
-													{"COEFF1", "FLOAT", "1.0"} ,
-													{"COEFF2", "FLOAT", "1.0"} ,
-													{"COEFF3", "FLOAT", "1.0"} ,
-													{"WRITE_CYCLES", "UINT32", "1"} ,
+													std::make_tuple("VERSION", "UINT8",  "1") ,
+													std::make_tuple("FEATURE_FLAGS", "UINT8",  "0") ,
+													std::make_tuple("CALIB_FLAGS", "UINT8", "0") ,
+													std::make_tuple("DATE", "UINT32", "0") ,
+													std::make_tuple("RSENSE", "UINT16", "100") ,
+													std::make_tuple("VDIV", "UINT16", "1100") ,
+													std::make_tuple("COEFF0", "FLOAT", "0.0") ,
+													std::make_tuple("COEFF1", "FLOAT", "1.0") ,
+													std::make_tuple("COEFF2", "FLOAT", "1.0") ,
+													std::make_tuple("COEFF3", "FLOAT", "1.0") ,
+													std::make_tuple("WRITE_CYCLES", "UINT32", "1")
 													/* std::make_tuple("CALIB_FLAGS", "UINT8", "1") 
 													 * alternative, since list init formally introduced in C++17
 													 * but it works with the current gnu c++ compiler with gnu++11 extensions.
