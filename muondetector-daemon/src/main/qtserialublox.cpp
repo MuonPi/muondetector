@@ -125,7 +125,13 @@ void QtSerialUblox::onReadyRead() {
 		// if put std::string to console it gets stuck!?
 		//emit stdToConsole(temp.toStdString());
 	}
-	buffer += temp.toStdString();
+	//buffer += temp.toStdString();
+//	buffer += QString::fromLocal8Bit(temp.data()).toStdString();
+	for (int i=0; i<temp.size(); i++) {
+		buffer+=temp.data()[i];
+	}
+	//buffer += std::string(temp.constData());
+	//cout<<"buffer: "<<buffer;
 	//cout << QString(temp).toStdString();
 	UbxMessage message;
 	while (scanUnknownMessage(buffer, message)) {

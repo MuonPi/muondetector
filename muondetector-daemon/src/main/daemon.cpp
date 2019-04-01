@@ -1900,15 +1900,19 @@ void Daemon::logBiasValues()
 			
 			CalibStruct flagItem=calib->getCalibItem("CALIB_FLAGS");
 			uint8_t calFlags;
-			istr=std::istringstream(flagItem.value);
+//			istr=std::istringstream(flagItem.value);
+			istr.str(flagItem.value);
             istr >> calFlags;
             if (calFlags & CalibStruct::CALIBFLAGS_CURRENT_COEFFS) {
 				double islope,ioffs,rsense;
-				istr=std::istringstream(calib->getCalibItem("COEFF2").value);
+//				istr=std::istringstream(calib->getCalibItem("COEFF2").value);
+				istr.str(calib->getCalibItem("COEFF2").value);
 				istr >> ioffs;
-				istr=std::istringstream(calib->getCalibItem("COEFF3").value);
+//				istr=std::istringstream(calib->getCalibItem("COEFF3").value);
+				istr.str(calib->getCalibItem("COEFF3").value);
 				istr >> islope;
-				istr=std::istringstream(calib->getCalibItem("RSENSE").value);
+//				istr=std::istringstream(calib->getCalibItem("RSENSE").value);
+				istr.str(calib->getCalibItem("RSENSE").value);
 				istr >> rsense;
 				rsense /= 10.*1000.; // yields Rsense in MOhm
 				double icorr = ubias*islope+ioffs;
