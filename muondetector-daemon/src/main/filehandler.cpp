@@ -75,8 +75,10 @@ static QString getMacAddress(){
 
 static QByteArray getMacAddressByteArray(){
     //QString::fromLocal8Bit(temp.data()).toStdString();
-    return QByteArray(getMacAddress().toStdString().c_str());
-    //return QByteArray::fromStdString(getMacAddress().toStdString());
+    //return QByteArray(getMacAddress().toStdString().c_str());
+//    return QByteArray::fromStdString(getMacAddress().toStdString());
+    QString mac=getMacAddress();
+    return QByteArray::fromRawData(mac.toStdString().c_str(),mac.size());
 }
 
 static QString dateStringNow(){
