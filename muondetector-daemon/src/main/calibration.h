@@ -64,6 +64,13 @@ public:
 	bool isEepromValid() const { return fEepromValid; }
 	uint64_t getSerialID();
 
+	template <typename T>
+	static void getValueFromString(const std::string& valstr, T& value) { 
+		//value = std::stoi(valstr, nullptr);
+		std::istringstream istr(valstr);
+		istr >> value;
+	}
+
 private:
 	void init() {
 		const uint16_t n=256;
@@ -91,13 +98,6 @@ private:
 	
 //	void updateBuffer();
 	
-	template <typename T>
-	void getValueFromString(const std::string& valstr, T& value) { 
-		//value = std::stoi(valstr, nullptr);
-		std::istringstream istr(valstr);
-		istr >> value;
-	}
-
 	std::vector<CalibStruct> fCalibList;
 	EEPROM24AA02 *fEeprom = nullptr;
 	uint8_t fEepBuffer[256];

@@ -69,6 +69,7 @@ HEADERS += \
     main/custom_io_operators.h \
     main/filehandler.h \
     main/calibration.h \
-    main/logparameter.h
+    main/logparameter.h \
+    main/gpio_mapping.h
 
 DISTFILES += ubx_rates_config.cfg
