@@ -7,6 +7,7 @@
 #include <QTime>
 #include <QVector>
 #include <geodeticpos.h>
+#include <gpio_pin_definitions.h>
 
 // for sig handling:
 #include <sys/types.h>
@@ -65,7 +66,7 @@ signals:
 
 public slots:
 	void receivedTcpMessage(TcpMessage tcpMessage);
-    void receivedGpioRisingEdge(quint8 pin);
+    void receivedGpioRisingEdge(GPIO_PIN pin);
     void sendRequestUbxMsgRates();
     void sendSetUbxMsgRateChanges(QMap<uint16_t, int> changes);
     void onSendUbxReset();

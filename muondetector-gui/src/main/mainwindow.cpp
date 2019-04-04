@@ -5,7 +5,6 @@
 #include <QKeyEvent>
 #include <QDebug>
 #include <QErrorMessage>
-#include <gpio_pin_definitions.h>
 #include <calib_struct.h>
 #include <gnsssatellite.h>
 #include <ublox_structs.h>
@@ -99,7 +98,8 @@ MainWindow::MainWindow(QWidget *parent) :
     qRegisterMetaType<CalibStruct>("CalibStruct");
     qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
     qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
-	
+    qRegisterMetaType<GPIO_PIN>("GPIO_PIN");
+
     ui->setupUi(this);
 	ui->discr1Layout->setAlignment(ui->discr1Slider, Qt::AlignHCenter);
     ui->discr2Layout->setAlignment(ui->discr2Slider, Qt::AlignHCenter); // aligns the slider in their vertical layout centered
@@ -348,9 +348,9 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
 void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
     quint16 msgID = tcpMessage.getMsgID();
 	if (msgID == gpioPinSig) {
-        quint8 gpioPin;
+        unsigned int gpioPin;
         *(tcpMessage.dStream) >> gpioPin;
-        receivedGpioRisingEdge(gpioPin);
+        receivedGpioRisingEdge((GPIO_PIN)gpioPin);
         return;
 	}
 	if (msgID == ubxMsgRate) {
@@ -715,7 +715,7 @@ void MainWindow::sendRequestGpioRateBuffer(){
     emit sendTcpMessage(andRateRequest);
 }
 
-void MainWindow::receivedGpioRisingEdge(quint8 pin) {
+void MainWindow::receivedGpioRisingEdge(GPIO_PIN pin) {
 	if (pin == EVT_AND) {
 		ui->ANDHit->setStyleSheet("QLabel {color: white; background-color: darkGreen;}");
 		andTimer.start();
