@@ -1,6 +1,7 @@
 #include <pigpiodhandler.h>
 #include <QDebug>
 #include <gpio_pin_definitions.h>
+#include <gpio_mapping.h>
 #include <exception>
 #include <iostream>
 #include <QPointer>
@@ -25,11 +26,13 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
     static uint32_t lastTick=0;
     QPointer<PigpiodHandler> pigpioHandler = pigHandlerAddress;
     try{
-        if (user_gpio == ADC_READY) {
+/*
+        if (user_gpio == GPIO_PINMAP[ADC_READY]) {
 //			std::cout<<"ADC conv ready"<<std::endl;
             return;
         }
-        if (user_gpio == TIMEPULSE) {
+*/
+        if (user_gpio == GPIO_PINMAP[TIMEPULSE]) {
 //			std::cout<<"Timepulse"<<std::endl;
             struct timespec ts;
 			clock_gettime(CLOCK_REALTIME, &ts);
@@ -39,7 +42,7 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
             return;
         }
         QDateTime now = QDateTime::currentDateTimeUtc();
-        if (user_gpio == EVT_AND || user_gpio == EVT_XOR){
+        if (user_gpio == GPIO_PINMAP[EVT_AND] || user_gpio == GPIO_PINMAP[EVT_XOR]){
             if (pigpioHandler->lastSamplingTime.msecsTo(now)>=adcSampleDeadTime) {
                 pigpioHandler->samplingTrigger();
                 pigpioHandler->lastSamplingTime = now;
@@ -80,7 +83,7 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
     }
     for (auto& gpio_pin : gpio_pins) {
         set_mode(pi, gpio_pin, PI_INPUT);
-        if (gpio_pin==ADC_READY) set_pull_up_down(pi, gpio_pin, PI_PUD_UP);
+        if (gpio_pin==GPIO_PINMAP[ADC_READY]) set_pull_up_down(pi, gpio_pin, PI_PUD_UP);
         callback(pi, gpio_pin, RISING_EDGE, cbFunction);
 //        callback(pi, gpio_pin, FALLING_EDGE, cbFunction);
         //        if (value==pigif_bad_malloc||

@@ -5,6 +5,7 @@
 #include <QNetworkInterface>
 #include <daemon.h>
 #include <gpio_pin_definitions.h>
+#include <gpio_mapping.h>
 //#include <calib_struct.h>
 #include <ublox_messages.h>
 #include <tcpmessage_keys.h>
@@ -24,6 +25,10 @@ extern "C" {
 // REMEMBER: "emit" keyword is just syntactic sugar and not needed AT ALL ... learned it after 1 year *clap* *clap*
 
 using namespace std;
+
+
+static unsigned int HW_VERSION = 2; 
+
 
 int64_t msecdiff(timespec &ts, timespec &st){
     int64_t diff;
@@ -223,6 +228,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
     qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
     qRegisterMetaType<timespec>("timespec");
+    qRegisterMetaType<GPIO_PIN>("GPIO_PIN");
+    
     // signal handling
 	setup_unix_signal_handlers();
 	if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)) {
@@ -243,7 +250,86 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	snInt = new QSocketNotifier(sigintFd[1], QSocketNotifier::Read, this);
 	connect(snInt, SIGNAL(activated(int)), this, SLOT(handleSigInt()));
 
-	// set all variables
+	// general
+	verbose = new_verbose;
+	if (verbose > 4) {
+        cout << "daemon running in thread " << QString("0x%1").arg((intptr_t)this->thread()) << endl;
+    }
+
+	// try to find out on which hardware version we are running
+	// for this to work, we have to initialize and read the eeprom first
+	// EEPROM 24AA02 type
+	eep = new EEPROM24AA02();
+	calib = new ShowerDetectorCalib(eep);
+	if (eep->devicePresent()) {
+//		readEeprom();
+		calib->readFromEeprom();
+		if (verbose>1) {
+			cout<<"eep device is present."<<endl;
+//			readEeprom();
+//			calib->readFromEeprom();
+			uint64_t id=calib->getSerialID();
+			cout<<"unique ID: 0x"<<hex<<id<<dec<<endl;
+			
+			if (1==0) {
+				uint8_t buf[256];
+				for (int i=0; i<256; i++) buf[i]=i;
+				if (!eep->writeBytes(0, 256, buf)) cerr<<"error: write to eeprom failed!"<<endl;
+				if (verbose>2) cout<<"eep write took "<<eep->getLastTimeInterval()<<" ms"<<endl;
+				readEeprom();
+			}
+			if (1==1) {
+				calib->printCalibList();
+
+/*
+				calib->setCalibItem("VERSION", (uint8_t)1);
+				calib->setCalibItem("DATE", (uint32_t)time(NULL));
+				calib->setCalibItem("CALIB_FLAGS", (uint8_t)1);
+				calib->setCalibItem("FEATURE_FLAGS", (uint8_t)1);
+				calib->setCalibItem("RSENSE", (uint16_t)205);
+				calib->setCalibItem("COEFF0", (float)3.1415926535);
+				calib->setCalibItem("COEFF1", (float)-1.23456e-4);
+				calib->setCalibItem("WRITE_CYCLES", (uint32_t)5);
+
+				calib->printCalibList();
+				calib->updateBuffer();
+				calib->printBuffer();
+				//calib->writeToEeprom();
+				readEeprom();
+*/
+			}
+		}
+		if (calib->isValid()) {
+			CalibStruct verStruct = calib->getCalibItem("VERSION");
+			unsigned int version=0;
+			ShowerDetectorCalib::getValueFromString(verStruct.value,version);
+			if (version>0) {
+				HW_VERSION=version;
+				if (verbose>1) cout<<"found HW version "<<version<<" in eeprom"<<endl;
+			}
+		}
+	} else {
+		cerr<<"eeprom device NOT present!"<<endl;
+	}
+
+
+	// set up the pin definitions (hw version specific)
+	GPIO_PINMAP=GPIO_PINMAP_VERSIONS[HW_VERSION];
+
+	if (verbose>1) {
+		cout<<"GPIO pin mapping:"<<endl;
+		cout<<" EVT_AND     : "<<GPIO_PINMAP[EVT_AND]<<endl;
+		cout<<" EVT_XOR     : "<<GPIO_PINMAP[EVT_XOR]<<endl;
+		cout<<" UBIAS_EN    : "<<GPIO_PINMAP[UBIAS_EN]<<endl;
+		cout<<" PREAMP_1    : "<<GPIO_PINMAP[PREAMP_1]<<endl;
+		cout<<" PREAMP_2    : "<<GPIO_PINMAP[PREAMP_2]<<endl;
+		cout<<" GAIN_HL     : "<<GPIO_PINMAP[GAIN_HL]<<endl;
+		cout<<" TIMEPULSE   : "<<GPIO_PINMAP[TIMEPULSE]<<endl;
+		cout<<" ADC_READY   : "<<GPIO_PINMAP[ADC_READY]<<endl;
+		cout<<" STATUS1     : "<<GPIO_PINMAP[STATUS1]<<endl;
+		cout<<" STATUS2     : "<<GPIO_PINMAP[STATUS2]<<endl;
+		cout<<" PREAMP_FAULT: "<<GPIO_PINMAP[PREAMP_FAULT]<<endl;
+	}
 
     // create fileHandler
     QThread *fileHandlerThread = new QThread();
@@ -255,14 +341,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     connect(fileHandlerThread, &QThread::finished, fileHandlerThread, &QThread::deleteLater);
     fileHandlerThread->start();
 
-	// general
-	verbose = new_verbose;
-	if (verbose > 4) {
-        cout << "daemon running in thread " << QString("0x%1").arg((intptr_t)this->thread()) << endl;
-    }
-
 	// for pigpio signals:
-	const QVector<unsigned int> gpio_pins({ EVT_AND, EVT_XOR, /*ADC_READY,*/ TIMEPULSE });
+	const QVector<unsigned int> gpio_pins({ GPIO_PINMAP[EVT_AND], GPIO_PINMAP[EVT_XOR], /*GPIO_PINMAP[ADC_READY],*/ GPIO_PINMAP[TIMEPULSE] });
     pigHandler = new PigpiodHandler(gpio_pins);
     QThread *pigThread = new QThread();
     pigHandler->moveToThread(pigThread);
@@ -299,13 +379,13 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     startOfProgram = lastRateInterval;
     connect(pigHandler, &PigpiodHandler::signal, this, [this](uint8_t gpio_pin){
         rateCounterIntervalActualisation();
-        if (gpio_pin==EVT_XOR){
+        if (gpio_pin==GPIO_PINMAP[EVT_XOR]){
             quint64 value = xorCounts.back();
             xorCounts.pop_back();
             value++;
             xorCounts.push_back(value);
         }
-        if (gpio_pin==EVT_AND){
+        if (gpio_pin==GPIO_PINMAP[EVT_AND]){
             quint64 value = andCounts.back();
             andCounts.pop_back();
             value++;
@@ -416,7 +496,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 			cout<<" inputs: 0x"<<hex<<(int)pca->getInputState()<<endl;
 			cout<<"readout took "<<dec<<pca->getLastTimeInterval()<<" ms"<<endl;
 		}
-		pca->setOutputPorts(0x03);
+		pca->setOutputPorts(0b00000111);
 		setPcaChannel(new_pcaPortMask);
 	} else {
 		cerr<<"PCA9536 device NOT present!"<<endl;
@@ -428,50 +508,6 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		if (biasVoltage > 0) dac->setVoltage(DAC_BIAS, biasVoltage);
 	}
 
-	// EEPROM 24AA02 type
-	eep = new EEPROM24AA02();
-	calib = new ShowerDetectorCalib(eep);
-	if (eep->devicePresent()) {
-//		readEeprom();
-		calib->readFromEeprom();
-		if (verbose>1) {
-			cout<<"eep device is present."<<endl;
-			readEeprom();
-			calib->readFromEeprom();
-			uint64_t id=calib->getSerialID();
-			cout<<"unique ID: 0x"<<hex<<id<<dec<<endl;
-			
-			if (1==0) {
-				uint8_t buf[256];
-				for (int i=0; i<256; i++) buf[i]=i;
-				if (!eep->writeBytes(0, 256, buf)) cerr<<"error: write to eeprom failed!"<<endl;
-				if (verbose>2) cout<<"eep write took "<<eep->getLastTimeInterval()<<" ms"<<endl;
-				readEeprom();
-			}
-			if (1==1) {
-				calib->printCalibList();
-
-/*
-				calib->setCalibItem("VERSION", (uint8_t)1);
-				calib->setCalibItem("DATE", (uint32_t)time(NULL));
-				calib->setCalibItem("CALIB_FLAGS", (uint8_t)1);
-				calib->setCalibItem("FEATURE_FLAGS", (uint8_t)1);
-				calib->setCalibItem("RSENSE", (uint16_t)205);
-				calib->setCalibItem("COEFF0", (float)3.1415926535);
-				calib->setCalibItem("COEFF1", (float)-1.23456e-4);
-				calib->setCalibItem("WRITE_CYCLES", (uint32_t)5);
-*/
-				calib->printCalibList();
-				calib->updateBuffer();
-				calib->printBuffer();
-				//calib->writeToEeprom();
-				readEeprom();
-
-			}
-		}
-	} else {
-		cerr<<"eeprom device NOT present!"<<endl;
-	}
 	
 	ubloxI2c = new UbloxI2c(0x42);
 	if (ubloxI2c->devicePresent()) {
@@ -561,22 +597,22 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	emit GpioSetState(UBIAS_EN, biasON);
 */
 	wiringPiSetup();
-	pinMode(UBIAS_EN, 1);
+	pinMode(GPIO_PINMAP[UBIAS_EN], 1);
     if (biasON) {
-		digitalWrite(UBIAS_EN, 1);
+		digitalWrite(GPIO_PINMAP[UBIAS_EN], (HW_VERSION==1)?1:0);
 	}
 	else {
-		digitalWrite(UBIAS_EN, 0);
+		digitalWrite(GPIO_PINMAP[UBIAS_EN], (HW_VERSION==1)?0:1);
 	}
 
 	preampStatus[0]=preampStatus[1]=true;
-	pinMode(PREAMP_1, 1);
-	digitalWrite(PREAMP_1, preampStatus[0]);
-	pinMode(PREAMP_2, 1);
-	digitalWrite(PREAMP_2, preampStatus[1]);
+	pinMode(GPIO_PINMAP[PREAMP_1], 1);
+	digitalWrite(GPIO_PINMAP[PREAMP_1], preampStatus[0]);
+	pinMode(GPIO_PINMAP[PREAMP_2], 1);
+	digitalWrite(GPIO_PINMAP[PREAMP_2], preampStatus[1]);
 	gainSwitch=false;
-	pinMode(GAIN_HL, 1);
-	digitalWrite(GAIN_HL, gainSwitch);
+	pinMode(GPIO_PINMAP[GAIN_HL], 1);
+	digitalWrite(GPIO_PINMAP[GAIN_HL], gainSwitch);
 	
 	// for tcp connection with fileServer
 	peerPort = new_peerPort;
@@ -964,11 +1000,11 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> channel >> status;
         if (channel==0) {
 			preampStatus[0]=status;
-			digitalWrite(PREAMP_1, (uint8_t)status);
+			digitalWrite(GPIO_PINMAP[PREAMP_1], (uint8_t)status);
 			pulseHeightHisto.clear();
 		} else if (channel==1) {
 			preampStatus[1]=status;
-			digitalWrite(PREAMP_2, (uint8_t)status);
+			digitalWrite(GPIO_PINMAP[PREAMP_2], (uint8_t)status);
 		}
         return;
     }
@@ -980,7 +1016,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         bool status;
         *(tcpMessage.dStream) >> status;
 		gainSwitch=status;
-		digitalWrite(GAIN_HL, (uint8_t)status);
+		digitalWrite(GPIO_PINMAP[GAIN_HL], (uint8_t)status);
 		pulseHeightHisto.clear();
 		return;
     }
@@ -1188,8 +1224,16 @@ void Daemon::sendDacReadbackValue(uint8_t channel, float voltage) {
 
 void Daemon::sendGpioPinEvent(uint8_t gpio_pin) {
 	TcpMessage tcpMessage(gpioPinSig);
-    *(tcpMessage.dStream) << (quint8)gpio_pin;
-	emit sendTcpMessage(tcpMessage);
+    unsigned int gpio_function=0;
+    // reverse lookup of gpio function from given pin (first occurence)
+    auto result=std::find_if(GPIO_PINMAP.begin(), GPIO_PINMAP.end(), [&gpio_pin](const std::pair<GPIO_PIN,unsigned int>& item)
+					{ return item.second==gpio_pin; }
+					);
+	if (result!=GPIO_PINMAP.end()) {
+//		*(tcpMessage.dStream) << (quint8)gpio_pin;
+		*(tcpMessage.dStream) << (GPIO_PIN)result->first;
+		emit sendTcpMessage(tcpMessage);
+	}
 }
 
 void Daemon::sendBiasVoltage(){
@@ -1355,16 +1399,16 @@ void Daemon::getTemperature(){
 
 // ALL FUNCTIONS ABOUT SETTINGS FOR THE I2C-DEVICES (DAC, ADC, PCA...)
 void Daemon::setPcaChannel(uint8_t channel) {
-    if (verbose > 1){
-        qDebug() << "change pcaPortMask to " << channel;
-    }
-	if (channel > 3) {
-        cout << "there is no channel > 3" << endl;
-		return;
-	}
 	if (!pca || !pca->devicePresent()) {
 		return;
 	}
+	if (channel > ((HW_VERSION==1)?3:7)) {
+        cerr << "invalid PCA channel selected (ch " <<(int)channel<<")"<< endl;
+		return;
+	}
+    if (verbose > 1){
+        qDebug() << "changed pcaPortMask to " << channel;
+    }
     pcaPortMask = channel;
     pca->setOutputState(channel);
     sendPcaChannel();
@@ -1388,10 +1432,10 @@ void Daemon::setBiasStatus(bool status){
     //emit GpioSetState(UBIAS_EN, status);
 
     if (status) {
-        digitalWrite(UBIAS_EN, 1);
+        digitalWrite(GPIO_PINMAP[UBIAS_EN], (HW_VERSION==1)?1:0);
     }
     else {
-        digitalWrite(UBIAS_EN, 0);
+        digitalWrite(GPIO_PINMAP[UBIAS_EN], (HW_VERSION==1)?0:1);
     }
     clearRates();
     sendBiasStatus();
