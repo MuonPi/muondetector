@@ -524,6 +524,24 @@ void QtSerialUblox::UBXSetAopCfg(bool enable, uint16_t maxOrbErr)
 */
 }
 
+void QtSerialUblox::UBXSaveCfg(uint8_t devMask)
+{
+	unsigned char data[13];
+	// select the following sections to save:
+	// ioPort, msgCfg, navCfg, rxmCfg, antConf
+	uint32_t sectionMask=0x01 | 0x02 | 0x08 | 0x10 | 0x400;
+	
+	data[0]=data[1]=data[2]=data[3]=0x00; // clear mask is all zero
+	data[8]=data[9]=data[10]=data[11]=0x00; // load mask is all zero
+	data[4]=sectionMask & 0xff;
+	data[5]=(sectionMask>>8) & 0xff;
+	data[6]=(sectionMask>>16) & 0xff;
+	data[7]=(sectionMask>>24) & 0xff;
+	data[12]=devMask;
+
+	enqueueMsg(MSG_CFG_CFG, toStdString(data, 13));
+}
+
 void QtSerialUblox::onRequestGpsProperties(){
 
 }

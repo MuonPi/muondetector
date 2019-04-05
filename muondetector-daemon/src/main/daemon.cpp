@@ -770,6 +770,7 @@ void Daemon::connectToGps() {
 	connect(this, &Daemon::UBXSetMinMaxSVs, qtGps, &QtSerialUblox::UBXSetMinMaxSVs);
 	connect(this, &Daemon::UBXSetMinCNO, qtGps, &QtSerialUblox::UBXSetMinCNO);
 	connect(this, &Daemon::UBXSetAopCfg, qtGps, &QtSerialUblox::UBXSetAopCfg);
+	connect(this, &Daemon::UBXSaveCfg, qtGps, &QtSerialUblox::UBXSaveCfg);
     connect(qtGps, &QtSerialUblox::UBXReceivedTimeTM2, this, &Daemon::onUBXReceivedTimeTM2);
 
     // connect fileHandler related stuff
@@ -942,7 +943,7 @@ void Daemon::checkRescaleHisto(Histogram& hist, double newValue) {
 	double ofl=hist.getOverflow();
 	entries-=ufl+ofl;
 	if (ufl>0. && ofl>0. && (ufl+ofl)>0.05*entries) {
-		// range is too small, onderflow and overflow have more than 5% of all entries
+		// range is too small, underflow and overflow have more than 5% of all entries
 		double range=hist.getMax()-hist.getMin();
 		rescaleHisto(hist, hist.getMean(), 1.1*range);
 	} else if (ufl>0.05*entries) {
@@ -1047,6 +1048,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         quint8 portMask;
         *(tcpMessage.dStream) >> portMask;
         setPcaChannel((uint8_t)portMask);
+        sendPcaChannel();
         ubxTimeLengthHisto.clear();
         return;
     }
@@ -1125,6 +1127,12 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> tp;
         emit UBXSetCfgTP5(tp);
         emit sendPollUbxMsg(MSG_CFG_TP5);
+        return;
+    }
+    if (msgID == ubxSaveCfgSig){
+        emit UBXSaveCfg();
+        emit sendPollUbxMsg(MSG_CFG_TP5);
+		emit sendPollUbxMsg(MSG_CFG_GNSS);
         return;
     }
     if (msgID == quitConnectionSig){

@@ -106,6 +106,7 @@ signals:
     void GpioSetState(unsigned int gpio, bool state);
     void UBXSetCfgTP5(const UbxTimePulseStruct& tp);
     void UBXSetAopCfg(bool enable=true, uint16_t maxOrbErr=0);
+    void UBXSaveCfg(uint8_t devMask=QtSerialUblox::DEV_BBR | QtSerialUblox::DEV_FLASH);
 	
 private slots:
     void onRateBufferReminder();

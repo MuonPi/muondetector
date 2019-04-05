@@ -21,6 +21,8 @@ public:
 	enum {	RESET_HOT=0x00000000, RESET_WARM=0x00010000, RESET_COLD=0xFFFF0000, 
 			RESET_HW=0x000000, RESET_SW=0x00000001, RESET_SW_GNSS=0x00000002, RESET_HW_AFTER_SHUTDOWN=0x00000004, GNSS_STOP=0x00000008, GNSS_START=0x00000009 };
 
+	enum { DEV_BBR=0x01, DEV_FLASH=0x02, DEV_EEPROM=0x04, DEV_SPI_FLASH=0x10 };
+	
 	explicit QtSerialUblox(const QString serialPortName, int newTimeout, int baudRate,
 		bool newDumpRaw, int newVerbose, bool newShowout, bool newShowin, QObject *parent = 0);
 
@@ -75,6 +77,7 @@ public slots:
 	void UBXSetMinCNO(uint8_t minCNO);
 	void UBXSetCfgTP5(const UbxTimePulseStruct& tp);
 	void UBXSetAopCfg(bool enable=true, uint16_t maxOrbErr=0);
+	void UBXSaveCfg(uint8_t devMask=DEV_BBR | DEV_FLASH);
 	
 	void ackTimeout();
 	// outPortMask is something like 1 for only UBX protocol or 0b11 for UBX and NMEA

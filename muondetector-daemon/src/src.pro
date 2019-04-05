@@ -51,7 +51,9 @@ SOURCES += main/main.cpp \
     main/custom_io_operators.cpp \
     main/filehandler.cpp \
     main/calibration.cpp \
-    main/i2c/glcdfont.c
+    main/i2c/glcdfont.c \
+    main/gpio_mapping.cpp
+
 
 HEADERS += \
 #    main/gnsssatellite.h \

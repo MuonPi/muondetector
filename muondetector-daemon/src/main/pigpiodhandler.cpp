@@ -42,9 +42,10 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
             return;
         }
         QDateTime now = QDateTime::currentDateTimeUtc();
+        //qDebug()<<"gpio evt: gpio="<<user_gpio<<"  GPIO_PINMAP[EVT_XOR]="<<GPIO_PINMAP[EVT_XOR];
         if (user_gpio == GPIO_PINMAP[EVT_AND] || user_gpio == GPIO_PINMAP[EVT_XOR]){
             if (pigpioHandler->lastSamplingTime.msecsTo(now)>=adcSampleDeadTime) {
-                pigpioHandler->samplingTrigger();
+                emit pigpioHandler->samplingTrigger();
                 pigpioHandler->lastSamplingTime = now;
             }
             quint64 nsecsElapsed=pigpioHandler->elapsedEventTimer.nsecsElapsed();

@@ -1,6 +1,8 @@
 #ifndef GPIO_MAPPING_H
 #define GPIO_MAPPING_H
+#include <map>
 #include "gpio_pin_definitions.h"
+
 
 #define MAX_HW_VER 2
 
@@ -75,6 +77,6 @@ static const std::map<GPIO_PIN, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER+1]
 	};
 
 
-static std::map<GPIO_PIN, unsigned int> GPIO_PINMAP = GPIO_PINMAP_VERSIONS[1];
+extern std::map<GPIO_PIN, unsigned int> GPIO_PINMAP;
 
 #endif //GPIO_MAPPING_H
