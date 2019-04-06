@@ -181,6 +181,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(settings, &Settings::setGnssConfigs, this, &MainWindow::onSetGnssConfigs);
     connect(this, &MainWindow::gpsTP5Received, settings, &Settings::onTP5Received);
     connect(settings, &Settings::setTP5Config, this, &MainWindow::onSetTP5Config);
+    connect(settings, &Settings::sendUbxSaveCfg, this, [this](){ this->sendRequest(ubxSaveCfgSig); } );
 
     ui->tabWidget->addTab(settings,"settings");
 

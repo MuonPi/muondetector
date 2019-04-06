@@ -34,6 +34,7 @@ signals:
     void sendUbxConfigDefault();
     void setGnssConfigs(const QVector<GnssConfigStruct>& configList);
     void setTP5Config(const UbxTimePulseStruct& tp);
+    void sendUbxSaveCfg();
 
 
 public slots:
@@ -67,6 +68,8 @@ private slots:
     void on_groupDelayLineEdit_editingFinished();
 
     void on_userDelayLineEdit_editingFinished();
+
+    void on_saveConfigPushButton_clicked();
 
 private:
     Ui::Settings *settingsUi;

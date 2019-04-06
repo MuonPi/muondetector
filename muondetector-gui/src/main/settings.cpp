@@ -399,3 +399,10 @@ void Settings::on_userDelayLineEdit_editingFinished()
         settingsUi->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(false);
     }
 }
+
+void Settings::on_saveConfigPushButton_clicked()
+{
+    // save config
+    emit sendUbxSaveCfg();
+
+}
