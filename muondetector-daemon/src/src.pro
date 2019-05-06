@@ -42,17 +42,29 @@ SOURCES += main/main.cpp \
     main/gnsssatellite.cpp \
     main/qtserialublox.cpp \
     main/qtserialublox_processmessages.cpp \
-    main/i2c/i2cdevices.cpp \
 #    main/i2c/custom_i2cdetect.c \
     main/i2c/i2cbusses.c \
-    main/i2c/Adafruit_GFX.cpp \
     main/pigpiodhandler.cpp \
     main/daemon.cpp \
     main/custom_io_operators.cpp \
     main/filehandler.cpp \
     main/calibration.cpp \
-    main/i2c/glcdfont.c \
-    main/gpio_mapping.cpp
+    main/gpio_mapping.cpp \
+    main/i2c/i2cdevices/adafruit_ssd1306/adafruit_ssd1306.cpp \
+    main/i2c/i2cdevices/ads1115/ads1115.cpp \
+    main/i2c/i2cdevices/bme280/bme280.cpp \
+    main/i2c/i2cdevices/bmp180/bmp180.cpp \
+    main/i2c/i2cdevices/eeprom24aa02/eeprom24aa02.cpp \
+    main/i2c/i2cdevices/hmc5883/hmc5883.cpp \
+    main/i2c/i2cdevices/lm75/lm75.cpp \
+    main/i2c/i2cdevices/mcp4728/mcp4728.cpp \
+    main/i2c/i2cdevices/pca9536/pca9536.cpp \
+    main/i2c/i2cdevices/sht21/sht21.cpp \
+    main/i2c/i2cdevices/ubloxi2c/ubloxi2c.cpp \
+    main/i2c/i2cdevices/x9119/x9119.cpp \
+    main/i2c/i2cdevices/Adafruit_GFX.cpp \
+    main/i2c/i2cdevices/i2cdevice.cpp \
+    main/i2c/i2cdevices/glcdfont.c \
 
 
 HEADERS += \
@@ -64,7 +76,6 @@ HEADERS += \
 #    main/i2c/custom_i2cdetect.h \
     main/i2c/i2cbusses.h \
     main/i2c/i2cdevices.h \
-    main/i2c/Adafruit_GFX.h \
 #   main/i2c/linux/i2c-dev.h \
     main/pigpiodhandler.h \
     main/daemon.h \
@@ -73,6 +84,21 @@ HEADERS += \
     main/filehandler.h \
     main/calibration.h \
     main/logparameter.h \
-    main/gpio_mapping.h
+    main/gpio_mapping.h \
+    main/i2c/i2cdevices/adafruit_ssd1306/adafruit_ssd1306.h \
+    main/i2c/i2cdevices/ads1015/ads1015.h \
+    main/i2c/i2cdevices/ads1115/ads1115.h \
+    main/i2c/i2cdevices/bme280/bme280.h \
+    main/i2c/i2cdevices/bmp180/bmp180.h \
+    main/i2c/i2cdevices/eeprom24aa02/eeprom24aa02.h \
+    main/i2c/i2cdevices/hmc5883/hmc5883.h \
+    main/i2c/i2cdevices/lm75/lm75.h \
+    main/i2c/i2cdevices/mcp4728/mcp4728.h \
+    main/i2c/i2cdevices/pca9536/pca9536.h \
+    main/i2c/i2cdevices/sht21/sht21.h \
+    main/i2c/i2cdevices/ubloxi2c/ubloxi2c.h \
+    main/i2c/i2cdevices/x9119/x9119.h \
+    main/i2c/i2cdevices/Adafruit_GFX.h \
+    main/i2c/i2cdevices/i2cdevice.h \
 
 DISTFILES += ubx_rates_config.cfg

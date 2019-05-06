@@ -11,8 +11,8 @@
 #include <QSocketNotifier>
 #include <pigpiodhandler.h>
 #include <filehandler.h>
-#include "i2c/i2cdevices.h"
-#include "calibration.h"
+#include <i2cdevices.h>
+#include <calibration.h>
 #include <logparameter.h>
 #include <histogram.h>
 #include <QPointF>

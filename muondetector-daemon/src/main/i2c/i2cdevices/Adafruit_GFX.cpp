@@ -23,8 +23,8 @@
 
  ******************************************************************/
 
-#include <Adafruit_GFX.h>
-#include <glcdfont.c>
+#include "Adafruit_GFX.h"
+#include "glcdfont.c"
 #include <stdio.h>
 #include <cstring>
 
