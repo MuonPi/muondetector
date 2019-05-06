@@ -11,6 +11,7 @@
 #include "i2cdevices/mcp4728/mcp4728.h"
 #include "i2cdevices/pca9536/pca9536.h"
 #include "i2cdevices/sht21/sht21.h"
+#include "i2cdevices/sht31/sht31.h"
 #include "i2cdevices/ubloxi2c/ubloxi2c.h"
 #include "i2cdevices/x9119/x9119.h"
 #endif // !_I2CDEVICES_H_
