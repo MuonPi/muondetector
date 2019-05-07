@@ -94,7 +94,7 @@ protected:
 	int value2Bin(double value) {
 		double range=fMax-fMin;
 		if (range<=0.) return -1;	
-		int bin=(value-fMin)/range*fNrBins+0.5;
+		int bin=(value-fMin)/range*(fNrBins-1)+0.5;
 		return bin;
 	}
 	double bin2Value(int bin) {
