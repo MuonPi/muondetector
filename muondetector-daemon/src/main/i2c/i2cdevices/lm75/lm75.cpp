@@ -47,6 +47,7 @@ bool LM75::devicePresent()
 
 double LM75::getTemperature()
 {
-	return (double)readRaw() / 256.;
+	fLastTemp=(double)readRaw() / 256.;
+	return fLastTemp;
 }
 

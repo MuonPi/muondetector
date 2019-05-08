@@ -22,6 +22,9 @@ extern "C" {
 #define DAC_TH1 0 // channel of the dac where threshold 1 is set
 #define DAC_TH2 1 // channel of the dac where threshold 2 is set
 
+#define OLED_UPDATE_PERIOD 2000
+#define DEGREE_CHARCODE 248
+
 // REMEMBER: "emit" keyword is just syntactic sugar and not needed AT ALL ... learned it after 1 year *clap* *clap*
 
 using namespace std;
@@ -562,6 +565,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		//  display.printf("0x%8X\n", 0xDEADBEEF);
 		oled->display();
 		usleep(500000L);
+		connect(&oledUpdateTimer, SIGNAL(timeout()), this, SLOT(updateOledDisplay()));
+		oledUpdateTimer.start(OLED_UPDATE_PERIOD);
 	} else {
 		cerr<<"I2C OLED display NOT present!"<<endl;
 	}
@@ -598,7 +603,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 */
 	wiringPiSetup();
 	pinMode(GPIO_PINMAP[UBIAS_EN], 1);
-    if (biasON) {
+	if (biasON) {
 		digitalWrite(GPIO_PINMAP[UBIAS_EN], (HW_VERSION==1)?1:0);
 	}
 	else {
@@ -639,7 +644,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		daemonPort = 51508;
 	}
 	if (!this->listen(daemonAddress, daemonPort)) {
-		cout << tr("Unable to start the server: %1.\n").arg(this->errorString());
+		cerr << tr("Unable to start the server: %1.\n").arg(this->errorString());
 	}
 	else {
 		if (verbose > 4) {
@@ -651,15 +656,15 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 
 	// connect to the regular log timer signal to log several non-regularly polled parameters
 	connect(fileHandler, &FileHandler::logIntervalSignal, this, [this]() {
-        double xorRate = 0.0;
-        if (!xorRatePoints.isEmpty()){
-            xorRate = xorRatePoints.back().y();
-        }
+		double xorRate = 0.0;
+		if (!xorRatePoints.isEmpty()){
+			xorRate = xorRatePoints.back().y();
+		}
 		logParameter(LogParameter("rateXOR", QString::number(xorRate)+" Hz"));
-        double andRate = 0.0;
-        if (!andRatePoints.isEmpty()){
-            andRate = andRatePoints.back().y();
-        }
+		double andRate = 0.0;
+		if (!andRatePoints.isEmpty()){
+			andRate = andRatePoints.back().y();
+		}
 		logParameter(LogParameter("rateAND", QString::number(andRate)+" Hz"));
 		if (lm75 && lm75->devicePresent()) logParameter(LogParameter("temperature", QString::number(lm75->getTemperature())+" degC"));
 		if (dac && dac->devicePresent()) {
@@ -682,15 +687,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		sendHistogram(ubxTimeIntervalHisto);
 		sendHistogram(tpTimeDiffHisto);
 		
-		if (oled->devicePresent()) {
-		  oled->clearDisplay();
-		  oled->setCursor(0,2);
-		  oled->print("*Cosmic Shower Det.*\n\n");
-		  oled->printf("rate (XOR) %4.2f 1/s\n", getRateFromCounts(XOR_RATE));
-		  oled->printf("rate (AND) %4.2f 1/s\n", getRateFromCounts(AND_RATE));
-		  oled->printf("temp %4.2f %cC\n", lm75->getTemperature(),248);
-		  oled->display();
-		}
+//		updateOledDisplay();
 	});
 
 
@@ -1163,12 +1160,13 @@ void Daemon::sendI2cStats() {
 	quint8 nrDevices=i2cDevice::getGlobalDeviceList().size();
 	quint32 bytesRead = i2cDevice::getGlobalNrBytesRead();
 	quint32 bytesWritten = i2cDevice::getGlobalNrBytesWritten();
-    *(tcpMessage.dStream) << nrDevices << bytesRead << bytesWritten;
+	*(tcpMessage.dStream) << nrDevices << bytesRead << bytesWritten;
 
 	for (uint8_t i=0; i<i2cDevice::getGlobalDeviceList().size(); i++)
 	{
 		uint8_t addr = i2cDevice::getGlobalDeviceList()[i]->getAddress();
 		QString title = QString::fromStdString(i2cDevice::getGlobalDeviceList()[i]->getTitle());
+		i2cDevice::getGlobalDeviceList()[i]->devicePresent();
 		uint8_t status = i2cDevice::getGlobalDeviceList()[i]->getStatus();
 		*(tcpMessage.dStream) << addr << title << status;
 	}
@@ -1577,7 +1575,7 @@ void Daemon::configGps() {
 	emit UBXSetCfgMsgRate(MSG_NAV_POSLLH, 1, 127);	// MON-POSLLH
 	// probably also configured with UBX-CFG-INFO...
 	emit UBXSetCfgMsgRate(MSG_NAV_TIMEGPS, 1, 0);	// NAV-TIMEGPS
-	emit UBXSetCfgMsgRate(MSG_NAV_SOL, 1, 167);	// NAV-SOL
+	emit UBXSetCfgMsgRate(MSG_NAV_SOL, 1, 0);	// NAV-SOL
 	emit UBXSetCfgMsgRate(MSG_NAV_STATUS, 1, 71);	// NAV-STATUS
 	emit UBXSetCfgMsgRate(MSG_NAV_CLOCK, 1, 189);	// NAV-CLOCK
 	emit UBXSetCfgMsgRate(MSG_MON_TXBUF, 1, 51);	// MON-TXBUF
@@ -1990,4 +1988,16 @@ void Daemon::onUBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t ac
 	interval+=(rising.tv_nsec-lastTimestamp.tv_nsec);
 	ubxTimeIntervalHisto.fill(1e-6*interval);
 	lastTimestamp=rising;
+}
+
+void Daemon::updateOledDisplay() {
+	if (!oled->devicePresent()) return;
+	oled->clearDisplay();
+	oled->setCursor(0,2);
+	oled->print("*Cosmic Shower Det.*\n");
+	oled->printf("rate (XOR) %4.2f 1/s\n", getRateFromCounts(XOR_RATE));
+	oled->printf("rate (AND) %4.2f 1/s\n", getRateFromCounts(AND_RATE));
+//	oled->printf("temp %4.2f %cC\n", lm75->lastTemperatureValue(), DEGREE_CHARCODE);
+	oled->printf("temp %4.2f %cC\n", lm75->getTemperature(), DEGREE_CHARCODE);
+	oled->display();
 }

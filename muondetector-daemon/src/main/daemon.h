@@ -110,6 +110,7 @@ signals:
 	
 private slots:
     void onRateBufferReminder();
+    void updateOledDisplay();
 
 private:
     void incomingConnection(qintptr socketDescriptor) override;
@@ -198,6 +199,7 @@ private:
     quint32 rateBufferTime = 120*60*1000; // in ms: 120 min
     quint32 rateBufferInterval = 2000; // in ms: 2 seconds
     QTimer rateBufferReminder;
+    QTimer oledUpdateTimer;
     QList<quint64> andCounts,xorCounts;
     UbxDopStruct currentDOP;
     timespec lastTimestamp = { 0, 0 };

@@ -9,6 +9,7 @@ public:
 	bool devicePresent();
 	int16_t readRaw();
 	double getTemperature();
+	double lastTemperatureValue() const { return fLastTemp; }
 
 private:
 	unsigned int fLastConvTime;
