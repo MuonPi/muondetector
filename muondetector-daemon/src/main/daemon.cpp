@@ -511,7 +511,10 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		if (biasVoltage > 0) dac->setVoltage(DAC_BIAS, biasVoltage);
 	}
 
-	
+
+// removed instantiation of ublox i2c interface since it doesn't work properly on RPi
+// the Ublox i2c relies on clock stretching, which RPi is not supporting
+/*
 	ubloxI2c = new UbloxI2c(0x42);
 	if (ubloxI2c->devicePresent()) {
 		if (verbose>1) {
@@ -519,23 +522,25 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 			uint16_t bufcnt = 0;
 			bool ok = ubloxI2c->getTxBufCount(bufcnt);
 			if (ok) cout<<"bytes in TX buf: "<<bufcnt<<endl;
-/*			unsigned long int argh=0;
-			while (argh++<100UL) {
-				bufcnt = 0;
-				ok = ubloxI2c->getTxBufCount(bufcnt);
-				if (ok) cout<<"bytes in TX buf: "<<hex<<bufcnt<<dec<<endl;
-				std::string str=ubloxI2c->getData();
-				cout<<"string length: "<<str.size()<<endl;
-				usleep(200000L);
-			}
-			ubloxI2c->getData();
-			ok = ubloxI2c->getTxBufCount(bufcnt);
-			if (ok) cout<<"bytes in TX buf: "<<bufcnt<<endl;
-*/
+
+ 			//unsigned long int argh=0;
+			//while (argh++<100UL) {
+				//bufcnt = 0;
+				//ok = ubloxI2c->getTxBufCount(bufcnt);
+				//if (ok) cout<<"bytes in TX buf: "<<hex<<bufcnt<<dec<<endl;
+				//std::string str=ubloxI2c->getData();
+				//cout<<"string length: "<<str.size()<<endl;
+				//usleep(200000L);
+			//}
+			//ubloxI2c->getData();
+			//ok = ubloxI2c->getTxBufCount(bufcnt);
+			//if (ok) cout<<"bytes in TX buf: "<<bufcnt<<endl;
+
 		}
 	} else {
 		cerr<<"ublox I2C device interface NOT present!"<<endl;
 	}
+*/
 	
 	oled = new Adafruit_SSD1306(0x3c);
 	if (oled->devicePresent()) {
