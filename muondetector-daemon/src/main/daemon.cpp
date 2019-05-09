@@ -25,6 +25,8 @@ extern "C" {
 #define OLED_UPDATE_PERIOD 2000
 #define DEGREE_CHARCODE 248
 
+const QVector<QString> FIX_TYPE_STRINGS = { "No Fix", "Dead Reck." , "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix"  };
+
 // REMEMBER: "emit" keyword is just syntactic sugar and not needed AT ALL ... learned it after 1 year *clap* *clap*
 
 using namespace std;
@@ -514,8 +516,9 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 
 // removed instantiation of ublox i2c interface since it doesn't work properly on RPi
 // the Ublox i2c relies on clock stretching, which RPi is not supporting
-/*
+
 	ubloxI2c = new UbloxI2c(0x42);
+	ubloxI2c->lock();
 	if (ubloxI2c->devicePresent()) {
 		if (verbose>1) {
 			cout<<"ublox I2C device interface is present."<<endl;
@@ -540,7 +543,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	} else {
 		cerr<<"ublox I2C device interface NOT present!"<<endl;
 	}
-*/
+
 	
 	oled = new Adafruit_SSD1306(0x3c);
 	if (oled->devicePresent()) {
@@ -1657,20 +1660,16 @@ void Daemon::gpsMonHW2Updated(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t ma
     emit sendTcpMessage(tcpMessage);
 }
 
-void Daemon::gpsPropertyUpdatedGnss(std::vector<GnssSatellite> data,
+void Daemon::gpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
 	std::chrono::duration<double> lastUpdated) {
-	//if (listSats){
-	vector<GnssSatellite> sats = data;
+	vector<GnssSatellite> visibleSats = sats;
+	std::sort(visibleSats.begin(), visibleSats.end(), GnssSatellite::sortByCnr);
+	while (visibleSats.back().getCnr() == 0 && visibleSats.size() > 0) visibleSats.pop_back();
+
 	if (verbose > 3) {
-		bool allSats = true;
-		if (!allSats) {
-			std::sort(sats.begin(), sats.end(), GnssSatellite::sortByCnr);
-			while (sats.back().getCnr() == 0 && sats.size() > 0) sats.pop_back();
-		}
 		cout << std::chrono::system_clock::now()
 			- std::chrono::duration_cast<std::chrono::microseconds>(lastUpdated)
-			<< "Nr of " << std::string((allSats) ? "visible" : "received")
-			<< " satellites: " << sats.size() << endl;
+			<< "Nr of satellites: " << visibleSats.size() <<" (out of "<< sats.size() << endl;
 		// read nrSats property without evaluation to prevent separate display of this property
 		// in the common message poll below
 		GnssSatellite::PrintHeader(true);
@@ -1678,13 +1677,15 @@ void Daemon::gpsPropertyUpdatedGnss(std::vector<GnssSatellite> data,
 			sats[i].Print(i, false);
 		}
 	}
-    int N=sats.size();
-    TcpMessage tcpMessage(gpsSatsSig);
-    (*tcpMessage.dStream) << N;
-    for (int i=0; i<N; i++) {
+	int N=sats.size();
+	TcpMessage tcpMessage(gpsSatsSig);
+	(*tcpMessage.dStream) << N;
+	for (int i=0; i<N; i++) {
 		(*tcpMessage.dStream)<< sats [i];
 	}
-    emit sendTcpMessage(tcpMessage);
+	emit sendTcpMessage(tcpMessage);
+	nrSats=QVariant(N);
+	nrVisibleSats=QVariant(visibleSats.size());
 }
 
 void Daemon::onUBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssConfigStruct>& gnssConfigs) {
@@ -1758,6 +1759,7 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
 		logParameter(LogParameter("fixStatus", QString::number(data)));
+		fixStatus=QVariant(data);
 		break;
 	default:
 		break;
@@ -2000,9 +2002,12 @@ void Daemon::updateOledDisplay() {
 	oled->clearDisplay();
 	oled->setCursor(0,2);
 	oled->print("*Cosmic Shower Det.*\n");
-	oled->printf("rate (XOR) %4.2f 1/s\n", getRateFromCounts(XOR_RATE));
-	oled->printf("rate (AND) %4.2f 1/s\n", getRateFromCounts(AND_RATE));
+//	oled->printf("rate (XOR) %4.2f 1/s\n", getRateFromCounts(XOR_RATE));
+//	oled->printf("rate (AND) %4.2f 1/s\n", getRateFromCounts(AND_RATE));
+	oled->printf("Rates %4.1f %4.1f /s\n", getRateFromCounts(AND_RATE), getRateFromCounts(XOR_RATE));
 //	oled->printf("temp %4.2f %cC\n", lm75->lastTemperatureValue(), DEGREE_CHARCODE);
 	oled->printf("temp %4.2f %cC\n", lm75->getTemperature(), DEGREE_CHARCODE);
+	oled->printf("%d(%d) Sats ", nrVisibleSats().toInt(), nrSats().toInt(), DEGREE_CHARCODE);
+	oled->printf("%s\n", FIX_TYPE_STRINGS[fixStatus().toInt()].toStdString().c_str());
 	oled->display();
 }

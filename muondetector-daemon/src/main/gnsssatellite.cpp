@@ -21,7 +21,7 @@ void GnssSatellite::PrintHeader(bool wIndex)
 }
 
 
-void GnssSatellite::Print(bool wHeader)
+void GnssSatellite::Print(bool wHeader) const
 {
 	if (wHeader) {
 		cout << "   ------------------------------------------------------------------------------" << endl;
@@ -37,7 +37,7 @@ void GnssSatellite::Print(bool wHeader)
 	cout << endl;
 }
 
-void GnssSatellite::Print(int index, bool wHeader)
+void GnssSatellite::Print(int index, bool wHeader) const
 {
 	if (wHeader) {
 		cout << "   ----------------------------------------------------------------------------------" << endl;

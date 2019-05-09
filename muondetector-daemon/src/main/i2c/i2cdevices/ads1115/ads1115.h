@@ -3,6 +3,10 @@
 
 #include "../i2cdevice.h"
 
+// ADC ADS1x13/4/5 sampling readout delay
+#define READ_WAIT_DELAY_INIT 10
+
+
 /* ADS1115: 4(2) ch, 16 bit ADC  */
 
 class ADS1115 : public i2cDevice {

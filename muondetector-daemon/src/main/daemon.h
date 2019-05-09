@@ -17,12 +17,42 @@
 #include <histogram.h>
 #include <QPointF>
 #include <QTimer>
+#include <QVariant>
 #include <time.h>
 
 // for sig handling:
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <signal.h>
+
+
+class Property {
+public:
+    Property()=default;
+    
+    Property(const QVariant& val) {
+        value=val;
+        updated=true;
+    }
+    
+    Property& operator=(const QVariant& val) {
+		value = val;
+		//lastUpdate = std::chrono::system_clock::now();
+		updated = true;
+		return *this;
+	}
+    
+	const QVariant& operator()() {
+		updated = false;
+		return value;
+	}
+    
+private:
+    QVariant value;
+    bool updated=false;
+
+};
+
 
 class Daemon : public QTcpServer
 {
@@ -63,8 +93,8 @@ public slots:
 		char propertyName);
     void gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double> updateAge,
 		char propertyName);
-    void gpsPropertyUpdatedGnss(std::vector<GnssSatellite>,
-        std::chrono::duration<double> updateAge);
+    void gpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
+        std::chrono::duration<double> lastUpdated);
     void onUBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssConfigStruct>& gnssConfigs);
     void onUBXReceivedTP5(const UbxTimePulseStruct& tp);
     void gpsMonHWUpdated(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags);
@@ -203,6 +233,7 @@ private:
     QList<quint64> andCounts,xorCounts;
     UbxDopStruct currentDOP;
     timespec lastTimestamp = { 0, 0 };
+    Property nrSats, nrVisibleSats, fixStatus;
 };
 
 #endif // DAEMON_H

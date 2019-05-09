@@ -41,8 +41,8 @@ public:
 	static const std::string GNSS_ID_STRING[];
 
 	static void PrintHeader(bool wIndex);
-	void Print(bool wHeader);
-	void Print(int index, bool wHeader);
+	void Print(bool wHeader) const;
+	void Print(int index, bool wHeader) const;
 
 	static bool sortByCnr(const GnssSatellite &sat1, const GnssSatellite &sat2)
 	{ return sat1.getCnr() > sat2.getCnr(); }
