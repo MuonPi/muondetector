@@ -39,13 +39,14 @@ void I2cForm::onI2cStatsReceived(quint32 bytesRead, quint32 bytesWritten, const 
 		uint8_t status = deviceList[i].status;		
 		QString str;
 		QBrush brush = QBrush(Qt::green, Qt::SolidPattern);
-		if (status == 0) { str="unknown"; brush = QBrush(Qt::gray, Qt::SolidPattern); }
+		if (status == 0) { str="unknown"; brush = QBrush(Qt::lightGray, Qt::SolidPattern); }
 		if (status & 0x04) { str="missing"; brush = QBrush(Qt::red, Qt::SolidPattern); }
 		else {
 			if (status & 0x01) { str="online"; brush = QBrush(Qt::green, Qt::SolidPattern); }
 			if (status & 0x02) { str="system"; brush = QBrush(Qt::blue, Qt::SolidPattern); }
 		}
 		if(status & 0x08) { str="bus error"; brush = QBrush(Qt::red, Qt::SolidPattern); }
+		if(status & 0x10) { str="locked"; brush = QBrush(Qt::darkGray, Qt::SolidPattern); }
 
 		QTableWidgetItem *newItem3 = new QTableWidgetItem(str);
 		newItem3->setBackground(brush);
