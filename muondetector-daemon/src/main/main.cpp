@@ -174,6 +174,15 @@ int main(int argc, char *argv[])
 		QCoreApplication::translate("main", "bias voltage on or off?"));
 	parser.addOption(biasPowerOnOff);
 
+	// biasVoltage on or off
+	QCommandLineOption eventInputOption(QStringList() << "t" << "trigger",
+		QCoreApplication::translate("main", "event (trigger) signal input:"
+			"\n0 - coincidence (AND)"
+			"\n1 - anti-coincidence (XOR)"),
+			QCoreApplication::translate("main", "trigger"));
+	parser.addOption(eventInputOption);
+	
+
 	// process the actual command line arguments given by the user
 	parser.process(a);
 	const QStringList args = parser.positionalArguments();
@@ -289,6 +298,26 @@ int main(int argc, char *argv[])
 	if (parser.isSet(biasPowerOnOff)) {
 		biasPower = true;
 	}
+
+	unsigned int eventSignal = EVT_XOR;
+	if (parser.isSet(eventInputOption)) {
+		eventSignal = parser.value(eventInputOption).toUInt(&ok);
+		if (!ok || eventSignal>1) {
+			cerr << "wrong trigger input signal (valid: 0,1)" << endl;
+			return -1;
+		} else {
+			switch (eventSignal) {
+				case 1:	eventSignal=EVT_AND;
+					break;
+				case 0: 	
+				default:
+					eventSignal=EVT_XOR;
+					break;
+			}
+		}
+	}
+
+
     string username;
     string password;
     if (parser.isSet(lftpSettingsOption)){
@@ -297,6 +326,7 @@ int main(int argc, char *argv[])
         password = getpass("please enter password:",true);
     }
     Daemon daemon(QString::fromStdString(username), QString::fromStdString(password), gpsdevname, verbose, pcaChannel, dacThresh, biasVoltage, biasPower, dumpRaw,
-		baudrate, showGnssConfig, peerAddress, peerPort, daemonAddress, daemonPort, showout, showin);
+		baudrate, showGnssConfig, eventSignal, peerAddress, peerPort, daemonAddress, daemonPort, showout, showin);
+	
 	return a.exec();
 }

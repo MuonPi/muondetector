@@ -6,6 +6,8 @@
 #include <QDateTime>
 #include <QElapsedTimer>
 
+#include <gpio_pin_definitions.h>
+
 #define XOR_RATE 0
 #define AND_RATE 1
 #define COMBINED_RATE 2
@@ -20,7 +22,8 @@ public:
     // can't make it private because of access of PigpiodHandler with global pointer
     QDateTime startOfProgram, lastSamplingTime; // the exact time when the program starts (Utc)
     QElapsedTimer elapsedEventTimer;
-
+	GPIO_PIN samplingTriggerSignal=EVT_XOR;
+	
 signals:
     void signal(uint8_t gpio_pin);
     void samplingTrigger();
@@ -35,6 +38,7 @@ public slots:
     void setPullUp(unsigned int gpio);
     void setPullDown(unsigned int gpio);
     void setGpioState(unsigned int gpio, bool state);
+    void setSamplingTriggerSignal(GPIO_PIN signalName) { samplingTriggerSignal=signalName; }
 private:
     bool isInitialised = false;
 };

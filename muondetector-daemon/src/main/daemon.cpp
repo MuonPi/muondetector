@@ -206,7 +206,7 @@ void Daemon::handleSigInt()
 // begin of the Daemon class
 Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
     float *new_dacThresh, float new_biasVoltage, bool bias_ON, bool new_dumpRaw, int new_baudrate,
-    bool new_configGnss, QString new_peerAddress, quint16 new_peerPort,
+    bool new_configGnss, unsigned int eventTrigger, QString new_peerAddress, quint16 new_peerPort,
     QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, QObject *parent)
 	: QTcpServer(parent)
 {
@@ -367,6 +367,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		tpTimeDiffHisto.fill((double)usecs);
 		/*cout<<"TP time diff: "<<usecs<<" us"<<endl;*/
 	} );
+	pigHandler->setSamplingTriggerSignal((GPIO_PIN)eventTrigger);
 	
 	struct timespec ts_res;
 	clock_getres(CLOCK_REALTIME, &ts_res);
