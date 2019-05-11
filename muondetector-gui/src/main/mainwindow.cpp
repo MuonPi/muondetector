@@ -166,7 +166,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::gainSwitchReceived, status, &Status::onGainSwitchReceived);
     connect(status, &Status::gainSwitchChanged, this, &MainWindow::sendGainSwitch);
     connect(this, &MainWindow::temperatureReceived, status, &Status::onTemperatureReceived);
-    ui->tabWidget->addTab(status,"status");
+    ui->tabWidget->addTab(status,"Overview");
 
     Settings *settings = new Settings(this);
     connect(this, &MainWindow::setUiEnabledStates, settings, &Settings::onUiEnabledStateChange);
@@ -183,10 +183,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(settings, &Settings::setTP5Config, this, &MainWindow::onSetTP5Config);
     connect(settings, &Settings::sendUbxSaveCfg, this, [this](){ this->sendRequest(ubxSaveCfgSig); } );
 
-    ui->tabWidget->addTab(settings,"settings");
+    ui->tabWidget->addTab(settings,"Ublox Settings");
 
     Map *map = new Map(this);
-    ui->tabWidget->addTab(map, "map");
+    ui->tabWidget->addTab(map, "Map");
     connect(this, &MainWindow::geodeticPos, map, &Map::onGeodeticPosReceived);
 
 
@@ -231,13 +231,13 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(calibTab, &CalibForm::writeCalibToEeprom, this, [this]() { this->sendRequest(calibWriteEepromSig); } );
     connect(this, &MainWindow::adcSampleReceived, calibTab, &CalibForm::onAdcSampleReceived);
 */    
-	ui->tabWidget->addTab(satsTab,"GNSS/GPS Data");
+    ui->tabWidget->addTab(satsTab,"GNSS Data");
 
 
     histogramDataForm *histoTab = new histogramDataForm(this);
     connect(this, &MainWindow::setUiEnabledStates, histoTab, &histogramDataForm::onUiEnabledStateChange);
     connect(this, &MainWindow::histogramReceived, histoTab, &histogramDataForm::onHistogramReceived);
-    ui->tabWidget->addTab(histoTab,"Histograms");
+    ui->tabWidget->addTab(histoTab,"Statistics");
 
 
     //sendRequest(calibRequestSig);
@@ -530,49 +530,69 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         return;
     }
     if (msgID == gpsTimeAccSig){
-	quint32 acc=0;    	
-	*(tcpMessage.dStream) >> acc;
+        quint32 acc=0;
+        *(tcpMessage.dStream) >> acc;
         emit timeAccReceived(acc);
         return;
     }
     if (msgID == gpsFreqAccSig){
-    quint32 acc=0;
-    *(tcpMessage.dStream) >> acc;
+        quint32 acc=0;
+        *(tcpMessage.dStream) >> acc;
         emit freqAccReceived(acc);
         return;
     }
     if (msgID == gpsIntCounterSig){
-	quint32 cnt=0;    	
-	*(tcpMessage.dStream) >> cnt;
+        quint32 cnt=0;
+        *(tcpMessage.dStream) >> cnt;
         emit intCounterReceived(cnt);
         return;
     }
     if (msgID == gpsUptimeSig){
-    quint32 val=0;
-    *(tcpMessage.dStream) >> val;
+        quint32 val=0;
+        *(tcpMessage.dStream) >> val;
         emit ubxUptimeReceived(val);
         return;
     }
     if (msgID == gpsTxBufSig){
-	quint8 val=0;    	
-	*(tcpMessage.dStream) >> val;
+        quint8 val=0;
+        *(tcpMessage.dStream) >> val;
         emit txBufReceived(val);
+        if (!tcpMessage.dStream->atEnd()) {
+            *(tcpMessage.dStream) >> val;
+            emit txBufPeakReceived(val);
+        }
+        return;
+    }
+    if (msgID == gpsRxBufSig){
+        quint8 val=0;
+        *(tcpMessage.dStream) >> val;
+        emit rxBufReceived(val);
+        if (!tcpMessage.dStream->atEnd()) {
+            *(tcpMessage.dStream) >> val;
+            emit rxBufPeakReceived(val);
+        }
         return;
     }
     if (msgID == gpsTxBufPeakSig){
-	quint8 val=0;    	
-	*(tcpMessage.dStream) >> val;
+        quint8 val=0;
+        *(tcpMessage.dStream) >> val;
         emit txBufPeakReceived(val);
         return;
     }
+    if (msgID == gpsRxBufPeakSig){
+        quint8 val=0;
+        *(tcpMessage.dStream) >> val;
+        emit rxBufPeakReceived(val);
+        return;
+    }
     if (msgID == gpsMonHWSig){
-	quint16 noise=0;    	
-	quint16 agc=0;
-	quint8 antStatus=0;
-	quint8 antPower=0;
-	quint8 jamInd=0;
-	quint8 flags=0;
-	*(tcpMessage.dStream) >> noise >> agc >> antStatus >> antPower >> jamInd >> flags;
+        quint16 noise=0;
+        quint16 agc=0;
+        quint8 antStatus=0;
+        quint8 antPower=0;
+        quint8 jamInd=0;
+        quint8 flags=0;
+        *(tcpMessage.dStream) >> noise >> agc >> antStatus >> antPower >> jamInd >> flags;
         emit gpsMonHWReceived(noise,agc,antStatus,antPower,jamInd,flags);
         return;
     }
@@ -581,32 +601,33 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         quint8 magI=0, magQ=0;
         quint8 cfgSrc=0;
         *(tcpMessage.dStream) >> ofsI >> magI >> ofsQ >> magQ >> cfgSrc;
+        //qDebug()<<"ofsI="<<ofsI<<" magI="<<magI<<"ofsQ="<<ofsQ<<" magQ="<<magQ<<" cfgSrc="<<cfgSrc;
         emit gpsMonHW2Received(ofsI, magI, ofsQ, magQ, cfgSrc);
         return;
     }
     if (msgID == gpsVersionSig){
-	QString sw="";
-	QString hw="";
-	QString pv="";
-	*(tcpMessage.dStream) >> sw >> hw >> pv;
+        QString sw="";
+        QString hw="";
+        QString pv="";
+        *(tcpMessage.dStream) >> sw >> hw >> pv;
         emit gpsVersionReceived(sw, hw, pv);
         return;
     }
     if (msgID == gpsFixSig){
-	quint8 val=0;
-	*(tcpMessage.dStream) >> val;
+        quint8 val=0;
+        *(tcpMessage.dStream) >> val;
         emit gpsFixReceived(val);
         return;
     }
     if (msgID == gpsCfgTP5Sig){
-	UbxTimePulseStruct tp;
-	*(tcpMessage.dStream) >> tp;
+        UbxTimePulseStruct tp;
+        *(tcpMessage.dStream) >> tp;
         emit gpsTP5Received(tp);
         return;
     }
     if (msgID == histogramSig){
-    Histogram h;
-    *(tcpMessage.dStream) >> h;
+        Histogram h;
+        *(tcpMessage.dStream) >> h;
         emit histogramReceived(h);
         return;
     }

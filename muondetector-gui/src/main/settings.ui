@@ -28,568 +28,192 @@
   <property name="modal">
    <bool>true</bool>
   </property>
-  <layout class="QGridLayout" name="gridLayout_5">
-   <item row="3" column="3">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Expanding</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>91</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="0" column="0" rowspan="10">
-    <layout class="QVBoxLayout" name="verticalLayout_5">
+  <layout class="QGridLayout" name="gridLayout_6">
+   <item row="0" column="0" rowspan="6">
+    <layout class="QVBoxLayout" name="verticalLayout_4">
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_4">
-       <item>
-        <widget class="QLabel" name="label">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-           <horstretch>200</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>200</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="baseSize">
-          <size>
-           <width>200</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Ublox message settings</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QTableWidget" name="ubloxSignalStates">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>260</width>
-           <height>200</height>
-          </size>
-         </property>
-         <property name="sizeIncrement">
-          <size>
-           <width>0</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="baseSize">
-          <size>
-           <width>320</width>
-           <height>200</height>
-          </size>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <widget class="QLabel" name="label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+         <horstretch>200</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>200</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="baseSize">
+        <size>
+         <width>200</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::Box</enum>
+       </property>
+       <property name="text">
+        <string>Ublox message settings</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <widget class="QLabel" name="label_3">
-         <property name="frameShape">
-          <enum>QFrame::Box</enum>
-         </property>
-         <property name="text">
-          <string>TxBuffer</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QProgressBar" name="txBufProgressBar">
-         <property name="minimumSize">
-          <size>
-           <width>40</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="baseSize">
-          <size>
-           <width>100</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="value">
-          <number>0</number>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="txPeakLabel">
-         <property name="autoFillBackground">
-          <bool>false</bool>
-         </property>
-         <property name="frameShape">
-          <enum>QFrame::NoFrame</enum>
-         </property>
-         <property name="text">
-          <string>max: </string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <widget class="QTableWidget" name="ubloxSignalStates">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>260</width>
+         <height>200</height>
+        </size>
+       </property>
+       <property name="sizeIncrement">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="baseSize">
+        <size>
+         <width>320</width>
+         <height>200</height>
+        </size>
+       </property>
+      </widget>
      </item>
-    </layout>
-   </item>
-   <item row="9" column="3">
-    <widget class="QDialogButtonBox" name="settingsButtonBox">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Apply|QDialogButtonBox::Discard|QDialogButtonBox::RestoreDefaults</set>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="2" rowspan="2" colspan="2">
-    <widget class="QPushButton" name="ubxResetPushButton">
-     <property name="text">
-      <string>Reset Ublox Chip</string>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="3">
-    <widget class="Line" name="line">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="2" colspan="2">
-    <widget class="QPushButton" name="saveConfigPushButton">
-     <property name="text">
-      <string>Save Config</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="3">
-    <widget class="QGroupBox" name="timePulseGroupBox">
-     <property name="title">
-      <string>Time Pulse Settings</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_4">
-      <item row="0" column="0" colspan="2">
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
-        <item>
-         <widget class="QLabel" name="label_4">
-          <property name="text">
-           <string>Antenna Delay</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="antDelayLineEdit">
+     <item>
+      <widget class="QFrame" name="frame">
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>60</height>
+        </size>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::StyledPanel</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Raised</enum>
+       </property>
+       <layout class="QGridLayout" name="gridLayout_5">
+        <item row="0" column="0">
+         <widget class="QProgressBar" name="rxBufProgressBar">
           <property name="minimumSize">
            <size>
-            <width>35</width>
+            <width>40</width>
             <height>0</height>
            </size>
           </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_5">
-          <property name="text">
-           <string>ns</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item row="0" column="2" colspan="2">
-       <layout class="QHBoxLayout" name="horizontalLayout_3">
-        <item>
-         <widget class="QLabel" name="label_6">
-          <property name="text">
-           <string>Group Delay</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="groupDelayLineEdit">
-          <property name="minimumSize">
+          <property name="baseSize">
            <size>
-            <width>30</width>
+            <width>100</width>
             <height>0</height>
            </size>
           </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_7">
-          <property name="text">
-           <string>ns</string>
+          <property name="value">
+           <number>0</number>
           </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item row="1" column="0" colspan="4">
-       <layout class="QHBoxLayout" name="horizontalLayout_4">
-        <item>
-         <widget class="QLabel" name="label_8">
-          <property name="text">
-           <string>User Delay</string>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
-         </widget>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer_4">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="userDelayLineEdit"/>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_9">
-          <property name="text">
-           <string>ns</string>
+          <property name="format">
+           <string>RX Buffer: %p%</string>
           </property>
          </widget>
         </item>
-       </layout>
-      </item>
-      <item row="2" column="0" colspan="2">
-       <widget class="QGroupBox" name="unsyncedPulseGroupBox">
-        <property name="title">
-         <string>unsynced</string>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_3">
-         <item row="0" column="0">
-          <layout class="QHBoxLayout" name="horizontalLayout_5">
-           <item>
-            <widget class="QLabel" name="label_10">
-             <property name="font">
-              <font>
-               <pointsize>8</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>period</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLineEdit" name="freqPeriodLineEdit">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>16</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_11">
-             <property name="text">
-              <string>us</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item row="1" column="0">
-          <layout class="QHBoxLayout" name="horizontalLayout_7">
-           <item>
-            <widget class="QLabel" name="label_14">
-             <property name="font">
-              <font>
-               <pointsize>8</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>pulse len</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLineEdit" name="pulseLenLineEdit">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>16</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_15">
-             <property name="text">
-              <string>us</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item row="2" column="2" colspan="2">
-       <widget class="QGroupBox" name="syncedPulseGroupBox">
-        <property name="title">
-         <string>synced</string>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_2">
-         <item row="0" column="0">
-          <layout class="QHBoxLayout" name="horizontalLayout_6">
-           <item>
-            <widget class="QLabel" name="label_12">
-             <property name="font">
-              <font>
-               <pointsize>8</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>period</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLineEdit" name="freqPeriodLockLineEdit">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>16</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_13">
-             <property name="text">
-              <string>us</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item row="1" column="0">
-          <layout class="QHBoxLayout" name="horizontalLayout_8">
-           <item>
-            <widget class="QLabel" name="label_16">
-             <property name="font">
-              <font>
-               <pointsize>8</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>pulse len</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLineEdit" name="pulseLenLockLineEdit">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>16</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_17">
-             <property name="text">
-              <string>us</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QCheckBox" name="tpActiveCheckBox">
-        <property name="text">
-         <string>Enabled</string>
-        </property>
-        <attribute name="buttonGroup">
-         <string notr="true">tpConfigButtonGroup</string>
-        </attribute>
-       </widget>
-      </item>
-      <item row="3" column="1" colspan="3">
-       <layout class="QHBoxLayout" name="horizontalLayout_9">
-        <item>
-         <widget class="QLabel" name="label_18">
-          <property name="layoutDirection">
-           <enum>Qt::LeftToRight</enum>
-          </property>
-          <property name="text">
-           <string>time grid</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QComboBox" name="timeGridComboBox">
+        <item row="0" column="1">
+         <widget class="QLabel" name="rxPeakLabel">
           <property name="minimumSize">
            <size>
-            <width>55</width>
+            <width>50</width>
             <height>0</height>
            </size>
           </property>
-          <item>
-           <property name="text">
-            <string>UTC</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>GPS</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>GLONASS</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>BeiDou</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Galileo</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>N/A</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>N/A</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>N/A</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>N/A</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>N/A</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item row="5" column="0" colspan="2">
-       <layout class="QHBoxLayout" name="horizontalLayout_11">
-        <item>
-         <widget class="QLabel" name="label_19">
+          <property name="autoFillBackground">
+           <bool>false</bool>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
           <property name="text">
-           <string>Polarity</string>
+           <string>max: </string>
           </property>
           <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
           </property>
          </widget>
         </item>
-        <item>
-         <widget class="QCheckBox" name="tpPolarityCheckBox">
-          <property name="text">
-           <string>rising edge</string>
+        <item row="1" column="0">
+         <widget class="QProgressBar" name="txBufProgressBar">
+          <property name="minimumSize">
+           <size>
+            <width>40</width>
+            <height>0</height>
+           </size>
           </property>
-          <attribute name="buttonGroup">
-           <string notr="true">tpConfigButtonGroup</string>
-          </attribute>
+          <property name="baseSize">
+           <size>
+            <width>100</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="value">
+           <number>0</number>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="format">
+           <string>TX Buffer: %p%</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLabel" name="txPeakLabel">
+          <property name="minimumSize">
+           <size>
+            <width>50</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="autoFillBackground">
+           <bool>false</bool>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="text">
+           <string>max: </string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
          </widget>
         </item>
        </layout>
-      </item>
-      <item row="5" column="3">
-       <widget class="QCheckBox" name="tpAlignTowCheckBox">
-        <property name="text">
-         <string>align to ToW</string>
-        </property>
-        <attribute name="buttonGroup">
-         <string notr="true">tpConfigButtonGroup</string>
-        </attribute>
-       </widget>
-      </item>
-      <item row="4" column="0" colspan="4">
-       <layout class="QHBoxLayout" name="horizontalLayout_10">
-        <item>
-         <widget class="QCheckBox" name="lockGpsCheckBox">
-          <property name="text">
-           <string>lock GPS</string>
-          </property>
-          <attribute name="buttonGroup">
-           <string notr="true">tpConfigButtonGroup</string>
-          </attribute>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="lockOtherCheckBox">
-          <property name="text">
-           <string>lock other</string>
-          </property>
-          <attribute name="buttonGroup">
-           <string notr="true">tpConfigButtonGroup</string>
-          </attribute>
-         </widget>
-        </item>
-       </layout>
-      </item>
-     </layout>
-    </widget>
+      </widget>
+     </item>
+    </layout>
    </item>
-   <item row="0" column="1" colspan="3">
+   <item row="0" column="1">
     <widget class="QGroupBox" name="gnssConfigGroupBox">
      <property name="maximumSize">
       <size>
@@ -606,7 +230,7 @@
         <item>
          <widget class="QLabel" name="label_2">
           <property name="text">
-           <string>max. tracking channels:</string>
+           <string>Max. Tracking Channels:</string>
           </property>
          </widget>
         </item>
@@ -703,7 +327,559 @@
         </item>
        </layout>
       </item>
+      <item row="2" column="1">
+       <spacer name="verticalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>17</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
      </layout>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QGroupBox" name="timePulseGroupBox">
+     <property name="title">
+      <string>Time Pulse Settings</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="0" colspan="2">
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Antenna Delay</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="antDelayLineEdit">
+          <property name="minimumSize">
+           <size>
+            <width>35</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>40</width>
+            <height>16777215</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_5">
+          <property name="maximumSize">
+           <size>
+            <width>30</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>ns</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="2">
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>128</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="1" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>Group Delay</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="groupDelayLineEdit">
+          <property name="minimumSize">
+           <size>
+            <width>30</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>40</width>
+            <height>16777215</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_7">
+          <property name="maximumSize">
+           <size>
+            <width>30</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>ns</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="1" column="1">
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>16</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="1" column="2">
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
+        <item>
+         <widget class="QLabel" name="label_8">
+          <property name="text">
+           <string>User Delay</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="userDelayLineEdit">
+          <property name="maximumSize">
+           <size>
+            <width>40</width>
+            <height>16777215</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_9">
+          <property name="maximumSize">
+           <size>
+            <width>30</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>ns</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="2" column="2">
+       <widget class="QGroupBox" name="syncedPulseGroupBox">
+        <property name="title">
+         <string>synced</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_2">
+         <item row="0" column="0">
+          <layout class="QHBoxLayout" name="horizontalLayout_6">
+           <item>
+            <widget class="QLabel" name="label_12">
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>period</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="freqPeriodLockLineEdit">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>16</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_13">
+             <property name="text">
+              <string>us</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="1" column="0">
+          <layout class="QHBoxLayout" name="horizontalLayout_8">
+           <item>
+            <widget class="QLabel" name="label_16">
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>pulse len</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="pulseLenLockLineEdit">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>16</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_17">
+             <property name="text">
+              <string>us</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QCheckBox" name="tpActiveCheckBox">
+        <property name="text">
+         <string>Enabled</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">tpConfigButtonGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <layout class="QHBoxLayout" name="horizontalLayout_9">
+        <item>
+         <widget class="QLabel" name="label_18">
+          <property name="layoutDirection">
+           <enum>Qt::LeftToRight</enum>
+          </property>
+          <property name="text">
+           <string>time grid</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="timeGridComboBox">
+          <property name="minimumSize">
+           <size>
+            <width>55</width>
+            <height>0</height>
+           </size>
+          </property>
+          <item>
+           <property name="text">
+            <string>UTC</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>GPS</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>GLONASS</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>BeiDou</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Galileo</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>N/A</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>N/A</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>N/A</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>N/A</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>N/A</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="4" column="0" colspan="2">
+       <layout class="QHBoxLayout" name="horizontalLayout_10">
+        <item>
+         <widget class="QCheckBox" name="lockGpsCheckBox">
+          <property name="text">
+           <string>lock GPS</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">tpConfigButtonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="lockOtherCheckBox">
+          <property name="text">
+           <string>lock other</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">tpConfigButtonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="5" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout_11">
+        <item>
+         <widget class="QLabel" name="label_19">
+          <property name="text">
+           <string>Polarity</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="tpPolarityCheckBox">
+          <property name="text">
+           <string>rising edge</string>
+          </property>
+          <attribute name="buttonGroup">
+           <string notr="true">tpConfigButtonGroup</string>
+          </attribute>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="5" column="2">
+       <widget class="QCheckBox" name="tpAlignTowCheckBox">
+        <property name="text">
+         <string>align to ToW</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">tpConfigButtonGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QGroupBox" name="unsyncedPulseGroupBox">
+        <property name="title">
+         <string>unsynced</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+        </property>
+        <property name="flat">
+         <bool>false</bool>
+        </property>
+        <property name="checkable">
+         <bool>false</bool>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_3">
+         <item row="0" column="0">
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
+           <item>
+            <widget class="QLabel" name="label_10">
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>period</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="freqPeriodLineEdit">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>16</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_11">
+             <property name="text">
+              <string>us</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="1" column="0">
+          <layout class="QHBoxLayout" name="horizontalLayout_7">
+           <item>
+            <widget class="QLabel" name="label_14">
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>pulse len</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="pulseLenLineEdit">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>16</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_15">
+             <property name="text">
+              <string>us</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <layout class="QHBoxLayout" name="horizontalLayout_13">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <item>
+        <widget class="QPushButton" name="saveConfigPushButton">
+         <property name="text">
+          <string>Save Config to Flash</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="ubxResetPushButton">
+         <property name="text">
+          <string>Reset Ublox Chip</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+   <item row="3" column="1">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Expanding</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>10</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="4" column="1">
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <widget class="QDialogButtonBox" name="settingsButtonBox">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Apply|QDialogButtonBox::Discard|QDialogButtonBox::RestoreDefaults</set>
+     </property>
     </widget>
    </item>
   </layout>
@@ -711,12 +887,12 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="gnssConfigButtonGroup">
+  <buttongroup name="tpConfigButtonGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
-  <buttongroup name="tpConfigButtonGroup">
+  <buttongroup name="gnssConfigButtonGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
