@@ -57,6 +57,8 @@ signals:
 	void UBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssConfigStruct>& gnssConfigs);
 	void UBXReceivedTP5(const UbxTimePulseStruct& tp);
 	void UBXReceivedDops(const UbxDopStruct& dops);
+	void UBXReceivedTxBuf(uint8_t txUsage, uint8_t txPeakUsage);
+	void UBXReceivedRxBuf(uint8_t rxUsage, uint8_t rxPeakUsage);
 	
 public slots:
 	// all functions that can be called from other classes through signal/slot mechanics
@@ -125,6 +127,7 @@ private:
 	void UBXMonHW(const std::string& msg);
 	void UBXMonHW2(const std::string& msg);
 	void UBXMonTx(const std::string& msg);
+	void UBXMonRx(const std::string& msg);
 	void UBXMonVer(const std::string& msg);
 	void UBXCfgNavX5(const std::string& msg);
 	void UBXCfgAnt(const std::string& msg);

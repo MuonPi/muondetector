@@ -268,7 +268,15 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 		break;
 	case 0x0a: // UBX-MON
 		switch (messageID) {
-			case 0x08:
+			case (MSG_MON_RXBUF & 0xff):
+				if (verbose > 2) {
+					tempStream << "received UBX-MON-RXBUF message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
+						<< " 0x" << std::hex << (int)messageID << ")\n";
+					emit toConsole(QString::fromStdString(tempStream.str()));
+				}
+				UBXMonRx(msg.data);
+				break;
+			case (MSG_MON_TXBUF & 0xff):
 				if (verbose > 2) {
 					tempStream << "received UBX-MON-TXBUF message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
 						<< " 0x" << std::hex << (int)messageID << ")\n";
@@ -1455,8 +1463,9 @@ void QtSerialUblox::UBXMonTx(const std::string& msg)
   //   cout<<"0a 09 "<<dec<<noisePerMS<<" "<<agcCnt<<" "<<flush;
   //   cout<<endl;
 	//mutex.lock();
-	emit gpsPropertyUpdatedUint8(tUsage, txBufUsage.updateAge(), 'b');
-	emit gpsPropertyUpdatedUint8(tPeakUsage, txBufPeakUsage.updateAge(), 'p');
+	//emit gpsPropertyUpdatedUint8(tUsage, txBufUsage.updateAge(), 'b');
+	//emit gpsPropertyUpdatedUint8(tPeakUsage, txBufPeakUsage.updateAge(), 'p');
+	emit UBXReceivedTxBuf(tUsage, tPeakUsage);
 	txBufUsage = tUsage;
 	txBufPeakUsage = tPeakUsage;
 	//mutex.unlock();
@@ -1479,6 +1488,60 @@ void QtSerialUblox::UBXMonTx(const std::string& msg)
 		}
 		tempStream << endl;
 		tempStream << " TX bytes pending for target  : ";
+		for (int i = 0; i < 6; i++) {
+			tempStream << "    (" << dec << i << ") " << setw(3) << pending[i];
+		}
+		tempStream << "\n";
+		//tempStream << setw(1) << setfill(' ');
+		//tempStream >> temp;
+		emit toConsole(QString::fromStdString(tempStream.str()));
+	}
+}
+
+void QtSerialUblox::UBXMonRx(const std::string& msg)
+{
+	// parse all fields
+	// nr bytes pending
+	uint16_t pending[6];
+	uint8_t usage[6];
+	uint8_t peakUsage[6];
+	uint8_t tUsage=0;
+	uint8_t tPeakUsage=0;
+
+	for (int i = 0; i < 6; i++) {
+		pending[i] = msg[2 * i];
+		pending[i] |= (uint16_t)msg[2 * i + 1] << 8;
+		usage[i] = msg[i + 12];
+		peakUsage[i] = msg[i + 18];
+		tUsage+=usage[i];
+		tPeakUsage+=peakUsage[i];
+	}
+
+	emit UBXReceivedRxBuf(tUsage, tPeakUsage);
+//	emit gpsPropertyUpdatedUint8(tUsage, txBufUsage.updateAge(), 'b');
+//	emit gpsPropertyUpdatedUint8(tPeakUsage, txBufPeakUsage.updateAge(), 'p');
+//	txBufUsage = tUsage;
+//	txBufPeakUsage = tPeakUsage;
+	//mutex.unlock();
+
+	if (verbose > 3) {
+		std::stringstream tempStream;
+		//std::string temp;
+		tempStream << setfill(' ') << setw(3);
+		tempStream << "*** UBX-MON-RXBUF message:" << endl;
+		tempStream << " global RX buf usage      : " << dec << (int)tUsage << " %" << endl;
+		tempStream << " global RX buf peak usage : " << dec << (int)tPeakUsage << " %" << endl;
+		tempStream << " RX buf usage for target      : ";
+		for (int i = 0; i < 6; i++) {
+			tempStream << "    (" << dec << i << ") " << setw(3) << (int)usage[i];
+		}
+		tempStream << endl;
+		tempStream << " RX buf peak usage for target : ";
+		for (int i = 0; i < 6; i++) {
+			tempStream << "    (" << dec << i << ") " << setw(3) << (int)peakUsage[i];
+		}
+		tempStream << endl;
+		tempStream << " RX bytes pending for target  : ";
 		for (int i = 0; i < 6; i++) {
 			tempStream << "    (" << dec << i << ") " << setw(3) << pending[i];
 		}

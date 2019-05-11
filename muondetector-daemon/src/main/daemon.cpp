@@ -768,6 +768,8 @@ void Daemon::connectToGps() {
 	connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Daemon::toConsole);
     connect(qtGps, &QtSerialUblox::UBXReceivedGnssConfig, this, &Daemon::onUBXReceivedGnssConfig);
     connect(qtGps, &QtSerialUblox::UBXReceivedTP5, this, &Daemon::onUBXReceivedTP5);
+    connect(qtGps, &QtSerialUblox::UBXReceivedTxBuf, this, &Daemon::onUBXReceivedTxBuf);
+    connect(qtGps, &QtSerialUblox::UBXReceivedRxBuf, this, &Daemon::onUBXReceivedRxBuf);
 	connect(this, &Daemon::UBXSetDynModel, qtGps, &QtSerialUblox::setDynamicModel);
 	connect(this, &Daemon::resetUbxDevice, qtGps, &QtSerialUblox::UBXReset);
 	connect(this, &Daemon::setGnssConfig, qtGps, &QtSerialUblox::onSetGnssConfig);
@@ -1586,6 +1588,7 @@ void Daemon::configGps() {
 	emit UBXSetCfgMsgRate(MSG_NAV_SOL, 1, 0);	// NAV-SOL
 	emit UBXSetCfgMsgRate(MSG_NAV_STATUS, 1, 71);	// NAV-STATUS
 	emit UBXSetCfgMsgRate(MSG_NAV_CLOCK, 1, 189);	// NAV-CLOCK
+	emit UBXSetCfgMsgRate(MSG_MON_RXBUF, 1, 53);	// MON-TXBUF
 	emit UBXSetCfgMsgRate(MSG_MON_TXBUF, 1, 51);	// MON-TXBUF
 	emit UBXSetCfgMsgRate(MSG_NAV_SBAS, 1, 0);	// NAV-SBAS
 	emit UBXSetCfgMsgRate(MSG_NAV_DOP, 1, 254);	// NAV-DOP
@@ -1709,6 +1712,34 @@ void Daemon::onUBXReceivedTP5(const UbxTimePulseStruct& tp) {
     TcpMessage tcpMessage(gpsCfgTP5Sig);
     (*tcpMessage.dStream) << tp;
     emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::onUBXReceivedTxBuf(uint8_t txUsage, uint8_t txPeakUsage) {
+	TcpMessage* tcpMessage;
+	if (verbose>2) {
+		cout << "TX buf usage: " << (int)txUsage << " %" << endl;
+		cout << "TX buf peak usage: " << (int)txPeakUsage << " %" << endl;
+	}
+	tcpMessage = new TcpMessage(gpsTxBufSig);
+	*(tcpMessage->dStream) << (quint8)txUsage << (quint8)txPeakUsage;
+	emit sendTcpMessage(*tcpMessage);
+	delete tcpMessage;
+	logParameter(LogParameter("TXBufUsage", QString::number(txUsage)+" %"));
+	logParameter(LogParameter("maxTXBufUsage", QString::number(txPeakUsage)+" %"));
+}
+
+void Daemon::onUBXReceivedRxBuf(uint8_t rxUsage, uint8_t rxPeakUsage) {
+	TcpMessage* tcpMessage;
+	if (verbose>2) {
+		cout << "RX buf usage: " << (int)rxUsage << " %" << endl;
+		cout << "RX buf peak usage: " << (int)rxPeakUsage << " %" << endl;
+	}
+	tcpMessage = new TcpMessage(gpsRxBufSig);
+	*(tcpMessage->dStream) << (quint8)rxUsage << (quint8)rxPeakUsage;
+	emit sendTcpMessage(*tcpMessage);
+	delete tcpMessage;
+	logParameter(LogParameter("RXBufUsage", QString::number(rxUsage)+" %"));
+	logParameter(LogParameter("maxRXBufUsage", QString::number(rxPeakUsage)+" %"));
 }
 
 void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double> updateAge,

@@ -93,6 +93,8 @@ public slots:
 		char propertyName);
     void gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double> updateAge,
 		char propertyName);
+	void onUBXReceivedTxBuf(uint8_t txUsage, uint8_t txPeakUsage);
+	void onUBXReceivedRxBuf(uint8_t rxUsage, uint8_t rxPeakUsage);
     void gpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
         std::chrono::duration<double> lastUpdated);
     void onUBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssConfigStruct>& gnssConfigs);
