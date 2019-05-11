@@ -43,6 +43,8 @@ public slots:
     void onUiEnabledStateChange(bool connected);
     void onTxBufReceived(quint8 val);
     void onTxBufPeakReceived(quint8 val);
+    void onRxBufReceived(quint8 val);
+    void onRxBufPeakReceived(quint8 val);
     void onGnssConfigsReceived(quint8 numTrkCh, const QVector<GnssConfigStruct>& configList);
     void onTP5Received(const UbxTimePulseStruct& tp);
 

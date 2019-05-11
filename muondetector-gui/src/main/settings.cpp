@@ -167,6 +167,16 @@ void Settings::onTxBufPeakReceived(quint8 val)
     settingsUi->txPeakLabel->setText("max: "+QString::number(val)+"%");
 }
 
+void Settings::onRxBufReceived(quint8 val)
+{
+    settingsUi->rxBufProgressBar->setValue(val);
+}
+
+void Settings::onRxBufPeakReceived(quint8 val)
+{
+    settingsUi->rxPeakLabel->setText("max: "+QString::number(val)+"%");
+}
+
 //const QString GNSS_ID_STRING[] = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
 void Settings::onGnssConfigsReceived(quint8 numTrkCh, const QVector<GnssConfigStruct> &configList)
 {

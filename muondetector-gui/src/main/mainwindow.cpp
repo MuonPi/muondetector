@@ -172,6 +172,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::setUiEnabledStates, settings, &Settings::onUiEnabledStateChange);
     connect(this, &MainWindow::txBufReceived, settings, &Settings::onTxBufReceived);
     connect(this, &MainWindow::txBufPeakReceived, settings, &Settings::onTxBufPeakReceived);
+    connect(this, &MainWindow::rxBufReceived, settings, &Settings::onRxBufReceived);
+    connect(this, &MainWindow::rxBufPeakReceived, settings, &Settings::onRxBufPeakReceived);
     connect(this, &MainWindow::addUbxMsgRates, settings, &Settings::addUbxMsgRates);
     connect(settings, &Settings::sendRequestUbxMsgRates, this, &MainWindow::sendRequestUbxMsgRates);
     connect(settings, &Settings::sendSetUbxMsgRateChanges, this, &MainWindow::sendSetUbxMsgRateChanges);
