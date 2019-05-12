@@ -368,7 +368,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		/*cout<<"TP time diff: "<<usecs<<" us"<<endl;*/
 	} );
 	pigHandler->setSamplingTriggerSignal((GPIO_PIN)eventTrigger);
-	
+	connect(this, &Daemon::setSamplingTriggerSignal, pigHandler, &PigpiodHandler::setSamplingTriggerSignal);
+
 	struct timespec ts_res;
 	clock_getres(CLOCK_REALTIME, &ts_res);
 	if (verbose) {
@@ -1064,6 +1065,17 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         sendPcaChannel();
         return;
     }
+    if (msgID == eventTriggerSig){
+        unsigned int signal;
+        *(tcpMessage.dStream) >> signal;
+        setEventTriggerSelection((GPIO_PIN)signal);
+        sendEventTriggerSelection();
+        return;
+    }
+    if (msgID == eventTriggerRequestSig){
+        sendEventTriggerSelection();
+        return;
+    }
     if (msgID == gpioRateRequestSig){
         quint8 whichRate;
         quint16 number;
@@ -1284,6 +1296,13 @@ void Daemon::sendPcaChannel(){
     emit sendTcpMessage(tcpMessage);
 }
 
+void Daemon::sendEventTriggerSelection(){
+    if (pigHandler==nullptr) return;
+    TcpMessage tcpMessage(eventTriggerSig);
+    *(tcpMessage.dStream) << (GPIO_PIN)pigHandler->samplingTriggerSignal;
+    emit sendTcpMessage(tcpMessage);
+}
+
 void Daemon::rateCounterIntervalActualisation(){
     if (xorCounts.isEmpty()){
         xorCounts.push_back(0);
@@ -1372,7 +1391,7 @@ void Daemon::sendGpioRates(int number, quint8 whichRate){
         number = ratePoints->size()-1;
     }
     if (!ratePoints->isEmpty()){
-        for (unsigned int i = 0; i<number; i++){
+        for (int i = 0; i<number; i++){
             someRates.push_front(ratePoints->at(ratePoints->size()-1-i));
         }
     }
@@ -1414,6 +1433,18 @@ void Daemon::getTemperature(){
     emit sendTcpMessage(tcpMessage);
 }
 
+void Daemon::setEventTriggerSelection(GPIO_PIN signal) {
+	if (pigHandler==nullptr) return;
+    auto it=GPIO_PINMAP.find(signal);
+    if (it==GPIO_PINMAP.end()) return;
+	
+    if (verbose > 1){
+        qDebug() << "changed event selection to signal " << (unsigned int)signal;
+    }
+    emit setSamplingTriggerSignal(signal);
+    //sendEventTriggerSelection();
+}
+
 // ALL FUNCTIONS ABOUT SETTINGS FOR THE I2C-DEVICES (DAC, ADC, PCA...)
 void Daemon::setPcaChannel(uint8_t channel) {
 	if (!pca || !pca->devicePresent()) {
@@ -1428,7 +1459,7 @@ void Daemon::setPcaChannel(uint8_t channel) {
     }
     pcaPortMask = channel;
     pca->setOutputState(channel);
-    sendPcaChannel();
+    //sendPcaChannel();
 }
 
 void Daemon::setBiasVoltage(float voltage) {

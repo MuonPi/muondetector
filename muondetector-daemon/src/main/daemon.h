@@ -139,6 +139,7 @@ signals:
     void UBXSetCfgTP5(const UbxTimePulseStruct& tp);
     void UBXSetAopCfg(bool enable=true, uint16_t maxOrbErr=0);
     void UBXSaveCfg(uint8_t devMask=QtSerialUblox::DEV_BBR | QtSerialUblox::DEV_FLASH);
+	void setSamplingTriggerSignal(GPIO_PIN signalName);
 	
 private slots:
     void onRateBufferReminder();
@@ -148,7 +149,9 @@ private:
     void incomingConnection(qintptr socketDescriptor) override;
     void setPcaChannel(uint8_t channel); // channel 0 to 3
 											 // 0: coincidence ; 1: xor ; 2: discr 1 ; 3: discr 2
+	void setEventTriggerSelection(GPIO_PIN signal);
     void sendPcaChannel();
+    void sendEventTriggerSelection();
     void setDacThresh(uint8_t channel, float threshold); // channel 0 or 1 ; threshold in volts
     void sendDacThresh(uint8_t channel);
     void sendDacReadbackValue(uint8_t channel, float voltage);
