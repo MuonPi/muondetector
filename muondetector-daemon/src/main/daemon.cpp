@@ -896,6 +896,8 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 	sendBiasVoltage();
 	sendDacThresh(0);
 	sendDacThresh(1);
+	sendPcaChannel();
+	sendEventTriggerSelection();
 
 	pollAllUbxMsgRate();
 }
