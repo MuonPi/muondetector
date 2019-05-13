@@ -65,6 +65,7 @@ signals:
     void ubxUptimeReceived(quint32 val);
     void gpsTP5Received(const UbxTimePulseStruct& tp);
     void histogramReceived(const Histogram& h);
+    void triggerSelectionReceived(GPIO_PIN signal);
 
 public slots:
 	void receivedTcpMessage(TcpMessage tcpMessage);
@@ -73,6 +74,7 @@ public slots:
     void sendSetUbxMsgRateChanges(QMap<uint16_t, int> changes);
     void onSendUbxReset();
 	void makeConnection(QString ipAddress, quint16 port);
+    void onTriggerSelectionChanged(GPIO_PIN signal);
 
 private slots:
 	// only those properties with value >= 0 will be updated!

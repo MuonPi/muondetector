@@ -166,6 +166,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::gainSwitchReceived, status, &Status::onGainSwitchReceived);
     connect(status, &Status::gainSwitchChanged, this, &MainWindow::sendGainSwitch);
     connect(this, &MainWindow::temperatureReceived, status, &Status::onTemperatureReceived);
+    connect(this, &MainWindow::triggerSelectionReceived, status, &Status::onTriggerSelectionReceived);
+    connect(status, &Status::triggerSelectionChanged, this, &MainWindow::onTriggerSelectionChanged);
+
     ui->tabWidget->addTab(status,"Overview");
 
     Settings *settings = new Settings(this);
@@ -276,7 +279,15 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
     connect(this, &MainWindow::closeConnection, tcpConnection, &TcpConnection::closeThisConnection);
     connect(this, &MainWindow::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
     connect(tcpConnection, &TcpConnection::receivedTcpMessage, this, &MainWindow::receivedTcpMessage);
-	tcpThread->start();
+    tcpThread->start();
+}
+
+void MainWindow::onTriggerSelectionChanged(GPIO_PIN signal)
+{
+    TcpMessage tcpMessage(eventTriggerSig);
+    *(tcpMessage.dStream) << signal;
+    emit sendTcpMessage(tcpMessage);
+    sendRequest(eventTriggerRequestSig);
 }
 
 bool MainWindow::saveSettings(QStandardItemModel *model) {
@@ -405,6 +416,13 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         //status->setInputSwitchButtonGroup(pcaPortMask);
         emit inputSwitchReceived(pcaPortMask);
         updateUiProperties();
+        return;
+    }
+    if (msgID == eventTriggerSig){
+        unsigned int signal;
+        *(tcpMessage.dStream) >> signal;
+        emit triggerSelectionReceived((GPIO_PIN)signal);
+        //updateUiProperties();
         return;
     }
     if (msgID == gpioRateSig){

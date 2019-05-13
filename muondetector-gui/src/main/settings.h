@@ -74,7 +74,7 @@ private slots:
     void on_saveConfigPushButton_clicked();
 
 private:
-    Ui::Settings *settingsUi;
+    Ui::Settings *ui;
     QMap<uint16_t, int> oldSettings;
     bool fGnssConfigChanged = false;
     bool fTpConfigChanged = false;

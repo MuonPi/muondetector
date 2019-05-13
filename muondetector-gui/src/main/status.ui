@@ -7,13 +7,13 @@
     <x>0</x>
     <y>0</y>
     <width>571</width>
-    <height>502</height>
+    <height>438</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_6">
+  <layout class="QGridLayout" name="gridLayout_7">
    <item row="0" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
@@ -136,112 +136,108 @@
      <property name="maximumSize">
       <size>
        <width>16777215</width>
-       <height>190</height>
+       <height>210</height>
       </size>
      </property>
      <property name="title">
       <string>Status</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_4">
+     <layout class="QGridLayout" name="gridLayout_6">
       <item row="0" column="0">
-       <layout class="QHBoxLayout" name="horizontalLayout">
-        <item>
-         <widget class="QGroupBox" name="ADCGroupBox">
-          <property name="minimumSize">
-           <size>
-            <width>100</width>
-            <height>110</height>
-           </size>
-          </property>
-          <property name="title">
-           <string>ADC Voltages</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout">
-           <item row="0" column="0">
-            <layout class="QVBoxLayout" name="verticalLayout">
-             <item>
-              <widget class="QLabel" name="ADCLabel1">
-               <property name="text">
-                <string>Ch1: </string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="ADCLabel2">
-               <property name="text">
-                <string>Ch2: </string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="ADCLabel3">
-               <property name="text">
-                <string>Ch3: </string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="ADCLabel4">
-               <property name="text">
-                <string>Ch4: </string>
-               </property>
-              </widget>
-             </item>
-            </layout>
+       <widget class="QGroupBox" name="ADCGroupBox">
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>110</height>
+         </size>
+        </property>
+        <property name="title">
+         <string>ADC Voltages</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout">
+         <item row="0" column="0">
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <item>
+            <widget class="QLabel" name="ADCLabel1">
+             <property name="text">
+              <string>Ch1: </string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="ADCLabel2">
+             <property name="text">
+              <string>Ch2: </string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="ADCLabel3">
+             <property name="text">
+              <string>Ch3: </string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="ADCLabel4">
+             <property name="text">
+              <string>Ch4: </string>
+             </property>
+            </widget>
            </item>
           </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QGroupBox" name="DACGroupBox">
-          <property name="minimumSize">
-           <size>
-            <width>100</width>
-            <height>110</height>
-           </size>
-          </property>
-          <property name="title">
-           <string>DAC Voltages</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_2">
-           <item row="0" column="0">
-            <layout class="QVBoxLayout" name="verticalLayout_2">
-             <item>
-              <widget class="QLabel" name="DACLabel1">
-               <property name="text">
-                <string>Ch1: </string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="DACLabel2">
-               <property name="text">
-                <string>Ch2: </string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="DACLabel3">
-               <property name="text">
-                <string>Ch3: </string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="DACLabel4">
-               <property name="text">
-                <string>Ch4: </string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-          </layout>
-         </widget>
-        </item>
-       </layout>
+         </item>
+        </layout>
+       </widget>
       </item>
-      <item row="0" column="1" rowspan="2">
+      <item row="0" column="1">
+       <widget class="QGroupBox" name="DACGroupBox">
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>110</height>
+         </size>
+        </property>
+        <property name="title">
+         <string>DAC Voltages</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_2">
+         <item row="0" column="0">
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <widget class="QLabel" name="DACLabel1">
+             <property name="text">
+              <string>Ch1: </string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="DACLabel2">
+             <property name="text">
+              <string>Ch2: </string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="DACLabel3">
+             <property name="text">
+              <string>Ch3: </string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="DACLabel4">
+             <property name="text">
+              <string>Ch4: </string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="0" column="2" rowspan="2">
        <widget class="QGroupBox" name="switchesGroupBox">
         <property name="minimumSize">
          <size>
@@ -252,14 +248,14 @@
         <property name="maximumSize">
          <size>
           <width>16777215</width>
-          <height>160</height>
+          <height>180</height>
          </size>
         </property>
         <property name="title">
-         <string>Switches</string>
+         <string>Configuration</string>
         </property>
-        <layout class="QGridLayout" name="gridLayout_3">
-         <item row="0" column="0" rowspan="2">
+        <layout class="QGridLayout" name="gridLayout_9">
+         <item row="0" column="0">
           <widget class="QGroupBox" name="InputSelectGroupBox">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -269,8 +265,8 @@
            </property>
            <property name="minimumSize">
             <size>
-             <width>144</width>
-             <height>110</height>
+             <width>135</width>
+             <height>100</height>
             </size>
            </property>
            <property name="maximumSize">
@@ -285,183 +281,155 @@
            <property name="checkable">
             <bool>false</bool>
            </property>
-           <widget class="QRadioButton" name="InputSelectRadioButton0">
-            <property name="geometry">
-             <rect>
-              <x>12</x>
-              <y>25</y>
-              <width>69</width>
-              <height>16</height>
-             </rect>
-            </property>
-            <property name="text">
-             <string>AND</string>
-            </property>
-            <property name="checked">
-             <bool>false</bool>
-            </property>
-           </widget>
-           <widget class="QRadioButton" name="InputSelectRadioButton1">
-            <property name="geometry">
-             <rect>
-              <x>12</x>
-              <y>45</y>
-              <width>69</width>
-              <height>16</height>
-             </rect>
-            </property>
-            <property name="text">
-             <string>XOR</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-           <widget class="QRadioButton" name="InputSelectRadioButton2">
-            <property name="geometry">
-             <rect>
-              <x>12</x>
-              <y>65</y>
-              <width>69</width>
-              <height>16</height>
-             </rect>
-            </property>
-            <property name="text">
-             <string>DISCR1</string>
-            </property>
-            <property name="checked">
-             <bool>false</bool>
-            </property>
-           </widget>
-           <widget class="QRadioButton" name="InputSelectRadioButton3">
-            <property name="geometry">
-             <rect>
-              <x>12</x>
-              <y>85</y>
-              <width>69</width>
-              <height>16</height>
-             </rect>
-            </property>
-            <property name="text">
-             <string>DISCR2</string>
-            </property>
-            <property name="checked">
-             <bool>false</bool>
-            </property>
-           </widget>
-           <widget class="QRadioButton" name="InputSelectRadioButton4">
-            <property name="geometry">
-             <rect>
-              <x>87</x>
-              <y>25</y>
-              <width>45</width>
-              <height>16</height>
-             </rect>
-            </property>
-            <property name="text">
-             <string>IN4</string>
-            </property>
-            <property name="checked">
-             <bool>false</bool>
-            </property>
-           </widget>
-           <widget class="QRadioButton" name="InputSelectRadioButton5">
-            <property name="geometry">
-             <rect>
-              <x>87</x>
-              <y>45</y>
-              <width>45</width>
-              <height>16</height>
-             </rect>
-            </property>
-            <property name="text">
-             <string>IN5</string>
-            </property>
-            <property name="checked">
-             <bool>false</bool>
-            </property>
-           </widget>
-           <widget class="QRadioButton" name="InputSelectRadioButton6">
-            <property name="geometry">
-             <rect>
-              <x>87</x>
-              <y>65</y>
-              <width>45</width>
-              <height>16</height>
-             </rect>
-            </property>
-            <property name="text">
-             <string>IN6</string>
-            </property>
-            <property name="checked">
-             <bool>false</bool>
-            </property>
-           </widget>
-           <widget class="QRadioButton" name="InputSelectRadioButton7">
-            <property name="geometry">
-             <rect>
-              <x>87</x>
-              <y>85</y>
-              <width>45</width>
-              <height>16</height>
-             </rect>
-            </property>
-            <property name="text">
-             <string>IN7</string>
-            </property>
-            <property name="checked">
-             <bool>false</bool>
-            </property>
-           </widget>
+           <layout class="QGridLayout" name="gridLayout_3">
+            <item row="0" column="0">
+             <widget class="QRadioButton" name="InputSelectRadioButton0">
+              <property name="text">
+               <string>AND</string>
+              </property>
+              <property name="checked">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QRadioButton" name="InputSelectRadioButton4">
+              <property name="text">
+               <string>IN4</string>
+              </property>
+              <property name="checked">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QRadioButton" name="InputSelectRadioButton1">
+              <property name="text">
+               <string>XOR</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QRadioButton" name="InputSelectRadioButton5">
+              <property name="text">
+               <string>IN5</string>
+              </property>
+              <property name="checked">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QRadioButton" name="InputSelectRadioButton2">
+              <property name="text">
+               <string>DISCR1</string>
+              </property>
+              <property name="checked">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QRadioButton" name="InputSelectRadioButton6">
+              <property name="text">
+               <string>IN6</string>
+              </property>
+              <property name="checked">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QRadioButton" name="InputSelectRadioButton3">
+              <property name="text">
+               <string>DISCR2</string>
+              </property>
+              <property name="checked">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QRadioButton" name="InputSelectRadioButton7">
+              <property name="text">
+               <string>IN7</string>
+              </property>
+              <property name="checked">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </widget>
          </item>
          <item row="0" column="1">
-          <layout class="QVBoxLayout" name="verticalLayout_3">
-           <item>
-            <widget class="QCheckBox" name="biasEnableCheckBox">
-             <property name="text">
-              <string>Bias On</string>
-             </property>
-             <property name="checked">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="highGainCheckBox">
-             <property name="text">
-              <string>High Gain</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="preamp1CheckBox">
-             <property name="text">
-              <string>Preamp 1</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="preamp2CheckBox">
-             <property name="text">
-              <string>Preamp 2</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item row="1" column="1">
-          <spacer name="verticalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
+          <widget class="QGroupBox" name="groupBox">
+           <property name="minimumSize">
             <size>
-             <width>20</width>
-             <height>52</height>
+             <width>0</width>
+             <height>100</height>
             </size>
            </property>
-          </spacer>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>110</height>
+            </size>
+           </property>
+           <property name="title">
+            <string>Switches</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_4">
+            <item row="0" column="0">
+             <widget class="QCheckBox" name="biasEnableCheckBox">
+              <property name="text">
+               <string>Bias On</string>
+              </property>
+              <property name="checked">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QCheckBox" name="highGainCheckBox">
+              <property name="text">
+               <string>High Gain</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QCheckBox" name="preamp1CheckBox">
+              <property name="text">
+               <string>Preamp 1</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QCheckBox" name="preamp2CheckBox">
+              <property name="text">
+               <string>Preamp 2</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="1" column="0" colspan="2">
+          <layout class="QHBoxLayout" name="horizontalLayout">
+           <item>
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>ADC Trigger Input:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="triggerSelectionComboBox"/>
+           </item>
+          </layout>
          </item>
         </layout>
        </widget>

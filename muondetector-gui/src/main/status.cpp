@@ -51,6 +51,11 @@ Status::Status(QWidget *parent) :
     fInputSwitchButtonGroup->addButton(statusUi->InputSelectRadioButton7,7);
     connect(fInputSwitchButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), [=](int id){ emit inputSwitchChanged(id); });
 //    connect(fInputSwitchButtonGroup, QOverload<int>::of(&QButtonGroup::buttonClicked), [=](int id){ emit inputSwitchChanged(id); });
+
+    foreach (QString item, GPIO_PIN_NAMES) {
+        statusUi->triggerSelectionComboBox->addItem(item);
+    }
+
 }
 
 void Status::onGpioRatesReceived(quint8 whichrate, QVector<QPointF> rates){
@@ -148,6 +153,20 @@ void Status::clearRatePlot()
     statusUi->ratePlot->plotAndSamples(andSamples);
 }
 
+void Status::onTriggerSelectionReceived(GPIO_PIN signal)
+{
+    if (GPIO_PIN_NAMES.find(signal)==GPIO_PIN_NAMES.end()) return;
+    unsigned int i=0;
+    foreach (QString item, GPIO_PIN_NAMES) {
+        if (item.compare(GPIO_PIN_NAMES[signal])==0) break;
+        i++;
+    }
+    statusUi->triggerSelectionComboBox->blockSignals(true);
+    statusUi->triggerSelectionComboBox->setEnabled(true);
+    statusUi->triggerSelectionComboBox->setCurrentIndex(i);
+    statusUi->triggerSelectionComboBox->blockSignals(false);
+}
+
 void Status::clearPulseHeightHisto()
 {
 	statusUi->pulseHeightHistogram->clear();
@@ -196,6 +215,7 @@ void Status::onUiEnabledStateChange(bool connected){
         statusUi->ratePlot->setStatusEnabled(false);
         statusUi->pulseHeightHistogram->clear();
 		statusUi->pulseHeightHistogram->setStatusEnabled(false);
+        statusUi->triggerSelectionComboBox->setEnabled(false);
         this->setDisabled(true);
     }
 }
@@ -252,3 +272,12 @@ Status::~Status()
     delete fInputSwitchButtonGroup;
 }
 
+
+void Status::on_triggerSelectionComboBox_currentIndexChanged(const QString &arg1)
+{
+    //
+    int i=statusUi->triggerSelectionComboBox->currentIndex();
+    auto it=qFind(GPIO_PIN_NAMES, arg1);
+    if (it==GPIO_PIN_NAMES.end()) return;
+    emit triggerSelectionChanged(it.key());
+}

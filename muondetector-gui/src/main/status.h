@@ -6,6 +6,7 @@
 #include <QMap>
 #include <QPointF>
 #include <QButtonGroup>
+#include <gpio_pin_definitions.h>
 
 namespace Ui {
 class Status;
@@ -26,6 +27,8 @@ signals:
 	void preamp1SwitchChanged(bool state);
 	void preamp2SwitchChanged(bool state);
     void resetRateClicked();
+    void triggerSelectionChanged(GPIO_PIN signal);
+
 public slots:
     void onGpioRatesReceived(quint8 whichrate, QVector<QPointF> rates);
     void onAdcSampleReceived(uint8_t channel, float value);
@@ -40,9 +43,12 @@ public slots:
     void onTemperatureReceived(float value);
    	void clearPulseHeightHisto();
     void clearRatePlot();
+    void onTriggerSelectionReceived(GPIO_PIN signal);
 
 private slots:
     void setRateSecondsBuffered(const QString& bufferTime);
+
+    void on_triggerSelectionComboBox_currentIndexChanged(const QString &arg1);
 
 private:
     Ui::Status *statusUi;
