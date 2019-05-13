@@ -620,7 +620,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		digitalWrite(GPIO_PINMAP[UBIAS_EN], (HW_VERSION==1)?0:1);
 	}
 
-	preampStatus[0]=preampStatus[1]=true;
+	preampStatus[0]=preampStatus[1]=false;
 	pinMode(GPIO_PINMAP[PREAMP_1], 1);
 	digitalWrite(GPIO_PINMAP[PREAMP_1], preampStatus[0]);
 	pinMode(GPIO_PINMAP[PREAMP_2], 1);
@@ -1071,6 +1071,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         unsigned int signal;
         *(tcpMessage.dStream) >> signal;
         setEventTriggerSelection((GPIO_PIN)signal);
+        usleep(1000);
         sendEventTriggerSelection();
         return;
     }
