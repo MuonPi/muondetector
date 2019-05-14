@@ -62,7 +62,6 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
             qint32 t_diff_us=ts.tv_nsec/1000;
             if (t_diff_us>500000L) t_diff_us=t_diff_us-1000000L;
             emit pigpioHandler->timePulseDiff(t_diff_us);
-            return;
         }
 
         if (pi != user_pi) {
