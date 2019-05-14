@@ -55,7 +55,12 @@ Status::Status(QWidget *parent) :
     foreach (GpioSignalDescriptor item, GPIO_SIGNAL_MAP) {
         if (item.direction==DIR_IN) statusUi->triggerSelectionComboBox->addItem(item.name);
     }
-
+    //timepulseTimer = new QTimer(this);
+    timepulseTimer.setSingleShot(true);
+    timepulseTimer.setInterval(3000);
+    connect(&timepulseTimer, &QTimer::timeout, this, [this]() {
+         statusUi->timePulseLabel->setStyleSheet("QLabel {background-color: red;}");
+    });
 }
 
 void Status::onGpioRatesReceived(quint8 whichrate, QVector<QPointF> rates){
@@ -161,11 +166,17 @@ void Status::onTriggerSelectionReceived(GPIO_PIN signal)
         if (statusUi->triggerSelectionComboBox->itemText(i).compare(GPIO_PIN_NAMES[signal])==0) break;
         i++;
     }
-    if (i==statusUi->triggerSelectionComboBox->count()) return;
+    if (i>=statusUi->triggerSelectionComboBox->count()) return;
     statusUi->triggerSelectionComboBox->blockSignals(true);
     statusUi->triggerSelectionComboBox->setEnabled(true);
     statusUi->triggerSelectionComboBox->setCurrentIndex(i);
     statusUi->triggerSelectionComboBox->blockSignals(false);
+}
+
+void Status::onTimepulseReceived()
+{
+    statusUi->timePulseLabel->setStyleSheet("QLabel {background-color: lightGreen;}");
+    timepulseTimer.start();
 }
 
 void Status::clearPulseHeightHisto()
@@ -217,6 +228,8 @@ void Status::onUiEnabledStateChange(bool connected){
         statusUi->pulseHeightHistogram->clear();
 		statusUi->pulseHeightHistogram->setStatusEnabled(false);
         statusUi->triggerSelectionComboBox->setEnabled(false);
+        timepulseTimer.stop();
+        statusUi->timePulseLabel->setStyleSheet("QLabel {background-color: Window;}");
         this->setDisabled(true);
     }
 }

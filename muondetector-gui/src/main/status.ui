@@ -237,7 +237,7 @@
         </layout>
        </widget>
       </item>
-      <item row="0" column="2" rowspan="2">
+      <item row="0" column="2" rowspan="3">
        <widget class="QGroupBox" name="switchesGroupBox">
         <property name="minimumSize">
          <size>
@@ -434,10 +434,29 @@
         </layout>
        </widget>
       </item>
-      <item row="1" column="0">
+      <item row="1" column="0" colspan="2">
        <widget class="QLabel" name="temperatureLabel">
+        <property name="frameShape">
+         <enum>QFrame::Box</enum>
+        </property>
         <property name="text">
          <string>Temperature:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="2">
+       <widget class="QLabel" name="timePulseLabel">
+        <property name="frameShape">
+         <enum>QFrame::Box</enum>
+        </property>
+        <property name="text">
+         <string>Time Pulse</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
         </property>
        </widget>
       </item>

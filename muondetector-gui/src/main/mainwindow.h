@@ -66,6 +66,7 @@ signals:
     void gpsTP5Received(const UbxTimePulseStruct& tp);
     void histogramReceived(const Histogram& h);
     void triggerSelectionReceived(GPIO_PIN signal);
+    void timepulseReceived();
 
 public slots:
 	void receivedTcpMessage(TcpMessage tcpMessage);
@@ -116,6 +117,8 @@ private slots:
     void on_biasControlTypeComboBox_currentIndexChanged(int index);
     void onSetGnssConfigs(const QVector<GnssConfigStruct>& configList);
     void onSetTP5Config(const UbxTimePulseStruct& tp);
+
+    void on_biasVoltageDoubleSpinBox_valueChanged(double arg1);
 
 private:
 	Ui::MainWindow *ui;

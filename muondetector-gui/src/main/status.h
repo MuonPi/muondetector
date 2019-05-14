@@ -6,6 +6,7 @@
 #include <QMap>
 #include <QPointF>
 #include <QButtonGroup>
+#include <QTimer>
 #include <gpio_pin_definitions.h>
 
 namespace Ui {
@@ -44,6 +45,7 @@ public slots:
    	void clearPulseHeightHisto();
     void clearRatePlot();
     void onTriggerSelectionReceived(GPIO_PIN signal);
+    void onTimepulseReceived();
 
 private slots:
     void setRateSecondsBuffered(const QString& bufferTime);
@@ -55,6 +57,7 @@ private:
     QVector<QPointF> xorSamples;
     QVector<QPointF> andSamples;
     QButtonGroup* fInputSwitchButtonGroup;
+    QTimer timepulseTimer;
 };
 
 #endif // STATUS_H

@@ -168,6 +168,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::temperatureReceived, status, &Status::onTemperatureReceived);
     connect(this, &MainWindow::triggerSelectionReceived, status, &Status::onTriggerSelectionReceived);
     connect(status, &Status::triggerSelectionChanged, this, &MainWindow::onTriggerSelectionChanged);
+    connect(this, &MainWindow::timepulseReceived, status, &Status::onTimepulseReceived);
 
     ui->tabWidget->addTab(status,"Overview");
 
@@ -759,20 +760,21 @@ void MainWindow::sendRequestGpioRateBuffer(){
 
 void MainWindow::receivedGpioRisingEdge(GPIO_PIN pin) {
 	if (pin == EVT_AND) {
-		ui->ANDHit->setStyleSheet("QLabel {color: white; background-color: darkGreen;}");
+        ui->ANDHit->setStyleSheet("QLabel {background-color: darkGreen;}");
 		andTimer.start();
-	}
-	if (pin == EVT_XOR) {
-		ui->XORHit->setStyleSheet("QLabel {color: white; background-color: darkGreen;}");
+    } else if (pin == EVT_XOR) {
+        ui->XORHit->setStyleSheet("QLabel {background-color: darkGreen;}");
 		xorTimer.start();
-	}
+    } else if (pin == TIMEPULSE) {
+        emit timepulseReceived();
+    }
 }
 
 void MainWindow::resetAndHit() {
-	ui->ANDHit->setStyleSheet("QLabel {color: white; background-color: darkRed;}");
+    ui->ANDHit->setStyleSheet("QLabel {background-color: Window;}");
 }
 void MainWindow::resetXorHit() {
-	ui->XORHit->setStyleSheet("QLabel {color: white; background-color: darkRed;}");
+    ui->XORHit->setStyleSheet("QLabel {background-color: Window;}");
 }
 
 void MainWindow::uiSetDisconnectedState() {
@@ -793,9 +795,9 @@ void MainWindow::uiSetDisconnectedState() {
 	ui->discr2Edit->clear();
 	ui->discr2Edit->setDisabled(true);
 	ui->ANDHit->setDisabled(true);
-	ui->ANDHit->setStyleSheet("QLabel {color: darkGray;}");
+    ui->ANDHit->setStyleSheet("QLabel {background-color: Window;}");
 	ui->XORHit->setDisabled(true);
-    ui->XORHit->setStyleSheet("QLabel {color: darkGray;}");
+    ui->XORHit->setStyleSheet("QLabel {background-color: Window;}");
     ui->rate1->setDisabled(true);
     ui->rate2->setDisabled(true);
 	ui->biasPowerLabel->setDisabled(true);
@@ -830,18 +832,20 @@ void MainWindow::updateUiProperties() {
     ui->discr2Edit->setEnabled(true);
     ui->discr2Edit->setText(QString::number(sliderValues.at(1) / 2.0) + "mV");
     double biasVoltage = biasCalibOffset + biasDacVoltage*biasCalibSlope;
-    ui->biasVoltageDoubleSpinBox->setValue(biasVoltage);
     ui->biasVoltageSlider->blockSignals(true);
+    ui->biasVoltageDoubleSpinBox->blockSignals(true);
+    ui->biasVoltageDoubleSpinBox->setValue(biasVoltage);
     ui->biasVoltageSlider->setValue(100*biasVoltage/maxBiasVoltage);
     ui->biasVoltageSlider->blockSignals(false);
+    ui->biasVoltageDoubleSpinBox->blockSignals(false);
     // equation:
     // UBias = c1*UDac + c0
     // (UBias - c0)/c1 = UDac
 
 	ui->ANDHit->setEnabled(true);
-	ui->ANDHit->setStyleSheet("QLabel {background-color: darkRed; color: white;}");
+    //ui->ANDHit->setStyleSheet("QLabel {background-color: darkRed; color: white;}");
 	ui->XORHit->setEnabled(true);
-	ui->XORHit->setStyleSheet("QLabel {background-color: darkRed; color: white;}");
+    //ui->XORHit->setStyleSheet("QLabel {background-color: darkRed; color: white;}");
     ui->rate1->setEnabled(true);
     ui->rate2->setEnabled(true);
 	ui->biasPowerButton->setEnabled(true);
@@ -1128,4 +1132,14 @@ void MainWindow::on_biasControlTypeComboBox_currentIndexChanged(int index)
         ui->biasVoltageDoubleSpinBox->setSingleStep(0.01);
     }
     sendRequest(biasVoltageRequestSig);
+}
+
+void MainWindow::on_biasVoltageDoubleSpinBox_valueChanged(double arg1)
+{
+    double biasVoltage = arg1;
+    if (fabs(biasCalibSlope)<1e-5) return;
+    double dacVoltage = (biasVoltage-biasCalibOffset)/biasCalibSlope;
+    if (dacVoltage<0.) dacVoltage=0.;
+    if (dacVoltage>3.3) dacVoltage=3.3;
+    sendSetBiasVoltage(dacVoltage);
 }
