@@ -39,15 +39,6 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
             return;
         }
 */
-        if (user_gpio == GPIO_PINMAP[TIMEPULSE]) {
-//			std::cout<<"Timepulse"<<std::endl;
-            struct timespec ts;
-			clock_gettime(CLOCK_REALTIME, &ts);
-            qint32 t_diff_us=ts.tv_nsec/1000;
-            if (t_diff_us>500000L) t_diff_us=t_diff_us-1000000L;
-            emit pigpioHandler->timePulseDiff(t_diff_us);
-            return;
-        }
         QDateTime now = QDateTime::currentDateTimeUtc();
         //qDebug()<<"gpio evt: gpio="<<user_gpio<<"  GPIO_PINMAP[EVT_XOR]="<<GPIO_PINMAP[EVT_XOR];
 //        if (user_gpio == GPIO_PINMAP[EVT_AND] || user_gpio == GPIO_PINMAP[EVT_XOR]){
@@ -62,6 +53,16 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
 			//emit pigpioHandler->eventInterval(nsecsElapsed);
 			emit pigpioHandler->eventInterval((tick-lastTick)*1000);
 			lastTick=tick;
+        }
+
+        if (user_gpio == GPIO_PINMAP[TIMEPULSE]) {
+//			std::cout<<"Timepulse"<<std::endl;
+            struct timespec ts;
+			clock_gettime(CLOCK_REALTIME, &ts);
+            qint32 t_diff_us=ts.tv_nsec/1000;
+            if (t_diff_us>500000L) t_diff_us=t_diff_us-1000000L;
+            emit pigpioHandler->timePulseDiff(t_diff_us);
+            return;
         }
 
         if (pi != user_pi) {

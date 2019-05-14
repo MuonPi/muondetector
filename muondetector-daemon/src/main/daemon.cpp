@@ -323,7 +323,22 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 
 	if (verbose>1) {
 		cout<<"GPIO pin mapping:"<<endl;
-		cout<<" EVT_AND     : "<<GPIO_PINMAP[EVT_AND]<<endl;
+		
+		for (auto signalIt=GPIO_PINMAP.begin(); signalIt!=GPIO_PINMAP.end(); signalIt++) {
+			const GPIO_PIN signalId=signalIt->first;
+			cout<<GPIO_SIGNAL_MAP[signalId].name<<"   \t: "<<signalIt->second;
+			switch (GPIO_SIGNAL_MAP[signalId].direction) {
+				case DIR_IN: cout<<" (in)";
+					break;
+				case DIR_OUT: cout<<" (out)";
+					break;
+				case DIR_IO: cout<<" (i/o)";
+					break;
+				default: cout<<" (undef)";
+			}
+			cout<<endl;
+		}
+/*		cout<<" EVT_AND     : "<<GPIO_PINMAP[EVT_AND]<<endl;
 		cout<<" EVT_XOR     : "<<GPIO_PINMAP[EVT_XOR]<<endl;
 		cout<<" UBIAS_EN    : "<<GPIO_PINMAP[UBIAS_EN]<<endl;
 		cout<<" PREAMP_1    : "<<GPIO_PINMAP[PREAMP_1]<<endl;
@@ -334,6 +349,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		cout<<" STATUS1     : "<<GPIO_PINMAP[STATUS1]<<endl;
 		cout<<" STATUS2     : "<<GPIO_PINMAP[STATUS2]<<endl;
 		cout<<" PREAMP_FAULT: "<<GPIO_PINMAP[PREAMP_FAULT]<<endl;
+*/
 	}
 
     // create fileHandler
