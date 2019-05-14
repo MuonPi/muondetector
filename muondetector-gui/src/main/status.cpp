@@ -52,8 +52,8 @@ Status::Status(QWidget *parent) :
     connect(fInputSwitchButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), [=](int id){ emit inputSwitchChanged(id); });
 //    connect(fInputSwitchButtonGroup, QOverload<int>::of(&QButtonGroup::buttonClicked), [=](int id){ emit inputSwitchChanged(id); });
 
-    foreach (QString item, GPIO_PIN_NAMES) {
-        statusUi->triggerSelectionComboBox->addItem(item);
+    foreach (GpioSignalDescriptor item, GPIO_SIGNAL_MAP) {
+        if (item.direction==DIR_IN) statusUi->triggerSelectionComboBox->addItem(item.name);
     }
 
 }
@@ -157,10 +157,11 @@ void Status::onTriggerSelectionReceived(GPIO_PIN signal)
 {
     if (GPIO_PIN_NAMES.find(signal)==GPIO_PIN_NAMES.end()) return;
     unsigned int i=0;
-    foreach (QString item, GPIO_PIN_NAMES) {
-        if (item.compare(GPIO_PIN_NAMES[signal])==0) break;
+    while (i<statusUi->triggerSelectionComboBox->count()) {
+        if (statusUi->triggerSelectionComboBox->itemText(i).compare(GPIO_PIN_NAMES[signal])==0) break;
         i++;
     }
+    if (i==statusUi->triggerSelectionComboBox->count()) return;
     statusUi->triggerSelectionComboBox->blockSignals(true);
     statusUi->triggerSelectionComboBox->setEnabled(true);
     statusUi->triggerSelectionComboBox->setCurrentIndex(i);
@@ -275,7 +276,6 @@ Status::~Status()
 
 void Status::on_triggerSelectionComboBox_currentIndexChanged(const QString &arg1)
 {
-    //
     int i=statusUi->triggerSelectionComboBox->currentIndex();
     auto it=qFind(GPIO_PIN_NAMES, arg1);
     if (it==GPIO_PIN_NAMES.end()) return;
