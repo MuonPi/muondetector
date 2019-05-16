@@ -116,6 +116,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 			if (verbose > 2) {
 				tempStream << "received UBX-NAV-SVINFO message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
 					<< " 0x" << std::hex << (int)messageID << ")\n";
+				tempStream << "nr sats = "<<sats.size()<<"\n";
 				emit toConsole(QString::fromStdString(tempStream.str()));
 			}
 			//mutex.lock();

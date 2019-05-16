@@ -828,13 +828,16 @@ void Daemon::connectToGps() {
 		}
 		
     });
-    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, this, [this](std::vector<GnssSatellite> satlist, std::chrono::duration<double> updateAge){
+    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, this, [this](const std::vector<GnssSatellite>& satlist, std::chrono::duration<double> updateAge){
         int allSats=0, usedSats=0, maxCnr=0;
-        for (auto sat : satlist){
-            if (sat.fCnr>0) allSats++;
-            if (sat.fUsed) usedSats++;
-	    if (sat.fCnr>maxCnr) maxCnr=sat.fCnr;
-        }
+        if (satlist.size()) {
+			for (auto sat : satlist){
+				if (sat.fCnr>0) allSats++;
+				if (sat.fUsed) usedSats++;
+				if (sat.fCnr>maxCnr) maxCnr=sat.fCnr;
+			}
+		}
+        //qDebug() << "received satlist ok, size=" << satlist.size();
         logParameter(LogParameter("sats",QString("%1").arg(allSats)));
         logParameter(LogParameter("usedSats",QString("%1").arg(usedSats)));
         logParameter(LogParameter("maxCNR",QString("%1").arg(maxCnr)));
@@ -1718,7 +1721,7 @@ void Daemon::gpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
 	std::chrono::duration<double> lastUpdated) {
 	vector<GnssSatellite> visibleSats = sats;
 	std::sort(visibleSats.begin(), visibleSats.end(), GnssSatellite::sortByCnr);
-	while (visibleSats.back().getCnr() == 0 && visibleSats.size() > 0) visibleSats.pop_back();
+	while (visibleSats.size() > 0 && visibleSats.back().getCnr() == 0) visibleSats.pop_back();
 
 	if (verbose > 3) {
 		cout << std::chrono::system_clock::now()
