@@ -5,7 +5,7 @@
 struct LogParameter{
 public:
     
-    enum { LOG_NEVER=0, LOG_ONCE, LOG_EVERY, LOG_LATEST, LOG_AVERAGE };
+    enum { LOG_NEVER=0, LOG_ONCE, LOG_EVERY, LOG_LATEST, LOG_AVERAGE, LOG_ON_CHANGE };
     
     LogParameter()=default;
     LogParameter(const QString& name, const QString& value, int a_logType = LOG_EVERY, bool updatedRecently=false)

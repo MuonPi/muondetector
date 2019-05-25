@@ -7,6 +7,7 @@
 #include <QStandardPaths>
 #include <logparameter.h>
 #include <QMap>
+#include <QVector>
 
 class FileHandler : public QObject
 {
@@ -27,7 +28,7 @@ public slots:
 private:
     void writeToLogFile(const QString& log); // writes log information to logFile
     // save and send data everyday
-    QMap<QString, LogParameter> logData;
+    QMap<QString, QVector<LogParameter> > logData;
     QFile *dataFile = nullptr; // the file date is currently written to. (timestamps)
     QFile *logFile = nullptr; // the file log information is written to.
     QString mainDataFolderName = ".muondetector-daemon/";
@@ -54,6 +55,7 @@ private:
     quint32 fileSize; // in MB
     QDateTime lastUploadDateTime;
     QTime dailyUploadTime;
+    bool onceLogFlag=true;
 
 private slots:
     void onUploadRemind();

@@ -104,6 +104,7 @@ void i2cDevice::setAddress(uint8_t address) {		        //pointer to our device o
 		res = ioctl(fHandle, I2C_SLAVE_FORCE, fAddress);
 		if (res<0) {
 			fMode = MODE_FAILED;
+			fIOErrors++;
 		}
 		else fMode = MODE_FORCE;
 	}
@@ -128,6 +129,7 @@ int i2cDevice::read(uint8_t* buf, int nBytes) {		//defines a function with a poi
 		fMode &= ~((uint8_t)MODE_UNREACHABLE);
 	}
 	else if (nread <= 0) {
+		fIOErrors++;
 		fMode |= MODE_UNREACHABLE;
 	}
 	return nread;				//uses the read funktion with the set parameters of the bool function
@@ -142,6 +144,7 @@ int i2cDevice::write(uint8_t* buf, int nBytes) {
 		fMode &= ~((uint8_t)MODE_UNREACHABLE);
 	}
 	else if (nwritten <= 0) {
+		fIOErrors++;
 		fMode |= MODE_UNREACHABLE;
 	}
 	return nwritten;

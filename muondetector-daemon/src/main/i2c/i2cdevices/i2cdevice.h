@@ -43,8 +43,9 @@ public:
 	void setAddress(uint8_t address);
 	uint8_t getAddress() const { return fAddress; }
 	static unsigned int getNrDevices() { return fNrDevices; }
-	unsigned int getNrBytesRead() { return fNrBytesRead; }
-	unsigned int getNrBytesWritten() { return fNrBytesWritten; }
+	unsigned int getNrBytesRead() const { return fNrBytesRead; }
+	unsigned int getNrBytesWritten() const { return fNrBytesWritten; }
+	unsigned int getNrIOErrors() const { return fIOErrors; }
 	static unsigned int getGlobalNrBytesRead() { return fGlobalNrBytesRead; }
 	static unsigned int getGlobalNrBytesWritten() { return fGlobalNrBytesWritten; }
 	static std::vector<i2cDevice*>& getGlobalDeviceList() { return fGlobalDeviceList; }
@@ -52,10 +53,10 @@ public:
 	uint8_t getStatus() const { return fMode; }
 	void lock(bool locked=true) { if (locked) fMode |= MODE_LOCKED; else fMode &= ~MODE_LOCKED; } 
 	
-	double getLastTimeInterval() { return fLastTimeInterval; }
+	double getLastTimeInterval() const { return fLastTimeInterval; }
 
 	void setDebugLevel(int level) { fDebugLevel = level; }
-	int getDebugLevel() { return fDebugLevel; }
+	int getDebugLevel() const { return fDebugLevel; }
 
 	void setTitle(const std::string& a_title) { fTitle = a_title; }
 	const std::string& getTitle() const { return fTitle; }
@@ -118,6 +119,7 @@ protected:
 	static std::vector<i2cDevice*> fGlobalDeviceList;
 	std::string fTitle="I2C device";
 	uint8_t fMode = MODE_NONE;
+	unsigned int fIOErrors=0;
 
 	// fuctions for measuring time intervals
 	void startTimer();

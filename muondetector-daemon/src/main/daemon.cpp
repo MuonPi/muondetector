@@ -576,7 +576,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		oled->setTextColor(Adafruit_SSD1306::WHITE);
 		oled->setCursor(0,2);
 		oled->print("*Cosmic Shower Det.*\n");
-		oled->print("V 1.0.2\n");
+		oled->print("V 1.0.3\n");
 		//  display.setTextColor(BLACK, WHITE); // 'inverted' text
 /*
 		struct timespec tNow;
@@ -682,6 +682,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 
 	// connect to the regular log timer signal to log several non-regularly polled parameters
 	connect(fileHandler, &FileHandler::logIntervalSignal, this, [this]() {
+		/*
 		double xorRate = 0.0;
 		if (!xorRatePoints.isEmpty()){
 			xorRate = xorRatePoints.back().y();
@@ -692,16 +693,23 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 			andRate = andRatePoints.back().y();
 		}
 		logParameter(LogParameter("rateAND", QString::number(andRate)+" Hz"));
-		if (lm75 && lm75->devicePresent()) logParameter(LogParameter("temperature", QString::number(lm75->getTemperature())+" degC"));
+		*/
+		emit logParameter(LogParameter("biasSwitch", QString::number(biasON), LogParameter::LOG_ON_CHANGE));
+		emit logParameter(LogParameter("preampEnable1", QString::number((int)preampStatus[0]), LogParameter::LOG_ON_CHANGE));
+		emit logParameter(LogParameter("preampEnable2", QString::number((int)preampStatus[1]), LogParameter::LOG_ON_CHANGE));
+		if (lm75 && lm75->devicePresent()) emit logParameter(LogParameter("temperature", QString::number(lm75->getTemperature())+" degC", LogParameter::LOG_AVERAGE));
+		
 		if (dac && dac->devicePresent()) {
-			logParameter(LogParameter("thresh1", QString::number(dacThresh[0])+" V"));
-			logParameter(LogParameter("thresh2", QString::number(dacThresh[1])+" V"));
-			logParameter(LogParameter("biasDAC", QString::number(biasVoltage)+" V"));
+			emit logParameter(LogParameter("thresh1", QString::number(dacThresh[0])+" V", LogParameter::LOG_ON_CHANGE));
+			emit logParameter(LogParameter("thresh2", QString::number(dacThresh[1])+" V", LogParameter::LOG_ON_CHANGE));
+			emit logParameter(LogParameter("biasDAC", QString::number(biasVoltage)+" V", LogParameter::LOG_ON_CHANGE));
 		}
-		if (pca && pca->devicePresent()) logParameter(LogParameter("interruptInputSwitch", "0x"+QString::number(pcaPortMask,16)));
+		
+		if (pca && pca->devicePresent()) emit logParameter(LogParameter("ubxInputSwitch", "0x"+QString::number(pcaPortMask,16), LogParameter::LOG_ON_CHANGE));
+		if (pigHandler!=nullptr) emit logParameter(LogParameter("gpioTriggerSelection", "0x"+QString::number((int)pigHandler->samplingTriggerSignal,16), LogParameter::LOG_ON_CHANGE));
 		logBiasValues();
 		if (adc && !(adc->getStatus() & i2cDevice::MODE_UNREACHABLE)) {
-			logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms"));
+			emit logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms", LogParameter::LOG_ON_CHANGE));
 			checkRescaleHisto(adcSampleTimeHisto, adc->getLastConvTime());
 			adcSampleTimeHisto.fill(adc->getLastConvTime());
 			sendHistogram(adcSampleTimeHisto);
@@ -740,6 +748,8 @@ Daemon::~Daemon() {
     if (adc!=nullptr){ delete adc; adc = nullptr; }
     if (eep!=nullptr){ delete eep; eep = nullptr; }
     if (calib!=nullptr){ delete calib; calib = nullptr; }
+    if (ubloxI2c!=nullptr){ delete ubloxI2c; ubloxI2c = nullptr; }
+    if (oled!=nullptr){ delete oled; oled = nullptr; }
     pigHandler.clear();
 }
 
@@ -775,13 +785,13 @@ void Daemon::connectToGps() {
 	connect(this, &Daemon::sendUbxMsg, qtGps, &QtSerialUblox::enqueueMsg);
 	connect(qtGps, &QtSerialUblox::UBXReceivedAckNak, this, &Daemon::UBXReceivedAckNak);
 	connect(qtGps, &QtSerialUblox::UBXreceivedMsgRateCfg, this, &Daemon::UBXReceivedMsgRateCfg);
-    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, &Daemon::sendUbxGeodeticPos);
-    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, this, &Daemon::gpsPropertyUpdatedGnss);
+    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, &Daemon::onGpsPropertyUpdatedGeodeticPos);
+    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, this, &Daemon::onGpsPropertyUpdatedGnss);
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedUint32, this, &Daemon::gpsPropertyUpdatedUint32);
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedInt32, this, &Daemon::gpsPropertyUpdatedInt32);
     connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedUint8, this, &Daemon::gpsPropertyUpdatedUint8);
-    connect(qtGps, &QtSerialUblox::gpsMonHW, this, &Daemon::gpsMonHWUpdated);
-    connect(qtGps, &QtSerialUblox::gpsMonHW2, this, &Daemon::gpsMonHW2Updated);
+    connect(qtGps, &QtSerialUblox::gpsMonHW, this, &Daemon::onGpsMonHWUpdated);
+    connect(qtGps, &QtSerialUblox::gpsMonHW2, this, &Daemon::onGpsMonHW2Updated);
     connect(qtGps, &QtSerialUblox::gpsVersion, this, &Daemon::UBXReceivedVersion);
 	connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Daemon::toConsole);
     connect(qtGps, &QtSerialUblox::UBXReceivedGnssConfig, this, &Daemon::onUBXReceivedGnssConfig);
@@ -798,66 +808,13 @@ void Daemon::connectToGps() {
 	connect(this, &Daemon::UBXSaveCfg, qtGps, &QtSerialUblox::UBXSaveCfg);
     connect(qtGps, &QtSerialUblox::UBXReceivedTimeTM2, this, &Daemon::onUBXReceivedTimeTM2);
 
+	connect(qtGps, &QtSerialUblox::UBXReceivedDops, this, [this](const UbxDopStruct& dops){
+		currentDOP=dops;
+		emit logParameter(LogParameter("positionDOP", QString::number(dops.pDOP/100.), LogParameter::LOG_AVERAGE));
+		emit logParameter(LogParameter("timeDOP", QString::number(dops.tDOP/100.), LogParameter::LOG_AVERAGE));
+	});
+
     // connect fileHandler related stuff
-    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, [this](GeodeticPos pos){
-		logParameter(LogParameter("geoLongitude", QString::number(1e-7*pos.lon,'f',5)+" deg"));
-		logParameter(LogParameter("geoLatitude", QString::number(1e-7*pos.lat,'f',5)+" deg"));
-		logParameter(LogParameter("geoHeightMSL", QString::number(1e-3*pos.hMSL,'f',2)+" m"));
-		logParameter(LogParameter("meanGeoHeightMSL", QString::number(geoHeightHisto.getMean(),'f',2)+" m"));
-		logParameter(LogParameter("geoHorAccuracy", QString::number(1e-3*pos.hAcc,'f',2)+" m"));
-		logParameter(LogParameter("geoVertAccuracy", QString::number(1e-3*pos.vAcc,'f',2)+" m"));
-		
-		if (1e-3*pos.vAcc<100.) {
-			checkRescaleHisto(geoHeightHisto, 1e-3*pos.hMSL);
-			geoHeightHisto.fill(1e-3*pos.hMSL /*, heightWeight */);
-			this->sendHistogram(geoHeightHisto);
-			if (currentDOP.vDOP>0) {
-				double heightWeight=100./currentDOP.vDOP;
-				checkRescaleHisto(weightedGeoHeightHisto, 1e-3*pos.hMSL);
-				weightedGeoHeightHisto.fill(1e-3*pos.hMSL , heightWeight );
-				this->sendHistogram(weightedGeoHeightHisto);
-			}
-		}
-		if (1e-3*pos.hAcc<100.) {
-			checkRescaleHisto(geoLonHisto, 1e-7*pos.lon);
-			geoLonHisto.fill(1e-7*pos.lon /*, heightWeight */);
-			checkRescaleHisto(geoLatHisto, 1e-7*pos.lat);
-			geoLatHisto.fill(1e-7*pos.lat /*, heightWeight */);
-			this->sendHistogram(geoLonHisto);
-			this->sendHistogram(geoLatHisto);
-		}
-		
-    });
-    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, this, [this](const std::vector<GnssSatellite>& satlist, std::chrono::duration<double> updateAge){
-        int allSats=0, usedSats=0, maxCnr=0;
-        if (satlist.size()) {
-			for (auto sat : satlist){
-				if (sat.fCnr>0) allSats++;
-				if (sat.fUsed) usedSats++;
-				if (sat.fCnr>maxCnr) maxCnr=sat.fCnr;
-			}
-		}
-        //qDebug() << "received satlist ok, size=" << satlist.size();
-        logParameter(LogParameter("sats",QString("%1").arg(allSats)));
-        logParameter(LogParameter("usedSats",QString("%1").arg(usedSats)));
-        logParameter(LogParameter("maxCNR",QString("%1").arg(maxCnr)));
-    });
-    
-    connect(qtGps, &QtSerialUblox::gpsMonHW, this, [this](uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags){
-		logParameter(LogParameter("preampNoise", QString::number(-noise)+" dBHz"));
-		logParameter(LogParameter("preampAGC", QString::number(agc)));
-		logParameter(LogParameter("antennaStatus", QString::number(antStatus)));
-		logParameter(LogParameter("antennaPower", QString::number(antPower)));
-		logParameter(LogParameter("jammingLevel", QString::number(jamInd/2.55,'f',1)+" %"));
-    });
-
-    connect(qtGps, &QtSerialUblox::UBXReceivedDops, this, [this](const UbxDopStruct& dops){
-	currentDOP=dops;
-	logParameter(LogParameter("positionDOP", QString::number(dops.pDOP/100.)));
-	logParameter(LogParameter("timeDOP", QString::number(dops.tDOP/100.)));
-    });
-
-    
     if (fileHandler != nullptr){
         connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
     }
@@ -877,7 +834,7 @@ void Daemon::connectToServer() {
 	connect(this->thread(), &QThread::finished, tcpThread, &QThread::quit);
 	connect(tcpConnection, &TcpConnection::error, this, &Daemon::displaySocketError);
 	connect(tcpConnection, &TcpConnection::toConsole, this, &Daemon::toConsole);
-	connect(tcpConnection, &TcpConnection::connectionTimeout, this, &Daemon::connectToServer);
+	//connect(tcpConnection, &TcpConnection::connectionTimeout, this, &Daemon::connectToServer);
 	//connect(this, &Daemon::sendMsg, tcpConnection, &TcpConnection::sendMsg);
 	//connect(this, &Daemon::posixTerminate, tcpConnection, &TcpConnection::onPosixTerminate);
 	//connect(tcpConnection, &TcpConnection::stoppedConnection, this, &Daemon::stoppedConnection);
@@ -901,10 +858,11 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 	connect(tcpConnection, &TcpConnection::receivedTcpMessage, this, &Daemon::receivedTcpMessage);
 	connect(tcpConnection, &TcpConnection::toConsole, this, &Daemon::toConsole);
 //	connect(tcpConnection, &TcpConnection::madeConnection, this, [this](QString, quint16, QString , quint16) { emit sendPollUbxMsg(MSG_MON_VER); });
+	connect(tcpConnection, &TcpConnection::madeConnection, this, &Daemon::onMadeConnection);
+	connect(tcpConnection, &TcpConnection::connectionTimeout, this, &Daemon::onStoppedConnection);
 	thread->start();
-//	madeConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort);
-	
-	
+
+/*	
 	emit sendPollUbxMsg(MSG_MON_VER);
 	emit sendPollUbxMsg(MSG_CFG_GNSS);
 	emit sendPollUbxMsg(MSG_CFG_NAV5);
@@ -917,6 +875,7 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 	sendDacThresh(1);
 	sendPcaChannel();
 	sendEventTriggerSelection();
+*/
 
 	pollAllUbxMsgRate();
 }
@@ -994,7 +953,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         uint8_t channel;
         float threshold;
         *(tcpMessage.dStream) >> channel >> threshold;
-        if (threshold<0.001)
+        if (threshold<0.005)
 			cout<<"Warning: setting DAC "<<channel<<" to 0!"<<endl;
         else setDacThresh(channel, threshold);
         return;
@@ -1020,6 +979,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> status;
         setBiasStatus(status);
         pulseHeightHisto.clear();
+        //sendBiasStatus();
         return;
     }
     if (msgID == biasRequestSig){
@@ -1037,6 +997,8 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
 			preampStatus[1]=status;
 			digitalWrite(GPIO_PINMAP[PREAMP_2], (uint8_t)status);
 		}
+        sendPreampStatus(0);
+        sendPreampStatus(1);
         return;
     }
     if (msgID == preampRequestSig){
@@ -1049,6 +1011,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
 		gainSwitch=status;
 		digitalWrite(GPIO_PINMAP[GAIN_HL], (uint8_t)status);
 		pulseHeightHisto.clear();
+		sendGainSwitchStatus();
 		return;
     }
     if (msgID == gainSwitchRequestSig){
@@ -1238,12 +1201,40 @@ void Daemon::receivedCalibItems(const std::vector<CalibStruct>& newCalibs) {
 }
 
 
-void Daemon::sendUbxGeodeticPos(GeodeticPos pos){
+void Daemon::onGpsPropertyUpdatedGeodeticPos(GeodeticPos pos){
     TcpMessage tcpMessage(geodeticPosSig);
     (*tcpMessage.dStream) << pos.iTOW << pos.lon << pos.lat
                           << pos.height << pos.hMSL << pos.hAcc
                           << pos.vAcc;
     emit sendTcpMessage(tcpMessage);
+    
+	emit logParameter(LogParameter("geoLongitude", QString::number(1e-7*pos.lon,'f',5)+" deg", LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("geoLatitude", QString::number(1e-7*pos.lat,'f',5)+" deg", LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("geoHeightMSL", QString::number(1e-3*pos.hMSL,'f',2)+" m", LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(geoHeightHisto.getMean(),'f',2)+" m", LogParameter::LOG_LATEST));
+	emit logParameter(LogParameter("geoHorAccuracy", QString::number(1e-3*pos.hAcc,'f',2)+" m", LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("geoVertAccuracy", QString::number(1e-3*pos.vAcc,'f',2)+" m", LogParameter::LOG_AVERAGE));
+		
+	if (1e-3*pos.vAcc<100.) {
+		checkRescaleHisto(geoHeightHisto, 1e-3*pos.hMSL);
+		geoHeightHisto.fill(1e-3*pos.hMSL /*, heightWeight */);
+		this->sendHistogram(geoHeightHisto);
+		if (currentDOP.vDOP>0) {
+			double heightWeight=100./currentDOP.vDOP;
+			checkRescaleHisto(weightedGeoHeightHisto, 1e-3*pos.hMSL);
+			weightedGeoHeightHisto.fill(1e-3*pos.hMSL , heightWeight );
+			this->sendHistogram(weightedGeoHeightHisto);
+		}
+	}
+	if (1e-3*pos.hAcc<100.) {
+		checkRescaleHisto(geoLonHisto, 1e-7*pos.lon);
+		geoLonHisto.fill(1e-7*pos.lon /*, heightWeight */);
+		checkRescaleHisto(geoLatHisto, 1e-7*pos.lat);
+		geoLatHisto.fill(1e-7*pos.lat /*, heightWeight */);
+		this->sendHistogram(geoLonHisto);
+		this->sendHistogram(geoLatHisto);
+	}
+
 }
 
 void Daemon::sendHistogram(const Histogram& hist){
@@ -1387,6 +1378,8 @@ void Daemon::onRateBufferReminder(){
     QPointF andPoint(secsSinceStart, andRate);
     xorRatePoints.append(xorPoint);
     andRatePoints.append(andPoint);
+    emit logParameter(LogParameter("rateXOR", QString::number(xorRate)+" Hz", LogParameter::LOG_AVERAGE));
+    emit logParameter(LogParameter("rateAND", QString::number(andRate)+" Hz", LogParameter::LOG_AVERAGE));
     while (xorRatePoints.size()>rateBufferTime/rateBufferInterval){
         xorRatePoints.pop_front();
     }
@@ -1489,7 +1482,10 @@ void Daemon::setBiasVoltage(float voltage) {
     if (verbose > 1){
         qDebug() << "change biasVoltage to " << voltage;
     }
-    if (dac && dac->devicePresent()) dac->setVoltage(DAC_BIAS, voltage);
+    if (dac && dac->devicePresent()) {
+		dac->setVoltage(DAC_BIAS, voltage);
+		//emit logParameter(LogParameter("biasDAC", QString::number(voltage)+" V", LogParameter::LOG_ON_CHANGE));
+    }
     clearRates();
     sendBiasVoltage();
 }
@@ -1507,6 +1503,7 @@ void Daemon::setBiasStatus(bool status){
     else {
         digitalWrite(GPIO_PINMAP[UBIAS_EN], (HW_VERSION==1)?0:1);
     }
+//    emit logParameter(LogParameter("biasSwitch", QString::number(status), LogParameter::LOG_ON_CHANGE));
     clearRates();
     sendBiasStatus();
 }
@@ -1521,7 +1518,10 @@ void Daemon::setDacThresh(uint8_t channel, float threshold) {
     }
     dacThresh[channel] = threshold;
     clearRates();
-    if (dac->devicePresent()) dac->setVoltage(channel, threshold);
+    if (dac->devicePresent()) {
+		dac->setVoltage(channel, threshold);
+		//emit logParameter(LogParameter("thresh"+QString::number(channel), QString::number(dacThresh[channel])+" V", LogParameter::LOG_EVERY));
+	}
     sendDacThresh(channel);
 }
 
@@ -1701,15 +1701,20 @@ void Daemon::UBXReceivedMsgRateCfg(uint16_t msgID, uint8_t rate) {
     }
 }
 
-void Daemon::gpsMonHWUpdated(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags)
+void Daemon::onGpsMonHWUpdated(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags)
 {
     TcpMessage tcpMessage(gpsMonHWSig);
     (*tcpMessage.dStream) << (quint16)noise << (quint16)agc << (quint8) antStatus
     << (quint8)antPower << (quint8)jamInd << (quint8)flags;
     emit sendTcpMessage(tcpMessage);
+	emit logParameter(LogParameter("preampNoise", QString::number(-noise)+" dBHz", LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("preampAGC", QString::number(agc), LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("antennaStatus", QString::number(antStatus), LogParameter::LOG_LATEST));
+	emit logParameter(LogParameter("antennaPower", QString::number(antPower), LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("jammingLevel", QString::number(jamInd/2.55,'f',1)+" %", LogParameter::LOG_AVERAGE));
 }
 
-void Daemon::gpsMonHW2Updated(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t magQ, uint8_t cfgSrc)
+void Daemon::onGpsMonHW2Updated(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t magQ, uint8_t cfgSrc)
 {
     TcpMessage tcpMessage(gpsMonHW2Sig);
     (*tcpMessage.dStream) << (qint8)ofsI << (quint8)magI << (qint8)ofsQ
@@ -1717,7 +1722,7 @@ void Daemon::gpsMonHW2Updated(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t ma
     emit sendTcpMessage(tcpMessage);
 }
 
-void Daemon::gpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
+void Daemon::onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
 	std::chrono::duration<double> lastUpdated) {
 	vector<GnssSatellite> visibleSats = sats;
 	std::sort(visibleSats.begin(), visibleSats.end(), GnssSatellite::sortByCnr);
@@ -1743,6 +1748,18 @@ void Daemon::gpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
 	emit sendTcpMessage(tcpMessage);
 	nrSats=QVariant(N);
 	nrVisibleSats=QVariant(visibleSats.size());
+	
+	int usedSats=0, maxCnr=0;
+	if (visibleSats.size()) {
+		for (auto sat : visibleSats){
+			if (sat.fUsed) usedSats++;
+			if (sat.fCnr>maxCnr) maxCnr=sat.fCnr;
+		}
+	}
+        //qDebug() << "received satlist ok, size=" << satlist.size();
+	emit logParameter(LogParameter("sats",QString("%1").arg(visibleSats.size()), LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("usedSats",QString("%1").arg(usedSats), LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("maxCNR",QString("%1").arg(maxCnr), LogParameter::LOG_AVERAGE));
 }
 
 void Daemon::onUBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssConfigStruct>& gnssConfigs) {
@@ -1778,8 +1795,8 @@ void Daemon::onUBXReceivedTxBuf(uint8_t txUsage, uint8_t txPeakUsage) {
 	*(tcpMessage->dStream) << (quint8)txUsage << (quint8)txPeakUsage;
 	emit sendTcpMessage(*tcpMessage);
 	delete tcpMessage;
-	logParameter(LogParameter("TXBufUsage", QString::number(txUsage)+" %"));
-	logParameter(LogParameter("maxTXBufUsage", QString::number(txPeakUsage)+" %"));
+	emit logParameter(LogParameter("TXBufUsage", QString::number(txUsage)+" %", LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("maxTXBufUsage", QString::number(txPeakUsage)+" %", LogParameter::LOG_LATEST));
 }
 
 void Daemon::onUBXReceivedRxBuf(uint8_t rxUsage, uint8_t rxPeakUsage) {
@@ -1792,8 +1809,8 @@ void Daemon::onUBXReceivedRxBuf(uint8_t rxUsage, uint8_t rxPeakUsage) {
 	*(tcpMessage->dStream) << (quint8)rxUsage << (quint8)rxPeakUsage;
 	emit sendTcpMessage(*tcpMessage);
 	delete tcpMessage;
-	logParameter(LogParameter("RXBufUsage", QString::number(rxUsage)+" %"));
-	logParameter(LogParameter("maxRXBufUsage", QString::number(rxPeakUsage)+" %"));
+	emit logParameter(LogParameter("RXBufUsage", QString::number(rxUsage)+" %", LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("maxRXBufUsage", QString::number(rxPeakUsage)+" %", LogParameter::LOG_LATEST));
 }
 
 void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double> updateAge,
@@ -1812,6 +1829,7 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "quant error: " << (int)data << " ps" << endl;
 		break;
+	/*
 	case 'b':
 		if (verbose>2)
 			cout << std::chrono::system_clock::now()
@@ -1821,7 +1839,7 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
 		*(tcpMessage->dStream) << (quint8)data;
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
-		logParameter(LogParameter("TXBufUsage", QString::number(data)+" %"));
+		emit logParameter(LogParameter("TXBufUsage", QString::number(data)+" %", LogParameter::LOG_LATEST));
 		break;
 	case 'p':
 		if (verbose>2)
@@ -1832,8 +1850,9 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
 		*(tcpMessage->dStream) << (quint8)data;
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
-		logParameter(LogParameter("maxTXBufUsage", QString::number(data)+" %"));
+		emit logParameter(LogParameter("maxTXBufUsage", QString::number(data)+" %", LogParameter::LOG_LATEST));
 		break;
+	*/
 	case 'f':
 		if (verbose>2)
 			cout << std::chrono::system_clock::now()
@@ -1843,7 +1862,7 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
 		*(tcpMessage->dStream) << (quint8)data;
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
-		logParameter(LogParameter("fixStatus", QString::number(data)));
+		emit logParameter(LogParameter("fixStatus", QString::number(data), LogParameter::LOG_LATEST));
 		fixStatus=QVariant(data);
 		break;
 	default:
@@ -1864,7 +1883,7 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
 		*(tcpMessage->dStream) << (quint32)data;
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
-		logParameter(LogParameter("timeAccuracy", QString::number(data)+" ns"));
+		emit logParameter(LogParameter("timeAccuracy", QString::number(data)+" ns", LogParameter::LOG_AVERAGE));
 		break;
 	case 'f':
 		if (verbose>2)
@@ -1875,7 +1894,7 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
 		*(tcpMessage->dStream) << (quint32)data;
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
-		logParameter(LogParameter("freqAccuracy", QString::number(data)+" ps/s"));
+		emit logParameter(LogParameter("freqAccuracy", QString::number(data)+" ps/s", LogParameter::LOG_AVERAGE));
 		break;
 	case 'u':
 		if (verbose>2)
@@ -1886,7 +1905,7 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
 		*(tcpMessage->dStream) << (quint32)data;
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
-		logParameter(LogParameter("ubloxUptime", QString::number(data)+" s"));
+		emit logParameter(LogParameter("ubloxUptime", QString::number(data)+" s", LogParameter::LOG_LATEST));
 		break;
 	case 'c':
 		if (verbose>2)
@@ -1911,14 +1930,14 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
 			cout << std::chrono::system_clock::now()
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "clock drift: " << data << " ns/s" << endl;
-		logParameter(LogParameter("clockDrift", QString::number(data)+" ns/s"));
+		logParameter(LogParameter("clockDrift", QString::number(data)+" ns/s", LogParameter::LOG_AVERAGE));
 		break;
 	case 'b':
 		if (verbose>2)
 			cout << std::chrono::system_clock::now()
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "clock bias: " << data << " ns" << endl;
-		logParameter(LogParameter("clockBias", QString::number(data)+" ns"));
+		emit logParameter(LogParameter("clockBias", QString::number(data)+" ns", LogParameter::LOG_AVERAGE));
 		break;
 	default:
 		break;
@@ -1932,9 +1951,9 @@ void Daemon::UBXReceivedVersion(const QString& swString, const QString& hwString
     TcpMessage tcpMessage(gpsVersionSig);
     (*tcpMessage.dStream) << swString << hwString << protString;
     emit sendTcpMessage(tcpMessage);
-	logParameter(LogParameter("UBX_SW_Version", swString));
-	logParameter(LogParameter("UBX_HW_Version", hwString));
-	logParameter(LogParameter("UBX_Prot_Version", protString));
+	logParameter(LogParameter("UBX_SW_Version", swString, LogParameter::LOG_ONCE));
+	logParameter(LogParameter("UBX_HW_Version", hwString, LogParameter::LOG_ONCE));
+	logParameter(LogParameter("UBX_Prot_Version", protString, LogParameter::LOG_ONCE));
 	if (initialVersionInfo) {
 		configGpsForVersion();
 	}
@@ -1955,9 +1974,29 @@ void Daemon::gpsConnectionError() {
 
 
 // ALL OTHER UTITLITY FUNCTIONS
-void Daemon::stoppedConnection(QString hostName, quint16 port, quint32 connectionTimeout, quint32 connectionDuration) {
-	cout << "stopped connection with " << hostName << ":" << port << endl;
-	cout << "connection timeout at " << connectionTimeout << "  connection lasted " << connectionDuration << "s" << endl;
+void Daemon::onMadeConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort) {
+	if (verbose>3) cout << "established connection with " << remotePeerAddress << ":" << remotePeerPort << endl;
+
+	emit sendPollUbxMsg(MSG_MON_VER);
+	emit sendPollUbxMsg(MSG_CFG_GNSS);
+	emit sendPollUbxMsg(MSG_CFG_NAV5);
+	emit sendPollUbxMsg(MSG_CFG_TP5);
+	emit sendPollUbxMsg(MSG_CFG_NAVX5);
+
+	sendBiasStatus();
+	sendBiasVoltage();
+	sendDacThresh(0);
+	sendDacThresh(1);
+	sendPcaChannel();
+	sendEventTriggerSelection();
+}
+
+void Daemon::onStoppedConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort,
+		quint32 timeoutTime, quint32 connectionDuration) {
+	if (verbose>3) {
+		cout << "stopped connection with " << remotePeerAddress << ":" << remotePeerPort << endl;
+		cout << "connection timeout at " << timeoutTime << "  connection lasted " << connectionDuration << "s" << endl;
+	}
 }
 
 void Daemon::displayError(QString message)
@@ -2036,8 +2075,8 @@ void Daemon::logBiasValues()
 			double vdiv;
 			istr >> vdiv;
 			vdiv/=100.;
-			logParameter(LogParameter("vbias1", QString::number(v1*vdiv)+" V"));
-			logParameter(LogParameter("vbias2", QString::number(v2*vdiv)+" V"));
+			logParameter(LogParameter("vbias1", QString::number(v1*vdiv)+" V", LogParameter::LOG_AVERAGE));
+			logParameter(LogParameter("vbias2", QString::number(v2*vdiv)+" V", LogParameter::LOG_AVERAGE));
             double ubias=v2*vdiv;
 			
 			CalibStruct flagItem=calib->getCalibItem("CALIB_FLAGS");
@@ -2059,11 +2098,11 @@ void Daemon::logBiasValues()
 				rsense /= 10.*1000.; // yields Rsense in MOhm
 				double icorr = ubias*islope+ioffs;
 				double ibias = (v1-v2)*vdiv/rsense-icorr;
-				logParameter(LogParameter("ibias", QString::number(ibias)+" uA"));
+				logParameter(LogParameter("ibias", QString::number(ibias)+" uA", LogParameter::LOG_AVERAGE));
 			}
 		} else {
-			logParameter(LogParameter("vadc3", QString::number(v1)+" V"));
-			logParameter(LogParameter("vadc4", QString::number(v2)+" V"));
+			logParameter(LogParameter("vadc3", QString::number(v1)+" V", LogParameter::LOG_AVERAGE));
+			logParameter(LogParameter("vadc4", QString::number(v2)+" V", LogParameter::LOG_AVERAGE));
 		}
 	}
 }

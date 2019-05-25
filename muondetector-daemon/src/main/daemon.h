@@ -83,7 +83,9 @@ public slots:
     void displayError(QString message);
     void toConsole(const QString& data);
     void gpsToConsole(const QString& data);
-    void stoppedConnection(QString hostName, quint16 port, quint32 connectionTimeout, quint32 connectionDuration);
+    void onMadeConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort);
+    void onStoppedConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort,
+		quint32 timeoutTime, quint32 connectionDuration);
     void UBXReceivedAckNak(uint16_t ackedMsgID, uint16_t ackedCfgMsgID);
     void UBXReceivedMsgRateCfg(uint16_t msgID, uint8_t rate);
     void gpsConnectionError();
@@ -95,16 +97,16 @@ public slots:
 		char propertyName);
 	void onUBXReceivedTxBuf(uint8_t txUsage, uint8_t txPeakUsage);
 	void onUBXReceivedRxBuf(uint8_t rxUsage, uint8_t rxPeakUsage);
-    void gpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
+    void onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
         std::chrono::duration<double> lastUpdated);
     void onUBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssConfigStruct>& gnssConfigs);
     void onUBXReceivedTP5(const UbxTimePulseStruct& tp);
-    void gpsMonHWUpdated(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags);
-    void gpsMonHW2Updated(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t magQ, uint8_t cfgSrc);
+    void onGpsMonHWUpdated(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags);
+    void onGpsMonHW2Updated(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t magQ, uint8_t cfgSrc);
     void receivedTcpMessage(TcpMessage tcpMessage);
     void pollAllUbxMsgRate();
     void sendGpioPinEvent(uint8_t gpio_pin);
-    void sendUbxGeodeticPos(GeodeticPos pos);
+    void onGpsPropertyUpdatedGeodeticPos(GeodeticPos pos);
     void UBXReceivedVersion(const QString& swString, const QString& hwString, const QString& protString);
     void sampleAdc0Event();
     void sampleAdcEvent(uint8_t channel);
@@ -239,6 +241,7 @@ private:
     UbxDopStruct currentDOP;
     timespec lastTimestamp = { 0, 0 };
     Property nrSats, nrVisibleSats, fixStatus;
+    QVector<QTcpSocket*> peerList;
 };
 
 #endif // DAEMON_H

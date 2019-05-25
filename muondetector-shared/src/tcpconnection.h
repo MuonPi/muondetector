@@ -8,6 +8,7 @@
 #include <QTimer>
 #include <QFile>
 #include <QPointer>
+#include <vector>
 
 class MUONDETECTORSHARED TcpConnection : public QObject
 {
@@ -20,23 +21,25 @@ public:
 		int pingInterval = 5000, QObject *parent = 0);
 	~TcpConnection();
 	void delay(int millisecondsWait);
+	const QString& getPeerAddress() const { return peerAddress; }
+	quint16 getPeerPort() const { return peerPort; }
+	QTcpSocket* getTcpSocket() { return tcpSocket; }
+	uint32_t getNrBytesRead() const { return bytesRead; }
+	uint32_t getNrBytesWritten() const { return bytesWritten; }
+	time_t firstConnectionTime() const { return firstConnection; }
+	
 	// void startTimePulser();
 
 signals:
 	void madeConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort);
 	void connectionTimeout(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort,
 		quint32 timeoutTime, quint32 connectionDuration);
+//	void connectionTimeout(QString remotePeerAddress, quint16 remotePeerPort,
+//		quint32 timeoutTime, quint32 connectionDuration);
 	void error(int socketError, const QString message);
 	void toConsole(QString data);
 	// void stopTimePulser();
 	void connected();
-	/*
-	  void i2CProperties(I2cProperty i2cProperty, bool setProperties);
-	  void requestI2CProperties();
-	  void gpioRisingEdge(quint8 pin, quint32 tick);
-	  void requestUbxMsgRate();
-	  void ubxMsgRates(QMap<uint16_t,int> msgRateCfgs);
-	*/
 	void receivedTcpMessage(TcpMessage tcpMessage);
 
 public slots:
@@ -79,5 +82,11 @@ private:
     QPointer<QTimer> t;
 	time_t lastConnection;
 	time_t firstConnection;
+	uint32_t bytesRead=0, bytesWritten=0;
+/*
+	static std::vector<TcpConnection*> globalConnectionList;
+	static uint32_t globalNrBytesRead;
+	static uint32_t globalNrBytesWritten;
+*/	
 };
 #endif // TCPCONNECTION_H

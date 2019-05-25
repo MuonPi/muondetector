@@ -8,6 +8,7 @@
 #include <QTimer>
 #include <QDir>
 #include <QCryptographicHash>
+#include <QByteArray>
 #include <crypto++/aes.h>
 #include <crypto++/modes.h>
 #include <crypto++/filters.h>
@@ -78,7 +79,11 @@ static QByteArray getMacAddressByteArray(){
     //return QByteArray(getMacAddress().toStdString().c_str());
 //    return QByteArray::fromStdString(getMacAddress().toStdString());
     QString mac=getMacAddress();
-    return QByteArray::fromRawData(mac.toStdString().c_str(),mac.size());
+    //qDebug()<<"MAC address: "<<mac;
+    QByteArray byteArray;
+    byteArray.append(mac);
+    return byteArray;
+    //return QByteArray::fromRawData(mac.toStdString().c_str(),mac.size());
 }
 
 static QString dateStringNow(){
@@ -97,7 +102,9 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
     QDir temp;
     QString fullPath = temp.homePath()+"/"+mainDataFolderName;
     QCryptographicHash hashFunction(QCryptographicHash::Sha3_256);
-    hashedMacAddress = QString(hashFunction.hash(getMacAddressByteArray(), QCryptographicHash::Sha3_224).toHex());
+//    hashedMacAddress = QString(hashFunction.hash(getMacAddressByteArray(), QCryptographicHash::Sha3_224).toHex());
+    hashedMacAddress = QString(QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex());
+    //qDebug()<<"hashed MAC: "<<hashedMacAddress;
     fullPath += hashedMacAddress;
     configPath = fullPath+"/";
     configFilePath = fullPath + "/currentWorkingFileInformation.conf";
@@ -147,15 +154,108 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
 
 // SLOTS
 void FileHandler::onReceivedLogParameter(const LogParameter& log){
-    writeToLogFile(dateStringNow()+" "+QString(log.name()+" "+log.value()+"\n"));
+//    writeToLogFile(dateStringNow()+" "+QString(log.name()+" "+log.value()+"\n"));
 //    LogParameter localLog(log);
 //    localLog.setUpdatedRecently(true);
-    logData.insert(log.name(),log);
-    logData[log.name()].setUpdatedRecently(true);
+    if (log.logType()==LogParameter::LOG_NEVER) {
+		// do nothing, just return
+		return;
+	}
+    if (log.logType()==LogParameter::LOG_EVERY) {
+		// directly log to file since LOG_EVERY attribute is set
+		// no need to store in buffer, just return after logging
+		writeToLogFile(dateStringNow()+" "+QString(log.name()+" "+log.value()+"\n"));
+		return;
+	} else {
+		// save to buffer
+		if (log.logType()==LogParameter::LOG_ONCE) {
+			// don't save if a LOG_ONCE param with this name is already in buffer
+			//if (logData.find(log.name())!=logData.end()) return;
+		}
+		logData[log.name()].push_back(log);
+		logData[log.name()].back().setUpdatedRecently(true);
+	}
 }
 
 void FileHandler::onLogRemind(){
+	if (logFile==nullptr) return;
 	emit logIntervalSignal();
+	// loop over the map with all accumulated parameters since last log reminder
+	for (auto it=logData.begin(); it != logData.end();/* no increment here since we erase and invalidate iterators within the loop */) {
+		QString name=it.key();
+		QVector<LogParameter> parVector=it.value();
+		// check if name string is set but no entry exists. This should not happen
+		if (parVector.isEmpty()) {
+			++it;
+			continue;
+		}
+		
+		if (parVector.back().logType()==LogParameter::LOG_LATEST) {
+			// easy to write only the last value to file
+			writeToLogFile(dateStringNow()+" "+name+" "+parVector.back().value()+"\n");
+			it=logData.erase(it);
+		} else if (parVector.back().logType()==LogParameter::LOG_AVERAGE) {
+			// here we loop over all values in the vector for the current parameter and do the averaging
+			double sum=0.;
+			bool ok=false;
+			// parse last field of value string
+			QString unitString=parVector.back().value().section(" ",-1,-1);
+			// compare with first field
+			if (unitString.compare(parVector.back().value().section(" ",0,0))==0) {
+				// unit and value are identical, so there is probably no unit suffix
+				// set unit to empty string
+				unitString="";
+			}
+			// do the averaging
+			for (int i=0; i<parVector.size(); i++) {
+				QString valString=parVector[i].value();
+				QString str=valString.section(" ",0,0);
+				// convert to double with error checking
+				double val=str.toDouble(&ok);
+				if (!ok) break;
+				sum+=val;
+			}
+			if (ok) {
+				sum/=parVector.size();
+				writeToLogFile(dateStringNow()+" "+QString(name+" "+QString::number(sum)+" "+unitString+"\n"));
+			}
+			it=logData.erase(it);
+		} else if (parVector.back().logType()==LogParameter::LOG_ONCE) {
+			// we want to log only one time per daemon lifetime || file change
+			if (onceLogFlag || parVector.front().updatedRecently()) {
+				writeToLogFile(dateStringNow()+" "+name+" "+parVector.back().value()+"\n");
+			}
+			while (parVector.size()>2) {
+				parVector.pop_front();
+			}
+			parVector.front().setUpdatedRecently(false);
+			logData[name]=parVector;
+			++it;
+		} else if (parVector.back().logType()==LogParameter::LOG_ON_CHANGE) {
+			// we want to log only if one value differs from the first entry
+			// first entry is reference value
+			if (onceLogFlag || parVector.front().updatedRecently()) {
+				// log the first time anyway
+				writeToLogFile(dateStringNow()+" "+name+" "+parVector.back().value()+"\n");
+			} else {
+				for (int i=1; i<parVector.size(); i++) {
+					if (parVector[i].value().compare(parVector.front().value())!=0) {
+						// found difference -> log it
+						writeToLogFile(dateStringNow()+" "+name+" "+parVector[i].value()+"\n");
+						parVector.replace(0,parVector[i]);
+					}
+				}
+			}
+			while (parVector.size()>1) {
+				parVector.pop_back();
+			}
+			parVector.front().setUpdatedRecently(false);
+			logData[name]=parVector;
+			++it;
+		} else ++it;
+	}
+	onceLogFlag=false;
+	//logData.clear();
 }
 
 void FileHandler::onUploadRemind(){
@@ -209,6 +309,7 @@ bool FileHandler::openFiles(bool writeHeader){
         dataOut << "#rising               falling               accEst valid timebase utc\n";
         QTextStream logOut(logFile);
         logOut << "#temperature ... etc.\n";
+        onceLogFlag=true;
     }
     return true;
 }
