@@ -44,20 +44,20 @@ int64_t msecdiff(timespec &ts, timespec &st){
 }
 
 static QVector<uint16_t> allMsgCfgID({
-	//   MSG_CFG_ANT, MSG_CFG_CFG, MSG_CFG_DAT, MSG_CFG_DOSC,
-	//   MSG_CFG_DYNSEED, MSG_CFG_ESRC, MSG_CFG_FIXSEED, MSG_CFG_GEOFENCE,
-	//   MSG_CFG_GNSS, MSG_CFG_INF, MSG_CFG_ITFM, MSG_CFG_LOGFILTER,
-	//   MSG_CFG_MSG, MSG_CFG_NAV5, MSG_CFG_NAVX5, MSG_CFG_NMEA,
-	//   MSG_CFG_ODO, MSG_CFG_PM2, MSG_CFG_PMS, MSG_CFG_PRT, MSG_CFG_PWR,
-	//   MSG_CFG_RATE, MSG_CFG_RINV, MSG_CFG_RST, MSG_CFG_RXM, MSG_CFG_SBAS,
-	//   MSG_CFG_SMGR, MSG_CFG_TMODE2, MSG_CFG_TP5, MSG_CFG_TXSLOT, MSG_CFG_USB
-		 MSG_TIM_TM2,MSG_TIM_TP,
-		 MSG_NAV_CLOCK, MSG_NAV_DGPS, MSG_NAV_AOPSTATUS, MSG_NAV_DOP,
-		 MSG_NAV_POSECEF, MSG_NAV_POSLLH, MSG_NAV_PVT, MSG_NAV_SBAS, MSG_NAV_SOL,
-		 MSG_NAV_STATUS, MSG_NAV_SVINFO, MSG_NAV_TIMEGPS, MSG_NAV_TIMEUTC, MSG_NAV_VELECEF,
-		 MSG_NAV_VELNED, /* MSG_NAV_SAT, */
-		 MSG_MON_HW, MSG_MON_HW2, MSG_MON_IO, MSG_MON_MSGPP,
-         MSG_MON_RXBUF, MSG_MON_RXR, MSG_MON_TXBUF
+	//   UBX_CFG_ANT, UBX_CFG_CFG, UBX_CFG_DAT, UBX_CFG_DOSC,
+	//   UBX_CFG_DYNSEED, UBX_CFG_ESRC, UBX_CFG_FIXSEED, UBX_CFG_GEOFENCE,
+	//   UBX_CFG_GNSS, UBX_CFG_INF, UBX_CFG_ITFM, UBX_CFG_LOGFILTER,
+	//   UBX_CFG_MSG, UBX_CFG_NAV5, UBX_CFG_NAVX5, UBX_CFG_NMEA,
+	//   UBX_CFG_ODO, UBX_CFG_PM2, UBX_CFG_PMS, UBX_CFG_PRT, UBX_CFG_PWR,
+	//   UBX_CFG_RATE, UBX_CFG_RINV, UBX_CFG_RST, UBX_CFG_RXM, UBX_CFG_SBAS,
+	//   UBX_CFG_SMGR, UBX_CFG_TMODE2, UBX_CFG_TP5, UBX_CFG_TXSLOT, UBX_CFG_USB
+		 UBX_TIM_TM2,UBX_TIM_TP,
+		 UBX_NAV_CLOCK, UBX_NAV_DGPS, UBX_NAV_AOPSTATUS, UBX_NAV_DOP,
+		 UBX_NAV_POSECEF, UBX_NAV_POSLLH, UBX_NAV_PVT, UBX_NAV_SBAS, UBX_NAV_SOL,
+		 UBX_NAV_STATUS, UBX_NAV_SVINFO, UBX_NAV_TIMEGPS, UBX_NAV_TIMEUTC, UBX_NAV_VELECEF,
+		 UBX_NAV_VELNED, /* UBX_NAV_SAT, */
+		 UBX_MON_HW, UBX_MON_HW2, UBX_MON_IO, UBX_MON_MSGPP,
+         UBX_MON_RXBUF, UBX_MON_RXR, UBX_MON_TXBUF
 	});
 
 
@@ -695,8 +695,9 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		logParameter(LogParameter("rateAND", QString::number(andRate)+" Hz"));
 		*/
 		emit logParameter(LogParameter("biasSwitch", QString::number(biasON), LogParameter::LOG_ON_CHANGE));
-		emit logParameter(LogParameter("preampEnable1", QString::number((int)preampStatus[0]), LogParameter::LOG_ON_CHANGE));
-		emit logParameter(LogParameter("preampEnable2", QString::number((int)preampStatus[1]), LogParameter::LOG_ON_CHANGE));
+		emit logParameter(LogParameter("preampSwitch1", QString::number((int)preampStatus[0]), LogParameter::LOG_ON_CHANGE));
+		emit logParameter(LogParameter("preampSwitch2", QString::number((int)preampStatus[1]), LogParameter::LOG_ON_CHANGE));
+		emit logParameter(LogParameter("gainSwitch", QString::number((int)gainSwitch), LogParameter::LOG_ON_CHANGE));
 		if (lm75 && lm75->devicePresent()) emit logParameter(LogParameter("temperature", QString::number(lm75->getTemperature())+" degC", LogParameter::LOG_AVERAGE));
 		
 		if (dac && dac->devicePresent()) {
@@ -709,9 +710,11 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		if (pigHandler!=nullptr) emit logParameter(LogParameter("gpioTriggerSelection", "0x"+QString::number((int)pigHandler->samplingTriggerSignal,16), LogParameter::LOG_ON_CHANGE));
 		logBiasValues();
 		if (adc && !(adc->getStatus() & i2cDevice::MODE_UNREACHABLE)) {
-			emit logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms", LogParameter::LOG_ON_CHANGE));
+/*
+ 			emit logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms", LogParameter::LOG_ON_CHANGE));
 			checkRescaleHisto(adcSampleTimeHisto, adc->getLastConvTime());
 			adcSampleTimeHisto.fill(adc->getLastConvTime());
+*/
 			sendHistogram(adcSampleTimeHisto);
 			sendHistogram(pulseHeightHisto);
 		}
@@ -857,17 +860,17 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
     connect(this, &Daemon::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
 	connect(tcpConnection, &TcpConnection::receivedTcpMessage, this, &Daemon::receivedTcpMessage);
 	connect(tcpConnection, &TcpConnection::toConsole, this, &Daemon::toConsole);
-//	connect(tcpConnection, &TcpConnection::madeConnection, this, [this](QString, quint16, QString , quint16) { emit sendPollUbxMsg(MSG_MON_VER); });
+//	connect(tcpConnection, &TcpConnection::madeConnection, this, [this](QString, quint16, QString , quint16) { emit sendPollUbxMsg(UBX_MON_VER); });
 	connect(tcpConnection, &TcpConnection::madeConnection, this, &Daemon::onMadeConnection);
 	connect(tcpConnection, &TcpConnection::connectionTimeout, this, &Daemon::onStoppedConnection);
 	thread->start();
 
 /*	
-	emit sendPollUbxMsg(MSG_MON_VER);
-	emit sendPollUbxMsg(MSG_CFG_GNSS);
-	emit sendPollUbxMsg(MSG_CFG_NAV5);
-	emit sendPollUbxMsg(MSG_CFG_TP5);
-	emit sendPollUbxMsg(MSG_CFG_NAVX5);
+	emit sendPollUbxMsg(UBX_MON_VER);
+	emit sendPollUbxMsg(UBX_CFG_GNSS);
+	emit sendPollUbxMsg(UBX_CFG_NAV5);
+	emit sendPollUbxMsg(UBX_CFG_TP5);
+	emit sendPollUbxMsg(UBX_CFG_NAVX5);
 
 	sendBiasStatus();
 	sendBiasVoltage();
@@ -956,6 +959,8 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         if (threshold<0.005)
 			cout<<"Warning: setting DAC "<<channel<<" to 0!"<<endl;
         else setDacThresh(channel, threshold);
+        sendDacThresh(DAC_TH1);
+        sendDacThresh(DAC_TH2);
         return;
 	}
     if (msgID == threshRequestSig){
@@ -968,6 +973,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> voltage;
         setBiasVoltage(voltage);
         pulseHeightHisto.clear();
+        sendBiasVoltage();
         return;
     }
     if (msgID == biasVoltageRequestSig){
@@ -979,7 +985,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> status;
         setBiasStatus(status);
         pulseHeightHisto.clear();
-        //sendBiasStatus();
+        sendBiasStatus();
         return;
     }
     if (msgID == biasRequestSig){
@@ -992,10 +998,12 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         if (channel==0) {
 			preampStatus[0]=status;
 			digitalWrite(GPIO_PINMAP[PREAMP_1], (uint8_t)status);
+			emit logParameter(LogParameter("preampSwitch1", QString::number((int)preampStatus[0]), LogParameter::LOG_EVERY));
 			pulseHeightHisto.clear();
 		} else if (channel==1) {
 			preampStatus[1]=status;
 			digitalWrite(GPIO_PINMAP[PREAMP_2], (uint8_t)status);
+			emit logParameter(LogParameter("preampSwitch2", QString::number((int)preampStatus[1]), LogParameter::LOG_EVERY));
 		}
         sendPreampStatus(0);
         sendPreampStatus(1);
@@ -1011,6 +1019,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
 		gainSwitch=status;
 		digitalWrite(GPIO_PINMAP[GAIN_HL], (uint8_t)status);
 		pulseHeightHisto.clear();
+		emit logParameter(LogParameter("gainSwitch", QString::number((int)gainSwitch), LogParameter::LOG_EVERY));
 		sendGainSwitchStatus();
 		return;
     }
@@ -1125,19 +1134,19 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
 		}
 		emit setGnssConfig(configs);
 		usleep(150000L);
-		emit sendPollUbxMsg(MSG_CFG_GNSS);
+		emit sendPollUbxMsg(UBX_CFG_GNSS);
     }
     if (msgID == gpsCfgTP5Sig){
         UbxTimePulseStruct tp;
         *(tcpMessage.dStream) >> tp;
         emit UBXSetCfgTP5(tp);
-        emit sendPollUbxMsg(MSG_CFG_TP5);
+        emit sendPollUbxMsg(UBX_CFG_TP5);
         return;
     }
     if (msgID == ubxSaveCfgSig){
         emit UBXSaveCfg();
-        emit sendPollUbxMsg(MSG_CFG_TP5);
-		emit sendPollUbxMsg(MSG_CFG_GNSS);
+        emit sendPollUbxMsg(UBX_CFG_TP5);
+		emit sendPollUbxMsg(UBX_CFG_GNSS);
         return;
     }
     if (msgID == quitConnectionSig){
@@ -1424,6 +1433,9 @@ void Daemon::sampleAdc0Event(){
     *(tcpMessage.dStream) << (quint8)channel << value;
     emit sendTcpMessage(tcpMessage);
     pulseHeightHisto.fill(value);
+	emit logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms", LogParameter::LOG_AVERAGE));
+	checkRescaleHisto(adcSampleTimeHisto, adc->getLastConvTime());
+	adcSampleTimeHisto.fill(adc->getLastConvTime());
 }
 
 void Daemon::sampleAdcEvent(uint8_t channel){
@@ -1457,6 +1469,7 @@ void Daemon::setEventTriggerSelection(GPIO_PIN signal) {
         qDebug() << "changed event selection to signal " << (unsigned int)signal;
     }
     emit setSamplingTriggerSignal(signal);
+	emit logParameter(LogParameter("gpioTriggerSelection", "0x"+QString::number((int)pigHandler->samplingTriggerSignal,16), LogParameter::LOG_EVERY));
     //sendEventTriggerSelection();
 }
 
@@ -1474,6 +1487,7 @@ void Daemon::setPcaChannel(uint8_t channel) {
     }
     pcaPortMask = channel;
     pca->setOutputState(channel);
+	emit logParameter(LogParameter("ubxInputSwitch", "0x"+QString::number(pcaPortMask,16), LogParameter::LOG_EVERY));
     //sendPcaChannel();
 }
 
@@ -1484,10 +1498,10 @@ void Daemon::setBiasVoltage(float voltage) {
     }
     if (dac && dac->devicePresent()) {
 		dac->setVoltage(DAC_BIAS, voltage);
-		//emit logParameter(LogParameter("biasDAC", QString::number(voltage)+" V", LogParameter::LOG_ON_CHANGE));
+		emit logParameter(LogParameter("biasDAC", QString::number(voltage)+" V", LogParameter::LOG_EVERY));
     }
     clearRates();
-    sendBiasVoltage();
+    //sendBiasVoltage();
 }
 
 void Daemon::setBiasStatus(bool status){
@@ -1503,9 +1517,9 @@ void Daemon::setBiasStatus(bool status){
     else {
         digitalWrite(GPIO_PINMAP[UBIAS_EN], (HW_VERSION==1)?0:1);
     }
-//    emit logParameter(LogParameter("biasSwitch", QString::number(status), LogParameter::LOG_ON_CHANGE));
+    emit logParameter(LogParameter("biasSwitch", QString::number(status), LogParameter::LOG_EVERY));
     clearRates();
-    sendBiasStatus();
+    //sendBiasStatus();
 }
 
 void Daemon::setDacThresh(uint8_t channel, float threshold) {
@@ -1520,9 +1534,9 @@ void Daemon::setDacThresh(uint8_t channel, float threshold) {
     clearRates();
     if (dac->devicePresent()) {
 		dac->setVoltage(channel, threshold);
-		//emit logParameter(LogParameter("thresh"+QString::number(channel), QString::number(dacThresh[channel])+" V", LogParameter::LOG_EVERY));
+		emit logParameter(LogParameter("thresh"+QString::number(channel), QString::number(dacThresh[channel])+" V", LogParameter::LOG_EVERY));
 	}
-    sendDacThresh(channel);
+    //sendDacThresh(channel);
 }
 
 bool Daemon::readEeprom()
@@ -1568,94 +1582,94 @@ void Daemon::configGps() {
 	
 	emit UBXSetAopCfg(true);
 	
-	emit sendPollUbxMsg(MSG_MON_VER);
+	emit sendPollUbxMsg(UBX_MON_VER);
 
 	// deactivate all NMEA messages: (port 6 means ALL ports)
 	// not needed because of deactivation of all NMEA messages with "UBXSetCfgPrt"
-//    msgRateCfgs.insert(MSG_NMEA_DTM,0);
-//    // msgRateCfgs.insert(MSG_NMEA_GBQ,0);
-//    msgRateCfgs.insert(MSG_NMEA_GBS,0);
-//    msgRateCfgs.insert(MSG_NMEA_GGA,0);
-//    msgRateCfgs.insert(MSG_NMEA_GLL,0);
-//    // msgRateCfgs.insert(MSG_NMEA_GLQ,0);
-//    // msgRateCfgs.insert(MSG_NMEA_GNQ,0);
-//    msgRateCfgs.insert(MSG_NMEA_GNS,0);
-//    // msgRateCfgs.insert(MSG_NMEA_GPQ,0);
-//    msgRateCfgs.insert(MSG_NMEA_GRS,0);
-//    msgRateCfgs.insert(MSG_NMEA_GSA,0);
-//    msgRateCfgs.insert(MSG_NMEA_GST,0);
-//    msgRateCfgs.insert(MSG_NMEA_GSV,0);
-//    msgRateCfgs.insert(MSG_NMEA_RMC,0);
-//    // msgRateCfgs.insert(MSG_NMEA_TXT,0);
-//    msgRateCfgs.insert(MSG_NMEA_VLW,0);
-//    msgRateCfgs.insert(MSG_NMEA_VTG,0);
-//    msgRateCfgs.insert(MSG_NMEA_ZDA,0);
-//    msgRateCfgs.insert(MSG_NMEA_POSITION,0);
-//    emit UBXSetCfgMsgRate(MSG_NMEA_DTM,6,0);
-//    // has no output msg MSG_NMEA_GBQ
-//    emit UBXSetCfgMsgRate(MSG_NMEA_GBS,6,0);
-//    emit UBXSetCfgMsgRate(MSG_NMEA_GGA,6,0);
-//    emit UBXSetCfgMsgRate(MSG_NMEA_GLL,6,0);
-//    // has no output msg MSG_NMEA_GLQ
-//    // has no output msg MSG_NMEA_GNQ
-//    emit UBXSetCfgMsgRate(MSG_NMEA_GNS,6,0);
-//    // has no output msg MSG_NMEA_GPQ
-//    emit UBXSetCfgMsgRate(MSG_NMEA_GRS,6,0);
-//    emit UBXSetCfgMsgRate(MSG_NMEA_GSA,6,0);
-//    emit UBXSetCfgMsgRate(MSG_NMEA_GST,6,0);
-//    emit UBXSetCfgMsgRate(MSG_NMEA_GSV,6,0);
-//    emit UBXSetCfgMsgRate(MSG_NMEA_RMC,6,0);
-//    // is not configured through MSG_CFG_MSG but through UBX-CFG-INF!!!  (MSG_NMEA_TXT)
-//    //emit UBXSetCfgMsgRate(MSG_NMEA_VLW,6,0); don't know why this does not work, probably not supported anymore
-//    emit UBXSetCfgMsgRate(MSG_NMEA_VTG,6,0);
-//    emit UBXSetCfgMsgRate(MSG_NMEA_ZDA,6,0);
-//    emit UBXSetCfgMsgRate(MSG_NMEA_POSITION,6,0);
+//    msgRateCfgs.insert(UBX_NMEA_DTM,0);
+//    // msgRateCfgs.insert(UBX_NMEA_GBQ,0);
+//    msgRateCfgs.insert(UBX_NMEA_GBS,0);
+//    msgRateCfgs.insert(UBX_NMEA_GGA,0);
+//    msgRateCfgs.insert(UBX_NMEA_GLL,0);
+//    // msgRateCfgs.insert(UBX_NMEA_GLQ,0);
+//    // msgRateCfgs.insert(UBX_NMEA_GNQ,0);
+//    msgRateCfgs.insert(UBX_NMEA_GNS,0);
+//    // msgRateCfgs.insert(UBX_NMEA_GPQ,0);
+//    msgRateCfgs.insert(UBX_NMEA_GRS,0);
+//    msgRateCfgs.insert(UBX_NMEA_GSA,0);
+//    msgRateCfgs.insert(UBX_NMEA_GST,0);
+//    msgRateCfgs.insert(UBX_NMEA_GSV,0);
+//    msgRateCfgs.insert(UBX_NMEA_RMC,0);
+//    // msgRateCfgs.insert(UBX_NMEA_TXT,0);
+//    msgRateCfgs.insert(UBX_NMEA_VLW,0);
+//    msgRateCfgs.insert(UBX_NMEA_VTG,0);
+//    msgRateCfgs.insert(UBX_NMEA_ZDA,0);
+//    msgRateCfgs.insert(UBX_NMEA_POSITION,0);
+//    emit UBXSetCfgMsgRate(UBX_NMEA_DTM,6,0);
+//    // has no output msg UBX_NMEA_GBQ
+//    emit UBXSetCfgMsgRate(UBX_NMEA_GBS,6,0);
+//    emit UBXSetCfgMsgRate(UBX_NMEA_GGA,6,0);
+//    emit UBXSetCfgMsgRate(UBX_NMEA_GLL,6,0);
+//    // has no output msg UBX_NMEA_GLQ
+//    // has no output msg UBX_NMEA_GNQ
+//    emit UBXSetCfgMsgRate(UBX_NMEA_GNS,6,0);
+//    // has no output msg UBX_NMEA_GPQ
+//    emit UBXSetCfgMsgRate(UBX_NMEA_GRS,6,0);
+//    emit UBXSetCfgMsgRate(UBX_NMEA_GSA,6,0);
+//    emit UBXSetCfgMsgRate(UBX_NMEA_GST,6,0);
+//    emit UBXSetCfgMsgRate(UBX_NMEA_GSV,6,0);
+//    emit UBXSetCfgMsgRate(UBX_NMEA_RMC,6,0);
+//    // is not configured through UBX_CFG_MSG but through UBX-CFG-INF!!!  (UBX_NMEA_TXT)
+//    //emit UBXSetCfgMsgRate(UBX_NMEA_VLW,6,0); don't know why this does not work, probably not supported anymore
+//    emit UBXSetCfgMsgRate(UBX_NMEA_VTG,6,0);
+//    emit UBXSetCfgMsgRate(UBX_NMEA_ZDA,6,0);
+//    emit UBXSetCfgMsgRate(UBX_NMEA_POSITION,6,0);
 
 	// set protocol configuration for ports
 	// msgRateCfgs: -1 means unknown, 0 means off, some positive value means update time
     int measrate = 10;
-    // msgRateCfgs.insert(MSG_CFG_RATE, measrate);
-    // msgRateCfgs.insert(MSG_TIM_TM2, 1);
-    // msgRateCfgs.insert(MSG_TIM_TP, 51);
-    // msgRateCfgs.insert(MSG_NAV_TIMEUTC, 20);
-    // msgRateCfgs.insert(MSG_MON_HW, 47);
-	// msgRateCfgs.insert(MSG_NAV_SAT, 59);
-    // msgRateCfgs.insert(MSG_NAV_TIMEGPS, 61);
-    // msgRateCfgs.insert(MSG_NAV_SOL, 67);
-    // msgRateCfgs.insert(MSG_NAV_STATUS, 71);
-    // msgRateCfgs.insert(MSG_NAV_CLOCK, 89);
-    // msgRateCfgs.insert(MSG_MON_TXBUF, 97);
-    // msgRateCfgs.insert(MSG_NAV_SBAS, 255);
-    // msgRateCfgs.insert(MSG_NAV_DOP, 101);
-    // msgRateCfgs.insert(MSG_NAV_SVINFO, 49);
-    emit UBXSetCfgRate(1000/measrate, 1); // MSG_RATE
+    // msgRateCfgs.insert(UBX_CFG_RATE, measrate);
+    // msgRateCfgs.insert(UBX_TIM_TM2, 1);
+    // msgRateCfgs.insert(UBX_TIM_TP, 51);
+    // msgRateCfgs.insert(UBX_NAV_TIMEUTC, 20);
+    // msgRateCfgs.insert(UBX_MON_HW, 47);
+	// msgRateCfgs.insert(UBX_NAV_SAT, 59);
+    // msgRateCfgs.insert(UBX_NAV_TIMEGPS, 61);
+    // msgRateCfgs.insert(UBX_NAV_SOL, 67);
+    // msgRateCfgs.insert(UBX_NAV_STATUS, 71);
+    // msgRateCfgs.insert(UBX_NAV_CLOCK, 89);
+    // msgRateCfgs.insert(UBX_MON_TXBUF, 97);
+    // msgRateCfgs.insert(UBX_NAV_SBAS, 255);
+    // msgRateCfgs.insert(UBX_NAV_DOP, 101);
+    // msgRateCfgs.insert(UBX_NAV_SVINFO, 49);
+    emit UBXSetCfgRate(1000/measrate, 1); // UBX_RATE
 
-	//emit sendPollUbxMsg(MSG_MON_VER);
-	emit UBXSetCfgMsgRate(MSG_TIM_TM2, 1, 1);	// TIM-TM2
-	emit UBXSetCfgMsgRate(MSG_TIM_TP, 1, 0);	// TIM-TP
-	emit UBXSetCfgMsgRate(MSG_NAV_TIMEUTC, 1, 131);	// NAV-TIMEUTC
-	emit UBXSetCfgMsgRate(MSG_MON_HW, 1, 47);	// MON-HW
-	emit UBXSetCfgMsgRate(MSG_MON_HW2, 1, 49);	// MON-HW
-	emit UBXSetCfgMsgRate(MSG_NAV_POSLLH, 1, 127);	// MON-POSLLH
+	//emit sendPollUbxMsg(UBX_MON_VER);
+	emit UBXSetCfgMsgRate(UBX_TIM_TM2, 1, 1);	// TIM-TM2
+	emit UBXSetCfgMsgRate(UBX_TIM_TP, 1, 0);	// TIM-TP
+	emit UBXSetCfgMsgRate(UBX_NAV_TIMEUTC, 1, 131);	// NAV-TIMEUTC
+	emit UBXSetCfgMsgRate(UBX_MON_HW, 1, 47);	// MON-HW
+	emit UBXSetCfgMsgRate(UBX_MON_HW2, 1, 49);	// MON-HW
+	emit UBXSetCfgMsgRate(UBX_NAV_POSLLH, 1, 127);	// MON-POSLLH
 	// probably also configured with UBX-CFG-INFO...
-	emit UBXSetCfgMsgRate(MSG_NAV_TIMEGPS, 1, 0);	// NAV-TIMEGPS
-	emit UBXSetCfgMsgRate(MSG_NAV_SOL, 1, 0);	// NAV-SOL
-	emit UBXSetCfgMsgRate(MSG_NAV_STATUS, 1, 71);	// NAV-STATUS
-	emit UBXSetCfgMsgRate(MSG_NAV_CLOCK, 1, 189);	// NAV-CLOCK
-	emit UBXSetCfgMsgRate(MSG_MON_RXBUF, 1, 53);	// MON-TXBUF
-	emit UBXSetCfgMsgRate(MSG_MON_TXBUF, 1, 51);	// MON-TXBUF
-	emit UBXSetCfgMsgRate(MSG_NAV_SBAS, 1, 0);	// NAV-SBAS
-	emit UBXSetCfgMsgRate(MSG_NAV_DOP, 1, 254);	// NAV-DOP
+	emit UBXSetCfgMsgRate(UBX_NAV_TIMEGPS, 1, 0);	// NAV-TIMEGPS
+	emit UBXSetCfgMsgRate(UBX_NAV_SOL, 1, 0);	// NAV-SOL
+	emit UBXSetCfgMsgRate(UBX_NAV_STATUS, 1, 71);	// NAV-STATUS
+	emit UBXSetCfgMsgRate(UBX_NAV_CLOCK, 1, 189);	// NAV-CLOCK
+	emit UBXSetCfgMsgRate(UBX_MON_RXBUF, 1, 53);	// MON-TXBUF
+	emit UBXSetCfgMsgRate(UBX_MON_TXBUF, 1, 51);	// MON-TXBUF
+	emit UBXSetCfgMsgRate(UBX_NAV_SBAS, 1, 0);	// NAV-SBAS
+	emit UBXSetCfgMsgRate(UBX_NAV_DOP, 1, 254);	// NAV-DOP
 	// this poll is for checking the port cfg (which protocols are enabled etc.)
-	emit sendPollUbxMsg(MSG_CFG_PRT);
-	emit sendPollUbxMsg(MSG_MON_VER);
-	emit sendPollUbxMsg(MSG_MON_VER);
-	emit sendPollUbxMsg(MSG_MON_VER);
-    emit sendPollUbxMsg(MSG_CFG_GNSS);
+	emit sendPollUbxMsg(UBX_CFG_PRT);
+	emit sendPollUbxMsg(UBX_MON_VER);
+	emit sendPollUbxMsg(UBX_MON_VER);
+	emit sendPollUbxMsg(UBX_MON_VER);
+    emit sendPollUbxMsg(UBX_CFG_GNSS);
 	//emit UBXSetMinCNO(5);
-	emit sendPollUbxMsg(MSG_CFG_NAVX5);
-	emit sendPollUbxMsg(MSG_CFG_ANT);
-	emit sendPollUbxMsg(MSG_CFG_TP5);
+	emit sendPollUbxMsg(UBX_CFG_NAVX5);
+	emit sendPollUbxMsg(UBX_CFG_ANT);
+	emit sendPollUbxMsg(UBX_CFG_TP5);
 
 	configGpsForVersion();
 }
@@ -1663,12 +1677,12 @@ void Daemon::configGps() {
 void Daemon::configGpsForVersion() {
 	if (QtSerialUblox::getProtVersion()<=0.1) return;
 	if (QtSerialUblox::getProtVersion()>15.0) {
-		if (std::find(allMsgCfgID.begin(), allMsgCfgID.end(), MSG_NAV_SAT)==allMsgCfgID.end()) {
-			allMsgCfgID.push_back(MSG_NAV_SAT);
+		if (std::find(allMsgCfgID.begin(), allMsgCfgID.end(), UBX_NAV_SAT)==allMsgCfgID.end()) {
+			allMsgCfgID.push_back(UBX_NAV_SAT);
 		}
-		emit UBXSetCfgMsgRate(MSG_NAV_SAT, 1, 69);	// NAV-SAT 
-		emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 0);
-	} else emit UBXSetCfgMsgRate(MSG_NAV_SVINFO, 1, 69);	// NAV-SVINFO
+		emit UBXSetCfgMsgRate(UBX_NAV_SAT, 1, 69);	// NAV-SAT 
+		emit UBXSetCfgMsgRate(UBX_NAV_SVINFO, 1, 0);
+	} else emit UBXSetCfgMsgRate(UBX_NAV_SVINFO, 1, 69);	// NAV-SVINFO
 	//cout<<"prot Version: "<<QtSerialUblox::getProtVersion()<<endl;
 }
 
@@ -1682,7 +1696,7 @@ void Daemon::UBXReceivedAckNak(uint16_t ackedMsgID, uint16_t ackedCfgMsgID) {
 	// the value was already set correctly before by either poll or set,
 	// if not acknowledged or timeout we set the value to -1 (unknown/undefined)
 	switch (ackedMsgID) {
-	case MSG_CFG_MSG:
+	case UBX_CFG_MSG:
 		msgRateCfgs.insert(ackedCfgMsgID, -1);
 		break;
 	default:
@@ -1977,11 +1991,11 @@ void Daemon::gpsConnectionError() {
 void Daemon::onMadeConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort) {
 	if (verbose>3) cout << "established connection with " << remotePeerAddress << ":" << remotePeerPort << endl;
 
-	emit sendPollUbxMsg(MSG_MON_VER);
-	emit sendPollUbxMsg(MSG_CFG_GNSS);
-	emit sendPollUbxMsg(MSG_CFG_NAV5);
-	emit sendPollUbxMsg(MSG_CFG_TP5);
-	emit sendPollUbxMsg(MSG_CFG_NAVX5);
+	emit sendPollUbxMsg(UBX_MON_VER);
+	emit sendPollUbxMsg(UBX_CFG_GNSS);
+	emit sendPollUbxMsg(UBX_CFG_NAV5);
+	emit sendPollUbxMsg(UBX_CFG_TP5);
+	emit sendPollUbxMsg(UBX_CFG_NAVX5);
 
 	sendBiasStatus();
 	sendBiasVoltage();
@@ -2075,29 +2089,38 @@ void Daemon::logBiasValues()
 			double vdiv;
 			istr >> vdiv;
 			vdiv/=100.;
-			logParameter(LogParameter("vbias1", QString::number(v1*vdiv)+" V", LogParameter::LOG_AVERAGE));
-			logParameter(LogParameter("vbias2", QString::number(v2*vdiv)+" V", LogParameter::LOG_AVERAGE));
+			logParameter(LogParameter("calib_vdiv", QString::number(vdiv), LogParameter::LOG_ONCE));
+			istr=std::istringstream(calib->getCalibItem("RSENSE").value);
+//			istr.str(calib->getCalibItem("RSENSE").value);
+			double rsense;
+			istr >> rsense;
+			rsense /= 10.*1000.; // yields Rsense in MOhm
+			logParameter(LogParameter("calib_rsense", QString::number(rsense*1000.)+" kOhm", LogParameter::LOG_ONCE));
+//			logParameter(LogParameter("vbias1", QString::number(v1*vdiv)+" V", LogParameter::LOG_AVERAGE));
+//			logParameter(LogParameter("vbias2", QString::number(v2*vdiv)+" V", LogParameter::LOG_AVERAGE));
             double ubias=v2*vdiv;
+			logParameter(LogParameter("vbias", QString::number(ubias)+" V", LogParameter::LOG_AVERAGE));
+			double usense=(v1-v2)*vdiv;
+			logParameter(LogParameter("vsense", QString::number(usense)+" V", LogParameter::LOG_AVERAGE));
 			
 			CalibStruct flagItem=calib->getCalibItem("CALIB_FLAGS");
-			uint8_t calFlags;
-//			istr=std::istringstream(flagItem.value);
-			istr.str(flagItem.value);
+			uint16_t calFlags;
+			istr=std::istringstream(flagItem.value);
+//			istr.str(flagItem.value);
             istr >> calFlags;
+            //cout<<"cal flags:"<<flagItem.value<<"  (0x"<<hex<<(int)calFlags<<dec<<")"<<endl;
             if (calFlags & CalibStruct::CALIBFLAGS_CURRENT_COEFFS) {
-				double islope,ioffs,rsense;
-//				istr=std::istringstream(calib->getCalibItem("COEFF2").value);
-				istr.str(calib->getCalibItem("COEFF2").value);
+				double islope,ioffs;
+				istr=std::istringstream(calib->getCalibItem("COEFF2").value);
+//				istr.str(calib->getCalibItem("COEFF2").value);
 				istr >> ioffs;
-//				istr=std::istringstream(calib->getCalibItem("COEFF3").value);
-				istr.str(calib->getCalibItem("COEFF3").value);
+				logParameter(LogParameter("calib_coeff2", QString::number(ioffs), LogParameter::LOG_ONCE));
+				istr=std::istringstream(calib->getCalibItem("COEFF3").value);
+//				istr.str(calib->getCalibItem("COEFF3").value);
 				istr >> islope;
-//				istr=std::istringstream(calib->getCalibItem("RSENSE").value);
-				istr.str(calib->getCalibItem("RSENSE").value);
-				istr >> rsense;
-				rsense /= 10.*1000.; // yields Rsense in MOhm
+				logParameter(LogParameter("calib_coeff3", QString::number(islope), LogParameter::LOG_ONCE));
 				double icorr = ubias*islope+ioffs;
-				double ibias = (v1-v2)*vdiv/rsense-icorr;
+				double ibias = usense/rsense-icorr;
 				logParameter(LogParameter("ibias", QString::number(ibias)+" uA", LogParameter::LOG_AVERAGE));
 			}
 		} else {

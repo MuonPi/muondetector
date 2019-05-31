@@ -321,20 +321,20 @@ void QtSerialUblox::UBXSetCfgRate(uint16_t measRate, uint16_t navRate)
 	data[4] = 0;
 	data[5] = 0;
 
-	enqueueMsg(MSG_CFG_RATE, toStdString(data, 6));
+	enqueueMsg(UBX_CFG_RATE, toStdString(data, 6));
 	
 /*
 	UbxMessage newMessage;
-	newMessage.msgID = MSG_CFG_RATE;
+	newMessage.msgID = UBX_CFG_RATE;
 	newMessage.data = toStdString(data, 6);
 	outMsgBuffer.push(newMessage);
 	if (!msgWaitingForAck) {
 		sendQueuedMsg();
 	}
 */
-	// sendUBX(MSG_CFG_RATE, data, sizeof(data));
+	// sendUBX(UBX_CFG_RATE, data, sizeof(data));
 	/* Ack check has to be done differently, asynchronously
-	if (waitAck(MSG_CFG_RATE, 10000))
+	if (waitAck(UBX_CFG_RATE, 10000))
 	{
 		emit toConsole("Set CFG successful");
 	}
@@ -391,11 +391,11 @@ void QtSerialUblox::UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask) {
 		data[18] = 0;
 		data[19] = 0; // reserved
 	}
-	// sendUBX(MSG_CFG_PRT, data, 20);
-	enqueueMsg(MSG_CFG_PRT, toStdString(data, 20));
+	// sendUBX(UBX_CFG_PRT, data, 20);
+	enqueueMsg(UBX_CFG_PRT, toStdString(data, 20));
 /*
 	UbxMessage newMessage;
-	newMessage.msgID = MSG_CFG_PRT;
+	newMessage.msgID = UBX_CFG_PRT;
 	newMessage.data = toStdString(data, 20);
 	outMsgBuffer.push(newMessage);
 	if (!msgWaitingForAck) {
@@ -430,12 +430,12 @@ void QtSerialUblox::UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate)
 			data[i] = rate;
 		}
 	}
-	//sendUBX(MSG_CFG_MSG, data, 8);#
+	//sendUBX(UBX_CFG_MSG, data, 8);#
 
-	enqueueMsg(MSG_CFG_MSG, toStdString(data, 8));
+	enqueueMsg(UBX_CFG_MSG, toStdString(data, 8));
 /*
 	UbxMessage newMessage;
-	newMessage.msgID = MSG_CFG_MSG;
+	newMessage.msgID = UBX_CFG_MSG;
 	newMessage.data = toStdString(data, 8);
 	outMsgBuffer.push(newMessage);
 	if (!msgWaitingForAck) {
@@ -443,7 +443,7 @@ void QtSerialUblox::UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate)
 	}
 */
 	/* Ack check has to be done differently, asynchronously
-	if (waitAck(MSG_CFG_MSG, 12000)) {
+	if (waitAck(UBX_CFG_MSG, 12000)) {
 		emit toConsole("Set CFG successful");
 	}
 	else {
@@ -463,7 +463,7 @@ void QtSerialUblox::UBXReset(uint32_t resetFlags)
 	data[3]=0;
 	
 	UbxMessage newMessage;
-	newMessage.msgID = MSG_CFG_RST;
+	newMessage.msgID = UBX_CFG_RST;
 	newMessage.data = toStdString(data, 4);
 	sendUBX(newMessage);
 }
@@ -478,10 +478,10 @@ void QtSerialUblox::UBXSetMinMaxSVs(uint8_t minSVs, uint8_t maxSVs)
 	data[10]=minSVs;
 	data[11]=maxSVs;
 	
-	enqueueMsg(MSG_CFG_NAVX5, toStdString(data, 40));
+	enqueueMsg(UBX_CFG_NAVX5, toStdString(data, 40));
 /*
 	UbxMessage newMessage;
-	newMessage.msgID = MSG_CFG_NAVX5;
+	newMessage.msgID = UBX_CFG_NAVX5;
 	newMessage.data = toStdString(data, 40);
 	sendUBX(newMessage);
 */
@@ -495,10 +495,10 @@ void QtSerialUblox::UBXSetMinCNO(uint8_t minCNO)
 	data[4]=0; data[5]=0; data[6]=0; data[7]=0;
 	data[12]=minCNO;
 	
-	enqueueMsg(MSG_CFG_NAVX5, toStdString(data, 40));
+	enqueueMsg(UBX_CFG_NAVX5, toStdString(data, 40));
 /*
 	UbxMessage newMessage;
-	newMessage.msgID = MSG_CFG_NAVX5;
+	newMessage.msgID = UBX_CFG_NAVX5;
 	newMessage.data = toStdString(data, 40);
 	sendUBX(newMessage);
 */
@@ -515,10 +515,10 @@ void QtSerialUblox::UBXSetAopCfg(bool enable, uint16_t maxOrbErr)
 	data[30]=maxOrbErr & 0xff;
 	data[31]=(maxOrbErr>>8) & 0xff;
 
-	enqueueMsg(MSG_CFG_NAVX5, toStdString(data, 40));
+	enqueueMsg(UBX_CFG_NAVX5, toStdString(data, 40));
 /*
 	UbxMessage newMessage;
-	newMessage.msgID = MSG_CFG_NAVX5;
+	newMessage.msgID = UBX_CFG_NAVX5;
 	newMessage.data = toStdString(data, 40);
 	sendUBX(newMessage);
 */
@@ -539,7 +539,7 @@ void QtSerialUblox::UBXSaveCfg(uint8_t devMask)
 	data[7]=(sectionMask>>24) & 0xff;
 	data[12]=devMask;
 
-	enqueueMsg(MSG_CFG_CFG, toStdString(data, 13));
+	enqueueMsg(UBX_CFG_CFG, toStdString(data, 13));
 }
 
 void QtSerialUblox::onRequestGpsProperties(){
@@ -569,9 +569,9 @@ void QtSerialUblox::pollMsgRate(uint16_t msgID) {
 	unsigned char temp[2];
 	temp[0] = (uint8_t)((msgID & 0xff00) >> 8);
 	temp[1] = (uint8_t)(msgID & 0xff);
-	enqueueMsg(MSG_CFG_MSG, toStdString(temp, 2));
+	enqueueMsg(UBX_CFG_MSG, toStdString(temp, 2));
 /*	
-	msg.msgID = MSG_CFG_MSG;
+	msg.msgID = UBX_CFG_MSG;
 	msg.data = toStdString(temp, 2);
 	outMsgBuffer.push(msg);
 	if (!msgWaitingForAck) {
@@ -584,7 +584,7 @@ void QtSerialUblox::pollMsg(uint16_t msgID) {
 	UbxMessage msg;
 	unsigned char temp[1];
 	switch (msgID) {
-	case MSG_CFG_PRT: // CFG-PRT
+	case UBX_CFG_PRT: // CFG-PRT
 		// in this special case "rate" is the port ID
 		temp[0] = 1;
 		msg.msgID = msgID;
@@ -594,7 +594,7 @@ void QtSerialUblox::pollMsg(uint16_t msgID) {
 			sendQueuedMsg();
 		}
 		break;
-	case MSG_MON_VER:
+	case UBX_MON_VER:
 		// the VER message apparently does not confirm reception with an ACK
 		msg.msgID = msgID;
 		msg.data = "";

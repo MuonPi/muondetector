@@ -269,7 +269,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 		break;
 	case 0x0a: // UBX-MON
 		switch (messageID) {
-			case (MSG_MON_RXBUF & 0xff):
+			case (UBX_MON_RXBUF & 0xff):
 				if (verbose > 2) {
 					tempStream << "received UBX-MON-RXBUF message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
 						<< " 0x" << std::hex << (int)messageID << ")\n";
@@ -277,7 +277,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 				}
 				UBXMonRx(msg.data);
 				break;
-			case (MSG_MON_TXBUF & 0xff):
+			case (UBX_MON_TXBUF & 0xff):
 				if (verbose > 2) {
 					tempStream << "received UBX-MON-TXBUF message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
 						<< " 0x" << std::hex << (int)messageID << ")\n";
@@ -897,10 +897,10 @@ void QtSerialUblox::onSetGnssConfig(const std::vector<GnssConfigStruct>& gnssCon
 		data[11 + 8 * i]=(flags>>24) & 0xff;
 	}
 
-	enqueueMsg(MSG_CFG_GNSS, toStdString(data, 4+8*N));
+	enqueueMsg(UBX_CFG_GNSS, toStdString(data, 4+8*N));
 /*
 	UbxMessage newMessage;
-	newMessage.msgID = MSG_CFG_GNSS;
+	newMessage.msgID = UBX_CFG_GNSS;
 	newMessage.data = toStdString(data, 4+8*N);
 	sendUBX(newMessage);
 */
@@ -959,7 +959,7 @@ void QtSerialUblox::setDynamicModel(uint8_t model){
 	buf[1]=0x00;
 	buf[2]=model; // dyn Model
 	string str(buf,36);
-	enqueueMsg(MSG_CFG_NAV5, str);
+	enqueueMsg(UBX_CFG_NAV5, str);
 }
 
 void QtSerialUblox::UBXNavStatus(const string &msg)
@@ -1737,7 +1737,7 @@ void QtSerialUblox::UBXSetCfgTP5(const UbxTimePulseStruct& tp)
 	msg[30]=(tp.flags >> 16) & 0xff;
 	msg[31]=(tp.flags >> 24) & 0xff;
 
-	enqueueMsg(MSG_CFG_TP5, toStdString(msg, 32));
+	enqueueMsg(UBX_CFG_TP5, toStdString(msg, 32));
 }
 
 void QtSerialUblox::UBXNavDOP(const string &msg)

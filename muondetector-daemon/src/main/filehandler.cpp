@@ -165,6 +165,15 @@ void FileHandler::onReceivedLogParameter(const LogParameter& log){
 		// directly log to file since LOG_EVERY attribute is set
 		// no need to store in buffer, just return after logging
 		writeToLogFile(dateStringNow()+" "+QString(log.name()+" "+log.value()+"\n"));
+		// reset already existing entries but preserve logType attribute
+		if (logData.find(log.name())!=logData.end()) {
+			int logType=logData[log.name()].front().logType();
+			if (logType!=LogParameter::LOG_AVERAGE) {
+				logData[log.name()].clear();
+			}
+			logData[log.name()].push_back(LogParameter(log.name(),log.value(),logType));
+			logData[log.name()].back().setUpdatedRecently(false);
+		}
 		return;
 	} else {
 		// save to buffer

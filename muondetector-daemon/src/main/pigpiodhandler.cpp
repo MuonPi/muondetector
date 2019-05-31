@@ -11,7 +11,7 @@ extern "C" {
 
 
 const static int eventCountDeadTime = 50;
-const static int adcSampleDeadTime = 10;
+const static int adcSampleDeadTime = 8;
 
 static int pi = 0;
 static QPointer<PigpiodHandler> pigHandlerAddress; // QPointer automatically clears itself if pigHandler object is destroyed

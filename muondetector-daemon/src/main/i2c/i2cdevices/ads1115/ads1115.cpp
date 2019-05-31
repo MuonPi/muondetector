@@ -23,8 +23,8 @@ int16_t ADS1115::readADC(unsigned int channel)
 	writeBuf[1] |= 0x01; // single shot mode
 	writeBuf[1] |= ((uint8_t)fPga[channel]) << 1; // PGA gain select
 
-												  // This sets the 8 LSBs of the config register (bits 7-0)
-												  //	writeBuf[2] = 0x03;  // disable ALERT/RDY pin
+	// This sets the 8 LSBs of the config register (bits 7-0)
+//	writeBuf[2] = 0x03;  // disable ALERT/RDY pin
 	writeBuf[2] = 0x00;  // enable ALERT/RDY pin
 	writeBuf[2] |= ((uint8_t)fDataRate) << 5;
 
@@ -48,7 +48,7 @@ int16_t ADS1115::readADC(unsigned int channel)
 	if (nloops*fReadWaitDelay / 1000 >= 1000) {
 		if (fDebugLevel > 1)
 			printf("timeout!\n");
-		return -32767;
+		return INT16_MIN;
 	}
 	if (fDebugLevel > 2)
 		printf(" nr of busy adc loops: %d \n", nloops);
