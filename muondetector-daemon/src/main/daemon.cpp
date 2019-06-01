@@ -2090,10 +2090,12 @@ void Daemon::logBiasValues()
 			istr >> vdiv;
 			vdiv/=100.;
 			logParameter(LogParameter("calib_vdiv", QString::number(vdiv), LogParameter::LOG_ONCE));
-			istr=std::istringstream(calib->getCalibItem("RSENSE").value);
-//			istr.str(calib->getCalibItem("RSENSE").value);
+//			istr=std::istringstream(calib->getCalibItem("RSENSE").value);
+			istr.clear();
+			istr.str(calib->getCalibItem("RSENSE").value);
 			double rsense;
 			istr >> rsense;
+            cout<<"rsense:"<<calib->getCalibItem("RSENSE").value<<" ("<<rsense<<")"<<endl;
 			rsense /= 10.*1000.; // yields Rsense in MOhm
 			logParameter(LogParameter("calib_rsense", QString::number(rsense*1000.)+" kOhm", LogParameter::LOG_ONCE));
 //			logParameter(LogParameter("vbias1", QString::number(v1*vdiv)+" V", LogParameter::LOG_AVERAGE));
@@ -2104,19 +2106,23 @@ void Daemon::logBiasValues()
 			logParameter(LogParameter("vsense", QString::number(usense)+" V", LogParameter::LOG_AVERAGE));
 			
 			CalibStruct flagItem=calib->getCalibItem("CALIB_FLAGS");
-			uint16_t calFlags;
-			istr=std::istringstream(flagItem.value);
-//			istr.str(flagItem.value);
+			int calFlags=0;
+//			istr=std::istringstream(flagItem.value);
+			
+			istr.clear();
+			istr.str(flagItem.value);
             istr >> calFlags;
-            //cout<<"cal flags:"<<flagItem.value<<"  (0x"<<hex<<(int)calFlags<<dec<<")"<<endl;
+            cout<<"cal flags:"<<flagItem.value<<" ("<<(int)calFlags<<dec<<")"<<endl;
             if (calFlags & CalibStruct::CALIBFLAGS_CURRENT_COEFFS) {
 				double islope,ioffs;
-				istr=std::istringstream(calib->getCalibItem("COEFF2").value);
-//				istr.str(calib->getCalibItem("COEFF2").value);
+//				istr=std::istringstream(calib->getCalibItem("COEFF2").value);
+				istr.clear();
+				istr.str(calib->getCalibItem("COEFF2").value);
 				istr >> ioffs;
 				logParameter(LogParameter("calib_coeff2", QString::number(ioffs), LogParameter::LOG_ONCE));
-				istr=std::istringstream(calib->getCalibItem("COEFF3").value);
-//				istr.str(calib->getCalibItem("COEFF3").value);
+//				istr=std::istringstream(calib->getCalibItem("COEFF3").value);
+				istr.clear();
+				istr.str(calib->getCalibItem("COEFF3").value);
 				istr >> islope;
 				logParameter(LogParameter("calib_coeff3", QString::number(islope), LogParameter::LOG_ONCE));
 				double icorr = ubias*islope+ioffs;
