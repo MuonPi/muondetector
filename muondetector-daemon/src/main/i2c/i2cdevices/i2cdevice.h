@@ -7,6 +7,7 @@
 #include <sys/time.h>                // for gettimeofday()
 #include <vector>
 #include <string>
+#include <iostream>
 
 #ifndef _I2CDEVICE_H_
 #define _I2CDEVICE_H_

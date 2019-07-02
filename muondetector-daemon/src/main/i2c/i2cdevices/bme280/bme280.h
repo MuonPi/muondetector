@@ -22,6 +22,7 @@ public:
 	bool setTSamplingMode(uint8_t mode);
 	bool setPSamplingMode(uint8_t mode);
 	bool setHSamplingMode(uint8_t mode);
+        bool setDefaultSettings();
 	bool softReset();
 	void readCalibParameters();
 	inline bool isCalibValid() const { return fCalibrationValid; }

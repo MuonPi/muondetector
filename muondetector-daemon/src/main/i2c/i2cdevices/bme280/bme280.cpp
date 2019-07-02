@@ -21,7 +21,8 @@ bool BME280::init()
 	{
 		printf("%d bytes read\n", n);
 		printf("chip id: 0x%x \n", val);
-	}
+        }
+
 	if (val == 0x60) readCalibParameters();
 	return (val == 0x60);
 }
@@ -143,7 +144,18 @@ bool BME280::setHSamplingMode(uint8_t mode)
 	ctrl_meas = ctrl_meas | mode;
 	buf[0] = ctrl_meas;
 	n += writeReg(0xf2, buf, 1);
+        n += readReg(0xf4, buf, 1);
+        writeReg(0xf4, buf, 1);
 	return (n == 2);
+}
+
+bool BME280::setDefaultSettings() {
+    uint8_t buf[1];
+    readReg(0xf2, buf, 1);
+    buf[0] &= 0b11111000;
+    buf[0] |= 0b010;
+    writeReg(0xf2, buf, 1); // enabling humidity measurement (oversampling x2)
+    write_CtrlMeasReg(0b01001000); // enabling temperature and pressure measurement (oversampling x2), set sleep mode
 }
 
 void BME280::measure() {
@@ -368,12 +380,14 @@ void BME280::readCalibParameters()
 		printf("calib%d: %d \n", 17, fCalibParameters[17]);
 
 	if (fDebugLevel > 1) {
-		if (ok)
-			printf("calib data is valid.\n");
-		else printf("calib data NOT valid!\n");
+                if (ok){
+                        printf("calib data is valid.\n");
+                }else{
+                       printf("calib data NOT valid!\n");
+                }
 	}
-
-	fCalibrationValid = ok;
+        fCalibrationValid = ok;
+        setDefaultSettings();
 }
 
 TPH BME280::getTPHValues() {
