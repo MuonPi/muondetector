@@ -14,8 +14,8 @@ public:
 	bool init();
 	unsigned int status();
 	void measure();
-	unsigned int readConfig();
-	unsigned int read_CtrlMeasReg();
+        uint8_t readConfig();
+        uint8_t read_CtrlMeasReg();
 	bool writeConfig(uint8_t config);
 	bool write_CtrlMeasReg(uint8_t config);
 	bool setMode(uint8_t mode); // 3 bits: "1=sleep", "2=single shot", "3=interval"
@@ -25,17 +25,17 @@ public:
 	bool softReset();
 	void readCalibParameters();
 	inline bool isCalibValid() const { return fCalibrationValid; }
-	signed int getCalibParameter(unsigned int param) const;
-	unsigned int readUT();
-	unsigned int readUP();
-	unsigned int readUH();
+        uint16_t getCalibParameter(unsigned int param) const;
+        int32_t readUT();
+        int32_t readUP();
+        int32_t readUH();
 	TPH readTPCU();
 	TPH getTPHValues();
-	double getTemperature(signed int adc_T);
+        double getTemperature(int32_t adc_T);
 	double getPressure(signed int adc_P);
 	double getPressure(signed int adc_P, signed int t_fine);
-	double getHumidity(signed int adc_H);
-	double getHumidity(signed int adc_H, signed int t_fine);
+        double getHumidity(int32_t adc_H);
+        double getHumidity(int32_t adc_H, int32_t t_fine);
 private:
 	int32_t fT_fine = 0;
 	unsigned int fLastConvTime;

@@ -31,12 +31,12 @@ unsigned int BME280::status() {
 	status[0] = 10;
 	int n = readReg(0xf3, status, 1);
 	if (fDebugLevel > 1)
-		printf("%d bytes read\n", n);
+                printf("%d bytes read\n", n);
 	status[0] &= 0b1001;
 	return (unsigned int)status[0];
 }
 
-unsigned int BME280::readConfig() {
+uint8_t BME280::readConfig() {
 	uint8_t config[1];
 	config[0] = 0;
 	int n = readReg(0xf5, config, 1);
@@ -45,13 +45,13 @@ unsigned int BME280::readConfig() {
 	return (unsigned int)config[0];
 }
 
-unsigned int BME280::read_CtrlMeasReg() {
+uint8_t BME280::read_CtrlMeasReg() {
 	uint8_t ctrl_meas[1];
 	ctrl_meas[0] = 0;
 	int n = readReg(0xf4, ctrl_meas, 1);
 	if (fDebugLevel > 1)
 		printf("%d bytes read\n", n);
-	return (unsigned int)ctrl_meas[0];
+        return (uint8_t)ctrl_meas[0];
 }
 
 bool BME280::writeConfig(uint8_t config) {
@@ -208,7 +208,7 @@ void BME280::measure() {
 	return;
 }
 
-unsigned int BME280::readUT()
+int32_t BME280::readUT()
 {
 	uint8_t readBuf[3];		// 2 byte buffer to store the data read from the I2C device  
 	uint32_t val;		// Stores the 20 bit value of our ADC conversion
@@ -228,10 +228,10 @@ unsigned int BME280::readUT()
 	val |= ((uint32_t)readBuf[1]) << 4;		// (look datasheet page 25)
 	val |= ((uint32_t)readBuf[2]) >> 4;
 
-	return val;
+        return (int32_t)val;
 }
 
-unsigned int BME280::readUP()
+int32_t BME280::readUP()
 {
 	uint8_t readBuf[3];		// 2 byte buffer to store the data read from the I2C device  
 	uint32_t val;		// Stores the 20 bit value of our ADC conversion
@@ -251,10 +251,10 @@ unsigned int BME280::readUP()
 	val |= ((uint32_t)readBuf[1]) << 4;
 	val |= ((uint32_t)readBuf[2]) >> 4;
 
-	return val;
+        return (int32_t)val;
 }
 
-unsigned int BME280::readUH()
+int32_t BME280::readUH()
 {
 	uint8_t readBuf[2];
 	uint16_t val;
@@ -271,7 +271,7 @@ unsigned int BME280::readUH()
 	val = ((uint32_t)readBuf[0]) << 8;
 	val |= ((uint32_t)readBuf[1]);		// (look datasheet page 25)
 
-	return val;
+        return (int32_t)val;
 }
 
 TPH BME280::readTPCU()
@@ -307,35 +307,43 @@ bool BME280::softReset() {
 	return(val == 1);
 }
 
-signed int BME280::getCalibParameter(unsigned int param) const
+uint16_t BME280::getCalibParameter(unsigned int param) const
 {
-	if (param < 11) return fCalibParameters[param];
+        if (param < 18) return fCalibParameters[param];
 	return 0xffff;
 }
 
 void BME280::readCalibParameters()
 {
-	uint8_t readBuf[33];
-	uint8_t readBufPart2[8];
+	uint8_t readBuf[32];
+	uint8_t readBufPart1[26];
+	uint8_t readBufPart2[7];
 	// register address first byte eeprom
-	int n = readReg(0x88, readBuf, 25);	// Read the 26 eeprom word values into readBuf 
-	n = n + readReg(0xe1, readBufPart2, 8); // from two different locations
-	for (int i = 0; i < 8; i++) {
+	int n = readReg(0x88, readBufPart1, 26);	// Read the 26 eeprom word values into readBuf 
+	n = n + readReg(0xe1, readBufPart2, 7); // from two different locations
+	
+	for (int i = 0; i < 24; i++){
+		readBuf[i] = readBufPart1[i];
+	}
+	readBuf[24] = readBufPart1[25];
+	for (int i = 0; i < 7; i++) {
 		readBuf[i + 25] = readBufPart2[i];
 	}
-	if (fDebugLevel > 1)
+	for(int i = 0; i < 32; i++){
+		if (fDebugLevel > 1){
+			printf("readBuf %d\n", n);
+		}
+	}
+	if (fDebugLevel > 1){
 		printf("%d bytes read\n", n);
-
-	if (fDebugLevel > 1)
+	}
+	if (fDebugLevel > 1){
 		printf("BME280 eeprom calib data:\n");
-
+	}
+	
 	bool ok = true;
 	for (int i = 0; i < 12; i++) {
 		fCalibParameters[i] = ((uint16_t)readBuf[2 * i]) | (((uint16_t)readBuf[2 * i + 1]) << 8); // 2x 8-Bit ergibt 16-Bit Wort
-																								  //if (i == 0 || i == 3)
-																								  //	fCalibParameters[i] = ((uint16_t)readBuf[2 * i]) | (((uint16_t)readBuf[2 * i + 1]) << 8); // 2x 8-Bit ergibt 16-Bit Wort
-																								  //else
-																								  //	fCalibParameters[i] = ((int16_t)readBuf[2 * i]) | (((int16_t)readBuf[2 * i + 1]) << 8);
 		if (fCalibParameters[i] == 0 || fCalibParameters[i] == 0xffff) ok = false;
 		if (fDebugLevel > 1)
 			printf("calib%d: %d \n", i, fCalibParameters[i]);
@@ -352,10 +360,10 @@ void BME280::readCalibParameters()
 	fCalibParameters[15] = (((uint16_t)readBuf[28]) << 4) | (((uint16_t)readBuf[29]) & 0b1111);
 	if (fDebugLevel > 1)
 		printf("calib%d: %d \n", 15, fCalibParameters[15]);
-	fCalibParameters[16] = (((uint16_t)readBuf[30] & 0xf0) >> 4) | (((uint16_t)readBuf[31]) << 4);
+        fCalibParameters[16] = (((uint16_t)readBuf[29] & 0xf0) >> 4) | (((uint16_t)readBuf[30]) << 4);
 	if (fDebugLevel > 1)
 		printf("calib%d: %d \n", 16, fCalibParameters[16]);
-	fCalibParameters[17] = (uint16_t)readBuf[32];
+        fCalibParameters[17] = (uint16_t)readBuf[31];
 	if (fDebugLevel > 1)
 		printf("calib%d: %d \n", 17, fCalibParameters[17]);
 
@@ -376,14 +384,13 @@ TPH BME280::getTPHValues() {
 	return vals;
 }
 
-double BME280::getTemperature(signed int adc_T) {
-	adc_T = (int32_t)adc_T;
+double BME280::getTemperature(int32_t adc_T) {
 	if (!fCalibrationValid) return -999.;
-	uint32_t dig_T1 = (uint32_t)fCalibParameters[0];
+        int32_t dig_T1 = (int32_t)fCalibParameters[0];
 	int32_t dig_T2 = (int32_t)((int16_t)fCalibParameters[1]);
 	int32_t dig_T3 = (int32_t)((int16_t)fCalibParameters[2]);
-	int32_t X1 = (((adc_T >> 3) - (((int32_t)dig_T1) << 1))*((int32_t)dig_T2)) >> 11;
-	int32_t X2 = (((((adc_T >> 4) - ((int32_t)dig_T1))*((adc_T >> 4) - ((int32_t)dig_T1))) >> 12)*((int32_t)dig_T3)) >> 14;
+        int32_t X1 = (((adc_T >> 3) - (dig_T1 << 1))*dig_T2) >> 11;
+        int32_t X2 = (((((adc_T >> 4) - dig_T1)*((adc_T >> 4) - dig_T1)) >> 12)*dig_T3) >> 14;
 	fT_fine = X1 + X2;
 	int32_t t = (fT_fine * 5 + 128) >> 8;
 	double T = t / 100.0;
@@ -397,29 +404,28 @@ double BME280::getTemperature(signed int adc_T) {
 	return T;
 }
 
-double BME280::getHumidity(signed int adc_H) { // please only do this if "getTemperature()" has been executed before
+double BME280::getHumidity(int32_t adc_H) { // please only do this if "getTemperature()" has been executed before
 	return getHumidity(adc_H, fT_fine);
 }
-double BME280::getHumidity(signed int adc_H, signed int t_fine) {
-	adc_H = (int32_t)adc_H;
+double BME280::getHumidity(int32_t adc_H, int32_t t_fine) {
 	if (!fCalibrationValid) return -999.;
 	if (t_fine == 0) return -999.;
-	uint32_t dig_H1 = (uint32_t)fCalibParameters[12];
+        int32_t dig_H1 = (int32_t)fCalibParameters[12];
 	int32_t dig_H2 = (int32_t)((int16_t)fCalibParameters[13]);
-	uint32_t dig_H3 = (uint32_t)fCalibParameters[14];
+        int32_t dig_H3 = (int32_t)fCalibParameters[14];
 	int32_t dig_H4 = (int32_t)((int16_t)fCalibParameters[15]);
 	int32_t dig_H5 = (int32_t)((int16_t)fCalibParameters[16]);
 	int32_t dig_H6 = (int32_t)((int8_t)((uint8_t)fCalibParameters[17]));
 	int32_t X1 = 0;
-	X1 = (t_fine - (76800));
-	X1 = (((((adc_H << 14) - (((int32_t)dig_H4) << 20) - (((int32_t)dig_H5)* X1)) +
-		(16384)) >> 15) * (((((((X1 * ((int32_t)dig_H6)) >> 10) * (((X1 *
-		((int32_t)dig_H3)) >> 11) + (32768))) >> 10) + (2097152)) *
-			((int32_t)dig_H2) + 8192) >> 14));
-	X1 = (X1 - (((((X1 >> 15) * (X1 >> 15)) >> 7) * ((int32_t)dig_H1)) >> 4));
+        X1 = (t_fine - ((int32_t)76800));
+        X1 = (((((adc_H << 14) - (dig_H4 << 20) - (dig_H5* X1)) +
+                ((int32_t)16384)) >> 15) * (((((((X1 * dig_H6) >> 10) * (((X1 *
+                dig_H3) >> 11) + ((int32_t)32768))) >> 10) + ((int32_t)2097152)) *
+                        dig_H2 + 8192) >> 14));
+        X1 = (X1 - (((((X1 >> 15) * (X1 >> 15)) >> 7) * dig_H1) >> 4));
 	X1 = (X1 < 0 ? 0 : X1);
 	X1 = (X1 > 419430400 ? 419430400 : X1);
-	unsigned int h = (uint32_t)(X1 >> 12);
+        uint32_t h = (uint32_t)(X1 >> 12);
 	double H = h / 1024.0;
 	if (fDebugLevel > 1) {
 		printf("adc_H=%d\n", adc_H);
@@ -436,15 +442,15 @@ double BME280::getPressure(signed int adc_P) {
 double BME280::getPressure(signed int adc_P, signed int t_fine) {
 	if (!fCalibrationValid) return -999.0;
 	if (fT_fine == 0) return -999.0;
-	uint32_t dig_P1 = (uint32_t)fCalibParameters[3];
-	int32_t dig_P2 = (int32_t)((int16_t)fCalibParameters[4]);
-	int32_t dig_P3 = (int32_t)((int16_t)fCalibParameters[5]);
-	int32_t dig_P4 = (int32_t)((int16_t)fCalibParameters[6]);
-	int32_t dig_P5 = (int32_t)((int16_t)fCalibParameters[7]);
-	int32_t dig_P6 = (int32_t)((int16_t)fCalibParameters[8]);
-	int32_t dig_P7 = (int32_t)((int16_t)fCalibParameters[9]);
-	int32_t dig_P8 = (int32_t)((int16_t)fCalibParameters[10]);
-	int32_t dig_P9 = (int32_t)((int16_t)fCalibParameters[11]);
+        uint16_t dig_P1 = fCalibParameters[3];
+        int16_t dig_P2 = (int16_t)fCalibParameters[4];
+        int16_t dig_P3 = (int16_t)fCalibParameters[5];
+        int16_t dig_P4 = (int16_t)fCalibParameters[6];
+        int16_t dig_P5 = (int16_t)fCalibParameters[7];
+        int16_t dig_P6 = (int16_t)fCalibParameters[8];
+        int16_t dig_P7 = (int16_t)fCalibParameters[9];
+        int16_t dig_P8 = (int16_t)fCalibParameters[10];
+        int16_t dig_P9 = (int16_t)fCalibParameters[11];
 
 	int64_t X1, X2, p;
 	X1 = ((int64_t)t_fine) - 128000;
