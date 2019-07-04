@@ -293,7 +293,7 @@ void MainWindow::onTriggerSelectionChanged(GPIO_PIN signal)
 
 bool MainWindow::saveSettings(QStandardItemModel *model) {
 #if defined(Q_OS_UNIX)
-    QFile file(QString("/usr/share/muondetector-gui/ipAddresses.save"));
+    QFile file(QString(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)+"/.muondetector-gui.save"));
 #elif defined(Q_OS_WIN)
     QFile file(QString("ipAddresses.save"));
 #else
@@ -315,13 +315,13 @@ bool MainWindow::saveSettings(QStandardItemModel *model) {
 
 bool MainWindow::loadSettings(QStandardItemModel* model) {
 #if defined(Q_OS_UNIX)
-    QFile file(QString("/usr/share/muondetector-gui/ipAddresses.save"));
+    QFile file(QString(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)+"/.muondetector-gui.save"));
 #elif defined(Q_OS_WIN)
     QFile file(QString("ipAddresses.save"));
 #else
     QFile file(QString("ipAddresses.save"));
 #endif
-	if (!file.open(QIODevice::ReadOnly)) {
+    if (!file.open(QIODevice::ReadOnly)) {
         qDebug() << "file open failed in 'ReadOnly' mode at location " << file.fileName();
 		return false;
 	}
