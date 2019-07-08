@@ -17,6 +17,11 @@ QT       += quickwidgets
 #greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 CONFIG += qwt
 CONFIG += c++11
+CONFIG += qtquickcompiler
+
+QMAKE_CXXFLAGS += -mthumb
+QMAKE_CXXFLAGS += -mthumb-interwork
+QMAKE_CXXFLAGS += -marm
 
 TARGET = muondetector-gui
 TEMPLATE = app
@@ -62,6 +67,10 @@ unix:LIBS += -L/usr/lib/muondetector-shared -lmuondetector-shared
 else:LIBS += -L./ -lmuondetector-shared
 win32:LIBS += -L../lib -lmuondetector-shared
 win32:INCLUDEPATH += ../bin/lib
+
+RESOURCES += resources.qrc
+
+#QT5_ADD_RESOURCES(RESOURCES resources.qrc)
 
 SOURCES += \
     main/main.cpp \

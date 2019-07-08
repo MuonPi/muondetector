@@ -11,7 +11,7 @@ Map::Map(QWidget *parent) :
     mapUi->quickWidget->setResizeMode(QQuickWidget::SizeRootObjectToView);
     QQmlEngine* engine = new QQmlEngine(this);
 #if defined(Q_OS_UNIX)
-        QQmlComponent* component = new QQmlComponent(engine, QUrl::fromLocalFile("/usr/share/muondetector-gui/qml/mymap.qml"));
+        QQmlComponent* component = new QQmlComponent(engine, ":/qml/mymap.qml");//QUrl::fromLocalFile("/usr/share/muondetector-gui/qml/mymap.qml"));
 #elif defined(Q_OS_WIN)
         QQmlComponent* component = new QQmlComponent(engine, QUrl::fromLocalFile("qml/mymap.qml"));
 #else
