@@ -28,13 +28,12 @@ bool BME280::init()
 }
 
 bool BME280::status() {
-	uint8_t status[1];
-	status[0] = 0;
-	int n = readReg(0xf3, status, 1);
+	uint8_t status = 0;
+	int n = readReg(0xf3, &status, 1);
 	if (fDebugLevel > 1){
                 printf("%d bytes read\n", n);
 	}
-	status[0] &= 0b1001;
+	status &= 0b1001;
 	return (status==0 && n==1);
 }
 
@@ -204,7 +203,7 @@ bool BME280::measure() {
 	// settings read out from registers f2 and f4
 
 	// wait while status not ready:
-	for (int i = 0; i < 10; i) {
+	for (int i = 0; i < 10; i++) {
 		usleep(5000);
 	}
 	setMode(0x2); // set mode to "forced measurement" (single-shot)
@@ -213,8 +212,8 @@ bool BME280::measure() {
 				  // wait at least 112.8 ms for a full accuracy measurement of all 3 values
 				  // or ask for status to be 0
 	usleep((int)(t_max * 1000 + 0.5) + 200);
-	if (fDebugLevel > 1)measure
-		printf("measurement took about %.1f ms\n", t_max + 0.2);
+	if (fDebugLevel > 1)
+			printf("measurement took about %.1f ms\n", t_max + 0.2);
 	for (int i = 0; i < 10; i++) {
 		if (status()){
 			break;
@@ -234,8 +233,8 @@ int32_t BME280::readUT()
 
 	if (!measure()){
 		std::cerr << "error: measurement invalid";
+		return INT32_MIN;
 	}
-	return INT32_MIN;
 
 	readBuf[0] = 0;
 	readBuf[1] = 0;
@@ -260,8 +259,8 @@ int32_t BME280::readUP()
 
 	if (!measure()){
 		std::cerr << "error: measurement invalid";
+		return INT32_MIN;
 	}
-	return INT32_MIN;
 
 	readBuf[0] = 0;
 	readBuf[1] = 0;
@@ -286,8 +285,8 @@ int32_t BME280::readUH()
 
 	if (!measure()){
 		std::cerr << "error: measurement invalid";
+		return INT32_MIN;
 	}
-	return INT32_MIN;
 		
 	readBuf[0] = 0;
 	readBuf[1] = 0;
@@ -310,10 +309,14 @@ TPH BME280::readTPCU()
 		readBuf[i] = 0;
 	}
 	
+	TPH val;
 	if (!measure()){
 		std::cerr << "error: measurement invalid";
+		val.adc_P = INT32_MIN;
+		val.adc_T = INT32_MIN;
+		val.adc_H = INT32_MIN;
+		return val;
 	}
-	return INT32_MIN;
 	
 	int n = readReg(0xf7, readBuf, 8); // read T, P and H registers;
 	if (fDebugLevel > 1)
@@ -327,7 +330,6 @@ TPH BME280::readTPCU()
 	uint32_t adc_H = ((uint32_t)readBuf[6]) << 8;
 	adc_H |= ((uint32_t)readBuf[7]);		// (look datasheet page 25)
 
-	TPH val;
 	val.adc_P = (int32_t)adc_P;
 	val.adc_T = (int32_t)adc_T;
 	val.adc_H = (int32_t)adc_H;

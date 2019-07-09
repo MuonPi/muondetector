@@ -4,7 +4,13 @@
 #include "../i2cdevice.h"
 
 /* BME280  */
-
+// struct to store temperature, pressure and humidity data in different ways
+struct TPH {
+	uint32_t adc_T;
+	uint32_t adc_P;
+	uint32_t adc_H;
+	double T, P, H;
+};
 class BME280 : public i2cDevice { // t_max = 112.8 ms for all three measurements at max oversampling
 public:
 	BME280() : i2cDevice(0x76) { init(); }
@@ -12,8 +18,8 @@ public:
 	BME280(uint8_t slaveAddress) : i2cDevice(slaveAddress) { init(); }
 
 	bool init();
-	unsigned int status();
-	void measure();
+	bool status();
+	bool measure();
         uint8_t readConfig();
         uint8_t read_CtrlMeasReg();
 	bool writeConfig(uint8_t config);

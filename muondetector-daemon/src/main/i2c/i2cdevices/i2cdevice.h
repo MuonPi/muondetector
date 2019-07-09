@@ -16,14 +16,6 @@
 #define DEFAULT_DEBUG_LEVEL 0
 
 
-// struct to store temperature, pressure and humidity data in different ways
-struct TPH {
-	uint32_t adc_T;
-	uint32_t adc_P;
-	uint32_t adc_H;
-	double T, P, H;
-};
-
 //We define a class named i2cDevices to outsource the hardware dependent programm parts. We want to 
 //access components of integrated curcuits, like the ads1115 or other subdevices via i2c-bus.
 //The main aim here was, that the user does not have  to be concerned about the c like low level operations
