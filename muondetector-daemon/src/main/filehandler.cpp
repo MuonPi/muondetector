@@ -136,6 +136,9 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
             qDebug() << "could not read login data from file";
         }
     }
+}
+
+void FileHandler::start(){
     // set upload reminder
     QTimer *uploadReminder = new QTimer(this);
     uploadReminder->setInterval(60*1000*uploadReminderInterval); // every 5 minutes or so
@@ -486,9 +489,9 @@ bool FileHandler::saveLoginData(QString username, QString password){
     SecByteBlock iv(AES::BLOCKSIZE);
     rnd.GenerateBlock(iv, iv.size());
 
-    //qDebug() << "key length = " << keyText.size();
-    //qDebug() << "macAddressHashed = " << QByteArray::fromStdString(keyText).toHex();
-    //qDebug() << "plainText = " << QString::fromStdString(plainText);
+    qDebug() << "key length = " << keyText.size();
+    qDebug() << "macAddressHashed = " << QByteArray::fromStdString(keyText).toHex();
+    qDebug() << "plainText = " << QString::fromStdString(plainText);
 
     //////////////////////////////////////////////////////////////////////////
     // Encrypt
@@ -500,7 +503,7 @@ bool FileHandler::saveLoginData(QString username, QString password){
     StringSource encryptor(plainText, true,
                            new StreamTransformationFilter(cfbEncryption,
                                                           new StringSink(encrypted)));
-    //qDebug() << "encrypted = " << QByteArray::fromStdString(encrypted).toHex();
+    qDebug() << "encrypted = " << QByteArray::fromStdString(encrypted).toHex();
     // write encrypted message and IV to file
     loginDataFile.write((const char*)iv.data(),iv.size());
     loginDataFile.write(encrypted.c_str());
@@ -529,9 +532,10 @@ bool FileHandler::readLoginData(){
     }
     iv.Assign((byte*)ivData, AES::BLOCKSIZE);
 //    encrypted = loginDataFile.readAll().toStdString();
-    encrypted = QString::fromLocal8Bit(loginDataFile.readAll()).toStdString();
-//    QString::fromLocal8Bit(temp.data()).toStdString()
-    //qDebug() << "encrypted = " << QByteArray::fromStdString(encrypted).toHex();
+      QByteArray data = loginDataFile.readAll();
+      encrypted = std::string(data.constData(), data.length()); // <-- right :)
+//    QString::fromLocal8Bit(temp.data()).toStdString() <-- wrong!!
+    qDebug() << "encrypted = " << QByteArray::fromStdString(encrypted).toHex();
 
     //////////////////////////////////////////////////////////////////////////
     // Decrypt
@@ -543,9 +547,12 @@ bool FileHandler::readLoginData(){
                            new StreamTransformationFilter(cfbDecryption,
                                                           new StringSink(recovered)));
 
-    //qDebug() << "recovered = " << QString::fromStdString(recovered);
+    qDebug() << "recovered = " << QString::fromStdString(recovered);
     QString recoverdQString = QString::fromStdString(recovered);
     QStringList loginData = recoverdQString.split(';',QString::SkipEmptyParts);
+    if (loginData.size() < 2){
+        return false;
+    }
     username = loginData.at(0);
     password = loginData.at(1);
     return true;

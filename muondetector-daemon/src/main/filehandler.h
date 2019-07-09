@@ -22,6 +22,7 @@ signals:
 	void logIntervalSignal();
 
 public slots:
+    void start();
     void writeToDataFile(const QString& data); // writes data to the file opened in "dataFile"
     void onReceivedLogParameter(const LogParameter& log);
 

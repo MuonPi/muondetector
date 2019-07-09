@@ -360,6 +360,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     connect(this, &Daemon::aboutToQuit, fileHandler, &FileHandler::deleteLater);
     connect(this, &Daemon::logParameter, fileHandler, &FileHandler::onReceivedLogParameter);
     connect(fileHandlerThread, &QThread::finished, fileHandlerThread, &QThread::deleteLater);
+    connect(fileHandlerThread, &QThread::started, fileHandler, &FileHandler::start);
     fileHandlerThread->start();
 
 	// for pigpio signals:
