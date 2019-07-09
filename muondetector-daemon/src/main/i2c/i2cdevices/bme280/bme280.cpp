@@ -27,14 +27,15 @@ bool BME280::init()
 	return (val == 0x60);
 }
 
-unsigned int BME280::status() {
+bool BME280::status() {
 	uint8_t status[1];
-	status[0] = 10;
+	status[0] = 0;
 	int n = readReg(0xf3, status, 1);
-	if (fDebugLevel > 1)
+	if (fDebugLevel > 1){
                 printf("%d bytes read\n", n);
+	}
 	status[0] &= 0b1001;
-	return (unsigned int)status[0];
+	return (status==0 && n==1);
 }
 
 uint8_t BME280::readConfig() {
@@ -158,7 +159,7 @@ bool BME280::setDefaultSettings() {
     write_CtrlMeasReg(0b01001000); // enabling temperature and pressure measurement (oversampling x2), set sleep mode
 }
 
-void BME280::measure() {
+bool BME280::measure() {
 	// calculate t_max [ms] from settings:
 	uint8_t readBuf[1];
 	double t_max = 1.25;
@@ -203,7 +204,7 @@ void BME280::measure() {
 	// settings read out from registers f2 and f4
 
 	// wait while status not ready:
-	while (status() != 0) {
+	for (int i = 0; i < 10; i) {
 		usleep(5000);
 	}
 	setMode(0x2); // set mode to "forced measurement" (single-shot)
@@ -212,12 +213,18 @@ void BME280::measure() {
 				  // wait at least 112.8 ms for a full accuracy measurement of all 3 values
 				  // or ask for status to be 0
 	usleep((int)(t_max * 1000 + 0.5) + 200);
-	if (fDebugLevel > 1)
+	if (fDebugLevel > 1)measure
 		printf("measurement took about %.1f ms\n", t_max + 0.2);
-	while (status() != 0) {
+	for (int i = 0; i < 10; i++) {
+		if (status()){
+			break;
+		}
 		usleep(5000);
+		if (i = 9){
+			return false;
+		}
 	}
-	return;
+	return true;
 }
 
 int32_t BME280::readUT()
@@ -225,7 +232,10 @@ int32_t BME280::readUT()
 	uint8_t readBuf[3];		// 2 byte buffer to store the data read from the I2C device  
 	uint32_t val;		// Stores the 20 bit value of our ADC conversion
 
-	measure();
+	if (!measure()){
+		std::cerr << "error: measurement invalid";
+	}
+	return INT32_MIN;
 
 	readBuf[0] = 0;
 	readBuf[1] = 0;
@@ -248,7 +258,10 @@ int32_t BME280::readUP()
 	uint8_t readBuf[3];		// 2 byte buffer to store the data read from the I2C device  
 	uint32_t val;		// Stores the 20 bit value of our ADC conversion
 
-	measure();
+	if (!measure()){
+		std::cerr << "error: measurement invalid";
+	}
+	return INT32_MIN;
 
 	readBuf[0] = 0;
 	readBuf[1] = 0;
@@ -271,7 +284,11 @@ int32_t BME280::readUH()
 	uint8_t readBuf[2];
 	uint16_t val;
 
-	measure();
+	if (!measure()){
+		std::cerr << "error: measurement invalid";
+	}
+	return INT32_MIN;
+		
 	readBuf[0] = 0;
 	readBuf[1] = 0;
 
@@ -292,7 +309,12 @@ TPH BME280::readTPCU()
 	for (int i = 0; i < 8; i++) {
 		readBuf[i] = 0;
 	}
-	measure();
+	
+	if (!measure()){
+		std::cerr << "error: measurement invalid";
+	}
+	return INT32_MIN;
+	
 	int n = readReg(0xf7, readBuf, 8); // read T, P and H registers;
 	if (fDebugLevel > 1)
 		printf("%d bytes read\n", n);
