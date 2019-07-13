@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>res/muon.ico</file>
+        <file>res/mymap.qml</file>
+    </qresource>
+</RCC>

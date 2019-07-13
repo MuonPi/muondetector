@@ -103,13 +103,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 	ui->discr1Layout->setAlignment(ui->discr1Slider, Qt::AlignHCenter);
     ui->discr2Layout->setAlignment(ui->discr2Slider, Qt::AlignHCenter); // aligns the slider in their vertical layout centered
-#if defined(Q_OS_UNIX)
-        QIcon icon("/usr/share/pixmaps/muon.ico");
-#elif defined(Q_OS_WIN)
-        QIcon icon("muon.ico");
-#else
-        QIcon icon("muon.ico");
-#endif
+    QIcon icon(":/res/muon.ico");
 	this->setWindowIcon(icon);
     setMaxThreshVoltage(1.0);
 
