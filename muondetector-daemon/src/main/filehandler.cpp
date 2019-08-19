@@ -423,7 +423,7 @@ QString FileHandler::createFileName(){
 // upload related stuff
 
 bool FileHandler::uploadDataFile(QString fileName){
-    std::string setEnvironmentPw = "LFTP_PASSWORD="+password.toStdString();
+    std::string setEnvironmentPw = "export LFTP_PASSWORD="+password.toStdString();
     system(setEnvironmentPw.c_str());
     QProcess lftpProcess(this);
     lftpProcess.setProgram("lftp");
