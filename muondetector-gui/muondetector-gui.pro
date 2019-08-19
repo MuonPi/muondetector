@@ -20,9 +20,9 @@ CONFIG += qwt
 CONFIG += c++11
 CONFIG += qtquickcompiler
 
-QMAKE_CXXFLAGS += -mthumb
-QMAKE_CXXFLAGS += -mthumb-interwork
-QMAKE_CXXFLAGS += -marm
+#QMAKE_CXXFLAGS += -mthumb
+#QMAKE_CXXFLAGS += -mthumb-interwork
+#QMAKE_CXXFLAGS += -marm
 
 TARGET = muondetector-gui
 TEMPLATE = app
@@ -64,10 +64,8 @@ else:unix:LIBS += -L/usr/local/qwt-6.1.3/lib -lqwt
 else:unix:LIBS += -L/usr/lib/muondetector-gui -lqwt
 else:unix:LIBS += "$$PWD/../lib/libqwt.so.6.1.3"
 else:unix:LIBS += -L/usr/lib/ -lqwt
-unix:LIBS += -L/usr/lib/muondetector-shared1 -lmuondetector-shared1
-else:LIBS += -L./ -lmuondetector-shared1
-win32:LIBS += -Llib -lmuondetector-shared1
-win32:INCLUDEPATH += lib
+unix:LIBS += -L/usr/lib/muondetector-shared -lmuondetector-shared
+win32:LIBS += -L./ -lmuondetector-shared1
 
 #QT5_ADD_RESOURCES(RESOURCES resources.qrc)
 
