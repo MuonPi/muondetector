@@ -1,11 +1,11 @@
-/*import QtQuick 2.7
+import QtQuick 2.7
 import QtLocation 5.7
 import QtPositioning 5.7
-*/
+/*
 import QtQuick 2.12
 import QtLocation 5.12
 import QtPositioning 5.12
-
+*/
 Item{
     id: rootItem
     Plugin {

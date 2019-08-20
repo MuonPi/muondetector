@@ -437,9 +437,9 @@ bool FileHandler::uploadDataFile(QString fileName){
     //qDebug() << lftpProcess.arguments();
     lftpProcess.start();
     if (!lftpProcess.waitForFinished(timeout)){
-        //qDebug() << lftpProcess.readAllStandardOutput();
-        //qDebug() << lftpProcess.readAllStandardError();
-        //qDebug() << "lftp not installed or timed out after "<< timeout/1000<< " s";
+        qDebug() << lftpProcess.readAllStandardOutput();
+        qDebug() << lftpProcess.readAllStandardError();
+        qDebug() << "lftp not installed or timed out after "<< timeout/1000<< " s";
         system("unset LFTP_PASSWORD");
         return false;
     }
@@ -456,11 +456,13 @@ bool FileHandler::uploadRecentDataFiles(){
     readFileInformation();
     for (auto &fileName : notUploadedFilesNames){
         QString filePath = dataFolderPath+fileName;
+        qDebug() << "checking for upload: " << filePath;
         if (filePath!=currentWorkingFilePath&&filePath!=currentWorkingLogPath){
-            //qDebug() << "attempt to upload " << filePath;
+            qDebug() << "attempt to upload " << filePath;
             if (!uploadDataFile(filePath)){
                 return false;
             }
+            qDebug() << "success";
             QFile::rename(filePath,QString(configPath+"uploadedFiles/"+fileName));
         }
     }
