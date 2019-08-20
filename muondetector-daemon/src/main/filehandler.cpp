@@ -436,7 +436,7 @@ bool FileHandler::uploadDataFile(QString fileName){
     lftpProcess.setArguments(arguments);
     //qDebug() << lftpProcess.arguments();
     lftpProcess.start();
-    qDebug() << "started upload of " << fileName;
+    //qDebug() << "started upload of " << fileName;
     if (!lftpProcess.waitForFinished(timeout)){
         qDebug() << lftpProcess.readAllStandardOutput();
         qDebug() << lftpProcess.readAllStandardError();
@@ -449,7 +449,7 @@ bool FileHandler::uploadDataFile(QString fileName){
         system("unset LFTP_PASSWORD");
         return false;
     }
-    qDebug() << "success!";
+    //qDebug() << "success!";
     system("unset LFTP_PASSWORD");
     return true;
 }
