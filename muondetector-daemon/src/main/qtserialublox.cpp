@@ -119,6 +119,9 @@ void QtSerialUblox::ackTimeout() {
 void QtSerialUblox::onReadyRead() {
 	// this function gets called when the serial port emits readyRead signal
 	//cout << "\nstart readyread" <<endl;
+    if (serialPort.isNull()){
+        return;
+    }
 	QByteArray temp = serialPort->readAll();
 	if (dumpRaw) {
 		emit toConsole(QString(temp));
@@ -245,7 +248,7 @@ bool QtSerialUblox::sendUBX(uint16_t msgID, const std::string& payload, uint16_t
 	//if (s.size() == WriteBuffer(s)) return true;
 	//QByteArray block;
 	//block.append(QString::fromStdString(s));
-	if (serialPort) {
+    if (!serialPort.isNull()) {
 		QByteArray block(s.c_str(), s.size());
 		if (serialPort->write(block)) {
 			if (serialPort->waitForBytesWritten(timeout)) {
