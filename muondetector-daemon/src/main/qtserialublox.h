@@ -69,7 +69,6 @@ public slots:
 	void pollMsg(uint16_t msgID);
 	void enqueueMsg(uint16_t msgID, const std::string& payload);
 	// for polling the port configuration for specific port set rate to port ID
-	void handleError(QSerialPort::SerialPortError serialPortError);
 	void UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate);
 	void UBXSetCfgRate(uint16_t measRate, uint16_t navRate);
 	void UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask);
