@@ -432,7 +432,7 @@ bool FileHandler::uploadDataFile(QString fileName){
     arguments << "-p" << "35221";
     arguments << "-u" << QString(username);
     arguments << "balu.physik.uni-giessen.de:/cosmicshower";
-    arguments << "-e" << QString("mkdir "+hashedMacAddress+" ; cd "+hashedMacAddress+" && put "+fileName+" ; exit");
+    arguments << "-e" << QString("'mkdir "+hashedMacAddress+" ; cd "+hashedMacAddress+" && put "+fileName+" ; exit'");
     lftpProcess.setArguments(arguments);
     //qDebug() << lftpProcess.arguments();
     lftpProcess.start();
