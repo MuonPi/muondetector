@@ -563,8 +563,8 @@ void QtSerialUblox::handleError(QSerialPort::SerialPortError serialPortError)
 	if (serialPortError == QSerialPort::ReadError) {
 		emit toConsole(QObject::tr("An I/O error occurred while reading "
 			"the data from port %1, error: %2\n")
-			.arg(serialPort->portName())
-			.arg(serialPort->errorString()));
+            .arg(_portName)
+            .arg(serialPortError.errorString()));
 	}
 }
 void QtSerialUblox::pollMsgRate(uint16_t msgID) {
