@@ -1,0 +1,15 @@
+Package: muondetector-gui
+Version: 1.0.3
+Maintainer: Marvin Peter <marvin.peter@physik.uni-giessen.de>
+Section: net
+Source: muondetector-gui
+Homepage: https://github.com/marvin5300/muondetector
+Architecture: amd64
+Priority: optional
+Depends: libqt5gui5 (>=5), libqt5widgets5 (>=5), libqt5core5a (>=5), libqt5quickwidgets5 (>=5.3), libqt5network5 (>=5), qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), libmuondetector-shared (>=1), libqwt-qt5-6 (>=6.1.3)
+Description: GUI for monitoring and controlling the muondetector-daemon.
+ It connects to muondetector-daemon via TCP. It is based on Qt and C++.
+ It lets you change the settings for the muondetector hardware and
+ uses qml for displaying the current position on the map if connected
+ the muondetector-daemon.
+ It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).

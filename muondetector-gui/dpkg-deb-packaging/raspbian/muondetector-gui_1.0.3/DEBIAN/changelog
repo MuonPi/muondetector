@@ -1,0 +1,11 @@
+muondetector-gui (1.0.3-raspbian) stretch; urgency=low
+
+  * Updated
+
+ -- Marvin Peter <marvin.peter@physik.uni-giessen.de>  Thu, 22 Aug 2019 14:12:17 +0200
+
+muondetector-gui (1.0.1-raspbian) stretch; urgency=low
+
+  * Initial release.
+
+ -- Marvin Peter <marvin.peter@physik.uni-giessen.de>  Fri, 26 Oct 2018 15:20:00 +0200

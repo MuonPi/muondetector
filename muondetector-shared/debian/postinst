@@ -1,6 +1,0 @@
-#!/bin/bash
-ln -s /usr/lib/muondetector-shared/libmuondetector-shared.so.1.0 /usr/lib/muondetector-shared/libmuondetector-shared.so.1.0.0
-ln -s /usr/lib/muondetector-shared/libmuondetector-shared.so.1 /usr/lib/muondetector-shared/libmuondetector-shared.so.1.0
-ln -s /usr/lib/muondetector-shared/libmuondetector-shared.so /usr/lib/muondetector-shared/libmuondetector-shared.so.1
-ln -s /usr/lib/muondetector-shared/libmuondetector-shared /usr/lib/muondetector-shared/libmuondetector-shared.so
-ldconfig
