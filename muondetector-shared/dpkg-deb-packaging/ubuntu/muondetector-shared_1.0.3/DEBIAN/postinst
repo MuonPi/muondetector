@@ -1,0 +1,4 @@
+#!/bin/bash
+ln -s /usr/lib/libmuondetector-shared.so.1.0.3 /usr/lib/libmuondetector-shared.so.1.0
+ln -s /usr/lib/libmuondetector-shared.so.1.0 /usr/lib/libmuondetector-shared.so.1
+ln -s /usr/lib/libmuondetector-shared.so.1 /usr/lib/libmuondetector-shared.so
