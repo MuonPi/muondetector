@@ -3,11 +3,11 @@ Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 #Source: https://github.com/marvin5300/myon_detector
 
 Files: *
-Copyright: 2018 Marvin Peter <marvin.peter@physik.uni-giessen.de>
+Copyright: 2019 Marvin Peter <marvin.peter@physik.uni-giessen.de>
 License: GPL-3.0+
 
 Files: debian/*
-Copyright: 2018 Marvin Peter <marvin.peter@physik.uni-giessen.de>
+Copyright: 2019 Marvin Peter <marvin.peter@physik.uni-giessen.de>
 License: GPL-3.0+
 
 License: GPL-3.0+
