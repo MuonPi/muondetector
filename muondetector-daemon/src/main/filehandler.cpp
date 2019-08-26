@@ -101,7 +101,7 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
     fileSize = fileSizeMB;
     QDir temp;
     QString fullPath = temp.homePath()+"/"+mainDataFolderName;
-    QCryptographicHash hashFunction(QCryptographicHash::Sha3_256);
+    //QCryptographicHash hashFunction(QCryptographicHash::Sha3_256);
 //    hashedMacAddress = QString(hashFunction.hash(getMacAddressByteArray(), QCryptographicHash::Sha3_224).toHex());
     hashedMacAddress = QString(QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex());
     //qDebug()<<"hashed MAC: "<<hashedMacAddress;
@@ -152,6 +152,7 @@ void FileHandler::start(){
     connect(logReminder, &QTimer::timeout, this, &FileHandler::onLogRemind);
     logReminder->start();
     // open files that are currently written
+    readFileInformation();
     openFiles();
 }
 
@@ -434,9 +435,9 @@ bool FileHandler::uploadDataFile(QString fileName){
     arguments << "balu.physik.uni-giessen.de:/cosmicshower";
     arguments << "-e" << QString("'mkdir "+hashedMacAddress+" ; cd "+hashedMacAddress+" && put "+fileName+" ; exit'");
     lftpProcess.setArguments(arguments);
-    //qDebug() << lftpProcess.arguments();
+    qDebug() << lftpProcess.arguments();
     lftpProcess.start();
-    //qDebug() << "started upload of " << fileName;
+    qDebug() << "started upload of " << fileName;
     if (!lftpProcess.waitForFinished(timeout)){
         qDebug() << lftpProcess.readAllStandardOutput();
         qDebug() << lftpProcess.readAllStandardError();
@@ -449,7 +450,7 @@ bool FileHandler::uploadDataFile(QString fileName){
         system("unset LFTP_PASSWORD");
         return false;
     }
-    //qDebug() << "success!";
+    qDebug() << "success!";
     system("unset LFTP_PASSWORD");
     return true;
 }

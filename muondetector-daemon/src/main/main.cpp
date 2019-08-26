@@ -318,8 +318,8 @@ int main(int argc, char *argv[])
 	}
 
 
-    string username;
-    string password;
+    std::string username="";
+    std::string password="";
     if (parser.isSet(lftpSettingsOption)){
         cout << "To set the login for the ftp-server, please enter user name:"<<endl;
         cin >> username;
