@@ -101,8 +101,6 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
     fileSize = fileSizeMB;
     QDir temp;
     QString fullPath = temp.homePath()+"/"+mainDataFolderName;
-    //QCryptographicHash hashFunction(QCryptographicHash::Sha3_256);
-//    hashedMacAddress = QString(hashFunction.hash(getMacAddressByteArray(), QCryptographicHash::Sha3_224).toHex());
     hashedMacAddress = QString(QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex());
     //qDebug()<<"hashed MAC: "<<hashedMacAddress;
     fullPath += hashedMacAddress;
@@ -152,7 +150,6 @@ void FileHandler::start(){
     connect(logReminder, &QTimer::timeout, this, &FileHandler::onLogRemind);
     logReminder->start();
     // open files that are currently written
-    readFileInformation();
     openFiles();
 }
 
@@ -435,9 +432,9 @@ bool FileHandler::uploadDataFile(QString fileName){
     arguments << "balu.physik.uni-giessen.de:/cosmicshower";
     arguments << "-e" << QString("'mkdir "+hashedMacAddress+" ; cd "+hashedMacAddress+" && put "+fileName+" ; exit'");
     lftpProcess.setArguments(arguments);
-    qDebug() << lftpProcess.arguments();
+    //qDebug() << lftpProcess.arguments();
     lftpProcess.start();
-    qDebug() << "started upload of " << fileName;
+    //qDebug() << "started upload of " << fileName;
     if (!lftpProcess.waitForFinished(timeout)){
         qDebug() << lftpProcess.readAllStandardOutput();
         qDebug() << lftpProcess.readAllStandardError();
@@ -450,13 +447,23 @@ bool FileHandler::uploadDataFile(QString fileName){
         system("unset LFTP_PASSWORD");
         return false;
     }
-    qDebug() << "success!";
+    //qDebug() << "success!";
     system("unset LFTP_PASSWORD");
     return true;
 }
 
 bool FileHandler::uploadRecentDataFiles(){
     readFileInformation();
+    QDir temp;
+    QFile lftp_rc_file(temp.homePath()+"/.lftp/rc");
+    if (!lftp_rc_file.exists()||lftp_rc_file.size()<10){
+        if (!lftp_rc_file.open(QIODevice::ReadWrite)){
+            qDebug() << "could not open .lftp/rc file";
+            return false;
+        }
+        lftp_rc_file.write("set ssl:verify-certificate no\n");
+        lftp_rc_file.close();
+    }
     for (auto &fileName : notUploadedFilesNames){
         QString filePath = dataFolderPath+fileName;
         //qDebug() << "checking for upload: " << filePath;
