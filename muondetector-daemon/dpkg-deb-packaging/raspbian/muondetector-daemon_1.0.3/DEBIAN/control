@@ -4,7 +4,7 @@ Maintainer: Marvin Peter <marvin.peter@physik.uni-giessen.de>
 Section: net
 Architecture: armhf
 Priority: optional
-Depends: muondetector-shared (>=1.0.3), libqt5serialport5 (>= 5)
+Depends: lftp (>=4.7), muondetector-shared (>=1.0.3), libqt5serialport5 (>= 5)
 Description: Daemon that controls the muon detector board
  It connects to the ublox gps module on the detector board via serial (rx tx) "ubx protocol" and to the other chips on the board via i2c. It is based on Qt and C++ and a little bit of C.
  It does the measuring in the background and sends the data to the central server.

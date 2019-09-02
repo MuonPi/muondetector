@@ -2096,9 +2096,11 @@ void Daemon::logBiasValues()
 			istr.str(calib->getCalibItem("RSENSE").value);
 			double rsense;
 			istr >> rsense;
-            cout<<"rsense:"<<calib->getCalibItem("RSENSE").value<<" ("<<rsense<<")"<<endl;
-			rsense /= 10.*1000.; // yields Rsense in MOhm
-			logParameter(LogParameter("calib_rsense", QString::number(rsense*1000.)+" kOhm", LogParameter::LOG_ONCE));
+            if (verbose>2){
+                cout<<"rsense:"<<calib->getCalibItem("RSENSE").value<<" ("<<rsense<<")"<<endl;
+            }
+            rsense /= 10.*1000.; // yields Rsense in MOhm
+            logParameter(LogParameter("calib_rsense", QString::number(rsense*1000.)+" kOhm", LogParameter::LOG_ONCE));
 //			logParameter(LogParameter("vbias1", QString::number(v1*vdiv)+" V", LogParameter::LOG_AVERAGE));
 //			logParameter(LogParameter("vbias2", QString::number(v2*vdiv)+" V", LogParameter::LOG_AVERAGE));
             double ubias=v2*vdiv;
@@ -2113,7 +2115,9 @@ void Daemon::logBiasValues()
 			istr.clear();
 			istr.str(flagItem.value);
             istr >> calFlags;
-            cout<<"cal flags:"<<flagItem.value<<" ("<<(int)calFlags<<dec<<")"<<endl;
+            if (verbose>2){
+                cout<<"cal flags:"<<flagItem.value<<" ("<<(int)calFlags<<dec<<")"<<endl;
+            }
             if (calFlags & CalibStruct::CALIBFLAGS_CURRENT_COEFFS) {
 				double islope,ioffs;
 //				istr=std::istringstream(calib->getCalibItem("COEFF2").value);

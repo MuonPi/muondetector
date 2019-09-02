@@ -421,8 +421,10 @@ QString FileHandler::createFileName(){
 // upload related stuff
 
 bool FileHandler::uploadDataFile(QString fileName){
-    std::string setEnvironmentPw = "export LFTP_PASSWORD="+password.toStdString();
-    system(setEnvironmentPw.c_str());
+    char envName[] = "LFTP_PASSWORD";
+    if (setenv(envName, password.toStdString().c_str(), 1)!=0){
+        qDebug() << "setenv returned not 0";
+    }
     QProcess lftpProcess(this);
     lftpProcess.setProgram("lftp");
     QStringList arguments;
@@ -430,11 +432,11 @@ bool FileHandler::uploadDataFile(QString fileName){
     arguments << "-p" << "35221";
     arguments << "-u" << QString(username);
     arguments << "balu.physik.uni-giessen.de:/cosmicshower";
-    arguments << "-e" << QString("'mkdir "+hashedMacAddress+" ; cd "+hashedMacAddress+" && put "+fileName+" ; exit'");
+    arguments << "-e" << QString("mkdir "+hashedMacAddress+" ; cd "+hashedMacAddress+" && put "+fileName+" ; exit");
     lftpProcess.setArguments(arguments);
     //qDebug() << lftpProcess.arguments();
     lftpProcess.start();
-    //qDebug() << "started upload of " << fileName;
+    //qDebug() << "started upload of " << fileName << "user:" << username << ";pw:" << password <<";";
     if (!lftpProcess.waitForFinished(timeout)){
         qDebug() << lftpProcess.readAllStandardOutput();
         qDebug() << lftpProcess.readAllStandardError();
@@ -442,20 +444,26 @@ bool FileHandler::uploadDataFile(QString fileName){
         system("unset LFTP_PASSWORD");
         return false;
     }
+    //qDebug() << "standard output" << lftpProcess.readAllStandardOutput();
+    //qDebug() << "standard error:" << lftpProcess.readAllStandardError();
+    //qDebug() << "exit status:" << lftpProcess.exitStatus();
     if (lftpProcess.exitStatus()!=0){
         qDebug() << "lftp returned exit status other than 0";
-        system("unset LFTP_PASSWORD");
+        unsetenv(envName);
         return false;
     }
-    //qDebug() << "success!";
-    system("unset LFTP_PASSWORD");
+    unsetenv(envName);
     return true;
 }
 
 bool FileHandler::uploadRecentDataFiles(){
     readFileInformation();
-    QDir temp;
-    QFile lftp_rc_file(temp.homePath()+"/.lftp/rc");
+    QDir lftpDir;
+    lftpDir.setPath(lftpDir.homePath()+"/.lftp");
+    if (!lftpDir.exists()){
+        lftpDir.mkpath(".");
+    }
+    QFile lftp_rc_file(lftpDir.path()+"/rc");
     if (!lftp_rc_file.exists()||lftp_rc_file.size()<10){
         if (!lftp_rc_file.open(QIODevice::ReadWrite)){
             qDebug() << "could not open .lftp/rc file";
@@ -470,9 +478,10 @@ bool FileHandler::uploadRecentDataFiles(){
         if (filePath!=currentWorkingFilePath&&filePath!=currentWorkingLogPath){
             //qDebug() << "attempt to upload " << filePath;
             if (!uploadDataFile(filePath)){
+                qDebug() << "failed to upload recent files";
                 return false;
             }
-            qDebug() << "success";
+            //qDebug() << "success uploading recent files";
             QFile::rename(filePath,QString(configPath+"uploadedFiles/"+fileName));
         }
     }
