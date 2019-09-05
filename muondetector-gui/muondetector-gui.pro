@@ -13,6 +13,7 @@ QT       += core \
           network
 QT       += svg
 QT       += quickwidgets
+QT       += quick
 QT       += qml
 
 #greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
