@@ -1,3 +1,4 @@
+
 /****************************************************************************
 **
 ** Copyright (C) 2017 The Qt Company Ltd.
@@ -47,7 +48,6 @@
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
-
 import QtQuick 2.5
 import QtQuick.Controls 1.4
 import QtQuick.Layouts 1.2
@@ -70,11 +70,12 @@ Item {
     property alias imagesButton: imagesButton
     property alias findSimilarButton: findSimilarButton
     property alias ratingView: ratingView
+    /*
     width: parent.width
     height: parent.height
-
+    */
     ScrollView {
-        id:scrollView
+        id: scrollView
         flickableItem.interactive: true
         anchors.fill: parent
         anchors.margins: 15
@@ -292,4 +293,3 @@ Item {
         }
     }
 }
-

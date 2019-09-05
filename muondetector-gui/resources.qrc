@@ -42,5 +42,7 @@
         <file>qml/places/views/SuggestionView.qml</file>
         <file>qml/places/helper.js</file>
         <file>qml/places/places.qml</file>
+        <file>qml/CustomMap.qml</file>
+        <file>qml/CustomMapForm.ui.qml</file>
     </qresource>
 </RCC>

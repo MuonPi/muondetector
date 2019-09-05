@@ -49,13 +49,16 @@
 ****************************************************************************/
 
 import QtQuick 2.5
-import QtQuick.Controls 2.5
+import QtQuick.Controls 2.1
 import QtPositioning 5.5
 import QtLocation 5.6
+import QtQuick.Layouts 1.0
 import "../helper.js" as Helper
 
 Map {
     id: map
+    width: parent.width
+    height: parent.height - 50
     property bool followme: false
     property variant scaleLengths: [5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000]
 
@@ -88,11 +91,7 @@ Map {
         scaleText.text = text
     }
 
-    center {
-        // The Qt Company in Oslo
-        latitude: 59.9485
-        longitude: 10.7686
-    }
+    center: QtPositioning.coordinate(50.569212, 8.673828) // 2. Physikalisches Institut Gießen
 
     gesture.flickDeceleration: 3000
     gesture.enabled: true

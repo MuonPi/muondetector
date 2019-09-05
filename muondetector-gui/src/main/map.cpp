@@ -13,7 +13,7 @@ Map::Map(QWidget *parent) :
     QVariantMap parameters;
     mapUi->setupUi(this);
     mapUi->quickWidget->setResizeMode(QQuickWidget::SizeRootObjectToView);
-
+/*
     // Fetch tokens from the environment, if present
     const QByteArray mapboxMapID = qgetenv("MAPBOX_MAP_ID");
     const QByteArray mapboxAccessToken = qgetenv("MAPBOX_ACCESS_TOKEN");
@@ -34,14 +34,15 @@ Map::Map(QWidget *parent) :
     }
     if (!esriToken.isEmpty()){
         parameters["esri.token"] = QString::fromLocal8Bit(esriToken);
-    }
+    }*/
 
     QQmlEngine* engine = new QQmlEngine(this);
-    engine->addImportPath(QStringLiteral(":/imports"));
-    QQmlComponent* component = new QQmlComponent(engine, "qrc:/qml/mymap.qml");//QUrl::fromLocalFile("/usr/share/muondetector-gui/qml/mymap.qml"));
+    //engine->addImportPath(QStringLiteral(":/imports"));
+    //QQmlComponent* component = new QQmlComponent(engine, "qrc:/qml/mymap.qml");//QUrl::fromLocalFile("/usr/share/muondetector-gui/qml/mymap.qml"));
+    QQmlComponent* component = new QQmlComponent(engine, "qrc:/qml/CustomMap.qml");
     mapComponent = component->create();
-    QMetaObject::invokeMethod(mapComponent, "initializeProviders",
-                              Q_ARG(QVariant, QVariant::fromValue(parameters)));
+    //QMetaObject::invokeMethod(mapComponent, "initializeProviders",
+    //                          Q_ARG(QVariant, QVariant::fromValue(parameters)));
     mapUi->quickWidget->setContent(component->url(), component, mapComponent);
     mapUi->quickWidget->show();
     //mapUi->quickWidget->setSource(QUrl::fromLocalFile("qml/mymap.qml"));

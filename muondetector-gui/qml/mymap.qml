@@ -1,5 +1,5 @@
 import QtQuick 2.7
-import QtQuick.Controls 2.5
+import QtQuick.Controls 2.1
 import QtLocation 5.7
 import QtPositioning 5.7
 import QtQuick.Layouts 1.0
@@ -48,6 +48,7 @@ Map {
 
 Item{
     id: rootItem
+    //anchors.fill: parent
     property variant map: Map
     property variant parameters
     property variant searchLocation: map ? map.center : QtPositioning.coordinate()
@@ -155,22 +156,10 @@ Item{
         }
     }*/
 
-    /*Rectangle{
-        id: barRectangle
-        anchors.fill: parent
-        width: rootItem.width
-        height: 300
-        SearchBar{
-            id: bar
-            searchBarVisbile: true
-            visible: true
-        }
-    }
-*/
-
     //! [PlaceSearchSuggestionModel search text changed 1]
-    SearchBar {
+/*    SearchBar {
         id: searchBar
+        Layout.row: 0
     //! [PlaceSearchSuggestionModel search text changed 1]
         searchBarVisbile: stackView.depth > 1 &&
                           stackView.currentItem &&
@@ -198,7 +187,7 @@ Item{
     //! [PlaceSearchSuggestionModel search text changed 3]
     }
     //! [PlaceSearchSuggestionModel search text changed 3]
-
+*/
 
     StackView {
         id: stackView
@@ -381,7 +370,7 @@ Item{
         focus: true
         initialItem:  Item {
             id: page
-
+            anchors.fill: parent
             //! [PlaceSearchModel model]
             PlaceSearchModel {
                 id: placeSearchModel

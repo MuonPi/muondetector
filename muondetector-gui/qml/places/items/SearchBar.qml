@@ -49,7 +49,7 @@
 ****************************************************************************/
 
 import QtQuick 2.7
-import QtQuick.Controls 2.5
+import QtQuick.Controls 1.4
 import QtQuick.Layouts 1.2
 
 ToolBar {
@@ -97,12 +97,12 @@ ToolBar {
         }
         ToolButton {
             id: searchButton
-            icon.source:  "../resources/search.png"
+            iconSource:  "../resources/search.png"
             onClicked: doSearch(searchText.text)
         }
         ToolButton {
             id: categoryButton
-            icon.source:  "../resources/categories.png"
+            iconSource:  "../resources/categories.png"
             onClicked: showCategories()
         }
     }
@@ -116,12 +116,12 @@ ToolBar {
         visible: opacity ? true : false
         ToolButton {
             id: backButton
-            icon.source:  "../resources/left.png"
+            iconSource:  "../resources/left.png"
             onClicked: goBack()
         }
         ToolButton {
             id: mapButton
-            icon.source:  "../resources/search.png"
+            iconSource:  "../resources/search.png"
             onClicked: showMap()
         }
         Item {

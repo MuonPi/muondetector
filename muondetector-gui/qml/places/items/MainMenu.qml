@@ -49,7 +49,7 @@
 ****************************************************************************/
 
 import QtQuick 2.5
-import QtQuick.Controls 2.5
+import QtQuick.Controls 2.1
 import QtLocation 5.6
 
 MenuBar {
