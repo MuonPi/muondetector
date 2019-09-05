@@ -48,7 +48,7 @@
 **
 ****************************************************************************/
 
-import QtQuick 2.5
+import QtQuick 2.2
 import QtQuick.Controls 2.1
 import QtPositioning 5.5
 import QtLocation 5.6
@@ -58,7 +58,6 @@ import "../helper.js" as Helper
 Map {
     id: map
     width: parent.width
-    height: parent.height - 50
     property bool followme: false
     property variant scaleLengths: [5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000]
 
@@ -173,6 +172,7 @@ Map {
         }
     }
 
+    /*
     MapQuickItem {
         id: poiTheQtComapny
         sourceItem: Rectangle { width: 14; height: 14; color: "#e41e25"; border.width: 2; border.color: "white"; smooth: true; radius: 7 }
@@ -195,6 +195,7 @@ Map {
         coordinate: poiTheQtComapny.coordinate
         anchorPoint: Qt.point(-poiTheQtComapny.sourceItem.width * 0.5,poiTheQtComapny.sourceItem.height * 1.5)
     }
+    */
 
     PositionSource{
         id: positionSource

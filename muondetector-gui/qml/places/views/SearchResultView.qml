@@ -48,7 +48,7 @@
 **
 ****************************************************************************/
 
-import QtQuick 2.5
+import QtQuick 2.2
 import QtLocation 5.6
 import QtQuick.Controls 1.4
 import QtQuick.Layouts 1.2
@@ -59,7 +59,7 @@ ListView {
     width: parent.width
     height: parent.height
 
-    property variant placeSearchModel
+    //property variant placeSearchModel
     signal showPlaceDetails(variant place, variant distance)
     signal showMap()
 

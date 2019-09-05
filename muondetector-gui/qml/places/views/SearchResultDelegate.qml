@@ -48,7 +48,7 @@
 **
 ****************************************************************************/
 
-import QtQuick 2.5
+import QtQuick 2.2
 import QtLocation 5.6
 import QtQuick.Controls 1.4
 import QtQuick.Layouts 1.2
@@ -102,7 +102,7 @@ Item {
                 Image {
                     // anchors.verticalCenter: parent.verticalCenter
                     id:icon
-                    source: place.favorite ? "../../resources/star.png" : place.icon.url()
+                    source: place.favorite ? "../resources/star.png" : place.icon.url()
                     Layout.rowSpan: 2
                 }
 
