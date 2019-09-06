@@ -574,9 +574,9 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 		tempStream << "   time base            : " << timeBase << "\n";
 		emit toConsole(QString::fromStdString(tempStream.str()));
 	}
+    std::stringstream tempStream;
 	else if (verbose > 0) {
 		// output is: rising falling accEst valid timeBase utcAvailable
-		std::stringstream tempStream;
 		if (flags & 0x80) {
 			// if new rising edge
 			tempStream << unixtime_from_gps(wnR, towMsR / 1000, (long int)(sr*1e9 + towSubMsR));
