@@ -533,8 +533,8 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 	//   cout<<endl;
 	//  cout<<flush;
 
+    std::stringstream tempStream;
 	if (verbose > 3) {
-		std::stringstream tempStream;
 		//std::string temp;
 		tempStream << "*** UBX-TimTM2 message:" << endl;
 		tempStream << " channel         : " << dec << (int)ch << endl;
@@ -573,9 +573,9 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 		}
 		tempStream << "   time base            : " << timeBase << "\n";
 		emit toConsole(QString::fromStdString(tempStream.str()));
-	}
-    std::stringstream tempStream;
+    }
 	else if (verbose > 0) {
+        tempStream.clear();
 		// output is: rising falling accEst valid timeBase utcAvailable
 		if (flags & 0x80) {
 			// if new rising edge
