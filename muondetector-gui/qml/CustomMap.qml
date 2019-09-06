@@ -2,6 +2,7 @@ import QtQuick 2.2
 import QtLocation 5.7
 import QtQuick.Layouts 1.0
 import QtPositioning 5.0
+import QtQuick.Controls 2.2
 import "qrc:/qml/places/items"
 import "qrc:/qml/places/views"
 
@@ -15,6 +16,7 @@ CustomMapForm {
     {
         map.onCoordsReceived(lon,lat,hAcc)
     }
+    /*
     SearchBar{
         id: searchBar
         width: parent.width
@@ -24,26 +26,79 @@ CustomMapForm {
             if (searchText.length > 0)
                 placeSearchModel.searchForText(searchText);
         }
-    }
+    }*/
     MapComponent{
         id: map
+        property double lastLon: 8.673828
+        property double lastLat: 50.569212
         plugin: plugin
-        anchors.top: searchBar.bottom
-        height: parent.height - 40
+        anchors.top: parent.top
+        //anchors.top: searchBar.bottom
+        width: parent.width
+        height: parent.height
         zoomLevel: (map.maximumZoomLevel - map.minimumZoomLevel)/2
         function onCoordsReceived(lon,lat,hAcc)
         {
+            lastLon = lon
+            lastLat = lat
             circle.center.longitude = lon
             circle.center.latitude = lat
             circle.radius = hAcc
+
+            console.log("lon: "+lon)
+            console.log("lat: "+lat)
+            console.log("lastLon: "+lastLon)
+            console.log("lastLat: "+lastLat)
+            if (control.checked){
+                map.center = QtPositioning.coordinate(lat,lon)
+            }
         }
+        function jumpToLocation(){
+            console.log("lastLon: "+lastLon)
+            console.log("lastLat: "+lastLat)
+            map.center = QtPositioning.coordinate(lastLat,lastLon)
+        }
+
         MapCircle {
             id: circle
             center: parent.center
             radius: 0.0
             border.width: 2
         }
+        ToolBar{
+            id: buttonBar
+            anchors.top: parent.top
+            height: 30
+            //Behavior on opacity { NumberAnimation{} }
+            RowLayout{
+                Rectangle{
+                    height: 30
+                    width: 60
+                    anchors.top: parent.top
+                    color: "white"
+                    ToolButton{
+                        id: centerButton
+                        anchors.fill: parent
+                        text: "center"
+                        onClicked: map.jumpToLocation()
+                    }
+                }
+                Rectangle{
+                    Layout.column: 1
+                    width: 90
+                    anchors.top: parent.top
+                    height: 30
+                    color:"white"
+                    CheckBox{
+                        id: control
+                        anchors.fill: parent
+                        text: "follow"
+                    }
+                }
+            }
+        }
     }
+    /*
     Rectangle{
         id: searchRectangle
         anchors.fill: parent
@@ -102,7 +157,7 @@ CustomMapForm {
             id: searchView
         }
     }
-
+    */
     /*
     Rectangle{
         id: something
