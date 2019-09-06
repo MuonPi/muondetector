@@ -597,8 +597,8 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 			<< " " << setfill('0') << setw(2) << ((flags & 0x18) >> 3)
 			<< " " << ((flags & 0x20) >> 5) << endl;
 		emit toConsole(QString::fromStdString(tempStream.str()));
-		emit timTM2(QString::fromStdString(tempStream.str()));
-	}
+    }
+    emit timTM2(QString::fromStdString(tempStream.str()));
 
 	struct timespec ts_r = unixtime_from_gps(wnR, towMsR / 1000, (long int)(sr*1e9 + towSubMsR)/*, this->leapSeconds()*/);
 	struct timespec ts_f = unixtime_from_gps(wnF, towMsF / 1000, (long int)(sf*1e9 + towSubMsF)/*, this->leapSeconds()*/);
