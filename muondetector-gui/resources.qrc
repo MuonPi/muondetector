@@ -1,48 +1,11 @@
 <RCC>
     <qresource prefix="/">
         <file>res/muon.ico</file>
-        <file>qml/mymap.qml</file>
-        <file>qml/places/doc/images/places.png</file>
-        <file>qml/places/doc/src/places.qdoc</file>
-        <file>qml/places/forms/Message.qml</file>
-        <file>qml/places/forms/MessageForm.ui.qml</file>
-        <file>qml/places/forms/PlaceDetails.qml</file>
-        <file>qml/places/forms/PlaceDetailsForm.ui.qml</file>
-        <file>qml/places/forms/SearchBoundingBox.qml</file>
-        <file>qml/places/forms/SearchBoundingBoxForm.ui.qml</file>
-        <file>qml/places/forms/SearchBoundingCircle.qml</file>
-        <file>qml/places/forms/SearchBoundingCircleForm.ui.qml</file>
-        <file>qml/places/forms/SearchCenter.qml</file>
-        <file>qml/places/forms/SearchCenterForm.ui.qml</file>
-        <file>qml/places/forms/SearchOptions.qml</file>
-        <file>qml/places/forms/SearchOptionsForm.ui.qml</file>
-        <file>qml/places/items/MainMenu.qml</file>
         <file>qml/places/items/MapComponent.qml</file>
-        <file>qml/places/items/SearchBar.qml</file>
-        <file>qml/places/resources/categories.png</file>
-        <file>qml/places/resources/left.png</file>
-        <file>qml/places/resources/marker.png</file>
-        <file>qml/places/resources/right.png</file>
-        <file>qml/places/resources/scale.png</file>
-        <file>qml/places/resources/scale_end.png</file>
-        <file>qml/places/resources/search.png</file>
-        <file>qml/places/resources/star.png</file>
-        <file>qml/places/views/CategoryDelegate.qml</file>
-        <file>qml/places/views/CategoryView.qml</file>
-        <file>qml/places/views/EditorialDelegate.qml</file>
-        <file>qml/places/views/EditorialPage.qml</file>
-        <file>qml/places/views/EditorialView.qml</file>
-        <file>qml/places/views/ImageView.qml</file>
-        <file>qml/places/views/RatingView.qml</file>
-        <file>qml/places/views/ReviewDelegate.qml</file>
-        <file>qml/places/views/ReviewPage.qml</file>
-        <file>qml/places/views/ReviewView.qml</file>
-        <file>qml/places/views/SearchResultDelegate.qml</file>
-        <file>qml/places/views/SearchResultView.qml</file>
-        <file>qml/places/views/SuggestionView.qml</file>
-        <file>qml/places/helper.js</file>
-        <file>qml/places/places.qml</file>
         <file>qml/CustomMap.qml</file>
         <file>qml/CustomMapForm.ui.qml</file>
+        <file>qml/places/helper.js</file>
+        <file>qml/places/resources/scale_end.png</file>
+        <file>qml/places/resources/scale.png</file>
     </qresource>
 </RCC>

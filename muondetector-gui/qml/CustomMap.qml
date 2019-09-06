@@ -4,7 +4,7 @@ import QtQuick.Layouts 1.0
 import QtPositioning 5.0
 import QtQuick.Controls 2.2
 import "qrc:/qml/places/items"
-import "qrc:/qml/places/views"
+//import "qrc:/qml/places/views"
 
 CustomMapForm {
     id: page
@@ -44,18 +44,16 @@ CustomMapForm {
             circle.center.longitude = lon
             circle.center.latitude = lat
             circle.radius = hAcc
-
+/*
             console.log("lon: "+lon)
             console.log("lat: "+lat)
             console.log("lastLon: "+lastLon)
             console.log("lastLat: "+lastLat)
-            if (control.checked){
+*/            if (control.checked){
                 map.center = QtPositioning.coordinate(lat,lon)
             }
         }
         function jumpToLocation(){
-            console.log("lastLon: "+lastLon)
-            console.log("lastLat: "+lastLat)
             map.center = QtPositioning.coordinate(lastLat,lastLon)
         }
 
