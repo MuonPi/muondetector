@@ -534,7 +534,7 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 	//  cout<<flush;
 
     std::stringstream tempStream;
-	if (verbose > 3) {
+    if (verbose > 2) {
 		//std::string temp;
 		tempStream << "*** UBX-TimTM2 message:" << endl;
 		tempStream << " channel         : " << dec << (int)ch << endl;
@@ -574,31 +574,31 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 		tempStream << "   time base            : " << timeBase << "\n";
 		emit toConsole(QString::fromStdString(tempStream.str()));
     }
-	else if (verbose > 0) {
-        tempStream.clear();
-		// output is: rising falling accEst valid timeBase utcAvailable
-		if (flags & 0x80) {
-			// if new rising edge
-			tempStream << unixtime_from_gps(wnR, towMsR / 1000, (long int)(sr*1e9 + towSubMsR));
-		}
-		else {
-			tempStream << "..................... ";
-		}
-		if (flags & 0x04) {
-			// if new falling edge
-			tempStream << unixtime_from_gps(wnF, towMsF / 1000, (long int)(sr*1e9 + towSubMsF));
-		}
-		else {
-			tempStream << "..................... ";
-		}
-		tempStream << accEst
-			<< " " << count
-			<< " " << ((flags & 0x40) >> 6)
-			<< " " << setfill('0') << setw(2) << ((flags & 0x18) >> 3)
-			<< " " << ((flags & 0x20) >> 5) << endl;
-		emit toConsole(QString::fromStdString(tempStream.str()));
+    // output is: rising falling accEst valid timeBase utcAvailable
+    tempStream.clear();
+    if (flags & 0x80) {
+        // if new rising edge
+        tempStream << unixtime_from_gps(wnR, towMsR / 1000, (long int)(sr*1e9 + towSubMsR));
     }
+    else {
+        tempStream << "..................... ";
+    }
+    if (flags & 0x04) {
+        // if new falling edge
+        tempStream << unixtime_from_gps(wnF, towMsF / 1000, (long int)(sr*1e9 + towSubMsF));
+    }
+    else {
+        tempStream << "..................... ";
+    }
+    tempStream << accEst
+        << " " << count
+        << " " << ((flags & 0x40) >> 6)
+        << " " << setfill('0') << setw(2) << ((flags & 0x18) >> 3)
+        << " " << ((flags & 0x20) >> 5) << endl;
     emit timTM2(QString::fromStdString(tempStream.str()));
+    if (verbose > 0 && verbose < 3){
+        emit toConsole(QString::fromStdString(tempStream.str()));
+    }
 
 	struct timespec ts_r = unixtime_from_gps(wnR, towMsR / 1000, (long int)(sr*1e9 + towSubMsR)/*, this->leapSeconds()*/);
 	struct timespec ts_f = unixtime_from_gps(wnF, towMsF / 1000, (long int)(sf*1e9 + towSubMsF)/*, this->leapSeconds()*/);
