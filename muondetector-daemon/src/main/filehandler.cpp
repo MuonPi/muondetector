@@ -278,7 +278,9 @@ void FileHandler::onUploadRemind(){
     }
     if (lastUploadDateTime<todaysRegularUploadTime&&QDateTime::currentDateTimeUtc()>todaysRegularUploadTime){
         switchFiles();
-        uploadRecentDataFiles();
+        if (!password.size()==0 || !username.size()==0){
+            uploadRecentDataFiles();
+        }
         lastUploadDateTime = QDateTime::currentDateTimeUtc();
     }
 }
