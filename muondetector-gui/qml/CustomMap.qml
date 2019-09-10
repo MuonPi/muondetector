@@ -2,7 +2,7 @@ import QtQuick 2.2
 import QtLocation 5.7
 import QtQuick.Layouts 1.0
 import QtPositioning 5.0
-import QtQuick.Controls 2.1
+import QtQuick.Controls 2.0
 import "qrc:/qml/places/items"
 //import "qrc:/qml/places/views"
 
