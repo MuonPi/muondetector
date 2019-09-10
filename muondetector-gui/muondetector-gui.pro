@@ -30,10 +30,11 @@ TEMPLATE = app
 CONFIG += warn_on
 CONFIG += release
 
-linux {
+linux { #assumes that it is compiled on raspberry pi!!! if not the case delete
     contains(QMAKE_HOST.arch, arm.*):{
         QMAKE_CXXFLAGS += -mthumb
         QMAKE_CXXFLAGS += -mthumb-interwork
+        QMAKE_CXXFLAGS += -march=armv7-a
     }
 }
 
