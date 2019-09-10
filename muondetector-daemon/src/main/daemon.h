@@ -233,7 +233,7 @@ private:
      ubxTimeIntervalHisto, tpTimeDiffHisto;
     QVector<QPointF> xorRatePoints, andRatePoints;
     timespec startOfProgram, lastRateInterval;
-    quint32 rateBufferTime = 120*60*1000; // in ms: 120 min
+    quint32 rateBufferTime = 2*60*1000; // in ms: 2 min
     quint32 rateBufferInterval = 2000; // in ms: 2 seconds
     QTimer rateBufferReminder;
     QTimer oledUpdateTimer;
