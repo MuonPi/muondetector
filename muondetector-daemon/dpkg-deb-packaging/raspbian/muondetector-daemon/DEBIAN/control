@@ -1,4 +1,4 @@
-Package: muondetector
+Package: muondetector-daemon
 Version: 1.0.3
 Maintainer: Marvin Peter <marvin.peter@physik.uni-giessen.de>
 Section: net
