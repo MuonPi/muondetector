@@ -2,9 +2,9 @@ Package: libmuondetector-shared
 Version: 1.0.3
 Maintainer: Marvin Peter <marvin.peter@physik.uni-giessen.de>
 Section: net
-Source: muondetector-shared
+Source: libmuondetector-shared
 Homepage: https://github.com/marvin5300/muondetector
-Architecture: amd64
+Architecture: armhf
 Priority: optional
 Depends: libqt5network5 (>=5), libqt5core5a (>=5)
 Description: Shared library for muondetector.
