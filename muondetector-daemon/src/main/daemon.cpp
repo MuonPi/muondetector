@@ -207,7 +207,7 @@ void Daemon::handleSigInt()
 Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
     float *new_dacThresh, float new_biasVoltage, bool bias_ON, bool new_dumpRaw, int new_baudrate,
     bool new_configGnss, unsigned int eventTrigger, QString new_peerAddress, quint16 new_peerPort,
-    QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, QObject *parent)
+    QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, bool preamp1, bool preamp2, bool gain, QObject *parent)
 	: QTcpServer(parent)
 {
 
@@ -404,16 +404,17 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     connect(pigHandler, &PigpiodHandler::signal, this, [this](uint8_t gpio_pin){
         rateCounterIntervalActualisation();
         if (gpio_pin==GPIO_PINMAP[EVT_XOR]){
-            quint64 value = xorCounts.back();
-            xorCounts.pop_back();
-            value++;
-            xorCounts.push_back(value);
+            xorCounts.back()++;
+            //xorCounts.pop_back();
+            //value++;
+            //xorCounts.push_back(value);
         }
         if (gpio_pin==GPIO_PINMAP[EVT_AND]){
-            quint64 value = andCounts.back();
-            andCounts.pop_back();
-            value++;
-            andCounts.push_back(value);
+            //quint64 value = andCounts.back();
+            andCounts.back()++;
+            //andCounts.pop_back();
+            //value++;
+            //andCounts.push_back(value);
         }
     });
     pigThread->start();
@@ -637,12 +638,13 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		digitalWrite(GPIO_PINMAP[UBIAS_EN], (HW_VERSION==1)?0:1);
 	}
 
-	preampStatus[0]=preampStatus[1]=false;
+    preampStatus[0]=preamp1,
+    preampStatus[1]=preamp2;
 	pinMode(GPIO_PINMAP[PREAMP_1], 1);
 	digitalWrite(GPIO_PINMAP[PREAMP_1], preampStatus[0]);
 	pinMode(GPIO_PINMAP[PREAMP_2], 1);
 	digitalWrite(GPIO_PINMAP[PREAMP_2], preampStatus[1]);
-	gainSwitch=false;
+    gainSwitch=gain;
 	pinMode(GPIO_PINMAP[GAIN_HL], 1);
 	digitalWrite(GPIO_PINMAP[GAIN_HL], gainSwitch);
 	
@@ -1375,7 +1377,7 @@ qreal Daemon::getRateFromCounts(quint8 which_rate){
     }
     timespec now;
     timespec_get(&now, TIME_UTC);
-    qreal timeInterval = (qreal)(1000*(counts->size()-1)+(qreal)msecdiff(now,lastRateInterval)); // in ms
+    qreal timeInterval = ((qreal)(1000*(counts->size()-1)))+(qreal)msecdiff(now,lastRateInterval); // in ms
     qreal rate = sum/timeInterval*1000;
     return (rate);
 }

@@ -174,6 +174,19 @@ int main(int argc, char *argv[])
 		QCoreApplication::translate("main", "bias voltage on or off?"));
 	parser.addOption(biasPowerOnOff);
 
+    // preamps on:
+    QCommandLineOption preamp1Option(QStringList() << "pre1" << "preamp1",
+        QCoreApplication::translate("main", "pre-amplifier 1 on or off"));
+    parser.addOption(preamp1Option);
+    QCommandLineOption preamp2Option(QStringList() << "pre2" << "preamp2",
+        QCoreApplication::translate("main", "pre-amplifier 2 on or off"));
+    parser.addOption(preamp2Option);
+
+    // gain:
+    QCommandLineOption gainOption(QStringList() << "g" << "gain",
+        QCoreApplication::translate("main", "gain high"));
+    parser.addOption(gainOption);
+
 	// biasVoltage on or off
 	QCommandLineOption eventInputOption(QStringList() << "t" << "trigger",
 		QCoreApplication::translate("main", "event (trigger) signal input:"
@@ -298,7 +311,18 @@ int main(int argc, char *argv[])
 	if (parser.isSet(biasPowerOnOff)) {
 		biasPower = true;
 	}
-
+    bool preamp1 = false;
+    if (parser.isSet(preamp1Option)) {
+        preamp1 = true;
+    }
+    bool preamp2 = false;
+    if (parser.isSet(preamp2Option)) {
+        preamp2 = true;
+    }
+    bool gain = false;
+    if (parser.isSet(gainOption)) {
+        gain = true;
+    }
 	unsigned int eventSignal = EVT_XOR;
 	if (parser.isSet(eventInputOption)) {
 		eventSignal = parser.value(eventInputOption).toUInt(&ok);
@@ -326,7 +350,7 @@ int main(int argc, char *argv[])
         password = getpass("please enter password:",true);
     }
     Daemon daemon(QString::fromStdString(username), QString::fromStdString(password), gpsdevname, verbose, pcaChannel, dacThresh, biasVoltage, biasPower, dumpRaw,
-		baudrate, showGnssConfig, eventSignal, peerAddress, peerPort, daemonAddress, daemonPort, showout, showin);
+        baudrate, showGnssConfig, eventSignal, peerAddress, peerPort, daemonAddress, daemonPort, showout, showin, preamp1, preamp2, gain);
 	
 	return a.exec();
 }

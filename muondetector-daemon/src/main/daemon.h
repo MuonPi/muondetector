@@ -62,7 +62,7 @@ public:
     Daemon(QString username, QString password, QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
         float *new_dacThresh, float new_biasVoltage, bool bias_ON, bool new_dumpRaw, int new_baudrate,
         bool new_configGnss, unsigned int eventTrigger, QString new_PeerAddress, quint16 new_PpeerPort,
-        QString new_serverAddress, quint16 new_serverPort, bool new_showout, bool new_showin, QObject *parent = 0);
+        QString new_serverAddress, quint16 new_serverPort, bool new_showout, bool new_showin, bool preamp1, bool preamp2, bool gain, QObject *parent = 0);
 	~Daemon();
 	void configGps();
 	void configGpsForVersion();
