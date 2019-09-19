@@ -1339,10 +1339,10 @@ void Daemon::rateCounterIntervalActualisation(){
     while(diff>1000){
         xorCounts.push_back(0);
         andCounts.push_back(0);
-        while (xorCounts.size()>(120*120)){
+        while (xorCounts.size()>(rateBufferTime)){
             xorCounts.pop_front();
         }
-        while (andCounts.size()>(120*120)){
+        while (andCounts.size()>(rateBufferTime)){
             andCounts.pop_front();
         }
         lastRateInterval.tv_sec += 1;
@@ -1375,7 +1375,7 @@ qreal Daemon::getRateFromCounts(quint8 which_rate){
     }
     timespec now;
     timespec_get(&now, TIME_UTC);
-    qreal timeInterval = (qreal)(1000*(counts->size()-1)+(qreal)msecdiff(now,lastRateInterval));
+    qreal timeInterval = (qreal)(1000*(counts->size()-1)+(qreal)msecdiff(now,lastRateInterval)); // in ms
     qreal rate = sum/timeInterval*1000;
     return (rate);
 }
@@ -1390,10 +1390,10 @@ void Daemon::onRateBufferReminder(){
     andRatePoints.append(andPoint);
     emit logParameter(LogParameter("rateXOR", QString::number(xorRate)+" Hz", LogParameter::LOG_AVERAGE));
     emit logParameter(LogParameter("rateAND", QString::number(andRate)+" Hz", LogParameter::LOG_AVERAGE));
-    while (xorRatePoints.size()>rateBufferTime/rateBufferInterval){
+    while (xorRatePoints.size()>rateMaxShowInterval/rateBufferInterval){
         xorRatePoints.pop_front();
     }
-    while (andRatePoints.size()>rateBufferTime/rateBufferInterval){
+    while (andRatePoints.size()>rateMaxShowInterval/rateBufferInterval){
         andRatePoints.pop_front();
     }
 }
