@@ -581,14 +581,14 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
         tempStream << unixtime_from_gps(wnR, towMsR / 1000, (long int)(sr*1e9 + towSubMsR));
     }
     else {
-        tempStream << "..................... ";
+        tempStream << ".................... ";
     }
     if (flags & 0x04) {
         // if new falling edge
         tempStream << unixtime_from_gps(wnF, towMsF / 1000, (long int)(sr*1e9 + towSubMsF));
     }
     else {
-        tempStream << "..................... ";
+        tempStream << ".................... ";
     }
     tempStream << accEst
         << " " << count
