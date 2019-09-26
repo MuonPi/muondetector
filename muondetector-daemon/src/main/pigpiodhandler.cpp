@@ -126,8 +126,32 @@ void PigpiodHandler::setGpioState(unsigned int gpio, bool state) {
     }
 }
 
+void PigpiodHandler::writeSpiReg(uint8_t reg, uint8_t data){
+    // write some data
+}
+
+void PigpiodHandler::readSpiReg(uint8_t reg){
+    uint8_t data = 0;
+    // do some readings
+    emit spiData(data);
+}
+
 bool PigpiodHandler::initialised(){
     return isInitialised;
+}
+
+bool PigpiodHandler::spiInitialise(){
+    if (!isInitialised){
+        return false;
+    }
+    if (spiInitialised){
+        return true;
+    }
+    if (spi_open(pi, 0, spiClkFreq, spiFlags)<0){
+        return false;
+    }
+    spiInitialised = true;
+    return true;
 }
 
 void PigpiodHandler::stop() {
@@ -135,7 +159,7 @@ void PigpiodHandler::stop() {
         return;
     }
     isInitialised=false;
-	pigpio_stop(pi);
+    pigpio_stop(pi);
     pigHandlerAddress.clear();
     this->deleteLater();
 }
