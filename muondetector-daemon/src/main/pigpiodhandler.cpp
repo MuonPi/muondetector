@@ -14,6 +14,7 @@ const static int eventCountDeadTime = 50;
 const static int adcSampleDeadTime = 8;
 
 static int pi = 0;
+static int spiHandle = 0;
 static QPointer<PigpiodHandler> pigHandlerAddress; // QPointer automatically clears itself if pigHandler object is destroyed
 
 static void cbFunction(int user_pi, unsigned int user_gpio,
@@ -126,18 +127,45 @@ void PigpiodHandler::setGpioState(unsigned int gpio, bool state) {
     }
 }
 
-void PigpiodHandler::writeSpiReg(uint8_t reg, uint8_t data){
-    // write some data
+void PigpiodHandler::writeSpi(uint8_t command, std::string data){
+    if(!spiInitialised){
+        if(!spiInitialise()){
+            return;
+        }
+    }
+    std::string buf = (char)command+data;
+    qDebug() << "trying to write " << QString::fromStdString(buf);
+    int bytesWritten = spi_write(pi, spiHandle, const_cast<char*>(buf.c_str()), buf.size());
+    if (bytesWritten != buf.size()){
+        // emit some warning
+        qDebug() << "wrong number of bytes written: " << bytesWritten << " should be " << buf.size();
+    }
 }
 
-void PigpiodHandler::readSpiReg(uint8_t reg){
-    uint8_t data = 0;
-    // do some readings
-    emit spiData(data);
+void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead){
+    if(!spiInitialised){
+        if(!spiInitialise()){
+            return;
+        }
+    }
+    char commandChar = (char)command;
+    char buf[bytesToRead];
+    if (spi_write(pi, spiHandle, &commandChar, 1)!=1){
+        qDebug() << "wrong number of bytes written as read command";
+    }
+    if (spi_read(pi, spiHandle, buf, bytesToRead)!=bytesToRead){
+        qDebug() << "wrong number of bytes read";
+    }
+    std::string data(buf);
+    emit spiData(command, data);
 }
 
 bool PigpiodHandler::initialised(){
     return isInitialised;
+}
+
+bool PigpiodHandler::isSpiInitialised(){
+    return spiInitialised;
 }
 
 bool PigpiodHandler::spiInitialise(){
@@ -147,7 +175,8 @@ bool PigpiodHandler::spiInitialise(){
     if (spiInitialised){
         return true;
     }
-    if (spi_open(pi, 0, spiClkFreq, spiFlags)<0){
+    spiHandle = spi_open(pi, spiHandle, spiClkFreq, spiFlags);
+    if (spiHandle<0){
         return false;
     }
     spiInitialised = true;
