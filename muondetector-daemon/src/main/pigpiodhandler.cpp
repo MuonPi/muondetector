@@ -156,17 +156,30 @@ void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead){
             return;
         }
     }
-    char commandChar = (char)command;
-    char buf[bytesToRead];
-    if (spi_write(pi, spiHandle, &commandChar, 1)!=1){
+    //char buf[bytesToRead];
+    //char charCommand = command;
+    //spi_write(pi, spiHandle, &charCommand, 1);
+    //spi_read(pi, spiHandle, buf, bytesToRead);
+
+    char rxBuf[bytesToRead+1];
+    char txBuf[bytesToRead+1];
+    txBuf[0] = (char)command;
+    for (int i = 1; i < bytesToRead; i++){
+        txBuf[i] = 0;
+    }
+    if (spi_xfer(pi, spiHandle, txBuf, rxBuf, bytesToRead+1)!=1+bytesToRead){
         qDebug() << "wrong number of bytes written as read command";
         return;
     }
-    if (spi_read(pi, spiHandle, buf, bytesToRead)!=bytesToRead){
-        qDebug() << "wrong number of bytes read";
-        return;
+
+    std::string data;
+    for (int i = 0; i < sizeof(rxBuf); i++){
+        data += rxBuf[i];
     }
-    std::string data(buf);
+    /*for (int i = 0; i < sizeof(buf); i++){
+        data += buf[i];
+    }
+    */
     qDebug() << "read back: ";
     for (int i = 0; i < data.size(); i++){
         qDebug() << hex << (uint8_t)data[i];
