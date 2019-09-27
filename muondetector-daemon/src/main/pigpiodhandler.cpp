@@ -89,6 +89,8 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
     pigHandlerAddress = this;
     pi = pigpio_start((char*)"127.0.0.1", (char*)"8888");
     if (pi < 0) {
+        qDebug() << "could not start pigpio. Is pigpiod running?";
+        qDebug() << "you can start pigpiod with: sudo pigpiod -s 1";
         return;
     }
     for (auto& gpio_pin : gpio_pins) {
