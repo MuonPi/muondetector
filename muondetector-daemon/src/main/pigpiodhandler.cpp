@@ -80,13 +80,15 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
     }
 }
 
-PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
+PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, unsigned int spi_freq, uint32_t spi_flags, QObject *parent)
 	: QObject(parent)
 {
     startOfProgram = QDateTime::currentDateTimeUtc();
     lastSamplingTime = startOfProgram;
     elapsedEventTimer.start();
     pigHandlerAddress = this;
+    spiClkFreq = spi_freq;
+    spiFlags = spi_flags;
     pi = pigpio_start((char*)"127.0.0.1", (char*)"8888");
     if (pi < 0) {
         qDebug() << "could not start pigpio. Is pigpiod running?";
@@ -135,18 +137,19 @@ void PigpiodHandler::writeSpi(uint8_t command, std::string data){
             return;
         }
     }
-    std::string buf;
-    buf += (char)command;
-    buf += data;
-    qDebug() << "trying to write: ";
-    for (int i = 0; i < buf.size(); i++){
-        qDebug() << hex << (uint8_t)buf[i];
+    char txBuf[data.size()+1];
+    txBuf[0] = (char)command;
+    for (int i = 1; i < data.size() +1; i++){
+        txBuf[i] = data[i-1];
     }
-    qDebug() << ".";
-    int bytesWritten = spi_write(pi, spiHandle, const_cast<char*>(buf.c_str()), buf.size());
-    if (bytesWritten != buf.size()){
-        // emit some warning
-        qDebug() << "wrong number of bytes written: " << bytesWritten << " should be " << buf.size();
+    qDebug() << "trying to write: ";
+    for (int i = 0; i < data.size()+1; i++){
+        qDebug() << hex << (uint8_t)txBuf[i];
+    }
+    char rxBuf[data.size()+1];
+    if (spi_xfer(pi, spiHandle, txBuf, rxBuf, data.size()+1)!=1+data.size()){
+        qDebug() << "wrong number of bytes transfered";
+        return;
     }
 }
 
@@ -168,18 +171,14 @@ void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead){
         txBuf[i] = 0;
     }
     if (spi_xfer(pi, spiHandle, txBuf, rxBuf, bytesToRead+1)!=1+bytesToRead){
-        qDebug() << "wrong number of bytes written as read command";
+        qDebug() << "wrong number of bytes transfered";
         return;
     }
 
     std::string data;
-    for (int i = 0; i < sizeof(rxBuf); i++){
+    for (int i = 0; i < bytesToRead+1; i++){
         data += rxBuf[i];
     }
-    /*for (int i = 0; i < sizeof(buf); i++){
-        data += buf[i];
-    }
-    */
     qDebug() << "read back: ";
     for (int i = 0; i < data.size(); i++){
         qDebug() << hex << (uint8_t)data[i];
@@ -204,7 +203,7 @@ bool PigpiodHandler::spiInitialise(){
     if (spiInitialised){
         return true;
     }
-    spiHandle = spi_open(pi, 1, spiClkFreq, 0);//spiFlags);
+    spiHandle = spi_open(pi, 0, spiClkFreq, spiFlags);
     if (spiHandle<0){
         qDebug() << "could not initialise spi bus";
         switch (spiHandle){

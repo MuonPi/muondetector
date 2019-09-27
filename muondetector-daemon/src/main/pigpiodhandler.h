@@ -18,8 +18,8 @@ class PigpiodHandler : public QObject
 {
 	Q_OBJECT
 public:
-	explicit PigpiodHandler(QVector<unsigned int> gpio_pins = DEFAULT_VECTOR,
-        QObject *parent = nullptr);
+    explicit PigpiodHandler(QVector<unsigned int> gpio_pins = DEFAULT_VECTOR, unsigned int spi_freq = 61035,
+                            uint32_t spi_flags = 0b100000, QObject *parent = nullptr);
     // can't make it private because of access of PigpiodHandler with global pointer
     QDateTime startOfProgram, lastSamplingTime; // the exact time when the program starts (Utc)
     QElapsedTimer elapsedEventTimer;
@@ -53,7 +53,7 @@ private:
     bool spiInitialised = false;
     bool spiInitialise(); // will be executed at first spi read/write command
     bool isSpiInitialised();
-    unsigned int spiClkFreq = 3906250; // TDC7200: up to 20MHz SCLK
+    unsigned int spiClkFreq;//3906250; // TDC7200: up to 20MHz SCLK
     // Raspi: Core clock speed of 250MHz can be devided by any even number from 2 to 65536
     // => 3.814kHz to 125MHz
     /*
@@ -63,7 +63,7 @@ private:
             b  b  b  b  b  b  R  T  n  n  n  n  W  A u2 u1 u0 p2 p1 p0  m  m
             word size bits  msb msb only-3wire 3wire aux CEx?  activ-low? spi-mode
     */
-    unsigned int spiFlags = 0b11000000;  // fixed value for now
+    unsigned int spiFlags;  // fixed value for now
 };
 
 
