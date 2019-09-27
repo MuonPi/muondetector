@@ -135,8 +135,14 @@ void PigpiodHandler::writeSpi(uint8_t command, std::string data){
             return;
         }
     }
-    std::string buf = (char)command+data;
-    qDebug() << "trying to write " << QString::fromStdString(buf);
+    std::string buf;
+    buf += (char)command;
+    buf += data;
+    qDebug() << "trying to write: ";
+    for (int i = 0; i < buf.size(); i++){
+        qDebug() << hex << (uint8_t)buf[i];
+    }
+    qDebug() << ".";
     int bytesWritten = spi_write(pi, spiHandle, const_cast<char*>(buf.c_str()), buf.size());
     if (bytesWritten != buf.size()){
         // emit some warning
@@ -154,11 +160,18 @@ void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead){
     char buf[bytesToRead];
     if (spi_write(pi, spiHandle, &commandChar, 1)!=1){
         qDebug() << "wrong number of bytes written as read command";
+        return;
     }
     if (spi_read(pi, spiHandle, buf, bytesToRead)!=bytesToRead){
         qDebug() << "wrong number of bytes read";
+        return;
     }
     std::string data(buf);
+    qDebug() << "read back: ";
+    for (int i = 0; i < data.size(); i++){
+        qDebug() << hex << (uint8_t)data[i];
+    }
+    qDebug() << ".";
     emit spiData(command, data);
 }
 
@@ -172,13 +185,34 @@ bool PigpiodHandler::isSpiInitialised(){
 
 bool PigpiodHandler::spiInitialise(){
     if (!isInitialised){
+        qDebug() << "pigpiohandler not initialised";
         return false;
     }
     if (spiInitialised){
         return true;
     }
-    spiHandle = spi_open(pi, spiHandle, spiClkFreq, spiFlags);
+    spiHandle = spi_open(pi, 1, spiClkFreq, 0);//spiFlags);
     if (spiHandle<0){
+        qDebug() << "could not initialise spi bus";
+        switch (spiHandle){
+        case PI_BAD_CHANNEL:
+            qDebug() << "DMA channel not 0-15";
+            break;
+        case PI_BAD_SPI_SPEED:
+            qDebug() << "bad SPI speed";
+            break;
+        case PI_BAD_FLAGS:
+            qDebug() << "bad spi open flags";
+            break;
+        case PI_NO_AUX_SPI:
+            qDebug() << "no auxiliary SPI on Pi A or B";
+            break;
+        case PI_SPI_OPEN_FAILED:
+            qDebug() << "can't open SPI device";
+            break;
+        default:
+            break;
+        }
         return false;
     }
     spiInitialised = true;

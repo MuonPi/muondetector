@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QVector>
 
+Q_DECLARE_METATYPE(std::string)
+
 class TDC7200 : public QObject
 {
     Q_OBJECT
@@ -18,7 +20,7 @@ signals:
     void timeMeas(QVector<double> timings);
 
 public slots:
-    void checkDevicePresent();
+    void initialise();
     void onDataReceived(uint8_t reg, std::string data);
     void onDataAvailable(uint8_t pin); // interrupt pin should connect here
     void startMeas();

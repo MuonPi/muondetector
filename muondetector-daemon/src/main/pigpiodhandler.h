@@ -53,7 +53,9 @@ private:
     bool spiInitialised = false;
     bool spiInitialise(); // will be executed at first spi read/write command
     bool isSpiInitialised();
-    unsigned int spiClkFreq = 9600;
+    unsigned int spiClkFreq = 3906250; // TDC7200: up to 20MHz SCLK
+    // Raspi: Core clock speed of 250MHz can be devided by any even number from 2 to 65536
+    // => 3.814kHz to 125MHz
     /*
      * spi_flags consists of the least significant 22 bits.
 

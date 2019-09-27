@@ -29,12 +29,12 @@ int main(int argc, char *argv[])
     QCoreApplication a(argc, argv);
     qRegisterMetaType<std::string>("std::string");
     PigpiodHandler pighandler(QVector<unsigned int>{intb_pin});
-    TDC7200 tdc(8);
+    TDC7200 tdc(intb_pin);
     pighandler.connect(&pighandler, &PigpiodHandler::spiData, &tdc, &TDC7200::onDataReceived);
     pighandler.connect(&tdc, &TDC7200::readData, &pighandler, &PigpiodHandler::readSpi);
     pighandler.connect(&tdc, &TDC7200::writeData, &pighandler, &PigpiodHandler::writeSpi);
     pighandler.connect(&pighandler, &PigpiodHandler::signal, &tdc, &TDC7200::onDataAvailable);
-
+    tdc.initialise();
     std::cout << "press a key to start tdc measurement" << std::endl;
     while(true){
         getch(); // wait for keypress

@@ -4,10 +4,9 @@
 TDC7200::TDC7200(uint8_t _INTB, QObject *parent) : QObject(parent)
 {
     INTB = _INTB;
-    checkDevicePresent();
 }
 
-void TDC7200::checkDevicePresent(){
+void TDC7200::initialise(){
    devicePresent = false;
    writeReg(0x03, 0x07);
    readReg(0x03);
@@ -37,6 +36,11 @@ void TDC7200::configRegisters(){
 }
 
 void TDC7200::startMeas(){
+    if (!devicePresent){
+        initialise();
+        return;
+    }
+    qDebug() << "start measurement";
     writeReg(0, config[0]|0x01); // the least significant bit starts the measurement
 }
 
@@ -44,6 +48,7 @@ void TDC7200::onDataReceived(uint8_t reg, std::string data){
     if (devicePresent == false){
         if(reg == 0x03 && data.size()==1 and data[0] == (char)0x07){
             devicePresent = true; // device is present, do configuration
+            qDebug() << "TDC7200 is now present";
             configRegisters();
             return;
         }else{
@@ -132,7 +137,8 @@ void TDC7200::processData(){
 void TDC7200::writeReg(uint8_t reg, uint8_t data){
     uint8_t command = reg & 0x3f;
     command |= 0x40; // bit 6 is 1 => write and bit 7 is 0 for writing only one byte
-    std::string dataString = ""+(char)data;
+    std::string dataString;
+    dataString += (char)data;
     emit writeData(command, dataString);
 }
 
