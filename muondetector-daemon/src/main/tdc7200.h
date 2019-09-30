@@ -10,7 +10,7 @@ class TDC7200 : public QObject
 {
     Q_OBJECT
 public:
-    explicit TDC7200(uint8_t _INTB = 8, QObject *parent = nullptr);
+    explicit TDC7200(uint8_t _INTB = 20, QObject *parent = nullptr);
 
 signals:
     void readData(uint8_t reg, unsigned int bytesRead);
