@@ -176,7 +176,7 @@ void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead){
     }
 
     std::string data;
-    for (int i = 1; i < bytesToRead; i++){
+    for (int i = 1; i < bytesToRead+1; i++){
         data += rxBuf[i];
     }
     qDebug() << "read back: ";
