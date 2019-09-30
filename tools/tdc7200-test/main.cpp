@@ -7,7 +7,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-const unsigned int intb_pin = 8;
+const unsigned int intb_pin = 20;
 
 int getch() {
     int ch;
