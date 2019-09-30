@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
     qRegisterMetaType<std::string>("std::string");
-    PigpiodHandler pighandler(QVector<unsigned int>{intb_pin}, 61035, 0b100000);
+    PigpiodHandler pighandler(QVector<unsigned int>{intb_pin}, 61035, 0);
     TDC7200 tdc(intb_pin);
     pighandler.connect(&pighandler, &PigpiodHandler::spiData, &tdc, &TDC7200::onDataReceived);
     pighandler.connect(&tdc, &TDC7200::readData, &pighandler, &PigpiodHandler::readSpi);
