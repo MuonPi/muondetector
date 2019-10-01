@@ -35,6 +35,7 @@ When trying to create a Makefile with qmake (qt version 5.7.1 on raspbian) there
 - You also need to install "libcrypto++-dev"
 - You also need to install "libqwt-qt5-dev" or "libqwt-dev".
 - You may also install "lftp" for uploading acquired data to our server.
+- For TDC7200 it may be required to manually add "dtoverlay=spi0-hw-cs" to /boot/config.txt
 
 ### RUNNING THE SOFTWARE
 
