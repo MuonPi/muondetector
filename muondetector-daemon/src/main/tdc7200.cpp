@@ -16,6 +16,7 @@ void TDC7200::initialise(){
 void TDC7200::onDataAvailable(uint8_t pin){
     // this means if the INTB is high and there are new measurement results
     // should read all relevant TOF data and after that
+    qDebug() << "received signal on pin " << pin;
     if (pin != INTB){
         return;
     }
@@ -46,6 +47,7 @@ void TDC7200::startMeas(){
 }
 
 void TDC7200::onDataReceived(uint8_t reg, std::string data){
+    qDebug() << "onDataReceived";
     if (devicePresent == false){
         if(reg == 0x03 && data.size()==1 and data[0] == (char)0x07){
             devicePresent = true; // device is present, do configuration

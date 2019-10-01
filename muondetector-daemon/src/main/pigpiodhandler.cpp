@@ -24,6 +24,12 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
         return;
     }
     static uint32_t lastTick=0;
+
+    if (user_gpio == 20){
+        emit pigpioHandler->signal(user_gpio);
+        return;
+    }
+
     QPointer<PigpiodHandler> pigpioHandler = pigHandlerAddress;
     try{
 		// allow only registered signals to be processed here
@@ -98,7 +104,11 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, unsigned int spi
     for (auto& gpio_pin : gpio_pins) {
         set_mode(pi, gpio_pin, PI_INPUT);
         if (gpio_pin==GPIO_PINMAP[ADC_READY]) set_pull_up_down(pi, gpio_pin, PI_PUD_UP);
-        callback(pi, gpio_pin, RISING_EDGE, cbFunction);
+        if (gpio_pin!=20){
+            callback(pi, gpio_pin, RISING_EDGE, cbFunction);
+        }else{
+            callback(pi, gpio_pin, FALLING_EDGE, cbFunction);
+        }
 //        callback(pi, gpio_pin, FALLING_EDGE, cbFunction);
         //        if (value==pigif_bad_malloc||
         //            value==pigif_dublicate_callback||
