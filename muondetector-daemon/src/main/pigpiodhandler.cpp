@@ -24,13 +24,13 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
         return;
     }
     static uint32_t lastTick=0;
+    QPointer<PigpiodHandler> pigpioHandler = pigHandlerAddress;
 
     if (user_gpio == 20){
         emit pigpioHandler->signal(user_gpio);
         return;
     }
 
-    QPointer<PigpiodHandler> pigpioHandler = pigHandlerAddress;
     try{
 		// allow only registered signals to be processed here
 		// if gpio pin fired which is not in GPIO_PIN list: return
