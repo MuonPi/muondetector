@@ -24,12 +24,10 @@ void TDC7200::onDataAvailable(uint8_t pin){
     if (num_stop > 0b100){
         num_stop = 0;
     }
-<<<<<<< HEAD
-    waitingForDataCounter = (int)((num_stop+1)*2 +3);
-=======
-    num_stop += 1;
-    waitingForDataCounter = (int)(num_stop*2 +3);
->>>>>>> 27beb3a0febeba98e0b037468fa27301bb8faae5
+
+    num_stop++;
+
+    waitingForDataCounter = (int)((num_stop)*2 +3);
     readReg(0x1b); // calibration 1
     readReg(0x1c); // calibration 2
     for(int i = 0; i < num_stop*2+1; i++){
@@ -106,10 +104,7 @@ void TDC7200::processData(){
     if (num_stop > 0b100){
         num_stop = 0;
     }
-<<<<<<< HEAD
-=======
     num_stop += 1;
->>>>>>> 27beb3a0febeba98e0b037468fa27301bb8faae5
     uint8_t meas_mode = (config[0]&0x2)>>1;
     uint32_t CALIBRATION1 = regContent2[0x1b-0x10];
     uint32_t CALIBRATION2 = regContent2[0x1c-0x10];
@@ -136,7 +131,6 @@ void TDC7200::processData(){
     double calCount = ((double)CALIBRATION2-(double)CALIBRATION1)/((double)CALIBRATION2_PERIODS-1);
     double normLSB = (double)CLOCKperiod/calCount;
     double TIME1 = (double)regContent2[0];
-<<<<<<< HEAD
     double TIME2 = regContent2[2];
     uint32_t CLOCK_COUNT1 = regContent2[1];
     qDebug() << "processData:";
@@ -150,19 +144,7 @@ void TDC7200::processData(){
     qDebug() << "TIME2" << TIME2;
     qDebug() << "CLOCK_COUNT1" << CLOCK_COUNT1;
     qDebug() << "normLSB: " << normLSB;
-    for (int i = 0; i < num_stop+1; i++){
-=======
-    qDebug() << "processData:";
-    qDebug() << "num_stop: " <<hex<< num_stop;
-    qDebug() << "meas_mode: " <<hex<< meas_mode;
-    qDebug() << "CALIBRATION1: " <<hex<< CALIBRATION1;
-    qDebug() << "CALIBRATION2: " <<hex<< CALIBRATION2;
-    qDebug() << "CALIBRATION2_PERIODS: "<<dec<< CALIBRATION2_PERIODS;
-    qDebug() << "calCount: " << calCount;
-    qDebug() << "normLSB: " << normLSB;
-    qDebug() << "TIME1" << TIME1;
     for (int i = 0; i < num_stop; i++){
->>>>>>> 27beb3a0febeba98e0b037468fa27301bb8faae5
         if (meas_mode == 0){ // mode 1
             double TIMEx = (double)regContent2[i*2];
             double TOF = TIMEx/normLSB;
