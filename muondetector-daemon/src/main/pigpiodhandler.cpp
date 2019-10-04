@@ -192,11 +192,15 @@ void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead){
     for (int i = 1; i < bytesToRead+1; i++){
         data += rxBuf[i];
     }
-    qDebug() << "read back from reg "<<hex<<command<<":";
+//    qDebug() << "read back from reg "<<hex<<command<<":";
+
+    /*qDebug() << "read back: ";
+>>>>>>> 27beb3a0febeba98e0b037468fa27301bb8faae5
     for (int i = 0; i < data.size(); i++){
         qDebug() << hex << (uint8_t)data[i];
     }
     qDebug() << ".";
+    */
     emit spiData(command, data);
 }
 
