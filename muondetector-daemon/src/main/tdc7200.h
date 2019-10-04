@@ -5,6 +5,7 @@
 #include <QVector>
 
 Q_DECLARE_METATYPE(std::string)
+//Q_DECLARE_METATYPE(uint8_t)
 
 class TDC7200 : public QObject
 {

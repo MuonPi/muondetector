@@ -19,6 +19,7 @@ static QPointer<PigpiodHandler> pigHandlerAddress; // QPointer automatically cle
 
 static void cbFunction(int user_pi, unsigned int user_gpio,
     unsigned int level, uint32_t tick) {
+    //qDebug() << "callback user_pi: " << user_pi << " user_gpio: " << user_gpio << " level: "<< level << " pigHandlerAddressNull: " << pigHandlerAddress.isNull() ;
     if (pigHandlerAddress.isNull()) {
         pigpio_stop(pi);
         return;
@@ -27,7 +28,8 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
     QPointer<PigpiodHandler> pigpioHandler = pigHandlerAddress;
 
     if (user_gpio == 20){
-        emit pigpioHandler->signal(user_gpio);
+        //qDebug()<< "emit signal for pin 20";
+        emit pigpioHandler->signal((uint8_t)user_gpio);
         return;
     }
 
@@ -107,6 +109,7 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, unsigned int spi
         if (gpio_pin!=20){
             callback(pi, gpio_pin, RISING_EDGE, cbFunction);
         }else{
+            //qDebug() << "set callback for pin " << gpio_pin;
             callback(pi, gpio_pin, FALLING_EDGE, cbFunction);
         }
 //        callback(pi, gpio_pin, FALLING_EDGE, cbFunction);
@@ -152,10 +155,10 @@ void PigpiodHandler::writeSpi(uint8_t command, std::string data){
     for (int i = 1; i < data.size() +1; i++){
         txBuf[i] = data[i-1];
     }
-    qDebug() << "trying to write: ";
+    /*qDebug() << "trying to write: ";
     for (int i = 0; i < data.size()+1; i++){
         qDebug() << hex << (uint8_t)txBuf[i];
-    }
+    }*/
     char rxBuf[data.size()+1];
     if (spi_xfer(pi, spiHandle, txBuf, rxBuf, data.size()+1)!=1+data.size()){
         qDebug() << "wrong number of bytes transfered";
@@ -189,7 +192,7 @@ void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead){
     for (int i = 1; i < bytesToRead+1; i++){
         data += rxBuf[i];
     }
-    qDebug() << "read back: ";
+    qDebug() << "read back from reg "<<hex<<command<<":";
     for (int i = 0; i < data.size(); i++){
         qDebug() << hex << (uint8_t)data[i];
     }

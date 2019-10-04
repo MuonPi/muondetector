@@ -16,17 +16,20 @@ void TDC7200::initialise(){
 void TDC7200::onDataAvailable(uint8_t pin){
     // this means if the INTB is high and there are new measurement results
     // should read all relevant TOF data and after that
-    qDebug() << "received signal on pin " << pin;
+    //qDebug() << "received signal on pin " << pin;
     if (pin != INTB){
         return;
     }
     uint8_t num_stop = config[1]&0x07;
+    if (num_stop > 0b100){
+        num_stop = 0;
+    }
     waitingForDataCounter = (int)((num_stop+1)*2 +3);
     readReg(0x1b); // calibration 1
     readReg(0x1c); // calibration 2
     for(int i = 0; i < (num_stop+1)*2+1; i++){
         // TIME1 and as many TIMEx and CLOCK_COUNTx as num_stop
-        // for single num_stop there are TIME1, CLOCK_COUNT1 and TIME2
+        // for single num_stop there are TIME1, CLOCK_COUNT1, TIME2
         readReg(i+0x10);
     }
 }
@@ -42,12 +45,12 @@ void TDC7200::startMeas(){
         initialise();
         return;
     }
-    qDebug() << "start measurement";
+    //qDebug() << "start measurement";
     writeReg(0, config[0]|0x01); // the least significant bit starts the measurement
 }
 
 void TDC7200::onDataReceived(uint8_t reg, std::string data){
-    qDebug() << "onDataReceived";
+    //qDebug() << "onDataReceived";
     if (devicePresent == false){
         if(reg == 0x03 && data.size()==1 and data[0] == (char)0x07){
             devicePresent = true; // device is present, do configuration
@@ -60,11 +63,11 @@ void TDC7200::onDataReceived(uint8_t reg, std::string data){
         }
     }
     if (reg < 10){
-        if (data.size()!=3){
+        if (data.size()!=1){
             qDebug() << "data size returned does not match the register size";
             return;
         }
-    }else if(data.size()!=1){
+    }else if(data.size()!=3){
         qDebug() << "data size returned does not match the register size";
         return;
     }else if(reg > 0x1c){
@@ -95,6 +98,9 @@ void TDC7200::onDataReceived(uint8_t reg, std::string data){
 
 void TDC7200::processData(){
     uint8_t num_stop = config[1]&0x07;
+    if (num_stop > 0b100){
+        num_stop = 0;
+    }
     uint8_t meas_mode = (config[0]&0x2)>>1;
     uint32_t CALIBRATION1 = regContent2[0x1b-0x10];
     uint32_t CALIBRATION2 = regContent2[0x1c-0x10];
@@ -121,7 +127,20 @@ void TDC7200::processData(){
     double calCount = ((double)CALIBRATION2-(double)CALIBRATION1)/((double)CALIBRATION2_PERIODS-1);
     double normLSB = (double)CLOCKperiod/calCount;
     double TIME1 = (double)regContent2[0];
-    for (int i = 0; i < num_stop +1; i++){
+    double TIME2 = regContent2[2];
+    uint32_t CLOCK_COUNT1 = regContent2[1];
+    qDebug() << "processData:";
+    qDebug() << "num_stop: " <<hex<< num_stop;
+    qDebug() << "meas_mode: " <<hex<< meas_mode;
+    qDebug() << "CALIBRATION1: " <<dec<< CALIBRATION1;
+    qDebug() << "CALIBRATION2: " <<dec<< CALIBRATION2;
+    qDebug() << "CALIBRATION2_PERIODS: "<<dec<< CALIBRATION2_PERIODS;
+    qDebug() << "calCount: " << calCount;
+    qDebug() << "TIME1" << TIME1;
+    qDebug() << "TIME2" << TIME2;
+    qDebug() << "CLOCK_COUNT1" << CLOCK_COUNT1;
+    qDebug() << "normLSB: " << normLSB;
+    for (int i = 0; i < num_stop+1; i++){
         if (meas_mode == 0){ // mode 1
             double TIMEx = (double)regContent2[i*2];
             double TOF = TIMEx/normLSB;
@@ -129,7 +148,8 @@ void TDC7200::processData(){
         }
         if (meas_mode == 1){ // mode 2
             double TIMEn1 = (double)regContent2[i*2+2];
-            double TOF = normLSB*(TIME1-TIMEn1)+((double)regContent2[i+1])*CLOCKperiod;
+//            double TOF = normLSB*(TIME1-TIMEn1)+((double)regContent2[i+1])*CLOCKperiod;
+            double TOF = normLSB*(TIME1-TIME2)+CLOCKperiod*CLOCK_COUNT1;
             timings.push_back(TOF);
         }
     }
