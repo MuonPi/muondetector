@@ -73,7 +73,7 @@ static const std::map<GPIO_PIN, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER+1]
             { EVT_AND , 22 },
             { EVT_XOR , 27 },
             { GAIN_HL , 6 },
-            { ADC_READY , 18 },
+            { ADC_READY , 12 },
 			{ TIMEPULSE , 18 },
 			{ TIME_MEAS_OUT , 5 },
             { STATUS1 , 13 },
