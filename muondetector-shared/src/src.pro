@@ -43,6 +43,7 @@ SOURCES += \
 HEADERS += \
     geodeticpos.h \
     gpio_pin_definitions.h \
+    histogram.h \
     tcpconnection.h \
     tcpmessage.h \
     tcpmessage_keys.h \

@@ -32,7 +32,7 @@ const QVector<QString> FIX_TYPE_STRINGS = { "No Fix", "Dead Reck." , "2D-Fix", "
 using namespace std;
 
 
-static unsigned int HW_VERSION = 2; 
+static unsigned int HW_VERSION = 2;
 
 
 int64_t msecdiff(timespec &ts, timespec &st){
@@ -635,10 +635,33 @@ Daemon::~Daemon() {
 }
 
 void Daemon::connectToPigpiod(){
-    const QVector<unsigned int> gpio_pins({ GPIO_PINMAP[EVT_AND], GPIO_PINMAP[EVT_XOR], /*GPIO_PINMAP[ADC_READY],*/ GPIO_PINMAP[TIMEPULSE] });
+    const QVector<unsigned int> gpio_pins({ GPIO_PINMAP[TDC_INTB], GPIO_PINMAP[PREAMP_1], GPIO_PINMAP[PREAMP_2],
+                                            GPIO_PINMAP[UBIAS_EN], GPIO_PINMAP[EVT_AND], GPIO_PINMAP[EVT_XOR],
+                                            /*GPIO_PINMAP[ADC_READY],*/ GPIO_PINMAP[TIMEPULSE], GPIO_PINMAP[GAIN_HL] });
     pigHandler = new PigpiodHandler(gpio_pins);
+    tdc7200 = new TDC7200(GPIO_PINMAP[TDC_INTB]);
     QThread *pigThread = new QThread();
     pigHandler->moveToThread(pigThread);
+    tdc7200->moveToThread(pigThread);
+    //pighandler <-> tdc
+    connect(pigHandler, &PigpiodHandler::spiData, tdc7200, &TDC7200::onDataReceived);
+    connect(pigHandler, &PigpiodHandler::signal, tdc7200, &TDC7200::onDataAvailable);
+    connect(tdc7200, &TDC7200::readData, pigHandler, &PigpiodHandler::readSpi);
+    connect(tdc7200, &TDC7200::writeData, pigHandler, &PigpiodHandler::writeSpi);
+
+    //tdc <-> thread & daemon
+    connect(tdc7200, &TDC7200::tdcEvent, this, [this](double usecs){
+        checkRescaleHisto(tdc7200Histo,usecs);
+        tdc7200Histo.fill(usecs);
+    });
+    connect(tdc7200, &TDC7200::statusUpdated, this, [this](bool isPresent){
+       spiDevicePresent = isPresent;
+       sendSpiStats();
+    });
+    connect(pigThread, &QThread::started, tdc7200, &TDC7200::initialise);
+    connect(pigThread, &QThread::finished, tdc7200, &TDC7200::deleteLater);
+
+    //pigHandler <-> thread & daemon
     connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
     connect(this, &Daemon::GpioSetOutput, pigHandler, &PigpiodHandler::setOutput);
     connect(this, &Daemon::GpioSetInput, pigHandler, &PigpiodHandler::setInput);
@@ -836,6 +859,8 @@ void Daemon::setupHistos() {
 	ubxTimeIntervalHisto.setUnit("ms");
 	tpTimeDiffHisto=Histogram("TPTimeDiff",200,-999.,1000.);
 	tpTimeDiffHisto.setUnit("us");
+    tdc7200Histo=Histogram("Time-to-Digital Time Diff",400, 0., 1e6);
+    tdc7200Histo.setUnit("ns");
 }
 
 void Daemon::rescaleHisto(Histogram& hist, double center, double width) {
@@ -1033,6 +1058,9 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         scanI2cBus();
         sendI2cStats();
     }
+    if (msgID == spiStatsRequestSig){
+        sendSpiStats();
+    }
     if (msgID == calibRequestSig){
         sendCalib();
     }
@@ -1117,6 +1145,12 @@ void Daemon::sendI2cStats() {
 		*(tcpMessage.dStream) << addr << title << status;
 	}
 	emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::sendSpiStats() {
+    TcpMessage tcpMessage(spiStatsSig);
+    *(tcpMessage.dStream) << spiDevicePresent;
+    emit sendTcpMessage(spiDevicePresent);
 }
 
 void Daemon::sendCalib() {
@@ -2112,6 +2146,7 @@ void Daemon::onLogParameterPolled(){
     sendHistogram(eventIntervalShortHisto);
     sendHistogram(ubxTimeIntervalHisto);
     sendHistogram(tpTimeDiffHisto);
+    sendHistogram(tdc7200Histo);
 
 //		updateOledDisplay();
 }

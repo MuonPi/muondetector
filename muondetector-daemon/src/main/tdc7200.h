@@ -11,20 +11,22 @@ class TDC7200 : public QObject
 {
     Q_OBJECT
 public:
-    explicit TDC7200(uint8_t _INTB = 20, QObject *parent = nullptr);
+    explicit TDC7200(unsigned int _INTB = 20, QObject *parent = nullptr);
 
 signals:
     void readData(uint8_t reg, unsigned int bytesRead);
     void writeData(uint8_t reg, std::string data);
     void regContentChanged(uint8_t reg, uint32_t data);
-    void tdcEvent(uint8_t t_diff);
-    void timeMeas(QVector<double> timings);
+    void tdcEvent(double t_diff); // in usecs
+    void timeMeas(QVector<double> timings); // in seconds
+    void statusUpdated(bool isPresent);
 
 public slots:
     void initialise();
     void onDataReceived(uint8_t reg, std::string data);
     void onDataAvailable(uint8_t pin); // interrupt pin should connect here
     void startMeas();
+    void onStatusRequested();
 
 private slots:
     void readReg(uint8_t reg);

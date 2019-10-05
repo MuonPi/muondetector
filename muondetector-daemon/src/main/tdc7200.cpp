@@ -2,9 +2,9 @@
 #include <unistd.h>
 #include <QDebug>
 
-TDC7200::TDC7200(uint8_t _INTB, QObject *parent) : QObject(parent)
+TDC7200::TDC7200(unsigned int _INTB, QObject *parent) : QObject(parent)
 {
-    INTB = _INTB;
+    INTB = (uint8_t)_INTB;
 }
 
 void TDC7200::initialise(){
@@ -37,6 +37,10 @@ void TDC7200::onDataAvailable(uint8_t pin){
     }
 }
 
+void TDC7200::onStatusRequested(){
+    emit statusUpdated(devicePresent);
+}
+
 void TDC7200::configRegisters(){
     for (int i = sizeof(config)-1; i > 0; i--){
         writeReg(i, config[i]);
@@ -57,10 +61,12 @@ void TDC7200::onDataReceived(uint8_t reg, std::string data){
     if (devicePresent == false){
         if(reg == 0x03 && data.size()==1 and data[0] == (char)0x07){
             devicePresent = true; // device is present, do configuration
-            qDebug() << "TDC7200 is now present";
+            emit statusUpdated(true);
+            //qDebug() << "TDC7200 is now present";
             configRegisters();
             return;
         }else{
+            emit statusUpdated(false);
             qDebug() << "TDC7200 not present";
             return;
         }
@@ -133,6 +139,7 @@ void TDC7200::processData(){
     double TIME1 = (double)regContent2[0];
     double TIME2 = regContent2[2];
     uint32_t CLOCK_COUNT1 = regContent2[1];
+    /*
     qDebug() << "processData:";
     qDebug() << "num_stop: " <<hex<< num_stop;
     qDebug() << "meas_mode: " <<hex<< meas_mode;
@@ -144,6 +151,7 @@ void TDC7200::processData(){
     qDebug() << "TIME2" << TIME2;
     qDebug() << "CLOCK_COUNT1" << CLOCK_COUNT1;
     qDebug() << "normLSB: " << normLSB;
+    */
     for (int i = 0; i < num_stop; i++){
         if (meas_mode == 0){ // mode 1
             double TIMEx = (double)regContent2[i*2];
@@ -159,6 +167,8 @@ void TDC7200::processData(){
     }
     emit timeMeas(timings);
     qDebug() << "Timings: " << timings;
+    emit tdcEvent(timings.at(0)*1e6);
+    startMeas();
 }
 
 void TDC7200::writeReg(uint8_t reg, uint8_t data){

@@ -9,6 +9,7 @@
 #include <qtserialublox.h>
 #include <QSocketNotifier>
 #include <pigpiodhandler.h>
+#include <tdc7200.h>
 #include <filehandler.h>
 #include <i2cdevices.h>
 #include <calibration.h>
@@ -167,6 +168,7 @@ private:
     void sendUbxMsgRates();
     void sendGpioRates(int number = 0, quint8 whichRate = 0);
     void sendI2cStats();
+    void sendSpiStats();
     void sendCalib();
     void sendHistogram(const Histogram& hist);
     bool readEeprom();
@@ -199,6 +201,8 @@ private:
     uint8_t pcaPortMask = 0;
     QVector <float> dacThresh; // do not give values here because of push_back in constructor of deamon
     QPointer<PigpiodHandler> pigHandler;
+    QPointer<TDC7200> tdc7200;
+    bool spiDevicePresent = false;
     QPointer<TcpConnection> tcpConnection;
 	QMap <uint16_t, int> msgRateCfgs;
     int waitingForAppliedMsgRate = 0;
@@ -229,7 +233,7 @@ private:
 
     Histogram geoHeightHisto, geoLonHisto, geoLatHisto,
      weightedGeoHeightHisto,
-     pulseHeightHisto, adcSampleTimeHisto,
+     pulseHeightHisto, adcSampleTimeHisto, tdc7200Histo,
      ubxTimeLengthHisto, eventIntervalHisto, eventIntervalShortHisto, 
      ubxTimeIntervalHisto, tpTimeDiffHisto;
     QVector<QPointF> xorRatePoints, andRatePoints;

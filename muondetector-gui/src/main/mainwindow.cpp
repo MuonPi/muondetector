@@ -496,6 +496,11 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         //updateUiProperties();
         return;
     }
+    if (msgID == spiStatsSig){
+        bool spiPresent;
+        *(tcpMessage.dStream) >> spiPresent;
+        emit spiStatsReceived(spiPresent);
+    }
     if (msgID == calibSetSig){
 		quint16 nrPars=0;
 		quint64 id = 0;
