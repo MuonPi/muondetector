@@ -206,7 +206,7 @@ void Daemon::handleSigInt()
 // begin of the Daemon class
 Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
     float *new_dacThresh, float new_biasVoltage, bool bias_ON, bool new_dumpRaw, int new_baudrate,
-    bool new_configGnss, unsigned int eventTrigger, QString new_peerAddress, quint16 new_peerPort,
+    bool new_configGnss, unsigned int new_eventTrigger, QString new_peerAddress, quint16 new_peerPort,
     QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, bool preamp1, bool preamp2, bool gain, QObject *parent)
 	: QTcpServer(parent)
 {
@@ -363,66 +363,6 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     connect(fileHandlerThread, &QThread::started, fileHandler, &FileHandler::start);
     fileHandlerThread->start();
 
-	// for pigpio signals:
-	const QVector<unsigned int> gpio_pins({ GPIO_PINMAP[EVT_AND], GPIO_PINMAP[EVT_XOR], /*GPIO_PINMAP[ADC_READY],*/ GPIO_PINMAP[TIMEPULSE] });
-    pigHandler = new PigpiodHandler(gpio_pins);
-    QThread *pigThread = new QThread();
-    pigHandler->moveToThread(pigThread);
-    connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
-    connect(this, &Daemon::GpioSetOutput, pigHandler, &PigpiodHandler::setOutput);
-    connect(this, &Daemon::GpioSetInput, pigHandler, &PigpiodHandler::setInput);
-    connect(this, &Daemon::GpioSetPullUp, pigHandler, &PigpiodHandler::setPullUp);
-    connect(this, &Daemon::GpioSetPullDown, pigHandler, &PigpiodHandler::setPullDown);
-	connect(this, &Daemon::GpioSetState, pigHandler, &PigpiodHandler::setGpioState);
-    connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
-    connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
-	connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) { eventIntervalHisto.fill(1e-6*nsecs); } );
-	connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) 
-	{ if (nsecs/1000<=eventIntervalShortHisto.getMax()) eventIntervalShortHisto.fill((double)nsecs/1000.); } );
-	connect(pigHandler, &PigpiodHandler::timePulseDiff, this, [this](qint32 usecs) 
-	{ 	checkRescaleHisto(tpTimeDiffHisto, usecs);
-		tpTimeDiffHisto.fill((double)usecs);
-		/*cout<<"TP time diff: "<<usecs<<" us"<<endl;*/
-	} );
-	pigHandler->setSamplingTriggerSignal((GPIO_PIN)eventTrigger);
-	connect(this, &Daemon::setSamplingTriggerSignal, pigHandler, &PigpiodHandler::setSamplingTriggerSignal);
-
-	struct timespec ts_res;
-	clock_getres(CLOCK_REALTIME, &ts_res);
-	if (verbose) {
-		cout<<"the timing resolution of the system clock is "<<ts_res.tv_nsec<<" ns"<<endl;
-	}
-	
-    /* looks good but using QPointer should be safer
-     * connect(pigHandler, &PigpiodHandler::destroyed, this, [this](){pigHandler = nullptr;});
-    */
-    // test if "aboutToQuit" is called everytime
-    //connect(this, &Daemon::aboutToQuit, [this](){this->toConsole("aboutToQuit called and signal emitted\n");});
-    connect(pigThread, &QThread::finished, pigHandler, &PigpiodHandler::deleteLater);
-    timespec_get(&lastRateInterval, TIME_UTC);
-    startOfProgram = lastRateInterval;
-    connect(pigHandler, &PigpiodHandler::signal, this, [this](uint8_t gpio_pin){
-        rateCounterIntervalActualisation();
-        if (gpio_pin==GPIO_PINMAP[EVT_XOR]){
-            xorCounts.back()++;
-            //xorCounts.pop_back();
-            //value++;
-            //xorCounts.push_back(value);
-        }
-        if (gpio_pin==GPIO_PINMAP[EVT_AND]){
-            //quint64 value = andCounts.back();
-            andCounts.back()++;
-            //andCounts.pop_back();
-            //value++;
-            //andCounts.push_back(value);
-        }
-    });
-    pigThread->start();
-    rateBufferReminder.setInterval(rateBufferInterval);
-    rateBufferReminder.setSingleShot(false);
-    connect(&rateBufferReminder, &QTimer::timeout, this, &Daemon::onRateBufferReminder);
-    rateBufferReminder.start();
-
 	// for i2c devices
 	lm75 = new LM75();
 	if (lm75->devicePresent()) {
@@ -509,9 +449,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		dac->readChannel(DAC_BIAS, eepromChannel);
 		biasVoltage=MCP4728::code2voltage(dacChannel);
 		//tempThresh[i]=code2voltage(eepromChannel);
-	}
-	
-    biasON = bias_ON;
+    }
     
     // PCA9536 4 bit I/O I2C device used for selecting the UBX timing input
     pca = new PCA9536();
@@ -599,6 +537,14 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		cerr<<"I2C OLED display NOT present!"<<endl;
 	}
 	
+    // for pigpio signals:
+    preampStatus[0]=preamp1;
+    preampStatus[1]=preamp2;
+    gainSwitch=gain;
+    biasON = bias_ON;
+    eventTrigger = (GPIO_PIN)new_eventTrigger;
+
+
 	// for diagnostics:
 	// print out some i2c device statistics
 	if (1==0) {
@@ -624,30 +570,6 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	showout = new_showout;
 	showin = new_showin;
 
-	// for separate raspi pin output states
-/*
-    emit GpioSetOutput(UBIAS_EN);
-	emit GpioSetState(UBIAS_EN, biasON);
-*/
-	wiringPiSetup();
-	pinMode(GPIO_PINMAP[UBIAS_EN], 1);
-	if (biasON) {
-		digitalWrite(GPIO_PINMAP[UBIAS_EN], (HW_VERSION==1)?1:0);
-	}
-	else {
-		digitalWrite(GPIO_PINMAP[UBIAS_EN], (HW_VERSION==1)?0:1);
-	}
-
-    preampStatus[0]=preamp1,
-    preampStatus[1]=preamp2;
-	pinMode(GPIO_PINMAP[PREAMP_1], 1);
-	digitalWrite(GPIO_PINMAP[PREAMP_1], preampStatus[0]);
-	pinMode(GPIO_PINMAP[PREAMP_2], 1);
-	digitalWrite(GPIO_PINMAP[PREAMP_2], preampStatus[1]);
-    gainSwitch=gain;
-	pinMode(GPIO_PINMAP[GAIN_HL], 1);
-	digitalWrite(GPIO_PINMAP[GAIN_HL], gainSwitch);
-	
 	// for tcp connection with fileServer
 	peerPort = new_peerPort;
 	if (peerPort == 0) {
@@ -665,8 +587,6 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 			cout << daemonAddress.toString() << endl;
 		}
 	}
-
-
 	daemonPort = new_daemonPort;
 	if (daemonPort == 0) {
 		// maybe think about other fall back solution
@@ -684,58 +604,13 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	flush(cout);
 
 	// connect to the regular log timer signal to log several non-regularly polled parameters
-	connect(fileHandler, &FileHandler::logIntervalSignal, this, [this]() {
-		/*
-		double xorRate = 0.0;
-		if (!xorRatePoints.isEmpty()){
-			xorRate = xorRatePoints.back().y();
-		}
-		logParameter(LogParameter("rateXOR", QString::number(xorRate)+" Hz"));
-		double andRate = 0.0;
-		if (!andRatePoints.isEmpty()){
-			andRate = andRatePoints.back().y();
-		}
-		logParameter(LogParameter("rateAND", QString::number(andRate)+" Hz"));
-		*/
-		emit logParameter(LogParameter("biasSwitch", QString::number(biasON), LogParameter::LOG_ON_CHANGE));
-		emit logParameter(LogParameter("preampSwitch1", QString::number((int)preampStatus[0]), LogParameter::LOG_ON_CHANGE));
-		emit logParameter(LogParameter("preampSwitch2", QString::number((int)preampStatus[1]), LogParameter::LOG_ON_CHANGE));
-		emit logParameter(LogParameter("gainSwitch", QString::number((int)gainSwitch), LogParameter::LOG_ON_CHANGE));
-		if (lm75 && lm75->devicePresent()) emit logParameter(LogParameter("temperature", QString::number(lm75->getTemperature())+" degC", LogParameter::LOG_AVERAGE));
-		
-		if (dac && dac->devicePresent()) {
-			emit logParameter(LogParameter("thresh1", QString::number(dacThresh[0])+" V", LogParameter::LOG_ON_CHANGE));
-			emit logParameter(LogParameter("thresh2", QString::number(dacThresh[1])+" V", LogParameter::LOG_ON_CHANGE));
-			emit logParameter(LogParameter("biasDAC", QString::number(biasVoltage)+" V", LogParameter::LOG_ON_CHANGE));
-		}
-		
-		if (pca && pca->devicePresent()) emit logParameter(LogParameter("ubxInputSwitch", "0x"+QString::number(pcaPortMask,16), LogParameter::LOG_ON_CHANGE));
-		if (pigHandler!=nullptr) emit logParameter(LogParameter("gpioTriggerSelection", "0x"+QString::number((int)pigHandler->samplingTriggerSignal,16), LogParameter::LOG_ON_CHANGE));
-		logBiasValues();
-		if (adc && !(adc->getStatus() & i2cDevice::MODE_UNREACHABLE)) {
-/*
- 			emit logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms", LogParameter::LOG_ON_CHANGE));
-			checkRescaleHisto(adcSampleTimeHisto, adc->getLastConvTime());
-			adcSampleTimeHisto.fill(adc->getLastConvTime());
-*/
-			sendHistogram(adcSampleTimeHisto);
-			sendHistogram(pulseHeightHisto);
-		}
-		sendHistogram(ubxTimeLengthHisto);
-		sendHistogram(eventIntervalHisto);
-		sendHistogram(eventIntervalShortHisto);
-		sendHistogram(ubxTimeIntervalHisto);
-		sendHistogram(tpTimeDiffHisto);
-		
-//		updateOledDisplay();
-	});
+    connect(fileHandler, &FileHandler::logIntervalSignal, this, &Daemon::onLogParameterPolled);
 
-
+    connectToPigpiod();
 	// set up histograms
 	setupHistos();
 
-	// start tcp connection and gps module connection
-	//connectToServer();
+    // start gps module connection
 	connectToGps();
 	//delay(1000);
 	if (configGnss) {
@@ -757,6 +632,76 @@ Daemon::~Daemon() {
     if (ubloxI2c!=nullptr){ delete ubloxI2c; ubloxI2c = nullptr; }
     if (oled!=nullptr){ delete oled; oled = nullptr; }
     pigHandler.clear();
+}
+
+void Daemon::connectToPigpiod(){
+    const QVector<unsigned int> gpio_pins({ GPIO_PINMAP[EVT_AND], GPIO_PINMAP[EVT_XOR], /*GPIO_PINMAP[ADC_READY],*/ GPIO_PINMAP[TIMEPULSE] });
+    pigHandler = new PigpiodHandler(gpio_pins);
+    QThread *pigThread = new QThread();
+    pigHandler->moveToThread(pigThread);
+    connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
+    connect(this, &Daemon::GpioSetOutput, pigHandler, &PigpiodHandler::setOutput);
+    connect(this, &Daemon::GpioSetInput, pigHandler, &PigpiodHandler::setInput);
+    connect(this, &Daemon::GpioSetPullUp, pigHandler, &PigpiodHandler::setPullUp);
+    connect(this, &Daemon::GpioSetPullDown, pigHandler, &PigpiodHandler::setPullDown);
+    connect(this, &Daemon::GpioSetState, pigHandler, &PigpiodHandler::setGpioState);
+    connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
+    connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
+    connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) { eventIntervalHisto.fill(1e-6*nsecs); } );
+    connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs)
+    { if (nsecs/1000<=eventIntervalShortHisto.getMax()) eventIntervalShortHisto.fill((double)nsecs/1000.); } );
+    connect(pigHandler, &PigpiodHandler::timePulseDiff, this, [this](qint32 usecs)
+    { 	checkRescaleHisto(tpTimeDiffHisto, usecs);
+        tpTimeDiffHisto.fill((double)usecs);
+        /*cout<<"TP time diff: "<<usecs<<" us"<<endl;*/
+    } );
+    pigHandler->setSamplingTriggerSignal(eventTrigger);
+    connect(this, &Daemon::setSamplingTriggerSignal, pigHandler, &PigpiodHandler::setSamplingTriggerSignal);
+
+    struct timespec ts_res;
+    clock_getres(CLOCK_REALTIME, &ts_res);
+    if (verbose) {
+        cout<<"the timing resolution of the system clock is "<<ts_res.tv_nsec<<" ns"<<endl;
+    }
+
+    /* looks good but using QPointer should be safer
+     * connect(pigHandler, &PigpiodHandler::destroyed, this, [this](){pigHandler = nullptr;});
+    */
+    // test if "aboutToQuit" is called everytime
+    //connect(this, &Daemon::aboutToQuit, [this](){this->toConsole("aboutToQuit called and signal emitted\n");});
+    connect(pigThread, &QThread::finished, pigHandler, &PigpiodHandler::deleteLater);
+    timespec_get(&lastRateInterval, TIME_UTC);
+    startOfProgram = lastRateInterval;
+    connect(pigHandler, &PigpiodHandler::signal, this, [this](uint8_t gpio_pin){
+        rateCounterIntervalActualisation();
+        if (gpio_pin==GPIO_PINMAP[EVT_XOR]){
+            xorCounts.back()++;
+            //xorCounts.pop_back();
+            //value++;
+            //xorCounts.push_back(value);
+        }
+        if (gpio_pin==GPIO_PINMAP[EVT_AND]){
+            //quint64 value = andCounts.back();
+            andCounts.back()++;
+            //andCounts.pop_back();
+            //value++;
+            //andCounts.push_back(value);
+        }
+    });
+    pigThread->start();
+    rateBufferReminder.setInterval(rateBufferInterval);
+    rateBufferReminder.setSingleShot(false);
+    connect(&rateBufferReminder, &QTimer::timeout, this, &Daemon::onRateBufferReminder);
+    rateBufferReminder.start();
+    emit GpioSetOutput(GPIO_PINMAP[UBIAS_EN]);
+    emit GpioSetState(GPIO_PINMAP[UBIAS_EN], (HW_VERSION==1)?(biasON?1:0):(biasON?0:1));
+
+    emit GpioSetOutput(GPIO_PINMAP[PREAMP_1]);
+    emit GpioSetOutput(GPIO_PINMAP[PREAMP_2]);
+    emit GpioSetOutput(GPIO_PINMAP[GAIN_HL]);
+    emit GpioSetState(GPIO_PINMAP[PREAMP_1],preampStatus[0]);
+    emit GpioSetState(GPIO_PINMAP[PREAMP_2],preampStatus[1]);
+    emit GpioSetState(GPIO_PINMAP[GAIN_HL],gainSwitch);
 }
 
 void Daemon::connectToGps() {
@@ -826,25 +771,6 @@ void Daemon::connectToGps() {
     }
 	// after thread start there will be a signal emitted which starts the qtGps makeConnection function
 	gpsThread->start();
-}
-
-void Daemon::connectToServer() {
-	QThread *tcpThread = new QThread();
-    if (!tcpConnection.isNull()) {
-        tcpConnection.clear();
-	}
-	tcpConnection = new TcpConnection(peerAddress, peerPort, verbose);
-	tcpConnection->moveToThread(tcpThread);
-	connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::makeConnection);
-	connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
-	connect(this->thread(), &QThread::finished, tcpThread, &QThread::quit);
-	connect(tcpConnection, &TcpConnection::error, this, &Daemon::displaySocketError);
-	connect(tcpConnection, &TcpConnection::toConsole, this, &Daemon::toConsole);
-	//connect(tcpConnection, &TcpConnection::connectionTimeout, this, &Daemon::connectToServer);
-	//connect(this, &Daemon::sendMsg, tcpConnection, &TcpConnection::sendMsg);
-	//connect(this, &Daemon::posixTerminate, tcpConnection, &TcpConnection::onPosixTerminate);
-	//connect(tcpConnection, &TcpConnection::stoppedConnection, this, &Daemon::stoppedConnection);
-	tcpThread->start();
 }
 
 void Daemon::incomingConnection(qintptr socketDescriptor) {
@@ -1000,12 +926,12 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> channel >> status;
         if (channel==0) {
 			preampStatus[0]=status;
-			digitalWrite(GPIO_PINMAP[PREAMP_1], (uint8_t)status);
+            emit GpioSetState(GPIO_PINMAP[PREAMP_1], status);
 			emit logParameter(LogParameter("preampSwitch1", QString::number((int)preampStatus[0]), LogParameter::LOG_EVERY));
 			pulseHeightHisto.clear();
 		} else if (channel==1) {
-			preampStatus[1]=status;
-			digitalWrite(GPIO_PINMAP[PREAMP_2], (uint8_t)status);
+            preampStatus[1]=status;
+            emit GpioSetState(GPIO_PINMAP[PREAMP_2], status);
 			emit logParameter(LogParameter("preampSwitch2", QString::number((int)preampStatus[1]), LogParameter::LOG_EVERY));
 		}
         sendPreampStatus(0);
@@ -1019,8 +945,8 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
     if (msgID == gainSwitchSig){
         bool status;
         *(tcpMessage.dStream) >> status;
-		gainSwitch=status;
-		digitalWrite(GPIO_PINMAP[GAIN_HL], (uint8_t)status);
+        gainSwitch=status;
+        emit GpioSetState(GPIO_PINMAP[GAIN_HL], status);
 		pulseHeightHisto.clear();
 		emit logParameter(LogParameter("gainSwitch", QString::number((int)gainSwitch), LogParameter::LOG_EVERY));
 		sendGainSwitchStatus();
@@ -1515,10 +1441,10 @@ void Daemon::setBiasStatus(bool status){
     //emit GpioSetState(UBIAS_EN, status);
 
     if (status) {
-        digitalWrite(GPIO_PINMAP[UBIAS_EN], (HW_VERSION==1)?1:0);
+        emit GpioSetState(GPIO_PINMAP[UBIAS_EN], (HW_VERSION==1)?1:0);
     }
     else {
-        digitalWrite(GPIO_PINMAP[UBIAS_EN], (HW_VERSION==1)?0:1);
+        emit GpioSetState(GPIO_PINMAP[UBIAS_EN], (HW_VERSION==1)?0:1);
     }
     emit logParameter(LogParameter("biasSwitch", QString::number(status), LogParameter::LOG_EVERY));
     clearRates();
@@ -2141,6 +2067,53 @@ void Daemon::logBiasValues()
 			logParameter(LogParameter("vadc4", QString::number(v2)+" V", LogParameter::LOG_AVERAGE));
 		}
 	}
+}
+
+void Daemon::onLogParameterPolled(){
+    // connect to the regular log timer signal to log several non-regularly polled parameters
+    /*
+    double xorRate = 0.0;
+    if (!xorRatePoints.isEmpty()){
+        xorRate = xorRatePoints.back().y();
+    }
+    logParameter(LogParameter("rateXOR", QString::number(xorRate)+" Hz"));
+    double andRate = 0.0;
+    if (!andRatePoints.isEmpty()){
+        andRate = andRatePoints.back().y();
+    }
+    logParameter(LogParameter("rateAND", QString::number(andRate)+" Hz"));
+    */
+    emit logParameter(LogParameter("biasSwitch", QString::number(biasON), LogParameter::LOG_ON_CHANGE));
+    emit logParameter(LogParameter("preampSwitch1", QString::number((int)preampStatus[0]), LogParameter::LOG_ON_CHANGE));
+    emit logParameter(LogParameter("preampSwitch2", QString::number((int)preampStatus[1]), LogParameter::LOG_ON_CHANGE));
+    emit logParameter(LogParameter("gainSwitch", QString::number((int)gainSwitch), LogParameter::LOG_ON_CHANGE));
+    if (lm75 && lm75->devicePresent()) emit logParameter(LogParameter("temperature", QString::number(lm75->getTemperature())+" degC", LogParameter::LOG_AVERAGE));
+
+    if (dac && dac->devicePresent()) {
+        emit logParameter(LogParameter("thresh1", QString::number(dacThresh[0])+" V", LogParameter::LOG_ON_CHANGE));
+        emit logParameter(LogParameter("thresh2", QString::number(dacThresh[1])+" V", LogParameter::LOG_ON_CHANGE));
+        emit logParameter(LogParameter("biasDAC", QString::number(biasVoltage)+" V", LogParameter::LOG_ON_CHANGE));
+    }
+
+    if (pca && pca->devicePresent()) emit logParameter(LogParameter("ubxInputSwitch", "0x"+QString::number(pcaPortMask,16), LogParameter::LOG_ON_CHANGE));
+    if (pigHandler!=nullptr) emit logParameter(LogParameter("gpioTriggerSelection", "0x"+QString::number((int)pigHandler->samplingTriggerSignal,16), LogParameter::LOG_ON_CHANGE));
+    logBiasValues();
+    if (adc && !(adc->getStatus() & i2cDevice::MODE_UNREACHABLE)) {
+/*
+        emit logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms", LogParameter::LOG_ON_CHANGE));
+        checkRescaleHisto(adcSampleTimeHisto, adc->getLastConvTime());
+        adcSampleTimeHisto.fill(adc->getLastConvTime());
+*/
+        sendHistogram(adcSampleTimeHisto);
+        sendHistogram(pulseHeightHisto);
+    }
+    sendHistogram(ubxTimeLengthHisto);
+    sendHistogram(eventIntervalHisto);
+    sendHistogram(eventIntervalShortHisto);
+    sendHistogram(ubxTimeIntervalHisto);
+    sendHistogram(tpTimeDiffHisto);
+
+//		updateOledDisplay();
 }
 
 void Daemon::onUBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t accEst, bool valid, uint8_t timeBase, bool utcAvailable)

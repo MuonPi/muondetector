@@ -41,38 +41,46 @@
 //#define STATUS2 19 // (24)
 //#define PREAMP_FAULT 23 // (4)
 
+// ATTENTION:
+// TO MAKE IT MORE SIMPLE THERE WILL BE ONLY PIGPIO,
+// NO WIRING PI FROM NOW
+
 static const std::map<GPIO_PIN, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER+1] = {
 		{
 			/* Pin mapping, HW Version 0, proxy to be never used nor initializing something */
 		} ,
 		{
 			/* Pin mapping, HW Version 1 */
-			{ UBIAS_EN , 7 },
-			{ PREAMP_1 , 28 },
-			{ PREAMP_2 , 29 },
+            { UBIAS_EN , 4 },
+            { PREAMP_1 , 20 },
+            { PREAMP_2 , 21 },
 			{ EVT_AND , 5 },
 			{ EVT_XOR , 6 },
-			{ GAIN_HL , 0 },
+            { GAIN_HL , 17 },
 			{ ADC_READY , 23 },
 			{ TIMEPULSE , 18 },
-			{ STATUS1 , 23 },
-			{ STATUS2 , 24 },
-			{ STATUS3 , 25 }
+            { STATUS1 , 13 },
+            { STATUS2 , 19 },
+            { STATUS3 , 26 },
+            { TDC_INTB, 20 },
+            { TDC_STATUS, 21 }
 		} ,
 		{
 			/* Pin mapping, HW Version 2 */
-			{ UBIAS_EN , 25 },
-			{ PREAMP_1 , 7 },
-			{ PREAMP_2 , 0 },
-			{ EVT_AND , 22 },
-			{ EVT_XOR , 27 },
-			{ GAIN_HL , 22 },
-			{ ADC_READY , 12 },
+            { UBIAS_EN , 26 },
+            { PREAMP_1 , 4 },
+            { PREAMP_2 , 17 },
+            { EVT_AND , 22 },
+            { EVT_XOR , 27 },
+            { GAIN_HL , 6 },
+            { ADC_READY , 18 },
 			{ TIMEPULSE , 18 },
 			{ TIME_MEAS_OUT , 5 },
-			{ STATUS1 , 23 },
-			{ STATUS2 , 24 },
-			{ PREAMP_FAULT , 4 }
+            { STATUS1 , 13 },
+            { STATUS2 , 19 },
+            { PREAMP_FAULT , 23 },
+            { TDC_INTB, 20 },
+            { TDC_STATUS, 21 }
 		}
 	};
 

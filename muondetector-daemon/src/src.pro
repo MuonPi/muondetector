@@ -33,8 +33,7 @@ INCLUDEPATH += ../../muondetector-shared/src/
 LIBS += -L/usr/lib/muondetector-shared -lmuondetector-shared
 DEPENDPATH += /usr/lib/muondetector-shared
 
-LIBS += -lwiringPi \
-        -lpigpiod_if2 \
+LIBS += -lpigpiod_if2 \
         -lcrypto++ \
         -lrt
 
