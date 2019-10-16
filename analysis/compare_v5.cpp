@@ -21,6 +21,7 @@
 #include <limits>
 #include <unistd.h>
 #include <fstream>
+#include <iterator>
 #include <utility>
 
 // max allowed timing error of a single station in ns
@@ -117,8 +118,12 @@ bool areTimestampsInOrder(string dateiName, bool verbose, unsigned long int& lin
 		stringstream str(oneLine);
 		long int v1, v2;
 		char c;
+
 		str >> v1 >> c >> v2;
 		newValue.tv_sec = v1;
+
+		while (v2<1000000000L) v2*=10;
+		v2/=10;		
 		newValue.tv_nsec = v2;
 
 		//cout<<"v1="<<v1<<" v2="<<v2<<endl;
@@ -161,58 +166,57 @@ void readToVector(ifstream& inputstream, vector<timestamp_t>& oneVector, int& ma
 			break;
 		}
 		
-		if (errCol<0 && tsCol > 0)
-		{
-			skipColumn(inputstream, tsCol);
-		} else if (errCol>=0 && tsCol > 0)
-		{
-			skipColumn(inputstream, min(errCol, tsCol));
-		}
+
+//		std::string text = "Let me split this into words";
 		getline(inputstream, oneLine);
-		stringstream str(oneLine);
-		long int v1, v2, v4, v5;
-		double v3=0.;
-		char c;
-		
-		if (errCol<0) {
-		  str >> v1 >> c >> v2;
-		  str >> v4 >> c >> v5;
-		}
+ 
+		std::istringstream iss(oneLine);
+		std::vector<std::string> results((std::istream_iterator<std::string>(iss)),
+                                 std::istream_iterator<std::string>());
 
-		else if (errCol>=0 && errCol<tsCol)	{
-			str >> v3;
-			string dummystring;
-			for (int i=0; i<abs(errCol-tsCol)-1; i++) str >> dummystring;
-			str >> v1 >> c >> v2;
-			str >> v4 >> c >> v5;
-		}
-		else if (errCol>=0 && errCol>tsCol) {
-			str >> v1 >> c >> v2;
-			str >> v4 >> c >> v5;
-			string dummystring;
-			for (int i=0; i<abs(errCol-tsCol)-2; i++) str >> dummystring;
-			str >> v3;
-		}
-		
-		//cout<<"read ts_i="<<v1<<" ts_ns="<<v2<<" err="<<v3<<endl;
-		timespec ts1, ts2;
-		ts1.tv_sec = v1;
-		ts1.tv_nsec = v2;
-		ts2.tv_sec = v4;
-		ts2.tv_nsec = v5;
-		
-		
-		oneValue.ts=ts1;
-		oneValue.err = v3;
-		oneValue.length = ts_diff_ns(ts1, ts2);
-		
-
-
-/*		oneValue.ts.tv_sec = v1;
-		oneValue.ts.tv_nsec = v2;
-		oneValue.err = v3;
+/*
+		for (int i=0; i<results.size(); i++)
+			cout<<results[i]<<" ";
+		cout<<endl;
 */
-		oneVector.push_back(oneValue);
+		if (results.size()<2) continue;		
+
+		timespec ts1, ts2;
+		double v3=0.;
+		
+		string helperString="";
+		std::istringstream tokenStream(results[tsCol]);		
+		std::getline(tokenStream, helperString,'.');
+		try {		
+			ts1.tv_sec = std::stol(helperString);
+			std::getline(tokenStream, helperString,'.');
+			bool flag=false;			
+			if (helperString.size()<9) flag=true;
+			while (helperString.size()<9) helperString+='0';
+			ts1.tv_nsec = std::stol(helperString);
+
+			tokenStream.clear();
+			tokenStream.str(results[tsCol+1]);
+			std::getline(tokenStream, helperString,'.');
+			ts2.tv_sec = std::stol(helperString);
+			std::getline(tokenStream, helperString,'.');
+			if (helperString.size()<9) flag=true;
+			while (helperString.size()<9) helperString+='0';		
+			ts2.tv_nsec = std::stol(helperString);
+
+			v3=std::stod(results[errCol]);
+
+//			if (flag) cout<<"read ts1_s="<<ts1.tv_sec<<" ts1_ns="<<ts1.tv_nsec<<" ts2_s="<<ts2.tv_sec<<" ts2_ns="<<ts2.tv_nsec<<" err="<<v3<<endl;
+		
+			oneValue.ts=ts1;
+			oneValue.err = v3;
+			oneValue.length = ts_diff_ns(ts1, ts2);
+		
+			oneVector.push_back(oneValue);
+
+	} catch (...) {	}
+	continue;
+
 	}
 }// end of readToVector(..																		 )
 

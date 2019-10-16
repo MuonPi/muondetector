@@ -68,7 +68,7 @@ INCLUDEPATH += /usr/local/include/qwt/
 
 #unix:INCLUDEPATH += /usr/lib/muondetector-shared
 
-unix:LIBS += -L/usr/lib -L/usr/local/lib -L/usr/local/qwt-6.1.3/lib -lqwt-qt5
+unix:LIBS += -L/usr/lib -L/usr/local/lib -L/usr/local/qwt-6.1.3/lib -lqwt
 else:unix:LIBS += -L/usr/local/qwt-6.1.3/lib -lqwt
 else:unix:LIBS += -L/usr/lib/muondetector-gui -lqwt
 else:unix:LIBS += "$$PWD/../lib/libqwt.so.6.1.3"

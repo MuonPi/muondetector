@@ -156,7 +156,7 @@
              </size>
             </property>
             <property name="text">
-             <string>thres1</string>
+             <string>Thresh1</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>
@@ -220,7 +220,7 @@
              </size>
             </property>
             <property name="text">
-             <string>thres2</string>
+             <string>Thresh2</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignCenter</set>

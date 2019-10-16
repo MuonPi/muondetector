@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>571</width>
-    <height>438</height>
+    <width>563</width>
+    <height>427</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -148,46 +148,64 @@
         <property name="minimumSize">
          <size>
           <width>100</width>
-          <height>110</height>
+          <height>90</height>
          </size>
         </property>
         <property name="title">
          <string>ADC Voltages</string>
         </property>
-        <layout class="QGridLayout" name="gridLayout">
-         <item row="0" column="0">
-          <layout class="QVBoxLayout" name="verticalLayout">
-           <item>
-            <widget class="QLabel" name="ADCLabel1">
-             <property name="text">
-              <string>Ch1: </string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="ADCLabel2">
-             <property name="text">
-              <string>Ch2: </string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="ADCLabel3">
-             <property name="text">
-              <string>Ch3: </string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="ADCLabel4">
-             <property name="text">
-              <string>Ch4: </string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-        </layout>
+        <widget class="QLabel" name="ADCLabel1">
+         <property name="geometry">
+          <rect>
+           <x>13</x>
+           <y>30</y>
+           <width>87</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Ch1: </string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="ADCLabel2">
+         <property name="geometry">
+          <rect>
+           <x>13</x>
+           <y>49</y>
+           <width>87</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Ch2: </string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="ADCLabel3">
+         <property name="geometry">
+          <rect>
+           <x>13</x>
+           <y>68</y>
+           <width>87</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Ch3: </string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="ADCLabel4">
+         <property name="geometry">
+          <rect>
+           <x>13</x>
+           <y>87</y>
+           <width>87</width>
+           <height>16</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Ch4: </string>
+         </property>
+        </widget>
        </widget>
       </item>
       <item row="0" column="1">
@@ -195,7 +213,7 @@
         <property name="minimumSize">
          <size>
           <width>100</width>
-          <height>110</height>
+          <height>90</height>
          </size>
         </property>
         <property name="title">
@@ -203,36 +221,32 @@
         </property>
         <layout class="QGridLayout" name="gridLayout_2">
          <item row="0" column="0">
-          <layout class="QVBoxLayout" name="verticalLayout_2">
-           <item>
-            <widget class="QLabel" name="DACLabel1">
-             <property name="text">
-              <string>Ch1: </string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="DACLabel2">
-             <property name="text">
-              <string>Ch2: </string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="DACLabel3">
-             <property name="text">
-              <string>Ch3: </string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="DACLabel4">
-             <property name="text">
-              <string>Ch4: </string>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <widget class="QLabel" name="DACLabel1">
+           <property name="text">
+            <string>Ch1: </string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="DACLabel2">
+           <property name="text">
+            <string>Ch2: </string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="DACLabel3">
+           <property name="text">
+            <string>Ch3: </string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="DACLabel4">
+           <property name="text">
+            <string>Ch4: </string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
@@ -417,7 +431,20 @@
            </layout>
           </widget>
          </item>
-         <item row="1" column="0" colspan="2">
+         <item row="1" column="0">
+          <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>4</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="3" column="0" colspan="2">
           <layout class="QHBoxLayout" name="horizontalLayout">
            <item>
             <widget class="QLabel" name="label">

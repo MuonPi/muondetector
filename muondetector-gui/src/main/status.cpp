@@ -220,6 +220,7 @@ void Status::onUiEnabledStateChange(bool connected){
             statusUi->pulseHeightHistogram->setStatusEnabled(true);
         }
         this->setEnabled(true);
+        timepulseTimer.start();
     }else{
         andSamples.clear();
         xorSamples.clear();

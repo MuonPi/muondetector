@@ -47,6 +47,7 @@ public slots:
     void onRxBufPeakReceived(quint8 val);
     void onGnssConfigsReceived(quint8 numTrkCh, const QVector<GnssConfigStruct>& configList);
     void onTP5Received(const UbxTimePulseStruct& tp);
+    void onConfigChanged();
 
 private slots:
     void onSettingsButtonBoxClicked(QAbstractButton *button);

@@ -18,18 +18,44 @@ ui(new Ui::Settings)
     connect(ui->gnssConfigButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this, [this](int)
     {
         this->fGnssConfigChanged=true;
+        this->onConfigChanged();
+/*
         this->ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setEnabled(true);
         this->ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setEnabled(true);
+*/
     } );
     connect(ui->tpConfigButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this, [this](int)
     {
         this->fTpConfigChanged=true;
+        this->onConfigChanged();
+/*
+        this->fTpConfigChanged=true;
         this->ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setEnabled(true);
         this->ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setEnabled(true);
+*/
     } );
+/*
+    connect(ui->syncedPulseGroupBox, &QGroupBox::toggled, this, [this](bool) {
+        this->fTpConfigChanged=true;
+        this->onConfigChanged();
+    });
+    connect(ui->unsyncedPulseGroupBox, &QGroupBox::toggled, this, [this](bool) {
+        this->fTpConfigChanged=true;
+        this->onConfigChanged();
+    });
+*/
     this->setDisabled(true);
     emit sendRequestUbxMsgRates();
 }
+
+
+void Settings::onConfigChanged()
+{
+    this->fTpConfigChanged=true;
+    this->ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setEnabled(true);
+    this->ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setEnabled(true);
+}
+
 
 void Settings::onItemChanged(QTableWidgetItem *item){
     ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setEnabled(true);
@@ -220,6 +246,8 @@ void Settings::onTP5Received(const UbxTimePulseStruct &tp)
 {
     fTpConfig=tp;
     ui->tpConfigButtonGroup->blockSignals(true);
+    ui->syncedPulseGroupBox->blockSignals(true);
+    ui->unsyncedPulseGroupBox->blockSignals(true);
     ui->antDelayLineEdit->setText(QString::number(tp.antCableDelay));
     ui->groupDelayLineEdit->setText(QString::number(tp.rfGroupDelay));
     ui->userDelayLineEdit->setText(QString::number(tp.userConfigDelay));
@@ -228,12 +256,19 @@ void Settings::onTP5Received(const UbxTimePulseStruct &tp)
     ui->pulseLenLineEdit->setText(QString::number(tp.pulseLenRatio));
     ui->pulseLenLockLineEdit->setText(QString::number(tp.pulseLenRatioLock));
     ui->tpActiveCheckBox->setChecked(tp.flags & UbxTimePulseStruct::ACTIVE);
+
     ui->lockGpsCheckBox->setChecked(tp.flags & UbxTimePulseStruct::LOCK_GPS);
+    //ui->syncedPulseGroupBox->setChecked(tp.flags & UbxTimePulseStruct::LOCK_GPS);
+
     ui->lockOtherCheckBox->setChecked(tp.flags & UbxTimePulseStruct::LOCK_OTHER);
+    //ui->unsyncedPulseGroupBox->setChecked(tp.flags & UbxTimePulseStruct::LOCK_OTHER);
+
     ui->timeGridComboBox->setCurrentIndex((tp.flags & UbxTimePulseStruct::GRID_UTC_GPS)>>7);
     ui->tpPolarityCheckBox->setChecked((tp.flags & UbxTimePulseStruct::POLARITY));
     ui->tpAlignTowCheckBox->setChecked((tp.flags & UbxTimePulseStruct::ALIGN_TO_TOW));
     ui->tpConfigButtonGroup->blockSignals(false);
+    ui->syncedPulseGroupBox->blockSignals(false);
+    ui->unsyncedPulseGroupBox->blockSignals(false);
 }
 
 
@@ -314,8 +349,13 @@ void Settings::writeTpConfig()
     tp.flags = UbxTimePulseStruct::IS_LENGTH;
     if (ui->tpActiveCheckBox->isChecked()) tp.flags |= UbxTimePulseStruct::ACTIVE;
     if (ui->tpPolarityCheckBox->isChecked()) tp.flags |= UbxTimePulseStruct::POLARITY;
+
     if (ui->lockGpsCheckBox->isChecked()) tp.flags |= UbxTimePulseStruct::LOCK_GPS;
+//    if (ui->syncedPulseGroupBox->isChecked()) tp.flags |= UbxTimePulseStruct::LOCK_GPS;
+
     if (ui->lockOtherCheckBox->isChecked()) tp.flags |= UbxTimePulseStruct::LOCK_OTHER;
+//    if (ui->unsyncedPulseGroupBox->isChecked()) tp.flags |= UbxTimePulseStruct::LOCK_OTHER;
+
     if (ui->tpAlignTowCheckBox->isChecked()) tp.flags |= UbxTimePulseStruct::ALIGN_TO_TOW;
     tp.flags |= ((ui->timeGridComboBox->currentIndex()<<7) & UbxTimePulseStruct::GRID_UTC_GPS);
     emit setTP5Config(tp);
@@ -336,8 +376,11 @@ void Settings::on_freqPeriodLineEdit_editingFinished()
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
+        this->onConfigChanged();
+/*
         ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(false);
         ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(false);
+*/
     }
 }
 
@@ -348,8 +391,11 @@ void Settings::on_freqPeriodLockLineEdit_editingFinished()
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
+        this->onConfigChanged();
+/*
         ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(false);
         ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(false);
+*/
     }
 }
 
@@ -360,8 +406,11 @@ void Settings::on_pulseLenLineEdit_editingFinished()
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
+        this->onConfigChanged();
+/*
         ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(false);
         ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(false);
+*/
     }
 }
 
@@ -372,8 +421,11 @@ void Settings::on_pulseLenLockLineEdit_editingFinished()
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
+        this->onConfigChanged();
+/*
         ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(false);
         ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(false);
+*/
     }
 }
 
@@ -384,10 +436,12 @@ void Settings::on_antDelayLineEdit_editingFinished()
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
+        this->onConfigChanged();
+/*
         ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(false);
         ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(false);
+*/
     }
-
 }
 
 void Settings::on_groupDelayLineEdit_editingFinished()
@@ -397,8 +451,11 @@ void Settings::on_groupDelayLineEdit_editingFinished()
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
+        this->onConfigChanged();
+/*
         ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(false);
         ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(false);
+*/
     }
 }
 
@@ -409,8 +466,11 @@ void Settings::on_userDelayLineEdit_editingFinished()
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
+        this->onConfigChanged();
+/*
         ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(false);
         ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(false);
+*/
     }
 }
 
