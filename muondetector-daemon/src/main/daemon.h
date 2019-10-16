@@ -4,12 +4,12 @@
 #include <QObject>
 #include <QPointer>
 #include <QTcpServer>
-#include <wiringPi.h>
 #include <tcpconnection.h>
 #include <custom_io_operators.h>
 #include <qtserialublox.h>
 #include <QSocketNotifier>
 #include <pigpiodhandler.h>
+#include <tdc7200.h>
 #include <filehandler.h>
 #include <i2cdevices.h>
 #include <calibration.h>
@@ -61,9 +61,9 @@ class Daemon : public QTcpServer
 public:
     Daemon(QString username, QString password, QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
         float *new_dacThresh, float new_biasVoltage, bool bias_ON, bool new_dumpRaw, int new_baudrate,
-        bool new_configGnss, unsigned int eventTrigger, QString new_PeerAddress, quint16 new_PpeerPort,
+        bool new_configGnss, unsigned int new_eventTrigger, QString new_PeerAddress, quint16 new_PpeerPort,
         QString new_serverAddress, quint16 new_serverPort, bool new_showout, bool new_showin, bool preamp1, bool preamp2, bool gain, QObject *parent = 0);
-	~Daemon();
+    ~Daemon() override;
 	void configGps();
 	void configGpsForVersion();
 	void loop();
@@ -77,8 +77,8 @@ public slots:
     void handleSigTerm();
     void handleSigInt();
     // others
+    void connectToPigpiod();
     void connectToGps();
-    void connectToServer();
     void displaySocketError(int socketError, QString message);
     void displayError(QString message);
     void toConsole(const QString& data);
@@ -113,6 +113,7 @@ public slots:
     void getTemperature();
     void scanI2cBus();
     void onUBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t accEst, bool valid, uint8_t timeBase, bool utcAvailable);
+    void onLogParameterPolled();
 	
 signals:
     void sendTcpMessage(TcpMessage tcpMessage);
@@ -167,6 +168,7 @@ private:
     void sendUbxMsgRates();
     void sendGpioRates(int number = 0, quint8 whichRate = 0);
     void sendI2cStats();
+    void sendSpiStats();
     void sendCalib();
     void sendHistogram(const Histogram& hist);
     bool readEeprom();
@@ -193,11 +195,14 @@ private:
     Adafruit_SSD1306* oled = nullptr;
     float biasVoltage = 0.;
     bool biasON = false;
+    GPIO_PIN eventTrigger;
     bool gainSwitch = false;
     bool preampStatus[2];
     uint8_t pcaPortMask = 0;
     QVector <float> dacThresh; // do not give values here because of push_back in constructor of deamon
     QPointer<PigpiodHandler> pigHandler;
+    QPointer<TDC7200> tdc7200;
+    bool spiDevicePresent = false;
     QPointer<TcpConnection> tcpConnection;
 	QMap <uint16_t, int> msgRateCfgs;
     int waitingForAppliedMsgRate = 0;
@@ -228,7 +233,7 @@ private:
 
     Histogram geoHeightHisto, geoLonHisto, geoLatHisto,
      weightedGeoHeightHisto,
-     pulseHeightHisto, adcSampleTimeHisto,
+     pulseHeightHisto, adcSampleTimeHisto, tdc7200Histo,
      ubxTimeLengthHisto, eventIntervalHisto, eventIntervalShortHisto, 
      ubxTimeIntervalHisto, tpTimeDiffHisto;
     QVector<QPointF> xorRatePoints, andRatePoints;

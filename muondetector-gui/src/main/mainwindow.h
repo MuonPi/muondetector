@@ -48,6 +48,7 @@ signals:
     void gainSwitchReceived(bool state);
     void temperatureReceived(float temp);
 	void i2cStatsReceived(quint32 bytesRead, quint32 bytesWritten, const QVector<I2cDeviceEntry>& deviceList);
+    void spiStatsReceived(bool spiPresent);
 	void calibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct>& calibList);
 	void satsReceived(const QVector<GnssSatellite>& satList);
     void gnssConfigsReceived(quint8 numTrkCh, const QVector<GnssConfigStruct>& configList);

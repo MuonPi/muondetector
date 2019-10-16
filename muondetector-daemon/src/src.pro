@@ -33,8 +33,7 @@ INCLUDEPATH += ../../muondetector-shared/src/
 LIBS += -L/usr/lib/muondetector-shared -lmuondetector-shared
 DEPENDPATH += /usr/lib/muondetector-shared
 
-LIBS += -lwiringPi \
-        -lpigpiod_if2 \
+LIBS += -lpigpiod_if2 \
         -lcrypto++ \
         -lrt
 
@@ -65,6 +64,7 @@ SOURCES += main/main.cpp \
     main/i2c/i2cdevices/Adafruit_GFX.cpp \
     main/i2c/i2cdevices/i2cdevice.cpp \
     main/i2c/i2cdevices/glcdfont.c \
+    main/tdc7200.cpp
 
 
 HEADERS += \
@@ -100,5 +100,6 @@ HEADERS += \
     main/i2c/i2cdevices/x9119/x9119.h \
     main/i2c/i2cdevices/Adafruit_GFX.h \
     main/i2c/i2cdevices/i2cdevice.h \
+    main/tdc7200.h
 
 DISTFILES += ubx_rates_config.cfg

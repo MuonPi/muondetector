@@ -20,7 +20,9 @@ enum GPIO_PIN {		UBIAS_EN,
 					TIMEPULSE, 
 					TIME_MEAS_OUT, 
 					STATUS1, STATUS2, STATUS3, 
-					PREAMP_FAULT, EXT_TRIGGER
+                    PREAMP_FAULT, EXT_TRIGGER,
+                    TDC_INTB,
+                    TDC_STATUS
 				};
 
 enum SIGNAL_DIRECTION { DIR_UNDEFINED, DIR_IN, DIR_OUT, DIR_IO };
@@ -44,7 +46,9 @@ static const QMap<GPIO_PIN, GpioSignalDescriptor> GPIO_SIGNAL_MAP =
 		{ STATUS2,			{ "STATUS2", DIR_OUT } },
 		{ STATUS3,			{ "STATUS3", DIR_OUT } },
 		{ PREAMP_FAULT,	{ "PREAMP_FAULT", DIR_IN } },
-		{ EXT_TRIGGER,	{ "EXT_TRIGGER", DIR_IN } }
+        { EXT_TRIGGER,	{ "EXT_TRIGGER", DIR_IN } },
+        { TDC_INTB, { "TDC_INTB", DIR_IN } },
+        { TDC_STATUS, { "TDC_STATUS", DIR_IN} }
 	};
 
 
@@ -62,7 +66,9 @@ static const QMap<GPIO_PIN, QString> GPIO_PIN_NAMES =
 		{ STATUS2,		"STATUS2"  },
 		{ STATUS3,		"STATUS3"  },
 		{ PREAMP_FAULT,	"PREAMP_FAULT" },
-		{ EXT_TRIGGER,	"EXT_TRIGGER"  }
+        { EXT_TRIGGER,	"EXT_TRIGGER"  },
+        { TDC_INTB, "TDC_INTB" },
+        { TDC_STATUS, "TDC_STATUS" }
 	};
 
 

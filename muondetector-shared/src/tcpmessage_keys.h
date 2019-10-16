@@ -69,6 +69,8 @@ static const quint16 gpsRxBufSig = 241;
 static const quint16 gpsRxBufPeakSig = 251;
 static const quint16 eventTriggerSig = 257;
 static const quint16 eventTriggerRequestSig = 263;
+static const quint16 spiStatsSig = 269;
+static const quint16 spiStatsRequestSig = 271;
 
 // not implemented from here on yet
 static const quint16 dacSetEepromSig = 109;

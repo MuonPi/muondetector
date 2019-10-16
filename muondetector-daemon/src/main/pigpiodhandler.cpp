@@ -13,17 +13,20 @@ extern "C" {
 const static int eventCountDeadTime = 50;
 const static int adcSampleDeadTime = 8;
 
-static int pi = 0;
+static int pi = -1;
+static int spiHandle = -1;
 static QPointer<PigpiodHandler> pigHandlerAddress; // QPointer automatically clears itself if pigHandler object is destroyed
 
 static void cbFunction(int user_pi, unsigned int user_gpio,
     unsigned int level, uint32_t tick) {
+    //qDebug() << "callback user_pi: " << user_pi << " user_gpio: " << user_gpio << " level: "<< level << " pigHandlerAddressNull: " << pigHandlerAddress.isNull() ;
     if (pigHandlerAddress.isNull()) {
         pigpio_stop(pi);
         return;
     }
     static uint32_t lastTick=0;
     QPointer<PigpiodHandler> pigpioHandler = pigHandlerAddress;
+
     try{
 		// allow only registered signals to be processed here
 		// if gpio pin fired which is not in GPIO_PIN list: return
@@ -79,21 +82,30 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
     }
 }
 
-PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, QObject *parent)
+PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, unsigned int spi_freq, uint32_t spi_flags, QObject *parent)
 	: QObject(parent)
 {
     startOfProgram = QDateTime::currentDateTimeUtc();
     lastSamplingTime = startOfProgram;
     elapsedEventTimer.start();
     pigHandlerAddress = this;
+    spiClkFreq = spi_freq;
+    spiFlags = spi_flags;
     pi = pigpio_start((char*)"127.0.0.1", (char*)"8888");
     if (pi < 0) {
+        qDebug() << "could not start pigpio. Is pigpiod running?";
+        qDebug() << "you can start pigpiod with: sudo pigpiod -s 1";
         return;
     }
     for (auto& gpio_pin : gpio_pins) {
         set_mode(pi, gpio_pin, PI_INPUT);
         if (gpio_pin==GPIO_PINMAP[ADC_READY]) set_pull_up_down(pi, gpio_pin, PI_PUD_UP);
-        callback(pi, gpio_pin, RISING_EDGE, cbFunction);
+        if (gpio_pin==GPIO_PINMAP[TDC_INTB]){
+            callback(pi, gpio_pin, FALLING_EDGE, cbFunction);
+        }else{
+            //qDebug() << "set callback for pin " << gpio_pin;
+            callback(pi, gpio_pin, RISING_EDGE, cbFunction);
+        }
 //        callback(pi, gpio_pin, FALLING_EDGE, cbFunction);
         //        if (value==pigif_bad_malloc||
         //            value==pigif_dublicate_callback||
@@ -126,8 +138,108 @@ void PigpiodHandler::setGpioState(unsigned int gpio, bool state) {
     }
 }
 
+void PigpiodHandler::writeSpi(uint8_t command, std::string data){
+    if(!spiInitialised){
+        if(!spiInitialise()){
+            return;
+        }
+    }
+    char txBuf[data.size()+1];
+    txBuf[0] = (char)command;
+    for (int i = 1; i < data.size() +1; i++){
+        txBuf[i] = data[i-1];
+    }
+    /*qDebug() << "trying to write: ";
+    for (int i = 0; i < data.size()+1; i++){
+        qDebug() << hex << (uint8_t)txBuf[i];
+    }*/
+    char rxBuf[data.size()+1];
+    if (spi_xfer(pi, spiHandle, txBuf, rxBuf, data.size()+1)!=1+data.size()){
+        qDebug() << "wrong number of bytes transfered";
+        return;
+    }
+}
+
+void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead){
+    if(!spiInitialised){
+        if(!spiInitialise()){
+            return;
+        }
+    }
+    //char buf[bytesToRead];
+    //char charCommand = command;
+    //spi_write(pi, spiHandle, &charCommand, 1);
+    //spi_read(pi, spiHandle, buf, bytesToRead);
+
+    char rxBuf[bytesToRead+1];
+    char txBuf[bytesToRead+1];
+    txBuf[0] = (char)command;
+    for (int i = 1; i < bytesToRead; i++){
+        txBuf[i] = 0;
+    }
+    if (spi_xfer(pi, spiHandle, txBuf, rxBuf, bytesToRead+1)!=1+bytesToRead){
+        qDebug() << "wrong number of bytes transfered";
+        return;
+    }
+
+    std::string data;
+    for (int i = 1; i < bytesToRead+1; i++){
+        data += rxBuf[i];
+    }
+//    qDebug() << "read back from reg "<<hex<<command<<":";
+
+    /*qDebug() << "read back: ";
+>>>>>>> 27beb3a0febeba98e0b037468fa27301bb8faae5
+    for (int i = 0; i < data.size(); i++){
+        qDebug() << hex << (uint8_t)data[i];
+    }
+    qDebug() << ".";
+    */
+    emit spiData(command, data);
+}
+
 bool PigpiodHandler::initialised(){
     return isInitialised;
+}
+
+bool PigpiodHandler::isSpiInitialised(){
+    return spiInitialised;
+}
+
+bool PigpiodHandler::spiInitialise(){
+    if (!isInitialised){
+        qDebug() << "pigpiohandler not initialised";
+        return false;
+    }
+    if (spiInitialised){
+        return true;
+    }
+    spiHandle = spi_open(pi, 0, spiClkFreq, spiFlags);
+    if (spiHandle<0){
+        qDebug() << "could not initialise spi bus";
+        switch (spiHandle){
+        case PI_BAD_CHANNEL:
+            qDebug() << "DMA channel not 0-15";
+            break;
+        case PI_BAD_SPI_SPEED:
+            qDebug() << "bad SPI speed";
+            break;
+        case PI_BAD_FLAGS:
+            qDebug() << "bad spi open flags";
+            break;
+        case PI_NO_AUX_SPI:
+            qDebug() << "no auxiliary SPI on Pi A or B";
+            break;
+        case PI_SPI_OPEN_FAILED:
+            qDebug() << "can't open SPI device";
+            break;
+        default:
+            break;
+        }
+        return false;
+    }
+    spiInitialised = true;
+    return true;
 }
 
 void PigpiodHandler::stop() {
@@ -135,7 +247,7 @@ void PigpiodHandler::stop() {
         return;
     }
     isInitialised=false;
-	pigpio_stop(pi);
+    pigpio_stop(pi);
     pigHandlerAddress.clear();
     this->deleteLater();
 }

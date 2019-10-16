@@ -6,7 +6,7 @@
 #include <QDateTime>
 
 static timespec unixtime_from_gps(int week_nr, long int s_of_week, long int ns /*,int leap_seconds*/) {
-    QDateTime gpsTimeStart(QDate(1980,1,6),QTime(0,0,0,0));
+    QDateTime gpsTimeStart(QDate(1980,1,6),QTime(0,0,0,0),Qt::UTC);
     quint64 gpsOffsetToEpoch = gpsTimeStart.toMSecsSinceEpoch()/1000;
     //qDebug() << "week: " << week_nr << " second: " << s_of_week << " ns: " << ns;
     //qDebug() << "gpsOffsetToEpoch: "<<gpsOffsetToEpoch;

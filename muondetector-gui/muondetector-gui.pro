@@ -86,6 +86,7 @@ FORMS += \
     src/main/mainwindow.ui \
     src/main/map.ui \
     src/main/settings.ui \
+    src/main/spiform.ui \
     src/main/status.ui
 
 HEADERS += \
@@ -99,6 +100,7 @@ HEADERS += \
     src/main/map.h \
     src/main/plotcustom.h \
     src/main/settings.h \
+    src/main/spiform.h \
     src/main/status.h
 
 SOURCES += \
@@ -113,6 +115,7 @@ SOURCES += \
     src/main/map.cpp \
     src/main/plotcustom.cpp \
     src/main/settings.cpp \
+    src/main/spiform.cpp \
     src/main/status.cpp
 
 RESOURCES += \

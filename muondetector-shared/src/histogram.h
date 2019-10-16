@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <cmath>
+#include <QDataStream>
 
 
 class Histogram 
