@@ -1,0 +1,117 @@
+CHANGELOG FOR AW_LUKAS
+
+++++++++++++++++++++++++++++++++
+TO DO:
+	- Short term 
+		+ Debug the langaus fit
+		+ Initialize CALIB structure (works without but dunno why)
+		+ TMAX programmieren
+		+ fix plot_interpol() markers
+		+ debug "config file read in" error, where software interprets the -BLA option as config file, even if there is none
+	- Long term
+		+ Highlight mode for the timing vs energy plot
+		+ Plot hists in separate canvases to get more plot control
+		+ Build other .h files to get rid of structure and function definitions in the main code 
+		+ Implement SiPM saturation correction (see g-2 papers for that), will be done with light pulser studies
+
+++++++++++++++++++++++++++++++++
+05/11/2019
+	- Different analysis modes available
+		+ MULTIS: If multisampling is used, MULTIS does the multisampling calibration
+		+ COMICS: Used for calibration of detector, utilizes "column" cut for coincidence evaluation, and "langaus" fit for energy fitting
+		+ PULSER: If pulser is connected, fits several superimposed gaussian peaks 
+
+
+++++++++++++++++++++++++++++++++
+05/09/2019
+	- All histogram related plots are now also saved in a split screen
+
+++++++++++++++++++++++++++++++++
+05/08/2019
+	- Input polarity can be read in via the MAPPING in the config file, if input signal is negative, it will be converted to a positive signal for the feature extraction. The plot will still plot the original ploarity
+	- Execution time display implemented
+
+++++++++++++++++++++++++++++++++
+05/05/2019
+	- Implemented the time structure in the signal structure for more clarity
+
+++++++++++++++++++++++++++++++++
+04/23/2019
+		
+	- Implemented costum verbose mode, the runtime output depends on different characters given by the VERBOSE char
+		- "p": runtime progress reports
+		- "c": config file parameters 
+		- "f": fit routine output
+		- "h": histogram operation output
+		- "e": energy calibration/extraction ouput
+		- "t": timing statistics
+
+++++++++++++++++++++++++++++++++
+04/14/2019
+	- Implemented detector matrix geometry in config file. The MAPPING 2D array has information about the hardware and software channel, if a channel is multisampled, etc..
+
+++++++++++++++++++++++++++++++++
+03/12/2019
+	- Implemented reading independent energy calibration parameters for the different filter methods, now can be directly copy pasted into config file
+
+++++++++++++++++++++++++++++++++
+03/08/2019
+	- implemented also time extraction for MWD and TMAX
+	- hist_struct
+		+ now saves fit parameters as a double_t vector
+
+++++++++++++++++++++++++++++++++
+02/12/2019
+	- plot_waves
+		+ now has "double sample_freq" option to pass the sample frequency of the trace (necessary to get the xaxis right for RAW traces in multisampling mode)
+
+++++++++++++++++++++++++++++++++
+02/12/2019
+	- Langaus fit routine implemented
+
+++++++++++++++++++++++++++++++++
+02/11/2019
+	- Config file now can be passed as the third command line argument
+	- CFD algortithm now includes possiblity to introduce fraction (finally), also implemented as global variable (therefore command line and config file entries)
+	- Fast linear fit in interpolation introduced, also plotted in plot_interpol()
+
+++++++++++++++++++++++++++++++++
+02/09/2019
+	- Major rework of the time structure, introduction of several new structs 	and init functions
+	- Including possibility to use configuration file for setting parameters, overwriting all standard settings or command line parsing  
+	
+++++++++++++++++++++++++++++++++
+02/07/2019
+	- interpolate()
+		+ Adjusted ranges so the global grid stays the same and no time convertion has to be done
+		  Only once the sample frequency has to be taken into account
+	- print_final_statistics()
+		+ Changed acordingly
+	- plot_interpol()
+		+ Changed acordingly
+		+ now gets only two 2D vectors passed including the traces for the interpolated traces
+
+
+++++++++++++++++++++++++++++++++
+02/02/2019
+	- main()
+		+ Repalced the histogram initialization with new function
+	- init_hists(int channels)
+		+ Newly implemented
+		+ Initializes all needed histograms in the current program mode
+
+++++++++++++++++++++++++++++++++
+02/01/2019
+
+	- main()
+		+ Filling the histograms now in new fill_hist() function
+		+ Added some comments
+	- fill_hist()
+		+ Newly implemented
+		+ Fills histograms respectiong the program mode
+	- ectraction()
+		+ Added comments
+	- multis_calib()
+		+ Added comments
+
+
