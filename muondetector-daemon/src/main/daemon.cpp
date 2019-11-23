@@ -32,7 +32,7 @@ const QVector<QString> FIX_TYPE_STRINGS = { "No Fix", "Dead Reck." , "2D-Fix", "
 using namespace std;
 
 
-static unsigned int HW_VERSION = 2;
+static unsigned int HW_VERSION = 0; // default value is set in calibration.h
 
 
 int64_t msecdiff(timespec &ts, timespec &st){
@@ -283,7 +283,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 				if (verbose>2) cout<<"eep write took "<<eep->getLastTimeInterval()<<" ms"<<endl;
 				readEeprom();
 			}
-			if (1==1) {
+            if (1==1) {
 				calib->printCalibList();
 
 /*
@@ -304,19 +304,19 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 */
 			}
 		}
-		if (calib->isValid()) {
-			CalibStruct verStruct = calib->getCalibItem("VERSION");
-			unsigned int version=0;
-			ShowerDetectorCalib::getValueFromString(verStruct.value,version);
-			if (version>0) {
-				HW_VERSION=version;
-				if (verbose>1) cout<<"found HW version "<<version<<" in eeprom"<<endl;
-			}
-		}
-	} else {
-		cerr<<"eeprom device NOT present!"<<endl;
-	}
+        //if (calib->isValid()) {
 
+        //}
+    } else {
+        cerr<<"eeprom device NOT present!"<<endl;
+    }
+    CalibStruct verStruct = calib->getCalibItem("VERSION");
+    unsigned int version=0;
+    ShowerDetectorCalib::getValueFromString(verStruct.value,version);
+    if (version>0) {
+        HW_VERSION=version;
+        if (verbose>1) cout<<"found HW version "<<version<<" in eeprom"<<endl;
+        }
 
 	// set up the pin definitions (hw version specific)
 	GPIO_PINMAP=GPIO_PINMAP_VERSIONS[HW_VERSION];

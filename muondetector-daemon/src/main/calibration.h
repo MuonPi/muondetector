@@ -22,7 +22,7 @@ static const CalibStruct InvalidCalibStruct = CalibStruct( "", "", 0, "" );
 // meaning of entries (columns is:
 // <item name> <item type> <default value>
 static const std::vector<std::tuple<std::string, std::string, std::string>> CALIBITEMS = { 
-													std::make_tuple("VERSION", "UINT8",  "1") ,
+                                                    std::make_tuple("VERSION", "UINT8",  "2") ,
 													std::make_tuple("FEATURE_FLAGS", "UINT8",  "0") ,
 													std::make_tuple("CALIB_FLAGS", "UINT8", "0") ,
 													std::make_tuple("DATE", "UINT32", "0") ,

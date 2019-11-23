@@ -219,7 +219,7 @@ bool BME280::measure() {
 			break;
 		}
 		usleep(5000);
-		if (i = 9){
+		if (i == 9){
 			return false;
 		}
 	}
