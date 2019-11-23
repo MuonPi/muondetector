@@ -41,6 +41,7 @@ static const quint16 preampSig = 97;
 static const quint16 preampRequestSig = 101;
 static const quint16 temperatureSig = 103;
 static const quint16 temperatureRequestSig = 107;
+static const quint16 dacSetEepromSig = 109;
 static const quint16 calibSetSig = 127;
 static const quint16 calibRequestSig = 131;
 static const quint16 i2cStatsSig = 137;
@@ -71,9 +72,9 @@ static const quint16 eventTriggerSig = 257;
 static const quint16 eventTriggerRequestSig = 263;
 static const quint16 spiStatsSig = 269;
 static const quint16 spiStatsRequestSig = 271;
+static const quint16 histogramClearSig = 277;
 
 // not implemented from here on yet
-static const quint16 dacSetEepromSig = 109;
 static const quint16 dacRequestEepromSig = 113;
 
 

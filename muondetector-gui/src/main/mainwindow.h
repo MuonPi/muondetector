@@ -77,6 +77,7 @@ public slots:
     void onSendUbxReset();
 	void makeConnection(QString ipAddress, quint16 port);
     void onTriggerSelectionChanged(GPIO_PIN signal);
+    void onHistogramCleared(QString histogramName);
 
 private slots:
 	// only those properties with value >= 0 will be updated!

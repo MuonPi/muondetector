@@ -7,6 +7,9 @@ histogramDataForm::histogramDataForm(QWidget *parent) :
     ui(new Ui::histogramDataForm)
 {
     ui->setupUi(this);
+    connect(ui->histoWidget, &CustomHistogram::histogramCleared, [this](const QString histogramName){
+        emit histogramCleared(histogramName);
+    });
 }
 
 histogramDataForm::~histogramDataForm()

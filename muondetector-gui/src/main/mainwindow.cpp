@@ -240,8 +240,8 @@ MainWindow::MainWindow(QWidget *parent) :
     histogramDataForm *histoTab = new histogramDataForm(this);
     connect(this, &MainWindow::setUiEnabledStates, histoTab, &histogramDataForm::onUiEnabledStateChange);
     connect(this, &MainWindow::histogramReceived, histoTab, &histogramDataForm::onHistogramReceived);
+    connect(histoTab, &histogramDataForm::histogramCleared, this, &MainWindow::onHistogramCleared);
     ui->tabWidget->addTab(histoTab,"Statistics");
-
 
     //sendRequest(calibRequestSig);
 
@@ -721,6 +721,12 @@ void MainWindow::sendSetUbxMsgRateChanges(QMap<uint16_t, int> changes){
 void MainWindow::onSendUbxReset()
 {
     TcpMessage tcpMessage(ubxResetSig);
+    emit sendTcpMessage(tcpMessage);
+}
+
+void MainWindow::onHistogramCleared(QString histogramName){
+    TcpMessage tcpMessage(histogramClearSig);
+    *(tcpMessage.dStream) << histogramName;
     emit sendTcpMessage(tcpMessage);
 }
 

@@ -156,6 +156,7 @@ bool BME280::setDefaultSettings() {
     buf[0] |= 0b010;
     writeReg(0xf2, buf, 1); // enabling humidity measurement (oversampling x2)
     write_CtrlMeasReg(0b01001000); // enabling temperature and pressure measurement (oversampling x2), set sleep mode
+    return true;
 }
 
 bool BME280::measure() {

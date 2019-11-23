@@ -14,7 +14,8 @@ class histogramDataForm;
 class histogramDataForm : public QWidget
 {
     Q_OBJECT
-
+signals:
+    void histogramCleared(QString histogramName);
 public:
     explicit histogramDataForm(QWidget *parent = 0);
     ~histogramDataForm();

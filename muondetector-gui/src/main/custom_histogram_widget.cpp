@@ -207,6 +207,7 @@ void CustomHistogram::clear()
 {
 	fHistogramMap.clear();
 	fOverflow=fUnderflow=0;
+    emit histogramCleared(QString::fromStdString(fName));
     update();
 }
 

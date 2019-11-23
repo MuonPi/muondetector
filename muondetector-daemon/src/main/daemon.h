@@ -179,7 +179,8 @@ private:
     void rescaleHisto(Histogram& hist, double center, double width);
     void rescaleHisto(Histogram& hist, double center);
     void checkRescaleHisto(Histogram& hist, double newValue);
-    
+    void onClearHistoReceived(QString histogramName);
+
     void printTimestamp();
     void delay(int millisecondsWait);
 
@@ -232,6 +233,7 @@ private:
     // others
     ShowerDetectorCalib* calib = nullptr;
 
+    // QMap<QString, Histogram> histoMap; // histos to be replaced by a map
     Histogram geoHeightHisto, geoLonHisto, geoLatHisto,
      weightedGeoHeightHisto,
      pulseHeightHisto, adcSampleTimeHisto, tdc7200Histo,

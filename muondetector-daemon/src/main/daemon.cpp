@@ -742,7 +742,7 @@ void Daemon::connectToGps() {
 	// here is where the magic threading happens look closely
     qtGps = new QtSerialUblox(gpsdevname, gpsTimeout, baudrate, dumpRaw, verbose, showout, showin);
     QThread *gpsThread = new QThread();
-	qtGps->moveToThread(gpsThread);
+    qtGps->moveToThread(gpsThread);
     // connect all signals about quitting
     connect(this, &Daemon::aboutToQuit, qtGps, &QtSerialUblox::deleteLater);
     connect(gpsThread, &QThread::finished, gpsThread, &QThread::deleteLater);
@@ -838,7 +838,7 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 
 void Daemon::setupHistos() {
 	geoHeightHisto=Histogram("geoHeight",200,0.,199.);
-	geoHeightHisto.setUnit("m");
+    geoHeightHisto.setUnit("m");
 	geoLonHisto=Histogram("geoLongitude",200,0.,0.003);
 	geoLonHisto.setUnit("deg");
 	geoLatHisto=Histogram("geoLatitude",200,0.,0.003);
@@ -861,6 +861,34 @@ void Daemon::setupHistos() {
 	tpTimeDiffHisto.setUnit("us");
     tdc7200Histo=Histogram("Time-to-Digital Time Diff",400, 0., 1e6);
     tdc7200Histo.setUnit("ns");
+}
+
+void Daemon::onClearHistoReceived(QString histogramName){
+    if (histogramName.toStdString()==geoHeightHisto.getName()){
+        geoHeightHisto.clear();
+    }else if (histogramName.toStdString()==geoLonHisto.getName()){
+        geoLonHisto.clear();
+    }else if (histogramName.toStdString()==geoLatHisto.getName()){
+        geoLatHisto.clear();
+    }else if (histogramName.toStdString()==weightedGeoHeightHisto.getName()){
+        weightedGeoHeightHisto.clear();
+    }else if (histogramName.toStdString()==pulseHeightHisto.getName()){
+        pulseHeightHisto.clear();
+    }else if (histogramName.toStdString()==adcSampleTimeHisto.getName()){
+        adcSampleTimeHisto.clear();
+    }else if (histogramName.toStdString()==ubxTimeLengthHisto.getName()){
+        ubxTimeLengthHisto.clear();
+    }else if (histogramName.toStdString()==eventIntervalHisto.getName()){
+        eventIntervalHisto.clear();
+    }else if (histogramName.toStdString()==eventIntervalShortHisto.getName()){
+        eventIntervalShortHisto.clear();
+    }else if (histogramName.toStdString()==ubxTimeIntervalHisto.getName()){
+        ubxTimeIntervalHisto.clear();
+    }else if (histogramName.toStdString()==tpTimeDiffHisto.getName()){
+        tpTimeDiffHisto.clear();
+    }else if (histogramName.toStdString()==tdc7200Histo.getName()){
+        tdc7200Histo.clear();
+    }
 }
 
 void Daemon::rescaleHisto(Histogram& hist, double center, double width) {
@@ -1113,6 +1141,11 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
     }
     if (msgID == dacSetEepromSig){
         saveDacValuesToEeprom();
+    }
+    if (msgID == histogramClearSig){
+        QString histogramName;
+        *(tcpMessage.dStream) >> histogramName;
+        onClearHistoReceived(histogramName);
     }
 }
 
