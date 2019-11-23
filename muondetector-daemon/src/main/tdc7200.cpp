@@ -137,8 +137,8 @@ void TDC7200::processData(){
     double calCount = ((double)CALIBRATION2-(double)CALIBRATION1)/((double)CALIBRATION2_PERIODS-1);
     double normLSB = (double)CLOCKperiod/calCount;
     double TIME1 = (double)regContent2[0];
-    double TIME2 = regContent2[2];
-    uint32_t CLOCK_COUNT1 = regContent2[1];
+    //double TIME2 = regContent2[2];
+    //uint32_t CLOCK_COUNT1 = regContent2[1];
     /*
     qDebug() << "processData:";
     qDebug() << "num_stop: " <<hex<< num_stop;
@@ -160,13 +160,13 @@ void TDC7200::processData(){
         }
         if (meas_mode == 1){ // mode 2
             double TIMEn1 = (double)regContent2[i*2+2];
-//            double TOF = normLSB*(TIME1-TIMEn1)+((double)regContent2[i+1])*CLOCKperiod;
-            double TOF = normLSB*(TIME1-TIME2)+CLOCKperiod*CLOCK_COUNT1;
+            double TOF = normLSB*(TIME1-TIMEn1)+((double)regContent2[i+1])*CLOCKperiod;
+            // double TOF = normLSB*(TIME1-TIME2)+CLOCKperiod*CLOCK_COUNT1;
             timings.push_back(TOF);
         }
     }
     emit timeMeas(timings);
-    qDebug() << "Timings: " << timings;
+    //qDebug() << "Timings: " << timings;
     emit tdcEvent(timings.at(0)*1e6);
     startMeas();
 }
