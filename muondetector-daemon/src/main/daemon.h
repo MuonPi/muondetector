@@ -159,6 +159,7 @@ private:
     void sendDacThresh(uint8_t channel);
     void sendDacReadbackValue(uint8_t channel, float voltage);
     void setBiasVoltage(float voltage);
+    void saveDacValuesToEeprom();
     void sendBiasVoltage();
     void sendBiasStatus();
     void sendGainSwitchStatus();

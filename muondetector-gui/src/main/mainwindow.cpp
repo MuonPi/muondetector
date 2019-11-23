@@ -142,6 +142,9 @@ MainWindow::MainWindow(QWidget *parent) :
         ratePollTimer.start();
     }
 
+    // set mainwindow
+    //connect(ui->saveThresholdsButton, &QPushButton, this, &MainWindow::on_saveThresholdsButton_clicked);
+
     // set all tabs
     ui->tabWidget->removeTab(0);
     Status *status = new Status(this);
@@ -1036,6 +1039,12 @@ float MainWindow::parseValue(QString text) {
 		return -1;
 	}
 	return value;
+}
+
+void MainWindow::on_saveThresholdsButton_clicked()
+{
+    TcpMessage tcpMessage(dacSetEepromSig);
+    emit sendTcpMessage(tcpMessage);
 }
 
 void MainWindow::on_biasPowerButton_clicked()

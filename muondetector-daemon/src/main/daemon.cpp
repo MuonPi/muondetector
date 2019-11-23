@@ -1111,6 +1111,9 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> closeAddress;
         emit closeConnection(closeAddress);
     }
+    if (msgID == dacSetEepromSig){
+        saveDacValuesToEeprom();
+    }
 }
 
 void Daemon::scanI2cBus() {
@@ -1500,6 +1503,15 @@ void Daemon::setDacThresh(uint8_t channel, float threshold) {
 		emit logParameter(LogParameter("thresh"+QString::number(channel), QString::number(dacThresh[channel])+" V", LogParameter::LOG_EVERY));
 	}
     //sendDacThresh(channel);
+}
+
+void Daemon::saveDacValuesToEeprom(){
+    for (int i=0; i<4; i++) {
+        MCP4728::DacChannel dacChannel;
+        dac->readChannel(i, dacChannel);
+        dacChannel.eeprom=true;
+        dac->writeChannel(i, dacChannel);
+    }
 }
 
 bool Daemon::readEeprom()

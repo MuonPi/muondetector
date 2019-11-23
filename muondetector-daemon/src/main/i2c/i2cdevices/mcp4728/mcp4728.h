@@ -35,7 +35,7 @@ public:
 	bool devicePresent();
 	bool setVoltage(uint8_t channel, float voltage, bool toEEPROM = false);
 	bool setValue(uint8_t channel, uint16_t value, uint8_t gain = GAIN1, bool toEEPROM = false);
-	bool setChannel(uint8_t channel, const DacChannel& channelData);
+    bool writeChannel(uint8_t channel, const DacChannel& channelData);
 	bool readChannel(uint8_t channel, DacChannel& channelData);
 
 	static float code2voltage(const DacChannel& channelData);

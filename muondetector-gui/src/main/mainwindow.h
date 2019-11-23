@@ -121,6 +121,8 @@ private slots:
 
     void on_biasVoltageDoubleSpinBox_valueChanged(double arg1);
 
+    void on_saveThresholdsButton_clicked();
+
 private:
 	Ui::MainWindow *ui;
 	void uiSetConnectedState();
