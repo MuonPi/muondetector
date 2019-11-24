@@ -10,7 +10,7 @@ const int MAX_IQTRACK_BUFFER = 250;
 const static double PI = 3.1415926535;
 
 const QVector<QString> FIX_TYPE_STRINGS = { "No Fix", "Dead Reck." , "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix"  };
-const QString GNSS_ID_STRING[] = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
+//const QString GNSS_ID_STRING[] = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
 const QString GNSS_ORBIT_SRC_STRING[] = { "N/A","Ephem","Alm","AOP","AOP+","Alt","Alt","Alt" };
 
 // helper function to format human readable numbers with common suffixes (k(ilo), M(ega), m(illi) etc.)

@@ -860,7 +860,7 @@ void QtSerialUblox::UBXCfgGNSS(const string &msg)
 		{
 			std::stringstream tempStream;
 			tempStream << "   " << i << ":   GNSS name : "
-				<< GnssSatellite::GNSS_ID_STRING[config.gnssId] << endl;
+				<< GNSS_ID_STRING[config.gnssId] << endl;
 			tempStream << "      reserved (min) tracking channels  : "
 				<< dec << (int)config.resTrkCh << endl;
 			tempStream << "      max nr of tracking channels used : "

@@ -8,10 +8,10 @@
 #include <iomanip>
 #include <QString>
 #include <QDataStream>
+#include <QList>
 
 
-
-struct MUONDETECTORSHARED CalibStruct {
+struct CalibStruct {
 public:
     enum {	CALIBFLAGS_NO_CALIB=0x00, CALIBFLAGS_COMPONENTS=0x01,
             CALIBFLAGS_VOLTAGE_COEFFS=0x02, CALIBFLAGS_CURRENT_COEFFS=0x04};
@@ -76,7 +76,7 @@ public:
 
 	~GnssSatellite() {}
 
-	static const std::string GNSS_ID_STRING[];
+	//static const std::string GNSS_ID_STRING[];
 
 	static void PrintHeader(bool wIndex);
 	void Print(bool wHeader) const;
@@ -100,10 +100,13 @@ public:
 	bool fUsed=false, fDiffCorr=false, fSmoothed=false;
 };
 
-inline const std::string GnssSatellite::GNSS_ID_STRING[] = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
-
+//inline const std::string GnssSatellite::GNSS_ID_STRING[] = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
 //const MUONDETECTORSHARED std::string GNSS_ID_STRING[] = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
 //const MUONDETECTORSHARED std::string GnssSatellite::GNSS_ID_STRING[];
+//inline const std::string GNSS_ID_STRING()
+static const QList<QString> GNSS_ID_STRING = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
+//enum {  };
+
 
 inline void GnssSatellite::PrintHeader(bool wIndex)
 {
@@ -127,7 +130,7 @@ inline void GnssSatellite::Print(bool wHeader) const
 		std::cout << "    Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth DiffCorr" << std::endl;
 		std::cout << "   ------------------------------------------------------------------------------" << std::endl;
 	}
-	std::cout << "   " << std::dec << "  " << GNSS_ID_STRING[(int)fGnssId] << "   " << std::setw(3) << (int)fSatId << "    ";
+	std::cout << "   " << std::dec << "  " << GNSS_ID_STRING[(int)fGnssId].toStdString() << "   " << std::setw(3) << (int)fSatId << "    ";
 //	cout << "   " << dec << "  " << (int)fGnssId << "   " << setw(3) << (int)fSatId << "    ";
 	//    cout<<setfill(' ');
 	std::cout << std::setw(3) << (int)fCnr << "      " << std::setw(3) << (int)fElev << "       " << std::setw(3) << (int)fAzim;
@@ -143,7 +146,7 @@ inline void GnssSatellite::Print(int index, bool wHeader) const
 		std::cout << "   Nr   Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth DiffCorr" << std::endl;
 		std::cout << "   ----------------------------------------------------------------------------------" << std::endl;
 	}
-	std::cout << "   " << std::dec << std::setw(2) << index + 1 << "  " << GNSS_ID_STRING[(int)fGnssId] << "   " << std::setw(3) << (int)fSatId << "    ";
+	std::cout << "   " << std::dec << std::setw(2) << index + 1 << "  " << GNSS_ID_STRING[(int)fGnssId].toStdString() << "   " << std::setw(3) << (int)fSatId << "    ";
 //	cout << "   " << dec << setw(2) << index + 1 << "  " << (int)fGnssId << "   " << setw(3) << (int)fSatId << "    ";
 	//    cout<<setfill(' ');
 	std::cout << std::setw(3) << (int)fCnr << "      " << std::setw(3) << (int)fElev << "       " << std::setw(3) << (int)fAzim;
