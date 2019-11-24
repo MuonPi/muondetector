@@ -1,9 +1,9 @@
 #include <QThread>
 #include "calibform.h"
 #include "ui_calibform.h"
-#include <calib_struct.h>
 #include <qwt_symbol.h>
 #include <string>
+#include <muondetector_structs.h>
 
 #define calVoltMin 0.3
 #define calVoltMax 2.5

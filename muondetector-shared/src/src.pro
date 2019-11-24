@@ -38,7 +38,8 @@ macx:OBJECTS_DIR = ../build/o/mac
 
 SOURCES += \
     tcpconnection.cpp \
-    tcpmessage.cpp
+    tcpmessage.cpp #\
+    #muondetector_structs.cpp
 
 HEADERS += \
     geodeticpos.h \
@@ -52,4 +53,5 @@ HEADERS += \
     muondetector_shared_global.h \
     calib_struct.h \
     gnsssatellite.h \
-    ublox_structs.h
+    ublox_structs.h \
+    muondetector_structs.h

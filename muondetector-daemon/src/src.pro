@@ -30,8 +30,9 @@ INCLUDEPATH +=  . \
 
 INCLUDEPATH += ../../muondetector-shared/src/
 
-LIBS += -L/usr/lib/muondetector-shared -lmuondetector-shared
-DEPENDPATH += /usr/lib/muondetector-shared
+#LIBS += -L/usr/lib/muondetector-shared -lmuondetector-shared
+LIBS += -L/usr/lib/ -lmuondetector-shared
+#DEPENDPATH += /usr/lib/muondetector-shared
 
 LIBS += -lpigpiod_if2 \
         -lcrypto++ \

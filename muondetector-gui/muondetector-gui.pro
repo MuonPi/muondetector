@@ -101,7 +101,7 @@ HEADERS += \
     src/main/plotcustom.h \
     src/main/settings.h \
     src/main/spiform.h \
-    src/main/status.h \
+    src/main/status.h
 
 SOURCES += \
     src/main/calibform.cpp \

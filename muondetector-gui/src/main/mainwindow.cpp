@@ -5,7 +5,6 @@
 #include <QKeyEvent>
 #include <QDebug>
 #include <QErrorMessage>
-#include <calib_struct.h>
 #include <gnsssatellite.h>
 #include <ublox_structs.h>
 #include <settings.h>
@@ -17,10 +16,12 @@
 #include <gpssatsform.h>
 #include <iostream>
 #include <histogram.h>
-#include "histogramdataform.h"
+#include <histogramdataform.h>
+#include <muondetector_structs.h>
 
 using namespace std;
 
+/*
 QDataStream & operator >> (QDataStream& in, CalibStruct& calib)
 {
 	QString s1,s2,s3;
@@ -41,6 +42,7 @@ QDataStream& operator << (QDataStream& out, const CalibStruct& calib)
      << (quint16)calib.address << QString::fromStdString(calib.value);
     return out;
 }
+*/
 
 QDataStream& operator >> (QDataStream& in, GnssSatellite& sat)
 {

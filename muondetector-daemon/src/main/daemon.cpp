@@ -12,6 +12,7 @@
 #include <iomanip>      // std::setfill, std::setw
 #include <locale>
 #include <iostream>
+#include <muondetector_structs.h>
 
 // for i2cdetect:
 extern "C" {
@@ -24,6 +25,9 @@ extern "C" {
 
 #define OLED_UPDATE_PERIOD 2000
 #define DEGREE_CHARCODE 248
+
+extern QDataStream& operator << (QDataStream& out, const CalibStruct& calib);
+extern QDataStream& operator >> (QDataStream& in, CalibStruct& calib);
 
 const QVector<QString> FIX_TYPE_STRINGS = { "No Fix", "Dead Reck." , "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix"  };
 
@@ -60,7 +64,7 @@ static QVector<uint16_t> allMsgCfgID({
          UBX_MON_RXBUF, UBX_MON_RXR, UBX_MON_TXBUF
 	});
 
-
+/*
 QDataStream& operator << (QDataStream& out, const CalibStruct& calib)
 {
 	out << QString::fromStdString(calib.name) << QString::fromStdString(calib.type)
@@ -81,6 +85,7 @@ QDataStream & operator >> (QDataStream& in, CalibStruct& calib)
 	calib.value = s3.toStdString();
 	return in;
 }
+*/
 
 QDataStream& operator << (QDataStream& out, const GnssSatellite& sat)
 {
@@ -742,7 +747,7 @@ void Daemon::connectToGps() {
 	// here is where the magic threading happens look closely
     qtGps = new QtSerialUblox(gpsdevname, gpsTimeout, baudrate, dumpRaw, verbose, showout, showin);
     QThread *gpsThread = new QThread();
-    qtGps->moveToThread(gpsThread);
+	qtGps->moveToThread(gpsThread);
     // connect all signals about quitting
     connect(this, &Daemon::aboutToQuit, qtGps, &QtSerialUblox::deleteLater);
     connect(gpsThread, &QThread::finished, gpsThread, &QThread::deleteLater);
@@ -838,7 +843,7 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 
 void Daemon::setupHistos() {
 	geoHeightHisto=Histogram("geoHeight",200,0.,199.);
-    geoHeightHisto.setUnit("m");
+	geoHeightHisto.setUnit("m");
 	geoLonHisto=Histogram("geoLongitude",200,0.,0.003);
 	geoLonHisto.setUnit("deg");
 	geoLatHisto=Histogram("geoLatitude",200,0.,0.003);
@@ -861,34 +866,6 @@ void Daemon::setupHistos() {
 	tpTimeDiffHisto.setUnit("us");
     tdc7200Histo=Histogram("Time-to-Digital Time Diff",400, 0., 1e6);
     tdc7200Histo.setUnit("ns");
-}
-
-void Daemon::onClearHistoReceived(QString histogramName){
-    if (histogramName.toStdString()==geoHeightHisto.getName()){
-        geoHeightHisto.clear();
-    }else if (histogramName.toStdString()==geoLonHisto.getName()){
-        geoLonHisto.clear();
-    }else if (histogramName.toStdString()==geoLatHisto.getName()){
-        geoLatHisto.clear();
-    }else if (histogramName.toStdString()==weightedGeoHeightHisto.getName()){
-        weightedGeoHeightHisto.clear();
-    }else if (histogramName.toStdString()==pulseHeightHisto.getName()){
-        pulseHeightHisto.clear();
-    }else if (histogramName.toStdString()==adcSampleTimeHisto.getName()){
-        adcSampleTimeHisto.clear();
-    }else if (histogramName.toStdString()==ubxTimeLengthHisto.getName()){
-        ubxTimeLengthHisto.clear();
-    }else if (histogramName.toStdString()==eventIntervalHisto.getName()){
-        eventIntervalHisto.clear();
-    }else if (histogramName.toStdString()==eventIntervalShortHisto.getName()){
-        eventIntervalShortHisto.clear();
-    }else if (histogramName.toStdString()==ubxTimeIntervalHisto.getName()){
-        ubxTimeIntervalHisto.clear();
-    }else if (histogramName.toStdString()==tpTimeDiffHisto.getName()){
-        tpTimeDiffHisto.clear();
-    }else if (histogramName.toStdString()==tdc7200Histo.getName()){
-        tdc7200Histo.clear();
-    }
 }
 
 void Daemon::rescaleHisto(Histogram& hist, double center, double width) {
@@ -1141,11 +1118,6 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
     }
     if (msgID == dacSetEepromSig){
         saveDacValuesToEeprom();
-    }
-    if (msgID == histogramClearSig){
-        QString histogramName;
-        *(tcpMessage.dStream) >> histogramName;
-        onClearHistoReceived(histogramName);
     }
 }
 

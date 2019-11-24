@@ -282,9 +282,9 @@
        </layout>
       </item>
       <item>
-       <widget class="QPushButton" name="saveThresholdsButton">
+       <widget class="QPushButton" name="saveDacButton">
         <property name="text">
-         <string>Save to Flash</string>
+         <string>Store DAC settings</string>
         </property>
        </widget>
       </item>

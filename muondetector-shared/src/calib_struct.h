@@ -1,6 +1,6 @@
 #ifndef CALIBSTRUCT_H
 #define CALIBSTRUCT_H
-
+/*
 #include <muondetector_shared_global.h>
 
 #include <sys/types.h>
@@ -29,15 +29,15 @@ public:
 	uint16_t address=0;
 	std::string value="";
 };
-/*
+
 QDataStream& operator << (QDataStream& out, const CalibStruct& calib)
 {
 	out << QString::fromStdString(calib.name) << QString::fromStdString(calib.type)
 	 << (quint16)calib.address << QString::fromStdString(calib.value);
     return out;
 }
-*/
-/*
+
+
 QDataStream & operator >> (QDataStream& in, CalibStruct& calib)
 {
 	QString s1,s2,s3;

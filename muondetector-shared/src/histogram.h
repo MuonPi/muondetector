@@ -7,7 +7,7 @@
 #include <QDataStream>
 
 
-class Histogram
+class Histogram 
 {
 public:
     Histogram()=default;

@@ -10,7 +10,7 @@
 #include <string>
 #include <iomanip>
 #include <custom_io_operators.h>
-#include <calib_struct.h>
+#include <muondetector_structs.h>
 #include "i2c/i2cdevices.h"
 
 
