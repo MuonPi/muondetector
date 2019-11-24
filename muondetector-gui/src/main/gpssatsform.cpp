@@ -3,6 +3,7 @@
 #include "ui_gpssatsform.h"
 #include <QPainter>
 #include <QPixmap>
+#include <muondetector_structs.h>
 
 const int MAX_IQTRACK_BUFFER = 250;
 
@@ -321,7 +322,7 @@ void GpsSatsForm::onGpsFixReceived(quint8 val)
     ui->fixTypeLabel->setText(fixType);
 }
 
-void GpsSatsForm::onGeodeticPosReceived(GeodeticPos pos){
+void GpsSatsForm::onGeodeticPosReceived(const GeodeticPos& pos){
 
     QString str;
     str=printReadableFloat(pos.hAcc/1000.,2,0)+"m/"+printReadableFloat(pos.vAcc/1000.,2,0)+"m";

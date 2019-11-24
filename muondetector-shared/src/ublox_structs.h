@@ -3,10 +3,16 @@
 
 #include <string>
 #include <chrono>
-#include <gnsssatellite.h>
-#include <geodeticpos.h>
+//#include <gnsssatellite.h>
+//#include <geodeticpos.h>
 #include <sstream>
 #include <string>
+
+#include "muondetector_structs.h"
+
+struct GeodeticPos;
+class GnssSatellite;
+
 
 struct UbxMessage {
 public:

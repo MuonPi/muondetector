@@ -2,6 +2,10 @@
 #include <QDataStream>
 #include <QString>
 
+
+//const std::string GnssSatellite::GNSS_ID_STRING[] = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
+
+/*
 QDataStream& operator << (QDataStream& out, const CalibStruct& calib)
 {
     out << QString::fromStdString(calib.name) << QString::fromStdString(calib.type)
@@ -23,4 +27,4 @@ QDataStream& operator >> (QDataStream& in, CalibStruct& calib)
     calib.value = s3.toStdString();
     return in;
 }
-
+*/

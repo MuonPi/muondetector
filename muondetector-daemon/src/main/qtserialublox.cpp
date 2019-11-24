@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <QEventLoop>
 #include <ublox_messages.h>
+#include <muondetector_structs.h>
 
 using namespace std;
 

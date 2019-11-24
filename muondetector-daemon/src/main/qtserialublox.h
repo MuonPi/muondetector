@@ -9,8 +9,10 @@
 #include <QObject>
 #include <QTimer>
 #include <QLocale>
-#include <geodeticpos.h>
-#include <gnsssatellite.h>
+//#include <geodeticpos.h>
+//#include <gnsssatellite.h>
+
+struct GeodeticPos;
 
 class QtSerialUblox : public QObject
 {

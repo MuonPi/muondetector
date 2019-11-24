@@ -5,7 +5,7 @@
 #include <QKeyEvent>
 #include <QDebug>
 #include <QErrorMessage>
-#include <gnsssatellite.h>
+//#include <gnsssatellite.h>
 #include <ublox_structs.h>
 #include <settings.h>
 #include <status.h>
@@ -134,6 +134,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	xorTimer.setInterval(timerInterval);
 	connect(&andTimer, &QTimer::timeout, this, &MainWindow::resetAndHit);
 	connect(&xorTimer, &QTimer::timeout, this, &MainWindow::resetXorHit);
+	
+	ui->ANDHit->setFocusPolicy(Qt::NoFocus);
+	ui->XORHit->setFocusPolicy(Qt::NoFocus);
 
     // set timer for automatic rate poll
     if (automaticRatePoll){
@@ -145,7 +148,7 @@ MainWindow::MainWindow(QWidget *parent) :
     }
 
     // set mainwindow
-    //connect(ui->saveThresholdsButton, &QPushButton, this, &MainWindow::on_saveThresholdsButton_clicked);
+    //connect(ui->saveDacButton, &QPushButton, this, &MainWindow::on_saveThresholdsButton_clicked);
 
     // set all tabs
     ui->tabWidget->removeTab(0);
@@ -1049,7 +1052,7 @@ float MainWindow::parseValue(QString text) {
 	return value;
 }
 
-void MainWindow::on_saveThresholdsButton_clicked()
+void MainWindow::on_saveDacButton_clicked()
 {
     TcpMessage tcpMessage(dacSetEepromSig);
     emit sendTcpMessage(tcpMessage);

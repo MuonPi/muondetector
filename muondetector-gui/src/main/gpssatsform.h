@@ -2,10 +2,15 @@
 #define GPSSATSFORM_H
 
 #include <QWidget>
-#include <gnsssatellite.h>
-#include <geodeticpos.h>
+//#include <gnsssatellite.h>
+//#include <geodeticpos.h>
 #include <QMap>
 #include <QVector>
+//#include <muondetector_structs.h>
+
+struct GeodeticPos;
+class GnssSatellite;
+
 
 namespace Ui {
 class GpsSatsForm;
@@ -33,7 +38,7 @@ public slots:
     void onGpsMonHW2Received(qint8 ofsI, quint8 magI, qint8 ofsQ, quint8 magQ, quint8 cfgSrc);
     void onGpsVersionReceived(const QString& swString, const QString& hwString, const QString& protString);
     void onGpsFixReceived(quint8 val);
-    void onGeodeticPosReceived(GeodeticPos pos);
+    void onGeodeticPosReceived(const GeodeticPos& pos);
     void onUiEnabledStateChange(bool connected);
     void onUbxUptimeReceived(quint32 val);
 

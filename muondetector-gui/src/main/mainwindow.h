@@ -6,7 +6,7 @@
 #include <QErrorMessage>
 #include <QTime>
 #include <QVector>
-#include <geodeticpos.h>
+//#include <geodeticpos.h>
 #include <gpio_pin_definitions.h>
 
 // for sig handling:
@@ -14,6 +14,7 @@
 
 struct I2cDeviceEntry;
 struct CalibStruct;
+struct GeodeticPos;
 struct GnssConfigStruct;
 class GnssSatellite;
 class CalibForm;
@@ -39,7 +40,7 @@ signals:
     void gpioRates(quint8 whichrate, QVector<QPointF> rate);
     void tcpDisconnected();
     void setUiEnabledStates(bool enabled);
-    void geodeticPos(GeodeticPos pos);
+    void geodeticPos(const GeodeticPos& pos);
     void adcSampleReceived(uint8_t channel, float value);
     void inputSwitchReceived(uint8_t);
     void dacReadbackReceived(uint8_t channel, float value);
@@ -122,7 +123,7 @@ private slots:
 
     void on_biasVoltageDoubleSpinBox_valueChanged(double arg1);
 
-    void on_saveThresholdsButton_clicked();
+    void on_saveDacButton_clicked();
 
 private:
 	Ui::MainWindow *ui;

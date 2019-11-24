@@ -39,7 +39,7 @@ LIBS += -lpigpiod_if2 \
         -lrt
 
 SOURCES += main/main.cpp \
-    main/gnsssatellite.cpp \
+#    main/gnsssatellite.cpp \
     main/qtserialublox.cpp \
     main/qtserialublox_processmessages.cpp \
 #    main/i2c/custom_i2cdetect.c \

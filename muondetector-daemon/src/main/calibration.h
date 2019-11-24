@@ -13,10 +13,12 @@
 #include <muondetector_structs.h>
 #include "i2c/i2cdevices.h"
 
-
 const uint16_t CALIB_HEADER = 0x2019;
 
-static const CalibStruct InvalidCalibStruct = CalibStruct( "", "", 0, "" );
+struct CalibStruct;
+
+
+//static const CalibStruct InvalidCalibStruct = CalibStruct( "", "", 0, "" );
 
 // initialization of calib items
 // meaning of entries (columns is:
@@ -43,6 +45,8 @@ static const std::vector<std::tuple<std::string, std::string, std::string>> CALI
 class ShowerDetectorCalib {
 
 public:
+	static const CalibStruct InvalidCalibStruct;
+	
 	ShowerDetectorCalib() { init(); }
     ShowerDetectorCalib(EEPROM24AA02 *eep) : fEeprom(eep) { init(); }
 
@@ -52,7 +56,7 @@ public:
 	static uint8_t getTypeSize(const std::string& a_type);
 	const std::vector<CalibStruct>& getCalibList() const { return fCalibList; }
 	std::vector<CalibStruct>& calibList() { return fCalibList; }
-	const CalibStruct& getCalibItem(unsigned int i) const { if (i<fCalibList.size()) return fCalibList[i]; else return InvalidCalibStruct; }
+	const CalibStruct& getCalibItem(unsigned int i) const;
 	const CalibStruct& getCalibItem(const std::string& name);
 	void setCalibItem(const std::string& name, const CalibStruct& item);
 	template <typename T>
@@ -72,29 +76,8 @@ public:
 	}
 
 private:
-	void init() {
-		const uint16_t n=256;
-		for (int i=0; i<n; i++) fEepBuffer[i]=0;
-		buildCalibList();
-		if (fEeprom != nullptr) {
-			fEepromValid = fEeprom->devicePresent() && readFromEeprom();
-		}
-	}
-	
-	void buildCalibList() {
-		fCalibList.clear();
-		std::vector<std::tuple<std::string, std::string, std::string>>::const_iterator it;
-		uint8_t addr=0x02;  // calib range starts at 0x02 behind header
-		for (it=CALIBITEMS.begin(); it != CALIBITEMS.end(); it++) {
-			CalibStruct calibItem;
-			calibItem.name=std::get<0>(*it);
-			calibItem.type=std::get<1>(*it);
-			calibItem.address=addr;
-			addr+=getTypeSize(std::get<1>(*it));
-			calibItem.value=std::get<2>(*it);
-			fCalibList.push_back(calibItem);
-		}
-	}
+	void init();
+	void buildCalibList();
 	
 //	void updateBuffer();
 	

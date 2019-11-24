@@ -5,6 +5,8 @@
 #include <QQmlContext>
 #include <QQuickItem>
 #include <QSsl>
+#include <muondetector_structs.h>
+
 
 Map::Map(QWidget *parent) :
     QWidget(parent),

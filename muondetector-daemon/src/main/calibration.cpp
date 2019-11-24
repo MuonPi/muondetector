@@ -16,6 +16,35 @@
 
 using namespace std;
 
+const CalibStruct ShowerDetectorCalib::InvalidCalibStruct = CalibStruct( "", "", 0, "" );
+
+
+void ShowerDetectorCalib::init() {
+	const uint16_t n=256;
+	for (int i=0; i<n; i++) fEepBuffer[i]=0;
+	buildCalibList();
+	if (fEeprom != nullptr) {
+		fEepromValid = fEeprom->devicePresent() && readFromEeprom();
+	}
+}
+
+void ShowerDetectorCalib::buildCalibList() {
+	fCalibList.clear();
+	std::vector<std::tuple<std::string, std::string, std::string>>::const_iterator it;
+	uint8_t addr=0x02;  // calib range starts at 0x02 behind header
+	for (it=CALIBITEMS.begin(); it != CALIBITEMS.end(); it++) {
+		CalibStruct calibItem;
+		calibItem.name=std::get<0>(*it);
+		calibItem.type=std::get<1>(*it);
+		calibItem.address=addr;
+		addr+=getTypeSize(std::get<1>(*it));
+		calibItem.value=std::get<2>(*it);
+		fCalibList.push_back(calibItem);
+	}
+}
+
+
+
 uint8_t ShowerDetectorCalib::getTypeSize(const std::string& a_type)
 {
 	string str=a_type;
@@ -33,6 +62,12 @@ uint8_t ShowerDetectorCalib::getTypeSize(const std::string& a_type)
 	else if (str=="INT32") size=4;
 	
 	return size;
+}
+
+const CalibStruct& ShowerDetectorCalib::getCalibItem(unsigned int i) const
+{ 
+	//static const CalibStruct dummyCalibStruct = CalibStruct( "", "", 0, "" );
+	if (i<fCalibList.size()) return fCalibList[i]; else return InvalidCalibStruct; 
 }
 
 const CalibStruct& ShowerDetectorCalib::getCalibItem(const std::string& name)
