@@ -179,9 +179,11 @@ void CustomHistogram::update()
 
 void CustomHistogram::clear()
 {
-	fHistogramMap.clear();
-	fOverflow=fUnderflow=0;
+//	fHistogramMap.clear();
+//	fOverflow=fUnderflow=0;
+	Histogram::clear();
     emit histogramCleared(QString::fromStdString(fName));
+	fName="defaultHisto";
     update();
 }
 
