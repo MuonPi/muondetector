@@ -210,6 +210,7 @@ void CustomHistogram::clear()
 	fHistogramMap.clear();
 	fOverflow=fUnderflow=0;
     emit histogramCleared(QString::fromStdString(fName));
+//    qDebug()<<"sent signal CustomHistogram::histogramCleared("<<QString::fromStdString(fName)<<")";
     update();
 }
 

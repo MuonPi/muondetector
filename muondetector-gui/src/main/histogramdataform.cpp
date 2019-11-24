@@ -9,6 +9,14 @@ histogramDataForm::histogramDataForm(QWidget *parent) :
     ui->setupUi(this);
     connect(ui->histoWidget, &CustomHistogram::histogramCleared, [this](const QString histogramName){
         emit histogramCleared(histogramName);
+/*
+		auto it = fHistoMap.find(histogramName);
+		if (it!=fHistoMap.end()) {
+			it->clear();
+			this->updateHistoTable();
+		}
+*/
+//        qDebug()<<"sent signal histogramDataForm::histogramCleared("<<histogramName<<")";
     });
 }
 
