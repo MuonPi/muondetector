@@ -877,6 +877,10 @@ void Daemon::clearHisto(QString histoName){
         geoLonHisto.clear();
         emit sendHistogram(geoLonHisto);
     }
+    if (histoName=="geoLatHisto"){
+        geoLatHisto.clear();
+        emit sendHistogram(geoLatHisto);
+    }
     if (histoName=="weightedGeoHeight"){
         weightedGeoHeightHisto.clear();
         emit sendHistogram(weightedGeoHeightHisto);
@@ -892,6 +896,10 @@ void Daemon::clearHisto(QString histoName){
     if (histoName=="UbxEventLength"){
         ubxTimeLengthHisto.clear();
         emit sendHistogram(ubxTimeLengthHisto);
+    }
+    if (histoName=="gpioEventInterval"){
+        eventIntervalHisto.clear();
+        emit sendHistogram(eventIntervalHisto);
     }
     if (histoName=="gpioEventIntervalShort"){
         eventIntervalShortHisto.clear();
