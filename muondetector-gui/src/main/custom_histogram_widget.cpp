@@ -75,12 +75,14 @@ void CustomHistogram::setData(const QVector<QPointF>& samples)
 
 void CustomHistogram::setData(const Histogram &hist)
 {
-    fHistogramMap.clear();
+    fName = hist.getName();
+    fUnit = hist.getUnit();
     fNrBins = hist.getNrBins();
     fMin=hist.getMin();
     fMax=hist.getMax();
     fUnderflow=hist.getUnderflow();
     fOverflow=hist.getOverflow();
+    fHistogramMap.clear();
     for (int i=0; i<fNrBins; i++) fHistogramMap[i]=hist.getBinContent(i);
     update();
 }
