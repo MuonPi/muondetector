@@ -37,7 +37,6 @@ public slots:
 
 	QwtPlotHistogram* getHistogramPlot() { return fBarChart; }
     
-    void setData(const QVector<QPointF>&);
     void setData(const Histogram& hist);
 
 private slots:

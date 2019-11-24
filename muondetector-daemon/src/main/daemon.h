@@ -180,6 +180,7 @@ private:
     void rescaleHisto(Histogram& hist, double center, double width);
     void rescaleHisto(Histogram& hist, double center);
     void checkRescaleHisto(Histogram& hist, double newValue);
+    void clearHisto(QString histoName);
 
     void printTimestamp();
     void delay(int millisecondsWait);

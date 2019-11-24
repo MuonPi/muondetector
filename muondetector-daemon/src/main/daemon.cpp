@@ -868,6 +868,49 @@ void Daemon::setupHistos() {
     tdc7200Histo.setUnit("ns");
 }
 
+void Daemon::clearHisto(QString histoName){
+    if (histoName=="geoHeight"){
+        geoHeightHisto.clear();
+        emit sendHistogram(geoHeightHisto);
+    }
+    if (histoName=="geoLongitude"){
+        geoLonHisto.clear();
+        emit sendHistogram(geoLonHisto);
+    }
+    if (histoName=="weightedGeoHeight"){
+        weightedGeoHeightHisto.clear();
+        emit sendHistogram(weightedGeoHeightHisto);
+    }
+    if (histoName=="pulseHeight"){
+        pulseHeightHisto.clear();
+        emit sendHistogram(pulseHeightHisto);
+    }
+    if (histoName=="adcSampleTime"){
+        adcSampleTimeHisto.clear();
+        emit sendHistogram(adcSampleTimeHisto);
+    }
+    if (histoName=="UbxEventLength"){
+        ubxTimeLengthHisto.clear();
+        emit sendHistogram(ubxTimeLengthHisto);
+    }
+    if (histoName=="gpioEventIntervalShort"){
+        eventIntervalShortHisto.clear();
+        emit sendHistogram(eventIntervalShortHisto);
+    }
+    if (histoName=="UbxEventInterval"){
+        ubxTimeIntervalHisto.clear();
+        emit sendHistogram(ubxTimeIntervalHisto);
+    }
+    if (histoName=="TPTimeDiff"){
+        tpTimeDiffHisto.clear();
+        emit sendHistogram(tpTimeDiffHisto);
+    }
+    if (histoName=="Time-to-Digital Time Diff"){
+        tdc7200.clear();
+        emit sendHistogram(tdc7200Histo);
+    }
+}
+
 void Daemon::rescaleHisto(Histogram& hist, double center, double width) {
 	hist.setMin(center-width/2.);
 	hist.setMax(center+width/2.);
@@ -1118,6 +1161,10 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
     }
     if (msgID == dacSetEepromSig){
         saveDacValuesToEeprom();
+    }
+    if (msgID == histogramClearSig){
+        QString histoName;
+        *(tcpMessage.dStream) >> histoName;
     }
 }
 
