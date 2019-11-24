@@ -1165,6 +1165,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
     if (msgID == histogramClearSig){
         QString histoName;
         *(tcpMessage.dStream) >> histoName;
+        clearHisto(histoName);
     }
 }
 
