@@ -58,8 +58,8 @@ win32:OBJECTS_DIR = build/o/win32
 macx:OBJECTS_DIR = build/o/mac
 
 INCLUDEPATH += \
-    src/main \
-    qml
+    $$PWD/src/main \
+    $$PWD/qml
 
 INCLUDEPATH += $$PWD/../muondetector-shared/src/
 
@@ -79,44 +79,44 @@ win32:LIBS += -L./lib -lmuondetector-shared1
 #QT5_ADD_RESOURCES(RESOURCES resources.qrc)
 
 FORMS += \
-    src/main/calibform.ui \
-    src/main/gpssatsform.ui \
-    src/main/histogramdataform.ui \
-    src/main/i2cform.ui \
-    src/main/mainwindow.ui \
-    src/main/map.ui \
-    src/main/settings.ui \
-    src/main/spiform.ui \
-    src/main/status.ui
+    $$PWD/src/main/calibform.ui \
+    $$PWD/src/main/gpssatsform.ui \
+    $$PWD/src/main/histogramdataform.ui \
+    $$PWD/src/main/i2cform.ui \
+    $$PWD/src/main/mainwindow.ui \
+    $$PWD/src/main/map.ui \
+    $$PWD/src/main/settings.ui \
+    $$PWD/src/main/spiform.ui \
+    $$PWD/src/main/status.ui
 
 HEADERS += \
-    src/main/calibform.h \
-    src/main/custom_histogram_widget.h \
-    src/main/custom_plot_widget.h \
-    src/main/gpssatsform.h \
-    src/main/histogramdataform.h \
-    src/main/i2cform.h \
-    src/main/mainwindow.h \
-    src/main/map.h \
-    src/main/plotcustom.h \
-    src/main/settings.h \
-    src/main/spiform.h \
-    src/main/status.h
+    $$PWD/src/main/calibform.h \
+    $$PWD/src/main/custom_histogram_widget.h \
+    $$PWD/src/main/custom_plot_widget.h \
+    $$PWD/src/main/gpssatsform.h \
+    $$PWD/src/main/histogramdataform.h \
+    $$PWD/src/main/i2cform.h \
+    $$PWD/src/main/mainwindow.h \
+    $$PWD/src/main/map.h \
+    $$PWD/src/main/plotcustom.h \
+    $$PWD/src/main/settings.h \
+    $$PWD/src/main/spiform.h \
+    $$PWD/src/main/status.h
 
 SOURCES += \
-    src/main/calibform.cpp \
-    src/main/custom_histogram_widget.cpp \
-    src/main/custom_plot_widget.cpp \
-    src/main/gpssatsform.cpp \
-    src/main/histogramdataform.cpp \
-    src/main/i2cform.cpp \
-    src/main/main.cpp \
-    src/main/mainwindow.cpp \
-    src/main/map.cpp \
-    src/main/plotcustom.cpp \
-    src/main/settings.cpp \
-    src/main/spiform.cpp \
-    src/main/status.cpp
+    $$PWD/src/main/calibform.cpp \
+    $$PWD/src/main/custom_histogram_widget.cpp \
+    $$PWD/src/main/custom_plot_widget.cpp \
+    $$PWD/src/main/gpssatsform.cpp \
+    $$PWD/src/main/histogramdataform.cpp \
+    $$PWD/src/main/i2cform.cpp \
+    $$PWD/src/main/main.cpp \
+    $$PWD/src/main/mainwindow.cpp \
+    $$PWD/src/main/map.cpp \
+    $$PWD/src/main/plotcustom.cpp \
+    $$PWD/src/main/settings.cpp \
+    $$PWD/src/main/spiform.cpp \
+    $$PWD/src/main/status.cpp
 
 RESOURCES += \
     resources.qrc

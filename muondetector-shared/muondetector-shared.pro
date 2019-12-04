@@ -23,7 +23,7 @@ DEFINES += MUONDETECTOR_SHARED_LIBRARY
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
 
-INCLUDEPATH += src
+INCLUDEPATH += $$PWD/src
 
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -39,21 +39,21 @@ win32:OBJECTS_DIR = build/o/win32
 macx:OBJECTS_DIR = build/o/mac
 
 SOURCES += \
-    src/tcpconnection.cpp \
-    src/tcpmessage.cpp \
-    #src/muondetector_structs.cpp
+    $$PWD/src/tcpconnection.cpp \
+    $$PWD/src/tcpmessage.cpp \
+    #$$PWD/src/muondetector_structs.cpp
 
 HEADERS += \
-    #src/geodeticpos.h \
-    src/gpio_pin_definitions.h \
-    src/histogram.h \
-    src/tcpconnection.h \
-    src/tcpmessage.h \
-    src/tcpmessage_keys.h \
-    src/ublox_messages.h \
-    src/ubx_msg_key_name_map.h \
-    src/muondetector_shared_global.h \
-    #src/calib_struct.h \
-    #src/gnsssatellite.h \
-    src/ublox_structs.h \
-    src/muondetector_structs.h
+    #$$PWD/src/geodeticpos.h \
+    $$PWD/src/gpio_pin_definitions.h \
+    $$PWD/src/histogram.h \
+    $$PWD/src/tcpconnection.h \
+    $$PWD/src/tcpmessage.h \
+    $$PWD/src/tcpmessage_keys.h \
+    $$PWD/src/ublox_messages.h \
+    $$PWD/src/ubx_msg_key_name_map.h \
+    $$PWD/src/muondetector_shared_global.h \
+    #$$PWD/src/calib_struct.h \
+    #$$PWD/src/gnsssatellite.h \
+    $$PWD/src/ublox_structs.h \
+    $$PWD/src/muondetector_structs.h
