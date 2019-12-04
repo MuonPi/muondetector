@@ -1,4 +1,4 @@
-#include "tcpmessage.h"
+#include <tcpmessage.h>
 #include <QDebug>
 
 TcpMessage::TcpMessage(quint16 tcpMsgID)
