@@ -25,7 +25,7 @@ RCC_DIR = $$PWD/build/rcc
 OBJECTS_DIR = $$PWD/build/o/unix
 
 INCLUDEPATH +=  $$PWD \
-    $$PWD/main \
+    $$PWD/src \
     $$PWD/src/i2c
 
 INCLUDEPATH += $$PWD/../muondetector-shared/src/
