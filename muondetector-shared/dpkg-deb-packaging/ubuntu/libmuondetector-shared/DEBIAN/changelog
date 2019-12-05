@@ -1,3 +1,9 @@
+muondetector-shared (1.1.0-ubuntu) bionic; urgency=low
+
+  * Updated
+
+ -- Marvin Peter <marvin.peter@physik.uni-giessen.de> Wed, 04 Dec 2019 17:43:00 +0100
+
 muondetector-shared (1.0.3-ubuntu) bionic; urgency=low
 
   * Updated
