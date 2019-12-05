@@ -2,7 +2,7 @@ QT -= gui
 QT += core
 QT += network
 QT += serialport
-VERSION = 1.0.3
+VERSION = 1.1.0
 CONFIG += c++11 console
 CONFIG -= app_bundle
 

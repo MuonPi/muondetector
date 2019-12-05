@@ -6,7 +6,7 @@
 win32{
 include ( C:/qwt-6.1.3/features/qwt.prf )
 }
-VERSION = 1.0.3
+VERSION = 1.1.0
 QT       += core \
           widgets \
           gui \
