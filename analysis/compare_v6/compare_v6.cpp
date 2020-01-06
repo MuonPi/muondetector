@@ -4,10 +4,12 @@
 	und zusammen mit den Zeitdifferenzen in eine Datei schreibt
 	Ziel: mehr als 2 Eingabe-Dateien (mehrere RasPi-Stationen) -> erfuellt
 	Ziel: Einstellbarkeit der match-Kriterien (ab wann gelten  -> erfuellt
-	Einträge als Zeitlich korreliert?) und versehen der
+	Eintraege als Zeitlich korreliert?) und versehen der
 	Coincidents mit einem Guetefaktor  -> momentan Guetefaktor == Anzahl Coincidents (an einem Zeitpunkt) -> (erfuellt)
 */
 //  Geschrieben von <Marvin.Peter@physik.uni-giessen.de>, Teilelemente sind geklaut von <Lukas.Nies@physik.uni-giessen.de>
+
+#define USING_MAIN_IN_MAIN_CPP // uncomment to ignore main() in qtcreator
 
 // On Linux compile with 'g++ -std=gnu++11 -o compare compare_v5.cpp -O'
 // Vielleicht kann man mit openmp noch etwas mehr optimieren durch multithreading aber eher nicht so viel, weshalb diese Option verworfen wurde
@@ -16,13 +18,17 @@
 #include <string>
 #include <vector>
 #include <math.h>
+#include <algorithm>
 #include <time.h>
 #include <iomanip>
 #include <limits>
+#ifndef USING_MAIN_IN_MAIN_CPP
 #include <unistd.h>
+#endif
 #include <fstream>
 #include <iterator>
 #include <utility>
+
 
 // max allowed timing error of a single station in ns
 #define MAX_ERR_LIMIT 100000.
@@ -36,7 +42,7 @@ struct timestamp_t {
 };
 
 
-unsigned long int oldBalken = 0;
+static unsigned long int oldBalken = 0;
 void prozentanzeige(unsigned long int prozent, string& ausgabe)
 {
 	int width = 50;
@@ -203,10 +209,10 @@ void readToVector(ifstream& inputstream, vector<timestamp_t>& oneVector, int& ma
 			if (helperString.size()<9) flag=true;
 			while (helperString.size()<9) helperString+='0';		
 			ts2.tv_nsec = std::stol(helperString);
-			
-			if(errCol!=-1){
-				v3=std::stod(results[errCol]);
-			}
+
+            if (errCol != -1){ // if errCol not set, ignore gps timing error estimate
+                v3=std::stod(results[errCol]);
+            }
 //			if (flag) cout<<"read ts1_s="<<ts1.tv_sec<<" ts1_ns="<<ts1.tv_nsec<<" ts2_s="<<ts2.tv_sec<<" ts2_ns="<<ts2.tv_nsec<<" err="<<v3<<endl;
 		
 			oneValue.ts=ts1;
@@ -365,7 +371,7 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 						coincidents++;
 					}
 					rewriteToVectors.push_back(i);
-					output << ts_diff_ns(values[min(i,indexSmallest)][iterator[min(i,indexSmallest)]].ts, values[max(i,indexSmallest)][iterator[max(i,indexSmallest)]].ts) << "   ";
+                    output << ts_diff_ns(values[min(i,indexSmallest)][iterator[min(i,indexSmallest)]].ts, values[max(i,indexSmallest)][iterator[max(i,indexSmallest)]].ts) << "   ";
 					//output << indexSmallest << "-" << i <<"  ";
 					output << (int)sqrt(err1*err1+err2*err2)<< "    err: "<<err1 << " " << err2 <<" ns  ";
 					output << "    len: "<<len1 << " " << len2 <<" ns  ";
@@ -382,133 +388,9 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 	}
 }//end of Algorithmus																																			  
 
-int main(int argc, char*argv[])
-{
-	string outputDateiName;
-	vector <string> dateiName;
-	time_t start, end, readToVectorTime, checkTimestampOrderTime, algorithmTime;
-	double matchKriterium = 0.001;//[us]
-	timestamp_t oneValue;
-	int maxTimestampsAtOnce = 10000;
-
-	// Einlesen der Zusatzinformationen aus der Konsole
-	bool verbose = false;
-	int ch;
-	int column1 = 0;
-	int errColumn = -1;
-//	int column2 = 0;
-	double b = 1.0;
-	bool notSorted = true;
-	while ((ch = getopt(argc, argv, "svm:c:e:o:b:h?")) != EOF)
-	{
-		switch ((char)ch)
-		{
-		case 's':  notSorted = false;
-		case 'o':  outputDateiName = optarg;
-			//printf("Output wurde gewaehlt. %s.c_str()\n", out.c_str());
-			break;
-		case 'h': Usage();
-			return -1;
-			break;
-		case 'v': verbose = true;
-			break;
-		case 'b': b = atof(optarg);
-			break;
-		case 'c': column1 = atoi(optarg); //momentan nicht individuell fuer jede Datei
-			break;
-		case 'e': errColumn = atoi(optarg); //momentan nicht individuell fuer jede Datei
-			break;
-		case 'm': maxTimestampsAtOnce = atoi(optarg);
-			break;
-		}
-	}
-	int maxTimestampsInVector = maxTimestampsAtOnce / 4;
-	matchKriterium = b * 1e-6; //[us]
-	if (argc - optind < 2)
-	{
-		perror("wrong input. too few arguments!\n");
-		Usage();
-		return -1;
-	}
-	if (verbose)
-	{
-		cout << "launched program...." << endl;
-		cout << endl << "reading at most " << maxTimestampsAtOnce << " values at once" << endl << endl;
-		cout << "coincidence window: " << b << " us" << endl;
-	}
-	int index = 0;
-	for (int i = optind; i < argc; i++)
-	{
-		//
-		dateiName.push_back("");
-		string temp = argv[i];
-		dateiName[index] = temp;
-		if (verbose)
-		{
-			cout << index << ". file name is " << dateiName[index].c_str() << "." << endl;
-		}
-		index++;
-	}
-
-
-	// Ueberpruefung der Dateien auf Reihenfolge
-	cout << endl << "check files...." << flush<<endl;
-	if (verbose)
-	{
-		cout << endl << endl;
-	}
-
-	start = time(0);
-	vector<unsigned long int> lines;
-	if (notSorted)
-	{
-		for (unsigned int i = 0; i < dateiName.size(); i++)
-		{
-			lines.push_back(0);
-			if (!areTimestampsInOrder(dateiName[i], verbose, lines[i], column1))
-			{
-				if (verbose)
-				{
-					// falls die Timestamps nicht in der richtigen Reihenfolge gespeichert sind,
-					// werden sie automatisch mit Unix sort sortiert, ob dann auch gleich ueberschrieben
-					// laesst sich einstellen, momentan ja
-					cout << "sort " << dateiName[i] << " with Unix sort" << endl << endl;
-				}
-				string systemOut = "sort -n ";
-				systemOut += dateiName[i];
-				systemOut += " > ";
-				systemOut += "tmp";
-				char *outs = &systemOut[0];
-				system(outs);
-				systemOut = "mv -v tmp ";
-				systemOut += dateiName[i];
-				outs = &systemOut[0];
-				system(outs);
-			}
-		}
-	}
-	else {
-		// lese oder schätze zeilenmenge!!!
-		for (unsigned int i = 0; i < dateiName.size(); i++)
-		{
-			lines[i] = 10000;
-
-		}
-	}
-	unsigned long int overallLines = 0;
-	for (unsigned int i = 0; i < lines.size(); i++)
-	{
-		// zaehlt alle Zeilen in allen Dateien (schon waehrend der Reihenfolgen-Ueberpruefung
-		// und addiert sie. Ist wichtig fuer den Ladebalken
-		overallLines += lines[i];
-	}
-	end = time(0);
-	checkTimestampOrderTime = end - start;
-	if (verbose)
-	{
-		cout << endl << "check for sort order concluded. duration: " << checkTimestampOrderTime << "s" << endl;
-	}
-
+int compare(string outputDateiName, vector <string> dateiName, double matchKriterium = 0.001/*micro seconds*/, int maxTimestampsAtOnce = 10000, int column1 = 0, int errColumn = -1, unsigned long int overallLines = 0, bool verbose = false){
+    time_t start, end, algorithmTime;
+    int maxTimestampsInVector = maxTimestampsAtOnce / 4;
 	// Erstellen der iostreams
 	vector<ifstream*> data;
 	for (size_t i = 0; i < dateiName.size(); i++)
@@ -516,7 +398,7 @@ int main(int argc, char*argv[])
 		ifstream* in = new ifstream;
 		data.push_back(in);
 		(*data[i]).open(dateiName[i].c_str());
-		//data enthaelt alle ifstreams, einen fuer jede Datei
+        //data enthaelt alle ifstreams, einen fuer jede Datei
 	}
 	ofstream output(outputDateiName.c_str());
 	output.precision(9);
@@ -542,12 +424,12 @@ int main(int argc, char*argv[])
 	for (unsigned int i = 0; i < dateiName.size(); i++)
 	{
 		iterator.push_back(0);
-		//hier werden die Vectors mit einer "festen Laenge" also Anzahl der Dateien gebaut
-		//iterator und der aeußerste Container von "values" sind korelliert mit dem "dateiName" vector,
-		//haben also die gleiche Anzahl Eintraege wie es Dateien gibt
+        //hier werden die Vectors mit einer "festen Laenge" also Anzahl der Dateien gebaut
+        //iterator und der aeusserste Container von "values" sind korelliert mit dem "dateiName" vector,
+        //haben also die gleiche Anzahl Eintraege wie es Dateien gibt
 		//iterator gibt an, welcher index in der jeweiligen Datei (an welcher stelle in Datei i gerade gelesen wird)
 	}
-	start = time(0);
+    start = time(0);
 	prozentanzeige(0, ausgabeAlgorithmString);
 
 	for (unsigned int i = 0; i < dateiName.size(); i++)
@@ -647,4 +529,134 @@ int main(int argc, char*argv[])
 		cout << "finalized program. duration: " << algorithmTime << "s" << endl;
 	}
 	return (int)true;
-}//end of int main()																										
+}// end of compare
+
+#ifndef USING_MAIN_IN_MAIN_CPP
+int main(int argc, char*argv[])
+{string outputDateiName;
+    vector <string> dateiName;
+    time_t start, end, readToVectorTime, checkTimestampOrderTime, algorithmTime;
+    double matchKriterium = 0.001;//[us]
+    timestamp_t oneValue;
+    int maxTimestampsAtOnce = 10000;
+
+    // Einlesen der Zusatzinformationen aus der Konsole
+    bool verbose = false;
+    int ch;
+    int column1 = 0;
+    int errColumn = -1;
+//	int column2 = 0;
+    double b = 1.0;
+    bool notSorted = true;
+    while ((ch = getopt(argc, argv, "svm:c:e:o:b:h?")) != EOF)
+    {
+        switch ((char)ch)
+        {
+        case 's':  notSorted = false;
+        case 'o':  outputDateiName = optarg;
+            //printf("Output wurde gewaehlt. %s.c_str()\n", out.c_str());
+            break;
+        case 'h': Usage();
+            return -1;
+            break;
+        case 'v': verbose = true;
+            break;
+        case 'b': b = atof(optarg);
+            break;
+        case 'c': column1 = atoi(optarg); //momentan nicht individuell fuer jede Datei
+            break;
+        case 'e': errColumn = atoi(optarg); //momentan nicht individuell fuer jede Datei
+            break;
+        case 'm': maxTimestampsAtOnce = atoi(optarg);
+            break;
+        }
+    }
+    int maxTimestampsInVector = maxTimestampsAtOnce / 4;
+    matchKriterium = b * 1e-6; //[us]
+    if (argc - optind < 2)
+    {
+        perror("wrong input. too few arguments!\n");
+        Usage();
+        return -1;
+    }
+    if (verbose)
+    {
+        cout << "launched program...." << endl;
+        cout << endl << "reading at most " << maxTimestampsAtOnce << " values at once" << endl << endl;
+        cout << "coincidence window: " << b << " us" << endl;
+    }
+    int index = 0;
+    for (int i = optind; i < argc; i++)
+    {
+        //
+        dateiName.push_back("");
+        string temp = argv[i];
+        dateiName[index] = temp;
+        if (verbose)
+        {
+            cout << index << ". file name is " << dateiName[index].c_str() << "." << endl;
+        }
+        index++;
+    }
+
+
+    // Ueberpruefung der Dateien auf Reihenfolge
+    cout << endl << "check files...." << flush<<endl;
+    if (verbose)
+    {
+        cout << endl << endl;
+    }
+
+    start = time(0);
+    vector<unsigned long int> lines;
+    if (notSorted)
+    {
+        for (unsigned int i = 0; i < dateiName.size(); i++)
+        {
+            lines.push_back(0);
+            if (!areTimestampsInOrder(dateiName[i], verbose, lines[i], column1))
+            {
+                if (verbose)
+                {
+                    // falls die Timestamps nicht in der richtigen Reihenfolge gespeichert sind,
+                    // werden sie automatisch mit Unix sort sortiert, ob dann auch gleich ueberschrieben
+                    // laesst sich einstellen, momentan ja
+                    cout << "sort " << dateiName[i] << " with Unix sort" << endl << endl;
+                }
+                string systemOut = "sort -n ";
+                systemOut += dateiName[i];
+                systemOut += " > ";
+                systemOut += "tmp";
+                char *outs = &systemOut[0];
+                system(outs);
+                systemOut = "mv -v tmp ";
+                systemOut += dateiName[i];
+                outs = &systemOut[0];
+                system(outs);
+            }
+        }
+    }
+    else {
+        // lese oder schaetze zeilenmenge!!!
+        for (unsigned int i = 0; i < dateiName.size(); i++)
+        {
+            lines[i] = 10000;
+
+        }
+    }
+    unsigned long int overallLines = 0;
+    for (unsigned int i = 0; i < lines.size(); i++)
+    {
+        // zaehlt alle Zeilen in allen Dateien (schon waehrend der Reihenfolgen-Ueberpruefung
+        // und addiert sie. Ist wichtig fuer den Ladebalken
+        overallLines += lines[i];
+    }
+    end = time(0);
+    checkTimestampOrderTime = end - start;
+    if (verbose)
+    {
+        cout << endl << "check for sort order concluded. duration: " << checkTimestampOrderTime << "s" << endl;
+    }
+    return compare(outputDateiName,dateiName,matchKriterium,maxTimestampsAtOnce,column1,errColumn,overallLines,verbose);
+}//end of int main()
+#endif
