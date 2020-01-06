@@ -3,7 +3,6 @@
 #include <QFileDialog>
 #include <QStandardPaths>
 #include <QDebug>
-#define USING_MAIN_IN_MAIN_CPP
 #include <compare_v6.cpp>
 
 MainWindow::MainWindow(QWidget *parent)
