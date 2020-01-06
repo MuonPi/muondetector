@@ -11,7 +11,8 @@ TARGET = compare_v6
 # depend on your compiler). Please consult the documentation of the
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
-DEFINES += DO_NOT_USE_COMPARE_MAIN_CPP=true
+DEFINES += DO_NOT_USE_COMPARE_MAIN_CPP
+DEFINES += PATH_ROLE 42
 # You can also make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
@@ -19,11 +20,15 @@ DEFINES += DO_NOT_USE_COMPARE_MAIN_CPP=true
 
 SOURCES += \
     compare_v6.cpp \
+    filemodel.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    selectionmodel.cpp
 
 HEADERS += \
-    mainwindow.h
+    filemodel.h \
+    mainwindow.h \
+    selectionmodel.h
 
 FORMS += \
     mainwindow.ui

@@ -2,8 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QFileSystemModel>
+#include <filemodel.h>
 #include <QPointer>
+#include <selectionmodel.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -17,9 +18,13 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+public slots:
+    void customContextMenu(const QPoint &pos);
+
 private:
     Ui::MainWindow *ui;
     QString workDirectory;
-    QPointer<QFileSystemModel> model;
+    QPointer<FileModel> fileModel;
+    QPointer<SelectionModel> selectionModel;
 };
 #endif // MAINWINDOW_H
