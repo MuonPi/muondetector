@@ -1,6 +1,7 @@
 #include "filemodel.h"
 #include <QMimeData>
 #include <QDebug>
+#include <QFileSystemModel>
 
 QStringList FileModel::mimeTypes() const
 {
@@ -19,7 +20,7 @@ QMimeData *FileModel::mimeData(const QModelIndexList &indexes)const{
     QByteArray encodedIcon;
     QDataStream stream(&encodedData, QIODevice::WriteOnly);
     QDataStream stream2(&encodedIcon,QIODevice::WriteOnly);
-    foreach (QModelIndex index, indexes) {
+    for (QModelIndex index : indexes) {
         if (index.isValid()) {
             QIcon icon = fileIcon(index);
             stream2 << icon;

@@ -1,25 +1,36 @@
 #include "selectionmodel.h"
-#include <QStandardItemModel>
+#include <QAbstractItemModel>
+#include <QStandardItem>
+#include <QDataStream>
+#include <QIcon>
 #include <QDebug>
 
-Qt::DropActions SelectionModel::supportedDropActions()const
-{
-        return Qt::CopyAction | Qt::MoveAction;
-    }
+SelectionModel::SelectionModel(const QString &data, QObject *parent)
+    : QAbstractItemModel(parent){
+    rootItem = new TreeItem({tr("Title"), tr("Summary")});
+    setupModelData(data.split('\n'), rootItem);
+}
 
-Qt::ItemFlags SelectionModel::flags(const QModelIndex &index) const
-{
-    Qt::ItemFlags defaultFlags = QStandardItemModel::flags(index);//QFileSystemModel::flags(index);
+SelectionModel::~SelectionModel(){
+    delete rootItem;
+}
 
-    if (index.isValid())
+Qt::DropActions SelectionModel::supportedDropActions()const{
+    return Qt::CopyAction | Qt::MoveAction;
+}
+
+Qt::ItemFlags SelectionModel::flags(const QModelIndex &index) const{
+    Qt::ItemFlags defaultFlags = QAbstractItemModel::flags(index);//QFileSystemModel::flags(index);
+
+    if (!index.isValid())
     {
-        return Qt::ItemIsDropEnabled | defaultFlags;
+        return Qt::NoItemFlags;//Qt::ItemIsDropEnabled | defaultFlags;
     }else{
         return Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled | defaultFlags;
     }
 }
-QStringList SelectionModel::mimeTypes() const
-{
+
+QStringList SelectionModel::mimeTypes() const{
     QStringList types;
     types << "application/vnd.text.list";
     //types << "text/uri-list";
@@ -33,31 +44,25 @@ QStringList SelectionModel::mimeTypes() const
 QMimeData *SelectionModel::mimeData(const QModelIndexList &indexes)const{
     QMimeData *mimeData = new QMimeData();
     QByteArray encodedData;
-    QByteArray encodedIcon;
     QDataStream stream(&encodedData, QIODevice::WriteOnly);
-    QDataStream stream2(&encodedIcon,QIODevice::WriteOnly);
-    foreach (QModelIndex index, indexes) {
-        if (index.isValid()) {
-            QIcon icon = data(index,Qt::DecorationRole).value<QIcon>();
-            stream2 << icon;
-            QString text = data(index, Qt::DisplayRole).toString();
-            stream << text;
-            text = data(index,Qt::UserRole).toString();
-            //qDebug()<<data(index,Qt::UserRole);
-            stream << text;
-        }
+    /*for (auto index : indexes){
+
     }
-    //mimeData->setData("application/vnd.text.list", encodedData);
-    mimeData->setData("application/x-dndicondata",encodedIcon);
-    mimeData->setData("text/plain", encodedData);
-    //qDebug("filesystemmodel mimeData was set");
+    if (index.isValid()){
+
+    }*/
+    TreeItem *item = static_cast<TreeItem*>(indexes.at(0).internalPointer());
+    stream << *item;
+
+    mimeData->setData("text/plain",encodedData);
     return mimeData;
 }
 
-bool SelectionModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent){
+bool SelectionModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
+                                  int row, int column, const QModelIndex &parent){
     //qDebug("I am in the model");
     if (action==Qt::IgnoreAction){
-    return true;
+        return true;
     }
     //qDebug("not ignored");
     //if (!data->hasFormat("application/vnd.text.list"))
@@ -70,88 +75,149 @@ bool SelectionModel::dropMimeData(const QMimeData *data, Qt::DropAction action, 
     {
         return false;
     }
-    //qDebug("right after first return sequences, column = 0");
-    //QByteArray encodedData = data->data("application/vnd.text.list");
     QByteArray encodedData = data->data("text/plain");
-    QByteArray encodedIcon = data->data("application/x-dndicondata");
-    QDataStream stream2(&encodedIcon, QIODevice::ReadOnly);
     QDataStream stream(&encodedData, QIODevice::ReadOnly);
-    QList <QIcon> newIcons;
-    QStringList newItems;
-    int rows = 0;
-    while (!stream.atEnd()) {
-        QString text;
-        stream >> text;
-        newItems << text;
-        ++rows;
-    }
-    rows = 0;
-    while (!stream2.atEnd()){
-        QIcon icon;
-        stream2 >> icon;
-        newIcons << icon;
-        ++rows;
-    }
-    int iconCounter = 0;
-    int itemCounter = 0;
-    foreach(QString text,newItems)
-    {
-        if (itemCounter%2==0)
-        {
-            QStandardItem *item=new QStandardItem(newItems.at(itemCounter));
-            //item->setData(newItems.at(itemCounter),Qt::DisplayRole);
-            item->setData(newItems.at(itemCounter+1),Qt::UserRole);
-            item->setData(newIcons.at(iconCounter),Qt::DecorationRole);
-            appendRow(item);
-            iconCounter++;
-        }
-        itemCounter++;
-    }
-    //qDebug()<<rows;
-    /*odelIndex model = parent;
-    if (row != -1){
-             beginRow = row;
-    }
-    else if (parent.isValid()){
-             beginRow = parent.row();
-    }
-    else {
-        beginRow = rowCount();
-    }
-    bool setDataDone = true;
-    //qDebug("right before foreach loop");
-    int i = 0;
-    int nowRow = beginRow;
-    foreach (QString text, newItems) {
-        //qDebug()<<text;
-        QModelIndex idx = this->index(nowRow,0);
-        if(i==0){
-            //setRowCount(rowCount()+1);
-            QStandardItem* item = new QStandardItem(text);
-            this->appendRow(item);
-        }
-        if (this->setData(idx,text,i))
-        if (i==0){
-            i=1;
-        }else if (i==1){
-           i=0;
-        }else{
-            setDataDone = false;
-            break;
-        }
-        if(i==0)
-        {
-            nowRow++;
-        }
-    }
-    nowRow = beginRow;
-    foreach (QIcon icon, newIcons){
-        QModelIndex idx = this->index(nowRow,0);
-        if(!setData(idx,icon,Qt::DecorationRole)){
-            setDataDone = false;
-        }
-        nowRow++;
-    }
-    */
+    //while (!stream.atEnd()){
+        qDebug() << "drop";
+        TreeItem *p = static_cast<TreeItem*>(parent.internalPointer());
+        TreeItem *item = new TreeItem(QVector<QVariant>(),p);
+        p->appendChild(item);
+        stream >> *item;
+        emit dataChanged(parent,parent);
+    //}
     return false;
+}
+
+int SelectionModel::columnCount(const QModelIndex &parent) const{
+    if (parent.isValid())
+        return static_cast<TreeItem*>(parent.internalPointer())->columnCount();
+    return rootItem->columnCount();
+}
+
+QVariant SelectionModel::data(const QModelIndex &index, int role) const{
+    if (!index.isValid())
+        return QVariant();
+
+    if (role != Qt::DisplayRole)
+        return QVariant();
+
+    TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
+
+    return item->data(index.column());
+}
+
+QVariant SelectionModel::headerData(int section, Qt::Orientation orientation,
+                                    int role) const{
+    if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
+        return rootItem->data(section);
+
+    return QVariant();
+}
+
+QModelIndex SelectionModel::index(int row, int column, const QModelIndex &parent) const{
+    if (!hasIndex(row, column, parent))
+        return QModelIndex();
+
+    TreeItem *parentItem;
+
+    if (!parent.isValid())
+        parentItem = rootItem;
+    else
+        parentItem = static_cast<TreeItem*>(parent.internalPointer());
+
+    TreeItem *childItem = parentItem->child(row);
+    if (childItem)
+        return createIndex(row, column, childItem);
+    return QModelIndex();
+}
+
+QModelIndex SelectionModel::parent(const QModelIndex &index) const{
+    if (!index.isValid())
+        return QModelIndex();
+
+    TreeItem *childItem = static_cast<TreeItem*>(index.internalPointer());
+    TreeItem *parentItem = const_cast<TreeItem*>(childItem->parentItem());
+
+    if (parentItem == rootItem)
+        return QModelIndex();
+
+    return createIndex(parentItem->row(), 0, parentItem);
+}
+
+int SelectionModel::rowCount(const QModelIndex &parent) const{
+    TreeItem *parentItem;
+    if (parent.column() > 0)
+        return 0;
+
+    if (!parent.isValid())
+        parentItem = rootItem;
+    else
+        parentItem = static_cast<TreeItem*>(parent.internalPointer());
+
+    return parentItem->childCount();
+}
+
+void SelectionModel::setupModelData(const QStringList &lines, TreeItem *parent){
+    QVector<TreeItem*> parents;
+    QVector<int> indentations;
+    parents << parent;
+    indentations << 0;
+
+    int number = 0;
+
+    while (number < lines.count()) {
+        int position = 0;
+        while (position < lines[number].length()) {
+            if (lines[number].at(position) != ' ')
+                break;
+            position++;
+        }
+
+        const QString lineData = lines[number].mid(position).trimmed();
+
+        if (!lineData.isEmpty()) {
+            // Read the column data from the rest of the line.
+            const QStringList columnStrings = lineData.split('\t', QString::SkipEmptyParts);
+            QVector<QVariant> columnData;
+            columnData.reserve(columnStrings.count());
+            for (const QString &columnString : columnStrings)
+                columnData << columnString;
+
+            if (position > indentations.last()) {
+                // The last child of the current parent is now the new parent
+                // unless the current parent has no children.
+
+                if (parents.last()->childCount() > 0) {
+                    parents << parents.last()->child(parents.last()->childCount()-1);
+                    indentations << position;
+                }
+            } else {
+                while (position < indentations.last() && parents.count() > 0) {
+                    parents.pop_back();
+                    indentations.pop_back();
+                }
+            }
+
+            // Append a new item to the current parent's list of children.
+            parents.last()->appendChild(new TreeItem(columnData, parents.last()));
+        }
+        ++number;
+    }
+    /*
+    QByteArray block;
+    QDataStream stream(&block,QIODevice::ReadWrite);
+    stream << *rootItem;
+    qDebug() << block.size();
+    qDebug() << "probe";
+    stream.unsetDevice();
+    qDebug() << block.size();
+    QDataStream stream2(&block, QIODevice::ReadOnly);
+    TreeItem *tree = new TreeItem(QVector<QVariant>(),nullptr);
+    stream2 >> *tree;
+    QByteArray block2;
+    QDataStream stream3(&block2,QIODevice::ReadWrite);
+    stream3 << *tree;
+    qDebug() << block2.size();
+    qDebug() << (block == block2);
+    */
 }

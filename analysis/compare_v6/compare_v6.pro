@@ -1,5 +1,5 @@
 QT       += core gui
-
+#ATTENTION: don't use files with "< or >" in the name it will break the program, thank you!
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
@@ -23,12 +23,14 @@ SOURCES += \
     filemodel.cpp \
     main.cpp \
     mainwindow.cpp \
-    selectionmodel.cpp
+    selectionmodel.cpp \
+    treeitem.cpp
 
 HEADERS += \
     filemodel.h \
     mainwindow.h \
-    selectionmodel.h
+    selectionmodel.h \
+    treeitem.h
 
 FORMS += \
     mainwindow.ui
@@ -37,3 +39,6 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+RESOURCES += \
+    res.qrc

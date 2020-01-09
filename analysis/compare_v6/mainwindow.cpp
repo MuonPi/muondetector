@@ -8,13 +8,18 @@
 #include <QTreeWidget>
 #include <QAction>
 #include <QMenu>
+#include <QFile>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    selectionModel = new SelectionModel();
+    QFile file(":/default.txt");
+    file.open(QIODevice::ReadOnly);
+    selectionModel = new SelectionModel(QString::fromStdString(file.readAll().toStdString()),this);
+    file.close();
+    //selectionModel = new SelectionModel();
     ui->selection->setModel(selectionModel);
     ui->selection->setDefaultDropAction(Qt::MoveAction);
     ui->selection->setContextMenuPolicy(Qt::CustomContextMenu);

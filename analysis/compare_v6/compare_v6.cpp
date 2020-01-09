@@ -541,7 +541,8 @@ int compare(string outputDateiName, vector <string> dateiName, double matchKrite
 
 #ifndef DO_NOT_USE_COMPARE_MAIN_CPP
 int main(int argc, char*argv[])
-{string outputDateiName;
+{
+    string outputDateiName = "";
     vector <string> dateiName;
     time_t start, end, readToVectorTime, checkTimestampOrderTime, algorithmTime;
     double matchKriterium = 0.001;//[us]
@@ -578,6 +579,11 @@ int main(int argc, char*argv[])
         case 'm': maxTimestampsAtOnce = atoi(optarg);
             break;
         }
+    }
+    if (outputDateiName.empty()) {
+        perror("no output file selected!\n");
+        Usage();
+        return -1;
     }
     int maxTimestampsInVector = maxTimestampsAtOnce / 4;
     matchKriterium = b * 1e-6; //[us]
