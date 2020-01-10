@@ -9,6 +9,7 @@ SelectionModel::SelectionModel(const QString &data, QObject *parent)
     : QAbstractItemModel(parent){
     rootItem = new TreeItem({tr("Title"), tr("Summary")});
     setupModelData(data.split('\n'), rootItem);
+    connect(this, &SelectionModel::movedActionFinished, this, &SelectionModel::onMovedActionFinished);
 }
 
 SelectionModel::~SelectionModel(){
@@ -53,7 +54,6 @@ QMimeData *SelectionModel::mimeData(const QModelIndexList &indexes)const{
     }*/
     TreeItem *item = static_cast<TreeItem*>(indexes.at(0).internalPointer());
     stream << *item;
-
     mimeData->setData("text/plain",encodedData);
     return mimeData;
 }
@@ -77,6 +77,7 @@ bool SelectionModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
     }
     QByteArray encodedData = data->data("text/plain");
     QDataStream stream(&encodedData, QIODevice::ReadOnly);
+    TreeItem::probe(encodedData);
     //while (!stream.atEnd()){
         qDebug() << "drop";
         TreeItem *p = static_cast<TreeItem*>(parent.internalPointer());
@@ -86,6 +87,13 @@ bool SelectionModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
         emit dataChanged(parent,parent);
     //}
     return false;
+}
+
+void SelectionModel::onMovedActionFinished(){
+    qDebug() << lastMoved;
+    for (auto index : lastMoved){
+        removeRow(index.row(),index.parent());
+    }
 }
 
 int SelectionModel::columnCount(const QModelIndex &parent) const{

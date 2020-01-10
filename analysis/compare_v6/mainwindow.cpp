@@ -19,7 +19,6 @@ MainWindow::MainWindow(QWidget *parent)
     file.open(QIODevice::ReadOnly);
     selectionModel = new SelectionModel(QString::fromStdString(file.readAll().toStdString()),this);
     file.close();
-    //selectionModel = new SelectionModel();
     ui->selection->setModel(selectionModel);
     ui->selection->setDefaultDropAction(Qt::MoveAction);
     ui->selection->setContextMenuPolicy(Qt::CustomContextMenu);

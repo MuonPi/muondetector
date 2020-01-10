@@ -67,12 +67,12 @@ void TreeItem::setParentItem(TreeItem *parentItem){
     m_parentItem = parentItem;
 }
 
-void serialize(QDataStream &ds, const TreeItem &root, unsigned depth = 0){
+void serialize(QDataStream &ds, const TreeItem &root, int depth = 0){
     QVector<QVariant> data = root.itemData();
     ds << depth;
     ds << data;
-    qDebug() << depth;
-    qDebug() << data;
+    //qDebug() << depth;
+    //qDebug() << data;
     for (TreeItem *item : root.childItems()){
         serialize(ds,*item,depth+1);
     }

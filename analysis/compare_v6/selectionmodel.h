@@ -26,10 +26,12 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const override;
     bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) override;
 signals:
-
+    void movedActionFinished();
 public slots:
+    void onMovedActionFinished();
 private:
     void setupModelData(const QStringList &lines, TreeItem *parent);
+    QModelIndexList lastMoved;
     TreeItem *rootItem;
 };
 

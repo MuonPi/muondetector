@@ -26,6 +26,8 @@ public:
     void setItemData(QVector<QVariant> data);
     void setParentItem(TreeItem *parentItem);
     static void probe(QByteArray& block);
+private slots:
+     void onMovedItemsFinished();
 private:
     QVector<QVariant> m_itemData; // 0: (QString) name; 1: (QString) size; 2: (QString) path; 3: (QIcon) icon
     QVector<TreeItem*> m_childItems;
