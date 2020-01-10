@@ -366,8 +366,7 @@ void compareAlgorithm(vector<unsigned int> it,
 					if (coincidents < 1)
 					{
                         t = values[indexSmallest][it[indexSmallest]].ts.tv_sec;
-                        struct tm *tm = nullptr;
-                        localtime_s(tm,&t);
+                        struct tm *tm = localtime(&t);
 						char date[20];
 						strftime(date, sizeof(date), "%Y.%m.%d %H:%M:%S", tm);
                         output << date << "  " << values[indexSmallest][it[indexSmallest]].ts.tv_sec << ".";

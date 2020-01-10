@@ -12,11 +12,17 @@ TARGET = compare_v6
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
 DEFINES += DO_NOT_USE_COMPARE_MAIN_CPP
-DEFINES += PATH_ROLE 42
+#DEFINES += PATH_ROLE 42
 # You can also make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+
+DESTDIR = bin
+UI_DIR = build/ui
+MOC_DIR = build/moc
+RCC_DIR = build/rcc
+OBJECTS_DIR = build/o
 
 SOURCES += \
     compare_v6.cpp \
