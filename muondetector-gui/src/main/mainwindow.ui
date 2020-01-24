@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>816</width>
-    <height>720</height>
+    <width>608</width>
+    <height>530</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -133,18 +133,6 @@
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
-     </widget>
-    </item>
-    <item row="2" column="1">
-     <widget class="QTabWidget" name="tabWidget">
-      <property name="usesScrollButtons">
-       <bool>false</bool>
-      </property>
-      <widget class="QWidget" name="widget">
-       <attribute name="title">
-        <string/>
-       </attribute>
-      </widget>
      </widget>
     </item>
     <item row="2" column="0">
@@ -478,6 +466,18 @@
        </layout>
       </item>
      </layout>
+    </item>
+    <item row="2" column="1">
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="usesScrollButtons">
+       <bool>false</bool>
+      </property>
+      <widget class="QWidget" name="widget">
+       <attribute name="title">
+        <string/>
+       </attribute>
+      </widget>
+     </widget>
     </item>
    </layout>
   </widget>

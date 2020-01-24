@@ -73,6 +73,8 @@ static const quint16 eventTriggerRequestSig = 263;
 static const quint16 spiStatsSig = 269;
 static const quint16 spiStatsRequestSig = 271;
 static const quint16 histogramClearSig = 277;
+static const quint16 adcTraceSig = 281;
+
 
 // not implemented from here on yet
 static const quint16 dacRequestEepromSig = 113;

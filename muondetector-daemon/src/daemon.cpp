@@ -26,6 +26,10 @@ extern "C" {
 #define OLED_UPDATE_PERIOD 2000
 #define DEGREE_CHARCODE 248
 
+#define ADC_SAMPLEBUFFER_SIZE 50
+#define ADC_PRETRIGGER 10
+#define TRACE_SAMPLING_INTERVAL 1  // free running adc sampling interval in ms
+
 extern QDataStream& operator << (QDataStream& out, const CalibStruct& calib);
 extern QDataStream& operator >> (QDataStream& in, CalibStruct& calib);
 
@@ -389,6 +393,13 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		if (!adc->setDataReadyPinMode()) {
 			cerr<<"error: failed setting data ready pin mode (setting thresh regs)"<<endl;
 		}
+
+        // set up free running sampling
+        QTimer* samplingTimer = new QTimer(this);
+        samplingTimer->setInterval(TRACE_SAMPLING_INTERVAL);
+        samplingTimer->setSingleShot(false);
+        connect(samplingTimer, &QTimer::timeout, this, &Daemon::sampleAdc0TraceEvent);
+        samplingTimer->start();
 		
 		if (verbose>2) {
 			cout<<"ADS1115 device is present."<<endl;
@@ -407,7 +418,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 			cout<<"readout took "<<adc->getLastTimeInterval()<<" ms"<<endl;
 		}
 	} else {
-		cerr<<"ADS1115 device NOT present!"<<endl;
+        adcSamplingMode = ADC_MODE_DISABLED;
+        cerr<<"ADS1115 device NOT present!"<<endl;
 	}
 	
 
@@ -1463,6 +1475,33 @@ void Daemon::sampleAdc0Event(){
 	emit logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms", LogParameter::LOG_AVERAGE));
 	checkRescaleHisto(adcSampleTimeHisto, adc->getLastConvTime());
 	adcSampleTimeHisto.fill(adc->getLastConvTime());
+    currentAdcSampleIndex=0;
+}
+
+void Daemon::sampleAdc0TraceEvent(){
+    const uint8_t channel=0;
+    if (adc==nullptr){
+        return;
+    }
+    if (adc->getStatus() & i2cDevice::MODE_UNREACHABLE) return;
+    float value = adc->readVoltage(channel);
+    adcSamplesBuffer.push_back(value);
+    if (adcSamplesBuffer.size()>ADC_SAMPLEBUFFER_SIZE) adcSamplesBuffer.pop_front();
+    if (currentAdcSampleIndex>=0) {
+        currentAdcSampleIndex++;
+        if (currentAdcSampleIndex >= ADC_SAMPLEBUFFER_SIZE-ADC_PRETRIGGER) {
+            TcpMessage tcpMessage(adcTraceSig);
+            *(tcpMessage.dStream) << (quint16) adcSamplesBuffer.size();
+            for (int i=0; i<adcSamplesBuffer.size(); i++)
+                *(tcpMessage.dStream) << adcSamplesBuffer[i];
+            emit sendTcpMessage(tcpMessage);
+            currentAdcSampleIndex = -1;
+            //qDebug()<<"adc trace sent";
+        }
+    }
+    emit logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms", LogParameter::LOG_AVERAGE));
+    checkRescaleHisto(adcSampleTimeHisto, adc->getLastConvTime());
+    adcSampleTimeHisto.fill(adc->getLastConvTime());
 }
 
 void Daemon::sampleAdcEvent(uint8_t channel){
@@ -1550,7 +1589,13 @@ void Daemon::setBiasStatus(bool status){
 }
 
 void Daemon::setDacThresh(uint8_t channel, float threshold) {
-    if (threshold < 0 || channel > 1) { return; }
+    if (threshold < 0 || channel > 3) { return; }
+    if (channel==2 || channel==3) {
+        if (dac->devicePresent()) {
+            dac->setVoltage(channel, threshold);
+        }
+        return;
+    }
     if (threshold > 4.095){
         threshold = 4.095;
     }

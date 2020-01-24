@@ -18,6 +18,7 @@
 #include <histogram.h>
 #include <histogramdataform.h>
 #include <muondetector_structs.h>
+#include <parametermonitorform.h>
 
 using namespace std;
 
@@ -192,6 +193,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(calib, &CalibForm::writeCalibToEeprom, this, [this]() { this->sendRequest(calibWriteEepromSig); } );
     connect(this, &MainWindow::adcSampleReceived, calib, &CalibForm::onAdcSampleReceived);
     connect(calib, &CalibForm::setBiasDacVoltage, this, &MainWindow::sendSetBiasVoltage);
+    connect(calib, &CalibForm::setDacVoltage, this, &MainWindow::sendSetThresh);
     connect(calib, &CalibForm::updatedCalib, this, &MainWindow::onCalibUpdated);
     ui->tabWidget->addTab(calib,"Calibration");
 
@@ -225,6 +227,25 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::histogramReceived, histoTab, &histogramDataForm::onHistogramReceived);
     connect(histoTab, &histogramDataForm::histogramCleared, this, &MainWindow::onHistogramCleared);
     ui->tabWidget->addTab(histoTab,"Statistics");
+
+    parameterMonitorForm *paramTab = new parameterMonitorForm(this);
+    //connect(this, &MainWindow::setUiEnabledStates, paramTab, &parameterMonitorForm::onUiEnabledStateChange);
+    connect(this, &MainWindow::adcSampleReceived, paramTab, &parameterMonitorForm::onAdcSampleReceived);
+    connect(this, &MainWindow::adcTraceReceived, paramTab, &parameterMonitorForm::onAdcTraceReceived);
+    connect(this, &MainWindow::dacReadbackReceived, paramTab, &parameterMonitorForm::onDacReadbackReceived);
+    connect(this, &MainWindow::inputSwitchReceived, paramTab, &parameterMonitorForm::onInputSwitchReceived);
+    connect(this, &MainWindow::biasSwitchReceived, paramTab, &parameterMonitorForm::onBiasSwitchReceived);
+    connect(this, &MainWindow::preampSwitchReceived, paramTab, &parameterMonitorForm::onPreampSwitchReceived);
+    connect(this, &MainWindow::triggerSelectionReceived, paramTab, &parameterMonitorForm::onTriggerSelectionReceived);
+    connect(this, &MainWindow::temperatureReceived, paramTab, &parameterMonitorForm::onTemperatureReceived);
+    connect(this, &MainWindow::timeAccReceived, paramTab, &parameterMonitorForm::onTimeAccReceived);
+    connect(this, &MainWindow::freqAccReceived, paramTab, &parameterMonitorForm::onFreqAccReceived);
+    connect(this, &MainWindow::intCounterReceived, paramTab, &parameterMonitorForm::onIntCounterReceived);
+    connect(this, &MainWindow::gainSwitchReceived, paramTab, &parameterMonitorForm::onGainSwitchReceived);
+    connect(this, &MainWindow::calibReceived, paramTab, &parameterMonitorForm::onCalibReceived);
+    connect(paramTab, &parameterMonitorForm::setDacVoltage, this, &MainWindow::sendSetThresh);
+    ui->tabWidget->addTab(paramTab,"Parameters");
+
 
     //sendRequest(calibRequestSig);
 
@@ -442,6 +463,19 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> channel >> value;
         emit adcSampleReceived(channel, value);
         updateUiProperties();
+        return;
+    }
+    if (msgID == adcTraceSig){
+        quint16 size;
+        QVector<float> sampleBuffer;
+        *(tcpMessage.dStream) >> size;
+        for (int i=0; i<size; i++) {
+            float value;
+            *(tcpMessage.dStream) >> value;
+            sampleBuffer.push_back(value);
+        }
+        emit adcTraceReceived(sampleBuffer);
+        //qDebug()<<"trace received. length="<<sampleBuffer.size();
         return;
     }
     if (msgID == dacReadbackSig){

@@ -42,6 +42,7 @@ signals:
     void setUiEnabledStates(bool enabled);
     void geodeticPos(const GeodeticPos& pos);
     void adcSampleReceived(uint8_t channel, float value);
+    void adcTraceReceived(const QVector<float>& sampleBuffer);
     void inputSwitchReceived(uint8_t);
     void dacReadbackReceived(uint8_t channel, float value);
     void biasSwitchReceived(bool state);

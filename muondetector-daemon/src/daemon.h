@@ -72,6 +72,8 @@ public:
 	static void termSignalHandler(int);
 	static void intSignalHandler(int);
 
+    enum {ADC_MODE_DISABLED=0, ADC_MODE_PEAK=1, ADC_MODE_TRACE=2 };
+
 public slots:
     // Qt signal handlers.
     void handleSigHup();
@@ -110,6 +112,7 @@ public slots:
     void onGpsPropertyUpdatedGeodeticPos(GeodeticPos pos);
     void UBXReceivedVersion(const QString& swString, const QString& hwString, const QString& protString);
     void sampleAdc0Event();
+    void sampleAdc0TraceEvent();
     void sampleAdcEvent(uint8_t channel);
     void getTemperature();
     void scanI2cBus();
@@ -251,6 +254,9 @@ private:
     timespec lastTimestamp = { 0, 0 };
     Property nrSats, nrVisibleSats, fixStatus;
     QVector<QTcpSocket*> peerList;
+    QList<float> adcSamplesBuffer;
+    uint8_t adcSamplingMode = ADC_MODE_PEAK;
+    qint16 currentAdcSampleIndex = -1;
 };
 
 #endif // DAEMON_H
