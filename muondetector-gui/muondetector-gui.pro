@@ -87,7 +87,8 @@ FORMS += \
     $$PWD/src/main/map.ui \
     $$PWD/src/main/settings.ui \
     $$PWD/src/main/spiform.ui \
-    $$PWD/src/main/status.ui
+    $$PWD/src/main/status.ui \
+    $$PWD/src/main/parametermonitorform.ui
 
 HEADERS += \
     $$PWD/src/main/calibform.h \
@@ -101,7 +102,8 @@ HEADERS += \
     $$PWD/src/main/plotcustom.h \
     $$PWD/src/main/settings.h \
     $$PWD/src/main/spiform.h \
-    $$PWD/src/main/status.h
+    $$PWD/src/main/status.h \
+    $$PWD/src/main/parametermonitorform.h
 
 SOURCES += \
     $$PWD/src/main/calibform.cpp \
@@ -116,7 +118,8 @@ SOURCES += \
     $$PWD/src/main/plotcustom.cpp \
     $$PWD/src/main/settings.cpp \
     $$PWD/src/main/spiform.cpp \
-    $$PWD/src/main/status.cpp
+    $$PWD/src/main/status.cpp   \
+    $$PWD/src/main/parametermonitorform.cpp
 
 RESOURCES += \
     resources.qrc

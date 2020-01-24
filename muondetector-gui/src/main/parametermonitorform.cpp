@@ -3,9 +3,9 @@
 #include "ui_parametermonitorform.h"
 #include <muondetector_structs.h>
 
-parameterMonitorForm::parameterMonitorForm(QWidget *parent) :
+ParameterMonitorForm::ParameterMonitorForm(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::parameterMonitorForm)
+    ui(new Ui::ParameterMonitorForm)
 {
     ui->setupUi(this);
     ui->adcTracePlot->setTitle("ADC trace");
@@ -27,12 +27,12 @@ parameterMonitorForm::parameterMonitorForm(QWidget *parent) :
 
 }
 
-parameterMonitorForm::~parameterMonitorForm()
+ParameterMonitorForm::~ParameterMonitorForm()
 {
     delete ui;
 }
 
-void parameterMonitorForm::onAdcSampleReceived(uint8_t channel, float value)
+void ParameterMonitorForm::onAdcSampleReceived(uint8_t channel, float value)
 {
     if (channel==0)
         ui->adcLabel1->setText(QString::number(value,'f',4));
@@ -44,7 +44,7 @@ void parameterMonitorForm::onAdcSampleReceived(uint8_t channel, float value)
         ui->adcLabel4->setText(QString::number(value,'f',4));
 }
 
-void parameterMonitorForm::onDacReadbackReceived(uint8_t channel, float value)
+void ParameterMonitorForm::onDacReadbackReceived(uint8_t channel, float value)
 {
     ui->dacSpinBox1->blockSignals(true);
     ui->dacSpinBox2->blockSignals(true);
@@ -64,23 +64,23 @@ void parameterMonitorForm::onDacReadbackReceived(uint8_t channel, float value)
     ui->dacSpinBox4->blockSignals(false);
 }
 
-void parameterMonitorForm::onInputSwitchReceived(uint8_t index)
+void ParameterMonitorForm::onInputSwitchReceived(uint8_t index)
 {
     ui->timingSelectionComboBox->setCurrentIndex(index);
 }
 
-void parameterMonitorForm::onBiasSwitchReceived(bool state)
+void ParameterMonitorForm::onBiasSwitchReceived(bool state)
 {
     ui->biasEnCheckBox->setChecked(state);
 }
 
-void parameterMonitorForm::onPreampSwitchReceived(uint8_t channel, bool state)
+void ParameterMonitorForm::onPreampSwitchReceived(uint8_t channel, bool state)
 {
     if (channel==0) ui->preamp1EnCheckBox->setChecked(state);
     else if (channel==1) ui->preamp2EnCheckBox->setChecked(state);
 }
 
-void parameterMonitorForm::onTriggerSelectionReceived(GPIO_PIN signal)
+void ParameterMonitorForm::onTriggerSelectionReceived(GPIO_PIN signal)
 {
     if (GPIO_PIN_NAMES.find(signal)==GPIO_PIN_NAMES.end()) return;
     unsigned int i=0;
@@ -95,22 +95,22 @@ void parameterMonitorForm::onTriggerSelectionReceived(GPIO_PIN signal)
     ui->adcTriggerSelectionComboBox->blockSignals(false);
 }
 
-void parameterMonitorForm::onGainSwitchReceived(bool state)
+void ParameterMonitorForm::onGainSwitchReceived(bool state)
 {
     ui->hiGainCheckBox->setChecked(state);
 }
 
-void parameterMonitorForm::onTemperatureReceived(float temp)
+void ParameterMonitorForm::onTemperatureReceived(float temp)
 {
     ui->temperatureLabel->setText(QString::number(temp, 'f', 2));
 }
 
-void parameterMonitorForm::onTimepulseReceived()
+void ParameterMonitorForm::onTimepulseReceived()
 {
     //
 }
 
-void parameterMonitorForm::onAdcTraceReceived(const QVector<float> &sampleBuffer)
+void ParameterMonitorForm::onAdcTraceReceived(const QVector<float> &sampleBuffer)
 {
     //
     QVector<QPointF> vec;
@@ -126,43 +126,43 @@ void parameterMonitorForm::onAdcTraceReceived(const QVector<float> &sampleBuffer
 
 }
 
-void parameterMonitorForm::onTimeAccReceived(quint32 acc)
+void ParameterMonitorForm::onTimeAccReceived(quint32 acc)
 {
     ui->timePrecLabel->setText(QString::number(acc*1e-9, 'g', 6));
 }
 
-void parameterMonitorForm::onFreqAccReceived(quint32 acc)
+void ParameterMonitorForm::onFreqAccReceived(quint32 acc)
 {//
 
 }
 
-void parameterMonitorForm::onIntCounterReceived(quint32 cnt)
+void ParameterMonitorForm::onIntCounterReceived(quint32 cnt)
 {
     ui->ubloxCounterLabel->setText(QString::number(cnt));
 }
 
 
-void parameterMonitorForm::on_dacSpinBox1_valueChanged(double arg1)
+void ParameterMonitorForm::on_dacSpinBox1_valueChanged(double arg1)
 {
     emit setDacVoltage(0, arg1);
 }
 
-void parameterMonitorForm::on_dacSpinBox2_valueChanged(double arg1)
+void ParameterMonitorForm::on_dacSpinBox2_valueChanged(double arg1)
 {
     emit setDacVoltage(1, arg1);
 }
 
-void parameterMonitorForm::on_dacSpinBox3_valueChanged(double arg1)
+void ParameterMonitorForm::on_dacSpinBox3_valueChanged(double arg1)
 {
     emit setDacVoltage(2, arg1);
 }
 
-void parameterMonitorForm::on_dacSpinBox4_valueChanged(double arg1)
+void ParameterMonitorForm::on_dacSpinBox4_valueChanged(double arg1)
 {
     emit setDacVoltage(3, arg1);
 }
 
-void parameterMonitorForm::onCalibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct> & calibList)
+void ParameterMonitorForm::onCalibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct> & calibList)
 {
     if (!eepromValid) { ui->eepromGroupBox->setDisabled(true); return; }
     else ui->eepromGroupBox->setEnabled(true);

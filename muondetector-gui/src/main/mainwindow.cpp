@@ -228,22 +228,22 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(histoTab, &histogramDataForm::histogramCleared, this, &MainWindow::onHistogramCleared);
     ui->tabWidget->addTab(histoTab,"Statistics");
 
-    parameterMonitorForm *paramTab = new parameterMonitorForm(this);
-    //connect(this, &MainWindow::setUiEnabledStates, paramTab, &parameterMonitorForm::onUiEnabledStateChange);
-    connect(this, &MainWindow::adcSampleReceived, paramTab, &parameterMonitorForm::onAdcSampleReceived);
-    connect(this, &MainWindow::adcTraceReceived, paramTab, &parameterMonitorForm::onAdcTraceReceived);
-    connect(this, &MainWindow::dacReadbackReceived, paramTab, &parameterMonitorForm::onDacReadbackReceived);
-    connect(this, &MainWindow::inputSwitchReceived, paramTab, &parameterMonitorForm::onInputSwitchReceived);
-    connect(this, &MainWindow::biasSwitchReceived, paramTab, &parameterMonitorForm::onBiasSwitchReceived);
-    connect(this, &MainWindow::preampSwitchReceived, paramTab, &parameterMonitorForm::onPreampSwitchReceived);
-    connect(this, &MainWindow::triggerSelectionReceived, paramTab, &parameterMonitorForm::onTriggerSelectionReceived);
-    connect(this, &MainWindow::temperatureReceived, paramTab, &parameterMonitorForm::onTemperatureReceived);
-    connect(this, &MainWindow::timeAccReceived, paramTab, &parameterMonitorForm::onTimeAccReceived);
-    connect(this, &MainWindow::freqAccReceived, paramTab, &parameterMonitorForm::onFreqAccReceived);
-    connect(this, &MainWindow::intCounterReceived, paramTab, &parameterMonitorForm::onIntCounterReceived);
-    connect(this, &MainWindow::gainSwitchReceived, paramTab, &parameterMonitorForm::onGainSwitchReceived);
-    connect(this, &MainWindow::calibReceived, paramTab, &parameterMonitorForm::onCalibReceived);
-    connect(paramTab, &parameterMonitorForm::setDacVoltage, this, &MainWindow::sendSetThresh);
+    ParameterMonitorForm *paramTab = new ParameterMonitorForm(this);
+    //connect(this, &MainWindow::setUiEnabledStates, paramTab, &ParameterMonitorForm::onUiEnabledStateChange);
+    connect(this, &MainWindow::adcSampleReceived, paramTab, &ParameterMonitorForm::onAdcSampleReceived);
+    connect(this, &MainWindow::adcTraceReceived, paramTab, &ParameterMonitorForm::onAdcTraceReceived);
+    connect(this, &MainWindow::dacReadbackReceived, paramTab, &ParameterMonitorForm::onDacReadbackReceived);
+    connect(this, &MainWindow::inputSwitchReceived, paramTab, &ParameterMonitorForm::onInputSwitchReceived);
+    connect(this, &MainWindow::biasSwitchReceived, paramTab, &ParameterMonitorForm::onBiasSwitchReceived);
+    connect(this, &MainWindow::preampSwitchReceived, paramTab, &ParameterMonitorForm::onPreampSwitchReceived);
+    connect(this, &MainWindow::triggerSelectionReceived, paramTab, &ParameterMonitorForm::onTriggerSelectionReceived);
+    connect(this, &MainWindow::temperatureReceived, paramTab, &ParameterMonitorForm::onTemperatureReceived);
+    connect(this, &MainWindow::timeAccReceived, paramTab, &ParameterMonitorForm::onTimeAccReceived);
+    connect(this, &MainWindow::freqAccReceived, paramTab, &ParameterMonitorForm::onFreqAccReceived);
+    connect(this, &MainWindow::intCounterReceived, paramTab, &ParameterMonitorForm::onIntCounterReceived);
+    connect(this, &MainWindow::gainSwitchReceived, paramTab, &ParameterMonitorForm::onGainSwitchReceived);
+    connect(this, &MainWindow::calibReceived, paramTab, &ParameterMonitorForm::onCalibReceived);
+    connect(paramTab, &ParameterMonitorForm::setDacVoltage, this, &MainWindow::sendSetThresh);
     ui->tabWidget->addTab(paramTab,"Parameters");
 
 

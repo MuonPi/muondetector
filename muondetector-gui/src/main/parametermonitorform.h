@@ -7,16 +7,16 @@
 struct CalibStruct;
 
 namespace Ui {
-class parameterMonitorForm;
+class ParameterMonitorForm;
 }
 
-class parameterMonitorForm : public QWidget
+class ParameterMonitorForm : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit parameterMonitorForm(QWidget *parent = 0);
-    ~parameterMonitorForm();
+    explicit ParameterMonitorForm(QWidget *parent = 0);
+    ~ParameterMonitorForm();
 
 signals:
     void setDacVoltage(uint8_t ch, float val);
@@ -47,7 +47,7 @@ private slots:
     void on_dacSpinBox4_valueChanged(double arg1);
 
 private:
-    Ui::parameterMonitorForm *ui;
+    Ui::ParameterMonitorForm *ui;
     QVector<CalibStruct> fCalibList;
 };
 
