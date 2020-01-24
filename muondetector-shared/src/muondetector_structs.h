@@ -33,7 +33,7 @@ public:
 };
 
 
-struct MUONDETECTORSHARED GeodeticPos {
+struct GeodeticPos {
     uint32_t iTOW;
     int32_t lon; // longitude 1e-7 scaling (increase by 1 means 100 nano degrees)
     int32_t lat; // latitude 1e-7 scaling (increase by 1 means 100 nano degrees)
@@ -44,7 +44,7 @@ struct MUONDETECTORSHARED GeodeticPos {
 };
 
 
-struct MUONDETECTORSHARED GnssConfigStruct {
+struct GnssConfigStruct {
 	uint8_t gnssId;
 	uint8_t resTrkCh;
 	uint8_t maxTrkCh;
@@ -52,7 +52,7 @@ struct MUONDETECTORSHARED GnssConfigStruct {
 };
 
 
-class MUONDETECTORSHARED GnssSatellite {
+class GnssSatellite {
 public:
 	GnssSatellite() {}
 	GnssSatellite(int gnssId, int satId, int cnr, int elev, int azim, float prRes, uint32_t flags)
@@ -162,7 +162,7 @@ inline void GnssSatellite::Print(int index, bool wHeader) const
 
 //extern inline QDataStream& operator << (QDataStream& out, const CalibStruct& calib);
 //extern inline QDataStream& operator >> (QDataStream& in, CalibStruct& calib);
-inline MUONDETECTORSHARED QDataStream& operator << (QDataStream& out, const CalibStruct& calib)
+inline QDataStream& operator << (QDataStream& out, const CalibStruct& calib)
 {
     out << QString::fromStdString(calib.name) << QString::fromStdString(calib.type)
      << (quint16)calib.address << QString::fromStdString(calib.value);
@@ -170,7 +170,7 @@ inline MUONDETECTORSHARED QDataStream& operator << (QDataStream& out, const Cali
 }
 
 
-inline MUONDETECTORSHARED QDataStream& operator >> (QDataStream& in, CalibStruct& calib)
+inline QDataStream& operator >> (QDataStream& in, CalibStruct& calib)
 {
     QString s1,s2,s3;
     quint16 u;
