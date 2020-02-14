@@ -1,7 +1,7 @@
 #include <qwt_legend.h>
 #include <qwt.h>
 #include <qwt_scale_engine.h>
-#include <qwt_samples.h>
+//#include <qwt_samples.h>
 #include <qwt_plot_renderer.h>
 #include <QMenu>
 #include <QFileDialog>
@@ -228,7 +228,11 @@ void CustomHistogram::setStatusEnabled(bool status){
 
 void CustomHistogram::setLogY(bool logscale){
 	if (logscale) {
+#if	QWT_VERSION > 0x060100
 		setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine());
+#else
+		setAxisScaleEngine(QwtPlot::yLeft, new QwtLog10ScaleEngine());
+#endif
 		setAxisAutoScale(QwtPlot::yLeft,false);
 		fBarChart->setBaseline(1e-12);
 		fLogY=true;
