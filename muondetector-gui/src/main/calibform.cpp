@@ -1,9 +1,9 @@
 #include <QThread>
 #include "calibform.h"
 #include "ui_calibform.h"
-#include <calib_struct.h>
 #include <qwt_symbol.h>
 #include <string>
+#include <muondetector_structs.h>
 
 #define calVoltMin 0.3
 #define calVoltMax 2.5
@@ -449,4 +449,12 @@ void CalibForm::on_calibItemTableWidget_cellChanged(int row, int column)
         items.push_back(getCalibItem(name));
         emit updatedCalib(items);
     }
+}
+
+void CalibForm::on_horizontalSlider_valueChanged(int value)
+{
+    //
+    float voltage = value/1000.*3.3;
+    ui->intOffsetDacLabel->setText(QString::number(voltage));
+    emit setDacVoltage(3, voltage);
 }

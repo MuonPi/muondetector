@@ -2,7 +2,9 @@
 #define MAP_H
 
 #include <QWidget>
-#include <geodeticpos.h>
+//#include <geodeticpos.h>
+
+struct GeodeticPos;
 
 namespace Ui {
 class Map;

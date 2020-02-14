@@ -5,8 +5,7 @@
 #include <QKeyEvent>
 #include <QDebug>
 #include <QErrorMessage>
-#include <calib_struct.h>
-#include <gnsssatellite.h>
+//#include <gnsssatellite.h>
 #include <ublox_structs.h>
 #include <settings.h>
 #include <status.h>
@@ -17,30 +16,12 @@
 #include <gpssatsform.h>
 #include <iostream>
 #include <histogram.h>
-#include "histogramdataform.h"
+#include <histogramdataform.h>
+#include <muondetector_structs.h>
+#include <parametermonitorform.h>
 
 using namespace std;
 
-QDataStream & operator >> (QDataStream& in, CalibStruct& calib)
-{
-	QString s1,s2,s3;
-	quint16 u;
-	in >> s1 >> s2;
-	in >> u;
-	in >> s3;
-	calib.name = s1.toStdString();
-	calib.type = s2.toStdString();
-	calib.address = (uint16_t)u;
-	calib.value = s3.toStdString();
-	return in;
-}
-
-QDataStream& operator << (QDataStream& out, const CalibStruct& calib)
-{
-    out << QString::fromStdString(calib.name) << QString::fromStdString(calib.type)
-     << (quint16)calib.address << QString::fromStdString(calib.value);
-    return out;
-}
 
 QDataStream& operator >> (QDataStream& in, GnssSatellite& sat)
 {
@@ -132,6 +113,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	xorTimer.setInterval(timerInterval);
 	connect(&andTimer, &QTimer::timeout, this, &MainWindow::resetAndHit);
 	connect(&xorTimer, &QTimer::timeout, this, &MainWindow::resetXorHit);
+	
+	ui->ANDHit->setFocusPolicy(Qt::NoFocus);
+	ui->XORHit->setFocusPolicy(Qt::NoFocus);
 
     // set timer for automatic rate poll
     if (automaticRatePoll){
@@ -141,6 +125,9 @@ MainWindow::MainWindow(QWidget *parent) :
         connect(&ratePollTimer, &QTimer::timeout, this, &MainWindow::sendValueUpdateRequests);
         ratePollTimer.start();
     }
+
+    // set mainwindow
+    //connect(ui->saveDacButton, &QPushButton, this, &MainWindow::on_saveThresholdsButton_clicked);
 
     // set all tabs
     ui->tabWidget->removeTab(0);
@@ -206,6 +193,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(calib, &CalibForm::writeCalibToEeprom, this, [this]() { this->sendRequest(calibWriteEepromSig); } );
     connect(this, &MainWindow::adcSampleReceived, calib, &CalibForm::onAdcSampleReceived);
     connect(calib, &CalibForm::setBiasDacVoltage, this, &MainWindow::sendSetBiasVoltage);
+    connect(calib, &CalibForm::setDacVoltage, this, &MainWindow::sendSetThresh);
     connect(calib, &CalibForm::updatedCalib, this, &MainWindow::onCalibUpdated);
     ui->tabWidget->addTab(calib,"Calibration");
 
@@ -237,7 +225,26 @@ MainWindow::MainWindow(QWidget *parent) :
     histogramDataForm *histoTab = new histogramDataForm(this);
     connect(this, &MainWindow::setUiEnabledStates, histoTab, &histogramDataForm::onUiEnabledStateChange);
     connect(this, &MainWindow::histogramReceived, histoTab, &histogramDataForm::onHistogramReceived);
+    connect(histoTab, &histogramDataForm::histogramCleared, this, &MainWindow::onHistogramCleared);
     ui->tabWidget->addTab(histoTab,"Statistics");
+
+    ParameterMonitorForm *paramTab = new ParameterMonitorForm(this);
+    //connect(this, &MainWindow::setUiEnabledStates, paramTab, &ParameterMonitorForm::onUiEnabledStateChange);
+    connect(this, &MainWindow::adcSampleReceived, paramTab, &ParameterMonitorForm::onAdcSampleReceived);
+    connect(this, &MainWindow::adcTraceReceived, paramTab, &ParameterMonitorForm::onAdcTraceReceived);
+    connect(this, &MainWindow::dacReadbackReceived, paramTab, &ParameterMonitorForm::onDacReadbackReceived);
+    connect(this, &MainWindow::inputSwitchReceived, paramTab, &ParameterMonitorForm::onInputSwitchReceived);
+    connect(this, &MainWindow::biasSwitchReceived, paramTab, &ParameterMonitorForm::onBiasSwitchReceived);
+    connect(this, &MainWindow::preampSwitchReceived, paramTab, &ParameterMonitorForm::onPreampSwitchReceived);
+    connect(this, &MainWindow::triggerSelectionReceived, paramTab, &ParameterMonitorForm::onTriggerSelectionReceived);
+    connect(this, &MainWindow::temperatureReceived, paramTab, &ParameterMonitorForm::onTemperatureReceived);
+    connect(this, &MainWindow::timeAccReceived, paramTab, &ParameterMonitorForm::onTimeAccReceived);
+    connect(this, &MainWindow::freqAccReceived, paramTab, &ParameterMonitorForm::onFreqAccReceived);
+    connect(this, &MainWindow::intCounterReceived, paramTab, &ParameterMonitorForm::onIntCounterReceived);
+    connect(this, &MainWindow::gainSwitchReceived, paramTab, &ParameterMonitorForm::onGainSwitchReceived);
+    connect(this, &MainWindow::calibReceived, paramTab, &ParameterMonitorForm::onCalibReceived);
+    connect(paramTab, &ParameterMonitorForm::setDacVoltage, this, &MainWindow::sendSetThresh);
+    ui->tabWidget->addTab(paramTab,"Parameters");
 
 
     //sendRequest(calibRequestSig);
@@ -456,6 +463,19 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> channel >> value;
         emit adcSampleReceived(channel, value);
         updateUiProperties();
+        return;
+    }
+    if (msgID == adcTraceSig){
+        quint16 size;
+        QVector<float> sampleBuffer;
+        *(tcpMessage.dStream) >> size;
+        for (int i=0; i<size; i++) {
+            float value;
+            *(tcpMessage.dStream) >> value;
+            sampleBuffer.push_back(value);
+        }
+        emit adcTraceReceived(sampleBuffer);
+        //qDebug()<<"trace received. length="<<sampleBuffer.size();
         return;
     }
     if (msgID == dacReadbackSig){
@@ -719,6 +739,13 @@ void MainWindow::onSendUbxReset()
 {
     TcpMessage tcpMessage(ubxResetSig);
     emit sendTcpMessage(tcpMessage);
+}
+
+void MainWindow::onHistogramCleared(QString histogramName){
+    TcpMessage tcpMessage(histogramClearSig);
+    *(tcpMessage.dStream) << histogramName;
+    emit sendTcpMessage(tcpMessage);
+//	qDebug()<<"received signal in slot MainWindow::onHistogramCleared("<<histogramName<<")";
 }
 
 void MainWindow::onSetGnssConfigs(const QVector<GnssConfigStruct>& configList){
@@ -1036,6 +1063,12 @@ float MainWindow::parseValue(QString text) {
 		return -1;
 	}
 	return value;
+}
+
+void MainWindow::on_saveDacButton_clicked()
+{
+    TcpMessage tcpMessage(dacSetEepromSig);
+    emit sendTcpMessage(tcpMessage);
 }
 
 void MainWindow::on_biasPowerButton_clicked()

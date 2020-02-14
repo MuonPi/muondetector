@@ -6,7 +6,7 @@
 #include <QErrorMessage>
 #include <QTime>
 #include <QVector>
-#include <geodeticpos.h>
+//#include <geodeticpos.h>
 #include <gpio_pin_definitions.h>
 
 // for sig handling:
@@ -14,6 +14,7 @@
 
 struct I2cDeviceEntry;
 struct CalibStruct;
+struct GeodeticPos;
 struct GnssConfigStruct;
 class GnssSatellite;
 class CalibForm;
@@ -39,8 +40,9 @@ signals:
     void gpioRates(quint8 whichrate, QVector<QPointF> rate);
     void tcpDisconnected();
     void setUiEnabledStates(bool enabled);
-    void geodeticPos(GeodeticPos pos);
+    void geodeticPos(const GeodeticPos& pos);
     void adcSampleReceived(uint8_t channel, float value);
+    void adcTraceReceived(const QVector<float>& sampleBuffer);
     void inputSwitchReceived(uint8_t);
     void dacReadbackReceived(uint8_t channel, float value);
     void biasSwitchReceived(bool state);
@@ -77,6 +79,7 @@ public slots:
     void onSendUbxReset();
 	void makeConnection(QString ipAddress, quint16 port);
     void onTriggerSelectionChanged(GPIO_PIN signal);
+    void onHistogramCleared(QString histogramName);
 
 private slots:
 	// only those properties with value >= 0 will be updated!
@@ -120,6 +123,8 @@ private slots:
     void onSetTP5Config(const UbxTimePulseStruct& tp);
 
     void on_biasVoltageDoubleSpinBox_valueChanged(double arg1);
+
+    void on_saveDacButton_clicked();
 
 private:
 	Ui::MainWindow *ui;

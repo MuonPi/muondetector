@@ -1,3 +1,9 @@
+muondetector (1.1.0-raspbian) stretch; urgency=low
+
+  * Updated
+
+ -- Marvin Peter <marvin.peter@physik.uni-giessen.de>  Thu, 05 Dec 2019 12:17:17 +0100
+
 muondetector (1.0.3-raspbian) stretch; urgency=low
 
   * Updated

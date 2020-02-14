@@ -19,8 +19,12 @@ int main(int argc, char *argv[])
     pighandler.connect(&tdc, &TDC7200::writeData, &pighandler, &PigpiodHandler::writeSpi);
     pighandler.connect(&pighandler, &PigpiodHandler::signal, &tdc, &TDC7200::onDataAvailable);
     tdc.initialise();
-    std::cout << "press a key to start tdc measurement" << std::endl;
-    std::cin.ignore();
+    tdc.connect(&tdc, &TDC7200::timeMeas, [](QVector<double> timings){
+        std::cout << timings.at(0) << std::endl;
+    });
+
+    //std::cout << "press a key to start tdc measurement" << std::endl;
+    //std::cin.ignore();
     tdc.startMeas();
     return a.exec();
 }

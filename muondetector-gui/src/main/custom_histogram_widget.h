@@ -13,6 +13,8 @@ class Histogram;
 class CustomHistogram : public QwtPlot, public Histogram
 {
 	Q_OBJECT
+signals:
+    void histogramCleared(QString histogramName);
 public:
     CustomHistogram(QWidget *parent = 0) : QwtPlot(parent){ initialize();}
     CustomHistogram(const QwtText &title, QWidget *parent = 0) : QwtPlot(title, parent){ initialize();}
@@ -35,7 +37,6 @@ public slots:
 
 	QwtPlotHistogram* getHistogramPlot() { return fBarChart; }
     
-    void setData(const QVector<QPointF>&);
     void setData(const Histogram& hist);
 
 private slots:

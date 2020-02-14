@@ -22,6 +22,7 @@ signals:
     void calibRequest();
     void writeCalibToEeprom();
     void setBiasDacVoltage(float val);
+    void setDacVoltage(uint8_t ch, float val);
     void updatedCalib(const QVector<CalibStruct>& items);
 
 public slots:
@@ -44,6 +45,8 @@ private slots:
     void updateCalibTable();
 
     void on_calibItemTableWidget_cellChanged(int row, int column);
+
+    void on_horizontalSlider_valueChanged(int value);
 
 private:
     Ui::CalibForm *ui;

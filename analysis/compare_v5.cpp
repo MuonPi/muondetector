@@ -203,9 +203,10 @@ void readToVector(ifstream& inputstream, vector<timestamp_t>& oneVector, int& ma
 			if (helperString.size()<9) flag=true;
 			while (helperString.size()<9) helperString+='0';		
 			ts2.tv_nsec = std::stol(helperString);
-
-			v3=std::stod(results[errCol]);
-
+			
+			if(errCol!=-1){
+				v3=std::stod(results[errCol]);
+			}
 //			if (flag) cout<<"read ts1_s="<<ts1.tv_sec<<" ts1_ns="<<ts1.tv_nsec<<" ts2_s="<<ts2.tv_sec<<" ts2_ns="<<ts2.tv_nsec<<" err="<<v3<<endl;
 		
 			oneValue.ts=ts1;
@@ -383,7 +384,7 @@ void compareAlgorithm(vector<unsigned int>& iterator,
 
 int main(int argc, char*argv[])
 {
-	string outputDateiName;
+	string outputDateiName = "";
 	vector <string> dateiName;
 	time_t start, end, readToVectorTime, checkTimestampOrderTime, algorithmTime;
 	double matchKriterium = 0.001;//[us]
@@ -420,6 +421,11 @@ int main(int argc, char*argv[])
 		case 'm': maxTimestampsAtOnce = atoi(optarg);
 			break;
 		}
+	}
+	if (outputDateiName.empty()) {
+		perror("no output file selected!\n");
+		Usage();
+		return -1;
 	}
 	int maxTimestampsInVector = maxTimestampsAtOnce / 4;
 	matchKriterium = b * 1e-6; //[us]

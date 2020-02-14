@@ -45,42 +45,16 @@ void CustomHistogram::initialize(){
 	show();
 }
 
-void CustomHistogram::setData(const QVector<QPointF>& samples)
-{
-	if (!isEnabled()) return;
-	//fBarChart->setSamples(samples);
-	return;
-/*
-	const int N = samples.size();	
-	QVector< QwtIntervalSample > intervals;
-	intervals.clear();
-	double rangeX=samples.last().x()-samples.first().x();
-	double xBinSize = rangeX/(N-1);
-	for (int i=0; i<N; i++) {
-		QwtIntervalSample interval(samples[i].y(), samples[i].x()-xBinSize/2., samples[i].x()+xBinSize/2.);
-		intervals.push_back(interval);
-	}
-	fBarChart->setSamples(intervals);
-//	fBarChart->setSamples(samples);
-	long int max=0;
-	for (int i=0; i<samples.size(); i++) {
-		if (samples[i].y()>max) max=samples[i].y();
-	}
-	if (fLogY) {
-		setAxisScale(QwtPlot::yLeft,0.1, 1.5*max);
-	}
-	replot();
-*/
-}
-
 void CustomHistogram::setData(const Histogram &hist)
 {
-    fHistogramMap.clear();
+    fName = hist.getName();
+    fUnit = hist.getUnit();
     fNrBins = hist.getNrBins();
     fMin=hist.getMin();
     fMax=hist.getMax();
     fUnderflow=hist.getUnderflow();
     fOverflow=hist.getOverflow();
+    fHistogramMap.clear();
     for (int i=0; i<fNrBins; i++) fHistogramMap[i]=hist.getBinContent(i);
     update();
 }
@@ -205,8 +179,11 @@ void CustomHistogram::update()
 
 void CustomHistogram::clear()
 {
-	fHistogramMap.clear();
-	fOverflow=fUnderflow=0;
+//	fHistogramMap.clear();
+//	fOverflow=fUnderflow=0;
+	Histogram::clear();
+    emit histogramCleared(QString::fromStdString(fName));
+	fName="defaultHisto";
     update();
 }
 

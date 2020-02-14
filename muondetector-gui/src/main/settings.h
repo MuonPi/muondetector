@@ -4,9 +4,10 @@
 #include <QDialog>
 #include <QTableWidget>
 #include <QtWidgets>
-#include <gnsssatellite.h>
+//#include <gnsssatellite.h>
 #include <ublox_structs.h>
 
+struct GnssSatellite;
 
 class UbxMsgRateTableItem : public QTableWidgetItem
 {

@@ -1,0 +1,50 @@
+.\" manpage for muondetector-gui
+.\" Contact marvin.peter@physik.uni-giessen.de to correct errors or typos
+.TH "muondetector-gui" "1" "December 5, 2019" "v 1.1.0" "muondetector-gui manpage"
+.SH "NAME"
+muondetector-gui - gui for muondetector-daemon
+.SH "SYNOPSIS"
+.B muondetector-gui
+.br
+Opens the gui.
+.SH "DESCRIPTION"
+.B muondetector-gui
+works only in combination with 
+.B muondetector-daemon
+.
+.br
+The gui connects via unencrypted (!) tcp to the daemon. It can be used to
+change settings of the daemon and start/stop measurements as well as 
+displaying coordinates on a qml based map plugin.
+.PP
+Both programs are part of a science project for measuring cosmic particles 
+(muons) at a relatively low cost, using a raspberry-pi, silicon photomultipliers
+("SiPM"s) and our own creation of a raspberry pi HAT (module to stick on top of the
+pi, i.e. a shield).
+.SH "OPTIONS"
+.TP
+There are currently no options.
+.SH "EXIT STATUS"
+Default
+.SH "BUGS"
+No known bugs.
+.SH "AUTHOR"
+Marvin Peter <marvin.peter@physik.uni-giessen.de>
+.SH "COPYRIGHT"
+License: GPL-3.0+
+.PP
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+.PP
+This package is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+.PP
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+.PP
+On Debian systems, the complete text of the GNU General
+Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".

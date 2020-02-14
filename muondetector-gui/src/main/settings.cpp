@@ -1,6 +1,8 @@
 #include <settings.h>
 #include <ui_settings.h>
 #include <ubx_msg_key_name_map.h>
+#include <muondetector_structs.h>
+
 
 Settings::Settings(QWidget *parent) : QDialog(parent),
 ui(new Ui::Settings)
