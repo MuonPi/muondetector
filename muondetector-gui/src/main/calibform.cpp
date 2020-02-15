@@ -451,10 +451,3 @@ void CalibForm::on_calibItemTableWidget_cellChanged(int row, int column)
     }
 }
 
-void CalibForm::on_horizontalSlider_valueChanged(int value)
-{
-    //
-    float voltage = value/1000.*3.3;
-    ui->intOffsetDacLabel->setText(QString::number(voltage));
-    emit setDacVoltage(3, voltage);
-}

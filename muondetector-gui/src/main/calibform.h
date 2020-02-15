@@ -46,8 +46,6 @@ private slots:
 
     void on_calibItemTableWidget_cellChanged(int row, int column);
 
-    void on_horizontalSlider_valueChanged(int value);
-
 private:
     Ui::CalibForm *ui;
     QVector<CalibStruct> fCalibList;

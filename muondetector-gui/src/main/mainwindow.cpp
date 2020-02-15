@@ -242,7 +242,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::freqAccReceived, paramTab, &ParameterMonitorForm::onFreqAccReceived);
     connect(this, &MainWindow::intCounterReceived, paramTab, &ParameterMonitorForm::onIntCounterReceived);
     connect(this, &MainWindow::gainSwitchReceived, paramTab, &ParameterMonitorForm::onGainSwitchReceived);
-    connect(this, &MainWindow::calibReceived, paramTab, &ParameterMonitorForm::onCalibReceived);
+    //connect(this, &MainWindow::calibReceived, paramTab, &ParameterMonitorForm::onCalibReceived);
     connect(paramTab, &ParameterMonitorForm::setDacVoltage, this, &MainWindow::sendSetThresh);
     ui->tabWidget->addTab(paramTab,"Parameters");
 
