@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>737</width>
+    <width>757</width>
     <height>631</height>
    </rect>
   </property>
@@ -831,7 +831,7 @@
               <property name="currentIndex">
                <number>0</number>
               </property>
-              <property name="tabBarAutoHide">
+              <property name="tabBarAutoHide" stdset="0">
                <bool>false</bool>
               </property>
               <widget class="QWidget" name="calibFeatureTab">
