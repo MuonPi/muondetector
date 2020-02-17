@@ -32,16 +32,78 @@ ParameterMonitorForm::~ParameterMonitorForm()
     delete ui;
 }
 
+void ParameterMonitorForm::onCalibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct> & calibList)
+{
+    fCalibList.clear();
+    for (int i=0; i<calibList.size(); i++)
+    {
+        fCalibList.push_back(calibList[i]);
+    }
+
+    int ver = getCalibParameter("VERSION").toInt();
+    ui->hwVersionLabel->setText(QString::number(ver));
+/*
+    double rsense = 0.1*getCalibParameter("RSENSE").toInt();
+    ui->rsenseDoubleSpinBox->setValue(rsense);
+    double vdiv = 0.01*getCalibParameter("VDIV").toInt();
+    ui->vdivDoubleSpinBox->setValue(vdiv);
+    int eepCycles = getCalibParameter("WRITE_CYCLES").toInt();
+    ui->eepromWriteCyclesLabel->setText(QString::number(eepCycles));
+    int featureFlags = getCalibParameter("FEATURE_FLAGS").toInt();
+    ui->featureGnssCheckBox->setChecked(featureFlags & CalibStruct::FEATUREFLAGS_GNSS);
+    ui->featureEnergyCheckBox->setChecked(featureFlags & CalibStruct::FEATUREFLAGS_ENERGY);
+    ui->featureDetBiasCheckBox->setChecked(featureFlags & CalibStruct::FEATUREFLAGS_DETBIAS);
+    ui->featurePreampBiasCheckBox->setChecked(featureFlags & CalibStruct::FEATUREFLAGS_PREAMP_BIAS);
+*/
+/*
+    if (voltageCalibValid()) {
+        fSlope1 = getCalibParameter("COEFF1").toDouble();
+        fOffs1 = getCalibParameter("COEFF0").toDouble();
+    }
+    if (currentCalibValid()) {
+        fSlope2 = getCalibParameter("COEFF3").toDouble();
+        fOffs2 = getCalibParameter("COEFF2").toDouble();
+    }
+    updateCalibTable();
+    QVector<CalibStruct> emptyList;
+    emit updatedCalib(emptyList);
+*/
+}
+
+
 void ParameterMonitorForm::onAdcSampleReceived(uint8_t channel, float value)
 {
     if (channel==0)
         ui->adcLabel1->setText(QString::number(value,'f',4));
     else if (channel==1)
         ui->adcLabel2->setText(QString::number(value,'f',4));
-    else if (channel==2)
+    else if (channel==2) {
         ui->adcLabel3->setText(QString::number(value,'f',4));
-    else if (channel==3)
+        fLastBiasVoltageHi = value;
+    }
+    else if (channel==3) {
         ui->adcLabel4->setText(QString::number(value,'f',4));
+        double vdiv=getCalibParameter("VDIV").toDouble()*0.01;
+        double ubias = value*vdiv;
+        ui->biasVoltageLabel->setText(QString::number(ubias,'f',2));
+
+        if (currentCalibValid()) {
+            double fSlope2 = getCalibParameter("COEFF3").toDouble();
+            double fOffs2 = getCalibParameter("COEFF2").toDouble();
+            double ioffs = ubias*fSlope2+fOffs2;
+
+            double rsense = getCalibParameter("RSENSE").toDouble()*0.1/1000.; // RSense in MOhm
+            double ibias = (fLastBiasVoltageHi-value)*vdiv/rsense-ioffs;
+            ui->biasCurrentLabel->setText(QString::number(ibias,'f',1)+" uA");
+        }
+        else {
+            double ioffs = 0.;
+            double rsense = getCalibParameter("RSENSE").toDouble()*0.1/1000.; // RSense in MOhm
+            double ibias = (fLastBiasVoltageHi-value)*vdiv/rsense-ioffs;
+            ui->biasCurrentLabel->setText(QString::number(ibias,'f',1)+" uA");
+        }
+        fLastBiasVoltageLo = value;
+    }
 }
 
 void ParameterMonitorForm::onDacReadbackReceived(uint8_t channel, float value)
@@ -50,18 +112,31 @@ void ParameterMonitorForm::onDacReadbackReceived(uint8_t channel, float value)
     ui->dacSpinBox2->blockSignals(true);
     ui->dacSpinBox3->blockSignals(true);
     ui->dacSpinBox4->blockSignals(true);
-    if (channel==0)
+    ui->dacSlider1->blockSignals(true);
+    ui->dacSlider2->blockSignals(true);
+    ui->dacSlider3->blockSignals(true);
+    ui->dacSlider4->blockSignals(true);
+    if (channel==0) {
         ui->dacSpinBox1->setValue(value);
-    else if (channel==1)
+        ui->dacSlider1->setValue(value*1000);
+    } else if (channel==1) {
         ui->dacSpinBox2->setValue(value);
-    else if (channel==2)
+        ui->dacSlider2->setValue(value*1000);
+    } else if (channel==2) {
         ui->dacSpinBox3->setValue(value);
-    else if (channel==3)
+        ui->dacSlider3->setValue(value*1000);
+    } else if (channel==3) {
         ui->dacSpinBox4->setValue(value);
+        ui->dacSlider4->setValue(value*1000);
+    }
     ui->dacSpinBox1->blockSignals(false);
     ui->dacSpinBox2->blockSignals(false);
     ui->dacSpinBox3->blockSignals(false);
     ui->dacSpinBox4->blockSignals(false);
+    ui->dacSlider1->blockSignals(false);
+    ui->dacSlider2->blockSignals(false);
+    ui->dacSlider3->blockSignals(false);
+    ui->dacSlider4->blockSignals(false);
 }
 
 void ParameterMonitorForm::onInputSwitchReceived(uint8_t index)
@@ -162,19 +237,49 @@ void ParameterMonitorForm::on_dacSpinBox4_valueChanged(double arg1)
     emit setDacVoltage(3, arg1);
 }
 
-void ParameterMonitorForm::onCalibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct> & calibList)
+void ParameterMonitorForm::on_dacSlider1_valueChanged(int value)
 {
-    if (!eepromValid) { ui->eepromGroupBox->setDisabled(true); return; }
-    else ui->eepromGroupBox->setEnabled(true);
-    QString str = "invalid";
-    if (valid) str="valid";
-    ui->eepromValidLabel->setText(str);
-    ui->eepromShaLabel->setText(QString::number(id,16));
+    //
+    double voltage = value/1000.;
+    emit setDacVoltage(0, voltage);
+}
 
-    fCalibList.clear();
-    for (int i=0; i<calibList.size(); i++)
-    {
-        fCalibList.push_back(calibList[i]);
+void ParameterMonitorForm::on_dacSlider2_valueChanged(int value)
+{
+    //
+    double voltage = value/1000.;
+    emit setDacVoltage(1, voltage);
+}
+
+void ParameterMonitorForm::on_dacSlider3_valueChanged(int value)
+{
+    //
+    double voltage = value/1000.;
+    emit setDacVoltage(2, voltage);
+}
+
+void ParameterMonitorForm::on_dacSlider4_valueChanged(int value)
+{
+    //
+    double voltage = value/1000.;
+    emit setDacVoltage(3, voltage);
+}
+
+QString ParameterMonitorForm::getCalibParameter(const QString &name)
+{
+    if (!fCalibList.empty()) {
+        auto result = std::find_if(fCalibList.begin(), fCalibList.end(), [&name](const CalibStruct& s){ return s.name==name.toStdString(); } );
+        if (result != fCalibList.end()) {
+            return QString::fromStdString(result->value);
+        }
     }
+    return "";
+}
 
+bool ParameterMonitorForm::currentCalibValid()
+{
+    //
+    int calibFlags = getCalibParameter("CALIB_FLAGS").toUInt();
+    if (calibFlags & CalibStruct::CALIBFLAGS_CURRENT_COEFFS) return true;
+    return false;
 }

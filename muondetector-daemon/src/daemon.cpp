@@ -28,7 +28,7 @@ extern "C" {
 
 #define ADC_SAMPLEBUFFER_SIZE 50
 #define ADC_PRETRIGGER 10
-#define TRACE_SAMPLING_INTERVAL 1  // free running adc sampling interval in ms
+#define TRACE_SAMPLING_INTERVAL 5  // free running adc sampling interval in ms
 
 extern QDataStream& operator << (QDataStream& out, const CalibStruct& calib);
 extern QDataStream& operator >> (QDataStream& in, CalibStruct& calib);
@@ -862,9 +862,9 @@ void Daemon::setupHistos() {
 	geoLatHisto.setUnit("deg");
 	weightedGeoHeightHisto=Histogram("weightedGeoHeight",200,0.,199.);
 	weightedGeoHeightHisto.setUnit("m");
-	pulseHeightHisto=Histogram("pulseHeight",200,0.,4.0);
+    pulseHeightHisto=Histogram("pulseHeight",500,0.,3.8);
 	pulseHeightHisto.setUnit("V");
-	adcSampleTimeHisto=Histogram("adcSampleTime",100,0.,9.9);
+    adcSampleTimeHisto=Histogram("adcSampleTime",500,0.,49.9);
 	adcSampleTimeHisto.setUnit("ms");
 	ubxTimeLengthHisto=Histogram("UbxEventLength",100,50.,149.);
 	ubxTimeLengthHisto.setUnit("ns");

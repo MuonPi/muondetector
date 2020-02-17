@@ -30,7 +30,8 @@ public slots:
     void onAdcSampleReceived(uint8_t channel, float value);
     QString getCalibParameter(const QString& name);
     const CalibStruct& getCalibItem(const QString& name);
-    bool biasCalibValid();
+    bool voltageCalibValid();
+    bool currentCalibValid();
     void onUiEnabledStateChange(bool connected);
 
 private slots:
@@ -45,8 +46,6 @@ private slots:
     void updateCalibTable();
 
     void on_calibItemTableWidget_cellChanged(int row, int column);
-
-    void on_horizontalSlider_valueChanged(int value);
 
 private:
     Ui::CalibForm *ui;

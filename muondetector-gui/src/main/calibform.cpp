@@ -147,9 +147,25 @@ void CalibForm::onCalibReceived(bool valid, bool eepromValid, quint64 id, const 
         fCalibList.push_back(calibList[i]);
     }
 
-    if (biasCalibValid()) {
+    int ver = getCalibParameter("VERSION").toInt();
+    ui->eepromHwVersionSpinBox->setValue(ver);
+    double rsense = 0.1*getCalibParameter("RSENSE").toInt();
+    ui->rsenseDoubleSpinBox->setValue(rsense);
+    double vdiv = 0.01*getCalibParameter("VDIV").toInt();
+    ui->vdivDoubleSpinBox->setValue(vdiv);
+    int eepCycles = getCalibParameter("WRITE_CYCLES").toInt();
+    ui->eepromWriteCyclesLabel->setText(QString::number(eepCycles));
+    int featureFlags = getCalibParameter("FEATURE_FLAGS").toInt();
+    ui->featureGnssCheckBox->setChecked(featureFlags & CalibStruct::FEATUREFLAGS_GNSS);
+    ui->featureEnergyCheckBox->setChecked(featureFlags & CalibStruct::FEATUREFLAGS_ENERGY);
+    ui->featureDetBiasCheckBox->setChecked(featureFlags & CalibStruct::FEATUREFLAGS_DETBIAS);
+    ui->featurePreampBiasCheckBox->setChecked(featureFlags & CalibStruct::FEATUREFLAGS_PREAMP_BIAS);
+
+    if (voltageCalibValid()) {
         fSlope1 = getCalibParameter("COEFF1").toDouble();
         fOffs1 = getCalibParameter("COEFF0").toDouble();
+    }
+    if (currentCalibValid()) {
         fSlope2 = getCalibParameter("COEFF3").toDouble();
         fOffs2 = getCalibParameter("COEFF2").toDouble();
     }
@@ -222,9 +238,16 @@ void CalibForm::onAdcSampleReceived(uint8_t channel, float value)
             ui->biasVoltageCalibPlot->replot();
             ui->biasCurrentCalibPlot->replot();
         }
-        if (biasCalibValid()) {
+        if (currentCalibValid()) {
             double ioffs = ubias*fSlope2+fOffs2;
 
+            double vdiv=getCalibParameter("VDIV").toDouble()*0.01;
+            double rsense = getCalibParameter("RSENSE").toDouble()*0.1/1000.; // RSense in MOhm
+            double ibias = (fLastRSenseHiVoltage-value)*vdiv/rsense-ioffs;
+            ui->biasCurrentLineEdit->setText(QString::number(ibias,'f',1)+" uA");
+        }
+        else {
+            double ioffs = 0.;
             double vdiv=getCalibParameter("VDIV").toDouble()*0.01;
             double rsense = getCalibParameter("RSENSE").toDouble()*0.1/1000.; // RSense in MOhm
             double ibias = (fLastRSenseHiVoltage-value)*vdiv/rsense-ioffs;
@@ -409,11 +432,19 @@ const CalibStruct& CalibForm::getCalibItem(const QString &name)
     return invalidCalibItem;
 }
 
-bool CalibForm::biasCalibValid()
+bool CalibForm::voltageCalibValid()
 {
     //
     int calibFlags = getCalibParameter("CALIB_FLAGS").toUInt();
     if (calibFlags & CalibStruct::CALIBFLAGS_VOLTAGE_COEFFS) return true;
+    return false;
+}
+
+bool CalibForm::currentCalibValid()
+{
+    //
+    int calibFlags = getCalibParameter("CALIB_FLAGS").toUInt();
+    if (calibFlags & CalibStruct::CALIBFLAGS_CURRENT_COEFFS) return true;
     return false;
 }
 
@@ -451,10 +482,3 @@ void CalibForm::on_calibItemTableWidget_cellChanged(int row, int column)
     }
 }
 
-void CalibForm::on_horizontalSlider_valueChanged(int value)
-{
-    //
-    float voltage = value/1000.*3.3;
-    ui->intOffsetDacLabel->setText(QString::number(voltage));
-    emit setDacVoltage(3, voltage);
-}

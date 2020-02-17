@@ -16,6 +16,9 @@ public:
     enum {	CALIBFLAGS_NO_CALIB=0x00, CALIBFLAGS_COMPONENTS=0x01,
             CALIBFLAGS_VOLTAGE_COEFFS=0x02, CALIBFLAGS_CURRENT_COEFFS=0x04};
 
+    enum {	FEATUREFLAGS_NONE=0x00, FEATUREFLAGS_GNSS=0x01,
+            FEATUREFLAGS_ENERGY=0x02, FEATUREFLAGS_DETBIAS=0x04, FEATUREFLAGS_PREAMP_BIAS=0x08};
+
     CalibStruct()=default;
     CalibStruct(const std::string& a_name, const std::string& a_type, uint8_t a_address, const std::string& a_value)
     : name(a_name), type(a_type), address(a_address), value(a_value)
