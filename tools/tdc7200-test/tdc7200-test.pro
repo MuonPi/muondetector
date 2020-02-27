@@ -19,16 +19,15 @@ TARGET = tdc7200-test
 LIBS += -lpigpiod_if2 \
         -lrt
 
-INCLUDEPATH += ../../muondetector-daemon/src/main \
-               ../../muondetector-shared/src
+INCLUDEPATH += ../../muondetector-daemon/src/
 
 SOURCES += main.cpp \
-    ../../muondetector-daemon/src/main/tdc7200.cpp \
-    ../../muondetector-daemon/src/main/pigpiodhandler.cpp \
-    ../../muondetector-daemon/src/main/gpio_mapping.cpp
+    ../../muondetector-daemon/src/tdc7200.cpp \
+    ../../muondetector-daemon/src/pigpiodhandler.cpp \
+    ../../muondetector-daemon/src/gpio_mapping.cpp
 
 HEADERS += \
-    ../../muondetector-daemon/src/main/tdc7200.h \
-    ../../muondetector-daemon/src/main/pigpiodhandler.h \
     ../../muondetector-shared/src/gpio_pin_definitions.h \
-    ../../muondetector-daemon/src/main/gpio_mapping.h
+    ../../muondetector-daemon/src/tdc7200.h \
+    ../../muondetector-daemon/src/pigpiodhandler.h \
+    ../../muondetector-daemon/src/gpio_mapping.h
