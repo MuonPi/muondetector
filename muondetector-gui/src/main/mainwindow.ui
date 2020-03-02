@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>608</width>
-    <height>530</height>
+    <height>490</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -472,7 +472,7 @@
       <property name="maximumSize">
        <size>
         <width>16777215</width>
-        <height>750</height>
+        <height>16777215</height>
        </size>
       </property>
       <property name="usesScrollButtons">

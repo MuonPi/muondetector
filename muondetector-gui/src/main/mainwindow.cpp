@@ -13,6 +13,7 @@
 #include <map.h>
 #include <i2cform.h>
 #include <calibform.h>
+#include <calibscandialog.h>
 #include <gpssatsform.h>
 #include <iostream>
 #include <histogram.h>
@@ -196,6 +197,16 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(calib, &CalibForm::setDacVoltage, this, &MainWindow::sendSetThresh);
     connect(calib, &CalibForm::updatedCalib, this, &MainWindow::onCalibUpdated);
     ui->tabWidget->addTab(calib,"Calibration");
+
+    calibscandialog = new CalibScanDialog(this);
+    calibscandialog->hide();
+    connect(this, &MainWindow::calibReceived, calibscandialog, &CalibScanDialog::onCalibReceived);
+//    connect(calib, &CalibForm::calibRequest, this, [this]() { this->sendRequest(calibRequestSig); } );
+//    connect(calib, &CalibForm::writeCalibToEeprom, this, [this]() { this->sendRequest(calibWriteEepromSig); } );
+    connect(this, &MainWindow::adcSampleReceived, calibscandialog, &CalibScanDialog::onAdcSampleReceived);
+    connect(calib, &CalibForm::setBiasDacVoltage, this, &MainWindow::sendSetBiasVoltage);
+    connect(calib, &CalibForm::setDacVoltage, this, &MainWindow::sendSetThresh);
+    connect(calib, &CalibForm::updatedCalib, this, &MainWindow::onCalibUpdated);
 
 
     GpsSatsForm *satsTab = new GpsSatsForm(this);

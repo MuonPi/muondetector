@@ -30,6 +30,7 @@ public slots:
     void onAdcSampleReceived(uint8_t channel, float value);
     QString getCalibParameter(const QString& name);
     const CalibStruct& getCalibItem(const QString& name);
+    void setCalibParameter(const QString &name, const QString &value);
     bool voltageCalibValid();
     bool currentCalibValid();
     void onUiEnabledStateChange(bool connected);
@@ -40,11 +41,7 @@ private slots:
     void on_doBiasCalibPushButton_clicked();
     void doFit();
     void on_transferBiasCoeffsPushButton_clicked();
-
-    void setCalibParameter(const QString &name, const QString &value);
-
     void updateCalibTable();
-
     void on_calibItemTableWidget_cellChanged(int row, int column);
 
 private:

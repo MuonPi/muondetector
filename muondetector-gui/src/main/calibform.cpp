@@ -85,7 +85,7 @@ CalibForm::CalibForm(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->calibItemTableWidget->resizeColumnsToContents();
-
+/*
     ui->biasVoltageCalibPlot->setTitle("Ubias calibration");
     ui->biasVoltageCalibPlot->setAxisTitle(QwtPlot::xBottom,"DAC voltage / V");
     ui->biasVoltageCalibPlot->setAxisTitle(QwtPlot::yLeft,"Ubias / V");
@@ -123,7 +123,7 @@ CalibForm::CalibForm(QWidget *parent) :
     ui->biasVoltageCalibPlot->replot();
     ui->biasCurrentCalibPlot->replot();
     ui->transferBiasCoeffsPushButton->setEnabled(false);
-
+*/
 }
 
 CalibForm::~CalibForm()
@@ -135,10 +135,10 @@ void CalibForm::onCalibReceived(bool valid, bool eepromValid, quint64 id, const 
 {
     QString str = "invalid";
     if (eepromValid) str="valid";
-    ui->eepromValidLabel->setText("EEPROM data: "+str);
+    ui->eepromValidLabel->setText(str);
     str = "invalid";
     if (valid) str="valid";
-    ui->calibValidLabel->setText("Calib data: "+str);
+    ui->calibValidLabel->setText(str);
     ui->idLineEdit->setText(QString::number(id,16));
 
     fCalibList.clear();
@@ -192,16 +192,16 @@ void CalibForm::updateCalibTable()
         }
 
         QTableWidgetItem *newItem2 = new QTableWidgetItem(type);
-        newItem2->setSizeHint(QSize(40,20));
+        newItem2->setSizeHint(QSize(60,20));
         ui->calibItemTableWidget->setItem(i, 1, newItem2);
         QTableWidgetItem *newItem3 = new QTableWidgetItem(numberstr);
         newItem3->setSizeHint(QSize(60,20));
         ui->calibItemTableWidget->setItem(i, 2, newItem3);
         QTableWidgetItem *newItem4 = new QTableWidgetItem("0x"+QString("%1").arg(fCalibList[i].address, 2, 16, QChar('0')));
-        newItem4->setSizeHint(QSize(20,20));
+        newItem4->setSizeHint(QSize(40,20));
         ui->calibItemTableWidget->setItem(i, 3, newItem4);
     }
-    //ui->calibItemTableWidget->resizeColumnsToContents();
+    ui->calibItemTableWidget->resizeColumnsToContents();
     ui->calibItemTableWidget->resizeRowsToContents();
 }
 
@@ -218,8 +218,9 @@ void CalibForm::onAdcSampleReceived(uint8_t channel, float value)
         }
     }
     if (channel == 3) {
-        ui->biasAdcLineEdit->setText(QString::number(value));
-        ui->biasVoltageLineEdit->setText(QString::number(ubias));
+        //ui->biasAdcLineEdit->setText(QString::number(value));
+        //ui->biasVoltageLineEdit->setText(QString::number(ubias));
+/*
         if (fCalibRunning) {
             if (fCurrBias>calVoltMax) { on_doBiasCalibPushButton_clicked(); return; }
             QPointF p(fCurrBias, ubias);
@@ -238,23 +239,25 @@ void CalibForm::onAdcSampleReceived(uint8_t channel, float value)
             ui->biasVoltageCalibPlot->replot();
             ui->biasCurrentCalibPlot->replot();
         }
+*/
         if (currentCalibValid()) {
             double ioffs = ubias*fSlope2+fOffs2;
 
             double vdiv=getCalibParameter("VDIV").toDouble()*0.01;
             double rsense = getCalibParameter("RSENSE").toDouble()*0.1/1000.; // RSense in MOhm
             double ibias = (fLastRSenseHiVoltage-value)*vdiv/rsense-ioffs;
-            ui->biasCurrentLineEdit->setText(QString::number(ibias,'f',1)+" uA");
+            //ui->biasCurrentLineEdit->setText(QString::number(ibias,'f',1)+" uA");
         }
         else {
             double ioffs = 0.;
             double vdiv=getCalibParameter("VDIV").toDouble()*0.01;
             double rsense = getCalibParameter("RSENSE").toDouble()*0.1/1000.; // RSense in MOhm
             double ibias = (fLastRSenseHiVoltage-value)*vdiv/rsense-ioffs;
-            ui->biasCurrentLineEdit->setText(QString::number(ibias,'f',1)+" uA");
+            //ui->biasCurrentLineEdit->setText(QString::number(ibias,'f',1)+" uA");
         }
         fLastRSenseLoVoltage = value;
     } else if (channel == 2) {
+/*
         if (fCalibRunning) {
             QPointF p(fCurrBias, ubias);
             fPoints1.push_back(p);
@@ -262,6 +265,7 @@ void CalibForm::onAdcSampleReceived(uint8_t channel, float value)
             ui->biasVoltageCalibPlot->replot();
             doFit();
         }
+*/
         fLastRSenseHiVoltage = value;
     }
 }
@@ -282,6 +286,7 @@ void CalibForm::on_writeEepromPushButton_clicked()
 
 void CalibForm::on_doBiasCalibPushButton_clicked()
 {
+/*
     // let's go
     if (fCalibRunning) {
         fCalibRunning=false;
@@ -295,12 +300,13 @@ void CalibForm::on_doBiasCalibPushButton_clicked()
     fPoints3.clear();
     fCurrBias=calVoltMin;
     emit setBiasDacVoltage(fCurrBias);
+*/
 }
 
 void CalibForm::doFit()
 {
-//    double slope1=0.,offs1=0.;
-//    double slope2=0.,offs2=0.;
+/*
+
     QVector<QPointF> goodPoints1,goodPoints2, goodPoints3;
 
     ui->fitTextEdit->clear();
@@ -322,21 +328,6 @@ void CalibForm::doFit()
     ui->biasVoltageCalibPlot->replot();
     ui->fitTextEdit->append("fit voltage: c0="+QString::number(fOffs1)+", c1="+QString::number(fSlope1));
 
-/*
-    std::copy_if(fPoints2.begin(), fPoints2.end(), std::back_inserter(goodPoints2), [](const QPointF& p)
-            { return p.y()<26. && p.y()>7.0; } );
-    ok=calcLinearCoefficients(goodPoints2,&fOffs2,&fSlope2);
-    if (!ok) return;
-    vec.clear();
-    p1.rx()=0.;
-    p1.ry()=fOffs2;
-    p2.rx()=2.2;
-    p2.ry()=fOffs2+2.2*fSlope2;
-    vec.push_back(p1);
-    vec.push_back(p2);
-    ui->biasVoltageCalibPlot->curve("Fit2").setSamples(vec);
-    ui->fitTextEdit->append("fit bias2: c0="+QString::number(fOffs2)+", c1="+QString::number(fSlope2));
-*/
     // here, we have 2 fits successfully applied. Now we can use the fit fuctions
     // V1=Slope1*VADC1+Offs1
     // V2=Slope2*VADC2+Offs2
@@ -362,11 +353,12 @@ void CalibForm::doFit()
 
     ui->biasCurrentCalibPlot->replot();
     ui->transferBiasCoeffsPushButton->setEnabled(true);
-
+*/
 }
 
 void CalibForm::on_transferBiasCoeffsPushButton_clicked()
 {
+/*
     // transfer to calib
     if (ui->transferBiasCoeffsPushButton->isEnabled()) {
         QVector<CalibStruct> items;
@@ -397,6 +389,7 @@ void CalibForm::on_transferBiasCoeffsPushButton_clicked()
         updateCalibTable();
         emit updatedCalib(items);
     }
+*/
 }
 
 void CalibForm::setCalibParameter(const QString &name, const QString &value)
@@ -454,14 +447,14 @@ void CalibForm::onUiEnabledStateChange(bool connected)
     if (!connected) {
         ui->calibItemTableWidget->setRowCount(0);
         fCalibList.clear();
-        ui->eepromValidLabel->setText("EEPROM data: ");
-        ui->calibValidLabel->setText("Calib data: ");
+        ui->eepromValidLabel->setText("N/A");
+        ui->calibValidLabel->setText("N/A");
         ui->idLineEdit->setText("N/A");
     }
-    ui->measureBiasCalibGroupBox->setEnabled(connected);
-    ui->biasCalibGroupBox->setEnabled(connected);
+    //ui->measureBiasCalibGroupBox->setEnabled(connected);
+    //ui->biasCalibGroupBox->setEnabled(connected);
     ui->calibItemsGroupBox->setEnabled(connected);
-    ui->currentCalibGroupBox->setEnabled(connected);
+    //ui->currentCalibGroupBox->setEnabled(connected);
 }
 
 

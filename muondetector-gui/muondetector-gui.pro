@@ -88,7 +88,8 @@ FORMS += \
     $$PWD/src/main/settings.ui \
     $$PWD/src/main/spiform.ui \
     $$PWD/src/main/status.ui \
-    $$PWD/src/main/parametermonitorform.ui
+    $$PWD/src/main/parametermonitorform.ui \
+    src/main/calibscandialog.ui
 
 HEADERS += \
     $$PWD/src/main/calibform.h \
@@ -103,7 +104,8 @@ HEADERS += \
     $$PWD/src/main/settings.h \
     $$PWD/src/main/spiform.h \
     $$PWD/src/main/status.h \
-    $$PWD/src/main/parametermonitorform.h
+    $$PWD/src/main/parametermonitorform.h \
+    src/main/calibscandialog.h
 
 SOURCES += \
     $$PWD/src/main/calibform.cpp \
@@ -119,7 +121,8 @@ SOURCES += \
     $$PWD/src/main/settings.cpp \
     $$PWD/src/main/spiform.cpp \
     $$PWD/src/main/status.cpp   \
-    $$PWD/src/main/parametermonitorform.cpp
+    $$PWD/src/main/parametermonitorform.cpp \
+    src/main/calibscandialog.cpp
 
 RESOURCES += \
     resources.qrc

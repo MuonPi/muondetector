@@ -18,6 +18,7 @@ struct GeodeticPos;
 struct GnssConfigStruct;
 class GnssSatellite;
 class CalibForm;
+class CalibScanDialog;
 struct UbxTimePulseStruct;
 class Histogram;
 
@@ -160,6 +161,7 @@ private:
     bool automaticRatePoll = true;
     QTimer andTimer, xorTimer, ratePollTimer;
     CalibForm *calib = nullptr;
+    CalibScanDialog *calibscandialog = nullptr;
     double biasCalibOffset = 0.;
     double biasCalibSlope = 1.;
     double minBiasVoltage = 0.;

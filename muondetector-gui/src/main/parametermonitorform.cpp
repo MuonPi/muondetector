@@ -94,13 +94,13 @@ void ParameterMonitorForm::onAdcSampleReceived(uint8_t channel, float value)
 
             double rsense = getCalibParameter("RSENSE").toDouble()*0.1/1000.; // RSense in MOhm
             double ibias = (fLastBiasVoltageHi-value)*vdiv/rsense-ioffs;
-            ui->biasCurrentLabel->setText(QString::number(ibias,'f',1)+" uA");
+            ui->biasCurrentLabel->setText(QString::number(ibias,'f',1));
         }
         else {
             double ioffs = 0.;
             double rsense = getCalibParameter("RSENSE").toDouble()*0.1/1000.; // RSense in MOhm
             double ibias = (fLastBiasVoltageHi-value)*vdiv/rsense-ioffs;
-            ui->biasCurrentLabel->setText(QString::number(ibias,'f',1)+" uA");
+            ui->biasCurrentLabel->setText(QString::number(ibias,'f',1));
         }
         fLastBiasVoltageLo = value;
     }
@@ -187,11 +187,10 @@ void ParameterMonitorForm::onTimepulseReceived()
 
 void ParameterMonitorForm::onAdcTraceReceived(const QVector<float> &sampleBuffer)
 {
-    //
     QVector<QPointF> vec;
     for (int i=0; i<sampleBuffer.size(); i++) {
         QPointF p1;
-        p1.rx()=i-10;
+        p1.rx()=i-9;
         p1.ry()=sampleBuffer[i];
         vec.push_back(p1);
     }
