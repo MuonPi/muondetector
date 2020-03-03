@@ -1,0 +1,126 @@
+.\" manpage for muondetector-gui
+.\" Contact marvin.peter@physik.uni-giessen.de to correct errors or typos
+.TH "muondetector-daemon" "1" "March 3, 2020" "v 1.1.1" "muondetector manpage"
+.SH "NAME"
+muondetector-daemon - daemon for muondetector board
+.SH "SYNOPSIS"
+.B muondetector-daemon [options] <device-location>
+.br
+Starts the daemon.
+.SH "DESCRIPTION"
+.B muondetector-daemon
+.
+.br
+The daemon is intended to run in the background and manage all communications
+between the muondetector hat (the board that is put on the raspberry pi).
+Features are communication with a ublox gps chip via serial connection
+and with a variety of components via i2c.
+To read the gpio pins it uses the 'pigpiod' library. It is required to start
+the pigpio-daemon first ('sudo pigpiod [-s 1]') to enable all functionalities
+of the daemon.
+The daemon will listen for incoming connections on a dedicated tcp port.
+A gui can be used to show live monitoring of the muondetector hat components
+from any device inside the network.
+.PP
+Both programs are part of a science project for measuring cosmic particles
+(muons) at a relatively low cost, using a raspberry-pi, silicon photomultipliers
+("SiPM"s) and our own creation of a raspberry pi HAT (module to stick on top of the
+pi, i.e. a shield).
+.SH "OPTIONS"
+.TP
+\fB-h, --help\fP
+Displays a help page.
+.TP
+\fB-v, --version\fP
+Displays version information.
+.TP
+\fB-p\fP
+Enable bias voltage at start.
+.TP
+\fB-c\fP
+Set default configuration for ublox message cycles.
+.TP
+\fB-g, --gain\fP
+Set default gain: high gain.
+.TP
+\fB--pre1, --preamp1\fP
+Enable pre-amplifier 1.
+.TP
+\fB--pre2, --preamp2\fP
+Enable pre-amplifier 2.
+.TP
+\fB-d\fP
+Show raw NMEA messages (those are not used by the program).
+.TP
+\fB--showout, --showoutgoing\fP
+Show outgoing ubx messages as hex.
+.TP
+\fB--shouin, --showincoming\fP
+Show incoming ubx messages as hex.
+.TP
+\fB-e, --verbose <verbosity>\fP
+Set verbosity level.
+.TP
+\fB-b <baudrate>\fP
+Set baudrate for ublox serial connection.
+.TP
+\fB--peer, --peerAddress <peerAddress>\fP
+Set file server ipv4 address.
+.TP
+\fB--pp, --peerPort <peerPort>\fP
+Set file server port.
+.TP
+\fB--server, --daemonAddress <daemonAddress>\fP
+Set ipv4 address for incoming connection from gui program. (default: localhost)
+.TP
+\fB--dp, --daemonPort <daemonPort>\fP
+Set port for incoming connection from gui program. (default: 51508)
+.TP
+\fB--th1, --discr1, --thresh1 <threshold1>\fP
+.TP
+\fB--th2, --discr2, --thresh2 <threshold2>\fP
+.TP
+\fB--bias, --vout <bias voltage>\fP
+Set bias output voltage value.
+.TP
+\fB--pca, --signal <channel>\fP
+Set input signal for ublox interrupt pin:
+.br
+0 - coincidence (AND)
+.br
+1 - anti-coincidence (XOR)
+.br
+2 - discr 1
+.br
+3 - discr 2
+.TP
+\fB-t, --trigger <trigger>\fP
+Set event (trigger) signal input:
+.br
+0 - coincidence (AND)
+.br
+1 - anti-coincidence (XOR)
+.SH "EXIT STATUS"
+Default
+.SH "BUGS"
+No known bugs.
+.SH "AUTHOR"
+Marvin Peter <marvin.peter@physik.uni-giessen.de>
+.SH "COPYRIGHT"
+License: GPL-3.0+
+.PP
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+.PP
+This package is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+.PP
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+.PP
+On Debian systems, the complete text of the GNU General
+Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
