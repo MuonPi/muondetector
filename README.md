@@ -41,6 +41,6 @@ When trying to create a Makefile with qmake (qt version 5.7.1 on raspbian) there
 
 On your Raspberry Pi, do:
 1. `sudo pigpiod -s 1` for setting the sampling rate to 1
-2. start the daemon with `muondetector_daemon <device> [options]` where device is your serial interface (either "/dev/ttyS0" or "/dev/ttyAMA0") and the options can be viewed by adding -h. It is recommended to use the -c option.
+2. start the daemon with `muondetector_daemon <device> [options]` where device is your serial interface (either "/dev/ttyS0" or "/dev/ttyAMA0") and the options can be viewed by adding -h. It is recommended to use the -c option on first start (if the configuration is not yet written to eeprom).
 On your network device or on your Raspberry Pi: 
 3. Start the gui with `muondetector_gui` on the device of your choice and measure some tasty muons!
