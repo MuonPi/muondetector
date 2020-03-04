@@ -1,0 +1,2 @@
+#!/bin/bash
+sed -i 's/pigpiod -s 1/pigpiod -l/g' /lib/systemd/system/pigpiod.service

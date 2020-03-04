@@ -1,0 +1,11 @@
+[Unit]
+Description=muondetector-daemon - Daemon for custom muondetector board
+Requires=pigpiod.service
+
+[Service]
+ExecStart=/usr/bin/muondetector-daemon
+ExecStop=/bin/systemctl kill muondetector-daemon
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

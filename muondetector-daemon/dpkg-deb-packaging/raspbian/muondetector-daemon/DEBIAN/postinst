@@ -1,0 +1,4 @@
+#!/bin/bash
+sed -i 's/pigpiod -l/pigpiod -s 1/g' /lib/systemd/system/pigpiod.service
+systemctl enable pigpiod.service
+systemctl enable muondetector-daemon.service
