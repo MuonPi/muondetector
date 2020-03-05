@@ -1,0 +1,5 @@
+#!/bin/bash
+mkdir -p /var/muondetector
+useradd muonuser -g pi -G users dialout -s /usr/sbin/nologin -r -N -M -b /var/muondetector
+chown -R muonuser:users /var/muondetector
+chmod -R g+w /var/muondetector
