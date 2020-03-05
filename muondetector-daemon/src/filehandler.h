@@ -32,7 +32,7 @@ private:
     QMap<QString, QVector<LogParameter> > logData;
     QFile *dataFile = nullptr; // the file date is currently written to. (timestamps)
     QFile *logFile = nullptr; // the file log information is written to.
-    QString mainDataFolderName = ".muondetector-daemon/";
+    QString mainDataFolderName = "data";
     QString hashedMacAddress;
     QString configFilePath;
     QString loginDataFilePath;
