@@ -14,7 +14,7 @@ class FileHandler : public QObject
     Q_OBJECT
 
 public:
-    FileHandler(QString userName, QString passWord, QString dataPath = "", quint32 fileSizeMB = 500, QObject *parent = nullptr);
+    FileHandler(QString userName, QString passWord, quint32 fileSizeMB = 500, QObject *parent = nullptr);
     float temperature = 0.0;
     quint8 pcaChannel = 0;
 
@@ -32,7 +32,6 @@ private:
     QMap<QString, QVector<LogParameter> > logData;
     QFile *dataFile = nullptr; // the file date is currently written to. (timestamps)
     QFile *logFile = nullptr; // the file log information is written to.
-    QString mainDataFolderName = "data";
     QString hashedMacAddress;
     QString configFilePath;
     QString loginDataFilePath;
@@ -42,6 +41,9 @@ private:
     QString currentWorkingLogPath;
     QString username;
     QString password;
+    QFlags defaultPermissions = QFileDevice::WriteOwner|QFileDevice::WriteUser|
+            QFileDevice::WriteGroup|QFileDevice::ReadOwner|QFileDevice::ReadUser|
+            QFileDevice::ReadGroup|QFileDevice::ReadOther;
     QStringList notUploadedFilesNames;
     bool saveLoginData(QString username, QString password);
     bool readLoginData();
