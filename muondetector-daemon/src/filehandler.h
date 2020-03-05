@@ -41,7 +41,7 @@ private:
     QString currentWorkingLogPath;
     QString username;
     QString password;
-    QFlags defaultPermissions = QFileDevice::WriteOwner|QFileDevice::WriteUser|
+    QFlags<QFileDevice::Permission> defaultPermissions = QFileDevice::WriteOwner|QFileDevice::WriteUser|
             QFileDevice::WriteGroup|QFileDevice::ReadOwner|QFileDevice::ReadUser|
             QFileDevice::ReadGroup|QFileDevice::ReadOther;
     QStringList notUploadedFilesNames;
