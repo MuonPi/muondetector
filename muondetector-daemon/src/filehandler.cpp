@@ -100,7 +100,7 @@ FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, q
     }
     fileSize = fileSizeMB;
     QDir temp;
-    QString fullPath = temp.homePath()+"/"+mainDataFolderName;
+    QString fullPath = +"/var/muondetector/"+mainDataFolderName;
     hashedMacAddress = QString(QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex());
     //qDebug()<<"hashed MAC: "<<hashedMacAddress;
     fullPath += hashedMacAddress;
