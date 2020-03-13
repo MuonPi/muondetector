@@ -20,6 +20,7 @@
 #include <histogramdataform.h>
 #include <muondetector_structs.h>
 #include <parametermonitorform.h>
+#include <logplotswidget.h>
 
 using namespace std;
 
@@ -256,6 +257,15 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::calibReceived, paramTab, &ParameterMonitorForm::onCalibReceived);
     connect(paramTab, &ParameterMonitorForm::setDacVoltage, this, &MainWindow::sendSetThresh);
     ui->tabWidget->addTab(paramTab,"Parameters");
+
+
+    LogPlotsWidget *logTab = new LogPlotsWidget(this);
+    connect(this, &MainWindow::temperatureReceived, logTab, &LogPlotsWidget::onTemperatureReceived);
+    connect(this, &MainWindow::timeAccReceived, logTab, &LogPlotsWidget::onTimeAccReceived);
+    connect(this, &MainWindow::setUiEnabledStates, logTab, &LogPlotsWidget::onUiEnabledStateChange);
+    connect(paramTab, &ParameterMonitorForm::biasVoltageCalculated, logTab, &LogPlotsWidget::onBiasVoltageCalculated);
+    connect(paramTab, &ParameterMonitorForm::biasCurrentCalculated, logTab, &LogPlotsWidget::onBiasCurrentCalculated);
+    ui->tabWidget->addTab(logTab, "Log");
 
 
     //sendRequest(calibRequestSig);

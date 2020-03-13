@@ -1,6 +1,13 @@
-#include <custom_plot_widget.h>
-#include <qwt_legend.h>
 #include <qwt.h>
+#include <qwt_legend.h>
+#include <qwt_scale_engine.h>
+#include <QMenu>
+#include <QFileDialog>
+#include <numeric>
+
+#include <custom_plot_widget.h>
+
+#define LOG_BASELINE 0.1
 
 QwtPlotCurve CustomPlot::INVALID_CURVE;
 
@@ -25,17 +32,9 @@ void CustomPlot::initialize(){
        grid->setPen(blackPen);
        grid->attach(this);
 
-/*       xorCurve = new QwtPlotCurve();
-       xorCurve->setYAxis(QwtPlot::yRight);
-       xorCurve->setRenderHint(QwtPlotCurve::RenderAntialiased, true);
-       //xorCurve->setStyle(QwtPlotCurve::Steps);
-       QColor xorCurveColor = Qt::darkGreen;
-       xorCurveColor.setAlphaF(0.3);
-       const QPen greenPen(xorCurveColor);
-       xorCurve->setPen(greenPen);
-       xorCurve->setBrush(xorCurveColor);
-       xorCurve->attach(this);
-*/
+       this->setContextMenuPolicy(Qt::CustomContextMenu);
+       connect(this,SIGNAL(customContextMenuRequested(const QPoint &  )),this,SLOT(popUpMenu(const QPoint &)));
+
        show();
 }
 
@@ -60,6 +59,82 @@ void CustomPlot::addCurve(const QString& name, const QColor& curveColor)
 	//curve->setBrush(curveColor);
 	fCurveMap[name]=curve;
 	fCurveMap[name]->attach(this);
+}
+
+void CustomPlot::popUpMenu(const QPoint & pos)
+{
+    QMenu contextMenu(tr("Context menu"), this);
+
+    QAction action1("&Log Y", this);
+    action1.setCheckable(true);
+    action1.setChecked(getLogY());
+    connect(&action1, &QAction::toggled, this, [this](bool checked){ this->setLogY(checked); this->replot(); } );
+    contextMenu.addAction(&action1);
+/*
+    contextMenu.addSeparator();
+    QAction action2("&Clear", this);
+//    connect(&action2, &QAction::triggered, this, &CustomHistogram::clear );
+    connect(&action2, &QAction::triggered, this,  [this](bool checked){ this->clear(); this->replot(); });
+    contextMenu.addAction(&action2);
+
+    QAction action3("&Export", this);
+    connect(&action3, &QAction::triggered, this, &CustomHistogram::exportToFile );
+    contextMenu.addAction(&action3);
+*/
+    contextMenu.exec(mapToGlobal(pos));
+//    contextMenu.popup(mapToGlobal(pos));
+}
+
+void CustomPlot::rescale() {
+    bool succ=false;
+    double ymin=1e30;
+    double ymax=-1e30;
+    double xmin=1e30;
+    double xmax=-1e30;
+
+    for (auto it=fCurveMap.begin(); it!=fCurveMap.end(); ++it) {
+        if ((*it)->dataSize()) {
+            if (xmin>(*it)->minXValue()) xmin=(*it)->minXValue();
+            if (xmax<(*it)->maxXValue()) xmax=(*it)->maxXValue();
+            if (ymin>(*it)->minYValue()) ymin=(*it)->minYValue();
+            if (ymax<(*it)->maxYValue()) ymax=(*it)->maxYValue();
+            succ=true;
+        }
+    }
+
+    if (fLogY) {
+        if (this->axisInterval(QwtPlot::yLeft).minValue()<=0.) {
+        }
+        if (this->axisAutoScale(QwtPlot::yLeft)) {
+        } else {
+
+        }
+    } else {
+
+    }
+
+}
+
+void CustomPlot::setLogY(bool logscale){
+    if (logscale) {
+        if (this->axisInterval(QwtPlot::yLeft).minValue()<=0.) {
+            this->setAxisScale(QwtPlot::yLeft, LOG_BASELINE, axisInterval(QwtPlot::yLeft).maxValue());
+        }
+#if	QWT_VERSION > 0x060100
+        setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine());
+#else
+        setAxisScaleEngine(QwtPlot::yLeft, new QwtLog10ScaleEngine());
+#endif
+        setAxisAutoScale(QwtPlot::yLeft,true);
+        //fBarChart->setBaseline(1e-12);
+        fLogY=true;
+    } else {
+        setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine());
+        setAxisAutoScale(QwtPlot::yLeft,true);
+        //fBarChart->setBaseline(0);
+        fLogY=false;
+    }
+    emit scalingChanged();
 }
 
 

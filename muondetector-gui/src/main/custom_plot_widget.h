@@ -10,6 +10,7 @@
 
 class CustomPlot : public QwtPlot
 {
+    Q_OBJECT
 public:
     CustomPlot(QWidget *parent = 0) : QwtPlot(parent){ initialize();}
     CustomPlot(const QwtText &title, QWidget *parent = 0) : QwtPlot(title, parent){ initialize();}
@@ -26,10 +27,25 @@ public:
 
 
     const QString title = "Plot";
-	static QwtPlotCurve INVALID_CURVE;
+    static QwtPlotCurve INVALID_CURVE;
+
+signals:
+    void scalingChanged();
+
+public slots:
+    bool getLogX() const { return fLogX; }
+    bool getLogY() const { return fLogY; }
+    void setLogY(bool logscale);
+    void rescale();
+
+private slots:
+    void popUpMenu(const QPoint &pos);
+
 private:
 	QMap<QString, QwtPlotCurve*> fCurveMap;
-	
+    bool fLogY=false;
+    bool fLogX=false;
+
 };
 
 #endif // CUSTOMPLOT_H

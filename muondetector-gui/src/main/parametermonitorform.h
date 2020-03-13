@@ -20,6 +20,8 @@ public:
 
 signals:
     void setDacVoltage(uint8_t ch, float val);
+    void biasVoltageCalculated(float vbias);
+    void biasCurrentCalculated(float ibias);
 
 public slots:
     void onCalibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct> &calibList);
@@ -51,8 +53,8 @@ private:
     Ui::ParameterMonitorForm *ui;
     QVector<CalibStruct> fCalibList;
 
-    double fLastBiasVoltageLo=0.;
-    double fLastBiasVoltageHi=0.;
+    double fLastBiasVoltageLo=-999.;
+    double fLastBiasVoltageHi=-999.;
 
     QString getCalibParameter(const QString &name);
     bool currentCalibValid();
