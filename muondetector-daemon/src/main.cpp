@@ -5,9 +5,16 @@
 #include <QCommandLineParser>
 #include <QObject>
 #include <QHostAddress>
+#include <QDir>
 #include <termios.h>
 #include <unistd.h>
 #include <iostream>
+
+/*
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <syslog.h>
+*/
 
 #include <custom_io_operators.h>
 #include <daemon.h>
@@ -208,8 +215,14 @@ int main(int argc, char *argv[])
 		gpsdevname = args.at(0);
 	}
 	else {
-		cout << "no device selected, will not connect to gps module" << endl;
-	}
+        QDir directory("/dev","*",QDir::Name, QDir::System);
+        QStringList serialports = directory.entryList(QStringList({"ttyS0","ttyAMA0"}));
+        if (!serialports.empty()){
+            gpsdevname=serialports.at(0);
+        }else{
+            cout << "no device selected, will not connect to gps module" << endl;
+        }
+    }
     bool ok;
 	int verbose = 0;
 	if (parser.isSet(verbosityOption)) {
@@ -349,6 +362,57 @@ int main(int argc, char *argv[])
         cin >> username;
         password = getpass("please enter password:",true);
     }
+    /*
+    pid_t pid;
+
+    // Fork off the parent process
+    pid = fork();
+
+    // An error occurred
+    if (pid < 0)
+        exit(EXIT_FAILURE);
+
+    // Success: Let the parent terminate
+    if (pid > 0)
+        exit(EXIT_SUCCESS);
+
+    // On success: The child process becomes session leader
+    if (setsid() < 0)
+        exit(EXIT_FAILURE);
+
+    // Catch, ignore and handle signals
+    //TODO: Implement a working signal handler
+    signal(SIGCHLD, SIG_IGN);
+    signal(SIGHUP, SIG_IGN);
+
+    // Fork off for the second time
+    pid = fork();
+
+    // An error occurred
+    if (pid < 0)
+        exit(EXIT_FAILURE);
+
+    // Success: Let the parent terminate
+    if (pid > 0)
+        exit(EXIT_SUCCESS);
+
+    // Set new file permissions
+    umask(0);
+
+    // Change the working directory to the root directory
+    // or another appropriated directory
+    chdir("/");
+
+    // Close all open file descriptors
+    int x;
+    for (x = sysconf(_SC_OPEN_MAX); x>=0; x--)
+    {
+        close (x);
+    }
+
+    // Open the log file
+    openlog ("muondetector-daemon", LOG_PID, LOG_DAEMON);
+    */
     Daemon daemon(QString::fromStdString(username), QString::fromStdString(password), gpsdevname, verbose, pcaChannel, dacThresh, biasVoltage, biasPower, dumpRaw,
         baudrate, showGnssConfig, eventSignal, peerAddress, peerPort, daemonAddress, daemonPort, showout, showin, preamp1, preamp2, gain);
 	

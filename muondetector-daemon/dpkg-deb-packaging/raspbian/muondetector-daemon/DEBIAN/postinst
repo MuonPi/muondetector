@@ -1,0 +1,3 @@
+#!/bin/bash
+systemctl enable pigpiod.service
+systemctl enable muondetector-daemon.service

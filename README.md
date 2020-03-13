@@ -1,10 +1,10 @@
 # muondetector
 
-Software for a [Raspberry Pi based muon detector system](https://balu.physik.uni-giessen.de:8081/mediawiki/index.php) using a Ublox GPS module for precise timing.
+Software for a [Raspberry Pi based muon detector system](https://balu.physik.uni-giessen.de:8081/mediawiki/index.php) using a u-blox GNSS module for precise timing.
 
 ### ABSTRACT
 
-The goal work is the create a software solution that can use a Raspberry Pi mini computer and the Ublox M8 GPS module's "timemark" feature together with a plastic scintillator + SiPM-based detector system to measure muons up to a 20ns time accuracy. Therefore, the software has to communicate with the Ublox GPS module through a serial interface using the ubx protocol. The good time accuracy is needed for correlating several independent detector units for the reconstruction of atmospheric muon showers resulting from ultra high-energy cosmic particles impinging on the earth's atmosphere. The software must be easy-to-use and runs in the background while synchronizing accumulated data with a central server.
+This is a software solution for operating a Raspberry Pi mini computer and the u-blox NEO-M8 GNSS module's "timemark" feature together with a plastic scintillator + SiPM-based detector system to detect muons with a time stamping accuracy of up to a 20ns. Therefore, the software has to communicate with the Ublox GPS module through a serial interface using the ubx protocol. The good time accuracy is needed for correlating several independent detector units for the reconstruction of atmospheric muon showers resulting from ultra high-energy cosmic particles impinging on the earth's atmosphere. The software must be easy-to-use and runs in the background while synchronizing accumulated data with a central server.
 
 ### DOWNLOAD
 
@@ -40,7 +40,7 @@ When trying to create a Makefile with qmake (qt version 5.7.1 on raspbian) there
 ### RUNNING THE SOFTWARE
 
 On your Raspberry Pi, do:
-1. `sudo pigpiod -s 1` for setting the sampling rate to 1
-2. start the daemon with `muondetector_daemon <device> [options]` where device is your serial interface (either "/dev/ttyS0" or "/dev/ttyAMA0") and the options can be viewed by adding -h. It is recommended to use the -c option.
+1. `sudo pigpiod -s 1` for setting the GPIO sampling rate to 1 MHz
+2. start the daemon with `muondetector_daemon <device> [options]` where device is your serial interface (either "/dev/ttyS0" or "/dev/ttyAMA0"). The options can be reviewed by adding -h. It is recommended to use the -c option on first start (if the configuration is not yet written to eeprom).
 On your network device or on your Raspberry Pi: 
 3. Start the gui with `muondetector_gui` on the device of your choice and measure some tasty muons!

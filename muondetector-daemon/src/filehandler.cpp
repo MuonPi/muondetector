@@ -90,17 +90,14 @@ static QString dateStringNow(){
     return QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd_hh-mm-ss");
 }
 
-FileHandler::FileHandler(QString userName, QString passWord, QString dataPath, quint32 fileSizeMB, QObject *parent)
+FileHandler::FileHandler(QString userName, QString passWord, quint32 fileSizeMB, QObject *parent)
     : QObject(parent)
 {
     lastUploadDateTime = QDateTime(QDate::currentDate(),QTime(0,0,0,0),Qt::TimeSpec::UTC);
     dailyUploadTime = QTime(11,11,11,111);
-    if (dataPath != ""){
-        mainDataFolderName = dataPath;
-    }
     fileSize = fileSizeMB;
     QDir temp;
-    QString fullPath = temp.homePath()+"/"+mainDataFolderName;
+    QString fullPath = +"/var/muondetector/";
     hashedMacAddress = QString(QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex());
     //qDebug()<<"hashed MAC: "<<hashedMacAddress;
     fullPath += hashedMacAddress;
@@ -306,11 +303,13 @@ bool FileHandler::openFiles(bool writeHeader){
         writeConfigFile();
     }
     dataFile = new QFile(currentWorkingFilePath);
+    dataFile->setPermissions(defaultPermissions);
     if (!dataFile->open(QIODevice::ReadWrite | QIODevice::Append)) {
         qDebug() << "file open failed in 'ReadWrite' mode at location " << currentWorkingFilePath;
         return false;
     }
     logFile = new QFile(currentWorkingLogPath);
+    logFile->setPermissions(defaultPermissions);
     if (!logFile->open(QIODevice::ReadWrite | QIODevice::Append)) {
         qDebug() << "file open failed in 'ReadWrite' mode at location " << currentWorkingLogPath;
         return false;
@@ -494,6 +493,7 @@ bool FileHandler::uploadRecentDataFiles(){
 
 bool FileHandler::saveLoginData(QString username, QString password){
     QFile loginDataFile(loginDataFilePath);
+    loginDataFile.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner);
     if(!loginDataFile.open(QIODevice::ReadWrite)){
         qDebug() << "could not open login data save file";
         return false;
