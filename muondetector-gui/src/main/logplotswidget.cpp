@@ -118,13 +118,17 @@ void LogPlotsWidget::on_tableWidget_cellClicked(int row, int column)
 //    ui->nrHistosLabel->setText(name);
     auto it = fLogMap.find(name);
     if (it!=fLogMap.end()) {
-        fCurrentLog=name;
         ui->logPlot->setTitle(name);
         //ui->histoWidget->setData(*it);
         ui->logPlot->curve("curve1").setSamples(it->data());
         ui->logPlot->setAxisTitle(QwtPlot::xBottom, "time");
         ui->logPlot->setAxisTitle(QwtPlot::yLeft, it->getUnit());
         ui->logNameLabel->setText(it->getName());
+        if (fCurrentLog==name) {
+            ui->logPlot->setAxisAutoScale(QwtPlot::xBottom);
+            ui->logPlot->setAxisAutoScale(QwtPlot::yLeft);
+        }
+        fCurrentLog=name;
         ui->logPlot->replot();
         onScalingChanged();
     }
@@ -167,4 +171,27 @@ void LogPlotsWidget::on_pointSizeSpinBox_valueChanged(int arg1)
     QwtSymbol *sym=new QwtSymbol(QwtSymbol::Rect, QBrush(Qt::blue, Qt::SolidPattern),QPen(Qt::black),QSize(arg1,arg1));
     ui->logPlot->curve("curve1").setSymbol(sym);
     ui->logPlot->replot();
+}
+
+void LogPlotsWidget::onGpioRatesReceived(quint8 whichrate, QVector<QPointF> rates){
+    QString name = "XOR Rate";
+    if (whichrate==0){
+        name = "XOR Rate";
+    } else if (whichrate==0){
+        name = "AND Rate";
+    } else return;
+
+    auto it = fLogMap.find(name);
+    if (it==fLogMap.end()) {
+        fLogMap[name].setName(name);
+        fLogMap[name].setUnit("1/s");
+    }
+
+    QPointF p;
+    p.setX(QDateTime::currentMSecsSinceEpoch()/1000ULL);
+    p.setY(rates.last().y());
+    fLogMap[name].push_back(p);
+
+    updateLogTable();
+
 }

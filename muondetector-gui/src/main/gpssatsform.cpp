@@ -74,6 +74,15 @@ void GpsSatsForm::onSatsReceived(const QVector<GnssSatellite> &satlist)
     satPosPainter.drawText(4,satPosPixmapSize/2-19,18,18,Qt::AlignHCenter,"W");
     satPosPainter.drawText(satPosPixmapSize-19,satPosPixmapSize/2-19,18,18,Qt::AlignHCenter,"E");
 
+    QFont font = satPosPainter.font();
+    font.setPointSize(font.pointSize()-2);
+    satPosPainter.setFont(font);
+    satPosPainter.drawText(satPosPixmapSize/2-14,satPosPixmapSize-12,18,18,Qt::AlignHCenter,"0°");
+    satPosPainter.drawText(satPosPixmapSize/2-16,satPosPixmapSize*5/6-12,18,18,Qt::AlignHCenter,"30°");
+    satPosPainter.drawText(satPosPixmapSize/2-16,satPosPixmapSize*2/3-12,18,18,Qt::AlignHCenter,"60°");
+
+
+
     int nrGoodSats = 0;
     for (auto it=satlist.begin(); it!=satlist.end(); it++)
         if (it->fCnr>0) nrGoodSats++;
@@ -135,6 +144,8 @@ void GpsSatsForm::onSatsReceived(const QVector<GnssSatellite> &satlist)
 */
             satPosPainter.drawEllipse(currPoint,3.,3.);
             if (satlist[i].fUsed) satPosPainter.drawEllipse(currPoint,3.5,3.5);
+            currPoint.rx()+=3;
+            if (ui->satLabelsCheckBox->isChecked()) satPosPainter.drawText(currPoint, QString::number(satlist[i].fSatId));
         }
     }
 

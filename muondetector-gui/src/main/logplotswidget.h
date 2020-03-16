@@ -5,6 +5,7 @@
 #include <QMap>
 #include <QString>
 #include <QPointF>
+#include <QVector>
 
 namespace Ui {
 class LogPlotsWidget;
@@ -46,6 +47,7 @@ public slots:
 
     void onBiasVoltageCalculated(float ubias);
     void onBiasCurrentCalculated(float ibias);
+    void onGpioRatesReceived(quint8 whichrate, QVector<QPointF> rates);
 private slots:
     void updateLogTable();
 

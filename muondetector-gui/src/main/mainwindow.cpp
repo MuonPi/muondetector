@@ -265,6 +265,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::setUiEnabledStates, logTab, &LogPlotsWidget::onUiEnabledStateChange);
     connect(paramTab, &ParameterMonitorForm::biasVoltageCalculated, logTab, &LogPlotsWidget::onBiasVoltageCalculated);
     connect(paramTab, &ParameterMonitorForm::biasCurrentCalculated, logTab, &LogPlotsWidget::onBiasCurrentCalculated);
+    connect(this, &MainWindow::gpioRates, logTab, &LogPlotsWidget::onGpioRatesReceived);
     ui->tabWidget->addTab(logTab, "Log");
 
 

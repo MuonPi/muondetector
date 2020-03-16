@@ -83,24 +83,27 @@ void ParameterMonitorForm::onAdcSampleReceived(uint8_t channel, float value)
     }
     else if (channel==3) {
         ui->adcLabel4->setText(QString::number(value,'f',4));
-        double vdiv=getCalibParameter("VDIV").toDouble()*0.01;
-        double ubias = value*vdiv;
-        ui->biasVoltageLabel->setText(QString::number(ubias,'f',2));
-        emit biasVoltageCalculated(ubias);
 
-        double ioffs = 0.;
-        if (currentCalibValid()) {
-            double fSlope2 = getCalibParameter("COEFF3").toDouble();
-            double fOffs2 = getCalibParameter("COEFF2").toDouble();
-            ioffs = ubias*fSlope2+fOffs2;
+        if (!fCalibList.empty()) {
+            double vdiv=getCalibParameter("VDIV").toDouble()*0.01;
+            double ubias = value*vdiv;
+            ui->biasVoltageLabel->setText(QString::number(ubias,'f',2));
+            emit biasVoltageCalculated(ubias);
 
-        }
-        double rsense = getCalibParameter("RSENSE").toDouble()*0.1/1000.; // RSense in MOhm
-        double ibias = (fLastBiasVoltageHi-value)*vdiv/rsense-ioffs;
+            double ioffs = 0.;
+            if (currentCalibValid()) {
+                double fSlope2 = getCalibParameter("COEFF3").toDouble();
+                double fOffs2 = getCalibParameter("COEFF2").toDouble();
+                ioffs = ubias*fSlope2+fOffs2;
 
-        if (fLastBiasVoltageHi>-900.) {
-            emit biasCurrentCalculated(ibias);
-            ui->biasCurrentLabel->setText(QString::number(ibias,'f',1));
+            }
+            double rsense = getCalibParameter("RSENSE").toDouble()*0.1/1000.; // RSense in MOhm
+            double ibias = (fLastBiasVoltageHi-value)*vdiv/rsense-ioffs;
+
+            if (fLastBiasVoltageHi>-900.) {
+                emit biasCurrentCalculated(ibias);
+                ui->biasCurrentLabel->setText(QString::number(ibias,'f',1));
+            }
         }
         fLastBiasVoltageLo = value;
     }
