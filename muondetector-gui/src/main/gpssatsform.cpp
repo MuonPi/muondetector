@@ -54,34 +54,12 @@ GpsSatsForm::~GpsSatsForm()
 
 void GpsSatsForm::onSatsReceived(const QVector<GnssSatellite> &satlist)
 {
+    ui->gnssPosWidget->onSatsReceived(satlist);
+
     QVector<GnssSatellite> newlist;
     QString str;
     QColor color;
-    const int iqPixmapSize=105;
-    const int satPosPixmapSize=220;
-    QPixmap satPosPixmap(satPosPixmapSize,satPosPixmapSize);
-    //    pixmap.fill(QColor("transparent"));
-    satPosPixmap.fill(Qt::white);
-    QPainter satPosPainter(&satPosPixmap);
-    satPosPainter.setPen(QPen(Qt::black));
-    satPosPainter.drawEllipse(QPoint(satPosPixmapSize/2,satPosPixmapSize/2),satPosPixmapSize/6,satPosPixmapSize/6);
-    satPosPainter.drawEllipse(QPoint(satPosPixmapSize/2,satPosPixmapSize/2),satPosPixmapSize/3,satPosPixmapSize/3);
-    satPosPainter.drawEllipse(QPoint(satPosPixmapSize/2,satPosPixmapSize/2),satPosPixmapSize/2,satPosPixmapSize/2);
-    satPosPainter.drawLine(QPoint(satPosPixmapSize/2,0),QPoint(satPosPixmapSize/2,satPosPixmapSize));
-    satPosPainter.drawLine(QPoint(0,satPosPixmapSize/2),QPoint(satPosPixmapSize,satPosPixmapSize/2));
-    satPosPainter.drawText(satPosPixmapSize/2+2,3,18,18,Qt::AlignHCenter,"N");
-    satPosPainter.drawText(satPosPixmapSize/2+2,satPosPixmapSize-19,18,18,Qt::AlignHCenter,"S");
-    satPosPainter.drawText(4,satPosPixmapSize/2-19,18,18,Qt::AlignHCenter,"W");
-    satPosPainter.drawText(satPosPixmapSize-19,satPosPixmapSize/2-19,18,18,Qt::AlignHCenter,"E");
-
-    QFont font = satPosPainter.font();
-    font.setPointSize(font.pointSize()-2);
-    satPosPainter.setFont(font);
-    satPosPainter.drawText(satPosPixmapSize/2-14,satPosPixmapSize-12,18,18,Qt::AlignHCenter,"0°");
-    satPosPainter.drawText(satPosPixmapSize/2-16,satPosPixmapSize*5/6-12,18,18,Qt::AlignHCenter,"30°");
-    satPosPainter.drawText(satPosPixmapSize/2-16,satPosPixmapSize*2/3-12,18,18,Qt::AlignHCenter,"60°");
-
-
+//    const int iqPixmapSize=105;
 
     int nrGoodSats = 0;
     for (auto it=satlist.begin(); it!=satlist.end(); it++)
@@ -94,71 +72,7 @@ void GpsSatsForm::onSatsReceived(const QVector<GnssSatellite> &satlist)
         if (ui->visibleSatsCheckBox->isChecked()) {
             if (satlist[i].fCnr>0) newlist.push_back(satlist[i]);
         } else newlist.push_back(satlist[i]);
-        if (satlist[i].fElev<=90. && satlist[i].fElev>=-90.) {
-            if (ui->visibleSatsCheckBox->isChecked() && satlist[i].fCnr==0) continue;
-            double magn=(90.-satlist[i].fElev)*satPosPixmapSize/180.;
-            double xpos = magn*sin(PI*satlist[i].fAzim/180.);
-            double ypos = -magn*cos(PI*satlist[i].fAzim/180.);
-            QColor satColor=Qt::white;
-            QColor fillColor=Qt::white;
-            if (satlist[i].fGnssId==0) satColor=QColor(Qt::darkGreen); // GPS
-            else if (satlist[i].fGnssId==1) satColor=QColor(Qt::darkYellow); // SBAS
-            else if (satlist[i].fGnssId==2) satColor=QColor(Qt::blue);  // GAL
-            else if (satlist[i].fGnssId==3) satColor=QColor(Qt::magenta); // BEID
-            else if (satlist[i].fGnssId==4) satColor=QColor(Qt::gray); // IMES
-            else if (satlist[i].fGnssId==5) satColor=QColor(Qt::cyan); // QZSS
-            else if (satlist[i].fGnssId==6) satColor=QColor(Qt::red); // GLNS
-            satPosPainter.setPen(satColor);
-            fillColor=satColor;
-            int alpha = satlist[i].fCnr*255/40;
-            if (alpha>255) alpha=255;
-            fillColor.setAlpha(alpha);
-            int satId = satlist[i].fGnssId*1000 + satlist[i].fSatId;
-            QPointF currPoint(xpos+satPosPixmapSize/2,ypos+satPosPixmapSize/2);
-            QPointF lastPoint;
-/*
-            for (int i=0; i<satTracks[satId].size(); i++) {
-                satPosPainter.setPen(satTracks[satId][i].color);
-                //satPosPainter.setBrush(satTracks[satId][i].color);
-                satPosPainter.drawPoint(satTracks[satId][i].pos);
-            }
-*/
-            if (satTracks[satId].size()) {
-                lastPoint=satTracks[satId].last().pos;
-            }
-            if (lastPoint!=currPoint) {
-                SatHistoryPoint p;
-                p.pos=currPoint;
-                p.color=fillColor;
-                satTracks[satId].push_back(p);
-            }
-            satPosPainter.setPen(satColor);
-            satPosPainter.setBrush(fillColor);
-/*
-            if (satlist[i].fCnr>40) satPosPainter.setBrush(Qt::darkGreen);
-            else if (satlist[i].fCnr>30) satPosPainter.setBrush(Qt::green);
-            else if (satlist[i].fCnr>20) satPosPainter.setBrush(Qt::yellow);
-            else if (satlist[i].fCnr>10) satPosPainter.setBrush(QColor(255,100,0));
-            else if (satlist[i].fCnr>0) satPosPainter.setBrush(Qt::red);
-            else satPosPainter.setBrush(QColor("transparent"));
-*/
-            satPosPainter.drawEllipse(currPoint,3.,3.);
-            if (satlist[i].fUsed) satPosPainter.drawEllipse(currPoint,3.5,3.5);
-            currPoint.rx()+=3;
-            if (ui->satLabelsCheckBox->isChecked()) satPosPainter.drawText(currPoint, QString::number(satlist[i].fSatId));
-        }
     }
-
-    // draw the sat tracks
-    foreach (QVector<SatHistoryPoint> sat, satTracks) {
-        for (int i=0; i<sat.size(); i++) {
-            satPosPainter.setPen(sat[i].color);
-            //satPosPainter.setBrush(satTracks[satId][i].color);
-            satPosPainter.drawPoint(sat[i].pos);
-        }
-    }
-
-    ui->satPosLabel->setPixmap(satPosPixmap);
 
     int N=newlist.size();
     ui->satsTableWidget->setRowCount(N);

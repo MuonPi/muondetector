@@ -90,7 +90,8 @@ FORMS += \
     $$PWD/src/main/status.ui \
     $$PWD/src/main/parametermonitorform.ui \
     src/main/calibscandialog.ui \
-    src/main/logplotswidget.ui
+    src/main/logplotswidget.ui \
+    src/main/gnssposwidget.ui
 
 HEADERS += \
     $$PWD/src/main/calibform.h \
@@ -107,7 +108,8 @@ HEADERS += \
     $$PWD/src/main/status.h \
     $$PWD/src/main/parametermonitorform.h \
     src/main/calibscandialog.h \
-    src/main/logplotswidget.h
+    src/main/logplotswidget.h \
+    src/main/gnssposwidget.h
 
 SOURCES += \
     $$PWD/src/main/calibform.cpp \
@@ -125,7 +127,8 @@ SOURCES += \
     $$PWD/src/main/status.cpp   \
     $$PWD/src/main/parametermonitorform.cpp \
     src/main/calibscandialog.cpp \
-    src/main/logplotswidget.cpp
+    src/main/logplotswidget.cpp \
+    src/main/gnssposwidget.cpp
 
 RESOURCES += \
     resources.qrc

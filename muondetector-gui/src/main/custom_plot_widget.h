@@ -26,7 +26,7 @@ public:
     // for other plots: subclass "CustomPlot" and put all specific functions (like below) to the new class
 
 
-    const QString title = "Plot";
+    //const QString title = "Plot";
     static QwtPlotCurve INVALID_CURVE;
 
 signals:
@@ -37,6 +37,7 @@ public slots:
     bool getLogY() const { return fLogY; }
     void setLogY(bool logscale);
     void rescale();
+    void exportToFile();
 
 private slots:
     void popUpMenu(const QPoint &pos);

@@ -16,11 +16,13 @@ namespace Ui {
 class GpsSatsForm;
 }
 
+struct SatHistoryPoint;
+/*
 struct SatHistoryPoint {
     QPointF pos;
     QColor color;
 };
-
+*/
 class GpsSatsForm : public QWidget
 {
     Q_OBJECT

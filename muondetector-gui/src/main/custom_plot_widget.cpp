@@ -3,6 +3,7 @@
 #include <qwt_scale_engine.h>
 #include <QMenu>
 #include <QFileDialog>
+#include <qwt_plot_renderer.h>
 #include <numeric>
 
 #include <custom_plot_widget.h>
@@ -70,17 +71,17 @@ void CustomPlot::popUpMenu(const QPoint & pos)
     action1.setChecked(getLogY());
     connect(&action1, &QAction::toggled, this, [this](bool checked){ this->setLogY(checked); this->replot(); } );
     contextMenu.addAction(&action1);
-/*
     contextMenu.addSeparator();
+/*
     QAction action2("&Clear", this);
 //    connect(&action2, &QAction::triggered, this, &CustomHistogram::clear );
     connect(&action2, &QAction::triggered, this,  [this](bool checked){ this->clear(); this->replot(); });
     contextMenu.addAction(&action2);
-
-    QAction action3("&Export", this);
-    connect(&action3, &QAction::triggered, this, &CustomHistogram::exportToFile );
-    contextMenu.addAction(&action3);
 */
+    QAction action3("&Export", this);
+    connect(&action3, &QAction::triggered, this, &CustomPlot::exportToFile );
+    contextMenu.addAction(&action3);
+
     contextMenu.exec(mapToGlobal(pos));
 //    contextMenu.popup(mapToGlobal(pos));
 }
@@ -141,12 +142,89 @@ void CustomPlot::setLogY(bool logscale){
 void CustomPlot::setStatusEnabled(bool status){
     if (status==true){
 //        curve->attach(this);
-        setTitle(title);
+        //setTitle(title);
         replot();
     }else{
 //        curve->detach();
-        setTitle("");
+        //setTitle("");
         replot();
     }
 }
 
+
+void CustomPlot::exportToFile() {
+    QPixmap qPix = QPixmap::grabWidget(this);
+    if(qPix.isNull()){
+        qDebug("Failed to capture the plot for saving");
+        return;
+    }
+    QString types(	"JPEG file (*.jpeg);;"				// Set up the possible graphics formats
+            "Portable Network Graphics file (*.png);;"
+            "Bitmap file (*.bmp);;"
+            "Portable Document Format (*.pdf);;"
+            "Scalable Vector Graphics Format (*.svg);;"
+            "ASCII raw data (*.txt)");
+    QString filter;							// Type of filter
+    QString jpegExt=".jpeg", pngExt=".png", tifExt=".tif", bmpExt=".bmp", tif2Ext="tiff";		// Suffix for the files
+    QString pdfExt=".pdf", svgExt=".svg";
+    QString txtExt=".txt";
+    QString suggestedName="";
+    QString fn = QFileDialog::getSaveFileName(this,tr("Export Histogram"),
+                                                  suggestedName,types,&filter);
+
+    if ( !fn.isEmpty() ) {						// If filename is not null
+        if (fn.contains(jpegExt)) {				// Remove file extension if already there
+            fn.remove(jpegExt);
+        } else if (fn.contains(pngExt)) {
+            fn.remove(pngExt);
+        } else if (fn.contains(bmpExt)) {
+            fn.remove(bmpExt);
+        } else if (fn.contains(pdfExt)) {
+            fn.remove(pdfExt);
+        } else if (fn.contains(svgExt)) {
+            fn.remove(svgExt);
+        } else if (fn.contains(txtExt)) {
+            fn.remove(txtExt);
+        }
+
+        if (filter.contains(jpegExt)) {				// OR, Test to see if jpeg and save
+            fn+=jpegExt;
+            qPix.save( fn, "JPEG" );
+        }
+        else if (filter.contains(pngExt)) {			// OR, Test to see if png and save
+            fn+=pngExt;
+            qPix.save( fn, "PNG" );
+        }
+        else if (filter.contains(bmpExt)) {			// OR, Test to see if bmp and save
+            fn+=bmpExt;
+            qPix.save( fn, "BMP" );
+        }
+        else if (filter.contains(pdfExt)) {
+            fn+=pdfExt;
+            QwtPlotRenderer renderer(this);
+            renderer.renderDocument(this, fn, "pdf", QSizeF(297/2,210/2),72);
+        }
+        else if (filter.contains(svgExt)) {
+            fn+=svgExt;
+            QwtPlotRenderer renderer(this);
+            renderer.renderDocument(this, fn, "svg", QSizeF(297/2,210/2),72);
+        }
+        if (filter.contains(txtExt)) {
+            fn+=txtExt;
+            // export histo in asci raw data format
+            QFile file(fn);
+            if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return;
+            QTextStream out(&file);
+            //out.setFieldWidth(20);
+
+            foreach (QwtPlotCurve *curve , fCurveMap) {
+                out << "# " << this->title().text() << "\n";
+                out << "# " << curve->title().text() << "\n";
+                out << "# " << this->axisTitle(QwtPlot::xBottom).text() << " " << this->axisTitle(QwtPlot::yLeft).text() << "\n";
+                for (int i=0; i<curve->dataSize(); i++) {
+                    out << QString::number(curve->sample(i).x(),'g',10) << "  " << QString::number(curve->sample(i).y(), 'g', 10) << "\n";
+                }
+            }
+        }
+    }
+}

@@ -2,6 +2,8 @@
 #include "ui_logplotswidget.h"
 #include <QDateTime>
 #include <qwt_symbol.h>
+#include <qwt_date_scale_draw.h>
+#include <qwt_date_scale_engine.h>
 
 LogPlotsWidget::LogPlotsWidget(QWidget *parent) :
     QWidget(parent),
@@ -9,6 +11,8 @@ LogPlotsWidget::LogPlotsWidget(QWidget *parent) :
 {
     ui->setupUi(this);
     //ui->logPlot->setTitle("temp");
+    ui->logPlot->setAxisScaleDraw(QwtPlot::xBottom, new QwtDateScaleDraw());
+    ui->logPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtDateScaleEngine());
     ui->logPlot->setAxisTitle(QwtPlot::xBottom,"time");
     //ui->logPlot->setAxisTitle(QwtPlot::yLeft,"temp / °C");
     connect(ui->logPlot, &CustomPlot::scalingChanged,this, &LogPlotsWidget::onScalingChanged);
@@ -35,7 +39,7 @@ void LogPlotsWidget::onTemperatureReceived(float temp)
         fLogMap["Temperature"].setUnit("°C");
     }
     QPointF p;
-    p.setX(QDateTime::currentMSecsSinceEpoch()/1000ULL);
+    p.setX(QDateTime::currentMSecsSinceEpoch());
     p.setY(temp);
     fLogMap["Temperature"].push_back(p);
     updateLogTable();
@@ -49,7 +53,7 @@ void LogPlotsWidget::onTimeAccReceived(quint32 acc)
         fLogMap["Time Accuracy"].setUnit("ns");
     }
     QPointF p;
-    p.setX(QDateTime::currentMSecsSinceEpoch()/1000ULL);
+    p.setX(QDateTime::currentMSecsSinceEpoch());
     p.setY(acc);
     fLogMap["Time Accuracy"].push_back(p);
     updateLogTable();
@@ -64,7 +68,7 @@ void LogPlotsWidget::onBiasVoltageCalculated(float ubias)
         fLogMap[name].setUnit("V");
     }
     QPointF p;
-    p.setX(QDateTime::currentMSecsSinceEpoch()/1000ULL);
+    p.setX(QDateTime::currentMSecsSinceEpoch());
     p.setY(ubias);
     fLogMap[name].push_back(p);
     updateLogTable();
@@ -79,7 +83,7 @@ void LogPlotsWidget::onBiasCurrentCalculated(float ibias)
         fLogMap[name].setUnit("uA");
     }
     QPointF p;
-    p.setX(QDateTime::currentMSecsSinceEpoch()/1000ULL);
+    p.setX(QDateTime::currentMSecsSinceEpoch());
     p.setY(ibias);
     fLogMap[name].push_back(p);
     updateLogTable();
@@ -188,7 +192,7 @@ void LogPlotsWidget::onGpioRatesReceived(quint8 whichrate, QVector<QPointF> rate
     }
 
     QPointF p;
-    p.setX(QDateTime::currentMSecsSinceEpoch()/1000ULL);
+    p.setX(QDateTime::currentMSecsSinceEpoch());
     p.setY(rates.last().y());
     fLogMap[name].push_back(p);
 
