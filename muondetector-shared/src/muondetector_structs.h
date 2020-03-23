@@ -9,6 +9,8 @@
 #include <QString>
 #include <QDataStream>
 #include <QList>
+#include <QMap>
+#include <histogram.h>
 
 
 struct CalibStruct {
@@ -79,8 +81,6 @@ public:
 
 	~GnssSatellite() {}
 
-	//static const std::string GNSS_ID_STRING[];
-
 	static void PrintHeader(bool wIndex);
 	void Print(bool wHeader) const;
 	void Print(int index, bool wHeader) const;
@@ -103,13 +103,71 @@ public:
 	bool fUsed=false, fDiffCorr=false, fSmoothed=false;
 };
 
+struct UbxTimePulseStruct {
+	enum { ACTIVE=0x01, LOCK_GPS=0x02, LOCK_OTHER=0x04, IS_FREQ=0x08, IS_LENGTH=0x10, ALIGN_TO_TOW=0x20, POLARITY=0x40, GRID_UTC_GPS=0x780  };
+	uint8_t tpIndex=0;
+	uint8_t version=0;
+	int16_t antCableDelay=0;
+	int16_t rfGroupDelay = 0;
+	uint32_t freqPeriod = 0;
+	uint32_t freqPeriodLock = 0;
+	uint32_t pulseLenRatio = 0;
+	uint32_t pulseLenRatioLock = 0;
+	int32_t userConfigDelay = 0;
+	uint32_t flags = 0;
+};
+
+
+struct GnssMonHwStruct {
+  GnssMonHwStruct() = default;
+  GnssMonHwStruct(quint16 a_noise, quint16 a_agc, quint8 a_antStatus, quint8 a_antPower, quint8 a_jamInd, quint8 a_flags)
+   : noise(a_noise), agc(a_agc), antStatus(a_antStatus), antPower(a_antPower), jamInd(a_jamInd), flags(a_flags)
+    {}
+  quint16 noise=0, agc=0;
+  quint8 antStatus=0, antPower=0, jamInd=0, flags=0;
+};
+
+struct GnssMonHw2Struct {
+  GnssMonHw2Struct() = default;
+  GnssMonHw2Struct(qint8 a_ofsI, qint8 a_ofsQ, quint8 a_magI, quint8 a_magQ, quint8 a_cfgSrc)
+   : ofsI(a_ofsI), ofsQ(a_ofsQ), magI(a_magI), magQ(a_magQ), cfgSrc(a_cfgSrc)
+    {}
+  qint8 ofsI=0, ofsQ=0;
+  quint8 magI=0, magQ=0;
+  quint8 cfgSrc=0;
+};
+
+
+enum I2C_DEVICE_MODE { I2C_MODE_NONE=0, I2C_MODE_NORMAL=0x01, I2C_MODE_FORCE=0x02,
+	I2C_MODE_UNREACHABLE=0x04, I2C_MODE_FAILED=0x08, I2C_MODE_LOCKED=0x10 };
+
+struct I2cDeviceEntry {
+	quint8 address;	
+	QString name;
+	quint8 status;
+	quint32 nrBytesWritten;
+	quint32 nrBytesRead;
+	quint32 nrIoErrors;
+	quint32 lastTransactionTime; // in us
+};
+
+
+
 //inline const std::string GnssSatellite::GNSS_ID_STRING[] = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
 //const MUONDETECTORSHARED std::string GNSS_ID_STRING[] = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
 //const MUONDETECTORSHARED std::string GnssSatellite::GNSS_ID_STRING[];
 //inline const std::string GNSS_ID_STRING()
 static const QList<QString> GNSS_ID_STRING = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
-//enum {  };
-
+static const QList<QString> FIX_TYPE_STRINGS = { "No Fix", "Dead Reck." , "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix"  };
+static const QList<QString> GNSS_ORBIT_SRC_STRING = { "N/A","Ephem","Alm","AOP","AOP+","Alt","Alt","Alt" };
+static const QList<QString> GNSS_ANT_STATUS_STRINGS = { "init", "unknown", "ok", "short", "open", "unknown", "unknown" };
+static const QList<QString> GNSS_HEALTH_STRINGS = { "N/A", "good", "bad", "bad+" };
+static const QMap<quint8,QString> I2C_MODE_STRINGMAP = { {0x00, "None"},
+							 {0x01, "Normal"},
+							 {0x02, "System"},
+							 {0x04, "Unreachable"},
+							 {0x08, "Failed"},
+							 {0x10, "Locked"} };
 
 inline void GnssSatellite::PrintHeader(bool wIndex)
 {
@@ -186,5 +244,93 @@ inline QDataStream& operator >> (QDataStream& in, CalibStruct& calib)
     calib.value = s3.toStdString();
     return in;
 }
+
+inline QDataStream& operator >> (QDataStream& in, GnssSatellite& sat)
+{
+/*
+	int fGnssId=0, fSatId=0, fCnr=0, fElev=0, fAzim=0;
+	float fPrRes=0.;
+	int fQuality=0, fHealth=0;
+	int fOrbitSource=0;
+	bool fUsed=false, fDiffCorr=false, fSmoothed=false;
+*/
+	in >> sat.fGnssId >> sat.fSatId >> sat.fCnr >> sat.fElev >> sat.fAzim
+		>> sat.fPrRes >> sat.fQuality >> sat.fHealth >> sat.fOrbitSource
+		>> sat.fUsed >> sat.fDiffCorr >> sat.fSmoothed;
+	return in;
+}
+
+inline QDataStream& operator << (QDataStream& out, const GnssSatellite& sat)
+{
+	out << sat.fGnssId << sat.fSatId << sat.fCnr << sat.fElev << sat.fAzim
+		<< sat.fPrRes << sat.fQuality << sat.fHealth << sat.fOrbitSource
+		<< sat.fUsed << sat.fDiffCorr << sat.fSmoothed;
+	return out;
+}
+
+inline QDataStream& operator >> (QDataStream& in, UbxTimePulseStruct& tp)
+{
+    in >> tp.tpIndex >> tp.version >> tp.antCableDelay >> tp.rfGroupDelay
+	>> tp.freqPeriod >> tp.freqPeriodLock >> tp.pulseLenRatio >> tp.pulseLenRatioLock
+	>> tp.userConfigDelay >> tp.flags;
+    return in;
+}
+
+inline QDataStream& operator << (QDataStream& out, const UbxTimePulseStruct& tp)
+{
+    out << tp.tpIndex << tp.version << tp.antCableDelay << tp.rfGroupDelay
+	<< tp.freqPeriod << tp.freqPeriodLock << tp.pulseLenRatio << tp.pulseLenRatioLock
+	<< tp.userConfigDelay << tp.flags;
+    return out;
+}
+
+inline QDataStream& operator >> (QDataStream& in, Histogram& h)
+{
+    h.clear();
+    QString name,unit;
+	in >> name >> h.fMin >> h.fMax >> h.fUnderflow >> h.fOverflow >> h.fNrBins;
+	h.setName(name.toStdString());
+	for (int i=0; i<h.fNrBins; i++) {
+		in >> h.fHistogramMap[i];
+	}
+    in >> unit;
+    h.setUnit(unit.toStdString());
+    return in;
+}
+
+inline QDataStream& operator << (QDataStream& out, const Histogram& h)
+{
+	out << QString::fromStdString(h.fName) << h.fMin << h.fMax << h.fUnderflow << h.fOverflow << h.fNrBins;
+	for (int i=0; i<h.fNrBins; i++) {
+		out << h.getBinContent(i);
+	}
+	out << QString::fromStdString(h.fUnit);
+    return out;
+}
+
+inline QDataStream& operator >> (QDataStream& in, GnssMonHwStruct& hw)
+{
+    in >> hw.noise >> hw.agc >> hw.antStatus >> hw.antPower >> hw.jamInd >> hw.flags;
+    return in;
+}
+
+inline QDataStream& operator << (QDataStream& out, const GnssMonHwStruct& hw)
+{
+    out << hw.noise << hw.agc << hw.antStatus << hw.antPower << hw.jamInd << hw.flags;
+    return out;
+}
+
+inline QDataStream& operator >> (QDataStream& in, GnssMonHw2Struct& hw2)
+{
+    in >> hw2.ofsI >> hw2.magI >> hw2.ofsQ >> hw2.magQ >> hw2.cfgSrc;
+    return in;
+}
+
+inline QDataStream& operator << (QDataStream& out, const GnssMonHw2Struct& hw2)
+{
+    out << hw2.ofsI << hw2.magI << hw2.ofsQ << hw2.magQ << hw2.cfgSrc;
+    return out;
+}
+
 
 #endif // MUONDETECTOR_STRUCTS_H

@@ -1,6 +1,7 @@
 #ifndef FILEHANDLER_H
 #define FILEHANDLER_H
 #include <QFile>
+#include <QFileInfo>
 #include <QObject>
 #include <QQueue>
 #include <QDateTime>
@@ -14,9 +15,12 @@ class FileHandler : public QObject
     Q_OBJECT
 
 public:
-    FileHandler(QString userName, QString passWord, quint32 fileSizeMB = 500, QObject *parent = nullptr);
-    float temperature = 0.0;
-    quint8 pcaChannel = 0;
+    FileHandler(const QString& userName, const QString& passWord, quint32 fileSizeMB = 500, QObject *parent = nullptr);
+
+    QString getCurrentDataFileName() const;
+    QString getCurrentLogFileName() const;
+    QFileInfo dataFileInfo() const;
+    QFileInfo logFileInfo() const;
 
 signals:
 	void logIntervalSignal();
@@ -25,6 +29,10 @@ public slots:
     void start();
     void writeToDataFile(const QString& data); // writes data to the file opened in "dataFile"
     void onReceivedLogParameter(const LogParameter& log);
+
+private slots:
+    void onUploadRemind();
+    void onLogRemind();
 
 private:
     void writeToLogFile(const QString& log); // writes log information to logFile
@@ -59,10 +67,8 @@ private:
     QDateTime lastUploadDateTime;
     QTime dailyUploadTime;
     bool onceLogFlag=true;
-
-private slots:
-    void onUploadRemind();
-    void onLogRemind();
+    float temperature = 0.0;
+    quint8 pcaChannel = 0;
 };
 
 #endif // FILEHANDLER_H

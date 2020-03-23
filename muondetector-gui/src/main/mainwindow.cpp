@@ -25,50 +25,6 @@
 using namespace std;
 
 
-QDataStream& operator >> (QDataStream& in, GnssSatellite& sat)
-{
-/*
-	int fGnssId=0, fSatId=0, fCnr=0, fElev=0, fAzim=0;
-	float fPrRes=0.;
-	int fQuality=0, fHealth=0;
-	int fOrbitSource=0;
-	bool fUsed=false, fDiffCorr=false, fSmoothed=false;
-*/
-	in >> sat.fGnssId >> sat.fSatId >> sat.fCnr >> sat.fElev >> sat.fAzim
-		>> sat.fPrRes >> sat.fQuality >> sat.fHealth >> sat.fOrbitSource
-		>> sat.fUsed >> sat.fDiffCorr >> sat.fSmoothed;
-	return in;
-}
-
-QDataStream& operator >> (QDataStream& in, UbxTimePulseStruct& tp)
-{
-    in >> tp.tpIndex >> tp.version >> tp.antCableDelay >> tp.rfGroupDelay
-	>> tp.freqPeriod >> tp.freqPeriodLock >> tp.pulseLenRatio >> tp.pulseLenRatioLock
-	>> tp.userConfigDelay >> tp.flags;
-    return in;
-}
-
-QDataStream& operator << (QDataStream& out, const UbxTimePulseStruct& tp)
-{
-    out << tp.tpIndex << tp.version << tp.antCableDelay << tp.rfGroupDelay
-	<< tp.freqPeriod << tp.freqPeriodLock << tp.pulseLenRatio << tp.pulseLenRatioLock
-	<< tp.userConfigDelay << tp.flags;
-    return out;
-}
-
-QDataStream& operator >> (QDataStream& in, Histogram& h)
-{
-    h.clear();
-    QString name,unit;
-	in >> name >> h.fMin >> h.fMax >> h.fUnderflow >> h.fOverflow >> h.fNrBins;
-	h.setName(name.toStdString());
-	for (int i=0; i<h.fNrBins; i++) {
-		in >> h.fHistogramMap[i];
-	}
-    in >> unit;
-    h.setUnit(unit.toStdString());
-    return in;
-}
 
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
@@ -384,43 +340,45 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
 }
 
 void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
-    quint16 msgID = tcpMessage.getMsgID();
-	if (msgID == gpioPinSig) {
+//    quint16 msgID = tcpMessage.getMsgID();
+    TCP_MSG_KEY msgID = static_cast<TCP_MSG_KEY>(tcpMessage.getMsgID());
+    if (msgID == TCP_MSG_KEY::MSG_GPIO_EVENT) {
+//	if (msgID == gpioPinSig) {
         unsigned int gpioPin;
         *(tcpMessage.dStream) >> gpioPin;
         receivedGpioRisingEdge((GPIO_PIN)gpioPin);
         return;
-	}
-	if (msgID == ubxMsgRate) {
-		QMap<uint16_t, int> msgRateCfgs;
-        *(tcpMessage.dStream) >> msgRateCfgs;
-		emit addUbxMsgRates(msgRateCfgs);
-		return;
     }
-    if (msgID == threshSig){
-        quint8 channel;
-        float threshold;
-        *(tcpMessage.dStream) >> channel >> threshold;
-        if (threshold > maxThreshVoltage){
-            sendSetThresh(channel,maxThreshVoltage);
-            return;
-        }
+    if (msgID == TCP_MSG_KEY::MSG_UBX_MSG_RATE) {
+	QMap<uint16_t, int> msgRateCfgs;
+        *(tcpMessage.dStream) >> msgRateCfgs;
+	emit addUbxMsgRates(msgRateCfgs);
+	return;
+    }
+    if (msgID == TCP_MSG_KEY::MSG_THRESHOLD){
+	quint8 channel;
+	float threshold;
+	*(tcpMessage.dStream) >> channel >> threshold;
+	if (threshold > maxThreshVoltage){
+	    sendSetThresh(channel,maxThreshVoltage);
+	    return;
+	}
         sliderValues[channel] = (int)(2000 * threshold);
         updateUiProperties();
         return;
     }
-    if (msgID == biasVoltageSig){
+    if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE){
         *(tcpMessage.dStream) >> biasDacVoltage;
         updateUiProperties();
         return;
     }
-    if (msgID == biasSig){
+    if (msgID == TCP_MSG_KEY::MSG_BIAS_SWITCH){
         *(tcpMessage.dStream) >> biasON;
         emit biasSwitchReceived(biasON);
         updateUiProperties();
         return;
     }
-    if (msgID == preampSig){
+    if (msgID == TCP_MSG_KEY::MSG_PREAMP_SWITCH){
         quint8 channel;
         bool state;
         *(tcpMessage.dStream) >> channel >> state;
@@ -428,28 +386,28 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         updateUiProperties();
         return;
     }
-    if (msgID == gainSwitchSig){
+    if (msgID == TCP_MSG_KEY::MSG_GAIN_SWITCH){
         bool gainSwitch;
         *(tcpMessage.dStream) >> gainSwitch;
         emit gainSwitchReceived(gainSwitch);
         updateUiProperties();
         return;
     }
-    if (msgID == pcaChannelSig){
+    if (msgID == TCP_MSG_KEY::MSG_PCA_SWITCH){
         *(tcpMessage.dStream) >> pcaPortMask;
         //status->setInputSwitchButtonGroup(pcaPortMask);
         emit inputSwitchReceived(pcaPortMask);
         updateUiProperties();
         return;
     }
-    if (msgID == eventTriggerSig){
+    if (msgID == TCP_MSG_KEY::MSG_EVENTTRIGGER){
         unsigned int signal;
         *(tcpMessage.dStream) >> signal;
         emit triggerSelectionReceived((GPIO_PIN)signal);
         //updateUiProperties();
         return;
     }
-    if (msgID == gpioRateSig){
+    if (msgID == TCP_MSG_KEY::MSG_GPIO_RATE){
         quint8 whichRate;
         QVector<QPointF> rate;
         *(tcpMessage.dStream) >> whichRate >> rate;
@@ -469,17 +427,17 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         updateUiProperties();
         return;
     }
-    if (msgID == quitConnectionSig){
+    if (msgID == TCP_MSG_KEY::MSG_QUIT_CONNECTION){
         connectedToDemon = false;
         uiSetDisconnectedState();
     }
-    if (msgID == geodeticPosSig){
+    if (msgID == TCP_MSG_KEY::MSG_GEO_POS){
         GeodeticPos pos;
         *(tcpMessage.dStream) >> pos.iTOW >> pos.lon >> pos.lat
                 >> pos.height >> pos.hMSL >> pos.hAcc >> pos.vAcc;
         emit geodeticPos(pos);
     }
-    if (msgID == adcSampleSig){
+    if (msgID == TCP_MSG_KEY::MSG_ADC_SAMPLE){
         quint8 channel;
         float value;
         *(tcpMessage.dStream) >> channel >> value;
@@ -487,7 +445,7 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         updateUiProperties();
         return;
     }
-    if (msgID == adcTraceSig){
+    if (msgID == TCP_MSG_KEY::MSG_ADC_TRACE){
         quint16 size;
         QVector<float> sampleBuffer;
         *(tcpMessage.dStream) >> size;
@@ -500,7 +458,7 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         //qDebug()<<"trace received. length="<<sampleBuffer.size();
         return;
     }
-    if (msgID == dacReadbackSig){
+    if (msgID == TCP_MSG_KEY::MSG_DAC_READBACK){
         quint8 channel;
         float value;
         *(tcpMessage.dStream) >> channel >> value;
@@ -508,73 +466,73 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         updateUiProperties();
         return;
     }
-    if (msgID == temperatureSig){
+    if (msgID == TCP_MSG_KEY::MSG_TEMPERATURE){
         float value;
         *(tcpMessage.dStream) >> value;
         emit temperatureReceived(value);
         updateUiProperties();
         return;
     }
-    if (msgID == i2cStatsSig){
-		quint8 nrDevices=0;
-		quint32 bytesRead = 0;
-		quint32 bytesWritten = 0;
+    if (msgID == TCP_MSG_KEY::MSG_I2C_STATS){
+	quint8 nrDevices=0;
+	quint32 bytesRead = 0;
+	quint32 bytesWritten = 0;
     	*(tcpMessage.dStream) >> nrDevices >> bytesRead >> bytesWritten;
 
-		QVector<I2cDeviceEntry> deviceList;
-		for (uint8_t i=0; i<nrDevices; i++)
-		{
-			uint8_t addr = 0;
-			QString title = "none";
-			uint8_t status = 0;
-			*(tcpMessage.dStream) >> addr >> title >> status;
-			I2cDeviceEntry entry;
-			entry.address=addr;
-			entry.name = title;
-			entry.status=status;
-			deviceList.push_back(entry);
-		}
+	QVector<I2cDeviceEntry> deviceList;
+	for (uint8_t i=0; i<nrDevices; i++)
+	{
+	    uint8_t addr = 0;
+	    QString title = "none";
+	    uint8_t status = 0;
+	    *(tcpMessage.dStream) >> addr >> title >> status;
+	    I2cDeviceEntry entry;
+	    entry.address=addr;
+	    entry.name = title;
+	    entry.status=status;
+	    deviceList.push_back(entry);
+	}
         emit i2cStatsReceived(bytesRead, bytesWritten, deviceList);
         //updateUiProperties();
         return;
     }
-    if (msgID == spiStatsSig){
+    if (msgID == TCP_MSG_KEY::MSG_SPI_STATS){
         bool spiPresent;
         *(tcpMessage.dStream) >> spiPresent;
         emit spiStatsReceived(spiPresent);
     }
-    if (msgID == calibSetSig){
-		quint16 nrPars=0;
-		quint64 id = 0;
-		bool valid = false;
-		bool eepromValid = 0;
+    if (msgID == TCP_MSG_KEY::MSG_CALIB_SET){
+	quint16 nrPars=0;
+	quint64 id = 0;
+	bool valid = false;
+	bool eepromValid = 0;
     	*(tcpMessage.dStream) >> valid >> eepromValid >> id >> nrPars;
 
-		QVector<CalibStruct> calibList;
-		for (uint8_t i=0; i<nrPars; i++)
-		{
-			CalibStruct item;
-			*(tcpMessage.dStream) >> item;
-			calibList.push_back(item);
-		}
+	QVector<CalibStruct> calibList;
+	for (uint8_t i=0; i<nrPars; i++)
+	{
+	    CalibStruct item;
+	    *(tcpMessage.dStream) >> item;
+	    calibList.push_back(item);
+	}
         emit calibReceived(valid, eepromValid, id, calibList);
         return;
     }
-    if (msgID == gpsSatsSig){
-		int nrSats=0;    	
-		*(tcpMessage.dStream) >> nrSats;
+    if (msgID == TCP_MSG_KEY::MSG_GNSS_SATS){
+	int nrSats=0;    	
+	*(tcpMessage.dStream) >> nrSats;
 
-		QVector<GnssSatellite> satList;
-		for (uint8_t i=0; i<nrSats; i++)
-		{
-			GnssSatellite sat;
-			*(tcpMessage.dStream) >> sat;
-			satList.push_back(sat);
-		}
+	QVector<GnssSatellite> satList;
+	for (uint8_t i=0; i<nrSats; i++)
+	{
+	    GnssSatellite sat;
+	    *(tcpMessage.dStream) >> sat;
+	    satList.push_back(sat);
+	}
         emit satsReceived(satList);
         return;
     }
-    if (msgID == gnssConfigSig){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_GNSS_CONFIG){
         int numTrkCh=0;
         int nrConfigs=0;
 
@@ -591,31 +549,31 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         emit gnssConfigsReceived(numTrkCh, configList);
         return;
     }
-    if (msgID == gpsTimeAccSig){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_TIME_ACCURACY){
         quint32 acc=0;
         *(tcpMessage.dStream) >> acc;
         emit timeAccReceived(acc);
         return;
     }
-    if (msgID == gpsFreqAccSig){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_FREQ_ACCURACY){
         quint32 acc=0;
         *(tcpMessage.dStream) >> acc;
         emit freqAccReceived(acc);
         return;
     }
-    if (msgID == gpsIntCounterSig){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_EVENTCOUNTER){
         quint32 cnt=0;
         *(tcpMessage.dStream) >> cnt;
         emit intCounterReceived(cnt);
         return;
     }
-    if (msgID == gpsUptimeSig){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_UPTIME){
         quint32 val=0;
         *(tcpMessage.dStream) >> val;
         emit ubxUptimeReceived(val);
         return;
     }
-    if (msgID == gpsTxBufSig){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_TXBUF){
         quint8 val=0;
         *(tcpMessage.dStream) >> val;
         emit txBufReceived(val);
@@ -625,7 +583,7 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         }
         return;
     }
-    if (msgID == gpsRxBufSig){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_RXBUF){
         quint8 val=0;
         *(tcpMessage.dStream) >> val;
         emit rxBufReceived(val);
@@ -635,39 +593,45 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         }
         return;
     }
-    if (msgID == gpsTxBufPeakSig){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_TXBUF_PEAK){
         quint8 val=0;
         *(tcpMessage.dStream) >> val;
         emit txBufPeakReceived(val);
         return;
     }
-    if (msgID == gpsRxBufPeakSig){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_RXBUF_PEAK){
         quint8 val=0;
         *(tcpMessage.dStream) >> val;
         emit rxBufPeakReceived(val);
         return;
     }
-    if (msgID == gpsMonHWSig){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_MONHW){
         quint16 noise=0;
         quint16 agc=0;
         quint8 antStatus=0;
         quint8 antPower=0;
         quint8 jamInd=0;
         quint8 flags=0;
-        *(tcpMessage.dStream) >> noise >> agc >> antStatus >> antPower >> jamInd >> flags;
-        emit gpsMonHWReceived(noise,agc,antStatus,antPower,jamInd,flags);
+        GnssMonHwStruct hw;
+	//*(tcpMessage.dStream) >> noise >> agc >> antStatus >> antPower >> jamInd >> flags;
+	*(tcpMessage.dStream) >> hw;
+        //emit gpsMonHWReceived(noise,agc,antStatus,antPower,jamInd,flags);
+        emit gpsMonHWReceived(hw);
         return;
     }
-    if (msgID == gpsMonHW2Sig){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_MONHW2){
         qint8 ofsI=0, ofsQ=0;
         quint8 magI=0, magQ=0;
         quint8 cfgSrc=0;
-        *(tcpMessage.dStream) >> ofsI >> magI >> ofsQ >> magQ >> cfgSrc;
+	GnssMonHw2Struct hw2;
+//        *(tcpMessage.dStream) >> hw2.ofsI >> hw2.magI >> hw2.ofsQ >> hw2.magQ >> hw2.cfgSrc;
+        *(tcpMessage.dStream) >> hw2;
         //qDebug()<<"ofsI="<<ofsI<<" magI="<<magI<<"ofsQ="<<ofsQ<<" magQ="<<magQ<<" cfgSrc="<<cfgSrc;
-        emit gpsMonHW2Received(ofsI, magI, ofsQ, magQ, cfgSrc);
+//        emit gpsMonHW2Received(ofsI, magI, ofsQ, magQ, cfgSrc);
+        emit gpsMonHW2Received(hw2);
         return;
     }
-    if (msgID == gpsVersionSig){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_VERSION){
         QString sw="";
         QString hw="";
         QString pv="";
@@ -675,19 +639,19 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         emit gpsVersionReceived(sw, hw, pv);
         return;
     }
-    if (msgID == gpsFixSig){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_FIXSTATUS){
         quint8 val=0;
         *(tcpMessage.dStream) >> val;
         emit gpsFixReceived(val);
         return;
     }
-    if (msgID == gpsCfgTP5Sig){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_CFG_TP5){
         UbxTimePulseStruct tp;
         *(tcpMessage.dStream) >> tp;
         emit gpsTP5Received(tp);
         return;
     }
-    if (msgID == histogramSig){
+    if (msgID == TCP_MSG_KEY::MSG_HISTOGRAM){
         Histogram h;
         *(tcpMessage.dStream) >> h;
         emit histogramReceived(h);

@@ -69,6 +69,7 @@ SOURCES += $$PWD/src/main.cpp \
 
 
 HEADERS += \
+    $$PWD/src/config.h \
 #    $$PWD/src/gnsssatellite.h \
     $$PWD/src/unixtime_from_gps.h \
     $$PWD/src/time_from_rtc.h \

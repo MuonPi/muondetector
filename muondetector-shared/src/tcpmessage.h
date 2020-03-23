@@ -4,6 +4,8 @@
 #include <QByteArray>
 #include <QDataStream>
 
+enum class TCP_MSG_KEY : quint16;
+
 // how is a message coded in TcpMessage?
 // in the data QByteArray:
 // at pos 0: length of message (quint16) -> length of QByteArray - length of this number (sizeof(quint16))
@@ -12,13 +14,21 @@
 class MUONDETECTORSHARED TcpMessage
 {
 public:
-	TcpMessage(quint16 tcpMsgID = 0);
+    TcpMessage(quint16 tcpMsgID = 0);
+    TcpMessage(TCP_MSG_KEY tcpMsgID) {
+	msgID = static_cast<quint16>(tcpMsgID);
+	dStream = new QDataStream(&data, QIODevice::ReadWrite);
+	byteCount = 0;
+	*dStream << (quint16)0;
+	*dStream << msgID;
+    }
+
     TcpMessage(QByteArray& rawdata);
     TcpMessage(const TcpMessage &tcpMessage);
     ~TcpMessage();
     QDataStream *dStream = nullptr;
-	void setMsgID(quint16 tcpMsgID);
-	void setData(QByteArray& data);
+    void setMsgID(quint16 tcpMsgID);
+    void setData(QByteArray& data);
     const QByteArray& getData() const;
     quint16 getMsgID() const;
     quint16 getByteCount() const;

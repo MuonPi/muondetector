@@ -5,11 +5,7 @@
 #include <QVector>
 #include <QString>
 
-struct I2cDeviceEntry {
-	uint8_t address;	
-	QString name;
-	uint8_t status;
-};
+struct I2cDeviceEntry;
 
 namespace Ui {
 class I2cForm;

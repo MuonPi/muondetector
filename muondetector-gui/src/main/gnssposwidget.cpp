@@ -3,8 +3,14 @@
 #include <QPainter>
 #include <QPixmap>
 #include <muondetector_structs.h>
+#include <cmath>
 
-const static double PI = 3.1415926535;
+using namespace std;
+
+constexpr double pi() { return acos(-1); }
+const int MAX_SAT_TRACK_ENTRIES = 10000;
+static const QList<QColor> GNSS_COLORS = { Qt::darkGreen, Qt::darkYellow, Qt::blue, Qt::magenta, Qt::gray, Qt::cyan, Qt::red, Qt::black };
+
 
 GnssPosWidget::GnssPosWidget(QWidget *parent) :
     QWidget(parent),
@@ -35,8 +41,8 @@ void GnssPosWidget::resizeEvent(QResizeEvent *event)
 
 QPointF GnssPosWidget::polar2cartUnity(const QPointF& pol) {
     double magn=(90.-pol.y())/180.;
-    double xpos = magn*sin(PI*pol.x()/180.);
-    double ypos = -magn*cos(PI*pol.x()/180.);
+    double xpos = magn*sin(pi()*pol.x()/180.);
+    double ypos = -magn*cos(pi()*pol.x()/180.);
     return QPointF(xpos,ypos);
 }
 
@@ -94,6 +100,8 @@ void GnssPosWidget::replot() {
 
             QColor satColor=Qt::white;
             QColor fillColor=Qt::white;
+            satColor = GNSS_COLORS[fCurrentSatlist[i].fGnssId];
+            /*
             if (fCurrentSatlist[i].fGnssId==0) satColor=QColor(Qt::darkGreen); // GPS
             else if (fCurrentSatlist[i].fGnssId==1) satColor=QColor(Qt::darkYellow); // SBAS
             else if (fCurrentSatlist[i].fGnssId==2) satColor=QColor(Qt::blue);  // GAL
@@ -101,6 +109,7 @@ void GnssPosWidget::replot() {
             else if (fCurrentSatlist[i].fGnssId==4) satColor=QColor(Qt::gray); // IMES
             else if (fCurrentSatlist[i].fGnssId==5) satColor=QColor(Qt::cyan); // QZSS
             else if (fCurrentSatlist[i].fGnssId==6) satColor=QColor(Qt::red); // GLNS
+            */
             satPosPainter.setPen(satColor);
             fillColor=satColor;
             int alpha = fCurrentSatlist[i].fCnr*255/40;
@@ -172,4 +181,15 @@ void GnssPosWidget::onSatsReceived(const QVector<GnssSatellite> &satlist)
 void GnssPosWidget::on_satSizeSpinBox_valueChanged(int arg1)
 {
     replot();
+}
+
+void GnssPosWidget::onUiEnabledStateChange(bool connected)
+{
+    if (!connected) {
+        QVector<GnssSatellite> emptylist;
+//        onSatsReceived(emptylist);
+        fCurrentSatlist.clear();
+    }
+    this->setEnabled(connected);
+
 }

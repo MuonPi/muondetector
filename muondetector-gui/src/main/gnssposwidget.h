@@ -13,8 +13,6 @@ namespace Ui {
 class GnssPosWidget;
 }
 
-//struct SatHistoryPoint;
-
 struct SatHistoryPoint {
     QPointF pos;
     QColor color;
@@ -32,6 +30,8 @@ public:
 public slots:
     void onSatsReceived(const QVector<GnssSatellite> &satlist);
     void replot();
+    void onUiEnabledStateChange(bool connected);
+
 private slots:
     void on_satSizeSpinBox_valueChanged(int arg1);
 

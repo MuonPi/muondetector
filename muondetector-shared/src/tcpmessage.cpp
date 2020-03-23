@@ -1,14 +1,26 @@
 #include <tcpmessage.h>
 #include <QDebug>
+#include <muondetector_structs.h>
 
 TcpMessage::TcpMessage(quint16 tcpMsgID)
 {
-	msgID = tcpMsgID;
+    msgID = tcpMsgID;
     dStream = new QDataStream(&data, QIODevice::ReadWrite);
     byteCount = 0;
     *dStream << (quint16)0;
     *dStream << tcpMsgID;
 }
+
+/*
+TcpMessage::TcpMessage(TCP_MSG_KEY tcpMsgID)
+{
+    msgID = static_cast<quint16>(tcpMsgID);
+    dStream = new QDataStream(&data, QIODevice::ReadWrite);
+    byteCount = 0;
+    *dStream << (quint16)0;
+    *dStream << tcpMsgID;
+}
+*/
 
 TcpMessage::TcpMessage(QByteArray& rawdata) {
 	data = rawdata;

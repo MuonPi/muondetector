@@ -1,5 +1,6 @@
 #include <i2cform.h>
 #include <ui_i2cform.h>
+#include <muondetector_structs.h>
 
 
 I2cForm::I2cForm(QWidget *parent) :

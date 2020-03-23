@@ -16,13 +16,14 @@
 #include <crypto++/hex.h>
 //#include <crypto++/sha3.h>
 #include <crypto++/sha.h>
+#include <config.h>
 
 using namespace CryptoPP;
 
 
-const int timeout = 600000; // in msecs
-const int uploadReminderInterval = 5; // in minutes
-const int logReminderInterval = 1; // in minutes
+const unsigned long int lftpUploadTimeout = MUONPI_UPLOAD_TIMEOUT_MS; // in msecs
+const int uploadReminderInterval = MUONPI_UPLOAD_REMINDER_MINUTES; // in minutes
+const int logReminderInterval = MUONPI_LOG_INTERVAL_MINUTES; // in minutes
 
 static std::string SHA256HashString(std::string aString){
     std::string digest;
@@ -90,7 +91,7 @@ static QString dateStringNow(){
     return QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd_hh-mm-ss");
 }
 
-FileHandler::FileHandler(QString userName, QString passWord, quint32 fileSizeMB, QObject *parent)
+FileHandler::FileHandler(const QString& userName, const QString& passWord, quint32 fileSizeMB, QObject *parent)
     : QObject(parent)
 {
     lastUploadDateTime = QDateTime(QDate::currentDate(),QTime(0,0,0,0),Qt::TimeSpec::UTC);
@@ -131,6 +132,30 @@ FileHandler::FileHandler(QString userName, QString passWord, quint32 fileSizeMB,
             qDebug() << "could not read login data from file";
         }
     }
+}
+
+QString FileHandler::getCurrentDataFileName() const {
+    if (dataFile==nullptr) return "";
+    QFileInfo fi( *dataFile );
+    return fi.absoluteFilePath();
+}
+
+QString FileHandler::getCurrentLogFileName() const {
+    if (logFile!=nullptr) return "";
+    QFileInfo fi( *logFile );
+    return fi.absoluteFilePath();
+}
+
+QFileInfo FileHandler::dataFileInfo() const {
+    if (dataFile==nullptr) return QFileInfo();
+    QFileInfo fi( *dataFile );
+    return fi;
+}
+
+QFileInfo FileHandler::logFileInfo() const {
+    if (logFile!=nullptr) return QFileInfo();
+    QFileInfo fi( *logFile );
+    return fi;
 }
 
 void FileHandler::start(){
@@ -306,14 +331,18 @@ bool FileHandler::openFiles(bool writeHeader){
     dataFile->setPermissions(defaultPermissions);
     if (!dataFile->open(QIODevice::ReadWrite | QIODevice::Append)) {
         qDebug() << "file open failed in 'ReadWrite' mode at location " << currentWorkingFilePath;
-        return false;
+        // the following return statement induced wrong behavior:
+	// in case the data file couldn't be opened, the log file QFile object would never be instantiated
+	// this would prevent local logging
+	//return false;
     }
     logFile = new QFile(currentWorkingLogPath);
     logFile->setPermissions(defaultPermissions);
     if (!logFile->open(QIODevice::ReadWrite | QIODevice::Append)) {
         qDebug() << "file open failed in 'ReadWrite' mode at location " << currentWorkingLogPath;
-        return false;
+        //return false;
     }
+    if (!dataFile->isOpen() || !logFile->isOpen()) return false;
     // write header
     if (writeHeader){
         QTextStream dataOut(dataFile);
@@ -430,18 +459,18 @@ bool FileHandler::uploadDataFile(QString fileName){
     lftpProcess.setProgram("lftp");
     QStringList arguments;
     arguments << "--env-password";
-    arguments << "-p" << "35221";
+    arguments << "-p" << QString::number(MUONPI_UPLOAD_PORT);
     arguments << "-u" << QString(username);
-    arguments << "balu.physik.uni-giessen.de:/cosmicshower";
+    arguments << MUONPI_UPLOAD_URL;
     arguments << "-e" << QString("mkdir "+hashedMacAddress+" ; cd "+hashedMacAddress+" && put "+fileName+" ; exit");
     lftpProcess.setArguments(arguments);
     //qDebug() << lftpProcess.arguments();
     lftpProcess.start();
     //qDebug() << "started upload of " << fileName << "user:" << username << ";pw:" << password <<";";
-    if (!lftpProcess.waitForFinished(timeout)){
+    if (!lftpProcess.waitForFinished(lftpUploadTimeout)){
         qDebug() << lftpProcess.readAllStandardOutput();
         qDebug() << lftpProcess.readAllStandardError();
-        qDebug() << "lftp not installed or timed out after "<< timeout/1000<< " s";
+        qDebug() << "lftp not installed or timed out after "<< lftpUploadTimeout/1000<< " s";
         system("unset LFTP_PASSWORD");
         return false;
     }

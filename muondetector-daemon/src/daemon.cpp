@@ -30,15 +30,14 @@ extern "C" {
 #define ADC_PRETRIGGER 10
 #define TRACE_SAMPLING_INTERVAL 5  // free running adc sampling interval in ms
 
-extern QDataStream& operator << (QDataStream& out, const CalibStruct& calib);
-extern QDataStream& operator >> (QDataStream& in, CalibStruct& calib);
+//extern QDataStream& operator << (QDataStream& out, const CalibStruct& calib);
+//extern QDataStream& operator >> (QDataStream& in, CalibStruct& calib);
 
-const QVector<QString> FIX_TYPE_STRINGS = { "No Fix", "Dead Reck." , "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix"  };
+//const QVector<QString> FIX_TYPE_STRINGS = { "No Fix", "Dead Reck." , "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix"  };
 
 // REMEMBER: "emit" keyword is just syntactic sugar and not needed AT ALL ... learned it after 1 year *clap* *clap*
 
 using namespace std;
-
 
 static unsigned int HW_VERSION = 0; // default value is set in calibration.h
 
@@ -91,39 +90,6 @@ QDataStream & operator >> (QDataStream& in, CalibStruct& calib)
 }
 */
 
-QDataStream& operator << (QDataStream& out, const GnssSatellite& sat)
-{
-	out << sat.fGnssId << sat.fSatId << sat.fCnr << sat.fElev << sat.fAzim
-		<< sat.fPrRes << sat.fQuality << sat.fHealth << sat.fOrbitSource
-		<< sat.fUsed << sat.fDiffCorr << sat.fSmoothed;
-	return out;
-}
-
-QDataStream& operator << (QDataStream& out, const UbxTimePulseStruct& tp)
-{
-	out << tp.tpIndex << tp.version << tp.antCableDelay << tp.rfGroupDelay
-	<< tp.freqPeriod << tp.freqPeriodLock << tp.pulseLenRatio << tp.pulseLenRatioLock
-	<< tp.userConfigDelay << tp.flags;
-    return out;
-}
-
-QDataStream& operator >> (QDataStream& in, UbxTimePulseStruct& tp)
-{
-    in >> tp.tpIndex >> tp.version >> tp.antCableDelay >> tp.rfGroupDelay
-    >> tp.freqPeriod >> tp.freqPeriodLock >> tp.pulseLenRatio >> tp.pulseLenRatioLock
-    >> tp.userConfigDelay >> tp.flags;
-    return in;
-}
-
-QDataStream& operator << (QDataStream& out, const Histogram& h)
-{
-	out << QString::fromStdString(h.fName) << h.fMin << h.fMax << h.fUnderflow << h.fOverflow << h.fNrBins;
-	for (int i=0; i<h.fNrBins; i++) {
-		out << h.getBinContent(i);
-	}
-	out << QString::fromStdString(h.fUnit);
-    return out;
-}
 
 // signal handling stuff: put code to execute before shutdown down there
 static int setup_unix_signal_handlers()
@@ -226,25 +192,27 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	//	std::locale mylocale( std::locale( std::cout.getloc(), new punct_facet<char, '.'>) );
 	std::locale::global(std::locale::classic());
 
-    qRegisterMetaType<TcpMessage>("TcpMessage");
-    qRegisterMetaType<GeodeticPos>("GeodeticPos");
-    qRegisterMetaType<int32_t>("int32_t");
-    qRegisterMetaType<uint32_t>("uint32_t");
-    qRegisterMetaType<uint16_t>("uint16_t");
-    qRegisterMetaType<uint8_t>("uint8_t");
-    qRegisterMetaType<int8_t>("int8_t");
-    qRegisterMetaType<CalibStruct>("CalibStruct");
+	qRegisterMetaType<TcpMessage>("TcpMessage");
+	qRegisterMetaType<GeodeticPos>("GeodeticPos");
+	qRegisterMetaType<int32_t>("int32_t");
+	qRegisterMetaType<uint32_t>("uint32_t");
+	qRegisterMetaType<uint16_t>("uint16_t");
+	qRegisterMetaType<uint8_t>("uint8_t");
+	qRegisterMetaType<int8_t>("int8_t");
+	qRegisterMetaType<CalibStruct>("CalibStruct");
 	qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
 	qRegisterMetaType<std::vector<GnssConfigStruct>>("std::vector<GnssConfigStruct>");
 	qRegisterMetaType<std::chrono::duration<double>>("std::chrono::duration<double>");
 	qRegisterMetaType<std::string>("std::string");
-    qRegisterMetaType<LogParameter>("LogParameter");
-    qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
-    qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
-    qRegisterMetaType<timespec>("timespec");
-    qRegisterMetaType<GPIO_PIN>("GPIO_PIN");
+	qRegisterMetaType<LogParameter>("LogParameter");
+	qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
+	qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
+	qRegisterMetaType<timespec>("timespec");
+	qRegisterMetaType<GPIO_PIN>("GPIO_PIN");
+	qRegisterMetaType<GnssMonHwStruct>("GnssMonHwStruct");
+	qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
     
-    // signal handling
+	// signal handling
 	setup_unix_signal_handlers();
 	if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)) {
 		qFatal("Couldn't create HUP socketpair");
@@ -267,8 +235,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	// general
 	verbose = new_verbose;
 	if (verbose > 4) {
-        cout << "daemon running in thread " << QString("0x%1").arg((intptr_t)this->thread()) << endl;
-    }
+		cout << "daemon running in thread " << QString("0x%1").arg((intptr_t)this->thread()) << endl;
+	}
 
 	// try to find out on which hardware version we are running
 	// for this to work, we have to initialize and read the eeprom first
@@ -292,7 +260,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 				if (verbose>2) cout<<"eep write took "<<eep->getLastTimeInterval()<<" ms"<<endl;
 				readEeprom();
 			}
-            if (1==1) {
+			if (1==1) {
 				calib->printCalibList();
 
 /*
@@ -316,15 +284,15 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
         //if (calib->isValid()) {
 
         //}
-    } else {
-        cerr<<"eeprom device NOT present!"<<endl;
-    }
-    CalibStruct verStruct = calib->getCalibItem("VERSION");
-    unsigned int version=0;
-    ShowerDetectorCalib::getValueFromString(verStruct.value,version);
-    if (version>0) {
-        HW_VERSION=version;
-        if (verbose>1) cout<<"found HW version "<<version<<" in eeprom"<<endl;
+	} else {
+		cerr<<"eeprom device NOT present!"<<endl;
+	}
+	CalibStruct verStruct = calib->getCalibItem("VERSION");
+	unsigned int version=0;
+	ShowerDetectorCalib::getValueFromString(verStruct.value,version);
+	if (version>0) {
+		HW_VERSION=version;
+		if (verbose>1) cout<<"found HW version "<<version<<" in eeprom"<<endl;
         }
 
 	// set up the pin definitions (hw version specific)
@@ -361,16 +329,16 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 */
 	}
 
-    // create fileHandler
-    QThread *fileHandlerThread = new QThread();
-
-    fileHandler = new FileHandler(username, password);
-    fileHandler->moveToThread(fileHandlerThread);
-    connect(this, &Daemon::aboutToQuit, fileHandler, &FileHandler::deleteLater);
-    connect(this, &Daemon::logParameter, fileHandler, &FileHandler::onReceivedLogParameter);
-    connect(fileHandlerThread, &QThread::finished, fileHandlerThread, &QThread::deleteLater);
-    connect(fileHandlerThread, &QThread::started, fileHandler, &FileHandler::start);
-    fileHandlerThread->start();
+	// create fileHandler
+	QThread *fileHandlerThread = new QThread();
+	
+	fileHandler = new FileHandler(username, password);
+	fileHandler->moveToThread(fileHandlerThread);
+	connect(this, &Daemon::aboutToQuit, fileHandler, &FileHandler::deleteLater);
+	connect(this, &Daemon::logParameter, fileHandler, &FileHandler::onReceivedLogParameter);
+	connect(fileHandlerThread, &QThread::finished, fileHandlerThread, &QThread::deleteLater);
+	connect(fileHandlerThread, &QThread::started, fileHandler, &FileHandler::start);
+	fileHandlerThread->start();
 
 	// for i2c devices
 	lm75 = new LM75();
@@ -394,13 +362,13 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 			cerr<<"error: failed setting data ready pin mode (setting thresh regs)"<<endl;
 		}
 
-        // set up free running sampling
-        QTimer* samplingTimer = new QTimer(this);
-        samplingTimer->setInterval(TRACE_SAMPLING_INTERVAL);
-        samplingTimer->setSingleShot(false);
-        connect(samplingTimer, &QTimer::timeout, this, &Daemon::sampleAdc0TraceEvent);
-        samplingTimer->start();
-		
+		// set up free running sampling
+		QTimer* samplingTimer = new QTimer(this);
+		samplingTimer->setInterval(TRACE_SAMPLING_INTERVAL);
+		samplingTimer->setSingleShot(false);
+		connect(samplingTimer, &QTimer::timeout, this, &Daemon::sampleAdc0TraceEvent);
+		samplingTimer->start();
+			
 		if (verbose>2) {
 			cout<<"ADS1115 device is present."<<endl;
 			bool ok=adc->setLowThreshold(0b00000000);
@@ -418,8 +386,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 			cout<<"readout took "<<adc->getLastTimeInterval()<<" ms"<<endl;
 		}
 	} else {
-        adcSamplingMode = ADC_MODE_DISABLED;
-        cerr<<"ADS1115 device NOT present!"<<endl;
+		adcSamplingMode = ADC_MODE_DISABLED;
+		cerr<<"ADS1115 device NOT present!"<<endl;
 	}
 	
 
@@ -466,10 +434,10 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		dac->readChannel(DAC_BIAS, eepromChannel);
 		biasVoltage=MCP4728::code2voltage(dacChannel);
 		//tempThresh[i]=code2voltage(eepromChannel);
-    }
+	}
     
-    // PCA9536 4 bit I/O I2C device used for selecting the UBX timing input
-    pca = new PCA9536();
+	// PCA9536 4 bit I/O I2C device used for selecting the UBX timing input
+	pca = new PCA9536();
 	if (pca->devicePresent()) {
 		if (verbose>2) {
 			cout<<"PCA9536 device is present."<<endl;
@@ -482,7 +450,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		cerr<<"PCA9536 device NOT present!"<<endl;
 	}
     
-    if (dac->devicePresent()) {
+	if (dac->devicePresent()) {
 		if (dacThresh[0] > 0) dac->setVoltage(DAC_TH1, dacThresh[0]);
 		if (dacThresh[1] > 0) dac->setVoltage(DAC_TH2, dacThresh[1]);
 		if (biasVoltage > 0) dac->setVoltage(DAC_BIAS, biasVoltage);
@@ -554,12 +522,12 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		cerr<<"I2C OLED display NOT present!"<<endl;
 	}
 	
-    // for pigpio signals:
-    preampStatus[0]=preamp1;
-    preampStatus[1]=preamp2;
-    gainSwitch=gain;
-    biasON = bias_ON;
-    eventTrigger = (GPIO_PIN)new_eventTrigger;
+	// for pigpio signals:
+	preampStatus[0]=preamp1;
+	preampStatus[1]=preamp2;
+	gainSwitch=gain;
+	biasON = bias_ON;
+	eventTrigger = (GPIO_PIN)new_eventTrigger;
 
 
 	// for diagnostics:
@@ -579,7 +547,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		lm75->getCapabilities();
 	}
 	
-	// for gps module
+	// for ublox gnss module
 	gpsdevname = new_gpsdevname;
 	dumpRaw = new_dumpRaw;
 	baudrate = new_baudrate;
@@ -621,15 +589,19 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	flush(cout);
 
 	// connect to the regular log timer signal to log several non-regularly polled parameters
-    connect(fileHandler, &FileHandler::logIntervalSignal, this, &Daemon::onLogParameterPolled);
+	connect(fileHandler, &FileHandler::logIntervalSignal, this, &Daemon::onLogParameterPolled);
 
-    connectToPigpiod();
+	// connect to the pigpio daemon interface for gpio control
+	connectToPigpiod();
+	
 	// set up histograms
 	setupHistos();
 
-    // start gps module connection
+	// establish ublox gnss module connection
 	connectToGps();
 	//delay(1000);
+	
+	// configure the ublox module with preset ubx messages, if required
 	if (configGnss) {
 		configGps();
 	}
@@ -687,20 +659,24 @@ void Daemon::connectToPigpiod(){
     connect(this, &Daemon::GpioSetState, pigHandler, &PigpiodHandler::setGpioState);
     connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
     connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
-    connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) { eventIntervalHisto.fill(1e-6*nsecs); } );
+    connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) 
+	{ eventIntervalHisto.fill(1e-6*nsecs); } );
     connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs)
-    { if (nsecs/1000<=eventIntervalShortHisto.getMax()) eventIntervalShortHisto.fill((double)nsecs/1000.); } );
+	{ 
+		if (nsecs/1000<=eventIntervalShortHisto.getMax()) 
+			eventIntervalShortHisto.fill((double)nsecs/1000.);
+	} );
     connect(pigHandler, &PigpiodHandler::timePulseDiff, this, [this](qint32 usecs)
-    { 	checkRescaleHisto(tpTimeDiffHisto, usecs);
-        tpTimeDiffHisto.fill((double)usecs);
-        /*cout<<"TP time diff: "<<usecs<<" us"<<endl;*/
-    } );
+	{ 	checkRescaleHisto(tpTimeDiffHisto, usecs);
+		tpTimeDiffHisto.fill((double)usecs);
+		/*cout<<"TP time diff: "<<usecs<<" us"<<endl;*/
+	} );
     pigHandler->setSamplingTriggerSignal(eventTrigger);
     connect(this, &Daemon::setSamplingTriggerSignal, pigHandler, &PigpiodHandler::setSamplingTriggerSignal);
 
     struct timespec ts_res;
     clock_getres(CLOCK_REALTIME, &ts_res);
-    if (verbose) {
+    if (verbose>1) {
         cout<<"the timing resolution of the system clock is "<<ts_res.tv_nsec<<" ns"<<endl;
     }
 
@@ -746,7 +722,7 @@ void Daemon::connectToPigpiod(){
 
 void Daemon::connectToGps() {
 	// before connecting to gps we have to make sure all other programs are closed
-    // and serial echo is off
+	// and serial echo is off
 	if (gpsdevname.isEmpty()) {
 		return;
 	}
@@ -757,12 +733,12 @@ void Daemon::connectToGps() {
 	prepareSerial.waitForFinished();
 
 	// here is where the magic threading happens look closely
-    qtGps = new QtSerialUblox(gpsdevname, gpsTimeout, baudrate, dumpRaw, verbose, showout, showin);
-    QThread *gpsThread = new QThread();
+	qtGps = new QtSerialUblox(gpsdevname, gpsTimeout, baudrate, dumpRaw, verbose, showout, showin);
+	QThread *gpsThread = new QThread();
 	qtGps->moveToThread(gpsThread);
-    // connect all signals about quitting
-    connect(this, &Daemon::aboutToQuit, qtGps, &QtSerialUblox::deleteLater);
-    connect(gpsThread, &QThread::finished, gpsThread, &QThread::deleteLater);
+	// connect all signals about quitting
+	connect(this, &Daemon::aboutToQuit, qtGps, &QtSerialUblox::deleteLater);
+	connect(gpsThread, &QThread::finished, gpsThread, &QThread::deleteLater);
 	// connect all signals not coming from Daemon to gps
 	connect(qtGps, &QtSerialUblox::toConsole, this, &Daemon::gpsToConsole);
 	connect(gpsThread, &QThread::started, qtGps, &QtSerialUblox::makeConnection);
@@ -776,19 +752,19 @@ void Daemon::connectToGps() {
 	connect(this, &Daemon::sendUbxMsg, qtGps, &QtSerialUblox::enqueueMsg);
 	connect(qtGps, &QtSerialUblox::UBXReceivedAckNak, this, &Daemon::UBXReceivedAckNak);
 	connect(qtGps, &QtSerialUblox::UBXreceivedMsgRateCfg, this, &Daemon::UBXReceivedMsgRateCfg);
-    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, &Daemon::onGpsPropertyUpdatedGeodeticPos);
-    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, this, &Daemon::onGpsPropertyUpdatedGnss);
-    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedUint32, this, &Daemon::gpsPropertyUpdatedUint32);
-    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedInt32, this, &Daemon::gpsPropertyUpdatedInt32);
-    connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedUint8, this, &Daemon::gpsPropertyUpdatedUint8);
-    connect(qtGps, &QtSerialUblox::gpsMonHW, this, &Daemon::onGpsMonHWUpdated);
-    connect(qtGps, &QtSerialUblox::gpsMonHW2, this, &Daemon::onGpsMonHW2Updated);
-    connect(qtGps, &QtSerialUblox::gpsVersion, this, &Daemon::UBXReceivedVersion);
+	connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGeodeticPos, this, &Daemon::onGpsPropertyUpdatedGeodeticPos);
+	connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedGnss, this, &Daemon::onGpsPropertyUpdatedGnss);
+	connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedUint32, this, &Daemon::gpsPropertyUpdatedUint32);
+	connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedInt32, this, &Daemon::gpsPropertyUpdatedInt32);
+	connect(qtGps, &QtSerialUblox::gpsPropertyUpdatedUint8, this, &Daemon::gpsPropertyUpdatedUint8);
+	connect(qtGps, &QtSerialUblox::gpsMonHW, this, &Daemon::onGpsMonHWUpdated);
+	connect(qtGps, &QtSerialUblox::gpsMonHW2, this, &Daemon::onGpsMonHW2Updated);
+	connect(qtGps, &QtSerialUblox::gpsVersion, this, &Daemon::UBXReceivedVersion);
 	connect(qtGps, &QtSerialUblox::UBXCfgError, this, &Daemon::toConsole);
-    connect(qtGps, &QtSerialUblox::UBXReceivedGnssConfig, this, &Daemon::onUBXReceivedGnssConfig);
-    connect(qtGps, &QtSerialUblox::UBXReceivedTP5, this, &Daemon::onUBXReceivedTP5);
-    connect(qtGps, &QtSerialUblox::UBXReceivedTxBuf, this, &Daemon::onUBXReceivedTxBuf);
-    connect(qtGps, &QtSerialUblox::UBXReceivedRxBuf, this, &Daemon::onUBXReceivedRxBuf);
+	connect(qtGps, &QtSerialUblox::UBXReceivedGnssConfig, this, &Daemon::onUBXReceivedGnssConfig);
+	connect(qtGps, &QtSerialUblox::UBXReceivedTP5, this, &Daemon::onUBXReceivedTP5);
+	connect(qtGps, &QtSerialUblox::UBXReceivedTxBuf, this, &Daemon::onUBXReceivedTxBuf);
+	connect(qtGps, &QtSerialUblox::UBXReceivedRxBuf, this, &Daemon::onUBXReceivedRxBuf);
 	connect(this, &Daemon::UBXSetDynModel, qtGps, &QtSerialUblox::setDynamicModel);
 	connect(this, &Daemon::resetUbxDevice, qtGps, &QtSerialUblox::UBXReset);
 	connect(this, &Daemon::setGnssConfig, qtGps, &QtSerialUblox::onSetGnssConfig);
@@ -797,7 +773,7 @@ void Daemon::connectToGps() {
 	connect(this, &Daemon::UBXSetMinCNO, qtGps, &QtSerialUblox::UBXSetMinCNO);
 	connect(this, &Daemon::UBXSetAopCfg, qtGps, &QtSerialUblox::UBXSetAopCfg);
 	connect(this, &Daemon::UBXSaveCfg, qtGps, &QtSerialUblox::UBXSaveCfg);
-    connect(qtGps, &QtSerialUblox::UBXReceivedTimeTM2, this, &Daemon::onUBXReceivedTimeTM2);
+	connect(qtGps, &QtSerialUblox::UBXReceivedTimeTM2, this, &Daemon::onUBXReceivedTimeTM2);
 
 	connect(qtGps, &QtSerialUblox::UBXReceivedDops, this, [this](const UbxDopStruct& dops){
 		currentDOP=dops;
@@ -805,10 +781,10 @@ void Daemon::connectToGps() {
 		emit logParameter(LogParameter("timeDOP", QString::number(dops.tDOP/100.), LogParameter::LOG_AVERAGE));
 	});
 
-    // connect fileHandler related stuff
-    if (fileHandler != nullptr){
-        connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
-    }
+	// connect fileHandler related stuff
+	if (fileHandler != nullptr){
+		connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
+	}
 	// after thread start there will be a signal emitted which starts the qtGps makeConnection function
 	gpsThread->start();
 }
@@ -820,13 +796,13 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 	QThread *thread = new QThread();
 	TcpConnection *tcpConnection = new TcpConnection(socketDescriptor, verbose);
 	tcpConnection->moveToThread(thread);
-    // connect all signals about quitting
-    connect(this, &Daemon::aboutToQuit, tcpConnection, &TcpConnection::closeThisConnection);
-    connect(this, &Daemon::closeConnection, tcpConnection, &TcpConnection::closeConnection);
-    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
-    // connect all other signals
-    connect(thread, &QThread::started, tcpConnection, &TcpConnection::receiveConnection);
-    connect(this, &Daemon::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
+	// connect all signals about quitting
+	connect(this, &Daemon::aboutToQuit, tcpConnection, &TcpConnection::closeThisConnection);
+	connect(this, &Daemon::closeConnection, tcpConnection, &TcpConnection::closeConnection);
+	connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+	// connect all other signals
+	connect(thread, &QThread::started, tcpConnection, &TcpConnection::receiveConnection);
+	connect(this, &Daemon::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
 	connect(tcpConnection, &TcpConnection::receivedTcpMessage, this, &Daemon::receivedTcpMessage);
 	connect(tcpConnection, &TcpConnection::toConsole, this, &Daemon::toConsole);
 //	connect(tcpConnection, &TcpConnection::madeConnection, this, [this](QString, quint16, QString , quint16) { emit sendPollUbxMsg(UBX_MON_VER); });
@@ -862,9 +838,9 @@ void Daemon::setupHistos() {
 	geoLatHisto.setUnit("deg");
 	weightedGeoHeightHisto=Histogram("weightedGeoHeight",200,0.,199.);
 	weightedGeoHeightHisto.setUnit("m");
-    pulseHeightHisto=Histogram("pulseHeight",500,0.,3.8);
+	pulseHeightHisto=Histogram("pulseHeight",500,0.,3.8);
 	pulseHeightHisto.setUnit("V");
-    adcSampleTimeHisto=Histogram("adcSampleTime",500,0.,49.9);
+	adcSampleTimeHisto=Histogram("adcSampleTime",500,0.,49.9);
 	adcSampleTimeHisto.setUnit("ms");
 	ubxTimeLengthHisto=Histogram("UbxEventLength",100,50.,149.);
 	ubxTimeLengthHisto.setUnit("ns");
@@ -876,11 +852,11 @@ void Daemon::setupHistos() {
 	ubxTimeIntervalHisto.setUnit("ms");
 	tpTimeDiffHisto=Histogram("TPTimeDiff",200,-999.,1000.);
 	tpTimeDiffHisto.setUnit("us");
-    tdc7200Histo=Histogram("Time-to-Digital Time Diff",400, 0., 1e6);
-    tdc7200Histo.setUnit("ns");
+	tdc7200Histo=Histogram("Time-to-Digital Time Diff",400, 0., 1e6);
+	tdc7200Histo.setUnit("ns");
 }
 
-void Daemon::clearHisto(QString histoName){
+void Daemon::clearHisto(const QString& histoName){
     if (histoName=="geoHeight"){
         geoHeightHisto.clear();
         emit sendHistogram(geoHeightHisto);
@@ -973,8 +949,9 @@ void Daemon::checkRescaleHisto(Histogram& hist, double newValue) {
 
 // ALL FUNCTIONS ABOUT TCPMESSAGE SENDING AND RECEIVING
 void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
-    quint16 msgID = tcpMessage.getMsgID();
-    if (msgID == threshSig) {
+//    quint16 msgID = tcpMessage.getMsgID();
+    TCP_MSG_KEY msgID = static_cast<TCP_MSG_KEY>(tcpMessage.getMsgID());
+    if (msgID == TCP_MSG_KEY::MSG_THRESHOLD) {
         uint8_t channel;
         float threshold;
         *(tcpMessage.dStream) >> channel >> threshold;
@@ -985,12 +962,12 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         sendDacThresh(DAC_TH2);
         return;
 	}
-    if (msgID == threshRequestSig){
+    if (msgID == TCP_MSG_KEY::MSG_THRESHOLD_REQUEST){
         sendDacThresh(DAC_TH1);
         sendDacThresh(DAC_TH2);
         return;
     }
-    if (msgID == biasVoltageSig){
+    if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE){
         float voltage;
         *(tcpMessage.dStream) >> voltage;
         setBiasVoltage(voltage);
@@ -998,11 +975,11 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         sendBiasVoltage();
         return;
     }
-    if (msgID == biasVoltageRequestSig){
+    if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST){
         sendBiasVoltage();
         return;
     }
-    if (msgID == biasSig){
+    if (msgID == TCP_MSG_KEY::MSG_BIAS_SWITCH){
         bool status;
         *(tcpMessage.dStream) >> status;
         setBiasStatus(status);
@@ -1010,10 +987,10 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         sendBiasStatus();
         return;
     }
-    if (msgID == biasRequestSig){
+    if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST){
         sendBiasStatus();
     }
-    if (msgID == preampSig){
+    if (msgID == TCP_MSG_KEY::MSG_PREAMP_SWITCH){
         quint8 channel;
         bool status;
         *(tcpMessage.dStream) >> channel >> status;
@@ -1031,11 +1008,11 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         sendPreampStatus(1);
         return;
     }
-    if (msgID == preampRequestSig){
+    if (msgID == TCP_MSG_KEY::MSG_PREAMP_SWITCH_REQUEST){
         sendPreampStatus(0);
         sendPreampStatus(1);
     }
-    if (msgID == gainSwitchSig){
+    if (msgID == TCP_MSG_KEY::MSG_GAIN_SWITCH){
         bool status;
         *(tcpMessage.dStream) >> status;
         gainSwitch=status;
@@ -1045,30 +1022,31 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
 		sendGainSwitchStatus();
 		return;
     }
-    if (msgID == gainSwitchRequestSig){
+    if (msgID == TCP_MSG_KEY::MSG_GAIN_SWITCH_REQUEST){
         sendGainSwitchStatus();
     }
-    if (msgID == ubxMsgRateRequest) {
+    if (msgID == TCP_MSG_KEY::MSG_UBX_MSG_RATE_REQUEST) {
+//    if (msgID == ubxMsgRateRequest) {
 		sendUbxMsgRates();
         return;
 	}
-    if (msgID == ubxResetSig) {
+    if (msgID == TCP_MSG_KEY::MSG_UBX_RESET) {
 		uint32_t resetFlags = QtSerialUblox::RESET_WARM | QtSerialUblox::RESET_SW;
 		emit resetUbxDevice(resetFlags);
 		pollAllUbxMsgRate();
         return;
 	}
-    if (msgID == ubxConfigureDefaultSig) {
+    if (msgID == TCP_MSG_KEY::MSG_UBX_CONFIG_DEFAULT) {
 		configGps();
 		pollAllUbxMsgRate();
         return;
 	}
-    if (msgID == ubxMsgRate){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_MSG_RATE){
         QMap<uint16_t, int> ubxMsgRates;
         *(tcpMessage.dStream) >> ubxMsgRates;
         setUbxMsgRates(ubxMsgRates);
     }
-    if (msgID == pcaChannelSig){
+    if (msgID == TCP_MSG_KEY::MSG_PCA_SWITCH){
         quint8 portMask;
         *(tcpMessage.dStream) >> portMask;
         setPcaChannel((uint8_t)portMask);
@@ -1076,11 +1054,11 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         ubxTimeLengthHisto.clear();
         return;
     }
-    if (msgID == pcaChannelRequestSig){
+    if (msgID == TCP_MSG_KEY::MSG_PCA_SWITCH_REQUEST){
         sendPcaChannel();
         return;
     }
-    if (msgID == eventTriggerSig){
+    if (msgID == TCP_MSG_KEY::MSG_EVENTTRIGGER){
         unsigned int signal;
         *(tcpMessage.dStream) >> signal;
         setEventTriggerSelection((GPIO_PIN)signal);
@@ -1088,21 +1066,21 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         sendEventTriggerSelection();
         return;
     }
-    if (msgID == eventTriggerRequestSig){
+    if (msgID == TCP_MSG_KEY::MSG_EVENTTRIGGER_REQUEST){
         sendEventTriggerSelection();
         return;
     }
-    if (msgID == gpioRateRequestSig){
+    if (msgID == TCP_MSG_KEY::MSG_GPIO_RATE_REQUEST){
         quint8 whichRate;
         quint16 number;
         *(tcpMessage.dStream) >> number >> whichRate;
         sendGpioRates(number, whichRate);
     }
-    if (msgID == resetRateSig){
+    if (msgID == TCP_MSG_KEY::MSG_GPIO_RATE_RESET){
         clearRates();
         return;
     }
-	if (msgID == dacRequestSig){
+	if (msgID == TCP_MSG_KEY::MSG_DAC_REQUEST){
 		quint8 channel;
 		*(tcpMessage.dStream) >> channel;
 		MCP4728::DacChannel channelData;
@@ -1111,32 +1089,32 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
 		float voltage = MCP4728::code2voltage(channelData);
 		sendDacReadbackValue(channel, voltage);
     }
-    if (msgID == adcSampleRequestSig){
+    if (msgID == TCP_MSG_KEY::MSG_ADC_SAMPLE_REQUEST){
         quint8 channel;
         *(tcpMessage.dStream) >> channel;
         sampleAdcEvent(channel);
     }
-    if (msgID == temperatureRequestSig){
+    if (msgID == TCP_MSG_KEY::MSG_TEMPERATURE_REQUEST){
         getTemperature();
     }
-    if (msgID == i2cStatsRequestSig){
+    if (msgID == TCP_MSG_KEY::MSG_I2C_STATS_REQUEST){
         sendI2cStats();
     }
-        if (msgID == i2cScanBusRequestSig){
+        if (msgID == TCP_MSG_KEY::MSG_I2C_SCAN_BUS){
         scanI2cBus();
         sendI2cStats();
     }
-    if (msgID == spiStatsRequestSig){
+    if (msgID == TCP_MSG_KEY::MSG_SPI_STATS_REQUEST){
         sendSpiStats();
     }
-    if (msgID == calibRequestSig){
+    if (msgID == TCP_MSG_KEY::MSG_CALIB_REQUEST){
         sendCalib();
     }
-    if (msgID == calibWriteEepromSig){
+    if (msgID == TCP_MSG_KEY::MSG_CALIB_SAVE){
         if (calib!=nullptr) calib->writeToEeprom();
         sendCalib();
     }
-    if (msgID == calibSetSig){
+    if (msgID == TCP_MSG_KEY::MSG_CALIB_SET){
         std::vector<CalibStruct> calibs;
         quint8 nrEntries=0;
         *(tcpMessage.dStream) >> nrEntries;
@@ -1147,7 +1125,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
 		}
 		receivedCalibItems(calibs);
     }
-    if (msgID == gnssConfigSig){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_GNSS_CONFIG){
         std::vector<GnssConfigStruct> configs;
         int nrEntries=0;
         *(tcpMessage.dStream) >> nrEntries;
@@ -1161,28 +1139,28 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
 		usleep(150000L);
 		emit sendPollUbxMsg(UBX_CFG_GNSS);
     }
-    if (msgID == gpsCfgTP5Sig){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_CFG_TP5){
         UbxTimePulseStruct tp;
         *(tcpMessage.dStream) >> tp;
         emit UBXSetCfgTP5(tp);
         emit sendPollUbxMsg(UBX_CFG_TP5);
         return;
     }
-    if (msgID == ubxSaveCfgSig){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_CFG_SAVE){
         emit UBXSaveCfg();
         emit sendPollUbxMsg(UBX_CFG_TP5);
-		emit sendPollUbxMsg(UBX_CFG_GNSS);
+	emit sendPollUbxMsg(UBX_CFG_GNSS);
         return;
     }
-    if (msgID == quitConnectionSig){
+    if (msgID == TCP_MSG_KEY::MSG_QUIT_CONNECTION){
         QString closeAddress;
         *(tcpMessage.dStream) >> closeAddress;
         emit closeConnection(closeAddress);
     }
-    if (msgID == dacSetEepromSig){
+    if (msgID == TCP_MSG_KEY::MSG_DAC_EEPROM_SET){
         saveDacValuesToEeprom();
     }
-    if (msgID == histogramClearSig){
+    if (msgID == TCP_MSG_KEY::MSG_HISTOGRAM_CLEAR){
         QString histoName;
         *(tcpMessage.dStream) >> histoName;
         clearHisto(histoName);
@@ -1206,7 +1184,8 @@ void Daemon::scanI2cBus() {
 }
 
 void Daemon::sendI2cStats() {
-	TcpMessage tcpMessage(i2cStatsSig);
+//	TcpMessage tcpMessage(i2cStatsSig);
+	TcpMessage tcpMessage(TCP_MSG_KEY::MSG_I2C_STATS);
 	quint8 nrDevices=i2cDevice::getGlobalDeviceList().size();
 	quint32 bytesRead = i2cDevice::getGlobalNrBytesRead();
 	quint32 bytesWritten = i2cDevice::getGlobalNrBytesWritten();
@@ -1249,7 +1228,7 @@ void Daemon::receivedCalibItems(const std::vector<CalibStruct>& newCalibs) {
 }
 
 
-void Daemon::onGpsPropertyUpdatedGeodeticPos(GeodeticPos pos){
+void Daemon::onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos){
     TcpMessage tcpMessage(geodeticPosSig);
     (*tcpMessage.dStream) << pos.iTOW << pos.lon << pos.lat
                           << pos.height << pos.hMSL << pos.hAcc
@@ -1314,7 +1293,7 @@ void Daemon::sendDacReadbackValue(uint8_t channel, float voltage) {
 
 void Daemon::sendGpioPinEvent(uint8_t gpio_pin) {
 	TcpMessage tcpMessage(gpioPinSig);
-    unsigned int gpio_function=0;
+    //unsigned int gpio_function=0;
     // reverse lookup of gpio function from given pin (first occurence)
     auto result=std::find_if(GPIO_PINMAP.begin(), GPIO_PINMAP.end(), [&gpio_pin](const std::pair<GPIO_PIN,unsigned int>& item)
 					{ return item.second==gpio_pin; }
@@ -1377,10 +1356,10 @@ void Daemon::rateCounterIntervalActualisation(){
     while(diff>1000){
         xorCounts.push_back(0);
         andCounts.push_back(0);
-        while (xorCounts.size()>(rateBufferTime)){
+        while ((quint32)xorCounts.size()>(rateBufferTime)){
             xorCounts.pop_front();
         }
-        while (andCounts.size()>(rateBufferTime)){
+        while ((quint32)andCounts.size()>(rateBufferTime)){
             andCounts.pop_front();
         }
         lastRateInterval.tv_sec += 1;
@@ -1428,10 +1407,10 @@ void Daemon::onRateBufferReminder(){
     andRatePoints.append(andPoint);
     emit logParameter(LogParameter("rateXOR", QString::number(xorRate)+" Hz", LogParameter::LOG_AVERAGE));
     emit logParameter(LogParameter("rateAND", QString::number(andRate)+" Hz", LogParameter::LOG_AVERAGE));
-    while (xorRatePoints.size()>rateMaxShowInterval/rateBufferInterval){
+    while ((quint32)xorRatePoints.size()>rateMaxShowInterval/rateBufferInterval){
         xorRatePoints.pop_front();
     }
-    while (andRatePoints.size()>rateMaxShowInterval/rateBufferInterval){
+    while ((quint32)andRatePoints.size()>rateMaxShowInterval/rateBufferInterval){
         andRatePoints.pop_front();
     }
 }
@@ -1461,6 +1440,7 @@ void Daemon::sendGpioRates(int number, quint8 whichRate){
     *(tcpMessage.dStream) << whichRate << someRates;
     emit sendTcpMessage(tcpMessage);
 }
+
 void Daemon::sampleAdc0Event(){
     const uint8_t channel=0;
     if (adc==nullptr){
@@ -1795,7 +1775,7 @@ void Daemon::UBXReceivedMsgRateCfg(uint16_t msgID, uint8_t rate) {
         sendUbxMsgRates();
     }
 }
-
+/*
 void Daemon::onGpsMonHWUpdated(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags)
 {
     TcpMessage tcpMessage(gpsMonHWSig);
@@ -1814,6 +1794,25 @@ void Daemon::onGpsMonHW2Updated(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t 
     TcpMessage tcpMessage(gpsMonHW2Sig);
     (*tcpMessage.dStream) << (qint8)ofsI << (quint8)magI << (qint8)ofsQ
     << (quint8)magQ << (quint8)cfgSrc;
+    emit sendTcpMessage(tcpMessage);
+}
+*/
+void Daemon::onGpsMonHWUpdated(const GnssMonHwStruct& hw)
+{
+	TcpMessage tcpMessage(gpsMonHWSig);
+	(*tcpMessage.dStream) << hw;
+	emit sendTcpMessage(tcpMessage);
+	emit logParameter(LogParameter("preampNoise", QString::number(-hw.noise)+" dBHz", LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("preampAGC", QString::number(hw.agc), LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("antennaStatus", QString::number(hw.antStatus), LogParameter::LOG_LATEST));
+	emit logParameter(LogParameter("antennaPower", QString::number(hw.antPower), LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("jammingLevel", QString::number(hw.jamInd/2.55,'f',1)+" %", LogParameter::LOG_AVERAGE));
+}
+
+void Daemon::onGpsMonHW2Updated(const GnssMonHw2Struct& hw2)
+{
+    TcpMessage tcpMessage(gpsMonHW2Sig);
+    (*tcpMessage.dStream) << hw2;
     emit sendTcpMessage(tcpMessage);
 }
 
@@ -2176,14 +2175,14 @@ void Daemon::logBiasValues()
 			istr.str(calib->getCalibItem("RSENSE").value);
 			double rsense;
 			istr >> rsense;
-            if (verbose>2){
-                cout<<"rsense:"<<calib->getCalibItem("RSENSE").value<<" ("<<rsense<<")"<<endl;
-            }
-            rsense /= 10.*1000.; // yields Rsense in MOhm
-            logParameter(LogParameter("calib_rsense", QString::number(rsense*1000.)+" kOhm", LogParameter::LOG_ONCE));
+			if (verbose>2){
+				cout<<"rsense:"<<calib->getCalibItem("RSENSE").value<<" ("<<rsense<<")"<<endl;
+			}
+			rsense /= 10.*1000.; // yields Rsense in MOhm
+			logParameter(LogParameter("calib_rsense", QString::number(rsense*1000.)+" kOhm", LogParameter::LOG_ONCE));
 //			logParameter(LogParameter("vbias1", QString::number(v1*vdiv)+" V", LogParameter::LOG_AVERAGE));
 //			logParameter(LogParameter("vbias2", QString::number(v2*vdiv)+" V", LogParameter::LOG_AVERAGE));
-            double ubias=v2*vdiv;
+			double ubias=v2*vdiv;
 			logParameter(LogParameter("vbias", QString::number(ubias)+" V", LogParameter::LOG_AVERAGE));
 			double usense=(v1-v2)*vdiv;
 			logParameter(LogParameter("vsense", QString::number(usense)+" V", LogParameter::LOG_AVERAGE));
@@ -2194,26 +2193,26 @@ void Daemon::logBiasValues()
 			
 			istr.clear();
 			istr.str(flagItem.value);
-            istr >> calFlags;
-            if (verbose>2){
-                cout<<"cal flags:"<<flagItem.value<<" ("<<(int)calFlags<<dec<<")"<<endl;
-            }
-            if (calFlags & CalibStruct::CALIBFLAGS_CURRENT_COEFFS) {
+			istr >> calFlags;
+			if (verbose>2){
+				cout<<"cal flags:"<<flagItem.value<<" ("<<(int)calFlags<<dec<<")"<<endl;
+			}
+			double icorr = 0.;
+			if (calFlags & CalibStruct::CALIBFLAGS_CURRENT_COEFFS) {
 				double islope,ioffs;
-//				istr=std::istringstream(calib->getCalibItem("COEFF2").value);
 				istr.clear();
 				istr.str(calib->getCalibItem("COEFF2").value);
 				istr >> ioffs;
 				logParameter(LogParameter("calib_coeff2", QString::number(ioffs), LogParameter::LOG_ONCE));
-//				istr=std::istringstream(calib->getCalibItem("COEFF3").value);
 				istr.clear();
 				istr.str(calib->getCalibItem("COEFF3").value);
 				istr >> islope;
 				logParameter(LogParameter("calib_coeff3", QString::number(islope), LogParameter::LOG_ONCE));
-				double icorr = ubias*islope+ioffs;
-				double ibias = usense/rsense-icorr;
-				logParameter(LogParameter("ibias", QString::number(ibias)+" uA", LogParameter::LOG_AVERAGE));
+				icorr = ubias*islope+ioffs;
 			}
+			double ibias = usense/rsense-icorr;
+			logParameter(LogParameter("ibias", QString::number(ibias)+" uA", LogParameter::LOG_AVERAGE));
+
 		} else {
 			logParameter(LogParameter("vadc3", QString::number(v1)+" V", LogParameter::LOG_AVERAGE));
 			logParameter(LogParameter("vadc4", QString::number(v2)+" V", LogParameter::LOG_AVERAGE));
@@ -2265,6 +2264,11 @@ void Daemon::onLogParameterPolled(){
     sendHistogram(ubxTimeIntervalHisto);
     sendHistogram(tpTimeDiffHisto);
     sendHistogram(tdc7200Histo);
+    //if (verbose>3)
+    { 
+	    qDebug() << "current data file: " << fileHandler->dataFileInfo().absoluteFilePath();
+	    qDebug() << " file size: " << fileHandler->dataFileInfo().size()/(1024*1024) << "MiB";
+    }
 
 //		updateOledDisplay();
 }

@@ -7,11 +7,9 @@
 
 const int MAX_IQTRACK_BUFFER = 250;
 
-const static double PI = 3.1415926535;
 
-const QVector<QString> FIX_TYPE_STRINGS = { "No Fix", "Dead Reck." , "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix"  };
-//const QString GNSS_ID_STRING[] = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
-const QString GNSS_ORBIT_SRC_STRING[] = { "N/A","Ephem","Alm","AOP","AOP+","Alt","Alt","Alt" };
+//const QVector<QString> FIX_TYPE_STRINGS = { "No Fix", "Dead Reck." , "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix"  };
+//const QString GNSS_ORBIT_SRC_STRING[] = { "N/A","Ephem","Alm","AOP","AOP+","Alt","Alt","Alt" };
 
 // helper function to format human readable numbers with common suffixes (k(ilo), M(ega), m(illi) etc.)
 QString printReadableFloat(double value, int prec=2, int lowOrderInhibit=-12, int highOrderInhibit=9) {
@@ -19,15 +17,15 @@ QString printReadableFloat(double value, int prec=2, int lowOrderInhibit=-12, in
     QString suffix="";
     double order=std::log10(std::fabs(value));
     if (order>=lowOrderInhibit && order<=highOrderInhibit) {
-    if (order>=9) { value*=1e-9; suffix="G"; }
-    else if (order>=6) { value*=1e-6; suffix="M"; }
-    else if (order>=3) { value*=1e-3; suffix="k"; }
-    else if (order>=0) { suffix=""; }
-    //else if (order>-2) { value*=100.; suffix="c"; }
-    else if (order>=-3) { value*=1000.; suffix="m"; }
-    else if (order>=-6) { value*=1e6; suffix="u"; }
-    else if (order>=-9) { value*=1e9; suffix="n"; }
-    else if (order>=-12) { value*=1e12; suffix="p"; }
+        if (order>=9) { value*=1e-9; suffix="G"; }
+        else if (order>=6) { value*=1e-6; suffix="M"; }
+        else if (order>=3) { value*=1e-3; suffix="k"; }
+        else if (order>=0) { suffix=""; }
+        //else if (order>-2) { value*=100.; suffix="c"; }
+        else if (order>=-3) { value*=1000.; suffix="m"; }
+        else if (order>=-6) { value*=1e6; suffix="u"; }
+        else if (order>=-9) { value*=1e9; suffix="n"; }
+        else if (order>=-12) { value*=1e12; suffix="p"; }
     }
     char fmtChar='f';
     double newOrder = std::log10(std::fabs(value));
@@ -59,7 +57,6 @@ void GpsSatsForm::onSatsReceived(const QVector<GnssSatellite> &satlist)
     QVector<GnssSatellite> newlist;
     QString str;
     QColor color;
-//    const int iqPixmapSize=105;
 
     int nrGoodSats = 0;
     for (auto it=satlist.begin(); it!=satlist.end(); it++)
@@ -107,9 +104,11 @@ void GpsSatsForm::onSatsReceived(const QVector<GnssSatellite> &satlist)
 
         newItem7->setSizeHint(QSize(25,24));
         ui->satsTableWidget->setItem(i, 6, newItem7);
-        if (newlist[i].fHealth==0) { str="N/A"; color=Qt::lightGray; }
-        else if (newlist[i].fHealth==1) { str="good"; color=Qt::green; }
-        else if (newlist[i].fHealth>=2) { str="bad"; color=Qt::red; }
+        str="n/a";
+        if (newlist[i].fHealth<GNSS_HEALTH_STRINGS.size()) str=GNSS_HEALTH_STRINGS[newlist[i].fHealth];
+        if (newlist[i].fHealth==0) { color=Qt::lightGray; }
+        else if (newlist[i].fHealth==1) { color=Qt::green; }
+        else if (newlist[i].fHealth>=2) { color=Qt::red; }
         QTableWidgetItem *newItem8 = new QTableWidgetItem(str);
         //newItem8->setBackgroundColor(color);
         newItem8->setSizeHint(QSize(25,24));
@@ -166,27 +165,23 @@ void GpsSatsForm::onIntCounterReceived(quint32 cnt)
     ui->intCounterLabel->setText(QString::number(cnt));
 }
 
+/*
 void GpsSatsForm::onGpsMonHWReceived(quint16 noise, quint16 agc, quint8 antStatus, quint8 antPower, quint8 jamInd, quint8 flags)
 {
     ui->lnaNoiseLabel->setText(QString::number(-noise)+" dBHz");
     ui->lnaAgcLabel->setText(QString::number(agc));
-    QString str;
+    QString str=GNSS_ANT_STATUS_STRINGS[antStatus];
     switch (antStatus) {
-        case 0: str="init";
-                ui->antStatusLabel->setStyleSheet("QLabel { background-color : yellow }");
+        case 0: ui->antStatusLabel->setStyleSheet("QLabel { background-color : yellow }");
                 break;
-        case 2: str="OK";
-            ui->antStatusLabel->setStyleSheet("QLabel { background-color : Window }");
-            break;
-        case 3: str="short";
-                ui->antStatusLabel->setStyleSheet("QLabel { background-color : red }");
+        case 2: ui->antStatusLabel->setStyleSheet("QLabel { background-color : Window }");
                 break;
-        case 4: str="open";
-                ui->antStatusLabel->setStyleSheet("QLabel { background-color : red }");
+        case 3: ui->antStatusLabel->setStyleSheet("QLabel { background-color : red }");
+                break;
+        case 4: ui->antStatusLabel->setStyleSheet("QLabel { background-color : red }");
                 break;
         case 1:
         default:
-                str="unknown";
                 ui->antStatusLabel->setStyleSheet("QLabel { background-color : yellow }");
     }
     ui->antStatusLabel->setText(str);
@@ -202,7 +197,42 @@ void GpsSatsForm::onGpsMonHWReceived(quint16 noise, quint16 agc, quint8 antStatu
     ui->antPowerLabel->setText(str);
     ui->jammingProgressBar->setValue(jamInd/2.55);
 }
+*/
 
+void GpsSatsForm::onGpsMonHWReceived(const GnssMonHwStruct& hwstruct)
+{
+    ui->lnaNoiseLabel->setText(QString::number(-hwstruct.noise)+" dBHz");
+    ui->lnaAgcLabel->setText(QString::number(hwstruct.agc));
+    QString str="n/a";
+    if (hwstruct.antStatus<GNSS_ANT_STATUS_STRINGS.size()) str=GNSS_ANT_STATUS_STRINGS[hwstruct.antStatus];
+    switch (hwstruct.antStatus) {
+        case 0: ui->antStatusLabel->setStyleSheet("QLabel { background-color : yellow }");
+                break;
+        case 2: ui->antStatusLabel->setStyleSheet("QLabel { background-color : Window }");
+                break;
+        case 3: ui->antStatusLabel->setStyleSheet("QLabel { background-color : red }");
+                break;
+        case 4: ui->antStatusLabel->setStyleSheet("QLabel { background-color : red }");
+                break;
+        case 1:
+        default:
+                ui->antStatusLabel->setStyleSheet("QLabel { background-color : yellow }");
+    }
+    ui->antStatusLabel->setText(str);
+    switch (hwstruct.antPower) {
+        case 0: str="off";
+                break;
+        case 1: str="on";
+                break;
+        case 2:
+        default:
+                str="unknown";
+    }
+    ui->antPowerLabel->setText(str);
+    ui->jammingProgressBar->setValue(hwstruct.jamInd/2.55);
+}
+
+/*
 void GpsSatsForm::onGpsMonHW2Received(qint8 ofsI, quint8 magI, qint8 ofsQ, quint8 magQ, quint8 cfgSrc)
 {
     const int iqPixmapSize=65;
@@ -224,6 +254,33 @@ void GpsSatsForm::onGpsMonHW2Received(qint8 ofsI, quint8 magI, qint8 ofsQ, quint
     col.setAlpha(100);
     iqPainter.setBrush(col);
     iqPainter.drawEllipse(QPointF(x,y),magI*iqPixmapSize/512.,magQ*iqPixmapSize/512.);
+    ui->iqAlignmentLabel->setPixmap(iqPixmap);
+    iqTrack.push_back(QPointF(x,y));
+    if (iqTrack.size()>MAX_IQTRACK_BUFFER) iqTrack.pop_front();
+}
+*/
+
+void GpsSatsForm::onGpsMonHW2Received(const GnssMonHw2Struct& hw2struct)
+{
+    const int iqPixmapSize=65;
+    QPixmap iqPixmap(iqPixmapSize,iqPixmapSize);
+    //    pixmap.fill(QColor("transparent"));
+    iqPixmap.fill(Qt::white);
+    QPainter iqPainter(&iqPixmap);
+    iqPainter.setPen(QPen(Qt::black));
+    iqPainter.drawLine(QPoint(iqPixmapSize/2,0),QPoint(iqPixmapSize/2,iqPixmapSize));
+    iqPainter.drawLine(QPoint(0,iqPixmapSize/2),QPoint(iqPixmapSize,iqPixmapSize/2));
+    QColor col(Qt::blue);
+    iqPainter.setPen(col);
+    double x=0., y=0.;
+    for (int i=0; i<iqTrack.size();i++) {
+        iqPainter.drawPoint(iqTrack[i]);
+    }
+    x=hw2struct.ofsI*iqPixmapSize/(2*127)+iqPixmapSize/2.;
+    y=-hw2struct.ofsQ*iqPixmapSize/(2*127)+iqPixmapSize/2.;
+    col.setAlpha(100);
+    iqPainter.setBrush(col);
+    iqPainter.drawEllipse(QPointF(x,y),hw2struct.magI*iqPixmapSize/512.,hw2struct.magQ*iqPixmapSize/512.);
     ui->iqAlignmentLabel->setPixmap(iqPixmap);
     iqTrack.push_back(QPointF(x,y));
     if (iqTrack.size()>MAX_IQTRACK_BUFFER) iqTrack.pop_front();
@@ -250,7 +307,7 @@ void GpsSatsForm::onGpsFixReceived(quint8 val)
 void GpsSatsForm::onGeodeticPosReceived(const GeodeticPos& pos){
 
     QString str;
-    str=printReadableFloat(pos.hAcc/1000.,2,0)+"m/"+printReadableFloat(pos.vAcc/1000.,2,0)+"m";
+    str=printReadableFloat(pos.hAcc/1000.,2,4)+"m / "+printReadableFloat(pos.vAcc/1000.,2,4)+"m";
 /*    str=QString::number((float)pos.hAcc/1000.,'f',3)+"m";
     str+="/"+QString::number((float)pos.vAcc/1000.,'f',3)+"m";
 */
@@ -263,8 +320,9 @@ void GpsSatsForm::onUiEnabledStateChange(bool connected)
         QVector<GnssSatellite> emptylist;
         onSatsReceived(emptylist);
         iqTrack.clear();
-        satTracks.clear();
-        onGpsMonHW2Received(0,0,0,0,0);
+        //satTracks.clear();
+//        onGpsMonHW2Received(0,0,0,0,0);
+        onGpsMonHW2Received(GnssMonHw2Struct());
         ui->jammingProgressBar->setValue(0);
         ui->timePrecisionLabel->setText("N/A");
         ui->freqPrecisionLabel->setText("N/A");

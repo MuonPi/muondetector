@@ -16,16 +16,20 @@
 #define DEFAULT_DEBUG_LEVEL 0
 
 
-//We define a class named i2cDevices to outsource the hardware dependent programm parts. We want to 
+//We define a class named i2cDevices to outsource the hardware dependent program parts. We want to 
 //access components of integrated curcuits, like the ads1115 or other subdevices via i2c-bus.
-//The main aim here was, that the user does not have  to be concerned about the c like low level operations
-//of the coding.
+//The main aim here is, that the user does not have to be concerned about the c like low level operations
+//of I2C access
+// First, we define an abstract base class with all low-level i2c acess functions implemented.
+// For device specific implementations, classes can inherit this base class
+// virtual methods should be reimplemented in the child classes to make sense there, e.g. devicePresent()
 class i2cDevice {
 
 public:
 
-	enum MODE { MODE_NONE=0, MODE_NORMAL=0x01, MODE_FORCE=0x02,
-				MODE_UNREACHABLE=0x04, MODE_FAILED=0x08, MODE_LOCKED=0x10 };
+	enum MODE { MODE_NONE=0, MODE_NORMAL=0x01, MODE_FORCE=0x02, MODE_UNREACHABLE=0x04, MODE_FAILED=0x08, MODE_LOCKED=0x10 };
+
+	//using I2C_DEVICE_MODE;
 
 	i2cDevice();
 	i2cDevice(const char* busAddress);

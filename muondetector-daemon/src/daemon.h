@@ -104,12 +104,14 @@ public slots:
         std::chrono::duration<double> lastUpdated);
     void onUBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssConfigStruct>& gnssConfigs);
     void onUBXReceivedTP5(const UbxTimePulseStruct& tp);
-    void onGpsMonHWUpdated(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags);
-    void onGpsMonHW2Updated(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t magQ, uint8_t cfgSrc);
+//    void onGpsMonHWUpdated(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags);
+//    void onGpsMonHW2Updated(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t magQ, uint8_t cfgSrc);
+    void onGpsMonHWUpdated(const GnssMonHwStruct& hw);
+    void onGpsMonHW2Updated(const GnssMonHw2Struct& hw2);
     void receivedTcpMessage(TcpMessage tcpMessage);
     void pollAllUbxMsgRate();
     void sendGpioPinEvent(uint8_t gpio_pin);
-    void onGpsPropertyUpdatedGeodeticPos(GeodeticPos pos);
+    void onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos);
     void UBXReceivedVersion(const QString& swString, const QString& hwString, const QString& protString);
     void sampleAdc0Event();
     void sampleAdc0TraceEvent();
@@ -183,7 +185,7 @@ private:
     void rescaleHisto(Histogram& hist, double center, double width);
     void rescaleHisto(Histogram& hist, double center);
     void checkRescaleHisto(Histogram& hist, double newValue);
-    void clearHisto(QString histoName);
+    void clearHisto(const QString& histoName);
 
     void printTimestamp();
     void delay(int millisecondsWait);
