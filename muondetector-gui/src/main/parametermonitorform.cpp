@@ -24,6 +24,10 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget *parent) :
     foreach (GpioSignalDescriptor item, GPIO_SIGNAL_MAP) {
         if (item.direction==DIR_IN) ui->adcTriggerSelectionComboBox->addItem(item.name);
     }
+    connect(ui->adcTraceGroupBox, &QGroupBox::clicked, this, [this](bool checked)
+        {
+            emit adcModeChanged((checked)?ADC_MODE_TRACE:ADC_MODE_PEAK);
+        } );
 
 }
 

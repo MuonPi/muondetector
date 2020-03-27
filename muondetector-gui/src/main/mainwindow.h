@@ -23,22 +23,25 @@ struct UbxTimePulseStruct;
 class Histogram;
 struct GnssMonHwStruct;
 struct GnssMonHw2Struct;
+struct LogInfoStruct;
+
+enum class TCP_MSG_KEY : quint16;
 
 namespace Ui {
-	class MainWindow;
+    class MainWindow;
 }
 
 class MainWindow : public QMainWindow
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	explicit MainWindow(QWidget *parent = 0);
-	~MainWindow();
+    explicit MainWindow(QWidget *parent = 0);
+    ~MainWindow();
 
 signals:
-	void addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates);
-	void sendTcpMessage(TcpMessage tcpMessage);
+    void addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates);
+    void sendTcpMessage(TcpMessage tcpMessage);
     void closeConnection();
     void gpioRates(quint8 whichrate, QVector<QPointF> rate);
     void tcpDisconnected();
@@ -52,92 +55,80 @@ signals:
     void preampSwitchReceived(uint8_t channel, bool state);
     void gainSwitchReceived(bool state);
     void temperatureReceived(float temp);
-	void i2cStatsReceived(quint32 bytesRead, quint32 bytesWritten, const QVector<I2cDeviceEntry>& deviceList);
+    void i2cStatsReceived(quint32 bytesRead, quint32 bytesWritten, const QVector<I2cDeviceEntry>& deviceList);
     void spiStatsReceived(bool spiPresent);
-	void calibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct>& calibList);
-	void satsReceived(const QVector<GnssSatellite>& satList);
+    void calibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct>& calibList);
+    void satsReceived(const QVector<GnssSatellite>& satList);
     void gnssConfigsReceived(quint8 numTrkCh, const QVector<GnssConfigStruct>& configList);
-	void timeAccReceived(quint32 acc);
+    void timeAccReceived(quint32 acc);
     void freqAccReceived(quint32 acc);
     void intCounterReceived(quint32 cnt);
-	void txBufReceived(quint8 val);
-	void txBufPeakReceived(quint8 val);
+    void txBufReceived(quint8 val);
+    void txBufPeakReceived(quint8 val);
     void rxBufReceived(quint8 val);
     void rxBufPeakReceived(quint8 val);
-//    void gpsMonHWReceived(quint16 noise, quint16 agc, quint8 antStatus, quint8 antPower, quint8 jamInd, quint8 flags);
-//    void gpsMonHW2Received(qint8 ofsI, quint8 magI, qint8 ofsQ, quint8 magQ, quint8 cfgSrc);
     void gpsMonHWReceived(const GnssMonHwStruct& hwstruct);
     void gpsMonHW2Received(const GnssMonHw2Struct& hw2struct);
     void gpsVersionReceived(const QString& swString, const QString& hwString, const QString& protString);
-	void gpsFixReceived(quint8 val);
+    void gpsFixReceived(quint8 val);
     void ubxUptimeReceived(quint32 val);
     void gpsTP5Received(const UbxTimePulseStruct& tp);
     void histogramReceived(const Histogram& h);
     void triggerSelectionReceived(GPIO_PIN signal);
     void timepulseReceived();
+    void adcModeReceived(quint8 mode);
+    void logInfoReceived(const LogInfoStruct& lis);
 
 public slots:
-	void receivedTcpMessage(TcpMessage tcpMessage);
+    void receivedTcpMessage(TcpMessage tcpMessage);
     void receivedGpioRisingEdge(GPIO_PIN pin);
     void sendRequestUbxMsgRates();
     void sendSetUbxMsgRateChanges(QMap<uint16_t, int> changes);
     void onSendUbxReset();
-	void makeConnection(QString ipAddress, quint16 port);
+    void makeConnection(QString ipAddress, quint16 port);
     void onTriggerSelectionChanged(GPIO_PIN signal);
     void onHistogramCleared(QString histogramName);
+    void onAdcModeChanged(quint8 mode);
 
 private slots:
-	// only those properties with value >= 0 will be updated!
-	void resetAndHit();
-	void resetXorHit();
+    void resetAndHit();
+    void resetXorHit();
     void sendRequestGpioRates();
     void sendRequestGpioRateBuffer();
-	void sendValueUpdateRequests();
+    void sendValueUpdateRequests();
 
-	void on_ipButton_clicked();
-	void connected();
-	void sendInputSwitch(int id);
-
-	void on_discr1Edit_editingFinished();
-
-	void on_discr1Slider_sliderReleased();
-
-	void on_discr1Slider_valueChanged(int value);
-
-	void on_discr1Slider_sliderPressed();
-
-	void on_discr2Slider_sliderReleased();
-
-	void on_discr2Slider_valueChanged(int value);
-
-	void on_discr2Slider_sliderPressed();
-
-	void on_biasPowerButton_clicked();
-
-	void on_discr2Edit_editingFinished();
-
+    void on_ipButton_clicked();
+    void connected();
+    void sendInputSwitch(int id);
+    void on_discr1Edit_editingFinished();
+    void on_discr1Slider_sliderReleased();
+    void on_discr1Slider_valueChanged(int value);
+    void on_discr1Slider_sliderPressed();
+    void on_discr2Slider_sliderReleased();
+    void on_discr2Slider_valueChanged(int value);
+    void on_discr2Slider_sliderPressed();
+    void on_biasPowerButton_clicked();
+    void on_discr2Edit_editingFinished();
     void on_biasVoltageSlider_sliderReleased();
-
     void on_biasVoltageSlider_valueChanged(int value);
-
     void on_biasVoltageSlider_sliderPressed();
     void onCalibUpdated(const QVector<CalibStruct>& items);
-
     void on_biasControlTypeComboBox_currentIndexChanged(int index);
     void onSetGnssConfigs(const QVector<GnssConfigStruct>& configList);
     void onSetTP5Config(const UbxTimePulseStruct& tp);
-
     void on_biasVoltageDoubleSpinBox_valueChanged(double arg1);
-
     void on_saveDacButton_clicked();
 
 private:
-	Ui::MainWindow *ui;
-	void uiSetConnectedState();
-	void uiSetDisconnectedState();
-	float parseValue(QString text);
+    Ui::MainWindow *ui;
+    void uiSetConnectedState();
+    void uiSetDisconnectedState();
+    float parseValue(QString text);
+    // ToDo: remove the sendRequest(quint) functions when switch-over to TCP_MSG_KEY is completed
     void sendRequest(quint16 requestSig);
+    void sendRequest(TCP_MSG_KEY requestSig);
     void sendRequest(quint16 requestSig, quint8 par);
+    void sendRequest(TCP_MSG_KEY requestSig, quint8 par);
     void sendSetBiasVoltage(float voltage);
     void sendSetBiasStatus(bool status);
     void sendSetThresh(uint8_t channel, float value);

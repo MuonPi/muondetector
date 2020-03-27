@@ -211,6 +211,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::intCounterReceived, paramTab, &ParameterMonitorForm::onIntCounterReceived);
     connect(this, &MainWindow::gainSwitchReceived, paramTab, &ParameterMonitorForm::onGainSwitchReceived);
     connect(this, &MainWindow::calibReceived, paramTab, &ParameterMonitorForm::onCalibReceived);
+    connect(paramTab, &ParameterMonitorForm::adcModeChanged, this, &MainWindow::onAdcModeChanged);
     connect(paramTab, &ParameterMonitorForm::setDacVoltage, this, &MainWindow::sendSetThresh);
     ui->tabWidget->addTab(paramTab,"Parameters");
 
@@ -222,6 +223,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(paramTab, &ParameterMonitorForm::biasVoltageCalculated, logTab, &LogPlotsWidget::onBiasVoltageCalculated);
     connect(paramTab, &ParameterMonitorForm::biasCurrentCalculated, logTab, &LogPlotsWidget::onBiasCurrentCalculated);
     connect(this, &MainWindow::gpioRates, logTab, &LogPlotsWidget::onGpioRatesReceived);
+    connect(this, &MainWindow::logInfoReceived, logTab, &LogPlotsWidget::onLogInfoReceived);
     ui->tabWidget->addTab(logTab, "Log");
 
 
@@ -657,9 +659,26 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         emit histogramReceived(h);
         return;
     }
+    if (msgID == TCP_MSG_KEY::MSG_ADC_MODE) {
+	quint8 mode;
+	*(tcpMessage.dStream) >> mode;
+	emit adcModeReceived(mode);
+	return;
+    }
+    if (msgID == TCP_MSG_KEY::MSG_LOG_INFO){
+	LogInfoStruct lis;
+	*(tcpMessage.dStream) >> lis;
+	emit logInfoReceived(lis);
+	return;
+    }
 }
 
 void MainWindow::sendRequest(quint16 requestSig){
+    TcpMessage tcpMessage(requestSig);
+    emit sendTcpMessage(tcpMessage);
+}
+
+void MainWindow::sendRequest(TCP_MSG_KEY requestSig){
     TcpMessage tcpMessage(requestSig);
     emit sendTcpMessage(tcpMessage);
 }
@@ -670,13 +689,19 @@ void MainWindow::sendRequest(quint16 requestSig, quint8 par){
     emit sendTcpMessage(tcpMessage);
 }
 
+void MainWindow::sendRequest(TCP_MSG_KEY requestSig, quint8 par){
+    TcpMessage tcpMessage(requestSig);
+    *(tcpMessage.dStream) << par;
+    emit sendTcpMessage(tcpMessage);
+}
+
 void MainWindow::sendRequestUbxMsgRates(){
-    TcpMessage tcpMessage(ubxMsgRateRequest);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_MSG_RATE_REQUEST);
     emit sendTcpMessage(tcpMessage);
 }
 
 void MainWindow::sendSetBiasVoltage(float voltage){
-    TcpMessage tcpMessage(biasVoltageSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_BIAS_VOLTAGE);
     *(tcpMessage.dStream) << voltage;
     emit sendTcpMessage(tcpMessage);
     emit sendRequest(dacRequestSig, 2);
@@ -685,57 +710,63 @@ void MainWindow::sendSetBiasVoltage(float voltage){
 }
 
 void MainWindow::sendSetBiasStatus(bool status){
-    TcpMessage tcpMessage(biasSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_BIAS_SWITCH);
     *(tcpMessage.dStream) << status;
     emit sendTcpMessage(tcpMessage);
 }
 
 void MainWindow::sendGainSwitch(bool status){
-    TcpMessage tcpMessage(gainSwitchSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GAIN_SWITCH);
     *(tcpMessage.dStream) << status;
     emit sendTcpMessage(tcpMessage);
 }
 
 void MainWindow::sendPreamp1Switch(bool status){
-    TcpMessage tcpMessage(preampSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_PREAMP_SWITCH);
     *(tcpMessage.dStream) << (quint8)0 << status;
     emit sendTcpMessage(tcpMessage);
 }
 
 void MainWindow::sendPreamp2Switch(bool status){
-    TcpMessage tcpMessage(preampSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_PREAMP_SWITCH);
     *(tcpMessage.dStream) << (quint8)1 << status;
     emit sendTcpMessage(tcpMessage);
 }
 
 void MainWindow::sendSetThresh(uint8_t channel, float value){
-    TcpMessage tcpMessage(threshSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_THRESHOLD);
     *(tcpMessage.dStream) << channel << value;
     emit sendTcpMessage(tcpMessage);
     emit sendRequest(dacRequestSig, channel);
 }
 
 void MainWindow::sendSetUbxMsgRateChanges(QMap<uint16_t, int> changes){
-    TcpMessage tcpMessage(ubxMsgRate);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_MSG_RATE);
     *(tcpMessage.dStream) << changes;
     emit sendTcpMessage(tcpMessage);
 }
 
 void MainWindow::onSendUbxReset()
 {
-    TcpMessage tcpMessage(ubxResetSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_RESET);
     emit sendTcpMessage(tcpMessage);
 }
 
 void MainWindow::onHistogramCleared(QString histogramName){
-    TcpMessage tcpMessage(histogramClearSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_HISTOGRAM_CLEAR);
     *(tcpMessage.dStream) << histogramName;
     emit sendTcpMessage(tcpMessage);
 //	qDebug()<<"received signal in slot MainWindow::onHistogramCleared("<<histogramName<<")";
 }
 
+void MainWindow::onAdcModeChanged(quint8 mode){
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_MODE);
+    *(tcpMessage.dStream) << mode;
+    emit sendTcpMessage(tcpMessage);
+}
+
 void MainWindow::onSetGnssConfigs(const QVector<GnssConfigStruct>& configList){
-    TcpMessage tcpMessage(gnssConfigSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_GNSS_CONFIG);
     int N=configList.size();
     *(tcpMessage.dStream) << (int)N;
     for (int i=0; i<N; i++){
@@ -747,25 +778,25 @@ void MainWindow::onSetGnssConfigs(const QVector<GnssConfigStruct>& configList){
 
 void MainWindow::onSetTP5Config(const UbxTimePulseStruct &tp)
 {
-    TcpMessage tcpMessage(gpsCfgTP5Sig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_CFG_TP5);
     *(tcpMessage.dStream) << tp;
     emit sendTcpMessage(tcpMessage);
 }
 
 void MainWindow::sendRequestGpioRates(){
-    TcpMessage xorRateRequest(gpioRateRequestSig);
+    TcpMessage xorRateRequest(TCP_MSG_KEY::MSG_GPIO_RATE_REQUEST);
     *(xorRateRequest.dStream) << (quint16)5 << (quint8)0;
     emit sendTcpMessage(xorRateRequest);
-    TcpMessage andRateRequest(gpioRateRequestSig);
+    TcpMessage andRateRequest(TCP_MSG_KEY::MSG_GPIO_RATE_REQUEST);
     *(andRateRequest.dStream) << (quint16)5 << (quint8)1;
     emit sendTcpMessage(andRateRequest);
 }
 
 void MainWindow::sendRequestGpioRateBuffer(){
-    TcpMessage xorRateRequest(gpioRateRequestSig);
+    TcpMessage xorRateRequest(TCP_MSG_KEY::MSG_GPIO_RATE_REQUEST);
     *(xorRateRequest.dStream) << (quint16)0 << (quint8)0;
     emit sendTcpMessage(xorRateRequest);
-    TcpMessage andRateRequest(gpioRateRequestSig);
+    TcpMessage andRateRequest(TCP_MSG_KEY::MSG_GPIO_RATE_REQUEST);
     *(andRateRequest.dStream) << (quint16)0 << (quint8)1;
     emit sendTcpMessage(andRateRequest);
 }
@@ -879,48 +910,32 @@ void MainWindow::connected() {
     connectedToDemon = true;
     saveSettings(addresses);
     uiSetConnectedState();
-    sendRequest(biasVoltageRequestSig);
-    sendRequest(biasRequestSig);
-    sendRequest(preampRequestSig,0);
-    sendRequest(preampRequestSig,1);
-    sendRequest(gainSwitchRequestSig);
-    sendRequest(threshRequestSig);
-    sendRequest(dacRequestSig,0);
-    sendRequest(dacRequestSig,1);
-    sendRequest(dacRequestSig,2);
-    sendRequest(dacRequestSig,3);
-    //sendRequest(adcSampleRequestSig,0);
-    sendRequest(adcSampleRequestSig,1);
-    sendRequest(adcSampleRequestSig,2);
-    sendRequest(adcSampleRequestSig,3);
-    sendRequest(pcaChannelRequestSig);
+    sendValueUpdateRequests();
+    sendRequest(TCP_MSG_KEY::MSG_PREAMP_SWITCH_REQUEST,0);
+    sendRequest(TCP_MSG_KEY::MSG_PREAMP_SWITCH_REQUEST,1);
+    sendRequest(TCP_MSG_KEY::MSG_GAIN_SWITCH_REQUEST);
+    sendRequest(TCP_MSG_KEY::MSG_THRESHOLD_REQUEST);
+    sendRequest(TCP_MSG_KEY::MSG_PCA_SWITCH_REQUEST);
     sendRequestUbxMsgRates();
     sendRequestGpioRateBuffer();
-    sendRequest(temperatureRequestSig);
-    sendRequest(i2cStatsRequestSig);
-    sendRequest(calibRequestSig);
+    sendRequest(TCP_MSG_KEY::MSG_CALIB_REQUEST);
+    sendRequest(TCP_MSG_KEY::MSG_ADC_MODE_REQUEST);
 }
 
 
 void MainWindow::sendValueUpdateRequests() {
-    sendRequest(biasVoltageRequestSig);
-    sendRequest(biasRequestSig);
+    sendRequest(TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST);
+    sendRequest(TCP_MSG_KEY::MSG_BIAS_SWITCH_REQUEST);
 //    sendRequest(preampRequestSig,0);
 //    sendRequest(preampRequestSig,1);
 //    sendRequest(threshRequestSig);
-    sendRequest(dacRequestSig,0);
-    sendRequest(dacRequestSig,1);
-    sendRequest(dacRequestSig,2);
-    sendRequest(dacRequestSig,3);
-    //sendRequest(adcSampleRequestSig,0);
-    sendRequest(adcSampleRequestSig,1);
-    sendRequest(adcSampleRequestSig,2);
-    sendRequest(adcSampleRequestSig,3);
+    for (int i=0; i<4; i++) sendRequest(TCP_MSG_KEY::MSG_DAC_REQUEST,i);
+    for (int i=1; i<4; i++) sendRequest(TCP_MSG_KEY::MSG_ADC_SAMPLE_REQUEST,i);
 //    sendRequest(pcaChannelRequestSig);
 //    sendRequestUbxMsgRates();
 //    sendRequestGpioRateBuffer();
-    sendRequest(temperatureRequestSig);
-    sendRequest(i2cStatsRequestSig);
+    sendRequest(TCP_MSG_KEY::MSG_TEMPERATURE_REQUEST);
+    sendRequest(TCP_MSG_KEY::MSG_I2C_STATS_REQUEST);
 //    sendRequest(calibRequestSig);
 }
 
@@ -1053,7 +1068,7 @@ float MainWindow::parseValue(QString text) {
 
 void MainWindow::on_saveDacButton_clicked()
 {
-    TcpMessage tcpMessage(dacSetEepromSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_DAC_EEPROM_SET);
     emit sendTcpMessage(tcpMessage);
 }
 
@@ -1063,7 +1078,7 @@ void MainWindow::on_biasPowerButton_clicked()
 }
 
 void MainWindow::sendInputSwitch(int id) {
-    TcpMessage tcpMessage(pcaChannelSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_PCA_SWITCH);
     *(tcpMessage.dStream) << (quint8)id;
     emit sendTcpMessage(tcpMessage);
     sendRequest(pcaChannelRequestSig);
@@ -1100,7 +1115,7 @@ void MainWindow::onCalibUpdated(const QVector<CalibStruct>& items)
 {
     if (calib==nullptr) return;
 
-    TcpMessage tcpMessage(calibSetSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_CALIB_SET);
     if (items.size()) {
         *(tcpMessage.dStream) << (quint8)items.size();
         for (int i=0; i<items.size(); i++) {
@@ -1149,7 +1164,7 @@ void MainWindow::on_biasControlTypeComboBox_currentIndexChanged(int index)
         ui->biasVoltageDoubleSpinBox->setMaximum(maxBiasVoltage);
         ui->biasVoltageDoubleSpinBox->setSingleStep(0.01);
     }
-    sendRequest(biasVoltageRequestSig);
+    sendRequest(TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST);
 }
 
 void MainWindow::on_biasVoltageDoubleSpinBox_valueChanged(double arg1)

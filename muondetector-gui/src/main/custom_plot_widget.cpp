@@ -169,7 +169,7 @@ void CustomPlot::exportToFile() {
     QString pdfExt=".pdf", svgExt=".svg";
     QString txtExt=".txt";
     QString suggestedName="";
-    QString fn = QFileDialog::getSaveFileName(this,tr("Export Histogram"),
+    QString fn = QFileDialog::getSaveFileName(this,tr("Export Plot"),
                                                   suggestedName,types,&filter);
 
     if ( !fn.isEmpty() ) {						// If filename is not null
@@ -208,8 +208,7 @@ void CustomPlot::exportToFile() {
             fn+=svgExt;
             QwtPlotRenderer renderer(this);
             renderer.renderDocument(this, fn, "svg", QSizeF(297/2,210/2),72);
-        }
-        if (filter.contains(txtExt)) {
+        } else if (filter.contains(txtExt)) {
             fn+=txtExt;
             // export histo in asci raw data format
             QFile file(fn);

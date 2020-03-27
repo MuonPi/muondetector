@@ -4,6 +4,8 @@
 #include <qwt_symbol.h>
 #include <qwt_date_scale_draw.h>
 #include <qwt_date_scale_engine.h>
+#include <muondetector_structs.h>
+
 
 LogPlotsWidget::LogPlotsWidget(QWidget *parent) :
     QWidget(parent),
@@ -197,5 +199,18 @@ void LogPlotsWidget::onGpioRatesReceived(quint8 whichrate, QVector<QPointF> rate
     fLogMap[name].push_back(p);
 
     updateLogTable();
-
 }
+
+void LogPlotsWidget::onLogInfoReceived(const LogInfoStruct& lis) {
+    ui->dataFileNameLineEdit->setText(lis.dataFileName);
+    ui->logFileNameLineEdit->setText(lis.logFileName);
+    ui->dataSizeLabel->setText(QString::number(lis.dataFileSize/1024.,'g',4)+ " kiB");
+    ui->logSizeLabel->setText(QString::number(lis.logFileSize/1024.,'g',4)+ " kiB");
+    QString st="failed (0)";
+    if (lis.status>0) st="ok ("+QString::number(lis.status)+")";
+    ui->logStatusLabel->setText(st);
+    ui->logAgeLabel->setText(QString::number(lis.logAge/3600.,'g',2)+" h");
+}
+
+
+

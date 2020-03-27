@@ -13,6 +13,9 @@
 #include <histogram.h>
 
 
+enum ADC_SAMPLING_MODE {ADC_MODE_DISABLED=0, ADC_MODE_PEAK=1, ADC_MODE_TRACE=2 };
+
+
 struct CalibStruct {
 public:
     enum {	CALIBFLAGS_NO_CALIB=0x00, CALIBFLAGS_COMPONENTS=0x01,
@@ -151,7 +154,14 @@ struct I2cDeviceEntry {
 	quint32 lastTransactionTime; // in us
 };
 
-
+struct LogInfoStruct {
+    QString logFileName;
+    QString dataFileName;
+    quint8 status;
+    quint32 logFileSize;
+    quint32 dataFileSize;
+    qint32 logAge;
+};
 
 //inline const std::string GnssSatellite::GNSS_ID_STRING[] = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
 //const MUONDETECTORSHARED std::string GNSS_ID_STRING[] = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
@@ -332,5 +342,18 @@ inline QDataStream& operator << (QDataStream& out, const GnssMonHw2Struct& hw2)
     return out;
 }
 
+inline QDataStream& operator >> (QDataStream& in, LogInfoStruct& lis)
+{
+    in 	>> lis.logFileName >> lis.dataFileName >> lis.status >> lis.logFileSize
+	>> lis.dataFileSize >> lis.logAge;
+    return in;
+}
+
+inline QDataStream& operator << (QDataStream& out, const LogInfoStruct& lis)
+{
+    out << lis.logFileName << lis.dataFileName << lis.status << lis.logFileSize
+	<< lis.dataFileSize << lis.logAge;
+    return out;
+}
 
 #endif // MUONDETECTOR_STRUCTS_H

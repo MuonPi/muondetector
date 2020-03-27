@@ -27,13 +27,41 @@
 
 struct CalibStruct;
 
+
 class Property {
 public:
     Property()=default;
     
-    Property(const QVariant& val) {
-        value=val;
+    template <typename T>
+    Property(const T& val) : name(""), unit ("") {
+        typeId = qMetaTypeId<T>();
+        if (typeId==QMetaType::UnknownType) {
+            typeId = qRegisterMetaType<T>();
+        }
+        value=QVariant(val);
         updated=true;
+    }
+
+    template <typename T>
+    Property(const QString& a_name, const T& val, const QString& a_unit = "") 
+        : name(a_name), unit(a_unit)
+    {
+        typeId = qMetaTypeId<T>();
+        if (typeId==QMetaType::UnknownType) {
+            typeId = qRegisterMetaType<T>();
+        }
+        value=QVariant(val);
+        updated=true;
+    }
+    
+    Property(const Property& prop) = default;
+    Property& operator=(const Property& prop) {
+        name=prop.name;
+        unit=prop.unit;
+        value=prop.value;
+        typeId=prop.typeId;
+        updated=prop.updated;
+        return *this;
     }
     
     Property& operator=(const QVariant& val) {
@@ -48,12 +76,27 @@ public:
 		return value;
 	}
     
+    bool isUpdated() const { return updated; }
+//    QMetaType::Type type() const { return static_cast<QMetaType::Type>(value.type()); }
+    int type() const { return typeId; }
+    
+    QString name="";
+    QString unit="";
+
 private:
     QVariant value;
     bool updated=false;
-
+    int typeId=0;
 };
 
+class OledEntry {
+public:
+    OledEntry()=default;
+    
+    QString displayString();
+    
+        
+};
 
 class Daemon : public QTcpServer
 {
@@ -72,8 +115,6 @@ public:
 	static void termSignalHandler(int);
 	static void intSignalHandler(int);
 
-    enum {ADC_MODE_DISABLED=0, ADC_MODE_PEAK=1, ADC_MODE_TRACE=2 };
-
 public slots:
     // Qt signal handlers.
     void handleSigHup();
@@ -87,25 +128,18 @@ public slots:
     void toConsole(const QString& data);
     void gpsToConsole(const QString& data);
     void onMadeConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort);
-    void onStoppedConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort,
-		quint32 timeoutTime, quint32 connectionDuration);
+    void onStoppedConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort, quint32 timeoutTime, quint32 connectionDuration);
     void UBXReceivedAckNak(uint16_t ackedMsgID, uint16_t ackedCfgMsgID);
     void UBXReceivedMsgRateCfg(uint16_t msgID, uint8_t rate);
     void gpsConnectionError();
-    void gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double> updateAge,
-		char propertyName);
-    void gpsPropertyUpdatedUint32(uint32_t data, std::chrono::duration<double> updateAge,
-		char propertyName);
-    void gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double> updateAge,
-		char propertyName);
+    void gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double> updateAge, char propertyName);
+    void gpsPropertyUpdatedUint32(uint32_t data, std::chrono::duration<double> updateAge, char propertyName);
+    void gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double> updateAge, char propertyName);
 	void onUBXReceivedTxBuf(uint8_t txUsage, uint8_t txPeakUsage);
 	void onUBXReceivedRxBuf(uint8_t rxUsage, uint8_t rxPeakUsage);
-    void onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
-        std::chrono::duration<double> lastUpdated);
+    void onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats, std::chrono::duration<double> lastUpdated);
     void onUBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssConfigStruct>& gnssConfigs);
     void onUBXReceivedTP5(const UbxTimePulseStruct& tp);
-//    void onGpsMonHWUpdated(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags);
-//    void onGpsMonHW2Updated(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t magQ, uint8_t cfgSrc);
     void onGpsMonHWUpdated(const GnssMonHwStruct& hw);
     void onGpsMonHW2Updated(const GnssMonHw2Struct& hw2);
     void receivedTcpMessage(TcpMessage tcpMessage);
@@ -178,6 +212,7 @@ private:
     void sendSpiStats();
     void sendCalib();
     void sendHistogram(const Histogram& hist);
+    void sendLogInfo();
     bool readEeprom();
     void receivedCalibItems(const std::vector<CalibStruct>& newCalibs);
     void logBiasValues();
@@ -186,7 +221,7 @@ private:
     void rescaleHisto(Histogram& hist, double center);
     void checkRescaleHisto(Histogram& hist, double newValue);
     void clearHisto(const QString& histoName);
-
+    void setAdcSamplingMode(quint8 mode);
     void printTimestamp();
     void delay(int millisecondsWait);
 
@@ -236,14 +271,17 @@ private:
     QPointer<QSocketNotifier> snTerm;
     QPointer<QSocketNotifier> snInt;
     
-    // others
+    // calibration
     ShowerDetectorCalib* calib = nullptr;
 
+    // histograms
     Histogram geoHeightHisto, geoLonHisto, geoLatHisto,
      weightedGeoHeightHisto,
      pulseHeightHisto, adcSampleTimeHisto, tdc7200Histo,
      ubxTimeLengthHisto, eventIntervalHisto, eventIntervalShortHisto, 
      ubxTimeIntervalHisto, tpTimeDiffHisto;
+    
+    // others
     QVector<QPointF> xorRatePoints, andRatePoints;
     timespec startOfProgram, lastRateInterval;
     quint32 rateBufferTime = 60; // in s: 60 seconds
@@ -259,6 +297,9 @@ private:
     QList<float> adcSamplesBuffer;
     uint8_t adcSamplingMode = ADC_MODE_PEAK;
     qint16 currentAdcSampleIndex = -1;
+    QTimer samplingTimer;
+    QMap<QString, Property> propertyMap;
+    
 };
 
 #endif // DAEMON_H

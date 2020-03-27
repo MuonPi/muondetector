@@ -11,6 +11,8 @@ namespace Ui {
 class LogPlotsWidget;
 }
 
+struct LogInfoStruct;
+
 class LogBuffer {
 public:
     LogBuffer(const QString& a_name) { name=a_name; }
@@ -44,10 +46,11 @@ public slots:
     void onTemperatureReceived(float temp);
     void onTimeAccReceived(quint32 acc);
     void onUiEnabledStateChange(bool connected);
-
     void onBiasVoltageCalculated(float ubias);
     void onBiasCurrentCalculated(float ibias);
     void onGpioRatesReceived(quint8 whichrate, QVector<QPointF> rates);
+    void onLogInfoReceived(const LogInfoStruct& lis);
+    
 private slots:
     void updateLogTable();
 

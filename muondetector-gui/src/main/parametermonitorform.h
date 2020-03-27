@@ -22,6 +22,7 @@ signals:
     void setDacVoltage(uint8_t ch, float val);
     void biasVoltageCalculated(float vbias);
     void biasCurrentCalculated(float ibias);
+    void adcModeChanged(quint8 mode);
 
 public slots:
     void onCalibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct> &calibList);

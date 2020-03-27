@@ -21,6 +21,7 @@ public:
     QString getCurrentLogFileName() const;
     QFileInfo dataFileInfo() const;
     QFileInfo logFileInfo() const;
+    qint64 currentLogAge();
 
 signals:
 	void logIntervalSignal();

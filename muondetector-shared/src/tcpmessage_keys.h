@@ -63,8 +63,14 @@ enum class TCP_MSG_KEY : quint16
 	MSG_SPI_STATS = 269,
 	MSG_SPI_STATS_REQUEST = 271,
 	MSG_HISTOGRAM_CLEAR = 277,
-	MSG_ADC_TRACE = 281
+	MSG_ADC_TRACE = 281,
+	MSG_ADC_MODE = 283,
+	MSG_ADC_MODE_REQUEST = 293,
+	MSG_LOG_INFO = 307,
+	MSG_FILE_DOWNLOAD = 311,
+	MSG_OLED_ENTRIES = 313
 };
+// 307    311    313    317    331    337    347    349
 
 // no specific reason but the codes are all prime numbers :)
 static const quint16 ping = 2;

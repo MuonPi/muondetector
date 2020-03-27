@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>239</width>
-    <height>302</height>
+    <width>275</width>
+    <height>331</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
+  <layout class="QGridLayout" name="gridLayout_2">
    <item row="0" column="0" colspan="3">
     <widget class="QWidget" name="hostWidget" native="true">
      <property name="sizePolicy">
@@ -52,28 +52,32 @@
      </widget>
     </widget>
    </item>
-   <item row="1" column="0" colspan="2">
-    <widget class="QCheckBox" name="receivedSatsCheckBox">
-     <property name="text">
-      <string>Received Only</string>
-     </property>
-    </widget>
+   <item row="1" column="0" rowspan="2">
+    <layout class="QGridLayout" name="gridLayout">
+     <item row="0" column="0" colspan="2">
+      <widget class="QCheckBox" name="receivedSatsCheckBox">
+       <property name="text">
+        <string>Received Only</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QCheckBox" name="tracksCheckBox">
+       <property name="text">
+        <string>Tracks</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QCheckBox" name="satLabelsCheckBox">
+       <property name="text">
+        <string>Labels</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
-   <item row="1" column="2">
-    <widget class="QCheckBox" name="satLabelsCheckBox">
-     <property name="text">
-      <string>Labels</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QCheckBox" name="tracksCheckBox">
-     <property name="text">
-      <string>Tracks</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
+   <item row="1" column="1" rowspan="2">
     <spacer name="horizontalSpacer">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -85,6 +89,13 @@
       </size>
      </property>
     </spacer>
+   </item>
+   <item row="1" column="2">
+    <widget class="QCheckBox" name="cartPolarCheckBox">
+     <property name="text">
+      <string>Polar Coord.</string>
+     </property>
+    </widget>
    </item>
    <item row="2" column="2">
     <layout class="QHBoxLayout" name="horizontalLayout">

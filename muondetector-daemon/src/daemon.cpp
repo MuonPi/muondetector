@@ -13,6 +13,7 @@
 #include <locale>
 #include <iostream>
 #include <muondetector_structs.h>
+#include <config.h>
 
 // for i2cdetect:
 extern "C" {
@@ -23,17 +24,7 @@ extern "C" {
 #define DAC_TH1 0 // channel of the dac where threshold 1 is set
 #define DAC_TH2 1 // channel of the dac where threshold 2 is set
 
-#define OLED_UPDATE_PERIOD 2000
 #define DEGREE_CHARCODE 248
-
-#define ADC_SAMPLEBUFFER_SIZE 50
-#define ADC_PRETRIGGER 10
-#define TRACE_SAMPLING_INTERVAL 5  // free running adc sampling interval in ms
-
-//extern QDataStream& operator << (QDataStream& out, const CalibStruct& calib);
-//extern QDataStream& operator >> (QDataStream& in, CalibStruct& calib);
-
-//const QVector<QString> FIX_TYPE_STRINGS = { "No Fix", "Dead Reck." , "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix"  };
 
 // REMEMBER: "emit" keyword is just syntactic sugar and not needed AT ALL ... learned it after 1 year *clap* *clap*
 
@@ -362,12 +353,14 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 			cerr<<"error: failed setting data ready pin mode (setting thresh regs)"<<endl;
 		}
 
-		// set up free running sampling
-		QTimer* samplingTimer = new QTimer(this);
-		samplingTimer->setInterval(TRACE_SAMPLING_INTERVAL);
-		samplingTimer->setSingleShot(false);
-		connect(samplingTimer, &QTimer::timeout, this, &Daemon::sampleAdc0TraceEvent);
-		samplingTimer->start();
+		// set up sampling timer used for continuous sampling mode
+		samplingTimer.setInterval(TRACE_SAMPLING_INTERVAL);
+		samplingTimer.setSingleShot(false);
+		samplingTimer.setTimerType(Qt::PreciseTimer);
+		connect(&samplingTimer, &QTimer::timeout, this, &Daemon::sampleAdc0TraceEvent);
+
+		// set up peak sampling mode
+		setAdcSamplingMode(ADC_MODE_PEAK);
 			
 		if (verbose>2) {
 			cout<<"ADS1115 device is present."<<endl;
@@ -791,7 +784,7 @@ void Daemon::connectToGps() {
 
 void Daemon::incomingConnection(qintptr socketDescriptor) {
 	if (verbose > 4) {
-		cout << "incomingConnection" << endl;
+		cout << "incoming connection" << endl;
 	}
 	QThread *thread = new QThread();
 	TcpConnection *tcpConnection = new TcpConnection(socketDescriptor, verbose);
@@ -1165,6 +1158,30 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> histoName;
         clearHisto(histoName);
     }
+    if (msgID == TCP_MSG_KEY::MSG_ADC_MODE_REQUEST){
+        TcpMessage answer(TCP_MSG_KEY::MSG_ADC_MODE);
+		*(answer.dStream) << (quint8)adcSamplingMode;
+		emit sendTcpMessage(answer);
+        
+	}
+    if (msgID == TCP_MSG_KEY::MSG_ADC_MODE){
+        quint8 mode=0;
+        *(tcpMessage.dStream) >> mode;
+        setAdcSamplingMode(mode);
+        TcpMessage answer(TCP_MSG_KEY::MSG_ADC_MODE);
+		*(answer.dStream) << (quint8)adcSamplingMode;
+		emit sendTcpMessage(answer);
+	}
+	if (msgID == TCP_MSG_KEY::MSG_LOG_INFO){
+		sendLogInfo();
+	}
+}
+
+void Daemon::setAdcSamplingMode(quint8 mode) {
+	if (mode>ADC_MODE_TRACE) return;
+	adcSamplingMode=mode;
+	if (mode==ADC_MODE_TRACE) samplingTimer.start();
+	else samplingTimer.stop();
 }
 
 void Daemon::scanI2cBus() {
@@ -1183,8 +1200,26 @@ void Daemon::scanI2cBus() {
 	}
 }
 
+void Daemon::sendLogInfo(){
+	LogInfoStruct lis;
+	lis.logFileName=fileHandler->logFileInfo().absoluteFilePath();
+	lis.dataFileName=fileHandler->dataFileInfo().absoluteFilePath();
+	lis.logFileSize=fileHandler->logFileInfo().size();
+	lis.dataFileSize=fileHandler->dataFileInfo().size();
+	lis.status=(quint8)(fileHandler->dataFileInfo().exists() && fileHandler->logFileInfo().exists());
+// following code works only from Qt 5.10 onwards
+/*
+	QDateTime now = QDateTime::currentDateTime();
+	qint64 difftime=-now.secsTo(fileHandler->dataFileInfo().fileTime(QFileDevice::FileMetadataChangeTime));
+	lis.logAge=(qint32)difftime;
+*/
+	lis.logAge=(qint32)fileHandler->currentLogAge();
+	TcpMessage answer(TCP_MSG_KEY::MSG_LOG_INFO);
+	*(answer.dStream) << lis;
+	emit sendTcpMessage(answer);
+}
+
 void Daemon::sendI2cStats() {
-//	TcpMessage tcpMessage(i2cStatsSig);
 	TcpMessage tcpMessage(TCP_MSG_KEY::MSG_I2C_STATS);
 	quint8 nrDevices=i2cDevice::getGlobalDeviceList().size();
 	quint32 bytesRead = i2cDevice::getGlobalNrBytesRead();
@@ -1203,19 +1238,19 @@ void Daemon::sendI2cStats() {
 }
 
 void Daemon::sendSpiStats() {
-    TcpMessage tcpMessage(spiStatsSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_SPI_STATS);
     *(tcpMessage.dStream) << spiDevicePresent;
     emit sendTcpMessage(spiDevicePresent);
 }
 
 void Daemon::sendCalib() {
-	TcpMessage tcpMessage(calibSetSig);
+	TcpMessage tcpMessage(TCP_MSG_KEY::MSG_CALIB_SET);
 	bool valid=calib->isValid();
 	bool eepValid=calib->isEepromValid();
-    quint16 nrPars = calib->getCalibList().size();
-    quint64 id = calib->getSerialID();
-    *(tcpMessage.dStream) << valid << eepValid << id << nrPars;
-    for (int i=0; i<nrPars; i++) {
+	quint16 nrPars = calib->getCalibList().size();
+	quint64 id = calib->getSerialID();
+	*(tcpMessage.dStream) << valid << eepValid << id << nrPars;
+	for (int i=0; i<nrPars; i++) {
 		*(tcpMessage.dStream) << calib->getCalibItem(i);
 	}
 	emit sendTcpMessage(tcpMessage);
@@ -1229,7 +1264,7 @@ void Daemon::receivedCalibItems(const std::vector<CalibStruct>& newCalibs) {
 
 
 void Daemon::onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos){
-    TcpMessage tcpMessage(geodeticPosSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GEO_POS);
     (*tcpMessage.dStream) << pos.iTOW << pos.lon << pos.lat
                           << pos.height << pos.hMSL << pos.hAcc
                           << pos.vAcc;
@@ -1261,24 +1296,23 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos){
 		this->sendHistogram(geoLonHisto);
 		this->sendHistogram(geoLatHisto);
 	}
-
 }
 
 void Daemon::sendHistogram(const Histogram& hist){
-    TcpMessage tcpMessage(histogramSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_HISTOGRAM);
     (*tcpMessage.dStream) << hist;
     emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::sendUbxMsgRates() {
-	TcpMessage tcpMessage(ubxMsgRate);
+	TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_MSG_RATE);
     *(tcpMessage.dStream) << msgRateCfgs;
 	emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::sendDacThresh(uint8_t channel) {
     if (channel > 1){ return; }
-    TcpMessage tcpMessage(threshSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_THRESHOLD);
     *(tcpMessage.dStream) << (quint8)channel << dacThresh[(int)channel];
     emit sendTcpMessage(tcpMessage);
 }
@@ -1286,59 +1320,58 @@ void Daemon::sendDacThresh(uint8_t channel) {
 void Daemon::sendDacReadbackValue(uint8_t channel, float voltage) {
     if (channel > 3){ return; }
     
-    TcpMessage tcpMessage(dacReadbackSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_DAC_READBACK);
     *(tcpMessage.dStream) << (quint8)channel << voltage;
     emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::sendGpioPinEvent(uint8_t gpio_pin) {
-	TcpMessage tcpMessage(gpioPinSig);
+	TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GPIO_EVENT);
     //unsigned int gpio_function=0;
     // reverse lookup of gpio function from given pin (first occurence)
     auto result=std::find_if(GPIO_PINMAP.begin(), GPIO_PINMAP.end(), [&gpio_pin](const std::pair<GPIO_PIN,unsigned int>& item)
 					{ return item.second==gpio_pin; }
 					);
 	if (result!=GPIO_PINMAP.end()) {
-//		*(tcpMessage.dStream) << (quint8)gpio_pin;
 		*(tcpMessage.dStream) << (GPIO_PIN)result->first;
 		emit sendTcpMessage(tcpMessage);
 	}
 }
 
 void Daemon::sendBiasVoltage(){
-    TcpMessage tcpMessage(biasVoltageSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_BIAS_VOLTAGE);
     *(tcpMessage.dStream) << biasVoltage;
     emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::sendBiasStatus(){
-    TcpMessage tcpMessage(biasSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_BIAS_SWITCH);
     *(tcpMessage.dStream) << biasON;
     emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::sendGainSwitchStatus(){
-    TcpMessage tcpMessage(gainSwitchSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GAIN_SWITCH);
     *(tcpMessage.dStream) << gainSwitch;
     emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::sendPreampStatus(uint8_t channel) {
     if (channel > 1){ return; }
-    TcpMessage tcpMessage(preampSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_PREAMP_SWITCH);
     *(tcpMessage.dStream) << (quint8)channel << preampStatus [channel];
     emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::sendPcaChannel(){
-    TcpMessage tcpMessage(pcaChannelSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_PCA_SWITCH);
     *(tcpMessage.dStream) << (quint8)pcaPortMask;
     emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::sendEventTriggerSelection(){
     if (pigHandler==nullptr) return;
-    TcpMessage tcpMessage(eventTriggerSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_EVENTTRIGGER);
     *(tcpMessage.dStream) << (GPIO_PIN)pigHandler->samplingTriggerSignal;
     emit sendTcpMessage(tcpMessage);
 }
@@ -1419,7 +1452,7 @@ void Daemon::sendGpioRates(int number, quint8 whichRate){
     if (pigHandler==nullptr){
         return;
     }
-    TcpMessage tcpMessage(gpioRateSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GPIO_RATE);
     QVector<QPointF> *ratePoints;
     if (whichRate==XOR_RATE){
          ratePoints = &xorRatePoints;
@@ -1443,11 +1476,11 @@ void Daemon::sendGpioRates(int number, quint8 whichRate){
 
 void Daemon::sampleAdc0Event(){
     const uint8_t channel=0;
-    if (adc==nullptr){
+    if (adc==nullptr || adcSamplingMode==ADC_MODE_DISABLED){
         return;
     }
     if (adc->getStatus() & i2cDevice::MODE_UNREACHABLE) return;
-    TcpMessage tcpMessage(adcSampleSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_SAMPLE);
     float value = adc->readVoltage(channel);
     *(tcpMessage.dStream) << (quint8)channel << value;
     emit sendTcpMessage(tcpMessage);
@@ -1460,7 +1493,7 @@ void Daemon::sampleAdc0Event(){
 
 void Daemon::sampleAdc0TraceEvent(){
     const uint8_t channel=0;
-    if (adc==nullptr){
+    if (adc==nullptr || adcSamplingMode==ADC_MODE_DISABLED){
         return;
     }
     if (adc->getStatus() & i2cDevice::MODE_UNREACHABLE) return;
@@ -1470,7 +1503,7 @@ void Daemon::sampleAdc0TraceEvent(){
     if (currentAdcSampleIndex>=0) {
         currentAdcSampleIndex++;
         if (currentAdcSampleIndex >= ADC_SAMPLEBUFFER_SIZE-ADC_PRETRIGGER) {
-            TcpMessage tcpMessage(adcTraceSig);
+            TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_TRACE);
             *(tcpMessage.dStream) << (quint16) adcSamplesBuffer.size();
             for (int i=0; i<adcSamplesBuffer.size(); i++)
                 *(tcpMessage.dStream) << adcSamplesBuffer[i];
@@ -1485,11 +1518,11 @@ void Daemon::sampleAdc0TraceEvent(){
 }
 
 void Daemon::sampleAdcEvent(uint8_t channel){
-    if (adc==nullptr){
+    if (adc==nullptr || adcSamplingMode==ADC_MODE_DISABLED){
         return;
     }
     if (adc->getStatus() & i2cDevice::MODE_UNREACHABLE) return;
-    TcpMessage tcpMessage(adcSampleSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_SAMPLE);
     float value = adc->readVoltage(channel);
     *(tcpMessage.dStream) << (quint8)channel << value;
     emit sendTcpMessage(tcpMessage);
@@ -1499,7 +1532,7 @@ void Daemon::getTemperature(){
     if (lm75==nullptr){
         return;
     }
-    TcpMessage tcpMessage(temperatureSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_TEMPERATURE);
     if (lm75->getStatus() & i2cDevice::MODE_UNREACHABLE) return;
     float value = lm75->getTemperature();
     *(tcpMessage.dStream) << value;
@@ -1834,14 +1867,18 @@ void Daemon::onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
 		}
 	}
 	int N=sats.size();
-	TcpMessage tcpMessage(gpsSatsSig);
+	TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GNSS_SATS);
 	(*tcpMessage.dStream) << N;
 	for (int i=0; i<N; i++) {
 		(*tcpMessage.dStream)<< sats [i];
 	}
 	emit sendTcpMessage(tcpMessage);
-	nrSats=QVariant(N);
+	//nrSats=QVariant(N);
+	nrSats=Property("nrSats",N);
 	nrVisibleSats=QVariant(visibleSats.size());
+	
+	propertyMap["nrSats"]=Property("nrSats",N);
+	propertyMap["visSats"]=Property("visSats",visibleSats.size());
 	
 	int usedSats=0, maxCnr=0;
 	if (visibleSats.size()) {
@@ -1850,7 +1887,11 @@ void Daemon::onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
 			if (sat.fCnr>maxCnr) maxCnr=sat.fCnr;
 		}
 	}
-        //qDebug() << "received satlist ok, size=" << satlist.size();
+	propertyMap["usedSats"]=Property("usedSats",usedSats);
+	propertyMap["maxCNR"]=Property("maxCNR",maxCnr);
+	//qDebug()<< "propertyMap.size()="<<propertyMap.size();
+
+    //qDebug() << "received satlist ok, size=" << satlist.size();
 	emit logParameter(LogParameter("sats",QString("%1").arg(visibleSats.size()), LogParameter::LOG_AVERAGE));
 	emit logParameter(LogParameter("usedSats",QString("%1").arg(usedSats), LogParameter::LOG_AVERAGE));
 	emit logParameter(LogParameter("maxCNR",QString("%1").arg(maxCnr), LogParameter::LOG_AVERAGE));
@@ -1861,7 +1902,7 @@ void Daemon::onUBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssCon
 		// put some verbose output here
 	}
     int N=gnssConfigs.size();
-    TcpMessage tcpMessage(gnssConfigSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_GNSS_CONFIG);
     (*tcpMessage.dStream) << (int)numTrkCh << N;
     for (int i=0; i<N; i++) {
 		(*tcpMessage.dStream)<<gnssConfigs[i].gnssId<<gnssConfigs[i].resTrkCh<<
@@ -1874,7 +1915,7 @@ void Daemon::onUBXReceivedTP5(const UbxTimePulseStruct& tp) {
 	if (verbose > 2) {
 		// put some verbose output here
 	}
-    TcpMessage tcpMessage(gpsCfgTP5Sig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_CFG_TP5);
     (*tcpMessage.dStream) << tp;
     emit sendTcpMessage(tcpMessage);
 }
@@ -1885,7 +1926,7 @@ void Daemon::onUBXReceivedTxBuf(uint8_t txUsage, uint8_t txPeakUsage) {
 		cout << "TX buf usage: " << (int)txUsage << " %" << endl;
 		cout << "TX buf peak usage: " << (int)txPeakUsage << " %" << endl;
 	}
-	tcpMessage = new TcpMessage(gpsTxBufSig);
+	tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_TXBUF);
 	*(tcpMessage->dStream) << (quint8)txUsage << (quint8)txPeakUsage;
 	emit sendTcpMessage(*tcpMessage);
 	delete tcpMessage;
@@ -1899,7 +1940,7 @@ void Daemon::onUBXReceivedRxBuf(uint8_t rxUsage, uint8_t rxPeakUsage) {
 		cout << "RX buf usage: " << (int)rxUsage << " %" << endl;
 		cout << "RX buf peak usage: " << (int)rxPeakUsage << " %" << endl;
 	}
-	tcpMessage = new TcpMessage(gpsRxBufSig);
+	tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_RXBUF);
 	*(tcpMessage->dStream) << (quint8)rxUsage << (quint8)rxPeakUsage;
 	emit sendTcpMessage(*tcpMessage);
 	delete tcpMessage;
@@ -1952,12 +1993,14 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
 			cout << std::chrono::system_clock::now()
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "Fix value: " << (int)data << endl;
-		tcpMessage = new TcpMessage(gpsFixSig);
+		tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_FIXSTATUS);
 		*(tcpMessage->dStream) << (quint8)data;
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
 		emit logParameter(LogParameter("fixStatus", QString::number(data), LogParameter::LOG_LATEST));
+		emit logParameter(LogParameter("fixStatusString", FIX_TYPE_STRINGS[data], LogParameter::LOG_LATEST));
 		fixStatus=QVariant(data);
+		propertyMap["fixStatus"]=Property("fixStatus",FIX_TYPE_STRINGS[data]);
 		break;
 	default:
 		break;
@@ -1973,7 +2016,7 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
 			cout << std::chrono::system_clock::now()
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "time accuracy: " << data << " ns" << endl;
-		tcpMessage = new TcpMessage(gpsTimeAccSig);
+		tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_TIME_ACCURACY);
 		*(tcpMessage->dStream) << (quint32)data;
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
@@ -1984,7 +2027,7 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
 			cout << std::chrono::system_clock::now()
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "frequency accuracy: " << data << " ps/s" << endl;
-		tcpMessage = new TcpMessage(gpsFreqAccSig);
+		tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_FREQ_ACCURACY);
 		*(tcpMessage->dStream) << (quint32)data;
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
@@ -1995,7 +2038,7 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
 			cout << std::chrono::system_clock::now()
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "Ublox uptime: " << data << " s" << endl;
-		tcpMessage = new TcpMessage(gpsUptimeSig);
+		tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_UPTIME);
 		*(tcpMessage->dStream) << (quint32)data;
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
@@ -2006,7 +2049,8 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
 			cout << std::chrono::system_clock::now()
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "rising edge counter: " << data << endl;
-		tcpMessage = new TcpMessage(gpsIntCounterSig);
+		propertyMap["events"]=Property("events",(quint16)data);
+		tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_EVENTCOUNTER);
 		*(tcpMessage->dStream) << (quint32)data;
 		emit sendTcpMessage(*tcpMessage);
 		delete tcpMessage;
@@ -2025,6 +2069,7 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "clock drift: " << data << " ns/s" << endl;
 		logParameter(LogParameter("clockDrift", QString::number(data)+" ns/s", LogParameter::LOG_AVERAGE));
+		propertyMap["clkDrift"]=Property("clkDrift",(qint32)data);
 		break;
 	case 'b':
 		if (verbose>2)
@@ -2032,6 +2077,7 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "clock bias: " << data << " ns" << endl;
 		emit logParameter(LogParameter("clockBias", QString::number(data)+" ns", LogParameter::LOG_AVERAGE));
+		propertyMap["clkBias"]=Property("clkBias",(qint32)data);
 		break;
 	default:
 		break;
@@ -2042,7 +2088,7 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
 void Daemon::UBXReceivedVersion(const QString& swString, const QString& hwString, const QString& protString)
 {
     static bool initialVersionInfo = true;
-    TcpMessage tcpMessage(gpsVersionSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_VERSION);
     (*tcpMessage.dStream) << swString << hwString << protString;
     emit sendTcpMessage(tcpMessage);
 	logParameter(LogParameter("UBX_SW_Version", swString, LogParameter::LOG_ONCE));
@@ -2264,7 +2310,9 @@ void Daemon::onLogParameterPolled(){
     sendHistogram(ubxTimeIntervalHisto);
     sendHistogram(tpTimeDiffHisto);
     sendHistogram(tdc7200Histo);
-    //if (verbose>3)
+    
+    sendLogInfo();
+    if (verbose>3)
     { 
 	    qDebug() << "current data file: " << fileHandler->dataFileInfo().absoluteFilePath();
 	    qDebug() << " file size: " << fileHandler->dataFileInfo().size()/(1024*1024) << "MiB";

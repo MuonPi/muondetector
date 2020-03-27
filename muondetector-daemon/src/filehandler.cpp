@@ -17,6 +17,7 @@
 //#include <crypto++/sha3.h>
 #include <crypto++/sha.h>
 #include <config.h>
+#include <QtGlobal>
 
 using namespace CryptoPP;
 
@@ -153,9 +154,24 @@ QFileInfo FileHandler::dataFileInfo() const {
 }
 
 QFileInfo FileHandler::logFileInfo() const {
-    if (logFile!=nullptr) return QFileInfo();
+    if (logFile==nullptr) return QFileInfo();
     QFileInfo fi( *logFile );
     return fi;
+}
+
+// return current log file age in s
+qint64 FileHandler::currentLogAge() {
+    if (dataFile==nullptr) return -1;
+    QDateTime now = QDateTime::currentDateTime();
+    QFileInfo fi( *dataFile );
+    
+#if QT_VERSION >= 0x051000
+    qint64 difftime=-now.secsTo(dataFile->fileTime(QFileDevice::FileMetadataChangeTime));
+#else
+    qint64 difftime=-now.secsTo(fi.created());
+#endif
+
+    return difftime;
 }
 
 void FileHandler::start(){
@@ -210,10 +226,11 @@ void FileHandler::onReceivedLogParameter(const LogParameter& log){
 }
 
 void FileHandler::onLogRemind(){
-	if (logFile==nullptr) return;
 	emit logIntervalSignal();
+	if (logFile==nullptr) return;
 	// loop over the map with all accumulated parameters since last log reminder
-	for (auto it=logData.begin(); it != logData.end();/* no increment here since we erase and invalidate iterators within the loop */) {
+	// no increment here since we erase and invalidate iterators within the loop
+	for (auto it=logData.begin(); it != logData.end();) {
 		QString name=it.key();
 		QVector<LogParameter> parVector=it.value();
 		// check if name string is set but no entry exists. This should not happen
@@ -346,9 +363,9 @@ bool FileHandler::openFiles(bool writeHeader){
     // write header
     if (writeHeader){
         QTextStream dataOut(dataFile);
-        dataOut << "#rising               falling               accEst valid timebase utc\n";
+        dataOut << "#unix_timestamp_rising(s)  unix_timestamp_trailing(s)  time_accuracy(ns)  valid  timebase(0=gps,2=utc)  utc_available\n";
         QTextStream logOut(logFile);
-        logOut << "#temperature ... etc.\n";
+        logOut << "#log parameters: time<YYYY-MM-DD_hh-mm-ss>  parname   value  unit\n";
         onceLogFlag=true;
     }
     return true;

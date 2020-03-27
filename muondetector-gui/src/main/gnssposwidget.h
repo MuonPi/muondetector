@@ -4,6 +4,8 @@
 #include <QWidget>
 #include <QMap>
 #include <QVector>
+#include <QPixmap>
+#include <QDateTime>
 
 
 class GnssSatellite;
@@ -14,8 +16,13 @@ class GnssPosWidget;
 }
 
 struct SatHistoryPoint {
-    QPointF pos;
+    QPointF posCart;
+    QPoint posPolar;
+    quint8 satId;
+    quint8 gnssId;
+    quint8 cnr;
     QColor color;
+    QDateTime time;
 };
 
 class GnssPosWidget : public QWidget
@@ -34,6 +41,8 @@ public slots:
 
 private slots:
     void on_satSizeSpinBox_valueChanged(int arg1);
+    void popUpMenu(const QPoint &);
+    void exportToFile();
 
 private:
     Ui::GnssPosWidget *ui;
@@ -41,6 +50,8 @@ private:
     QVector<GnssSatellite> fCurrentSatlist;
 
     QPointF polar2cartUnity(const QPointF &pol);
+    void drawPolarPixMap(QPixmap& pm);
+    void drawCartesianPixMap(QPixmap& pm);
 };
 
 #endif // GNSSPOSWIDGET_H
