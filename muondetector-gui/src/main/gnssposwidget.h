@@ -6,10 +6,9 @@
 #include <QVector>
 #include <QPixmap>
 #include <QDateTime>
-
+#include <QHash>
 
 class GnssSatellite;
-
 
 namespace Ui {
 class GnssPosWidget;
@@ -46,12 +45,17 @@ private slots:
 
 private:
     Ui::GnssPosWidget *ui;
-    QMap<int, QVector<SatHistoryPoint>> satTracks;
+//    QMap<int, QVector<SatHistoryPoint>> satTracks;
+    QMap<int, QHash<QPoint, QVector<SatHistoryPoint>>> satTracks;
     QVector<GnssSatellite> fCurrentSatlist;
 
     QPointF polar2cartUnity(const QPointF &pol);
     void drawPolarPixMap(QPixmap& pm);
     void drawCartesianPixMap(QPixmap& pm);
 };
+
+inline uint qHash(const QPoint& p){
+    return 1000*p.x()+p.y();
+}
 
 #endif // GNSSPOSWIDGET_H

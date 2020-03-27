@@ -8,12 +8,15 @@
 #include <QFileDialog>
 #include <QTextStream>
 #include <QResizeEvent>
+#include <QDebug>
 
 using namespace std;
 
 constexpr double pi() { return acos(-1); }
 constexpr double sqrt2() {return sqrt(2.); }
-const int MAX_SAT_TRACK_ENTRIES = 10000;
+
+const int MAX_SAT_TRACK_ENTRIES = 1000;
+
 static const QList<QColor> GNSS_COLORS = { Qt::darkGreen, Qt::darkYellow, Qt::blue, Qt::magenta, Qt::gray, Qt::cyan, Qt::red, Qt::black };
 static int alphaFromCnr(int cnr) {
     int alpha=cnr*255/40;
@@ -96,11 +99,6 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm) {
     satPosPainter.drawText(satPosPixmapSize/2-16,satPosPixmapSize*5/6-12,18,18,Qt::AlignHCenter,"30°");
     satPosPainter.drawText(satPosPixmapSize/2-16,satPosPixmapSize*2/3-12,18,18,Qt::AlignHCenter,"60°");
 
-
-    int nrGoodSats = 0;
-    for (auto it=fCurrentSatlist.begin(); it!=fCurrentSatlist.end(); it++)
-        if (it->fCnr>0) nrGoodSats++;
-
     for (int i=0; i<fCurrentSatlist.size(); i++)
     {
         if (ui->receivedSatsCheckBox->isChecked()) {
@@ -116,19 +114,12 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm) {
             satColor = GNSS_COLORS[fCurrentSatlist[i].fGnssId];
             satPosPainter.setPen(satColor);
             fillColor=satColor;
-//            int alpha = fCurrentSatlist[i].fCnr*255/40;
             int alpha = alphaFromCnr(fCurrentSatlist[i].fCnr);
-            //if (alpha>255) alpha=255;
             fillColor.setAlpha(alpha);
             int satId = fCurrentSatlist[i].fGnssId*1000 + fCurrentSatlist[i].fSatId;
-//            QPointF currPoint(xpos+satPosPixmapSize/2,ypos+satPosPixmapSize/2);
             QPointF lastPoint(-2,-2);
             int lastCnr = 255;
-            if (satTracks[satId].size()) {
-                lastPoint=satTracks[satId].last().posCart;
-                lastCnr = satTracks[satId].last().cnr;
-            }
-            if (lastPoint!=currPoint || lastCnr!=fCurrentSatlist[i].fCnr)
+            if (fCurrentSatlist[i].fCnr>0)
             {
                 SatHistoryPoint p;
                 p.posCart=currPoint;
@@ -138,39 +129,45 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm) {
                 p.satId=fCurrentSatlist[i].fSatId;
                 p.cnr=fCurrentSatlist[i].fCnr;
                 p.time=QDateTime::currentDateTimeUtc();
-                satTracks[satId].push_back(p);
+                satTracks[satId][p.posPolar].push_back(p);
+                if (satTracks[satId][p.posPolar].size()>MAX_SAT_TRACK_ENTRIES)
+                    satTracks[satId][p.posPolar].pop_front();
             }
             satPosPainter.setPen(satColor);
             satPosPainter.setBrush(fillColor);
-/*
-            if (fCurrentSatlist[i].fCnr>40) satPosPainter.setBrush(Qt::darkGreen);
-            else if (fCurrentSatlist[i].fCnr>30) satPosPainter.setBrush(Qt::green);
-            else if (fCurrentSatlist[i].fCnr>20) satPosPainter.setBrush(Qt::yellow);
-            else if (fCurrentSatlist[i].fCnr>10) satPosPainter.setBrush(QColor(255,100,0));
-            else if (fCurrentSatlist[i].fCnr>0) satPosPainter.setBrush(Qt::red);
-            else satPosPainter.setBrush(QColor("transparent"));
-*/
             currPoint*=satPosPixmapSize;
             currPoint+=originOffset;
 
             float satsize=ui->satSizeSpinBox->value();
             satPosPainter.drawEllipse(currPoint,satsize/2.,satsize/2.);
             if (fCurrentSatlist[i].fUsed) satPosPainter.drawEllipse(currPoint,satsize/2.+0.5,satsize/2.+0.5);
-            currPoint.rx()+=3;
+            currPoint.rx()+=4.5;
             if (ui->satLabelsCheckBox->isChecked()) satPosPainter.drawText(currPoint, QString::number(fCurrentSatlist[i].fSatId));
         }
     }
 
     // draw the sat tracks
     if (ui->tracksCheckBox->isChecked()) {
-        foreach (QVector<SatHistoryPoint> sat, satTracks) {
-            for (int i=0; i<sat.size(); i++) {
-                satPosPainter.setPen(sat[i].color);
-                QPointF p(sat[i].posCart);
+        for (const auto& pointMap : satTracks) {
+            for (const QVector<SatHistoryPoint> &pointVector : pointMap) {
+                if (pointVector.size()==0) continue;
+                double cnr=0.;
+                SatHistoryPoint satPoint;
+                for (int i=0; i<pointVector.size(); i++) {
+                    satPoint=pointVector[i];
+                    cnr+=satPoint.cnr;
+                }
+                satPoint = pointVector.front();
+                cnr/=(double)pointVector.size();
+                QColor satColor=GNSS_COLORS[satPoint.gnssId];
+                satColor.setAlpha(alphaFromCnr(cnr));
+                satPosPainter.setPen(satColor);
+                QPointF p(satPoint.posCart);
                 p*=satPosPixmapSize;
                 p+=originOffset;
                 //satPosPainter.setBrush(satTracks[satId][i].color);
                 satPosPainter.drawPoint(p);
+                //qDebug()<<satPoint.posPolar<<" cnr="<<cnr<<" "<<pointVector.size()<<" entries";
             }
         }
     }
@@ -206,9 +203,6 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm) {
     satPosPainter.drawText(pm.width()/2,originOffset.y()-10,18,18,Qt::AlignHCenter,"0°");
     satPosPainter.drawText(pm.width()/2,0.33*originOffset.y()+3,18,18,Qt::AlignHCenter,"60°");
     satPosPainter.drawText(pm.width()/2,0.67*originOffset.y()+3,18,18,Qt::AlignHCenter,"30°");
-//    satPosPainter.drawText(satPosPixmapSize/2-16,satPosPixmapSize*5/6-12,18,18,Qt::AlignHCenter,"30°");
-//    satPosPainter.drawText(satPosPixmapSize/2-16,satPosPixmapSize*2/3-12,18,18,Qt::AlignHCenter,"60°");
-
 
     int nrGoodSats = 0;
     for (auto it=fCurrentSatlist.begin(); it!=fCurrentSatlist.end(); it++)
@@ -229,18 +223,11 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm) {
             satColor = GNSS_COLORS[fCurrentSatlist[i].fGnssId];
             satPosPainter.setPen(satColor);
             fillColor=satColor;
-            int alpha = fCurrentSatlist[i].fCnr*255/40;
-            if (alpha>255) alpha=255;
+            int alpha = alphaFromCnr(fCurrentSatlist[i].fCnr);
             fillColor.setAlpha(alpha);
             int satId = fCurrentSatlist[i].fGnssId*1000 + fCurrentSatlist[i].fSatId;
-//            QPointF currPoint(xpos+satPosPixmapSize/2,ypos+satPosPixmapSize/2);
-            QPointF lastPoint(-2,-2);
-            int lastCnr = 255;
-            if (satTracks[satId].size()) {
-                lastPoint=satTracks[satId].last().posCart;
-                lastCnr = satTracks[satId].last().cnr;
-            }
-            if (lastPoint!=currPoint || lastCnr!=fCurrentSatlist[i].fCnr)
+
+            if (fCurrentSatlist[i].fCnr>0)
             {
                 SatHistoryPoint p;
                 p.posCart=currPoint;
@@ -250,7 +237,10 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm) {
                 p.satId=fCurrentSatlist[i].fSatId;
                 p.cnr=fCurrentSatlist[i].fCnr;
                 p.time=QDateTime::currentDateTimeUtc();
-                satTracks[satId].push_back(p);
+                satTracks[satId][p.posPolar].push_back(p);
+                if (satTracks[satId][p.posPolar].size()>MAX_SAT_TRACK_ENTRIES)
+                    satTracks[satId][p.posPolar].pop_front();
+
             }
             satPosPainter.setPen(satColor);
             satPosPainter.setBrush(fillColor);
@@ -267,21 +257,30 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm) {
 
     // draw the sat tracks
     if (ui->tracksCheckBox->isChecked()) {
-        foreach (QVector<SatHistoryPoint> sat, satTracks) {
-            for (int i=0; i<sat.size(); i++) {
-                satPosPainter.setPen(sat[i].color);
-                QPointF p(sat[i].posPolar);
-                p=QPointF(p.x()/360.*pm.width(), -p.y()/90.*pm.height()*0.9+pm.height()*0.9);
-                //satPosPainter.drawPoint(p);
+        for (const auto& pointMap : satTracks) {
+            for (const QVector<SatHistoryPoint> &pointVector : pointMap) {
+                if (pointVector.size()==0) continue;
+                double cnr=0.;
+                SatHistoryPoint satPoint;
+                for (int i=0; i<pointVector.size(); i++) {
+                    satPoint=pointVector[i];
+                    cnr+=satPoint.cnr;
+                }
+                satPoint = pointVector.front();
+                cnr/=(double)pointVector.size();
+                QColor satColor=GNSS_COLORS[satPoint.gnssId];
+                satColor.setAlpha(alphaFromCnr(cnr));
                 satPosPainter.setPen(QColor("transparent"));
-                satPosPainter.setBrush(sat[i].color);
+                satPosPainter.setBrush(satColor);
+        
+                QPointF p(satPoint.posPolar);
+                p=QPointF(p.x()/360.*pm.width(), -p.y()/90.*pm.height()*0.9+pm.height()*0.9);
                 int w=pm.width()/360+1;
                 int h=pm.height()*0.9/90+1;
                 satPosPainter.drawRect(p.x()-w/2,p.y()-h/2,w,h);
             }
         }
     }
-    
 }
 
 void GnssPosWidget::replot() {
@@ -391,19 +390,27 @@ void GnssPosWidget::exportToFile() {
             QTextStream out(&file);
             //out.setFieldWidth(20);
             out<<"# GNSS sat history from  xxx to yyy\n";
+            out<<"# datetime marks the entrance time into space point (az,el)\n";
             out<<"# <ISO8601-datetime> <gnss-id> <gnss-id-string> <sat-id> <azimuth> <elevation> <cnr>\n";
 
-            foreach (QVector<SatHistoryPoint> satvector, satTracks) {
-                foreach (SatHistoryPoint p, satvector) {
-                //for (int i=0; i<sat.size(); i++) {
-                    //QPointF p(sat[i].pos);
+            for (const auto& pointMap : satTracks) {
+                for (const QVector<SatHistoryPoint> &pointVector : pointMap) {
+                    if (pointVector.size()==0) continue;
+                    double cnr=0.;
+                    SatHistoryPoint p;
+                    for (int i=0; i<pointVector.size(); i++) {
+                        p=pointVector[i];
+                        cnr+=p.cnr;
+                    }
+                    p = pointVector.front();
+                    cnr/=(double)pointVector.size();
                     out << p.time.toString(Qt::ISODate) << " "
                         << p.gnssId << " "
                         << GNSS_ID_STRING[p.gnssId] << " "
                         << p.satId << " "
                         << p.posPolar.x() << " "
                         << p.posPolar.y() << " "
-                        << p.cnr <<"\n";
+                        << cnr <<"\n";
                 }
             }
         }
