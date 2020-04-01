@@ -9,11 +9,28 @@
 #include <QTextStream>
 #include <QResizeEvent>
 #include <QDebug>
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 using namespace std;
 
-constexpr double pi() { return acos(-1); }
-constexpr double sqrt2() {return sqrt(2.); }
+namespace Detail
+{
+    double constexpr sqrtNewtonRaphson(double x, double curr, double prev)
+    {
+        return curr == prev
+            ? curr
+            : sqrtNewtonRaphson(x, 0.5 * (curr + x / curr), curr);
+    }
+    double constexpr sqrt(double x)
+    {
+        return x >= 0 && x < std::numeric_limits<double>::infinity()
+            ? Detail::sqrtNewtonRaphson(x, x, 0)
+            : std::numeric_limits<double>::quiet_NaN();
+    }
+}
+constexpr double pi() { return M_PI; }
+constexpr double sqrt2() {return Detail::sqrt(2.); }
 
 const int MAX_SAT_TRACK_ENTRIES = 1000;
 

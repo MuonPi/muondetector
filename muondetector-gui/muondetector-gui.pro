@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 win32{
-include ( C:/qwt-6.1.3/features/qwt.prf )
+include ( C:/qwt-6.1.4/features/qwt.prf )
 }
 VERSION = 1.1.1
 QT       += core \
@@ -132,6 +132,8 @@ SOURCES += \
 
 RESOURCES += \
     resources.qrc
+
+win32:RC_ICONS = res/muon.ico
 
 DISTFILES += \
     res/mymap.qml \
