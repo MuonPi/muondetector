@@ -187,6 +187,7 @@ signals:
 private slots:
     void onRateBufferReminder();
     void updateOledDisplay();
+    void aquireMonitoringParameters();
 
 private:
     void incomingConnection(qintptr socketDescriptor) override;
@@ -215,7 +216,6 @@ private:
     void sendLogInfo();
     bool readEeprom();
     void receivedCalibItems(const std::vector<CalibStruct>& newCalibs);
-    void logBiasValues();
     void setupHistos();
     void rescaleHisto(Histogram& hist, double center, double width);
     void rescaleHisto(Histogram& hist, double center);
@@ -275,11 +275,14 @@ private:
     ShowerDetectorCalib* calib = nullptr;
 
     // histograms
-    Histogram geoHeightHisto, geoLonHisto, geoLatHisto,
+/*
+     Histogram geoHeightHisto, geoLonHisto, geoLatHisto,
      weightedGeoHeightHisto,
      pulseHeightHisto, adcSampleTimeHisto, tdc7200Histo,
      ubxTimeLengthHisto, eventIntervalHisto, eventIntervalShortHisto, 
      ubxTimeIntervalHisto, tpTimeDiffHisto;
+*/
+    QMap<QString, Histogram> histoMap;
     
     // others
     QVector<QPointF> xorRatePoints, andRatePoints;
@@ -298,6 +301,7 @@ private:
     uint8_t adcSamplingMode = ADC_MODE_PEAK;
     qint16 currentAdcSampleIndex = -1;
     QTimer samplingTimer;
+    QTimer parameterMonitorTimer;
     QMap<QString, Property> propertyMap;
     
 };

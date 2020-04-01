@@ -18,8 +18,10 @@ constexpr double sqrt2() {return sqrt(2.); }
 const int MAX_SAT_TRACK_ENTRIES = 1000;
 
 static const QList<QColor> GNSS_COLORS = { Qt::darkGreen, Qt::darkYellow, Qt::blue, Qt::magenta, Qt::gray, Qt::cyan, Qt::red, Qt::black };
-static int alphaFromCnr(int cnr) {
-    int alpha=cnr*255/40;
+
+int GnssPosWidget::alphaFromCnr(int cnr) {
+//    int alpha=cnr*255/cnrColorRange;
+    int alpha=cnr*255/ui->cnrRangeSpinBox->value();
     if (alpha>255) alpha=255;
     return alpha;
 }
@@ -36,6 +38,7 @@ GnssPosWidget::GnssPosWidget(QWidget *parent) :
     this->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(this,SIGNAL(customContextMenuRequested(const QPoint &  )),this,SLOT(popUpMenu(const QPoint &)));
     connect(ui->cartPolarCheckBox, &QCheckBox::toggled, this, [this](bool checked) { resizeEvent(nullptr); } );
+    connect(ui->cnrRangeSpinBox, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, [this](int) { replot(); } ); 
 }
 
 GnssPosWidget::~GnssPosWidget()
@@ -141,7 +144,7 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm) {
             float satsize=ui->satSizeSpinBox->value();
             satPosPainter.drawEllipse(currPoint,satsize/2.,satsize/2.);
             if (fCurrentSatlist[i].fUsed) satPosPainter.drawEllipse(currPoint,satsize/2.+0.5,satsize/2.+0.5);
-            currPoint.rx()+=4.5;
+            currPoint.rx()+=5.5;
             if (ui->satLabelsCheckBox->isChecked()) satPosPainter.drawText(currPoint, QString::number(fCurrentSatlist[i].fSatId));
         }
     }
@@ -250,7 +253,7 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm) {
             float satsize=ui->satSizeSpinBox->value();
             satPosPainter.drawEllipse(currPos,satsize/2.,satsize/2.);
             if (fCurrentSatlist[i].fUsed) satPosPainter.drawEllipse(currPos,satsize/2.+0.5,satsize/2.+0.5);
-            currPoint.rx()+=4.5;
+            currPoint.rx()+=5.5;
             if (ui->satLabelsCheckBox->isChecked()) satPosPainter.drawText(currPos, QString::number(fCurrentSatlist[i].fSatId));
         }
     }

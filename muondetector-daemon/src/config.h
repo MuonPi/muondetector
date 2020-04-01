@@ -14,6 +14,7 @@
 #define ADC_SAMPLEBUFFER_SIZE 		50
 #define ADC_PRETRIGGER 			10
 #define TRACE_SAMPLING_INTERVAL 	5  // free running adc sampling interval in ms
+#define PARAMETER_MONITOR_INTERVAL	5000
 
 
 #endif // _CONFIG_H_

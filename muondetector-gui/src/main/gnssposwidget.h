@@ -48,10 +48,12 @@ private:
 //    QMap<int, QVector<SatHistoryPoint>> satTracks;
     QMap<int, QHash<QPoint, QVector<SatHistoryPoint>>> satTracks;
     QVector<GnssSatellite> fCurrentSatlist;
+//    int cnrColorRange=40;
 
     QPointF polar2cartUnity(const QPointF &pol);
     void drawPolarPixMap(QPixmap& pm);
     void drawCartesianPixMap(QPixmap& pm);
+    int alphaFromCnr(int cnr);
 };
 
 inline uint qHash(const QPoint& p){

@@ -27,6 +27,22 @@ public:
 	double getMax() const { return fMax; }
 	double getRange() const { return fMax-fMin; }
 	double getCenter() const { return 0.5*getRange()+fMin; }
+	double getBinCenter(int bin) const { return bin2Value(bin); }
+	int getLowestOccupiedBin() const {
+		 if (fHistogramMap.empty()) return -1;
+		 auto it=fHistogramMap.begin();
+		 while (it!=fHistogramMap.end() && it->second<1e-3) ++it;
+		 if (it==fHistogramMap.end()) return -1;
+		 return it->first;
+	}
+	int getHighestOccupiedBin() const {
+		 if (fHistogramMap.empty()) return -1;
+		 auto it=--fHistogramMap.end();
+		 while (it!=fHistogramMap.begin() && it->second<1e-3) --it;
+		 if (it==fHistogramMap.begin()) return 0;
+		 return it->first;
+	}
+	
 	void fill(double x, double mult = 1.) {
 		int bin=value2Bin(x);
 		if (bin<0) {
@@ -93,13 +109,13 @@ public:
 	const std::string& getUnit() const { return fUnit; }
 
 protected:
-	int value2Bin(double value) {
+	int value2Bin(double value) const {
 		double range=fMax-fMin;
 		if (range<=0.) return -1;	
 		int bin=(value-fMin)/range*(fNrBins-1)+0.5;
 		return bin;
 	}
-	double bin2Value(int bin) {
+	double bin2Value(int bin) const {
 		double range=fMax-fMin;
 		if (range<=0.) return -1;	
 		double value=range*bin/(fNrBins-1)+fMin;

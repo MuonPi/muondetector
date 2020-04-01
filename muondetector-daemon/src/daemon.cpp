@@ -58,28 +58,6 @@ static QVector<uint16_t> allMsgCfgID({
          UBX_MON_RXBUF, UBX_MON_RXR, UBX_MON_TXBUF
 	});
 
-/*
-QDataStream& operator << (QDataStream& out, const CalibStruct& calib)
-{
-	out << QString::fromStdString(calib.name) << QString::fromStdString(calib.type)
-	 << (quint16)calib.address << QString::fromStdString(calib.value);
-    return out;
-}
-
-QDataStream & operator >> (QDataStream& in, CalibStruct& calib)
-{
-	QString s1,s2,s3;
-	quint16 u;
-	in >> s1 >> s2;
-	in >> u;
-	in >> s3;
-	calib.name = s1.toStdString();
-	calib.type = s2.toStdString();
-	calib.address = (uint16_t)u;
-	calib.value = s3.toStdString();
-	return in;
-}
-*/
 
 
 // signal handling stuff: put code to execute before shutdown down there
@@ -235,7 +213,6 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	eep = new EEPROM24AA02();
 	calib = new ShowerDetectorCalib(eep);
 	if (eep->devicePresent()) {
-//		readEeprom();
 		calib->readFromEeprom();
 		if (verbose>1) {
 			cout<<"eep device is present."<<endl;
@@ -244,6 +221,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 			uint64_t id=calib->getSerialID();
 			cout<<"unique ID: 0x"<<hex<<id<<dec<<endl;
 			
+			// Caution, only for debugging. This code snippet writes a test sequence into the eeprom
 			if (1==0) {
 				uint8_t buf[256];
 				for (int i=0; i<256; i++) buf[i]=i;
@@ -290,6 +268,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	GPIO_PINMAP=GPIO_PINMAP_VERSIONS[HW_VERSION];
 
 	if (verbose>1) {
+		// print out the current gpio pin mapping
+		// (function, gpio-pin, direction)
 		cout<<"GPIO pin mapping:"<<endl;
 		
 		for (auto signalIt=GPIO_PINMAP.begin(); signalIt!=GPIO_PINMAP.end(); signalIt++) {
@@ -306,18 +286,6 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 			}
 			cout<<endl;
 		}
-/*		cout<<" EVT_AND     : "<<GPIO_PINMAP[EVT_AND]<<endl;
-		cout<<" EVT_XOR     : "<<GPIO_PINMAP[EVT_XOR]<<endl;
-		cout<<" UBIAS_EN    : "<<GPIO_PINMAP[UBIAS_EN]<<endl;
-		cout<<" PREAMP_1    : "<<GPIO_PINMAP[PREAMP_1]<<endl;
-		cout<<" PREAMP_2    : "<<GPIO_PINMAP[PREAMP_2]<<endl;
-		cout<<" GAIN_HL     : "<<GPIO_PINMAP[GAIN_HL]<<endl;
-		cout<<" TIMEPULSE   : "<<GPIO_PINMAP[TIMEPULSE]<<endl;
-		cout<<" ADC_READY   : "<<GPIO_PINMAP[ADC_READY]<<endl;
-		cout<<" STATUS1     : "<<GPIO_PINMAP[STATUS1]<<endl;
-		cout<<" STATUS2     : "<<GPIO_PINMAP[STATUS2]<<endl;
-		cout<<" PREAMP_FAULT: "<<GPIO_PINMAP[PREAMP_FAULT]<<endl;
-*/
 	}
 
 	// create fileHandler
@@ -331,7 +299,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	connect(fileHandlerThread, &QThread::started, fileHandler, &FileHandler::start);
 	fileHandlerThread->start();
 
-	// for i2c devices
+	// instantiate, detect and initialize all i2c devices
+	// LM75A temp sensor
 	lm75 = new LM75();
 	if (lm75->devicePresent()) {
 		if (verbose>2) {
@@ -342,6 +311,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	} else {
 		cerr<<"LM75 device NOT present!"<<endl;
 	}
+	// 4ch, 16/14bit ADC ADS1115/1015
 	adc = new ADS1115();
 	if (adc->devicePresent()) {
 		adc->setPga(ADS1115::PGA4V);
@@ -383,7 +353,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		cerr<<"ADS1115 device NOT present!"<<endl;
 	}
 	
-
+	// 4ch DAC MCP4728
 	dac = new MCP4728();
 	if (dac->devicePresent()) {
 		if (verbose>2) {
@@ -450,9 +420,9 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	}
 
 
-// removed instantiation of ublox i2c interface since it doesn't work properly on RPi
+// removed initialization of ublox i2c interface since it doesn't work properly on RPi
 // the Ublox i2c relies on clock stretching, which RPi is not supporting
-
+// the ublox's i2c address is still occupied but locked, i.e. access is prohibited
 	ubloxI2c = new UbloxI2c(0x42);
 	ubloxI2c->lock();
 	if (ubloxI2c->devicePresent()) {
@@ -480,7 +450,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		cerr<<"ublox I2C device interface NOT present!"<<endl;
 	}
 
-	
+	// check if also an Adafruit-SSD1306 compatible i2c OLED display is present
+	// initialize and start loop for display of several state variables
 	oled = new Adafruit_SSD1306(0x3c);
 	if (oled->devicePresent()) {
 		if (verbose>1) {
@@ -525,7 +496,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 
 	// for diagnostics:
 	// print out some i2c device statistics
-	if (1==0) {
+	if (verbose>3) {
 		cout<<"Nr. of invoked I2C devices (plain count): "<<i2cDevice::getNrDevices()<<endl;
 		cout<<"Nr. of invoked I2C devices (gl. device list's size): "<<i2cDevice::getGlobalDeviceList().size()<<endl;
 		cout<<"Nr. of bytes read on I2C bus: "<<i2cDevice::getGlobalNrBytesRead()<<endl;
@@ -599,6 +570,13 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		configGps();
 	}
 	pollAllUbxMsgRate();
+
+	// set up cyclic timer monitoring following operational parameters:
+	// temp, vadc, vbias, ibias
+	parameterMonitorTimer.setInterval(PARAMETER_MONITOR_INTERVAL);
+	parameterMonitorTimer.setSingleShot(false);
+	connect(&parameterMonitorTimer, &QTimer::timeout, this, &Daemon::aquireMonitoringParameters);
+	parameterMonitorTimer.start();
 }
 
 
@@ -633,8 +611,10 @@ void Daemon::connectToPigpiod(){
 
     //tdc <-> thread & daemon
     connect(tdc7200, &TDC7200::tdcEvent, this, [this](double usecs){
-        checkRescaleHisto(tdc7200Histo,usecs);
-        tdc7200Histo.fill(usecs);
+        if (histoMap.find("Time-to-Digital Time Diff")!=histoMap.end()) {
+			checkRescaleHisto(histoMap["Time-to-Digital Time Diff"],usecs);
+			histoMap["Time-to-Digital Time Diff"].fill(usecs);
+		}
     });
     connect(tdc7200, &TDC7200::statusUpdated, this, [this](bool isPresent){
        spiDevicePresent = isPresent;
@@ -653,15 +633,22 @@ void Daemon::connectToPigpiod(){
     connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
     connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
     connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) 
-	{ eventIntervalHisto.fill(1e-6*nsecs); } );
+	{ 	if (histoMap.find("gpioEventInterval")!=histoMap.end()) {
+			checkRescaleHisto(histoMap["gpioEventInterval"], 1e-6*nsecs);
+			histoMap["gpioEventInterval"].fill(1e-6*nsecs); 
+		}
+	} );
     connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs)
-	{ 
-		if (nsecs/1000<=eventIntervalShortHisto.getMax()) 
-			eventIntervalShortHisto.fill((double)nsecs/1000.);
+	{ 	if (histoMap.find("gpioEventIntervalShort")!=histoMap.end()) {
+			if (nsecs/1000<=histoMap["gpioEventIntervalShort"].getMax()) 
+				histoMap["gpioEventIntervalShort"].fill((double)nsecs/1000.);
+		}
 	} );
     connect(pigHandler, &PigpiodHandler::timePulseDiff, this, [this](qint32 usecs)
-	{ 	checkRescaleHisto(tpTimeDiffHisto, usecs);
-		tpTimeDiffHisto.fill((double)usecs);
+	{ 	if (histoMap.find("TPTimeDiff")!=histoMap.end()) {
+			checkRescaleHisto(histoMap["TPTimeDiff"], usecs);
+			histoMap["TPTimeDiff"].fill((double)usecs);
+		}
 		/*cout<<"TP time diff: "<<usecs<<" us"<<endl;*/
 	} );
     pigHandler->setSamplingTriggerSignal(eventTrigger);
@@ -821,83 +808,58 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 	pollAllUbxMsgRate();
 }
 
-
+// Histogram functions
 void Daemon::setupHistos() {
-	geoHeightHisto=Histogram("geoHeight",200,0.,199.);
-	geoHeightHisto.setUnit("m");
-	geoLonHisto=Histogram("geoLongitude",200,0.,0.003);
-	geoLonHisto.setUnit("deg");
-	geoLatHisto=Histogram("geoLatitude",200,0.,0.003);
-	geoLatHisto.setUnit("deg");
-	weightedGeoHeightHisto=Histogram("weightedGeoHeight",200,0.,199.);
-	weightedGeoHeightHisto.setUnit("m");
-	pulseHeightHisto=Histogram("pulseHeight",500,0.,3.8);
-	pulseHeightHisto.setUnit("V");
-	adcSampleTimeHisto=Histogram("adcSampleTime",500,0.,49.9);
-	adcSampleTimeHisto.setUnit("ms");
-	ubxTimeLengthHisto=Histogram("UbxEventLength",100,50.,149.);
-	ubxTimeLengthHisto.setUnit("ns");
-	eventIntervalHisto=Histogram("gpioEventInterval",400,0.,1100.);
-	eventIntervalHisto.setUnit("ms");
-	eventIntervalShortHisto=Histogram("gpioEventIntervalShort",50,0.,49.);
-	eventIntervalShortHisto.setUnit("us");
-	ubxTimeIntervalHisto=Histogram("UbxEventInterval",200,0.,1100.);
-	ubxTimeIntervalHisto.setUnit("ms");
-	tpTimeDiffHisto=Histogram("TPTimeDiff",200,-999.,1000.);
-	tpTimeDiffHisto.setUnit("us");
-	tdc7200Histo=Histogram("Time-to-Digital Time Diff",400, 0., 1e6);
-	tdc7200Histo.setUnit("ns");
+	Histogram hist=Histogram("geoHeight",200,0.,199.);
+	hist.setUnit("m");
+	histoMap["geoHeight"]=hist;
+	hist=Histogram("geoLongitude",200,0.,0.003);
+	hist.setUnit("deg");
+	histoMap["geoLongitude"]=hist;
+	hist=Histogram("geoLatitude",200,0.,0.003);
+	hist.setUnit("deg");
+	histoMap["geoLatitude"]=hist;
+	hist=Histogram("weightedGeoHeight",200,0.,199.);
+	hist.setUnit("m");
+	histoMap["weightedGeoHeight"]=hist;
+	hist=Histogram("pulseHeight",500,0.,3.8);
+	hist.setUnit("V");
+	histoMap["pulseHeight"]=hist;
+	hist=Histogram("adcSampleTime",500,0.,49.9);
+	hist.setUnit("ms");
+	histoMap["adcSampleTime"]=hist;
+	hist=Histogram("UbxEventLength",100,50.,149.);
+	hist.setUnit("ns");
+	histoMap["UbxEventLength"]=hist;
+	hist=Histogram("gpioEventInterval",400,0.,1100.);
+	hist.setUnit("ms");
+	histoMap["gpioEventInterval"]=hist;
+	hist=Histogram("gpioEventIntervalShort",50,0.,49.);
+	hist.setUnit("us");
+	histoMap["gpioEventIntervalShort"]=hist;
+	hist=Histogram("UbxEventInterval",200,0.,1100.);
+	hist.setUnit("ms");
+	histoMap["UbxEventInterval"]=hist;
+	hist=Histogram("TPTimeDiff",200,-999.,1000.);
+	hist.setUnit("us");
+	histoMap["TPTimeDiff"]=hist;
+	hist=Histogram("Time-to-Digital Time Diff",400, 0., 1e6);
+	hist.setUnit("ns");
+	histoMap["Time-to-Digital Time Diff"]=hist;
+	hist=Histogram("Bias Voltage", 500, 0., 1.);
+	hist.setUnit("V");
+	histoMap["Bias Voltage"]=hist;
+	hist=Histogram("Bias Current", 200, 0., 50.);
+	hist.setUnit("uA");
+	histoMap["Bias Current"]=hist;
 }
 
 void Daemon::clearHisto(const QString& histoName){
-    if (histoName=="geoHeight"){
-        geoHeightHisto.clear();
-        emit sendHistogram(geoHeightHisto);
-    }
-    if (histoName=="geoLongitude"){
-        geoLonHisto.clear();
-        emit sendHistogram(geoLonHisto);
-    }
-    if (histoName=="geoLatHisto"){
-        geoLatHisto.clear();
-        emit sendHistogram(geoLatHisto);
-    }
-    if (histoName=="weightedGeoHeight"){
-        weightedGeoHeightHisto.clear();
-        emit sendHistogram(weightedGeoHeightHisto);
-    }
-    if (histoName=="pulseHeight"){
-        pulseHeightHisto.clear();
-        emit sendHistogram(pulseHeightHisto);
-    }
-    if (histoName=="adcSampleTime"){
-        adcSampleTimeHisto.clear();
-        emit sendHistogram(adcSampleTimeHisto);
-    }
-    if (histoName=="UbxEventLength"){
-        ubxTimeLengthHisto.clear();
-        emit sendHistogram(ubxTimeLengthHisto);
-    }
-    if (histoName=="gpioEventInterval"){
-        eventIntervalHisto.clear();
-        emit sendHistogram(eventIntervalHisto);
-    }
-    if (histoName=="gpioEventIntervalShort"){
-        eventIntervalShortHisto.clear();
-        emit sendHistogram(eventIntervalShortHisto);
-    }
-    if (histoName=="UbxEventInterval"){
-        ubxTimeIntervalHisto.clear();
-        emit sendHistogram(ubxTimeIntervalHisto);
-    }
-    if (histoName=="TPTimeDiff"){
-        tpTimeDiffHisto.clear();
-        emit sendHistogram(tpTimeDiffHisto);
-    }
-    if (histoName=="Time-to-Digital Time Diff"){
-        tdc7200.clear();
-        emit sendHistogram(tdc7200Histo);
-    }
+    if (histoMap.find(histoName)!=histoMap.end()) {
+		histoMap[histoName].clear();
+		emit sendHistogram(histoMap[histoName]);
+	}
+    return;
 }
 
 void Daemon::rescaleHisto(Histogram& hist, double center, double width) {
@@ -918,25 +880,33 @@ void Daemon::checkRescaleHisto(Histogram& hist, double newValue) {
 	// histo will not be filled with supplied value, it has to be done externally
 	double entries=hist.getEntries();
 	// do nothing if histo is empty
-	if (entries<1.) {
+	if (entries<3.) {
 		return;
 		rescaleHisto(hist, newValue);
 	}
 	double ufl=hist.getUnderflow();
 	double ofl=hist.getOverflow();
 	entries-=ufl+ofl;
+	double range=hist.getMax()-hist.getMin();
 	if (ufl>0. && ofl>0. && (ufl+ofl)>0.05*entries) {
 		// range is too small, underflow and overflow have more than 5% of all entries
-		double range=hist.getMax()-hist.getMin();
-		rescaleHisto(hist, hist.getMean(), 1.1*range);
+		rescaleHisto(hist, hist.getMean(), 1.2*range);
 	} else if (ufl>0.05*entries) {
 //		if (entries<1.) rescaleHisto(hist, hist.getMin()-(hist.getMax()-hist.getMin())/2.);
 		if (entries<1.) rescaleHisto(hist, newValue);
-		else rescaleHisto(hist, hist.getMean());
+		else rescaleHisto(hist, hist.getMean(), 1.2*range);
 	} else if (ofl>0.05*entries) {
 //		if (entries<1.) rescaleHisto(hist, hist.getMax()+(hist.getMax()-hist.getMin())/2.);
 		if (entries<1.) rescaleHisto(hist, newValue);
-		else rescaleHisto(hist, hist.getMean());
+		else rescaleHisto(hist, hist.getMean(), 1.1*range);
+	} else if (ufl<1e-3 && ofl<1e-3) {
+		// check if range is too wide
+		if (entries>100) {
+			int lowest = hist.getLowestOccupiedBin();
+			int highest = hist.getHighestOccupiedBin();
+			if ((float)lowest/hist.getNrBins()>0.45) rescaleHisto(hist, hist.getMean(), 0.6*range);
+			else if ((float)(hist.getNrBins()-highest)/hist.getNrBins()>0.45) rescaleHisto(hist, hist.getMean(), 0.6*range);
+		}
 	}
 }
 
@@ -964,7 +934,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         float voltage;
         *(tcpMessage.dStream) >> voltage;
         setBiasVoltage(voltage);
-        pulseHeightHisto.clear();
+  		if (histoMap.find("pulseHeight")!=histoMap.end()) histoMap["pulseHeight"].clear();
         sendBiasVoltage();
         return;
     }
@@ -976,7 +946,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         bool status;
         *(tcpMessage.dStream) >> status;
         setBiasStatus(status);
-        pulseHeightHisto.clear();
+        //pulseHeightHisto.clear();
         sendBiasStatus();
         return;
     }
@@ -991,7 +961,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
 			preampStatus[0]=status;
             emit GpioSetState(GPIO_PINMAP[PREAMP_1], status);
 			emit logParameter(LogParameter("preampSwitch1", QString::number((int)preampStatus[0]), LogParameter::LOG_EVERY));
-			pulseHeightHisto.clear();
+			//pulseHeightHisto.clear();
 		} else if (channel==1) {
             preampStatus[1]=status;
             emit GpioSetState(GPIO_PINMAP[PREAMP_2], status);
@@ -1010,7 +980,8 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> status;
         gainSwitch=status;
         emit GpioSetState(GPIO_PINMAP[GAIN_HL], status);
-		pulseHeightHisto.clear();
+		if (histoMap.find("pulseHeight")!=histoMap.end()) histoMap["pulseHeight"].clear();
+		//pulseHeightHisto.clear();
 		emit logParameter(LogParameter("gainSwitch", QString::number((int)gainSwitch), LogParameter::LOG_EVERY));
 		sendGainSwitchStatus();
 		return;
@@ -1044,7 +1015,8 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> portMask;
         setPcaChannel((uint8_t)portMask);
         sendPcaChannel();
-        ubxTimeLengthHisto.clear();
+//        ubxTimeLengthHisto.clear();
+		if (histoMap.find("UbxEventLength")!=histoMap.end()) histoMap["UbxEventLength"].clear();
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_PCA_SWITCH_REQUEST){
@@ -1273,28 +1245,31 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos){
 	emit logParameter(LogParameter("geoLongitude", QString::number(1e-7*pos.lon,'f',5)+" deg", LogParameter::LOG_AVERAGE));
 	emit logParameter(LogParameter("geoLatitude", QString::number(1e-7*pos.lat,'f',5)+" deg", LogParameter::LOG_AVERAGE));
 	emit logParameter(LogParameter("geoHeightMSL", QString::number(1e-3*pos.hMSL,'f',2)+" m", LogParameter::LOG_AVERAGE));
-	emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(geoHeightHisto.getMean(),'f',2)+" m", LogParameter::LOG_LATEST));
+	if (histoMap.find("geoHeight")!=histoMap.end())
+		emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(histoMap["geoHeight"].getMean(),'f',2)+" m", LogParameter::LOG_LATEST));
 	emit logParameter(LogParameter("geoHorAccuracy", QString::number(1e-3*pos.hAcc,'f',2)+" m", LogParameter::LOG_AVERAGE));
 	emit logParameter(LogParameter("geoVertAccuracy", QString::number(1e-3*pos.vAcc,'f',2)+" m", LogParameter::LOG_AVERAGE));
 		
 	if (1e-3*pos.vAcc<100.) {
-		checkRescaleHisto(geoHeightHisto, 1e-3*pos.hMSL);
-		geoHeightHisto.fill(1e-3*pos.hMSL /*, heightWeight */);
-		this->sendHistogram(geoHeightHisto);
-		if (currentDOP.vDOP>0) {
-			double heightWeight=100./currentDOP.vDOP;
-			checkRescaleHisto(weightedGeoHeightHisto, 1e-3*pos.hMSL);
-			weightedGeoHeightHisto.fill(1e-3*pos.hMSL , heightWeight );
-			this->sendHistogram(weightedGeoHeightHisto);
+		QString name="geoHeight";
+		if (histoMap.find(name)!=histoMap.end()) {
+			checkRescaleHisto(histoMap[name], 1e-3*pos.hMSL);
+			histoMap[name].fill(1e-3*pos.hMSL /*, heightWeight */);
+			if (currentDOP.vDOP>0) {
+				name="weightedGeoHeight";
+				double heightWeight=100./currentDOP.vDOP;
+				checkRescaleHisto(histoMap[name], 1e-3*pos.hMSL);
+				histoMap[name].fill(1e-3*pos.hMSL , heightWeight );
+			}
 		}
 	}
 	if (1e-3*pos.hAcc<100.) {
-		checkRescaleHisto(geoLonHisto, 1e-7*pos.lon);
-		geoLonHisto.fill(1e-7*pos.lon /*, heightWeight */);
-		checkRescaleHisto(geoLatHisto, 1e-7*pos.lat);
-		geoLatHisto.fill(1e-7*pos.lat /*, heightWeight */);
-		this->sendHistogram(geoLonHisto);
-		this->sendHistogram(geoLatHisto);
+		QString name="geoLongitude";
+		checkRescaleHisto(histoMap[name], 1e-7*pos.lon);
+		histoMap[name].fill(1e-7*pos.lon /*, heightWeight */);
+		name="geoLatitude";
+		checkRescaleHisto(histoMap[name], 1e-7*pos.lat);
+		histoMap[name].fill(1e-7*pos.lat /*, heightWeight */);
 	}
 }
 
@@ -1484,10 +1459,12 @@ void Daemon::sampleAdc0Event(){
     float value = adc->readVoltage(channel);
     *(tcpMessage.dStream) << (quint8)channel << value;
     emit sendTcpMessage(tcpMessage);
-    pulseHeightHisto.fill(value);
+    QString name="pulseHeight";
+    histoMap[name].fill(value);
 	emit logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms", LogParameter::LOG_AVERAGE));
-	checkRescaleHisto(adcSampleTimeHisto, adc->getLastConvTime());
-	adcSampleTimeHisto.fill(adc->getLastConvTime());
+	name="adcSampleTime";
+	checkRescaleHisto(histoMap[name], adc->getLastConvTime());
+	histoMap[name].fill(adc->getLastConvTime());
     currentAdcSampleIndex=0;
 }
 
@@ -1513,8 +1490,8 @@ void Daemon::sampleAdc0TraceEvent(){
         }
     }
     emit logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms", LogParameter::LOG_AVERAGE));
-    checkRescaleHisto(adcSampleTimeHisto, adc->getLastConvTime());
-    adcSampleTimeHisto.fill(adc->getLastConvTime());
+    checkRescaleHisto(histoMap["adcSampleTime"], adc->getLastConvTime());
+    histoMap["adcSampleTime"].fill(adc->getLastConvTime());
 }
 
 void Daemon::sampleAdcEvent(uint8_t channel){
@@ -2203,8 +2180,10 @@ void Daemon::intSignalHandler(int) {
 	::write(sigintFd[0], &a, sizeof(a));
 }
 
-void Daemon::logBiasValues()
+void Daemon::aquireMonitoringParameters()
 {
+    if (lm75 && lm75->devicePresent()) emit logParameter(LogParameter("temperature", QString::number(lm75->getTemperature())+" degC", LogParameter::LOG_AVERAGE));
+
 	double v1=0.,v2=0.;
 	if (adc && (!(adc->getStatus() & i2cDevice::MODE_UNREACHABLE)) && (adc->getStatus() & (i2cDevice::MODE_NORMAL | i2cDevice::MODE_FORCE))) {
 		v1=adc->readVoltage(2);
@@ -2230,6 +2209,8 @@ void Daemon::logBiasValues()
 //			logParameter(LogParameter("vbias2", QString::number(v2*vdiv)+" V", LogParameter::LOG_AVERAGE));
 			double ubias=v2*vdiv;
 			logParameter(LogParameter("vbias", QString::number(ubias)+" V", LogParameter::LOG_AVERAGE));
+			checkRescaleHisto(histoMap["Bias Voltage"], ubias);
+			histoMap["Bias Voltage"].fill(ubias);
 			double usense=(v1-v2)*vdiv;
 			logParameter(LogParameter("vsense", QString::number(usense)+" V", LogParameter::LOG_AVERAGE));
 			
@@ -2257,6 +2238,8 @@ void Daemon::logBiasValues()
 				icorr = ubias*islope+ioffs;
 			}
 			double ibias = usense/rsense-icorr;
+			checkRescaleHisto(histoMap["Bias Current"], ibias);
+			histoMap["Bias Current"].fill(ibias);
 			logParameter(LogParameter("ibias", QString::number(ibias)+" uA", LogParameter::LOG_AVERAGE));
 
 		} else {
@@ -2284,7 +2267,7 @@ void Daemon::onLogParameterPolled(){
     emit logParameter(LogParameter("preampSwitch1", QString::number((int)preampStatus[0]), LogParameter::LOG_ON_CHANGE));
     emit logParameter(LogParameter("preampSwitch2", QString::number((int)preampStatus[1]), LogParameter::LOG_ON_CHANGE));
     emit logParameter(LogParameter("gainSwitch", QString::number((int)gainSwitch), LogParameter::LOG_ON_CHANGE));
-    if (lm75 && lm75->devicePresent()) emit logParameter(LogParameter("temperature", QString::number(lm75->getTemperature())+" degC", LogParameter::LOG_AVERAGE));
+//    if (lm75 && lm75->devicePresent()) emit logParameter(LogParameter("temperature", QString::number(lm75->getTemperature())+" degC", LogParameter::LOG_AVERAGE));
 
     if (dac && dac->devicePresent()) {
         emit logParameter(LogParameter("thresh1", QString::number(dacThresh[0])+" V", LogParameter::LOG_ON_CHANGE));
@@ -2294,22 +2277,28 @@ void Daemon::onLogParameterPolled(){
 
     if (pca && pca->devicePresent()) emit logParameter(LogParameter("ubxInputSwitch", "0x"+QString::number(pcaPortMask,16), LogParameter::LOG_ON_CHANGE));
     if (pigHandler!=nullptr) emit logParameter(LogParameter("gpioTriggerSelection", "0x"+QString::number((int)pigHandler->samplingTriggerSignal,16), LogParameter::LOG_ON_CHANGE));
-    logBiasValues();
+    //logBiasValues();
     if (adc && !(adc->getStatus() & i2cDevice::MODE_UNREACHABLE)) {
 /*
         emit logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime())+" ms", LogParameter::LOG_ON_CHANGE));
         checkRescaleHisto(adcSampleTimeHisto, adc->getLastConvTime());
         adcSampleTimeHisto.fill(adc->getLastConvTime());
 */
-        sendHistogram(adcSampleTimeHisto);
-        sendHistogram(pulseHeightHisto);
+//        sendHistogram(histoMap["adcSampleTime"]);
+//        sendHistogram(histoMap["pulseHeight"]);
     }
+/*    
     sendHistogram(ubxTimeLengthHisto);
     sendHistogram(eventIntervalHisto);
     sendHistogram(eventIntervalShortHisto);
     sendHistogram(ubxTimeIntervalHisto);
     sendHistogram(tpTimeDiffHisto);
     sendHistogram(tdc7200Histo);
+*/    
+    
+    for (const auto &hist : histoMap) {
+		sendHistogram(hist);
+	}
     
     sendLogInfo();
     if (verbose>3)
@@ -2326,12 +2315,12 @@ void Daemon::onUBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t ac
 	long double dts=(falling.tv_sec-rising.tv_sec)*1e9;
 	dts+=(falling.tv_nsec-rising.tv_nsec);
 	if (dts>0.) {
-		checkRescaleHisto(ubxTimeLengthHisto, dts);
-		ubxTimeLengthHisto.fill(dts);
+		checkRescaleHisto(histoMap["UbxEventLength"], dts);
+		histoMap["UbxEventLength"].fill(dts);
 	}
 	long double interval=(rising.tv_sec-lastTimestamp.tv_sec)*1e9;
 	interval+=(rising.tv_nsec-lastTimestamp.tv_nsec);
-	ubxTimeIntervalHisto.fill(1e-6*interval);
+	histoMap["UbxEventInterval"].fill(1e-6*interval);
 	lastTimestamp=rising;
 }
 
