@@ -3,7 +3,6 @@
 #include <QPainter>
 #include <QPixmap>
 #include <muondetector_structs.h>
-#include <cmath>
 #include <QMenu>
 #include <QFileDialog>
 #include <QTextStream>
