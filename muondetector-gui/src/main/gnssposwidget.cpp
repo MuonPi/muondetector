@@ -295,9 +295,9 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm) {
         
                 QPointF p(satPoint.posPolar);
                 p=QPointF(p.x()/360.*pm.width(), -p.y()/90.*pm.height()*0.9+pm.height()*0.9);
-                int w=pm.width()/360+1;
-                int h=pm.height()*0.9/90+1;
-                satPosPainter.drawRect(p.x()-w/2,p.y()-h/2,w,h);
+                float w=pm.width()/360.+0.99;
+                float h=pm.height()*0.9/90.+0.99;
+                satPosPainter.drawRect(p.x()-w/2.-0.5,p.y()-h/2.-0.5,w,h);
             }
         }
     }

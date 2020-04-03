@@ -5,6 +5,7 @@
 #include <QVector>
 #include <QDateTime>
 #include <QElapsedTimer>
+#include <QTimer>
 
 #include <gpio_mapping.h>
 #include <gpio_pin_definitions.h>
@@ -14,6 +15,7 @@
 #define COMBINED_RATE 2
 
 static QVector<unsigned int> DEFAULT_VECTOR;
+
 class PigpiodHandler : public QObject
 {
 	Q_OBJECT
@@ -24,6 +26,11 @@ public:
     QDateTime startOfProgram, lastSamplingTime; // the exact time when the program starts (Utc)
     QElapsedTimer elapsedEventTimer;
 	GPIO_PIN samplingTriggerSignal=EVT_XOR;
+
+	double clockMeasurementSlope=0.;
+	double clockMeasurementOffset=0.;
+	uint64_t gpioTickOverflowCounter=0;
+	quint64 lastTimeMeasurementTick=0;
 	
 signals:
     void signal(uint8_t gpio_pin);
@@ -65,6 +72,9 @@ private:
             word size bits  msb msb only-3wire 3wire aux CEx?  activ-low? spi-mode
     */
     unsigned int spiFlags;  // fixed value for now
+    QTimer gpioClockTimeMeasurementTimer;
+
+	void measureGpioClockTime();
 };
 
 

@@ -375,10 +375,10 @@ void QtSerialUblox::UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask) {
 		data[7] = 0; //part of mode option but no meaning
 
 		// baudrate: (check if it works)
-		data[8] = (uint8_t)(((uint16_t)_baudRate) & 0x00ff);
-		data[9] = (uint8_t)((((uint16_t)_baudRate) & 0xff00) >> 8);
-		data[10] = 0;
-		data[11] = 0; //not needed because baudRate will never be over 65536 (2^16)
+		data[8] = (uint8_t)(((uint32_t)_baudRate) & 0x000000ff);
+		data[9] = (uint8_t)((((uint32_t)_baudRate) & 0x0000ff00) >> 8);
+		data[10] = (uint8_t)((((uint32_t)_baudRate) & 0x00ff0000) >> 16);
+		data[11] = 0; //not needed because baudRate will never be over 16777216 (2^24)
 
 		// inProtoMask enables/disables possible protocols for sending messages to the gps module:
 		data[12] = 0b00100111; // () () (RTCM3) () () (RTCM) (NMEA) (UBX)

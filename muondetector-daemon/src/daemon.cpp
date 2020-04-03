@@ -831,7 +831,7 @@ void Daemon::setupHistos() {
 	hist=Histogram("UbxEventLength",100,50.,149.);
 	hist.setUnit("ns");
 	histoMap["UbxEventLength"]=hist;
-	hist=Histogram("gpioEventInterval",400,0.,1100.);
+	hist=Histogram("gpioEventInterval",400,0.,1500.);
 	hist.setUnit("ms");
 	histoMap["gpioEventInterval"]=hist;
 	hist=Histogram("gpioEventIntervalShort",50,0.,49.);
