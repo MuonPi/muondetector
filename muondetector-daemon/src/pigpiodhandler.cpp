@@ -372,6 +372,7 @@ void PigpiodHandler::stop() {
 }
 
 void PigpiodHandler::measureGpioClockTime() {
+    if (!isInitialised) return;
     static uint32_t oldTick = 0;
 //    static uint64_t llTick = 0;
 	const int N = GPIO_CLOCK_MEASUREMENT_BUFFER_SIZE;

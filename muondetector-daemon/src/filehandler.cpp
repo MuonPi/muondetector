@@ -162,8 +162,9 @@ QFileInfo FileHandler::logFileInfo() const {
 // return current log file age in s
 qint64 FileHandler::currentLogAge() {
     if (dataFile==nullptr) return -1;
+    if (configFilePath=="") return -1;
     QDateTime now = QDateTime::currentDateTime();
-    QFileInfo fi( *dataFile );
+    QFileInfo fi(configFilePath);
     
 #if QT_VERSION >= 0x051000
     qint64 difftime=-now.secsTo(dataFile->fileTime(QFileDevice::FileMetadataChangeTime));

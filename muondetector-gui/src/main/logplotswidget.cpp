@@ -209,7 +209,7 @@ void LogPlotsWidget::onLogInfoReceived(const LogInfoStruct& lis) {
     QString st="failed (0)";
     if (lis.status>0) st="ok ("+QString::number(lis.status)+")";
     ui->logStatusLabel->setText(st);
-    ui->logAgeLabel->setText(QString::number(lis.logAge/3600.,'g',2)+" h");
+    ui->logAgeLabel->setText(QString::number(lis.logAge/3600.,'g',4)+" h");
 }
 
 
