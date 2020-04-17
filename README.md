@@ -24,6 +24,8 @@ Depending on the device of you choice, install the GUI for controlling the softw
 4. Enable serial connections on the Raspberry Pi (use either one of the following):
    - Use `sudo raspi-config` > Interfacing options > Serial > Login Shell "no" > Enable serial port hardware "yes"
    - Manually add "enable_uart=1" to /boot/config.txt
+4. Enable I2C communication on the Raspberry Pi:
+   - `sudo raspi-config` > Interfacing options > I2C > Enable "yes"
 
 ### TROUBLESHOOTING AND DEPENDENCIES:  
 
@@ -41,6 +43,6 @@ When trying to create a Makefile with qmake (qt version 5.7.1 on raspbian) there
 
 On your Raspberry Pi, do:
 1. `sudo pigpiod -s 1` for setting the GPIO sampling rate to 1 MHz
-2. start the daemon with `muondetector_daemon <device> [options]` where device is your serial interface (either "/dev/ttyS0" or "/dev/ttyAMA0"). The options can be reviewed by adding -h. It is recommended to use the -c option on first start (if the configuration is not yet written to eeprom).
+2. start the daemon with `muondetector_daemon <device> [options]` where device is your serial interface (either "/dev/ttyS0" for Raspberry Pi 3 & 4 or "/dev/ttyAMA0" for Raspberry Pi 2). The options can be reviewed by adding -h. It is recommended to use the -c option on first start (if the configuration is not yet written to eeprom).
 On your network device or on your Raspberry Pi: 
 3. Start the gui with `muondetector_gui` on the device of your choice and measure some tasty muons!
