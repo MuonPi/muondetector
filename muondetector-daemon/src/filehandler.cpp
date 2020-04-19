@@ -21,10 +21,41 @@
 
 using namespace CryptoPP;
 
-
 const unsigned long int lftpUploadTimeout = MUONPI_UPLOAD_TIMEOUT_MS; // in msecs
 const int uploadReminderInterval = MUONPI_UPLOAD_REMINDER_MINUTES; // in minutes
 const int logReminderInterval = MUONPI_LOG_INTERVAL_MINUTES; // in minutes
+
+void callback::connection_lost(const std::string& cause) {
+    std::cout << "\nConnection lost" << std::endl;
+    if (!cause.empty())
+        std::cout << "\tcause: " << cause << std::endl;
+}
+
+void callback::delivery_complete(mqtt::delivery_token_ptr tok) {
+    std::cout << "\tDelivery complete for token: "
+        << (tok ? tok->get_message_id() : -1) << std::endl;
+}
+void action_listener::on_failure(const mqtt::token& tok) {
+    std::cout << "\tListener failure for token: "
+        << tok.get_message_id() << std::endl;
+}
+
+void action_listener::on_success(const mqtt::token& tok) {
+    std::cout << "\tListener success for token: "
+        << tok.get_message_id() << std::endl;
+}
+
+void delivery_action_listener::on_failure(const mqtt::token& tok) {
+    action_listener::on_failure(tok);
+    done_ = true;
+    emit done(false);
+}
+
+void delivery_action_listener::on_success(const mqtt::token& tok) {
+    action_listener::on_success(tok);
+    done_ = true;
+    emit done(true);
+}
 
 static std::string SHA256HashString(std::string aString){
     std::string digest;
@@ -132,6 +163,52 @@ FileHandler::FileHandler(const QString& userName, const QString& passWord, quint
         if (!readLoginData()){
             qDebug() << "could not read login data from file";
         }
+    }
+}
+
+bool FileHandler::mqttConnect(){
+    try {
+        // init of mqtt client
+        mqttClient = new mqtt::async_client(mqttAddress.toStdString(), username.toStdString());
+        callback cb;
+        mqttClient->set_callback(cb);
+        mqtt::connect_options conopts;
+        conopts.set_user_name("user");
+        conopts.set_password("1234");
+        conopts.set_keep_alive_interval(45);
+        mqtt::message willmsg("muonpi"+username.toStdString(), "Last will and testament.", 1, true);
+        mqtt::will_options will(willmsg);
+        conopts.set_will(will);
+        mqtt::token_ptr conntok = mqttClient->connect(conopts);
+        conntok->wait();
+        _mqttConnectionStatus = true;
+        emit mqttConnectionStatusChanged();
+    }
+    catch (const mqtt::exception& exc) {
+        std::cerr << exc.what() << std::endl;
+    }
+}
+
+void FileHandler::mqttDisconnect(){
+    // Disconnect
+    try {
+        mqtt::token_ptr conntok = mqttClient->disconnect();
+        conntok->wait();
+    }
+    catch (const mqtt::exception& exc) {
+        std::cerr << exc.what() << std::endl;
+    }
+}
+
+bool FileHandler::mqttSendMessage(QString message){
+    try {
+        delivery_action_listener deliveryListener;
+        std::string topic = "muonpi/"+username.toStdString();
+        mqtt::message_ptr pubmsg = mqtt::make_message("muonpi/"+username.toStdString(), message.toStdString());
+        mqttClient->publish(pubmsg, nullptr, deliveryListener);
+    }
+    catch (const mqtt::exception& exc) {
+        std::cerr << exc.what() << std::endl;
     }
 }
 
@@ -626,4 +703,8 @@ bool FileHandler::readLoginData(){
     username = loginData.at(0);
     password = loginData.at(1);
     return true;
+}
+
+bool FileHandler::mqttConnectionStatus(){
+    return _mqttConnectionStatus;
 }

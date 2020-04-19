@@ -231,6 +231,7 @@ void Status::onUiEnabledStateChange(bool connected){
         statusUi->triggerSelectionComboBox->setEnabled(false);
         timepulseTimer.stop();
         statusUi->timePulseLabel->setStyleSheet("QLabel {background-color: Window;}");
+        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: Window;}");
         this->setDisabled(true);
     }
 }
@@ -287,11 +288,18 @@ Status::~Status()
     delete fInputSwitchButtonGroup;
 }
 
-
 void Status::on_triggerSelectionComboBox_currentIndexChanged(const QString &arg1)
 {
     int i=statusUi->triggerSelectionComboBox->currentIndex();
     auto it=qFind(GPIO_PIN_NAMES, arg1);
     if (it==GPIO_PIN_NAMES.end()) return;
     emit triggerSelectionChanged(it.key());
+}
+
+void Status::onMqttStatusChanged(bool connected){
+    if (connected){
+        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: lightGreen;}");
+    }else{
+        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: red;}");
+    }
 }

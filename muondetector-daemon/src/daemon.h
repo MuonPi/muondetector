@@ -154,6 +154,7 @@ public slots:
     void scanI2cBus();
     void onUBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t accEst, bool valid, uint8_t timeBase, bool utcAvailable);
     void onLogParameterPolled();
+    void sendMqttStatus();
 	
 signals:
     void sendTcpMessage(TcpMessage tcpMessage);

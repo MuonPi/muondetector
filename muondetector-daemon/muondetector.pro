@@ -2,7 +2,7 @@ QT -= gui
 QT += core
 QT += network
 QT += serialport
-VERSION = 1.1.1
+VERSION = 1.1.2
 CONFIG += c++11 console
 CONFIG -= app_bundle
 
@@ -29,14 +29,18 @@ INCLUDEPATH +=  $$PWD \
     $$PWD/src/i2c
 
 INCLUDEPATH += $$PWD/../muondetector-shared/src/
+INCLUDEPATH += /usr/local/include/mqtt
 
 #LIBS += -L/usr/lib/muondetector-shared -lmuondetector-shared
-LIBS += -L/usr/lib/ -lmuondetector-shared
+LIBS += -lmuondetector-shared
 #DEPENDPATH += /usr/lib/muondetector-shared
 
 LIBS += -lpigpiod_if2 \
         -lcrypto++ \
         -lrt
+
+LIBS += -lpaho-mqtt3c -lpaho-mqtt3a -lpaho-mqtt3cs -lpaho-mqtt3as
+LIBS += -lpaho-mqttpp3
 
 SOURCES += $$PWD/src/main.cpp \
 #    $$PWD/src/gnsssatellite.cpp \

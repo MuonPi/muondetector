@@ -108,6 +108,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::triggerSelectionReceived, status, &Status::onTriggerSelectionReceived);
     connect(status, &Status::triggerSelectionChanged, this, &MainWindow::onTriggerSelectionChanged);
     connect(this, &MainWindow::timepulseReceived, status, &Status::onTimepulseReceived);
+    connect(this, &MainWindow::mqttStatusChanged, status, &Status::onMqttStatusChanged);
 
     ui->tabWidget->addTab(status,"Overview");
 
@@ -660,16 +661,22 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_ADC_MODE) {
-	quint8 mode;
-	*(tcpMessage.dStream) >> mode;
-	emit adcModeReceived(mode);
-	return;
+        quint8 mode;
+        *(tcpMessage.dStream) >> mode;
+        emit adcModeReceived(mode);
+        return;
     }
     if (msgID == TCP_MSG_KEY::MSG_LOG_INFO){
-	LogInfoStruct lis;
-	*(tcpMessage.dStream) >> lis;
-	emit logInfoReceived(lis);
-	return;
+        LogInfoStruct lis;
+        *(tcpMessage.dStream) >> lis;
+        emit logInfoReceived(lis);
+        return;
+    }
+    if (msgID == TCP_MSG_KEY::MSG_MQTT_STATUS){
+        bool connected = false;
+        *(tcpMessage.dStream) >> connected;
+        emit mqttStatusChanged(connected);
+        return;
     }
 }
 

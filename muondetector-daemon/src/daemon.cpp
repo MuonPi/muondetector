@@ -764,6 +764,7 @@ void Daemon::connectToGps() {
 	// connect fileHandler related stuff
 	if (fileHandler != nullptr){
 		connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
+        connect(fileHandler, &FileHandler::mqttConnectionStatusChanged, this, &Daemon::sendMqttStatus);
 	}
 	// after thread start there will be a signal emitted which starts the qtGps makeConnection function
 	gpsThread->start();
@@ -1349,6 +1350,12 @@ void Daemon::sendEventTriggerSelection(){
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_EVENTTRIGGER);
     *(tcpMessage.dStream) << (GPIO_PIN)pigHandler->samplingTriggerSignal;
     emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::sendMqttStatus(){
+    if (pigHandler==nullptr){return;}
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_MQTT_STATUS);
+    *(tcpMessage.dStream) << fileHandler->mqttConnectionStatus();
 }
 
 void Daemon::rateCounterIntervalActualisation(){
