@@ -25,38 +25,6 @@ const unsigned long int lftpUploadTimeout = MUONPI_UPLOAD_TIMEOUT_MS; // in msec
 const int uploadReminderInterval = MUONPI_UPLOAD_REMINDER_MINUTES; // in minutes
 const int logReminderInterval = MUONPI_LOG_INTERVAL_MINUTES; // in minutes
 
-void callback::connection_lost(const std::string& cause) {
-    std::cout << "\nConnection lost" << std::endl;
-    if (!cause.empty())
-        std::cout << "\tcause: " << cause << std::endl;
-}
-
-void callback::delivery_complete(mqtt::delivery_token_ptr tok) {
-    std::cout << "\tDelivery complete for token: "
-        << (tok ? tok->get_message_id() : -1) << std::endl;
-}
-void action_listener::on_failure(const mqtt::token& tok) {
-    std::cout << "\tListener failure for token: "
-        << tok.get_message_id() << std::endl;
-}
-
-void action_listener::on_success(const mqtt::token& tok) {
-    std::cout << "\tListener success for token: "
-        << tok.get_message_id() << std::endl;
-}
-
-void delivery_action_listener::on_failure(const mqtt::token& tok) {
-    action_listener::on_failure(tok);
-    done_ = true;
-    emit done(false);
-}
-
-void delivery_action_listener::on_success(const mqtt::token& tok) {
-    action_listener::on_success(tok);
-    done_ = true;
-    emit done(true);
-}
-
 static std::string SHA256HashString(std::string aString){
     std::string digest;
     CryptoPP::SHA256 hash;
@@ -123,7 +91,7 @@ static QString dateStringNow(){
     return QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd_hh-mm-ss");
 }
 
-FileHandler::FileHandler(const QString& userName, const QString& passWord, quint32 fileSizeMB, QObject *parent)
+FileHandler::FileHandler(const QString& userName, const QString& passWord, const QString& station_ID, quint32 fileSizeMB, QObject *parent)
     : QObject(parent)
 {
     lastUploadDateTime = QDateTime(QDate::currentDate(),QTime(0,0,0,0),Qt::TimeSpec::UTC);
@@ -154,61 +122,16 @@ FileHandler::FileHandler(const QString& userName, const QString& passWord, quint
     }
 
     if (userName!=""||passWord!=""){
+        stationID = station_ID;
         username=userName;
         password=passWord;
-        if(!saveLoginData(userName,passWord)){
+        if(!saveLoginData(userName,passWord, station_ID)){
             qDebug() << "could not save login data";
         }
     }else{
         if (!readLoginData()){
             qDebug() << "could not read login data from file";
         }
-    }
-}
-
-bool FileHandler::mqttConnect(){
-    try {
-        // init of mqtt client
-        mqttClient = new mqtt::async_client(mqttAddress.toStdString(), username.toStdString());
-        callback cb;
-        mqttClient->set_callback(cb);
-        mqtt::connect_options conopts;
-        conopts.set_user_name("user");
-        conopts.set_password("1234");
-        conopts.set_keep_alive_interval(45);
-        mqtt::message willmsg("muonpi"+username.toStdString(), "Last will and testament.", 1, true);
-        mqtt::will_options will(willmsg);
-        conopts.set_will(will);
-        mqtt::token_ptr conntok = mqttClient->connect(conopts);
-        conntok->wait();
-        _mqttConnectionStatus = true;
-        emit mqttConnectionStatusChanged();
-    }
-    catch (const mqtt::exception& exc) {
-        std::cerr << exc.what() << std::endl;
-    }
-}
-
-void FileHandler::mqttDisconnect(){
-    // Disconnect
-    try {
-        mqtt::token_ptr conntok = mqttClient->disconnect();
-        conntok->wait();
-    }
-    catch (const mqtt::exception& exc) {
-        std::cerr << exc.what() << std::endl;
-    }
-}
-
-bool FileHandler::mqttSendMessage(QString message){
-    try {
-        delivery_action_listener deliveryListener;
-        std::string topic = "muonpi/"+username.toStdString();
-        mqtt::message_ptr pubmsg = mqtt::make_message("muonpi/"+username.toStdString(), message.toStdString());
-        mqttClient->publish(pubmsg, nullptr, deliveryListener);
-    }
-    catch (const mqtt::exception& exc) {
-        std::cerr << exc.what() << std::endl;
     }
 }
 
@@ -267,6 +190,8 @@ void FileHandler::start(){
     logReminder->start();
     // open files that are currently written
     openFiles();
+    emit mqttConnect(username,password,stationID);
+    qDebug() << "sended mqttConnect";
 }
 
 // SLOTS
@@ -396,7 +321,7 @@ void FileHandler::onUploadRemind(){
     if (lastUploadDateTime<todaysRegularUploadTime&&QDateTime::currentDateTimeUtc()>todaysRegularUploadTime){
         switchFiles();
         if (!password.size()==0 || !username.size()==0){
-            uploadRecentDataFiles();
+            //uploadRecentDataFiles(); // commented out because the upload server is not online
         }
         lastUploadDateTime = QDateTime::currentDateTimeUtc();
     }
@@ -615,7 +540,7 @@ bool FileHandler::uploadRecentDataFiles(){
 
 // crypto related stuff
 
-bool FileHandler::saveLoginData(QString username, QString password){
+bool FileHandler::saveLoginData(QString username, QString password, QString station_ID){
     QFile loginDataFile(loginDataFilePath);
     loginDataFile.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner);
     if(!loginDataFile.open(QIODevice::ReadWrite)){
@@ -625,7 +550,7 @@ bool FileHandler::saveLoginData(QString username, QString password){
     loginDataFile.resize(0);
 
     AutoSeededRandomPool rnd;
-    std::string plainText = QString(username+";"+password).toStdString();
+    std::string plainText = QString(username+";"+password+";"+station_ID).toStdString();
     std::string keyText;
     std::string encrypted;
 
@@ -702,9 +627,6 @@ bool FileHandler::readLoginData(){
     }
     username = loginData.at(0);
     password = loginData.at(1);
+    stationID = loginData.at(2);
     return true;
-}
-
-bool FileHandler::mqttConnectionStatus(){
-    return _mqttConnectionStatus;
 }

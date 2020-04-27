@@ -151,7 +151,7 @@ void Daemon::handleSigInt()
 Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
     float *new_dacThresh, float new_biasVoltage, bool bias_ON, bool new_dumpRaw, int new_baudrate,
     bool new_configGnss, unsigned int new_eventTrigger, QString new_peerAddress, quint16 new_peerPort,
-    QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, bool preamp1, bool preamp2, bool gain, QObject *parent)
+    QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, bool preamp1, bool preamp2, bool gain, QString station_ID, QObject *parent)
 	: QTcpServer(parent)
 {
 
@@ -288,16 +288,31 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		}
 	}
 
-	// create fileHandler
-	QThread *fileHandlerThread = new QThread();
-	
-	fileHandler = new FileHandler(username, password);
+    QThread *mqttHandlerThread = new QThread();
+
+    mqttHandler = new MqttHandler();
+    mqttHandler->moveToThread(mqttHandlerThread);
+    connect(mqttHandler, &MqttHandler::mqttConnectionStatus, this, &Daemon::sendMqttStatus);
+    connect(this, &Daemon::aboutToQuit, mqttHandler, &MqttHandler::deleteLater);
+    connect(this, &Daemon::requestMqttConnectionStatus, mqttHandler, &MqttHandler::onRequestConnectionStatus);
+    connect(mqttHandlerThread, &QThread::finished, mqttHandlerThread, &QThread::deleteLater);
+    //connect(this, &Daemon::logParameter, mqttHandler, &MqttHandler::sendLog);
+    mqttHandlerThread->start();
+
+    // create fileHandler
+    QThread *fileHandlerThread = new QThread();
+
+    fileHandler = new FileHandler(username, password, station_ID);
 	fileHandler->moveToThread(fileHandlerThread);
 	connect(this, &Daemon::aboutToQuit, fileHandler, &FileHandler::deleteLater);
 	connect(this, &Daemon::logParameter, fileHandler, &FileHandler::onReceivedLogParameter);
 	connect(fileHandlerThread, &QThread::finished, fileHandlerThread, &QThread::deleteLater);
 	connect(fileHandlerThread, &QThread::started, fileHandler, &FileHandler::start);
+    connect(fileHandler, &FileHandler::mqttConnect, mqttHandler, &MqttHandler::start);
 	fileHandlerThread->start();
+
+    // connect to the regular log timer signal to log several non-regularly polled parameters
+    connect(fileHandler, &FileHandler::logIntervalSignal, this, &Daemon::onLogParameterPolled);
 
 	// instantiate, detect and initialize all i2c devices
 	// LM75A temp sensor
@@ -552,9 +567,6 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	}
 	flush(cout);
 
-	// connect to the regular log timer signal to log several non-regularly polled parameters
-	connect(fileHandler, &FileHandler::logIntervalSignal, this, &Daemon::onLogParameterPolled);
-
 	// connect to the pigpio daemon interface for gpio control
 	connectToPigpiod();
 	
@@ -763,8 +775,8 @@ void Daemon::connectToGps() {
 
 	// connect fileHandler related stuff
 	if (fileHandler != nullptr){
-		connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
-        connect(fileHandler, &FileHandler::mqttConnectionStatusChanged, this, &Daemon::sendMqttStatus);
+        connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
+        connect(qtGps, &QtSerialUblox::timTM2, mqttHandler, &MqttHandler::sendData);
 	}
 	// after thread start there will be a signal emitted which starts the qtGps makeConnection function
 	gpsThread->start();
@@ -807,6 +819,7 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 */
 
 	pollAllUbxMsgRate();
+    emit requestMqttConnectionStatus();
 }
 
 // Histogram functions
@@ -1352,10 +1365,10 @@ void Daemon::sendEventTriggerSelection(){
     emit sendTcpMessage(tcpMessage);
 }
 
-void Daemon::sendMqttStatus(){
-    if (pigHandler==nullptr){return;}
+void Daemon::sendMqttStatus(bool connected){
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_MQTT_STATUS);
-    *(tcpMessage.dStream) << fileHandler->mqttConnectionStatus();
+    *(tcpMessage.dStream) << connected;
+    emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::rateCounterIntervalActualisation(){
