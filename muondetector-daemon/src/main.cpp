@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
         QDir directory("/dev","*",QDir::Name, QDir::System);
         QStringList serialports = directory.entryList(QStringList({"ttyS0","ttyAMA0"}));
         if (!serialports.empty()){
-            gpsdevname=serialports.at(0);
+            gpsdevname=QString("/dev/"+serialports.at(0));
         }else{
             cout << "no device selected, will not connect to gps module" << endl;
         }
