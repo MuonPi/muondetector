@@ -370,7 +370,7 @@ int main(int argc, char *argv[])
         password = getpass("please enter password:",true);
     }
 
-    QString stationID = "0";
+    QString stationID = "";
     if (parser.isSet(stationIdOption)){
         stationID = parser.value(stationIdOption);
     }

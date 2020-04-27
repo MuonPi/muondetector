@@ -120,17 +120,22 @@ FileHandler::FileHandler(const QString& userName, const QString& passWord, const
             qDebug() << "could not create folder " << uploadedFiles;
         }
     }
-
-    if (userName!=""||passWord!=""){
+    bool rewrite_login = false;
+    if (!readLoginData()){
+        qDebug() << "could not read login data from file";
+    }
+    if (station_ID!=""){
         stationID = station_ID;
+        rewrite_login = true;
+    }
+    if (userName!=""||passWord!=""){
         username=userName;
         password=passWord;
+        rewrite_login = true;
+    }
+    if (rewrite_login){
         if(!saveLoginData(userName,passWord, station_ID)){
             qDebug() << "could not save login data";
-        }
-    }else{
-        if (!readLoginData()){
-            qDebug() << "could not read login data from file";
         }
     }
 }
