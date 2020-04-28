@@ -56,19 +56,19 @@ void MqttHandler::mqttConnect(){
         log_topic = new mqtt::topic(*mqttClient, "muonpi/log/"+username.toStdString()+"/"+stationID.toStdString(),qos);
         emit mqttConnectionStatus(true);
         _mqttConnectionStatus = true;
+        qDebug() << "MQTT connected";
     }
     catch (const mqtt::exception& exc) {
         std::cerr << exc.what() << std::endl;
     }
-    qDebug() << "MQTT connected";
 }
 
 void MqttHandler::mqttDisconnect(){
     // Disconnect
+    if (mqttClient == nullptr){
+        return;
+    }
     try {
-        if (mqttClient == nullptr){
-            return;
-        }
         mqtt::token_ptr conntok = mqttClient->disconnect();
         conntok->wait();
         emit mqttConnectionStatus(false);
@@ -80,6 +80,9 @@ void MqttHandler::mqttDisconnect(){
 }
 
 void MqttHandler::sendData(const QString &message){
+    if (data_topic == nullptr || log_topic == nullptr){
+        return;
+    }
     try {
         data_topic->publish(message.toStdString())->wait();
     }
