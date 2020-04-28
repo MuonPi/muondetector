@@ -3,7 +3,6 @@
 #include <QNetworkSession>
 #include <QNetworkConfigurationManager>
 #include <iostream>
-#include <conio.h>
 
 static void getMacAddress(){
     QNetworkConfiguration nc;
@@ -53,7 +52,5 @@ static void getMacAddress(){
 int main(int argc, char *argv[])
 {
     getMacAddress();
-    std::cout << "press key to exit" << std::endl;
-    char KeyPressed = _getch();
     return 0;
 }
