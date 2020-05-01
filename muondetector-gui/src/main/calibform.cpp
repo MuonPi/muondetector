@@ -475,3 +475,8 @@ void CalibForm::on_calibItemTableWidget_cellChanged(int row, int column)
     }
 }
 
+
+void CalibForm::on_rateScanPushButton_clicked()
+{
+    emit startRateScan(1);
+}

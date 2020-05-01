@@ -6,6 +6,7 @@
 #include <unixtime_from_gps.h>
 #include <custom_io_operators.h>
 #include <ublox_messages.h>
+#include <muondetector_structs.h>
 
 using namespace std;
 
@@ -627,8 +628,21 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 	//fTimestamps.push(ts);
 	//mutex.unlock();
 
-	emit UBXReceivedTimeTM2(ts.rising_time, ts.falling_time, accEst, ts.valid, (flags & 0x18) >> 3, flags & 0x20);
+	//emit UBXReceivedTimeTM2(ts.rising_time, ts.falling_time, accEst, ts.valid, (flags & 0x18) >> 3, flags & 0x20);
 
+	UbxTimeMarkStruct tm;
+	tm.rising=ts.rising_time;
+	tm.falling=ts.falling_time;
+	tm.risingValid=ts.rising;
+	tm.fallingValid=ts.falling;
+	tm.accuracy_ns=accEst;
+	tm.valid=ts.valid;
+	tm.timeBase=(flags & 0x18) >> 3;
+	tm.utcAvailable=flags & 0x20;
+	tm.flags=flags;
+	tm.evtCounter=count;
+	
+	emit UBXReceivedTimeTM2(tm);
 	return true;
 }
 

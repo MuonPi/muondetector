@@ -192,6 +192,11 @@ void ParameterMonitorForm::onTimepulseReceived()
     //
 }
 
+void ParameterMonitorForm::onTimeMarkReceived(const UbxTimeMarkStruct& tm)
+{
+	ui->ubloxCounterLabel->setText(QString::number(tm.evtCounter));
+}
+
 void ParameterMonitorForm::onAdcTraceReceived(const QVector<float> &sampleBuffer)
 {
     QVector<QPointF> vec;
@@ -219,7 +224,7 @@ void ParameterMonitorForm::onFreqAccReceived(quint32 acc)
 
 void ParameterMonitorForm::onIntCounterReceived(quint32 cnt)
 {
-    ui->ubloxCounterLabel->setText(QString::number(cnt));
+    //ui->ubloxCounterLabel->setText(QString::number(cnt));
 }
 
 
@@ -245,28 +250,24 @@ void ParameterMonitorForm::on_dacSpinBox4_valueChanged(double arg1)
 
 void ParameterMonitorForm::on_dacSlider1_valueChanged(int value)
 {
-    //
     double voltage = value/1000.;
     emit setDacVoltage(0, voltage);
 }
 
 void ParameterMonitorForm::on_dacSlider2_valueChanged(int value)
 {
-    //
     double voltage = value/1000.;
     emit setDacVoltage(1, voltage);
 }
 
 void ParameterMonitorForm::on_dacSlider3_valueChanged(int value)
 {
-    //
     double voltage = value/1000.;
     emit setDacVoltage(2, voltage);
 }
 
 void ParameterMonitorForm::on_dacSlider4_valueChanged(int value)
 {
-    //
     double voltage = value/1000.;
     emit setDacVoltage(3, voltage);
 }
@@ -284,8 +285,13 @@ QString ParameterMonitorForm::getCalibParameter(const QString &name)
 
 bool ParameterMonitorForm::currentCalibValid()
 {
-    //
     int calibFlags = getCalibParameter("CALIB_FLAGS").toUInt();
     if (calibFlags & CalibStruct::CALIBFLAGS_CURRENT_COEFFS) return true;
     return false;
+}
+
+void ParameterMonitorForm::on_gpioInhibitCheckBox_toggled(bool checked)
+{
+    emit gpioInhibitChanged(checked);
+//	qDebug()<<"set inhibit to "<<QString((checked)?"true":"false");
 }

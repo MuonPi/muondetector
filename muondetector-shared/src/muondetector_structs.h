@@ -14,6 +14,7 @@
 
 
 enum ADC_SAMPLING_MODE {ADC_MODE_DISABLED=0, ADC_MODE_PEAK=1, ADC_MODE_TRACE=2 };
+enum TIMING_MUX_INPUTS { MUX_AND=0, MUX_XOR=1, MUX_DISC1=2, MUX_DISC2=3 };
 
 
 struct CalibStruct {
@@ -120,6 +121,19 @@ struct UbxTimePulseStruct {
 	uint32_t flags = 0;
 };
 
+struct UbxTimeMarkStruct {
+	enum { TIMEBASE_LOCAL=0x00, TIMEBASE_GNSS=0x01, TIMEBASE_UTC=0x02, TIMEBASE_OTHER=0x03 };
+	struct timespec rising = {0,0};
+	struct timespec falling = {0,0};
+	bool risingValid = false;
+	bool fallingValid = false;
+	uint32_t accuracy_ns=0;
+	bool valid=false;
+	uint8_t timeBase=0;
+	bool utcAvailable=false;
+	uint8_t flags = 0;
+	uint16_t evtCounter = 0;
+};
 
 struct GnssMonHwStruct {
   GnssMonHwStruct() = default;
@@ -162,6 +176,12 @@ struct LogInfoStruct {
     quint32 dataFileSize;
     qint32 logAge;
 };
+
+struct OledItem {
+	QString name;
+	QString displayString;
+};
+
 
 //inline const std::string GnssSatellite::GNSS_ID_STRING[] = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
 //const MUONDETECTORSHARED std::string GNSS_ID_STRING[] = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
@@ -353,6 +373,28 @@ inline QDataStream& operator << (QDataStream& out, const LogInfoStruct& lis)
 {
     out << lis.logFileName << lis.dataFileName << lis.status << lis.logFileSize
 	<< lis.dataFileSize << lis.logAge;
+    return out;
+}
+
+inline QDataStream& operator >> (QDataStream& in, UbxTimeMarkStruct& tm)
+{
+    qint64 sec, nsec;
+	in >> sec >> nsec;
+    tm.rising.tv_sec=sec;
+    tm.rising.tv_nsec=nsec;
+	in >> sec >> nsec;
+    tm.falling.tv_sec=sec;
+    tm.falling.tv_nsec=nsec;
+	in >> tm.risingValid >> tm.fallingValid >> tm.accuracy_ns >> tm.valid
+	>> tm.timeBase >> tm.utcAvailable >> tm.flags >> tm.evtCounter;
+    return in;
+}
+
+inline QDataStream& operator << (QDataStream& out, const UbxTimeMarkStruct& tm)
+{
+    out << (qint64)tm.rising.tv_sec << (qint64)tm.rising.tv_nsec << (qint64)tm.falling.tv_sec << (qint64)tm.falling.tv_nsec
+	<< tm.risingValid << tm.fallingValid << tm.accuracy_ns << tm.valid
+	<< tm.timeBase << tm.utcAvailable << tm.flags << tm.evtCounter;
     return out;
 }
 

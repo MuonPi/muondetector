@@ -26,7 +26,8 @@
 #include <signal.h>
 
 struct CalibStruct;
-
+struct UbxTimeMarkStruct;
+enum GPIO_PIN;
 
 class Property {
 public:
@@ -89,13 +90,35 @@ private:
     int typeId=0;
 };
 
-class OledEntry {
-public:
-    OledEntry()=default;
-    
-    QString displayString();
-    
-        
+struct RateScanInfo {
+	uint8_t origPcaMask=0;
+	GPIO_PIN origEventTrigger=GPIO_PIN::UNDEFINED_PIN;
+	uint16_t lastEvtCounter=0;
+	uint8_t thrChannel=0;
+	float origThr=3.3;
+	float thrIncrement=0.1;
+	float minThr=0.05;
+	float maxThr=3.3;
+	float currentThr=0.;
+	uint16_t nrLoops=0;
+	uint16_t currentLoop=0;
+};
+
+struct RateScan {
+//	void addScanPoint(double scanpar, double a_rate) { scanMap[scanpar].append(a_rate); }
+	uint8_t origPcaMask=0;
+	GPIO_PIN origEventTrigger=GPIO_PIN::UNDEFINED_PIN;
+	float origScanPar=3.3;
+	double minScanPar=0.;
+	double maxScanPar=1.;
+	double currentScanPar=0.;
+	double scanParIncrement=0.;
+	uint32_t currentCounts=0;
+	double currentTimeInterval=0.;
+	double maxTimeInterval=1.;
+	uint16_t nrLoops=0;
+	uint16_t currentLoop=0;
+	QMap<double, double> scanMap;
 };
 
 class Daemon : public QTcpServer
@@ -152,8 +175,9 @@ public slots:
     void sampleAdcEvent(uint8_t channel);
     void getTemperature();
     void scanI2cBus();
-    void onUBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t accEst, bool valid, uint8_t timeBase, bool utcAvailable);
-    void onLogParameterPolled();
+    //void onUBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t accEst, bool valid, uint8_t timeBase, bool utcAvailable);
+    void onUBXReceivedTimeTM2(const UbxTimeMarkStruct& tm);
+	void onLogParameterPolled();
 	
 signals:
     void sendTcpMessage(TcpMessage tcpMessage);
@@ -183,11 +207,14 @@ signals:
     void UBXSetAopCfg(bool enable=true, uint16_t maxOrbErr=0);
     void UBXSaveCfg(uint8_t devMask=QtSerialUblox::DEV_BBR | QtSerialUblox::DEV_FLASH);
 	void setSamplingTriggerSignal(GPIO_PIN signalName);
+	void timeMarkIntervalCountUpdate(uint16_t newCounts, double lastInterval);
 	
 private slots:
     void onRateBufferReminder();
     void updateOledDisplay();
     void aquireMonitoringParameters();
+	void doRateScanIteration(RateScanInfo* info);
+
 
 private:
     void incomingConnection(qintptr socketDescriptor) override;
@@ -222,6 +249,7 @@ private:
     void checkRescaleHisto(Histogram& hist, double newValue);
     void clearHisto(const QString& histoName);
     void setAdcSamplingMode(quint8 mode);
+	void startRateScan(uint8_t channel);
     void printTimestamp();
     void delay(int millisecondsWait);
 
@@ -294,7 +322,7 @@ private:
     QTimer oledUpdateTimer;
     QList<quint64> andCounts,xorCounts;
     UbxDopStruct currentDOP;
-    timespec lastTimestamp = { 0, 0 };
+    //timespec lastTimestamp = { 0, 0 };
     Property nrSats, nrVisibleSats, fixStatus;
     QVector<QTcpSocket*> peerList;
     QList<float> adcSamplesBuffer;
@@ -302,6 +330,7 @@ private:
     qint16 currentAdcSampleIndex = -1;
     QTimer samplingTimer;
     QTimer parameterMonitorTimer;
+	QTimer rateScanTimer;
     QMap<QString, Property> propertyMap;
     
 };

@@ -14,6 +14,7 @@
 struct GeodeticPos;
 struct GnssMonHwStruct;
 struct GnssMonHw2Struct;
+struct UbxTimeMarkStruct;
 
 class QtSerialUblox : public QObject
 {
@@ -53,7 +54,8 @@ signals:
 		std::chrono::duration<double> updateAge);
 	void gpsPropertyUpdatedGeodeticPos(GeodeticPos pos);
 	void timTM2(QString timTM2String);
-	void UBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t accEst, bool valid, uint8_t timeBase, bool utcAvailable);
+	//void UBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t accEst, bool valid, uint8_t timeBase, bool utcAvailable);
+	void UBXReceivedTimeTM2(const UbxTimeMarkStruct& tm);
 	void gpsVersion(const QString& swVersion, const QString& hwVersion, const QString& protVersion);
 	//void gpsMonHW(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags);
 	//void gpsMonHW2(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t magQ, uint8_t cfgSrc);

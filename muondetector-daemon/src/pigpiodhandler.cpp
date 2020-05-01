@@ -103,6 +103,10 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
 		return;
 	}
 	
+    QPointer<PigpiodHandler> pigpioHandler = pigHandlerAddress;
+
+   	if (pigpioHandler->isInhibited()) return;
+
     static uint32_t lastTriggerTick=0;
     static uint32_t lastXorAndTick=0;
     static uint32_t lastTick=0;
@@ -117,8 +121,6 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
     // if more than 50 pileups happened in a short period of time, leave immediately
     if (pileupCounter>50) return;
     
-    QPointer<PigpiodHandler> pigpioHandler = pigHandlerAddress;
-
     try{
 		// allow only registered signals to be processed here
 		// if gpio pin fired which is not in GPIO_PIN list, return immediately

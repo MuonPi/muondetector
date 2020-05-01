@@ -21,9 +21,9 @@
 #include <muondetector_structs.h>
 #include <parametermonitorform.h>
 #include <logplotswidget.h>
+#include <scanform.h>
 
 using namespace std;
-
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -38,6 +38,20 @@ MainWindow::MainWindow(QWidget *parent) :
     qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
     qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
     qRegisterMetaType<GPIO_PIN>("GPIO_PIN");
+	qRegisterMetaType<GnssMonHwStruct>("GnssMonHwStruct");
+	qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
+    qRegisterMetaType<UbxTimeMarkStruct>("UbxTimeMarkStruct");
+	qRegisterMetaType<int32_t>("int32_t");
+	qRegisterMetaType<uint32_t>("uint32_t");
+	qRegisterMetaType<uint16_t>("uint16_t");
+	qRegisterMetaType<uint8_t>("uint8_t");
+	qRegisterMetaType<int8_t>("int8_t");
+	qRegisterMetaType<std::vector<GnssConfigStruct>>("std::vector<GnssConfigStruct>");
+	qRegisterMetaType<std::chrono::duration<double>>("std::chrono::duration<double>");
+	qRegisterMetaType<std::string>("std::string");
+//	qRegisterMetaType<LogParameter>("LogParameter");
+	qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
+	qRegisterMetaType<timespec>("timespec");
 
     ui->setupUi(this);
 	ui->discr1Layout->setAlignment(ui->discr1Slider, Qt::AlignHCenter);
@@ -92,7 +106,7 @@ MainWindow::MainWindow(QWidget *parent) :
     Status *status = new Status(this);
     connect(this, &MainWindow::setUiEnabledStates, status, &Status::onUiEnabledStateChange);
     connect(this, &MainWindow::gpioRates, status, &Status::onGpioRatesReceived);
-    connect(status, &Status::resetRateClicked, this, [this](){ this->sendRequest(resetRateSig); } );
+    connect(status, &Status::resetRateClicked, this, [this](){ this->sendRequest(TCP_MSG_KEY::MSG_GPIO_RATE_RESET); } );
     connect(this, &MainWindow::adcSampleReceived, status, &Status::onAdcSampleReceived);
     connect(this, &MainWindow::dacReadbackReceived, status, &Status::onDacReadbackReceived);
     connect(status, &Status::inputSwitchChanged, this, &MainWindow::sendInputSwitch);
@@ -121,12 +135,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(settings, &Settings::sendRequestUbxMsgRates, this, &MainWindow::sendRequestUbxMsgRates);
     connect(settings, &Settings::sendSetUbxMsgRateChanges, this, &MainWindow::sendSetUbxMsgRateChanges);
     connect(settings, &Settings::sendUbxReset, this, &MainWindow::onSendUbxReset);
-    connect(settings, &Settings::sendUbxConfigDefault, this, [this](){ this->sendRequest(ubxConfigureDefaultSig); } );
+    connect(settings, &Settings::sendUbxConfigDefault, this, [this](){ this->sendRequest(TCP_MSG_KEY::MSG_UBX_CONFIG_DEFAULT); } );
     connect(this, &MainWindow::gnssConfigsReceived, settings, &Settings::onGnssConfigsReceived);
     connect(settings, &Settings::setGnssConfigs, this, &MainWindow::onSetGnssConfigs);
     connect(this, &MainWindow::gpsTP5Received, settings, &Settings::onTP5Received);
     connect(settings, &Settings::setTP5Config, this, &MainWindow::onSetTP5Config);
-    connect(settings, &Settings::sendUbxSaveCfg, this, [this](){ this->sendRequest(ubxSaveCfgSig); } );
+    connect(settings, &Settings::sendUbxSaveCfg, this, [this](){ this->sendRequest(TCP_MSG_KEY::MSG_UBX_CFG_SAVE); } );
 
     ui->tabWidget->addTab(settings,"Ublox Settings");
 
@@ -139,16 +153,16 @@ MainWindow::MainWindow(QWidget *parent) :
     I2cForm *i2cTab = new I2cForm(this);
     connect(this, &MainWindow::setUiEnabledStates, i2cTab, &I2cForm::onUiEnabledStateChange);
     connect(this, &MainWindow::i2cStatsReceived, i2cTab, &I2cForm::onI2cStatsReceived);
-    connect(i2cTab, &I2cForm::i2cStatsRequest, this, [this]() { this->sendRequest(i2cStatsRequestSig); } );
-    connect(i2cTab, &I2cForm::scanI2cBusRequest, this, [this]() { this->sendRequest(i2cScanBusRequestSig); } );
+    connect(i2cTab, &I2cForm::i2cStatsRequest, this, [this]() { this->sendRequest(TCP_MSG_KEY::MSG_I2C_STATS_REQUEST); } );
+    connect(i2cTab, &I2cForm::scanI2cBusRequest, this, [this]() { this->sendRequest(TCP_MSG_KEY::MSG_I2C_SCAN_BUS); } );
 
     ui->tabWidget->addTab(i2cTab,"I2C bus");
 
     calib = new CalibForm(this);
     connect(this, &MainWindow::setUiEnabledStates, calib, &CalibForm::onUiEnabledStateChange);
     connect(this, &MainWindow::calibReceived, calib, &CalibForm::onCalibReceived);
-    connect(calib, &CalibForm::calibRequest, this, [this]() { this->sendRequest(calibRequestSig); } );
-    connect(calib, &CalibForm::writeCalibToEeprom, this, [this]() { this->sendRequest(calibWriteEepromSig); } );
+    connect(calib, &CalibForm::calibRequest, this, [this]() { this->sendRequest(TCP_MSG_KEY::MSG_CALIB_REQUEST); } );
+    connect(calib, &CalibForm::writeCalibToEeprom, this, [this]() { this->sendRequest(TCP_MSG_KEY::MSG_CALIB_SAVE); } );
     connect(this, &MainWindow::adcSampleReceived, calib, &CalibForm::onAdcSampleReceived);
     connect(calib, &CalibForm::setBiasDacVoltage, this, &MainWindow::sendSetBiasVoltage);
     connect(calib, &CalibForm::setDacVoltage, this, &MainWindow::sendSetThresh);
@@ -164,7 +178,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(calib, &CalibForm::setBiasDacVoltage, this, &MainWindow::sendSetBiasVoltage);
     connect(calib, &CalibForm::setDacVoltage, this, &MainWindow::sendSetThresh);
     connect(calib, &CalibForm::updatedCalib, this, &MainWindow::onCalibUpdated);
-
+    connect(calib, &CalibForm::startRateScan, this, &MainWindow::onRateScanStart);
 
     GpsSatsForm *satsTab = new GpsSatsForm(this);
     connect(this, &MainWindow::setUiEnabledStates, satsTab, &GpsSatsForm::onUiEnabledStateChange);
@@ -208,13 +222,21 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::temperatureReceived, paramTab, &ParameterMonitorForm::onTemperatureReceived);
     connect(this, &MainWindow::timeAccReceived, paramTab, &ParameterMonitorForm::onTimeAccReceived);
     connect(this, &MainWindow::freqAccReceived, paramTab, &ParameterMonitorForm::onFreqAccReceived);
-    connect(this, &MainWindow::intCounterReceived, paramTab, &ParameterMonitorForm::onIntCounterReceived);
+//    connect(this, &MainWindow::intCounterReceived, paramTab, &ParameterMonitorForm::onIntCounterReceived);
     connect(this, &MainWindow::gainSwitchReceived, paramTab, &ParameterMonitorForm::onGainSwitchReceived);
     connect(this, &MainWindow::calibReceived, paramTab, &ParameterMonitorForm::onCalibReceived);
+    connect(this, &MainWindow::timeMarkReceived, paramTab, &ParameterMonitorForm::onTimeMarkReceived);
     connect(paramTab, &ParameterMonitorForm::adcModeChanged, this, &MainWindow::onAdcModeChanged);
     connect(paramTab, &ParameterMonitorForm::setDacVoltage, this, &MainWindow::sendSetThresh);
+    connect(paramTab, &ParameterMonitorForm::gpioInhibitChanged, this, &MainWindow::gpioInhibit);
     ui->tabWidget->addTab(paramTab,"Parameters");
 
+    ScanForm *scanTab = new ScanForm(this);
+    //connect(this, &MainWindow::setUiEnabledStates, paramTab, &ParameterMonitorForm::onUiEnabledStateChange);
+    connect(this, &MainWindow::timeMarkReceived, scanTab, &ScanForm::onTimeMarkReceived);
+    connect(scanTab, &ScanForm::setDacVoltage, this, &MainWindow::sendSetThresh);
+    connect(scanTab, &ScanForm::gpioInhibitChanged, this, &MainWindow::gpioInhibit);
+    ui->tabWidget->addTab(scanTab,"Scans");
 
     LogPlotsWidget *logTab = new LogPlotsWidget(this);
     connect(this, &MainWindow::temperatureReceived, logTab, &LogPlotsWidget::onTemperatureReceived);
@@ -266,10 +288,10 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
 
 void MainWindow::onTriggerSelectionChanged(GPIO_PIN signal)
 {
-    TcpMessage tcpMessage(eventTriggerSig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_EVENTTRIGGER);
     *(tcpMessage.dStream) << signal;
     emit sendTcpMessage(tcpMessage);
-    sendRequest(eventTriggerRequestSig);
+    sendRequest(TCP_MSG_KEY::MSG_EVENTTRIGGER_REQUEST);
 }
 
 bool MainWindow::saveSettings(QStandardItemModel *model) {
@@ -660,16 +682,22 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_ADC_MODE) {
-	quint8 mode;
-	*(tcpMessage.dStream) >> mode;
-	emit adcModeReceived(mode);
-	return;
+		quint8 mode;
+		*(tcpMessage.dStream) >> mode;
+		emit adcModeReceived(mode);
+		return;
     }
-    if (msgID == TCP_MSG_KEY::MSG_LOG_INFO){
-	LogInfoStruct lis;
-	*(tcpMessage.dStream) >> lis;
-	emit logInfoReceived(lis);
-	return;
+	if (msgID == TCP_MSG_KEY::MSG_LOG_INFO){
+		LogInfoStruct lis;
+		*(tcpMessage.dStream) >> lis;
+		emit logInfoReceived(lis);
+		return;
+    }
+	if (msgID == TCP_MSG_KEY::MSG_UBX_TIMEMARK){
+		UbxTimeMarkStruct tm;
+		*(tcpMessage.dStream) >> tm;
+		emit timeMarkReceived(tm);
+		return;
     }
 }
 
@@ -704,7 +732,7 @@ void MainWindow::sendSetBiasVoltage(float voltage){
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_BIAS_VOLTAGE);
     *(tcpMessage.dStream) << voltage;
     emit sendTcpMessage(tcpMessage);
-    emit sendRequest(dacRequestSig, 2);
+    emit sendRequest(TCP_MSG_KEY::MSG_DAC_REQUEST, 2);
 //    emit sendRequest(adcSampleRequestSig, 2);
 //    emit sendRequest(adcSampleRequestSig, 3);
 }
@@ -737,7 +765,7 @@ void MainWindow::sendSetThresh(uint8_t channel, float value){
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_THRESHOLD);
     *(tcpMessage.dStream) << channel << value;
     emit sendTcpMessage(tcpMessage);
-    emit sendRequest(dacRequestSig, channel);
+    emit sendRequest(TCP_MSG_KEY::MSG_DAC_REQUEST, channel);
 }
 
 void MainWindow::sendSetUbxMsgRateChanges(QMap<uint16_t, int> changes){
@@ -762,6 +790,12 @@ void MainWindow::onHistogramCleared(QString histogramName){
 void MainWindow::onAdcModeChanged(quint8 mode){
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_MODE);
     *(tcpMessage.dStream) << mode;
+    emit sendTcpMessage(tcpMessage);
+}
+
+void MainWindow::onRateScanStart(uint8_t ch) {
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_RATE_SCAN);
+    *(tcpMessage.dStream) << (quint8)ch;
     emit sendTcpMessage(tcpMessage);
 }
 
@@ -1081,7 +1115,7 @@ void MainWindow::sendInputSwitch(int id) {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_PCA_SWITCH);
     *(tcpMessage.dStream) << (quint8)id;
     emit sendTcpMessage(tcpMessage);
-    sendRequest(pcaChannelRequestSig);
+    sendRequest(TCP_MSG_KEY::MSG_PCA_SWITCH_REQUEST);
 }
 
 void MainWindow::on_biasVoltageSlider_sliderReleased()
@@ -1175,4 +1209,10 @@ void MainWindow::on_biasVoltageDoubleSpinBox_valueChanged(double arg1)
     if (dacVoltage<0.) dacVoltage=0.;
     if (dacVoltage>3.3) dacVoltage=3.3;
     sendSetBiasVoltage(dacVoltage);
+}
+
+void MainWindow::gpioInhibit(bool inhibit) {
+	TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GPIO_INHIBIT);
+    *(tcpMessage.dStream) << inhibit;
+    emit sendTcpMessage(tcpMessage);	
 }

@@ -2,6 +2,7 @@
 #define TCPMESSAGE_KEYS_H
 #include <muondetector_shared_global.h>
 
+// no specific reason but the codes are all prime numbers :)
 enum class TCP_MSG_KEY : quint16
 { 	MSG_PING = 2,
 	MSG_QUIT_CONNECTION = 3,
@@ -69,11 +70,12 @@ enum class TCP_MSG_KEY : quint16
 	MSG_LOG_INFO = 307,
 	MSG_FILE_DOWNLOAD = 311,
 	MSG_OLED_ENTRIES = 313,
-	MSG_RATE_SCAN = 317
+	MSG_RATE_SCAN = 317,
+	MSG_GPIO_INHIBIT = 337,
+	MSG_UBX_TIMEMARK = 349
 };
 // 307    311    313    317    331    337    347    349
-
-// no specific reason but the codes are all prime numbers :)
+/*
 static const quint16 ping = 2;
 static const quint16 quitConnectionSig = 3;
 static const quint16 timeoutSig = 5;
@@ -139,7 +141,7 @@ static const quint16 adcTraceSig = 281;
 
 // not implemented from here on yet
 static const quint16 dacRequestEepromSig = 113;
-
+*/
 
 // list of prime numbers
 //https://primes.utm.edu/lists/small/10000.txt

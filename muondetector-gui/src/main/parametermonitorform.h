@@ -5,6 +5,7 @@
 #include <gpio_pin_definitions.h>
 
 struct CalibStruct;
+struct UbxTimeMarkStruct;
 
 namespace Ui {
 class ParameterMonitorForm;
@@ -23,6 +24,7 @@ signals:
     void biasVoltageCalculated(float vbias);
     void biasCurrentCalculated(float ibias);
     void adcModeChanged(quint8 mode);
+    void gpioInhibitChanged(bool inhibitState);
 
 public slots:
     void onCalibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct> &calibList);
@@ -39,6 +41,8 @@ public slots:
     void onTimeAccReceived(quint32 acc);
     void onFreqAccReceived(quint32 acc);
     void onIntCounterReceived(quint32 cnt);
+	void onTimeMarkReceived(const UbxTimeMarkStruct& tm);
+
 
 private slots:
     void on_dacSpinBox1_valueChanged(double arg1);
@@ -49,6 +53,8 @@ private slots:
     void on_dacSlider2_valueChanged(int value);
     void on_dacSlider3_valueChanged(int value);
     void on_dacSlider4_valueChanged(int value);
+
+    void on_gpioInhibitCheckBox_toggled(bool checked);
 
 private:
     Ui::ParameterMonitorForm *ui;

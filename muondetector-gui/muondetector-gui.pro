@@ -91,7 +91,8 @@ FORMS += \
     $$PWD/src/main/parametermonitorform.ui \
     src/main/calibscandialog.ui \
     src/main/logplotswidget.ui \
-    src/main/gnssposwidget.ui
+    src/main/gnssposwidget.ui \
+    src/main/scanform.ui
 
 HEADERS += \
     $$PWD/src/main/calibform.h \
@@ -107,9 +108,10 @@ HEADERS += \
     $$PWD/src/main/spiform.h \
     $$PWD/src/main/status.h \
     $$PWD/src/main/parametermonitorform.h \
-    src/main/calibscandialog.h \
-    src/main/logplotswidget.h \
-    src/main/gnssposwidget.h
+    $$PWD/src/main/calibscandialog.h \
+    $$PWD/src/main/logplotswidget.h \
+    $$PWD/src/main/gnssposwidget.h \
+    $$PWD/src/main/scanform.h
 
 SOURCES += \
     $$PWD/src/main/calibform.cpp \
@@ -126,9 +128,10 @@ SOURCES += \
     $$PWD/src/main/spiform.cpp \
     $$PWD/src/main/status.cpp   \
     $$PWD/src/main/parametermonitorform.cpp \
-    src/main/calibscandialog.cpp \
-    src/main/logplotswidget.cpp \
-    src/main/gnssposwidget.cpp
+    $$PWD/src/main/calibscandialog.cpp \
+    $$PWD/src/main/logplotswidget.cpp \
+    $$PWD/src/main/gnssposwidget.cpp \
+    $$PWD/src/main/scanform.cpp
 
 RESOURCES += \
     resources.qrc

@@ -32,6 +32,9 @@ public:
 	uint64_t gpioTickOverflowCounter=0;
 	quint64 lastTimeMeasurementTick=0;
 	
+	bool isInhibited() const { return inhibit; }
+	void setInhibited(bool inh=true) { inhibit=inh; }
+	
 signals:
     void signal(uint8_t gpio_pin);
     void samplingTrigger();
@@ -75,6 +78,7 @@ private:
     QTimer gpioClockTimeMeasurementTimer;
 
 	void measureGpioClockTime();
+	bool inhibit=false;
 };
 
 

@@ -24,6 +24,7 @@ class Histogram;
 struct GnssMonHwStruct;
 struct GnssMonHw2Struct;
 struct LogInfoStruct;
+struct UbxTimeMarkStruct;
 
 enum class TCP_MSG_KEY : quint16;
 
@@ -78,6 +79,7 @@ signals:
     void timepulseReceived();
     void adcModeReceived(quint8 mode);
     void logInfoReceived(const LogInfoStruct& lis);
+	void timeMarkReceived(const UbxTimeMarkStruct&);
 
 public slots:
     void receivedTcpMessage(TcpMessage tcpMessage);
@@ -89,6 +91,8 @@ public slots:
     void onTriggerSelectionChanged(GPIO_PIN signal);
     void onHistogramCleared(QString histogramName);
     void onAdcModeChanged(quint8 mode);
+	void onRateScanStart(uint8_t ch);
+	void gpioInhibit(bool inhibit);
 
 private slots:
     void resetAndHit();

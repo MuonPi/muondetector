@@ -24,6 +24,7 @@ signals:
     void setBiasDacVoltage(float val);
     void setDacVoltage(uint8_t ch, float val);
     void updatedCalib(const QVector<CalibStruct>& items);
+    void startRateScan(uint8_t ch);
 
 public slots:
     void onCalibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct>& calibList);
@@ -43,6 +44,8 @@ private slots:
     void on_transferBiasCoeffsPushButton_clicked();
     void updateCalibTable();
     void on_calibItemTableWidget_cellChanged(int row, int column);
+
+    void on_rateScanPushButton_clicked();
 
 private:
     Ui::CalibForm *ui;

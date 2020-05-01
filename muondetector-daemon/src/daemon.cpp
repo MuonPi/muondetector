@@ -168,6 +168,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	qRegisterMetaType<uint16_t>("uint16_t");
 	qRegisterMetaType<uint8_t>("uint8_t");
 	qRegisterMetaType<int8_t>("int8_t");
+    qRegisterMetaType<bool>("bool");
 	qRegisterMetaType<CalibStruct>("CalibStruct");
 	qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
 	qRegisterMetaType<std::vector<GnssConfigStruct>>("std::vector<GnssConfigStruct>");
@@ -180,7 +181,9 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	qRegisterMetaType<GPIO_PIN>("GPIO_PIN");
 	qRegisterMetaType<GnssMonHwStruct>("GnssMonHwStruct");
 	qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
-    
+    qRegisterMetaType<UbxTimeMarkStruct>("UbxTimeMarkStruct");
+    qRegisterMetaType<I2cDeviceEntry>("I2cDeviceEntry");
+
 	// signal handling
 	setup_unix_signal_handlers();
 	if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)) {
@@ -918,7 +921,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         uint8_t channel;
         float threshold;
         *(tcpMessage.dStream) >> channel >> threshold;
-        if (threshold<0.005)
+        if (threshold<0.001)
 			cout<<"Warning: setting DAC "<<channel<<" to 0!"<<endl;
         else setDacThresh(channel, threshold);
         sendDacThresh(DAC_TH1);
@@ -1146,6 +1149,16 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
 	}
 	if (msgID == TCP_MSG_KEY::MSG_LOG_INFO){
 		sendLogInfo();
+	}
+	if (msgID == TCP_MSG_KEY::MSG_RATE_SCAN) {
+		quint8 channel=0;
+        *(tcpMessage.dStream) >> channel;
+		startRateScan(channel);
+	}
+	if (msgID == TCP_MSG_KEY::MSG_GPIO_INHIBIT) {
+		bool inhibit=true;
+        *(tcpMessage.dStream) >> inhibit;
+		if (pigHandler!=nullptr) pigHandler->setInhibited(inhibit);
 	}
 }
 
@@ -1809,7 +1822,7 @@ void Daemon::onGpsMonHW2Updated(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t 
 */
 void Daemon::onGpsMonHWUpdated(const GnssMonHwStruct& hw)
 {
-	TcpMessage tcpMessage(gpsMonHWSig);
+	TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_MONHW);
 	(*tcpMessage.dStream) << hw;
 	emit sendTcpMessage(tcpMessage);
 	emit logParameter(LogParameter("preampNoise", QString::number(-hw.noise)+" dBHz", LogParameter::LOG_AVERAGE));
@@ -1821,7 +1834,7 @@ void Daemon::onGpsMonHWUpdated(const GnssMonHwStruct& hw)
 
 void Daemon::onGpsMonHW2Updated(const GnssMonHw2Struct& hw2)
 {
-    TcpMessage tcpMessage(gpsMonHW2Sig);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_MONHW2);
     (*tcpMessage.dStream) << hw2;
     emit sendTcpMessage(tcpMessage);
 }
@@ -2310,6 +2323,7 @@ void Daemon::onLogParameterPolled(){
 //		updateOledDisplay();
 }
 
+/*
 void Daemon::onUBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t accEst, bool valid, uint8_t timeBase, bool utcAvailable)
 {
 	long double dts=(falling.tv_sec-rising.tv_sec)*1e9;
@@ -2323,6 +2337,29 @@ void Daemon::onUBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t ac
 	histoMap["UbxEventInterval"].fill(1e-6*interval);
 	lastTimestamp=rising;
 }
+*/
+
+void Daemon::onUBXReceivedTimeTM2(const UbxTimeMarkStruct& tm) {
+	if (!tm.risingValid) return;
+	static UbxTimeMarkStruct lastTimeMark;
+	long double dts=(tm.falling.tv_sec-tm.rising.tv_sec)*1e9;
+	dts+=(tm.falling.tv_nsec-tm.rising.tv_nsec);
+	if (dts>0. && tm.fallingValid) {
+		checkRescaleHisto(histoMap["UbxEventLength"], dts);
+		histoMap["UbxEventLength"].fill(dts);
+	}
+	long double interval=(tm.rising.tv_sec-lastTimeMark.rising.tv_sec)*1e9;
+	interval+=(tm.rising.tv_nsec-lastTimeMark.rising.tv_nsec);
+	histoMap["UbxEventInterval"].fill(1e-6*interval);
+	uint16_t diffCount=tm.evtCounter-lastTimeMark.evtCounter;
+	emit timeMarkIntervalCountUpdate(diffCount, interval*1e-9);
+	lastTimeMark=tm;
+	
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_TIMEMARK);
+    (*tcpMessage.dStream) << tm;
+    emit sendTcpMessage(tcpMessage);
+}
+
 
 void Daemon::updateOledDisplay() {
 	if (!oled->devicePresent()) return;
@@ -2338,3 +2375,87 @@ void Daemon::updateOledDisplay() {
 	oled->printf("%s\n", FIX_TYPE_STRINGS[fixStatus().toInt()].toStdString().c_str());
 	oled->display();
 }
+/*
+void Daemon::startRateScan(uint8_t channel) {
+	if (!dac->devicePresent()) return;
+	// save all the settings which will be altered during the scan
+	RateScanInfo *scanInfo = new RateScanInfo;
+	scanInfo->origPcaMask = pcaPortMask;
+	scanInfo->origEventTrigger = eventTrigger;
+	setPcaChannel((channel==0)?MUX_DISC1:MUX_DISC2);
+	setEventTriggerSelection(EXT_TRIGGER);
+	pigHandler->setInhibited(true);
+	
+	quint16 counterStart=propertyMap["events"]().toUInt();
+	scanInfo->lastEvtCounter=counterStart;
+	scanInfo->minThr=0.002;
+	scanInfo->maxThr=0.1;
+	scanInfo->currentThr=scanInfo->minThr;
+	scanInfo->thrIncrement=0.0005;
+	scanInfo->thrChannel=channel;
+	scanInfo->nrLoops=(RATE_SCAN_ITERATIONS>0)?RATE_SCAN_ITERATIONS:1;
+	scanInfo->currentLoop=0;
+	dac->setVoltage(channel, scanInfo->currentThr);
+//	usleep(10000UL);
+	QTimer::singleShot(RATE_SCAN_TIME_INTERVAL_MS, [this,scanInfo](){
+		this->doRateScanIteration(scanInfo);
+	} );
+}
+*/
+
+void Daemon::startRateScan(uint8_t channel) {
+	if (!dac->devicePresent() || channel>1) return;
+	// save all the settings which will be altered during the scan
+/*
+	RateScan *scan = new RateScan;
+	scan->origPcaMask = pcaPortMask;
+	scan->origEventTrigger = eventTrigger;
+	scan->origScanPar=dacThresh[channel];
+	setPcaChannel((channel==0)?MUX_DISC1:MUX_DISC2);
+	setEventTriggerSelection(EXT_TRIGGER);
+	pigHandler->setInhibited(true);
+	
+	quint16 counterStart=propertyMap["events"]().toUInt();
+	scan->lastEvtCounter=counterStart;
+	scan->minScanPar=0.002;
+	scan->maxScanPar=0.1;
+	scan->currentScanPar=scan->minScanPar;
+	scan->scanParIncrement=0.0005;
+	scanInfo->nrLoops=(RATE_SCAN_ITERATIONS>0)?RATE_SCAN_ITERATIONS:1;
+	scanInfo->currentLoop=0;
+	dac->setVoltage(channel, scan->currentScanPar);
+//	usleep(10000UL);
+	QTimer::singleShot(RATE_SCAN_TIME_INTERVAL_MS, [this,scanInfo](){
+		this->doRateScanIteration(scanInfo);
+	} );
+*/
+}
+
+void Daemon::doRateScanIteration(RateScanInfo* info) {
+	quint16 currCounter=propertyMap["events"]().toUInt();
+	quint16 diffCount=currCounter-info->lastEvtCounter;
+	info->lastEvtCounter=currCounter;
+
+	float thr=info->currentThr+info->thrIncrement;
+	double rate=(double)diffCount*1000/RATE_SCAN_TIME_INTERVAL_MS;
+//	qDebug() << "thr"<<(int)info->thrChannel<<"="<<info->currentThr<<": "<<rate<<" Hz";
+	qDebug() << info->currentThr<<" "<<rate<<" Hz";
+	if (thr<=info->maxThr) { 
+		// initiate next scan step
+		dac->setVoltage(info->thrChannel, thr);
+//		usleep(10000UL);
+		info->currentThr=thr;
+		QTimer::singleShot(RATE_SCAN_TIME_INTERVAL_MS, [this,info](){
+			this->doRateScanIteration(info);
+		} );
+	} else {
+		// scan is done, restore the original settings now
+		setDacThresh(0, dacThresh[0]);
+		setDacThresh(1, dacThresh[1]);
+		setPcaChannel(info->origPcaMask);
+		setEventTriggerSelection(info->origEventTrigger);
+		pigHandler->setInhibited(false);
+		delete info;
+	}
+}
+
