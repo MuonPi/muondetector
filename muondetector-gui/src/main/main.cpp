@@ -6,7 +6,7 @@ int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
     QCoreApplication::setApplicationName("muondetector-gui");
-    QCoreApplication::setApplicationVersion("1.0.3");
+    QCoreApplication::setApplicationVersion("1.1.2");
     QCommandLineParser parser;
     parser.addVersionOption();
     parser.process(a);

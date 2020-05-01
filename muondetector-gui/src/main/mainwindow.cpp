@@ -122,6 +122,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::triggerSelectionReceived, status, &Status::onTriggerSelectionReceived);
     connect(status, &Status::triggerSelectionChanged, this, &MainWindow::onTriggerSelectionChanged);
     connect(this, &MainWindow::timepulseReceived, status, &Status::onTimepulseReceived);
+    connect(this, &MainWindow::mqttStatusChanged, status, &Status::onMqttStatusChanged);
 
     ui->tabWidget->addTab(status,"Overview");
 
@@ -698,6 +699,12 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
 		*(tcpMessage.dStream) >> tm;
 		emit timeMarkReceived(tm);
 		return;
+	}
+	if (msgID == TCP_MSG_KEY::MSG_MQTT_STATUS){
+        bool connected = false;
+        *(tcpMessage.dStream) >> connected;
+        emit mqttStatusChanged(connected);
+        return;
     }
 }
 

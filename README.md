@@ -1,6 +1,6 @@
 # muondetector
 
-Software for a [Raspberry Pi based muon detector system](https://balu.physik.uni-giessen.de:8081/mediawiki/index.php) using a u-blox GNSS module for precise timing.
+Software for a [Raspberry Pi based muon detector system](https://MuonPi.org) using a u-blox GNSS module for precise timing. For more information visit our web page [www.MuonPi.org](https://MuonPi.org) and our [Mediawiki](https://wiki.muonpi.org/index.php?title=Main_Page).
 
 ### ABSTRACT
 

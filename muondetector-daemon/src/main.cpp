@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
     qRegisterMetaType<TcpMessage>("TcpMessage");
 	QCoreApplication a(argc, argv);
     QCoreApplication::setApplicationName("muondetector-daemon");
-    QCoreApplication::setApplicationVersion("1.0.3");
+    QCoreApplication::setApplicationVersion("1.1.2");
 
     // command line input management
 	QCommandLineParser parser;
@@ -86,10 +86,17 @@ int main(int argc, char *argv[])
 	parser.addPositionalArgument("device", QCoreApplication::translate("main", "Path to gps device\n"
 		"for example: /dev/ttyAMA0"));
 
-    // lftp settings option
-    QCommandLineOption lftpSettingsOption(QStringList() << "lftp-login",
-                                          QCoreApplication::translate("main", "ask for login to the online server"));
-    parser.addOption(lftpSettingsOption);
+    // login option
+    QCommandLineOption mqttLoginOption(QStringList() << "l" << "login",
+                                          QCoreApplication::translate("main", "ask for login to the online mqtt server"));
+    parser.addOption(mqttLoginOption);
+
+    // station ID (some name for individual stations if someone has multiple)
+    QCommandLineOption stationIdOption("id",
+        QCoreApplication::translate("main", "Set station ID"),
+        QCoreApplication::translate("main", "ID"));
+    parser.addOption(stationIdOption);
+
 
 	// verbosity option
 	QCommandLineOption verbosityOption(QStringList() << "e" << "verbose",
@@ -218,7 +225,7 @@ int main(int argc, char *argv[])
         QDir directory("/dev","*",QDir::Name, QDir::System);
         QStringList serialports = directory.entryList(QStringList({"ttyS0","ttyAMA0"}));
         if (!serialports.empty()){
-            gpsdevname=serialports.at(0);
+            gpsdevname=QString("/dev/"+serialports.at(0));
         }else{
             cout << "no device selected, will not connect to gps module" << endl;
         }
@@ -357,10 +364,15 @@ int main(int argc, char *argv[])
 
     std::string username="";
     std::string password="";
-    if (parser.isSet(lftpSettingsOption)){
+    if (parser.isSet(mqttLoginOption)){
         cout << "To set the login for the ftp-server, please enter user name:"<<endl;
         cin >> username;
         password = getpass("please enter password:",true);
+    }
+
+    QString stationID = "";
+    if (parser.isSet(stationIdOption)){
+        stationID = parser.value(stationIdOption);
     }
     /*
     pid_t pid;
@@ -414,7 +426,7 @@ int main(int argc, char *argv[])
     openlog ("muondetector-daemon", LOG_PID, LOG_DAEMON);
     */
     Daemon daemon(QString::fromStdString(username), QString::fromStdString(password), gpsdevname, verbose, pcaChannel, dacThresh, biasVoltage, biasPower, dumpRaw,
-        baudrate, showGnssConfig, eventSignal, peerAddress, peerPort, daemonAddress, daemonPort, showout, showin, preamp1, preamp2, gain);
+        baudrate, showGnssConfig, eventSignal, peerAddress, peerPort, daemonAddress, daemonPort, showout, showin, preamp1, preamp2, gain, stationID);
 	
 	return a.exec();
 }

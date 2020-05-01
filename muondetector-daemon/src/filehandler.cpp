@@ -21,7 +21,6 @@
 
 using namespace CryptoPP;
 
-
 const unsigned long int lftpUploadTimeout = MUONPI_UPLOAD_TIMEOUT_MS; // in msecs
 const int uploadReminderInterval = MUONPI_UPLOAD_REMINDER_MINUTES; // in minutes
 const int logReminderInterval = MUONPI_LOG_INTERVAL_MINUTES; // in minutes
@@ -92,7 +91,7 @@ static QString dateStringNow(){
     return QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd_hh-mm-ss");
 }
 
-FileHandler::FileHandler(const QString& userName, const QString& passWord, quint32 fileSizeMB, QObject *parent)
+FileHandler::FileHandler(const QString& userName, const QString& passWord, const QString& station_ID, quint32 fileSizeMB, QObject *parent)
     : QObject(parent)
 {
     lastUploadDateTime = QDateTime(QDate::currentDate(),QTime(0,0,0,0),Qt::TimeSpec::UTC);
@@ -121,16 +120,22 @@ FileHandler::FileHandler(const QString& userName, const QString& passWord, quint
             qDebug() << "could not create folder " << uploadedFiles;
         }
     }
-
+    bool rewrite_login = false;
+    if (!readLoginData()){
+        qDebug() << "could not read login data from file";
+    }
+    if (station_ID!=""){
+        stationID = station_ID;
+        rewrite_login = true;
+    }
     if (userName!=""||passWord!=""){
         username=userName;
         password=passWord;
-        if(!saveLoginData(userName,passWord)){
+        rewrite_login = true;
+    }
+    if (rewrite_login){
+        if(!saveLoginData(userName,passWord, station_ID)){
             qDebug() << "could not save login data";
-        }
-    }else{
-        if (!readLoginData()){
-            qDebug() << "could not read login data from file";
         }
     }
 }
@@ -190,6 +195,8 @@ void FileHandler::start(){
     logReminder->start();
     // open files that are currently written
     openFiles();
+    emit mqttConnect(username,password,stationID);
+    qDebug() << "sended mqttConnect";
 }
 
 // SLOTS
@@ -319,7 +326,7 @@ void FileHandler::onUploadRemind(){
     if (lastUploadDateTime<todaysRegularUploadTime&&QDateTime::currentDateTimeUtc()>todaysRegularUploadTime){
         switchFiles();
         if (!password.size()==0 || !username.size()==0){
-            uploadRecentDataFiles();
+            //uploadRecentDataFiles(); // commented out because the upload server is not online
         }
         lastUploadDateTime = QDateTime::currentDateTimeUtc();
     }
@@ -538,7 +545,7 @@ bool FileHandler::uploadRecentDataFiles(){
 
 // crypto related stuff
 
-bool FileHandler::saveLoginData(QString username, QString password){
+bool FileHandler::saveLoginData(QString username, QString password, QString station_ID){
     QFile loginDataFile(loginDataFilePath);
     loginDataFile.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner);
     if(!loginDataFile.open(QIODevice::ReadWrite)){
@@ -548,7 +555,7 @@ bool FileHandler::saveLoginData(QString username, QString password){
     loginDataFile.resize(0);
 
     AutoSeededRandomPool rnd;
-    std::string plainText = QString(username+";"+password).toStdString();
+    std::string plainText = QString(username+";"+password+";"+station_ID).toStdString();
     std::string keyText;
     std::string encrypted;
 
@@ -625,5 +632,6 @@ bool FileHandler::readLoginData(){
     }
     username = loginData.at(0);
     password = loginData.at(1);
+    stationID = loginData.at(2);
     return true;
 }

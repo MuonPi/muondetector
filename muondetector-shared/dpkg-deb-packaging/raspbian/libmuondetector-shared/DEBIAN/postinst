@@ -1,4 +1,2 @@
 #!/bin/bash
-ln -s /usr/lib/libmuondetector-shared.so.1.1.1 /usr/lib/libmuondetector-shared.so.1.1
-ln -s /usr/lib/libmuondetector-shared.so.1.1 /usr/lib/libmuondetector-shared.so.1
-ln -s /usr/lib/libmuondetector-shared.so.1 /usr/lib/libmuondetector-shared.so
+ldconfig

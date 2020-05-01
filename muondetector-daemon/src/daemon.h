@@ -11,6 +11,7 @@
 #include <pigpiodhandler.h>
 #include <tdc7200.h>
 #include <filehandler.h>
+#include <mqtthandler.h>
 #include <i2cdevices.h>
 #include <calibration.h>
 #include <logparameter.h>
@@ -129,7 +130,7 @@ public:
     Daemon(QString username, QString password, QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
         float *new_dacThresh, float new_biasVoltage, bool bias_ON, bool new_dumpRaw, int new_baudrate,
         bool new_configGnss, unsigned int new_eventTrigger, QString new_PeerAddress, quint16 new_PpeerPort,
-        QString new_serverAddress, quint16 new_serverPort, bool new_showout, bool new_showin, bool preamp1, bool preamp2, bool gain, QObject *parent = 0);
+        QString new_serverAddress, quint16 new_serverPort, bool new_showout, bool new_showin, bool preamp1, bool preamp2, bool gain, QString station_ID, QObject *parent = 0);
     ~Daemon() override;
 	void configGps();
 	void configGpsForVersion();
@@ -178,6 +179,7 @@ public slots:
     //void onUBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t accEst, bool valid, uint8_t timeBase, bool utcAvailable);
     void onUBXReceivedTimeTM2(const UbxTimeMarkStruct& tm);
 	void onLogParameterPolled();
+    void sendMqttStatus(bool connected);
 	
 signals:
     void sendTcpMessage(TcpMessage tcpMessage);
@@ -208,6 +210,7 @@ signals:
     void UBXSaveCfg(uint8_t devMask=QtSerialUblox::DEV_BBR | QtSerialUblox::DEV_FLASH);
 	void setSamplingTriggerSignal(GPIO_PIN signalName);
 	void timeMarkIntervalCountUpdate(uint16_t newCounts, double lastInterval);
+    void requestMqttConnectionStatus();
 	
 private slots:
     void onRateBufferReminder();
@@ -289,6 +292,9 @@ private:
 
     // file handling
     QPointer<FileHandler> fileHandler;
+
+    // mqtt
+    QPointer<MqttHandler> mqttHandler;
 
     // signal handling
 	static int sighupFd[2];

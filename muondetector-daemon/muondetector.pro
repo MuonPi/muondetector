@@ -2,7 +2,7 @@ QT -= gui
 QT += core
 QT += network
 QT += serialport
-VERSION = 1.1.1
+VERSION = 1.1.2
 CONFIG += c++11 console
 CONFIG -= app_bundle
 
@@ -29,14 +29,18 @@ INCLUDEPATH +=  $$PWD \
     $$PWD/src/i2c
 
 INCLUDEPATH += $$PWD/../muondetector-shared/src/
+INCLUDEPATH += /usr/local/include/mqtt
 
 #LIBS += -L/usr/lib/muondetector-shared -lmuondetector-shared
-LIBS += -L/usr/lib/ -lmuondetector-shared
+LIBS += -lmuondetector-shared
 #DEPENDPATH += /usr/lib/muondetector-shared
 
 LIBS += -lpigpiod_if2 \
         -lcrypto++ \
         -lrt
+
+LIBS += -lpaho-mqtt3c -lpaho-mqtt3a -lpaho-mqtt3cs -lpaho-mqtt3as
+LIBS += -lpaho-mqttpp3
 
 SOURCES += $$PWD/src/main.cpp \
 #    $$PWD/src/gnsssatellite.cpp \
@@ -65,7 +69,8 @@ SOURCES += $$PWD/src/main.cpp \
     $$PWD/src/i2c/i2cdevices/Adafruit_GFX.cpp \
     $$PWD/src/i2c/i2cdevices/i2cdevice.cpp \
     $$PWD/src/i2c/i2cdevices/glcdfont.c \
-    $$PWD/src/tdc7200.cpp
+    $$PWD/src/tdc7200.cpp \
+    $$PWD/src/mqtthandler.cpp
 
 
 HEADERS += \
@@ -102,6 +107,7 @@ HEADERS += \
     $$PWD/src/i2c/i2cdevices/x9119/x9119.h \
     $$PWD/src/i2c/i2cdevices/Adafruit_GFX.h \
     $$PWD/src/i2c/i2cdevices/i2cdevice.h \
-    $$PWD/src/tdc7200.h
+    $$PWD/src/tdc7200.h \
+    $$PWD/src/mqtthandler.h
 
 DISTFILES += $$PWD/ubx_rates_config.cfg

@@ -79,6 +79,7 @@ signals:
     void timepulseReceived();
     void adcModeReceived(quint8 mode);
     void logInfoReceived(const LogInfoStruct& lis);
+    void mqttStatusChanged(bool connected);
 	void timeMarkReceived(const UbxTimeMarkStruct&);
 
 public slots:

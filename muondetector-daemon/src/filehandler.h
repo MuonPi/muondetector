@@ -15,8 +15,7 @@ class FileHandler : public QObject
     Q_OBJECT
 
 public:
-    FileHandler(const QString& userName, const QString& passWord, quint32 fileSizeMB = 500, QObject *parent = nullptr);
-
+    FileHandler(const QString& userName, const QString& passWord, const QString& station_ID, quint32 fileSizeMB = 500, QObject *parent = nullptr);
     QString getCurrentDataFileName() const;
     QString getCurrentLogFileName() const;
     QFileInfo dataFileInfo() const;
@@ -24,7 +23,8 @@ public:
     qint64 currentLogAge();
 
 signals:
-	void logIntervalSignal();
+    void logIntervalSignal();
+    void mqttConnect(QString username, QString password, QString station_ID);
 
 public slots:
     void start();
@@ -48,13 +48,14 @@ private:
     QString dataFolderPath;
     QString currentWorkingFilePath;
     QString currentWorkingLogPath;
+    QString stationID;
     QString username;
     QString password;
     QFlags<QFileDevice::Permission> defaultPermissions = QFileDevice::WriteOwner|QFileDevice::WriteUser|
             QFileDevice::WriteGroup|QFileDevice::ReadOwner|QFileDevice::ReadUser|
             QFileDevice::ReadGroup|QFileDevice::ReadOther;
     QStringList notUploadedFilesNames;
-    bool saveLoginData(QString username, QString password);
+    bool saveLoginData(QString username, QString password, QString station_ID);
     bool readLoginData();
     bool openFiles(bool writeHeader = false); // reads the config file and opens the correct data file to write to
     bool readFileInformation();

@@ -46,6 +46,7 @@ public slots:
     void clearRatePlot();
     void onTriggerSelectionReceived(GPIO_PIN signal);
     void onTimepulseReceived();
+    void onMqttStatusChanged(bool connected);
 
 private slots:
     void setRateSecondsBuffered(const QString& bufferTime);
