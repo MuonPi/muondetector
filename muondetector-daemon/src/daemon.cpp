@@ -300,7 +300,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     connect(this, &Daemon::requestMqttConnectionStatus, mqttHandler, &MqttHandler::onRequestConnectionStatus);
     connect(mqttHandlerThread, &QThread::finished, mqttHandlerThread, &QThread::deleteLater);
     //connect(this, &Daemon::logParameter, mqttHandler, &MqttHandler::sendLog);
-    mqttHandlerThread->start();
+    //mqttHandlerThread->start();
 
     // create fileHandler
     QThread *fileHandlerThread = new QThread();
@@ -1269,8 +1269,8 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos){
                           << pos.vAcc;
     emit sendTcpMessage(tcpMessage);
     
-	emit logParameter(LogParameter("geoLongitude", QString::number(1e-7*pos.lon,'f',5)+" deg", LogParameter::LOG_AVERAGE));
-	emit logParameter(LogParameter("geoLatitude", QString::number(1e-7*pos.lat,'f',5)+" deg", LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("geoLongitude", QString::number(1e-7*pos.lon,'f',7)+" deg", LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("geoLatitude", QString::number(1e-7*pos.lat,'f',7)+" deg", LogParameter::LOG_AVERAGE));
 	emit logParameter(LogParameter("geoHeightMSL", QString::number(1e-3*pos.hMSL,'f',2)+" m", LogParameter::LOG_AVERAGE));
 	if (histoMap.find("geoHeight")!=histoMap.end())
 		emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(histoMap["geoHeight"].getMean(),'f',2)+" m", LogParameter::LOG_LATEST));
