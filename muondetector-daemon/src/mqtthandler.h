@@ -48,12 +48,12 @@ class MqttHandler : public QObject
 
     private:
         const int qos = 1;
-        mqtt::async_client *mqttClient;
-        mqtt::topic *data_topic;
-        mqtt::topic *log_topic;
-        mqtt::connect_options *conopts;
-        mqtt::message *willmsg;
-        mqtt::will_options *will;
+        mqtt::async_client *mqttClient = nullptr;
+        mqtt::topic *data_topic = nullptr;
+        mqtt::topic *log_topic = nullptr;
+        mqtt::connect_options *conopts = nullptr;
+        mqtt::message *willmsg = nullptr;
+        mqtt::will_options *will = nullptr;
         bool _mqttConnectionStatus = false;
         QString mqttAddress = "116.202.96.181:1883";
         QString stationID;
