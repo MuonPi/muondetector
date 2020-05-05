@@ -155,9 +155,6 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	: QTcpServer(parent)
 {
 
-    if (verbose>3)
-		qDebug()<<"QT version is "<<QString::number(QT_VERSION,16);
-
 	// first, we must set the locale to be independent of the number format of the system's locale.
 	// We rely on parsing floating point numbers with a decimal point (not a komma) which might fail if not setting the classic locale
 	//	std::locale::global( std::locale( std::cout.getloc(), new punct_facet<char, '.'>) ) );
@@ -212,6 +209,9 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	if (verbose > 4) {
 		cout << "daemon running in thread " << QString("0x%1").arg((intptr_t)this->thread()) << endl;
 	}
+
+    if (verbose>3)
+		qDebug()<<"QT version is "<<QString::number(QT_VERSION,16);
 
 	// try to find out on which hardware version we are running
 	// for this to work, we have to initialize and read the eeprom first
@@ -303,7 +303,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     connect(this, &Daemon::requestMqttConnectionStatus, mqttHandler, &MqttHandler::onRequestConnectionStatus);
     connect(mqttHandlerThread, &QThread::finished, mqttHandlerThread, &QThread::deleteLater);
     //connect(this, &Daemon::logParameter, mqttHandler, &MqttHandler::sendLog);
-    mqttHandlerThread->start();
+    //mqttHandlerThread->start();
 
     // create fileHandler
     QThread *fileHandlerThread = new QThread();
