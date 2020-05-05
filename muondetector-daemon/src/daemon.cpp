@@ -303,7 +303,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     connect(this, &Daemon::requestMqttConnectionStatus, mqttHandler, &MqttHandler::onRequestConnectionStatus);
     connect(mqttHandlerThread, &QThread::finished, mqttHandlerThread, &QThread::deleteLater);
     //connect(this, &Daemon::logParameter, mqttHandler, &MqttHandler::sendLog);
-    //mqttHandlerThread->start();
+    mqttHandlerThread->start();
 
     // create fileHandler
     QThread *fileHandlerThread = new QThread();
