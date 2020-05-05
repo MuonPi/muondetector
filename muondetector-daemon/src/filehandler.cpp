@@ -170,9 +170,10 @@ qint64 FileHandler::currentLogAge() {
     if (configFilePath=="") return -1;
     QDateTime now = QDateTime::currentDateTime();
     QFileInfo fi(configFilePath);
-    
-#if QT_VERSION >= 0x051000
-    qint64 difftime=-now.secsTo(dataFile->fileTime(QFileDevice::FileMetadataChangeTime));
+//    qDebug()<<"QT version is "<<QString::number(QT_VERSION,16);
+#if QT_VERSION >= 0x050a00
+//    qint64 difftime=-now.secsTo(dataFile->fileTime(QFileDevice::FileMetadataChangeTime));
+    qint64 difftime=-now.secsTo(dataFile->fileTime(QFileDevice::FileBirthTime));
 #else
     qint64 difftime=-now.secsTo(fi.created());
 #endif
