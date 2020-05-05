@@ -56,7 +56,7 @@ class MqttHandler : public QObject
         mqtt::will_options *will = nullptr;
         bool _mqttConnectionStatus = false;
         QString mqttAddress = "116.202.96.181:1883";
-        QString stationID;
+        QString stationID="0";
         QString username;
         QString password;
 };

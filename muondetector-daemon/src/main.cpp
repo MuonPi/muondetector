@@ -76,8 +76,8 @@ int main(int argc, char *argv[])
 
     // command line input management
 	QCommandLineParser parser;
-	parser.setApplicationDescription("U-Blox GPS polling and configuration program\n"
-		"with added tcp implementation for synchronising "
+	parser.setApplicationDescription("MuonPi cosmic shower muon detector control and configuration program (daemon)\n"
+		"with added tcp implementation for synchronisation of "
 		"data with a central server");
 	parser.addHelpOption();
 	parser.addVersionOption();
@@ -365,12 +365,12 @@ int main(int argc, char *argv[])
     std::string username="";
     std::string password="";
     if (parser.isSet(mqttLoginOption)){
-        cout << "To set the login for the ftp-server, please enter user name:"<<endl;
+        cout << "To set the login for the mqtt-server, please enter user name:"<<endl;
         cin >> username;
         password = getpass("please enter password:",true);
     }
 
-    QString stationID = "";
+    QString stationID = "0";
     if (parser.isSet(stationIdOption)){
         stationID = parser.value(stationIdOption);
     }

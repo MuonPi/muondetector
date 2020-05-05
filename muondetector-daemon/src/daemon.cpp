@@ -783,6 +783,24 @@ void Daemon::connectToGps() {
 	if (fileHandler != nullptr){
         connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
         connect(qtGps, &QtSerialUblox::timTM2, mqttHandler, &MqttHandler::sendData);
+        connect(this, &Daemon::logParameter, this, [this](const LogParameter& logpar) {
+			QString logtype="";
+			if (logpar.logType()==LogParameter::LOG_NEVER) {
+				return;
+			} else if (logpar.logType()==LogParameter::LOG_ONCE) {
+				logtype="once";
+			} else if (logpar.logType()==LogParameter::LOG_EVERY) {
+				logtype="every";
+			} else if (logpar.logType()==LogParameter::LOG_AVERAGE) {
+				logtype="avg";
+			} else if (logpar.logType()==LogParameter::LOG_LATEST) {
+				logtype="latest";
+			} else if (logpar.logType()==LogParameter::LOG_ON_CHANGE) {
+				logtype="change";
+			}
+			this->mqttHandler->sendLog(logpar.name()+" "+logpar.value()+" "+logtype);
+		} );
+				
 	}
 	// after thread start there will be a signal emitted which starts the qtGps makeConnection function
 	gpsThread->start();

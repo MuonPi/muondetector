@@ -92,6 +92,9 @@ void MqttHandler::sendData(const QString &message){
 }
 
 void MqttHandler::sendLog(const QString &message){
+    if (log_topic == nullptr){
+        return;
+    }
     try {
         log_topic->publish(message.toStdString());
     }
