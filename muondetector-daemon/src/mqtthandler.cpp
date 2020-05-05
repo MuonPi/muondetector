@@ -45,8 +45,8 @@ void MqttHandler::mqttConnect(){
     try {
         mqttClient = new mqtt::async_client(mqttAddress.toStdString(), username.toStdString());
         conopts = new mqtt::connect_options();
-        conopts->set_user_name("user");
-        conopts->set_password("1234");
+        conopts->set_user_name(username.toStdString());
+        conopts->set_password(password.toStdString());
         conopts->set_keep_alive_interval(45);
         //willmsg = new mqtt::message("muonpi/data/", "Last will and testament.", 1, true);
         //will = new mqtt::will_options(*willmsg);
