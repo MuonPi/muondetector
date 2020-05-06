@@ -25,20 +25,18 @@ public:
 signals:
     void logIntervalSignal();
     void mqttConnect(QString username, QString password, QString station_ID);
+	void logRotateSignal();
 
 public slots:
     void start();
     void writeToDataFile(const QString& data); // writes data to the file opened in "dataFile"
-    void onReceivedLogParameter(const LogParameter& log);
+    void writeToLogFile(const QString& log); // writes log data to the file opened in "logFile"
 
 private slots:
     void onUploadRemind();
-    void onLogRemind();
 
 private:
-    void writeToLogFile(const QString& log); // writes log information to logFile
     // save and send data everyday
-    QMap<QString, QVector<LogParameter> > logData;
     QFile *dataFile = nullptr; // the file date is currently written to. (timestamps)
     QFile *logFile = nullptr; // the file log information is written to.
     QString hashedMacAddress;
@@ -68,9 +66,8 @@ private:
     quint32 fileSize; // in MB
     QDateTime lastUploadDateTime;
     QTime dailyUploadTime;
-    bool onceLogFlag=true;
-    float temperature = 0.0;
-    quint8 pcaChannel = 0;
+//    float temperature = 0.0;
+//    quint8 pcaChannel = 0;
 };
 
 #endif // FILEHANDLER_H

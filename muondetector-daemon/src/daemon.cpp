@@ -308,45 +308,26 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     mqttHandlerThread->start();
 
 	
-	// connect log signals to and from log engine
-	connect(this, &Daemon::logParameter, &logEngine, &LogEngine::onLogParameterReceived);
-	connect(&logEngine, &LogEngine::sendLogString, mqttHandler, &MqttHandler::sendLog);
-
-/*	
-        connect(this, &Daemon::logParameter, this, [this](const LogParameter& logpar) {
-			QString logtype="";
-			if (logpar.logType()==LogParameter::LOG_NEVER) {
-				return;
-			} else if (logpar.logType()==LogParameter::LOG_ONCE) {
-				logtype="once";
-			} else if (logpar.logType()==LogParameter::LOG_EVERY) {
-				logtype="every";
-			} else if (logpar.logType()==LogParameter::LOG_AVERAGE) {
-				logtype="avg";
-			} else if (logpar.logType()==LogParameter::LOG_LATEST) {
-				logtype="latest";
-			} else if (logpar.logType()==LogParameter::LOG_ON_CHANGE) {
-				logtype="change";
-			}
-			this->mqttHandler->sendLog(logpar.name()+" "+logpar.value()+" "+logtype);
-		} );
-*/	
-	
-	
     // create fileHandler
     QThread *fileHandlerThread = new QThread();
 
     fileHandler = new FileHandler(username, password, station_ID);
 	fileHandler->moveToThread(fileHandlerThread);
 	connect(this, &Daemon::aboutToQuit, fileHandler, &FileHandler::deleteLater);
-	connect(this, &Daemon::logParameter, fileHandler, &FileHandler::onReceivedLogParameter);
+	//connect(this, &Daemon::logParameter, fileHandler, &FileHandler::onReceivedLogParameter);
 	connect(fileHandlerThread, &QThread::finished, fileHandlerThread, &QThread::deleteLater);
 	connect(fileHandlerThread, &QThread::started, fileHandler, &FileHandler::start);
     connect(fileHandler, &FileHandler::mqttConnect, mqttHandler, &MqttHandler::start);
 	fileHandlerThread->start();
 
-    // connect to the regular log timer signal to log several non-regularly polled parameters
-    connect(fileHandler, &FileHandler::logIntervalSignal, this, &Daemon::onLogParameterPolled);
+	// connect log signals to and from log engine and filehandler
+	connect(this, &Daemon::logParameter, &logEngine, &LogEngine::onLogParameterReceived);
+	connect(&logEngine, &LogEngine::sendLogString, mqttHandler, &MqttHandler::sendLog);
+	connect(&logEngine, &LogEngine::sendLogString, fileHandler, &FileHandler::writeToLogFile);
+	// connect to the regular log timer signal to log several non-regularly polled parameters
+    connect(&logEngine, &LogEngine::logIntervalSignal, this, &Daemon::onLogParameterPolled);
+    // connect the once-log flag reset slot of log engine with the logRotate signal of filehandler
+	connect(fileHandler, &FileHandler::logRotateSignal, &logEngine, &LogEngine::onOnceLogTrigger);
 
 	// instantiate, detect and initialize all i2c devices
 	// LM75A temp sensor
@@ -514,7 +495,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		oled->setTextColor(Adafruit_SSD1306::WHITE);
 		oled->setCursor(0,2);
 		oled->print("*Cosmic Shower Det.*\n");
-		oled->print("V 1.0.3\n");
+		oled->print("V 1.1.2\n");
 		//  display.setTextColor(BLACK, WHITE); // 'inverted' text
 /*
 		struct timespec tNow;

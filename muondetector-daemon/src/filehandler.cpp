@@ -188,134 +188,13 @@ void FileHandler::start(){
     uploadReminder->setSingleShot(false);
     connect(uploadReminder, &QTimer::timeout, this, &FileHandler::onUploadRemind);
     uploadReminder->start();
-    // set log reminder
-    QTimer *logReminder = new QTimer(this);
-    logReminder->setInterval(60*1000*logReminderInterval);
-    logReminder->setSingleShot(false);
-    connect(logReminder, &QTimer::timeout, this, &FileHandler::onLogRemind);
-    logReminder->start();
-    // open files that are currently written
+	// open files that are currently written
     openFiles();
     emit mqttConnect(username,password,stationID);
-    qDebug() << "sended mqttConnect";
+    qDebug() << "sent mqttConnect";
 }
 
 // SLOTS
-void FileHandler::onReceivedLogParameter(const LogParameter& log){
-//    writeToLogFile(dateStringNow()+" "+QString(log.name()+" "+log.value()+"\n"));
-//    LogParameter localLog(log);
-//    localLog.setUpdatedRecently(true);
-    if (log.logType()==LogParameter::LOG_NEVER) {
-		// do nothing, just return
-		return;
-	}
-    if (log.logType()==LogParameter::LOG_EVERY) {
-		// directly log to file since LOG_EVERY attribute is set
-		// no need to store in buffer, just return after logging
-		writeToLogFile(dateStringNow()+" "+QString(log.name()+" "+log.value()+"\n"));
-		// reset already existing entries but preserve logType attribute
-		if (logData.find(log.name())!=logData.end()) {
-			int logType=logData[log.name()].front().logType();
-			if (logType!=LogParameter::LOG_AVERAGE) {
-				logData[log.name()].clear();
-			}
-			logData[log.name()].push_back(LogParameter(log.name(),log.value(),logType));
-			logData[log.name()].back().setUpdatedRecently(false);
-		}
-		return;
-	} else {
-		// save to buffer
-		if (log.logType()==LogParameter::LOG_ONCE) {
-			// don't save if a LOG_ONCE param with this name is already in buffer
-			//if (logData.find(log.name())!=logData.end()) return;
-		}
-		logData[log.name()].push_back(log);
-		logData[log.name()].back().setUpdatedRecently(true);
-	}
-}
-
-void FileHandler::onLogRemind(){
-	emit logIntervalSignal();
-	if (logFile==nullptr) return;
-	// loop over the map with all accumulated parameters since last log reminder
-	// no increment here since we erase and invalidate iterators within the loop
-	for (auto it=logData.begin(); it != logData.end();) {
-		QString name=it.key();
-		QVector<LogParameter> parVector=it.value();
-		// check if name string is set but no entry exists. This should not happen
-		if (parVector.isEmpty()) {
-			++it;
-			continue;
-		}
-		
-		if (parVector.back().logType()==LogParameter::LOG_LATEST) {
-			// easy to write only the last value to file
-			writeToLogFile(dateStringNow()+" "+name+" "+parVector.back().value()+"\n");
-			it=logData.erase(it);
-		} else if (parVector.back().logType()==LogParameter::LOG_AVERAGE) {
-			// here we loop over all values in the vector for the current parameter and do the averaging
-			double sum=0.;
-			bool ok=false;
-			// parse last field of value string
-			QString unitString=parVector.back().value().section(" ",-1,-1);
-			// compare with first field
-			if (unitString.compare(parVector.back().value().section(" ",0,0))==0) {
-				// unit and value are identical, so there is probably no unit suffix
-				// set unit to empty string
-				unitString="";
-			}
-			// do the averaging
-			for (int i=0; i<parVector.size(); i++) {
-				QString valString=parVector[i].value();
-				QString str=valString.section(" ",0,0);
-				// convert to double with error checking
-				double val=str.toDouble(&ok);
-				if (!ok) break;
-				sum+=val;
-			}
-			if (ok) {
-				sum/=parVector.size();
-				writeToLogFile(dateStringNow()+" "+QString(name+" "+QString::number(sum)+" "+unitString+"\n"));
-			}
-			it=logData.erase(it);
-		} else if (parVector.back().logType()==LogParameter::LOG_ONCE) {
-			// we want to log only one time per daemon lifetime || file change
-			if (onceLogFlag || parVector.front().updatedRecently()) {
-				writeToLogFile(dateStringNow()+" "+name+" "+parVector.back().value()+"\n");
-			}
-			while (parVector.size()>2) {
-				parVector.pop_front();
-			}
-			parVector.front().setUpdatedRecently(false);
-			logData[name]=parVector;
-			++it;
-		} else if (parVector.back().logType()==LogParameter::LOG_ON_CHANGE) {
-			// we want to log only if one value differs from the first entry
-			// first entry is reference value
-			if (onceLogFlag || parVector.front().updatedRecently()) {
-				// log the first time anyway
-				writeToLogFile(dateStringNow()+" "+name+" "+parVector.back().value()+"\n");
-			} else {
-				for (int i=1; i<parVector.size(); i++) {
-					if (parVector[i].value().compare(parVector.front().value())!=0) {
-						// found difference -> log it
-						writeToLogFile(dateStringNow()+" "+name+" "+parVector[i].value()+"\n");
-						parVector.replace(0,parVector[i]);
-					}
-				}
-			}
-			while (parVector.size()>1) {
-				parVector.pop_back();
-			}
-			parVector.front().setUpdatedRecently(false);
-			logData[name]=parVector;
-			++it;
-		} else ++it;
-	}
-	onceLogFlag=false;
-	//logData.clear();
-}
-
 void FileHandler::onUploadRemind(){
     if (dataFile==nullptr){
         return;
@@ -375,8 +254,9 @@ bool FileHandler::openFiles(bool writeHeader){
         dataOut << "#unix_timestamp_rising(s)  unix_timestamp_trailing(s)  time_accuracy(ns)  valid  timebase(0=gps,2=utc)  utc_available\n";
         QTextStream logOut(logFile);
         logOut << "#log parameters: time<YYYY-MM-DD_hh-mm-ss>  parname   value  unit\n";
-        onceLogFlag=true;
+        //onceLogFlag=true;
     }
+    emit logRotateSignal();
     return true;
 }
 
@@ -452,7 +332,7 @@ void FileHandler::writeToDataFile(const QString &data){
         return;
     }
     QTextStream out(dataFile);
-    out << data;
+    out << data << "\n";
 }
 
 void FileHandler::writeToLogFile(const QString& log) {
@@ -460,7 +340,7 @@ void FileHandler::writeToLogFile(const QString& log) {
         return;
     }
     QTextStream out(logFile);
-    out << log;
+    out << log << "\n";
 }
 
 QString FileHandler::createFileName(){
@@ -587,6 +467,7 @@ bool FileHandler::saveLoginData(QString username, QString password, QString stat
     loginDataFile.write(encrypted.c_str());
     return true;
 }
+
 bool FileHandler::readLoginData(){
     QFile loginDataFile(loginDataFilePath);
     if(!loginDataFile.open(QIODevice::ReadWrite)){

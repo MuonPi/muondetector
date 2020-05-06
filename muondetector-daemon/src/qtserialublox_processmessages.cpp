@@ -594,11 +594,12 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
     tempStream << accEst
         << " " << count
         << " " << ((flags & 0x40) >> 6)
-        << " " << setfill('0') << setw(2) << ((flags & 0x18) >> 3)
-        << " " << ((flags & 0x20) >> 5) << endl;
+        << " " << setfill('0') << setw(1) << ((flags & 0x18) >> 3)
+        << " " << ((flags & 0x20) >> 5);
+		//cout << endl;
     emit timTM2(QString::fromStdString(tempStream.str()));
     if (verbose > 0 && verbose < 3){
-        emit toConsole(QString::fromStdString(tempStream.str()));
+        emit toConsole(QString::fromStdString(tempStream.str())+"\n");
     }
 
 	struct timespec ts_r = unixtime_from_gps(wnR, towMsR / 1000, (long int)(sr*1e9 + towSubMsR)/*, this->leapSeconds()*/);

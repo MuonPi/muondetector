@@ -1,5 +1,6 @@
 #include <QtGlobal>
 #include <QTimer>
+#include <QDateTime>
 #include <logparameter.h>
 #include <logengine.h>
 #include <config.h>
@@ -19,6 +20,21 @@ extern "C" {
 */
 
 const int logReminderInterval = MUONPI_LOG_INTERVAL_MINUTES; // in minutes
+
+
+static QString dateStringNow(){
+    return QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd_hh-mm-ss");
+// uncomment the code below (and comment out the line above) to format the log date in unix timestamp format
+// this would be more consistent to the data timestamp format
+// but would involve several changes to the existing analysis tools
+/*
+#if QT_VERSION >= 0x050800
+	return QString::number(QDateTime::currentSecsSinceEpoch());
+#else
+	return QString::number(QDateTime::currentMSecsSinceEpoch()/1000);
+#endif
+*/
+}
 
 
 LogEngine::LogEngine(QObject *parent) : QObject(parent)
@@ -46,7 +62,7 @@ void LogEngine::onLogParameterReceived(const LogParameter& logpar) {
 		// directly log to file since LOG_EVERY attribute is set
 		// no need to store in buffer, just return after logging
 //		writeToLogFile(dateStringNow()+" "+QString(log.name()+" "+log.value()+"\n"));
-		emit sendLogString(QString(logpar.name()+" "+logpar.value()));
+		emit sendLogString(dateStringNow()+" "+QString(logpar.name()+" "+logpar.value()));
 		// reset already existing entries but preserve logType attribute
 		if (logData.find(logpar.name())!=logData.end()) {
 			int logType=logData[logpar.name()].front().logType();
@@ -69,7 +85,7 @@ void LogEngine::onLogParameterReceived(const LogParameter& logpar) {
 }
 
 void LogEngine::onLogInterval() {
-	//emit logIntervalSignal();
+	emit logIntervalSignal();
 	// loop over the map with all accumulated parameters since last log reminder
 	// no increment here since we erase and invalidate iterators within the loop
 	for (auto it=logData.begin(); it != logData.end();) {
@@ -84,7 +100,7 @@ void LogEngine::onLogInterval() {
 		if (parVector.back().logType()==LogParameter::LOG_LATEST) {
 			// easy to write only the last value to file
 			//writeToLogFile(dateStringNow()+" "+name+" "+parVector.back().value()+"\n");
-			emit sendLogString(name+" "+parVector.back().value());
+			emit sendLogString(dateStringNow()+" "+name+" "+parVector.back().value());
 			it=logData.erase(it);
 		} else if (parVector.back().logType()==LogParameter::LOG_AVERAGE) {
 			// here we loop over all values in the vector for the current parameter and do the averaging
@@ -110,11 +126,11 @@ void LogEngine::onLogInterval() {
 			if (ok) {
 				sum/=parVector.size();
 				//writeToLogFile(dateStringNow()+" "+QString(name+" "+QString::number(sum)+" "+unitString+"\n"));
-				emit sendLogString(QString(name+" "+QString::number(sum,'f',7)+" "+unitString));
+				emit sendLogString(dateStringNow()+" "+QString(name+" "+QString::number(sum,'f',7)+" "+unitString));
 				/*
 				char buf[32];
 				g_fmt(buf, sum);
-				emit sendLogString(QString(name+" "+QString(buf)+" "+unitString));
+				emit sendLogString(dateStringNow()+" "+QString(name+" "+QString(buf)+" "+unitString));
 				*/
 				
 			}
@@ -123,7 +139,7 @@ void LogEngine::onLogInterval() {
 			// we want to log only one time per daemon lifetime || file change
 			if (onceLogFlag || parVector.front().updatedRecently()) {
 				//writeToLogFile(dateStringNow()+" "+name+" "+parVector.back().value()+"\n");
-				emit sendLogString(name+" "+parVector.back().value());				
+				emit sendLogString(dateStringNow()+" "+name+" "+parVector.back().value());				
 			}
 			while (parVector.size()>2) {
 				parVector.pop_front();
@@ -137,12 +153,12 @@ void LogEngine::onLogInterval() {
 			if (onceLogFlag || parVector.front().updatedRecently()) {
 				// log the first time anyway
 				//writeToLogFile(dateStringNow()+" "+name+" "+parVector.back().value()+"\n");
-				emit sendLogString(name+" "+parVector.back().value());
+				emit sendLogString(dateStringNow()+" "+name+" "+parVector.back().value());
 			} else {
 				for (int i=1; i<parVector.size(); i++) {
 					if (parVector[i].value().compare(parVector.front().value())!=0) {
 						// found difference -> log it
-						emit sendLogString(name+" "+parVector[i].value());
+						emit sendLogString(dateStringNow()+" "+name+" "+parVector[i].value());
 						//writeToLogFile(dateStringNow()+" "+name+" "+parVector[i].value()+"\n");
 						parVector.replace(0,parVector[i]);
 					}

@@ -16,6 +16,7 @@ public:
 	
 signals:
 	void sendLogString(const QString& str);
+	void logIntervalSignal();
 	
 public slots:
 	void onLogParameterReceived(const LogParameter& logpar);
