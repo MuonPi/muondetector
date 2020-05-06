@@ -20,6 +20,7 @@
 #include <QTimer>
 #include <QVariant>
 #include <time.h>
+#include <logengine.h>
 
 // for sig handling:
 #include <sys/types.h>
@@ -184,7 +185,7 @@ public slots:
 signals:
     void sendTcpMessage(TcpMessage tcpMessage);
     void closeConnection(QString closeAddress);
-    void logParameter(LogParameter log);
+    void logParameter(const LogParameter& log);
     void aboutToQuit();
     void sendPollUbxMsgRate(uint16_t msgID);
     void sendPollUbxMsg(uint16_t msgID);
@@ -338,6 +339,7 @@ private:
     QTimer parameterMonitorTimer;
 	QTimer rateScanTimer;
     QMap<QString, Property> propertyMap;
+	LogEngine logEngine;
     
 };
 

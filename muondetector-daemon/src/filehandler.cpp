@@ -191,7 +191,7 @@ void FileHandler::start(){
     // set log reminder
     QTimer *logReminder = new QTimer(this);
     logReminder->setInterval(60*1000*logReminderInterval);
-    uploadReminder->setSingleShot(false);
+    logReminder->setSingleShot(false);
     connect(logReminder, &QTimer::timeout, this, &FileHandler::onLogRemind);
     logReminder->start();
     // open files that are currently written

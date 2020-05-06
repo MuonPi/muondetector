@@ -14,6 +14,7 @@
 #include <iostream>
 #include <muondetector_structs.h>
 #include <config.h>
+#include <logengine.h>
 
 // for i2cdetect:
 extern "C" {
@@ -294,7 +295,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		}
 	}
 
-    QThread *mqttHandlerThread = new QThread();
+	
+	QThread *mqttHandlerThread = new QThread();
 
     mqttHandler = new MqttHandler();
     mqttHandler->moveToThread(mqttHandlerThread);
@@ -305,6 +307,32 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     //connect(this, &Daemon::logParameter, mqttHandler, &MqttHandler::sendLog);
     mqttHandlerThread->start();
 
+	
+	// connect log signals to and from log engine
+	connect(this, &Daemon::logParameter, &logEngine, &LogEngine::onLogParameterReceived);
+	connect(&logEngine, &LogEngine::sendLogString, mqttHandler, &MqttHandler::sendLog);
+
+/*	
+        connect(this, &Daemon::logParameter, this, [this](const LogParameter& logpar) {
+			QString logtype="";
+			if (logpar.logType()==LogParameter::LOG_NEVER) {
+				return;
+			} else if (logpar.logType()==LogParameter::LOG_ONCE) {
+				logtype="once";
+			} else if (logpar.logType()==LogParameter::LOG_EVERY) {
+				logtype="every";
+			} else if (logpar.logType()==LogParameter::LOG_AVERAGE) {
+				logtype="avg";
+			} else if (logpar.logType()==LogParameter::LOG_LATEST) {
+				logtype="latest";
+			} else if (logpar.logType()==LogParameter::LOG_ON_CHANGE) {
+				logtype="change";
+			}
+			this->mqttHandler->sendLog(logpar.name()+" "+logpar.value()+" "+logtype);
+		} );
+*/	
+	
+	
     // create fileHandler
     QThread *fileHandlerThread = new QThread();
 
@@ -783,24 +811,6 @@ void Daemon::connectToGps() {
 	if (fileHandler != nullptr){
         connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
         connect(qtGps, &QtSerialUblox::timTM2, mqttHandler, &MqttHandler::sendData);
-        connect(this, &Daemon::logParameter, this, [this](const LogParameter& logpar) {
-			QString logtype="";
-			if (logpar.logType()==LogParameter::LOG_NEVER) {
-				return;
-			} else if (logpar.logType()==LogParameter::LOG_ONCE) {
-				logtype="once";
-			} else if (logpar.logType()==LogParameter::LOG_EVERY) {
-				logtype="every";
-			} else if (logpar.logType()==LogParameter::LOG_AVERAGE) {
-				logtype="avg";
-			} else if (logpar.logType()==LogParameter::LOG_LATEST) {
-				logtype="latest";
-			} else if (logpar.logType()==LogParameter::LOG_ON_CHANGE) {
-				logtype="change";
-			}
-			this->mqttHandler->sendLog(logpar.name()+" "+logpar.value()+" "+logtype);
-		} );
-				
 	}
 	// after thread start there will be a signal emitted which starts the qtGps makeConnection function
 	gpsThread->start();

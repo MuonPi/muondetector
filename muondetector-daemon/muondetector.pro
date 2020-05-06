@@ -70,7 +70,10 @@ SOURCES += $$PWD/src/main.cpp \
     $$PWD/src/i2c/i2cdevices/i2cdevice.cpp \
     $$PWD/src/i2c/i2cdevices/glcdfont.c \
     $$PWD/src/tdc7200.cpp \
-    $$PWD/src/mqtthandler.cpp
+    $$PWD/src/mqtthandler.cpp \
+#    $$PWD/src/dtoa.c \
+#    $$PWD/src/g_fmt.c \
+    $$PWD/src/logengine.cpp
 
 
 HEADERS += \
@@ -108,6 +111,7 @@ HEADERS += \
     $$PWD/src/i2c/i2cdevices/Adafruit_GFX.h \
     $$PWD/src/i2c/i2cdevices/i2cdevice.h \
     $$PWD/src/tdc7200.h \
-    $$PWD/src/mqtthandler.h
+    $$PWD/src/mqtthandler.h \
+	$$PWD/src/logengine.h
 
 DISTFILES += $$PWD/ubx_rates_config.cfg
