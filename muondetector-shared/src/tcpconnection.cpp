@@ -129,7 +129,7 @@ void TcpConnection::closeConnection(QString closedAddress) {
 }
 
 void TcpConnection::closeThisConnection(){
-    TcpMessage quitMessage(quitConnectionSig);
+    TcpMessage quitMessage(TCP_MSG_KEY::MSG_QUIT_CONNECTION);
     *(quitMessage.dStream) << localAddress;
     sendTcpMessage(quitMessage);
     this->deleteLater();
