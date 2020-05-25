@@ -8,9 +8,9 @@
 
 # user-adjustable parameters
 # in this stringlist all the desired parameters (as they appear in the log file) are concatenated which shall be plotted in single subplots of a multiplot
-paramList="timeAccuracy sats clockDrift clockBias preampNoise preampAGC geoHorAccuracy geoVertAccuracy temperature vbias ibias freqAccuracy rateXOR jammingLevel maxCNR"
+paramList="timeAccuracy sats usedSats clockDrift clockBias preampNoise preampAGC geoHorAccuracy geoVertAccuracy temperature vbias ibias freqAccuracy rateXOR jammingLevel maxCNR positionDOP timeDOP"
 # here all the parameter pairs are listed, which shall be plotted in the same plot (pairwise)
-samePlotParamList="geoHorAccuracy geoVertAccuracy"
+samePlotParamList="geoHorAccuracy geoVertAccuracy sats usedSats positionDOP timeDOP"
 # the following list contains all parameters which shall be plotted in logarithmic scale
 logPlotParamList="timeAccuracy geoHorAccuracy rateXOR"
 # stepping: one data point from the log data will be drawn every N points 
@@ -36,20 +36,23 @@ nplots=words(paramList)-words(samePlotParamList)/2
 print "filename = ", filename;
 
 # the following two lines are just for counting the lines in the log file for fun
-line0 = filename
+#line0 = filename
+line0="<cat ".filename." | cut -d\\' -f2 "
 stats line0 using 1 name 'datestats' # nooutput
 
+escapedFileName="echo ".filename." | sed 's/\_/\\\\_/g'"
+
 #set some plot specific things
-set title filename
+set title system(escapedFileName)
 #set pointtype 7
 set pointsize 0.2
 lineWidth=10
-mainPointColor=8
-secondPointColor=12
+mainPointColor=2
+secondPointColor=3
 
 # set up the major and minor grid lines
-set style line 100 lt 0.5 lc rgb "gray" lw 5
-set style line 101 lt 0.5 lc rgb "gray" lw 2
+set style line 100 lt 0.5 lc rgb "gray" lw 2
+set style line 101 lt 0.5 lc rgb "gray" lw 1
 set grid mytics ytics ls 100, ls 101
 # height holds the height of each plot in relative coordinates, leave 5% margin on top and bottom
 height=0.9/nplots
@@ -80,9 +83,9 @@ while (iparam<=nparams && iplot<=nplots) {
   }
   print "same=".sameParams
   # generate and print the string with the filter for the desired parameter (bash command insertion)
-  line="<cat ".filename." | grep '".word(paramList,iparam)."'"
+  line="<cat ".filename." | cut -d\\' -f2 | grep '".word(paramList,iparam)."'"
   print line
-  unitStrCmd="cat ".filename." | grep '".word(paramList,iparam)."' | head -n1 | awk '{print $4}'"
+  unitStrCmd="cat ".filename." | cut -d\\' -f2 | grep '".word(paramList,iparam)."' | head -n1 | awk '{print $4}'"
   unitStr=system(unitStrCmd)
   print "unit=".unitStr
   # generate stats for this parameter and store it in variable 'stat'
@@ -92,7 +95,7 @@ while (iparam<=nparams && iplot<=nplots) {
   # generate and print the string with the filter for the desired second parameter which should go into the same plot
   secondLine=""
   if (sameParams==1) {
-    secondLine="<cat ".filename." | grep '".word(paramList,iparam+1)."'"
+    secondLine="<cat ".filename." | cut -d\\' -f2 | grep '".word(paramList,iparam+1)."'"
     print secondLine
     # generate stats for this parameter and store it in variable 'stat2'
     print "*** Stats for ".word(paramList,iparam+1)." ***"
@@ -139,22 +142,27 @@ while (iparam<=nparams && iplot<=nplots) {
       #set ytics getincr(stat_max-stat_min, nytics, 1e-9) rangelimited
       # forget everythin' above. this simple setting seems to work best 
       set ytics rangelimited
-      set y2tics
+      set y2tics rangelimited
       #set ytics
   }
   
   set ylabel unitStr
   # do the plot
+  statstring=sprintf("N: %g  min: %g  max: %g  mean: %g  rms: %g",stat_records,stat_min,stat_max,stat_mean,stat_stddev);
   if (sameParams==1) {
-      set label word(paramList,iparam) at graph 0.01,0.88 left offset character 1,-0.25 point pt 0 lc mainPointColor
-      set label word(paramList,iparam+1) at graph 0.01,0.75 left offset character 1,-0.25 point pt 0 lc secondPointColor
-      set label word(paramList,iparam) at graph 0.99,0.88 right offset character -1,-0.25 point pt 0 lc mainPointColor
-      set label word(paramList,iparam+1) at graph 0.99,0.75 right offset character -1,-0.25 point pt 0 lc secondPointColor
+	  statstring2=sprintf("N: %g  min: %g  max: %g  mean: %g  rms: %g",stat_records,stat2_min,stat2_max,stat2_mean,stat2_stddev);
+      set label word(paramList,iparam) at graph 0.01,0.88 left offset character 1,-0.05 point pt 0 lc mainPointColor
+      set label word(paramList,iparam+1) at graph 0.01,0.75 left offset character 1,-0.05 point pt 0 lc secondPointColor
+      set label word(paramList,iparam) at graph 0.99,0.88 right offset character -1,-0.05 point pt 0 lc mainPointColor
+      set label word(paramList,iparam+1) at graph 0.99,0.75 right offset character -1,-0.05 point pt 0 lc secondPointColor
+      set label statstring at graph 0.45,0.92 left offset character 1,0 point pt 0 lc mainPointColor
+      set label statstring2 at graph 0.45,0.82 left offset character 1,0 point pt 0 lc secondPointColor
       plot line u 1:3 every stepping w points pt 7 lc mainPointColor notitle, \
            secondLine u 1:3 every stepping w points pt 7 lc secondPointColor notitle
   } else {
       set label word(paramList,iparam) at graph 0.01,0.88 left offset character 1,-0.05 point pt 0 lc mainPointColor
       set label word(paramList,iparam) at graph 0.99,0.88 right offset character -1,-0.05 point pt 0 lc mainPointColor
+      set label statstring at graph 0.45,0.88 left
       plot line u 1:3 every stepping with points pt 7 lc mainPointColor notitle
   }
   
