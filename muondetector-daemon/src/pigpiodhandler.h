@@ -53,6 +53,7 @@ public slots:
     void setPullDown(unsigned int gpio);
     void setGpioState(unsigned int gpio, bool state);
     void setSamplingTriggerSignal(GPIO_PIN signalName) { samplingTriggerSignal=signalName; }
+    void registerForCallback(unsigned int gpio, bool edge); // false=falling, true=rising
 
     // spi related slots
     void writeSpi(uint8_t command, std::string data);
@@ -79,6 +80,7 @@ private:
 
 	void measureGpioClockTime();
 	bool inhibit=false;
+//	QVector<unsigned int> gpioPins;
 };
 
 

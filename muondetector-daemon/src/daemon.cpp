@@ -15,6 +15,7 @@
 #include <muondetector_structs.h>
 #include <config.h>
 #include <logengine.h>
+#include <geohash.h>
 
 // for i2cdetect:
 extern "C" {
@@ -725,6 +726,11 @@ void Daemon::connectToPigpiod(){
     emit GpioSetState(GPIO_PINMAP[PREAMP_1],preampStatus[0]);
     emit GpioSetState(GPIO_PINMAP[PREAMP_2],preampStatus[1]);
     emit GpioSetState(GPIO_PINMAP[GAIN_HL],gainSwitch);
+	if (HW_VERSION>1) {
+		emit GpioSetInput(GPIO_PINMAP[PREAMP_FAULT]);
+		emit GpioRegisterForCallback(GPIO_PINMAP[PREAMP_FAULT], 0);
+		//emit GpioSetPullUp(GPIO_PINMAP[PREAMP_FAULT]);
+	}
 }
 
 void Daemon::connectToGps() {
@@ -1281,8 +1287,11 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos){
                           << pos.vAcc;
     emit sendTcpMessage(tcpMessage);
     
+	QString geohash=GeoHash::hashFromCoordinates(1e-7*pos.lon, 1e-7*pos.lat, 10);
+	
 	emit logParameter(LogParameter("geoLongitude", QString::number(1e-7*pos.lon,'f',7)+" deg", LogParameter::LOG_AVERAGE));
 	emit logParameter(LogParameter("geoLatitude", QString::number(1e-7*pos.lat,'f',7)+" deg", LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("geoHash", geohash+" ", LogParameter::LOG_LATEST));
 	emit logParameter(LogParameter("geoHeightMSL", QString::number(1e-3*pos.hMSL,'f',2)+" m", LogParameter::LOG_AVERAGE));
 	if (histoMap.find("geoHeight")!=histoMap.end())
 		emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(histoMap["geoHeight"].getMean(),'f',2)+" m", LogParameter::LOG_LATEST));
@@ -1916,7 +1925,7 @@ void Daemon::onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
     //qDebug() << "received satlist ok, size=" << satlist.size();
 	emit logParameter(LogParameter("sats",QString("%1").arg(visibleSats.size()), LogParameter::LOG_AVERAGE));
 	emit logParameter(LogParameter("usedSats",QString("%1").arg(usedSats), LogParameter::LOG_AVERAGE));
-	emit logParameter(LogParameter("maxCNR",QString("%1").arg(maxCnr), LogParameter::LOG_AVERAGE));
+	emit logParameter(LogParameter("maxCNR",QString("%1").arg(maxCnr)+" dB", LogParameter::LOG_AVERAGE));
 }
 
 void Daemon::onUBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssConfigStruct>& gnssConfigs) {

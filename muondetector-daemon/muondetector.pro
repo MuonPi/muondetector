@@ -73,7 +73,8 @@ SOURCES += $$PWD/src/main.cpp \
     $$PWD/src/mqtthandler.cpp \
 #    $$PWD/src/dtoa.c \
 #    $$PWD/src/g_fmt.c \
-    $$PWD/src/logengine.cpp
+    $$PWD/src/logengine.cpp \
+    $$PWD/src/geohash.cpp
 
 
 HEADERS += \
@@ -112,6 +113,7 @@ HEADERS += \
     $$PWD/src/i2c/i2cdevices/i2cdevice.h \
     $$PWD/src/tdc7200.h \
     $$PWD/src/mqtthandler.h \
-	$$PWD/src/logengine.h
+	$$PWD/src/logengine.h \
+	$$PWD/src/geohash.h
 
 DISTFILES += $$PWD/ubx_rates_config.cfg

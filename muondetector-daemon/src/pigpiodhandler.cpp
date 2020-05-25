@@ -7,6 +7,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <cmath>
+#include <config.h>
 
 extern "C" {
 #include <pigpiod_if2.h>
@@ -214,6 +215,7 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, unsigned int spi
         qDebug() << "you can start pigpiod with: sudo pigpiod -s 1";
         return;
     }
+//    gpioPins=gpio_pins;
     for (auto& gpio_pin : gpio_pins) {
         set_mode(pi, gpio_pin, PI_INPUT);
         if (gpio_pin==GPIO_PINMAP[ADC_READY]) set_pull_up_down(pi, gpio_pin, PI_PUD_UP);
@@ -257,6 +259,10 @@ void PigpiodHandler::setGpioState(unsigned int gpio, bool state) {
     if (isInitialised) {
         gpio_write(pi, gpio, (state)?1:0);
     }
+}
+
+void PigpiodHandler::registerForCallback(unsigned int gpio, bool edge) {
+	callback(pi, gpio, edge?FALLING_EDGE:RISING_EDGE, cbFunction);
 }
 
 void PigpiodHandler::writeSpi(uint8_t command, std::string data){
