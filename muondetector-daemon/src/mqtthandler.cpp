@@ -1,5 +1,10 @@
 #include <mqtthandler.h>
 #include <QDebug>
+#include <cryptopp/sha.h>
+#include <cryptopp/filters.h>
+#include <cryptopp/hex.h>
+#include <string>
+
 
 void callback::connection_lost(const std::string& cause) {
     std::cout << "\nConnection lost" << std::endl;
@@ -38,12 +43,16 @@ void MqttHandler::start(QString username, QString password, QString station_ID){
     this->username = username;
     this->password = password;
     this->stationID = station_ID;
+    CryptoPP::SHA1 sha1;
+    std::string source = username.toStdString()+station_ID.toStdString();  //This will be randomly generated somehow
+    clientID = "";
+    CryptoPP::StringSource(source, true, new CryptoPP::HashFilter(sha1, new CryptoPP::HexEncoder(new CryptoPP::StringSink(clientID))));
     mqttConnect();
 }
 
 void MqttHandler::mqttConnect(){
     try {
-        mqttClient = new mqtt::async_client(mqttAddress.toStdString(), username.toStdString());
+        mqttClient = new mqtt::async_client(mqttAddress.toStdString(), clientID);
         conopts = new mqtt::connect_options();
         conopts->set_user_name(username.toStdString());
         conopts->set_password(password.toStdString());

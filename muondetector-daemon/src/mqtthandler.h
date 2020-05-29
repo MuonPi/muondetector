@@ -4,6 +4,7 @@
 #include <QObject>
 #include <async_client.h>
 #include <connect_options.h>
+#include <string>
 
 class callback : public virtual mqtt::callback{
 public:
@@ -59,6 +60,7 @@ class MqttHandler : public QObject
         QString stationID="0";
         QString username;
         QString password;
+        std::string clientID;
 };
 
 #endif // MQTTHANDLER_H
