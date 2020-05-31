@@ -43,15 +43,28 @@ When compiling the master branch, pre-installation of all dependencies is needed
 
 ## TROUBLESHOOTING AND DEPENDENCIES:  
 
+### Dependencies
+
 When trying to create a Makefile with qmake (qt version 5.7.1 on raspbian) there will probably be errors. To install just get it from repository with apt-get install:
 
 - "Project ERROR: unknown module(s) in QT: serialport" there is a missing library "libqt5serialport5-dev".
-- "Project ERROR: unknown module(s) in QT: quickwidgets" there is a missing library "qtdeclarative5-dev".
+- "Project ERROR: unknown module(s) in QT: quickwidgets" there is a missing library "c".
 - "Project ERROR: unknown module(s) in QT: svg" there is a missing library "libqt5svg5-dev".
 - You also need to install "libcrypto++-dev libcrypto++-doc libcrypto++-utils"
 - You also need to install "libqwt-qt5-dev" or "libqwt-dev".
 - You may also install "lftp" for uploading acquired data to our server.
 - For TDC7200 it may be required to manually add "dtoverlay=spi0-hw-cs" to /boot/config.txt
+
+Cheat-Sheet Cpoy&Past:
+
+`sudo apt get install qt5-default pyqt5-dev qt5-qmake libqt5serialport5-dev libqt5svg5-dev libqwt-qt5-dev libqwt-dev libcrypto++-dev libcrypto++-doc libcrypto++-utils libcrypto++-dev libcrypto++-doc libcrypto++-utils lftp libpaho-mqttpp`
+
+### Troubleshooting
+
+#### Version > 1.1.2
+
+It may be when starting for the first time that, if the daemon is not started as a service, the data folder structure cannot be written due to insufficient rights. Starting the daemon with sudo-er rights should be avoided. Here, the folder structure can be created by hand to solve the issue: copy paste the hashed folder name from the error output of the daemon when started without folder structure and create the folder with `sudo mkdir /var/muondetector/[Hashed Name]` with `notUploadedData` and `uploadedData` as sub-folders. Then, change the user rights with `sudo chown -R pi:pi /var/muondetector`. When restarted, the daemon should be able to write the data. 
+
 
 ## RUNNING THE SOFTWARE
 
