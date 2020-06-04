@@ -16,6 +16,7 @@
 #include <config.h>
 #include <logengine.h>
 #include <geohash.h>
+#include <sys/sysinfo.h>
 
 // for i2cdetect:
 extern "C" {
@@ -330,7 +331,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     // connect the once-log flag reset slot of log engine with the logRotate signal of filehandler
 	connect(fileHandler, &FileHandler::logRotateSignal, &logEngine, &LogEngine::onOnceLogTrigger);
 
-	// instantiate, detect and initialize all i2c devices
+	// instantiate, detect and initialize all other i2c devices
 	// LM75A temp sensor
 	lm75 = new LM75();
 	if (lm75->devicePresent()) {
@@ -1650,7 +1651,7 @@ void Daemon::setDacThresh(uint8_t channel, float threshold) {
     clearRates();
     if (dac->devicePresent()) {
 		dac->setVoltage(channel, threshold);
-		emit logParameter(LogParameter("thresh"+QString::number(channel), QString::number(dacThresh[channel])+" V", LogParameter::LOG_EVERY));
+		emit logParameter(LogParameter("thresh"+QString::number(channel+1), QString::number(dacThresh[channel])+" V", LogParameter::LOG_EVERY));
 	}
     //sendDacThresh(channel);
 }
@@ -2361,6 +2362,48 @@ void Daemon::onLogParameterPolled(){
 	    qDebug() << " file size: " << fileHandler->dataFileInfo().size()/(1024*1024) << "MiB";
     }
 
+//      Since Linux 2.3.23 (i386) and Linux 2.3.48 (all architectures) the
+//        structure is:
+// 
+//            struct sysinfo {
+//                long uptime;             /* Seconds since boot */
+//                unsigned long loads[3];  /* 1, 5, and 15 minute load averages */
+//                unsigned long totalram;  /* Total usable main memory size */
+//                unsigned long freeram;   /* Available memory size */
+//                unsigned long sharedram; /* Amount of shared memory */
+//                unsigned long bufferram; /* Memory used by buffers */
+//                unsigned long totalswap; /* Total swap space size */
+//                unsigned long freeswap;  /* Swap space still available */
+//                unsigned short procs;    /* Number of current processes */
+//                unsigned long totalhigh; /* Total high memory size */
+//                unsigned long freehigh;  /* Available high memory size */
+//                unsigned int mem_unit;   /* Memory unit size in bytes */
+//                char _f[20-2*sizeof(long)-sizeof(int)];
+//                                         /* Padding to 64 bytes */
+//            };
+// 
+//        In the above structure, sizes of the memory and swap fields are given
+//        as multiples of mem_unit bytes.
+
+    struct sysinfo info;
+	memset(&info, 0, sizeof info);
+    int err=sysinfo(&info);
+	if (!err) {
+		float f_load = 1.f / (1 << SI_LOAD_SHIFT);
+		if (verbose>2) {
+			qDebug()<<"*** Sysinfo Stats ***";
+			qDebug()<<"nr of cpus      : "<<get_nprocs();
+			qDebug()<<"uptime (h)      : "<<info.uptime/3600.;
+			qDebug()<<"load avg (1min) : "<<info.loads[0]*f_load;
+			qDebug()<<"free RAM        : "<<(double)1e-6*info.freeram/info.mem_unit<<" Mb";
+			qDebug()<<"free swap       : "<<(double)1e-6*info.freeswap/info.mem_unit<<" Mb";
+		}
+		emit logParameter(LogParameter("systemNrCPUs", QString::number(get_nprocs())+" ", LogParameter::LOG_ONCE));
+		emit logParameter(LogParameter("systemUptime", QString::number(info.uptime/3600.)+" h", LogParameter::LOG_LATEST));
+		emit logParameter(LogParameter("systemFreeMem", QString::number(1e-6*info.freeram/info.mem_unit)+" Mb", LogParameter::LOG_AVERAGE));
+		emit logParameter(LogParameter("systemFreeSwap", QString::number(1e-6*info.freeswap/info.mem_unit)+" Mb", LogParameter::LOG_AVERAGE));
+		emit logParameter(LogParameter("systemLoadAvg", QString::number(info.loads[0]*f_load)+" ", LogParameter::LOG_AVERAGE));
+	}
 //		updateOledDisplay();
 }
 

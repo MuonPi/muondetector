@@ -89,7 +89,7 @@ void MqttHandler::mqttDisconnect(){
 }
 
 void MqttHandler::sendData(const QString &message){
-    if (data_topic == nullptr || log_topic == nullptr){
+    if (data_topic == nullptr){
         return;
     }
     try {
@@ -97,6 +97,12 @@ void MqttHandler::sendData(const QString &message){
     }
     catch (const mqtt::exception& exc) {
         std::cerr << exc.what() << std::endl;
+        std::cerr << "trying to reconnect..." << std::endl;
+		try {
+			if (mqttClient!=nullptr) mqttClient->reconnect();
+		} catch (const mqtt::exception& exc) {
+			std::cerr << exc.what() << std::endl;
+		}
     }
 }
 
