@@ -37,7 +37,8 @@ LIBS += -lmuondetector-shared
 
 LIBS += -lpigpiod_if2 \
         -lcrypto++ \
-        -lrt
+        -lrt \
+        -lconfig++
 
 LIBS += -lpaho-mqtt3c -lpaho-mqtt3a -lpaho-mqtt3cs -lpaho-mqtt3as
 LIBS += -lpaho-mqttpp3

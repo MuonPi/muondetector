@@ -9,6 +9,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <iostream>
+#include <libconfig.h++>
 
 /*
 #include <sys/types.h>
@@ -18,6 +19,8 @@
 
 #include <custom_io_operators.h>
 #include <daemon.h>
+
+static const char* CONFIG_FILE = "/etc/muondetector.conf";
 
 using namespace std;
 
@@ -74,6 +77,26 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("muondetector-daemon");
     QCoreApplication::setApplicationVersion("1.1.2");
 
+	// config file handling
+	libconfig::Config cfg;
+	
+	// Read the file. If there is an error, report it and exit.
+	try
+	{
+		cfg.readFile(CONFIG_FILE);
+	}
+	catch(const libconfig::FileIOException &fioex)
+	{
+		std::cerr << "I/O error while reading file." << std::endl;
+		return(EXIT_FAILURE);
+	}
+	catch(const libconfig::ParseException &pex)
+	{
+		std::cerr << "Parse error at " << pex.getFile() << ":" << pex.getLine()
+              << " - " << pex.getError() << std::endl;
+		return(EXIT_FAILURE);
+	}
+	
     // command line input management
 	QCommandLineParser parser;
 	parser.setApplicationDescription("MuonPi cosmic shower muon detector control and configuration program (daemon)\n"
@@ -215,21 +238,6 @@ int main(int argc, char *argv[])
 	const QStringList args = parser.positionalArguments();
 	if (args.size() > 1) { cout << "you set additional positional arguments but the program does not use them" << endl; }
 
-
-	// setup all variables for ublox module manager, then make the object run
-	QString gpsdevname;
-	if (!args.empty() && args.at(0) != "") {
-		gpsdevname = args.at(0);
-	}
-	else {
-        QDir directory("/dev","*",QDir::Name, QDir::System);
-        QStringList serialports = directory.entryList(QStringList({"ttyS0","ttyAMA0"}));
-        if (!serialports.empty()){
-            gpsdevname=QString("/dev/"+serialports.at(0));
-        }else{
-            cout << "no device selected, will not connect to gps module" << endl;
-        }
-    }
     bool ok;
 	int verbose = 0;
 	if (parser.isSet(verbosityOption)) {
@@ -239,6 +247,33 @@ int main(int argc, char *argv[])
 			cout << "wrong input verbosity level" << endl;
 		}
 	}
+
+	// setup all variables for ublox module manager, then make the object run
+	QString gpsdevname="";
+	if (!args.empty() && args.at(0) != "") {
+		gpsdevname = args.at(0);
+	} else 
+	try
+	{
+		std::string gpsdevnameCfg = cfg.lookup("ublox_device");
+		if (verbose>2) cout << "ublox device: " << gpsdevnameCfg << endl;
+		gpsdevname = QString::fromStdString(gpsdevnameCfg);
+	}
+	catch(const libconfig::SettingNotFoundException &nfex)
+	{
+		if (verbose>2)
+			cerr << "No 'ublox_device' setting in configuration file. Will guess..." << endl;
+        QDir directory("/dev","*",QDir::Name, QDir::System);
+        QStringList serialports = directory.entryList(QStringList({"ttyS0","ttyAMA0"}));
+        if (!serialports.empty()){
+            gpsdevname=QString("/dev/"+serialports.at(0));
+			if (verbose>2)
+				cout << "detected " << gpsdevname << " as most probable candidate" << endl;
+        }else{
+            cout << "no device selected, will not connect to gps module" << endl;
+        }
+	}
+	
 	if (verbose > 4) {
 		cout << "int main running in thread "
 			<< QString("0x%1").arg((int)QCoreApplication::instance()->thread()) << endl;
@@ -251,7 +286,19 @@ int main(int argc, char *argv[])
 			baudrate = 9600;
 			cout << "wrong input for baudrate using default " << baudrate << endl;
 		}
+	} else
+	try
+	{
+		int baudrateCfg = cfg.lookup("ublox_baud");
+		if (verbose>2) cout << "ublox baudrate: " << baudrateCfg << endl;
+		baudrate = baudrateCfg;
 	}
+	catch(const libconfig::SettingNotFoundException &nfex)
+	{
+		if (verbose>2)
+			cerr << "No 'ublox_baud' setting in configuration file. Assuming " << baudrate << endl;
+	}
+	
 	bool showGnssConfig = false;
 	showGnssConfig = parser.isSet(showGnssConfigOption);
 	quint16 peerPort = 0;
@@ -290,6 +337,7 @@ int main(int argc, char *argv[])
 			}
 		}
     }
+	
 	quint8 pcaChannel = 0;
 	if (parser.isSet(pcaChannelOption)) {
 		pcaChannel = parser.value(pcaChannelOption).toUInt(&ok);
@@ -297,11 +345,24 @@ int main(int argc, char *argv[])
 			pcaChannel = 0;
 			cout << "wrong input pcaChannel (maybe not an unsigned integer)" << endl;
 		}
+	} else
+	try
+	{
+		int pcaChannelCfg = cfg.lookup("timing_input");
+		if (verbose>2) cout << "timing input: " << pcaChannelCfg << endl;
+		pcaChannel = pcaChannelCfg;
 	}
+	catch(const libconfig::SettingNotFoundException &nfex)
+	{
+		if (verbose>2)
+			cerr << "No 'timing_input' setting in configuration file. Assuming " << (int)pcaChannel << endl;
+	}
+	
 	bool showout = false;
 	showout = parser.isSet(showoutOption);
 	bool showin = false;
 	showin = parser.isSet(showinOption);
+	
 	float dacThresh[2];
 	dacThresh[0] = -1.;
 	if (parser.isSet(discr1Option)) {
@@ -330,19 +391,69 @@ int main(int argc, char *argv[])
 	bool biasPower = false;
 	if (parser.isSet(biasPowerOnOff)) {
 		biasPower = true;
+	} else
+	try
+	{
+		int biasPowerCfg = cfg.lookup("bias_switch");
+		if (verbose>2) cout << "bias switch: " << biasPowerCfg << endl;
+		biasPower = biasPowerCfg;
 	}
+	catch(const libconfig::SettingNotFoundException &nfex)
+	{
+		if (verbose>2)
+			cerr << "No 'bias_switch' setting in configuration file. Assuming " << (int)biasPower << endl;
+	}
+
     bool preamp1 = false;
     if (parser.isSet(preamp1Option)) {
         preamp1 = true;
-    }
+    } else
+	try
+	{
+		int preamp1Cfg = cfg.lookup("preamp1_switch");
+		if (verbose>2) cout << "preamp1 switch: " << preamp1Cfg << endl;
+		preamp1 = preamp1Cfg;
+	}
+	catch(const libconfig::SettingNotFoundException &nfex)
+	{
+		if (verbose>2)
+			cerr << "No 'preamp1_switch' setting in configuration file. Assuming " << (int)preamp1 << endl;
+	}
+	
     bool preamp2 = false;
     if (parser.isSet(preamp2Option)) {
         preamp2 = true;
-    }
+    } else
+	try
+	{
+		int preamp2Cfg = cfg.lookup("preamp2_switch");
+		if (verbose>2) cout << "preamp2 switch: " << preamp2Cfg << endl;
+		preamp2 = preamp2Cfg;
+	}
+	catch(const libconfig::SettingNotFoundException &nfex)
+	{
+		if (verbose>2)
+			cerr << "No 'preamp2_switch' setting in configuration file. Assuming " << (int)preamp2 << endl;
+	}
+    
+    
     bool gain = false;
     if (parser.isSet(gainOption)) {
         gain = true;
-    }
+    } else {
+		try
+		{
+			int gainCfg = cfg.lookup("gain_switch");
+			if (verbose>2) cout << "gain switch: " << gainCfg << endl;
+			gain = gainCfg;
+		}
+		catch(const libconfig::SettingNotFoundException &nfex)
+		{
+			if (verbose>2)
+				cerr << "No 'gain_switch' setting in configuration file. Assuming " << (int)gain << endl;
+		}
+	}
+	
 	unsigned int eventSignal = EVT_XOR;
 	if (parser.isSet(eventInputOption)) {
 		eventSignal = parser.value(eventInputOption).toUInt(&ok);
@@ -359,6 +470,17 @@ int main(int argc, char *argv[])
 					break;
 			}
 		}
+	} else
+	try
+	{
+		int eventSignalCfg = cfg.lookup("trigger_input");
+		if (verbose>2) cout << "event trigger : " << eventSignalCfg << endl;
+		eventSignal = eventSignalCfg;
+	}
+	catch(const libconfig::SettingNotFoundException &nfex)
+	{
+		if (verbose>2)
+			cerr << "No 'trigger_input' setting in configuration file. Assuming " << (int)eventSignal << endl;
 	}
 
 
@@ -368,12 +490,38 @@ int main(int argc, char *argv[])
         cout << "To set the login for the mqtt-server, please enter user name:"<<endl;
         cin >> username;
         password = getpass("please enter password:",true);
-    }
-
+    } else
+	try
+	{
+		std::string userNameCfg = cfg.lookup("mqtt_user");
+		std::string passwordCfg = cfg.lookup("mqtt_password");
+		if (verbose) cout << "mqtt user: " << userNameCfg << " passw: " << passwordCfg << endl;
+		username=userNameCfg;
+		password=passwordCfg;
+	}
+	catch(const libconfig::SettingNotFoundException &nfex)
+	{
+		if (verbose)
+		cerr << "No 'mqtt_user' or 'mqtt_password' setting in configuration file. Assuming user=''" << endl;
+	}
+	
     QString stationID = "0";
     if (parser.isSet(stationIdOption)){
         stationID = parser.value(stationIdOption);
-    }
+    } else
+	// Get the station id from config, if it exists
+	try
+	{
+		std::string stationIdString = cfg.lookup("stationID");
+		if (verbose) cout << "station id: " << stationIdString << endl;
+		stationID = QString::fromStdString(stationIdString);
+	}
+	catch(const libconfig::SettingNotFoundException &nfex)
+	{
+		if (verbose)
+		cerr << "No 'stationID' setting in configuration file. Assuming stationID='0'" << endl;
+	}
+	
     /*
     pid_t pid;
 

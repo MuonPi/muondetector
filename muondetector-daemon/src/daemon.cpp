@@ -35,7 +35,6 @@ using namespace std;
 
 static unsigned int HW_VERSION = 0; // default value is set in calibration.h
 
-
 int64_t msecdiff(timespec &ts, timespec &st){
     int64_t diff;
     diff = (int64_t)ts.tv_sec - (int64_t)st.tv_sec;
