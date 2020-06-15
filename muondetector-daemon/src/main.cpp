@@ -87,8 +87,8 @@ int main(int argc, char *argv[])
 	}
 	catch(const libconfig::FileIOException &fioex)
 	{
-		std::cerr << "I/O error while reading file." << std::endl;
-		return(EXIT_FAILURE);
+		std::cerr << "Error while reading config file " << std::string(CONFIG_FILE) << std::endl;
+		//return(EXIT_FAILURE);
 	}
 	catch(const libconfig::ParseException &pex)
 	{
