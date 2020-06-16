@@ -19,7 +19,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 LIBS += -lcrypto++
 
 SOURCES += \
-    muondetector_login.cpp
+    muondetector-login.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -27,4 +27,4 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 DISTFILES += \
-    muondetector_login.sh
+    muondetector-login.sh
