@@ -53,7 +53,7 @@ private:
             QFileDevice::WriteGroup|QFileDevice::ReadOwner|QFileDevice::ReadUser|
             QFileDevice::ReadGroup|QFileDevice::ReadOther;
     QStringList notUploadedFilesNames;
-    bool saveLoginData(QString username, QString password, QString station_ID);
+    bool saveLoginData(QString username, QString password);
     bool readLoginData();
     bool openFiles(bool writeHeader = false); // reads the config file and opens the correct data file to write to
     bool readFileInformation();

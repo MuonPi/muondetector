@@ -266,7 +266,7 @@ int main(int argc, char *argv[])
         QDir directory("/dev","*",QDir::Name, QDir::System);
         QStringList serialports = directory.entryList(QStringList({"ttyS0","ttyAMA0"}));
         if (!serialports.empty()){
-            gpsdevname=QString("/dev/"+serialports.at(0));
+            gpsdevname=QString("/dev/"+serialports.last());
 			if (verbose>2)
 				cout << "detected " << gpsdevname << " as most probable candidate" << endl;
         }else{
@@ -508,20 +508,20 @@ int main(int argc, char *argv[])
     QString stationID = "0";
     if (parser.isSet(stationIdOption)){
         stationID = parser.value(stationIdOption);
-    } else
-	// Get the station id from config, if it exists
-	try
-	{
-		std::string stationIdString = cfg.lookup("stationID");
-		if (verbose) cout << "station id: " << stationIdString << endl;
-		stationID = QString::fromStdString(stationIdString);
-	}
-	catch(const libconfig::SettingNotFoundException &nfex)
-	{
-		if (verbose)
-		cerr << "No 'stationID' setting in configuration file. Assuming stationID='0'" << endl;
-	}
-	
+    } else {
+        // Get the station id from config, if it exists
+        try
+        {
+            std::string stationIdString = cfg.lookup("stationID");
+            if (verbose) cout << "station id: " << stationIdString << endl;
+            stationID = QString::fromStdString(stationIdString);
+        }
+        catch(const libconfig::SettingNotFoundException &nfex)
+        {
+            if (verbose)
+            cerr << "No 'stationID' setting in configuration file. Assuming stationID='0'" << endl;
+        }
+    }
     /*
     pid_t pid;
 

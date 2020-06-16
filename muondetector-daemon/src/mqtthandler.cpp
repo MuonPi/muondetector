@@ -1,5 +1,6 @@
 #include <mqtthandler.h>
 #include <QDebug>
+#include <QTimer>
 #include <cryptopp/sha.h>
 #include <cryptopp/filters.h>
 #include <cryptopp/hex.h>
@@ -47,19 +48,26 @@ void MqttHandler::start(QString username, QString password, QString station_ID){
     std::string source = username.toStdString()+station_ID.toStdString();  //This will be randomly generated somehow
     clientID = "";
     CryptoPP::StringSource(source, true, new CryptoPP::HashFilter(sha1, new CryptoPP::HexEncoder(new CryptoPP::StringSink(clientID))));
-    mqttConnect();
+    reconnectTimer = new QTimer();
+    reconnectTimer->setInterval(timeout);
+    reconnectTimer->setSingleShot(true);
+    connect(reconnectTimer, &QTimer::timeout, this, [this](){mqttConnect();});
+    mqttStartConnection();
+}
+
+void MqttHandler::mqttStartConnection(){
+    mqttClient = new mqtt::async_client(mqttAddress.toStdString(), clientID);
+    conopts = new mqtt::connect_options();
+    conopts->set_user_name(username.toStdString());
+    conopts->set_password(password.toStdString());
+    conopts->set_keep_alive_interval(45);
+    //willmsg = new mqtt::message("muonpi/data/", "Last will and testament.", 1, true);
+    //will = new mqtt::will_options(*willmsg);
+    //conopts->set_will(*will);
 }
 
 void MqttHandler::mqttConnect(){
     try {
-        mqttClient = new mqtt::async_client(mqttAddress.toStdString(), clientID);
-        conopts = new mqtt::connect_options();
-        conopts->set_user_name(username.toStdString());
-        conopts->set_password(password.toStdString());
-        conopts->set_keep_alive_interval(45);
-        //willmsg = new mqtt::message("muonpi/data/", "Last will and testament.", 1, true);
-        //will = new mqtt::will_options(*willmsg);
-        //conopts->set_will(*will);
         mqttClient->connect(*conopts)->wait();
         data_topic = new mqtt::topic(*mqttClient, "muonpi/data/"+username.toStdString()+"/"+stationID.toStdString(),qos);
         log_topic = new mqtt::topic(*mqttClient, "muonpi/log/"+username.toStdString()+"/"+stationID.toStdString(),qos);
@@ -69,6 +77,7 @@ void MqttHandler::mqttConnect(){
     }
     catch (const mqtt::exception& exc) {
         std::cerr << exc.what() << std::endl;
+        reconnectTimer->start();
     }
 }
 

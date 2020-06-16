@@ -134,7 +134,7 @@ FileHandler::FileHandler(const QString& userName, const QString& passWord, const
         rewrite_login = true;
     }
     if (rewrite_login){
-        if(!saveLoginData(userName,passWord, station_ID)){
+        if(!saveLoginData(userName,passWord)){
             qDebug() << "could not save login data";
         }
     }
@@ -426,7 +426,7 @@ bool FileHandler::uploadRecentDataFiles(){
 
 // crypto related stuff
 
-bool FileHandler::saveLoginData(QString username, QString password, QString station_ID){
+bool FileHandler::saveLoginData(QString username, QString password){
     QFile loginDataFile(loginDataFilePath);
     loginDataFile.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner);
     if(!loginDataFile.open(QIODevice::ReadWrite)){
@@ -436,7 +436,7 @@ bool FileHandler::saveLoginData(QString username, QString password, QString stat
     loginDataFile.resize(0);
 
     AutoSeededRandomPool rnd;
-    std::string plainText = QString(username+";"+password+";"+station_ID).toStdString();
+    std::string plainText = QString(username+";"+password).toStdString();
     std::string keyText;
     std::string encrypted;
 
@@ -514,6 +514,5 @@ bool FileHandler::readLoginData(){
     }
     username = loginData.at(0);
     password = loginData.at(1);
-    stationID = loginData.at(2);
     return true;
 }

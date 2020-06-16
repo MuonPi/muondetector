@@ -2,6 +2,8 @@
 #define MQTTHANDLER_H
 
 #include <QObject>
+#include <QTimer>
+#include <QPointer>
 #include <async_client.h>
 #include <connect_options.h>
 #include <string>
@@ -44,11 +46,14 @@ class MqttHandler : public QObject
     public:
         MqttHandler();
         //using QObject::QObject;
-        void mqttConnect();
+        void mqttStartConnection();
         void mqttDisconnect();
 
     private:
+        void mqttConnect();
         const int qos = 1;
+        int timeout = 30000;
+        QPointer<QTimer> reconnectTimer;
         mqtt::async_client *mqttClient = nullptr;
         mqtt::topic *data_topic = nullptr;
         mqtt::topic *log_topic = nullptr;
