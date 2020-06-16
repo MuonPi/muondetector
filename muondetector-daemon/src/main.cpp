@@ -20,7 +20,7 @@
 #include <custom_io_operators.h>
 #include <daemon.h>
 
-static const char* CONFIG_FILE = "/etc/muondetector.conf";
+static const char* CONFIG_FILE = "/etc/muondetector/muondetector.conf";
 
 using namespace std;
 
