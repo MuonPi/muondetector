@@ -16,6 +16,12 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+DESTDIR = $$PWD/bin
+UI_DIR = $$PWD/build/ui
+MOC_DIR = $$PWD/build/moc
+RCC_DIR = $$PWD/build/rcc
+OBJECTS_DIR = $$PWD/build/o/unix
+
 LIBS += -lcrypto++
 
 LIBS += -lpaho-mqtt3c -lpaho-mqtt3a -lpaho-mqtt3cs -lpaho-mqtt3as

@@ -182,8 +182,15 @@ int main(int argc, char *argv[])
     QString hashedMacAddress = QString(QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex());
     saveLoginData(QString("/var/muondetector/"+hashedMacAddress+"/loginData.save"),QString::fromStdString(username),QString::fromStdString(password));
     MqttHandler mqttHandler("");
-    mqttHandler.connect(&mqttHandler, &MqttHandler::mqttConnectionStatus, [](bool connected){
-        std::cout << (connected ? "login data is correct!" : "invalid login data or server not reachable!") << std::endl;
+    std::unique_ptr<QObject> context{new QObject};
+    QObject* pcontext = context.get();
+    QObject::connect(&mqttHandler, &MqttHandler::mqttConnectionStatus, [context = std::move(context)](bool connected) mutable{
+        if (connected){
+            std::cout << "login data is correct!" << std::endl;
+        }{
+            //std::cout << "invalid login data or server not reachable!" << std::endl;
+        }
+        context.release();
     });
     mqttHandler.start(QString::fromStdString(username),QString::fromStdString(password));
     mqttHandler.mqttDisconnect();
