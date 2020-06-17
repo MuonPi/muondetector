@@ -37,15 +37,15 @@ void delivery_action_listener::on_success(const mqtt::token& tok) {
     done_ = true;
 }
 
-MqttHandler::MqttHandler(){
+MqttHandler::MqttHandler(QString station_ID){
+    stationID = station_ID;
 }
 
-void MqttHandler::start(QString username, QString password, QString station_ID){
+void MqttHandler::start(QString username, QString password){
     this->username = username;
     this->password = password;
-    this->stationID = station_ID;
     CryptoPP::SHA1 sha1;
-    std::string source = username.toStdString()+station_ID.toStdString();  //This will be randomly generated somehow
+    std::string source = username.toStdString()+stationID.toStdString();  //This will be randomly generated somehow
     clientID = "";
     CryptoPP::StringSource(source, true, new CryptoPP::HashFilter(sha1, new CryptoPP::HexEncoder(new CryptoPP::StringSink(clientID))));
     reconnectTimer = new QTimer();
@@ -63,7 +63,8 @@ void MqttHandler::mqttStartConnection(){
     conopts->set_keep_alive_interval(45);
     //willmsg = new mqtt::message("muonpi/data/", "Last will and testament.", 1, true);
     //will = new mqtt::will_options(*willmsg);
-    //conopts->set_will(*will);
+    //conopts->set_will(*will)
+    mqttConnect();
 }
 
 void MqttHandler::mqttConnect(){
@@ -76,6 +77,7 @@ void MqttHandler::mqttConnect(){
         qDebug() << "MQTT connected";
     }
     catch (const mqtt::exception& exc) {
+        emit mqttConnectionStatus(false);
         std::cerr << exc.what() << std::endl;
         reconnectTimer->start();
     }

@@ -15,7 +15,7 @@ class FileHandler : public QObject
     Q_OBJECT
 
 public:
-    FileHandler(const QString& userName, const QString& passWord, const QString& station_ID, quint32 fileSizeMB = 500, QObject *parent = nullptr);
+    FileHandler(const QString& userName, const QString& passWord, quint32 fileSizeMB = 500, QObject *parent = nullptr);
     QString getCurrentDataFileName() const;
     QString getCurrentLogFileName() const;
     QFileInfo dataFileInfo() const;
@@ -24,7 +24,7 @@ public:
 
 signals:
     void logIntervalSignal();
-    void mqttConnect(QString username, QString password, QString station_ID);
+    void mqttConnect(QString username, QString password);
 	void logRotateSignal();
 
 public slots:
@@ -46,7 +46,6 @@ private:
     QString dataFolderPath;
     QString currentWorkingFilePath;
     QString currentWorkingLogPath;
-    QString stationID;
     QString username;
     QString password;
     QFlags<QFileDevice::Permission> defaultPermissions = QFileDevice::WriteOwner|QFileDevice::WriteUser|

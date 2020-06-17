@@ -91,7 +91,7 @@ static QString dateStringNow(){
     return QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd_hh-mm-ss");
 }
 
-FileHandler::FileHandler(const QString& userName, const QString& passWord, const QString& station_ID, quint32 fileSizeMB, QObject *parent)
+FileHandler::FileHandler(const QString& userName, const QString& passWord, quint32 fileSizeMB, QObject *parent)
     : QObject(parent)
 {
     lastUploadDateTime = QDateTime(QDate::currentDate(),QTime(0,0,0,0),Qt::TimeSpec::UTC);
@@ -186,7 +186,7 @@ void FileHandler::start(){
     uploadReminder->start();
 	// open files that are currently written
     openFiles();
-    emit mqttConnect(username,password,stationID);
+    emit mqttConnect(username,password);
     qDebug() << "sent mqttConnect";
 }
 

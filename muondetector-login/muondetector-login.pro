@@ -18,8 +18,17 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 LIBS += -lcrypto++
 
+LIBS += -lpaho-mqtt3c -lpaho-mqtt3a -lpaho-mqtt3cs -lpaho-mqtt3as
+LIBS += -lpaho-mqttpp3
+
 SOURCES += \
-    muondetector-login.cpp
+    muondetector-login.cpp \
+    ../muondetector-daemon/src/mqtthandler.cpp
+
+HEADERS += ../muondetector-daemon/src/mqtthandler.h
+
+INCLUDEPATH += /usr/local/include/mqtt \
+               ../muondetector-daemon/src
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

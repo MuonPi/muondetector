@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <string>
+#include <mqtthandler.h>
 
 using namespace CryptoPP;
 
@@ -180,5 +181,11 @@ int main(int argc, char *argv[])
     std::string password = getpass("please enter password:",true);
     QString hashedMacAddress = QString(QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex());
     saveLoginData(QString("/var/muondetector/"+hashedMacAddress+"/loginData.save"),QString::fromStdString(username),QString::fromStdString(password));
+    MqttHandler mqttHandler("");
+    mqttHandler.connect(&mqttHandler, &MqttHandler::mqttConnectionStatus, [](bool connected){
+        std::cout << (connected ? "login data is correct!" : "invalid login data or server not reachable!") << std::endl;
+    });
+    mqttHandler.start(QString::fromStdString(username),QString::fromStdString(password));
+    mqttHandler.mqttDisconnect();
     return 0;
 }

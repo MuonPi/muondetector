@@ -38,13 +38,13 @@ class MqttHandler : public QObject
         void mqttConnectionStatus(bool connected);
 
     public slots:
-        void start(QString username, QString password, QString station_ID);
+        void start(QString username, QString password);
         void sendData(const QString &message);
         void sendLog(const QString &message);
         void onRequestConnectionStatus();
 
     public:
-        MqttHandler();
+        MqttHandler(QString station_ID);
         //using QObject::QObject;
         void mqttStartConnection();
         void mqttDisconnect();

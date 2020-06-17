@@ -299,7 +299,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	
 	QThread *mqttHandlerThread = new QThread();
 
-    mqttHandler = new MqttHandler();
+    mqttHandler = new MqttHandler(station_ID);
     mqttHandler->moveToThread(mqttHandlerThread);
     connect(mqttHandler, &MqttHandler::mqttConnectionStatus, this, &Daemon::sendMqttStatus);
     connect(this, &Daemon::aboutToQuit, mqttHandler, &MqttHandler::deleteLater);
@@ -312,7 +312,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     // create fileHandler
     QThread *fileHandlerThread = new QThread();
 
-    fileHandler = new FileHandler(username, password, station_ID);
+    fileHandler = new FileHandler(username, password);
 	fileHandler->moveToThread(fileHandlerThread);
 	connect(this, &Daemon::aboutToQuit, fileHandler, &FileHandler::deleteLater);
 	//connect(this, &Daemon::logParameter, fileHandler, &FileHandler::onReceivedLogParameter);
