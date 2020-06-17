@@ -124,10 +124,6 @@ FileHandler::FileHandler(const QString& userName, const QString& passWord, const
     if (!readLoginData()){
         qDebug() << "could not read login data from file";
     }
-    if (station_ID!=""){
-        stationID = station_ID;
-        rewrite_login = true;
-    }
     if (userName!=""||passWord!=""){
         username=userName;
         password=passWord;
@@ -490,11 +486,9 @@ bool FileHandler::readLoginData(){
         return false;
     }
     iv.Assign((byte*)ivData, AES::BLOCKSIZE);
-//    encrypted = loginDataFile.readAll().toStdString();
       QByteArray data = loginDataFile.readAll();
       encrypted = std::string(data.constData(), data.length()); // <-- right :)
-//    QString::fromLocal8Bit(temp.data()).toStdString() <-- wrong!!
-    //qDebug() << "encrypted = " << QByteArray::fromStdString(encrypted).toHex();
+    //QString::fromLocal8Bit(temp.data()).toStdString() <-- wrong!!
 
     //////////////////////////////////////////////////////////////////////////
     // Decrypt
@@ -505,8 +499,6 @@ bool FileHandler::readLoginData(){
     StringSource decryptor(encrypted, true,
                            new StreamTransformationFilter(cfbDecryption,
                                                           new StringSink(recovered)));
-
-    //qDebug() << "recovered = " << QString::fromStdString(recovered);
     QString recoverdQString = QString::fromStdString(recovered);
     QStringList loginData = recoverdQString.split(';',QString::SkipEmptyParts);
     if (loginData.size() < 2){
