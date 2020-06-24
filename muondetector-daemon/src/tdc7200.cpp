@@ -1,5 +1,7 @@
 #include "tdc7200.h"
+#include <QThread>
 #include <unistd.h>
+#include <sys/syscall.h>
 #include <QDebug>
 
 TDC7200::TDC7200(unsigned int _INTB, QObject *parent) : QObject(parent)
@@ -8,6 +10,7 @@ TDC7200::TDC7200(unsigned int _INTB, QObject *parent) : QObject(parent)
 }
 
 void TDC7200::initialise(){
+   qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
    devicePresent = false;
    writeReg(0x03, 0x07);
    readReg(0x03);

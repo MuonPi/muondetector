@@ -17,6 +17,8 @@
 #include <logengine.h>
 #include <geohash.h>
 #include <sys/sysinfo.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 
 // for i2cdetect:
 extern "C" {
@@ -156,7 +158,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, bool preamp1, bool preamp2, bool gain, QString station_ID, QObject *parent)
 	: QTcpServer(parent)
 {
-
+    this->thread()->setObjectName("muondetector-daemon");
+    qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
 	// first, we must set the locale to be independent of the number format of the system's locale.
 	// We rely on parsing floating point numbers with a decimal point (not a komma) which might fail if not setting the classic locale
 	//	std::locale::global( std::locale( std::cout.getloc(), new punct_facet<char, '.'>) ) );
@@ -209,7 +212,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	// general
 	verbose = new_verbose;
 	if (verbose > 4) {
-		qDebug() << "daemon running in thread " << QString("0x%1").arg((intptr_t)this->thread());
+        qDebug() << "daemon running in thread " << this->thread()->objectName();
 	}
 
     if (verbose>3)
@@ -285,27 +288,32 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	}
 
 	
-	QThread *mqttHandlerThread = new QThread();
+    mqttHandlerThread = new QThread();
+    mqttHandlerThread->setObjectName("muondetector-daemon-mqtt");
+    connect(this, &Daemon::aboutToQuit, mqttHandlerThread, &QThread::quit);
+    connect(mqttHandlerThread, &QThread::finished, mqttHandlerThread, &QThread::deleteLater);
 
     mqttHandler = new MqttHandler(station_ID, verbose-1);
     mqttHandler->moveToThread(mqttHandlerThread);
     connect(mqttHandler, &MqttHandler::mqttConnectionStatus, this, &Daemon::sendMqttStatus);
-    connect(this, &Daemon::aboutToQuit, mqttHandler, &MqttHandler::deleteLater);
+    connect(fileHandlerThread, &QThread::finished, mqttHandler, &MqttHandler::deleteLater);
     connect(this, &Daemon::requestMqttConnectionStatus, mqttHandler, &MqttHandler::onRequestConnectionStatus);
-    connect(mqttHandlerThread, &QThread::finished, mqttHandlerThread, &QThread::deleteLater);
     //connect(this, &Daemon::logParameter, mqttHandler, &MqttHandler::sendLog);
     mqttHandlerThread->start();
 
 	
     // create fileHandler
-    QThread *fileHandlerThread = new QThread();
+    fileHandlerThread = new QThread();
+    fileHandlerThread->setObjectName("muondetector-daemon-filehandler");
+    connect(this, &Daemon::aboutToQuit, fileHandlerThread, &QThread::quit);
+    connect(fileHandlerThread, &QThread::finished, fileHandlerThread, &QThread::deleteLater);
 
     fileHandler = new FileHandler(username, password);
 	fileHandler->moveToThread(fileHandlerThread);
 	connect(this, &Daemon::aboutToQuit, fileHandler, &FileHandler::deleteLater);
-	//connect(this, &Daemon::logParameter, fileHandler, &FileHandler::onReceivedLogParameter);
-	connect(fileHandlerThread, &QThread::finished, fileHandlerThread, &QThread::deleteLater);
+    //connect(this, &Daemon::logParameter, fileHandler, &FileHandler::onReceivedLogParameter);
 	connect(fileHandlerThread, &QThread::started, fileHandler, &FileHandler::start);
+    connect(fileHandlerThread, &QThread::finished, fileHandler, &FileHandler::deleteLater);
     connect(fileHandler, &FileHandler::mqttConnect, mqttHandler, &MqttHandler::start);
 	fileHandlerThread->start();
 
@@ -612,6 +620,22 @@ Daemon::~Daemon() {
     if (ubloxI2c!=nullptr){ delete ubloxI2c; ubloxI2c = nullptr; }
     if (oled!=nullptr){ delete oled; oled = nullptr; }
     pigHandler.clear();
+    unsigned long timeout = 2000;
+    if (!mqttHandlerThread->wait(timeout)){
+        qWarning() << "Timeout waiting for thread "+mqttHandlerThread->objectName();
+    }
+    if (!fileHandlerThread->wait(timeout)){
+        qWarning() << "Timeout waiting for thread "+fileHandlerThread->objectName();
+    }
+    if (!pigThread->wait(timeout)){
+        qWarning() << "Timeout waiting for thread "+pigThread->objectName();
+    }
+    if (!gpsThread->wait(timeout)){
+        qWarning() << "Timeout waiting for thread "+gpsThread->objectName();
+    }
+    if (!tcpThread->wait(timeout)){
+        qWarning() << "Timeout waiting for thread "+tcpThread->objectName();
+    }
 }
 
 void Daemon::connectToPigpiod(){
@@ -620,9 +644,13 @@ void Daemon::connectToPigpiod(){
                                             /*GPIO_PINMAP[ADC_READY],*/ GPIO_PINMAP[TIMEPULSE], GPIO_PINMAP[GAIN_HL] });
     pigHandler = new PigpiodHandler(gpio_pins);
     tdc7200 = new TDC7200(GPIO_PINMAP[TDC_INTB]);
-    QThread *pigThread = new QThread();
+    pigThread = new QThread();
+    pigThread->setObjectName("muondetector-daemon-pigpio");
     pigHandler->moveToThread(pigThread);
     tdc7200->moveToThread(pigThread);
+    connect(this, &Daemon::aboutToQuit, pigThread, &QThread::quit);
+    connect(pigThread, &QThread::finished, pigThread, &QThread::deleteLater);
+
     //pighandler <-> tdc
     connect(pigHandler, &PigpiodHandler::spiData, tdc7200, &TDC7200::onDataReceived);
     connect(pigHandler, &PigpiodHandler::signal, tdc7200, &TDC7200::onDataAvailable);
@@ -645,6 +673,7 @@ void Daemon::connectToPigpiod(){
 
     //pigHandler <-> thread & daemon
     connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
+    connect(pigThread, &QThread::finished, pigHandler, &PigpiodHandler::deleteLater);
     connect(this, &Daemon::GpioSetOutput, pigHandler, &PigpiodHandler::setOutput);
     connect(this, &Daemon::GpioSetInput, pigHandler, &PigpiodHandler::setInput);
     connect(this, &Daemon::GpioSetPullUp, pigHandler, &PigpiodHandler::setPullUp);
@@ -685,7 +714,6 @@ void Daemon::connectToPigpiod(){
     */
     // test if "aboutToQuit" is called everytime
     //connect(this, &Daemon::aboutToQuit, [this](){this->toConsole("aboutToQuit called and signal emitted\n");});
-    connect(pigThread, &QThread::finished, pigHandler, &PigpiodHandler::deleteLater);
     timespec_get(&lastRateInterval, TIME_UTC);
     startOfProgram = lastRateInterval;
     connect(pigHandler, &PigpiodHandler::signal, this, [this](uint8_t gpio_pin){
@@ -739,11 +767,13 @@ void Daemon::connectToGps() {
 
 	// here is where the magic threading happens look closely
 	qtGps = new QtSerialUblox(gpsdevname, gpsTimeout, baudrate, dumpRaw, verbose-1, showout, showin);
-	QThread *gpsThread = new QThread();
+    gpsThread = new QThread();
+    gpsThread->setObjectName("muondetector-daemon-gnss");
 	qtGps->moveToThread(gpsThread);
 	// connect all signals about quitting
-	connect(this, &Daemon::aboutToQuit, qtGps, &QtSerialUblox::deleteLater);
+    connect(this, &Daemon::aboutToQuit, gpsThread, &QThread::quit);
 	connect(gpsThread, &QThread::finished, gpsThread, &QThread::deleteLater);
+    connect(gpsThread, &QThread::finished, qtGps, &QtSerialUblox::deleteLater);
 	// connect all signals not coming from Daemon to gps
 	connect(qtGps, &QtSerialUblox::toConsole, this, &Daemon::gpsToConsole);
 	connect(gpsThread, &QThread::started, qtGps, &QtSerialUblox::makeConnection);
@@ -799,22 +829,24 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 	if (verbose > 4) {
 		qDebug() << "incoming connection";
 	}
-	QThread *thread = new QThread();
+    tcpThread = new QThread();
+    tcpThread->setObjectName("muondetector-daemon-tcp");
 	TcpConnection *tcpConnection = new TcpConnection(socketDescriptor, verbose);
-	tcpConnection->moveToThread(thread);
+    tcpConnection->moveToThread(tcpThread);
 	// connect all signals about quitting
-	connect(this, &Daemon::aboutToQuit, tcpConnection, &TcpConnection::closeThisConnection);
+    connect(this, &Daemon::aboutToQuit, tcpThread, &QThread::quit);
+    connect(this, &Daemon::aboutToQuit, tcpConnection, &TcpConnection::closeThisConnection);
 	connect(this, &Daemon::closeConnection, tcpConnection, &TcpConnection::closeConnection);
-	connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+    connect(tcpThread, &QThread::finished, tcpThread, &QThread::deleteLater);
 	// connect all other signals
-	connect(thread, &QThread::started, tcpConnection, &TcpConnection::receiveConnection);
+    connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::receiveConnection);
 	connect(this, &Daemon::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
 	connect(tcpConnection, &TcpConnection::receivedTcpMessage, this, &Daemon::receivedTcpMessage);
 	connect(tcpConnection, &TcpConnection::toConsole, this, &Daemon::toConsole);
 //	connect(tcpConnection, &TcpConnection::madeConnection, this, [this](QString, quint16, QString , quint16) { emit sendPollUbxMsg(UBX_MON_VER); });
 	connect(tcpConnection, &TcpConnection::madeConnection, this, &Daemon::onMadeConnection);
 	connect(tcpConnection, &TcpConnection::connectionTimeout, this, &Daemon::onStoppedConnection);
-	thread->start();
+    tcpThread->start();
 
 /*	
 	emit sendPollUbxMsg(UBX_MON_VER);

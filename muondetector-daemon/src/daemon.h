@@ -341,7 +341,13 @@ private:
 	QTimer rateScanTimer;
     QMap<QString, Property> propertyMap;
 	LogEngine logEngine;
-    
+
+    // threads
+    QPointer<QThread> mqttHandlerThread;
+    QPointer<QThread> fileHandlerThread;
+    QPointer<QThread> pigThread;
+    QPointer<QThread> gpsThread;
+    QPointer<QThread> tcpThread;
 };
 
 #endif // DAEMON_H

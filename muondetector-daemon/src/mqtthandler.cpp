@@ -1,6 +1,9 @@
 #include <mqtthandler.h>
 #include <QDebug>
 #include <QTimer>
+#include <QThread>
+#include <unistd.h>
+#include <sys/syscall.h>
 #include <cryptopp/sha.h>
 #include <cryptopp/filters.h>
 #include <cryptopp/hex.h>
@@ -43,6 +46,7 @@ MqttHandler::MqttHandler(QString station_ID, int verbosity){
 }
 
 void MqttHandler::start(QString username, QString password){
+    qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
     this->username = username;
     this->password = password;
     CryptoPP::SHA1 sha1;

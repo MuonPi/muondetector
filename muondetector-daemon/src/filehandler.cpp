@@ -9,6 +9,9 @@
 #include <QDir>
 #include <QCryptographicHash>
 #include <QByteArray>
+#include <QThread>
+#include <unistd.h>
+#include <sys/syscall.h>
 #include <crypto++/aes.h>
 #include <crypto++/modes.h>
 #include <crypto++/filters.h>
@@ -179,6 +182,7 @@ qint64 FileHandler::currentLogAge() {
 
 void FileHandler::start(){
     // set upload reminder
+    qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
     QTimer *uploadReminder = new QTimer(this);
     uploadReminder->setInterval(60*1000*uploadReminderInterval); // every 5 minutes or so
     uploadReminder->setSingleShot(false);
