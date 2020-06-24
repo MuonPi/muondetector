@@ -40,7 +40,9 @@ QtSerialUblox::QtSerialUblox(const QString serialPortName, int newTimeout, int b
 void QtSerialUblox::makeConnection() {
 	// this function gets called with a signal from client-thread
 	// (QtSerialUblox runs in a separate thread only communicating with main thread through messages)
-    qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
+    if (verbose>4){
+        qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
+    }
     if (!serialPort.isNull()) {
         serialPort.clear();
 	}

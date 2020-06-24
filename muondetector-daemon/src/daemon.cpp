@@ -158,8 +158,6 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, bool preamp1, bool preamp2, bool gain, QString station_ID, QObject *parent)
 	: QTcpServer(parent)
 {
-    this->thread()->setObjectName("muondetector-daemon");
-    qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
 	// first, we must set the locale to be independent of the number format of the system's locale.
 	// We rely on parsing floating point numbers with a decimal point (not a komma) which might fail if not setting the classic locale
 	//	std::locale::global( std::locale( std::cout.getloc(), new punct_facet<char, '.'>) ) );
@@ -215,8 +213,13 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
         qDebug() << "daemon running in thread " << this->thread()->objectName();
 	}
 
-    if (verbose>3)
+    if (verbose>3){
 		qDebug()<<"QT version is "<<QString::number(QT_VERSION,16);
+    }
+    if (verbose >3){
+        this->thread()->setObjectName("muondetector-daemon");
+        qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
+    }
 
 	// try to find out on which hardware version we are running
 	// for this to work, we have to initialize and read the eeprom first
@@ -836,8 +839,9 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
 	// connect all signals about quitting
     connect(this, &Daemon::aboutToQuit, tcpThread, &QThread::quit);
     connect(this, &Daemon::aboutToQuit, tcpConnection, &TcpConnection::closeThisConnection);
-	connect(this, &Daemon::closeConnection, tcpConnection, &TcpConnection::closeConnection);
+    connect(this, &Daemon::closeConnection, tcpConnection, &TcpConnection::closeConnection);
     connect(tcpThread, &QThread::finished, tcpThread, &QThread::deleteLater);
+    connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
 	// connect all other signals
     connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::receiveConnection);
 	connect(this, &Daemon::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);

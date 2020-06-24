@@ -182,7 +182,7 @@ qint64 FileHandler::currentLogAge() {
 
 void FileHandler::start(){
     // set upload reminder
-    qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
+    //qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
     QTimer *uploadReminder = new QTimer(this);
     uploadReminder->setInterval(60*1000*uploadReminderInterval); // every 5 minutes or so
     uploadReminder->setSingleShot(false);
