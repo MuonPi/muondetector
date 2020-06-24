@@ -382,7 +382,6 @@ void PigpiodHandler::stop() {
     isInitialised=false;
     pigpio_stop(pi);
     pigHandlerAddress.clear();
-    this->deleteLater();
 }
 
 void PigpiodHandler::measureGpioClockTime() {

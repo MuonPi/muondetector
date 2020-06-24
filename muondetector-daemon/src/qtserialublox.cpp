@@ -2,6 +2,10 @@
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <QDebug>
+#include <QThread>
+#include <unistd.h>
+#include <sys/syscall.h>
 #include <QEventLoop>
 #include <ublox_messages.h>
 #include <muondetector_structs.h>
@@ -36,9 +40,9 @@ QtSerialUblox::QtSerialUblox(const QString serialPortName, int newTimeout, int b
 void QtSerialUblox::makeConnection() {
 	// this function gets called with a signal from client-thread
 	// (QtSerialUblox runs in a separate thread only communicating with main thread through messages)
-	if (verbose > 3) {
-		emit toConsole(QString("gps running in thread " + QString("0x%1\n").arg((int)this->thread())));
-	}
+    if (verbose>4){
+        qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
+    }
     if (!serialPort.isNull()) {
         serialPort.clear();
 	}
@@ -307,8 +311,8 @@ void QtSerialUblox::calcChkSum(const std::string& buf, unsigned char* chkA, unsi
 void QtSerialUblox::UBXSetCfgRate(uint16_t measRate, uint16_t navRate)
 {
 	if (verbose > 3) {
-		emit toConsole(QString("Ublox UBXsetCfgRate running in thread " + QString("0x%1\n")
-			.arg((int)this->thread())));
+        emit toConsole(QString("Ublox UBXsetCfgRate running in thread " + QString("0x%1\n")
+            .arg((int)syscall(SYS_gettid))));
 	}
 	unsigned char data[6];
 	// initialise all contents from data as 0 first!
@@ -350,7 +354,7 @@ void QtSerialUblox::UBXSetCfgRate(uint16_t measRate, uint16_t navRate)
 void QtSerialUblox::UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask) {
 	if (verbose > 3) {
 		emit toConsole(QString("Ublox UBXSetCfgPort running in thread " + QString("0x%1\n")
-			.arg((int)this->thread())));
+            .arg((int)syscall(SYS_gettid))));
 	}
 	unsigned char data[20];
 	// initialise all contents from data as 0 first!
@@ -413,7 +417,7 @@ void QtSerialUblox::UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate)
 	// if port = -1 set all ports
 	if (verbose > 3) {
 		emit toConsole(QString("Ublox UBXsetCfgMsg running in thread " + QString("0x%1\n")
-			.arg((int)this->thread())));
+            .arg((int)syscall(SYS_gettid))));
 	}
 	unsigned char data[8];
 	// initialise all contents from data as 0 first!

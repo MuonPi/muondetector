@@ -8,7 +8,7 @@ After=pigpiod.service sockets.target
 Type=simple
 User=muonuser
 ExecStart=/usr/bin/muondetector-daemon -c
-ExecStop=/bin/systemctl kill muondetector-daemon
+ExecStop=/bin/kill $MAINPID
 Restart=on-abnormal
 TimeoutSec=2
 

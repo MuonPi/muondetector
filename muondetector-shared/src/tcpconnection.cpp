@@ -3,6 +3,9 @@
 #include <QtNetwork>
 #include <iostream>
 #include <QDataStream>
+#include <QThread>
+#include <unistd.h>
+#include <sys/syscall.h>
 
 /*
 std::vector<TcpConnection*> TcpConnection::globalConnectionList;
@@ -48,7 +51,7 @@ void TcpConnection::makeConnection()
 // (TcpConnection runs in a separate thread only communicating with main thread through messages)
 {
 	if (verbose > 4) {
-        emit toConsole(QString("client tcpConnection running in thread " + QString("0x%1").arg((intptr_t)this->thread())));
+        qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
 	}
 	tcpSocket = new QTcpSocket(this);
     in = new QDataStream();
@@ -84,9 +87,9 @@ void TcpConnection::makeConnection()
 
 void TcpConnection::receiveConnection()
 {   // setting up tcpSocket.
-	// only done once
-	if (verbose > 4) {
-        emit toConsole(QString("client tcpConnection running in thread " + QString("0x%1").arg((intptr_t)this->thread())));
+    // only done once
+    if (verbose > 4) {
+        qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
 	}
 	tcpSocket = new QTcpSocket(this);
 	if (!tcpSocket->setSocketDescriptor(socketDescriptor)) {
@@ -132,8 +135,6 @@ void TcpConnection::closeThisConnection(){
     TcpMessage quitMessage(TCP_MSG_KEY::MSG_QUIT_CONNECTION);
     *(quitMessage.dStream) << localAddress;
     sendTcpMessage(quitMessage);
-    this->deleteLater();
-    this->thread()->quit();
     return;
 }
 

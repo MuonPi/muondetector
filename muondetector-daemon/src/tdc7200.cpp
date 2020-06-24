@@ -1,5 +1,4 @@
 #include "tdc7200.h"
-#include <unistd.h>
 #include <QDebug>
 
 TDC7200::TDC7200(unsigned int _INTB, QObject *parent) : QObject(parent)
