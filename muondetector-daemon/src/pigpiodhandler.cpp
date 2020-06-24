@@ -223,9 +223,12 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, unsigned int spi
         if (gpio_pin==GPIO_PINMAP[ADC_READY]) set_pull_up_down(pi, gpio_pin, PI_PUD_UP);
         if (gpio_pin==GPIO_PINMAP[TDC_INTB]){
             callback(pi, gpio_pin, FALLING_EDGE, cbFunction);
-        }else{
+        } else {
             //qDebug() << "set callback for pin " << gpio_pin;
-            callback(pi, gpio_pin, RISING_EDGE, cbFunction);
+            int result=callback(pi, gpio_pin, RISING_EDGE, cbFunction);
+			if (result<0) {
+				qCritical()<<"error registering gpio callback for BCM pin"<<gpio_pin;
+			}
         }
 //        callback(pi, gpio_pin, FALLING_EDGE, cbFunction);
         //        if (value==pigif_bad_malloc||
@@ -284,7 +287,7 @@ void PigpiodHandler::writeSpi(uint8_t command, std::string data){
     }*/
     char rxBuf[data.size()+1];
     if (spi_xfer(pi, spiHandle, txBuf, rxBuf, data.size()+1)!=1+data.size()){
-        qDebug() << "wrong number of bytes transfered";
+        qWarning() << "writeSpi(uint8_t, std::string): wrong number of bytes transfered";
         return;
     }
 }
@@ -307,7 +310,7 @@ void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead){
         txBuf[i] = 0;
     }
     if (spi_xfer(pi, spiHandle, txBuf, rxBuf, bytesToRead+1)!=1+bytesToRead){
-        qDebug() << "wrong number of bytes transfered";
+		qWarning() << "readSpi(uint8_t, unsigned int): wrong number of bytes transfered";
         return;
     }
 
@@ -345,26 +348,27 @@ bool PigpiodHandler::spiInitialise(){
     }
     spiHandle = spi_open(pi, 0, spiClkFreq, spiFlags);
     if (spiHandle<0){
-        qDebug() << "could not initialise spi bus";
+        QString errstr="";
         switch (spiHandle){
         case PI_BAD_CHANNEL:
-            qDebug() << "DMA channel not 0-15";
+            errstr="DMA channel not 0-15";
             break;
         case PI_BAD_SPI_SPEED:
-            qDebug() << "bad SPI speed";
+            errstr="bad SPI speed";
             break;
         case PI_BAD_FLAGS:
-            qDebug() << "bad spi open flags";
+            errstr="bad spi open flags";
             break;
         case PI_NO_AUX_SPI:
-            qDebug() << "no auxiliary SPI on Pi A or B";
+            errstr="no auxiliary SPI on Pi A or B";
             break;
         case PI_SPI_OPEN_FAILED:
-            qDebug() << "can't open SPI device";
+            errstr="can't open SPI device";
             break;
         default:
             break;
         }
+        qCritical()<<"Could not initialise SPI bus:"<<errstr;
         return false;
     }
     spiInitialised = true;
