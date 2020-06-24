@@ -7,6 +7,7 @@
 #include <async_client.h>
 #include <connect_options.h>
 #include <string>
+#include <config.h>
 
 class callback : public virtual mqtt::callback{
 public:
@@ -44,15 +45,15 @@ class MqttHandler : public QObject
         void onRequestConnectionStatus();
 
     public:
-        MqttHandler(QString station_ID);
+        MqttHandler(QString station_ID, int verbosity=0);
         //using QObject::QObject;
         void mqttStartConnection();
         void mqttDisconnect();
 
     private:
         void mqttConnect();
-        const int qos = 1;
-        int timeout = 30000;
+        const int qos = MUONPI_MQTT_QOS;
+        int timeout = MUONPI_MQTT_TIMEOUT_MS;
         QPointer<QTimer> reconnectTimer;
         mqtt::async_client *mqttClient = nullptr;
         mqtt::topic *data_topic = nullptr;
@@ -61,11 +62,12 @@ class MqttHandler : public QObject
         mqtt::message *willmsg = nullptr;
         mqtt::will_options *will = nullptr;
         bool _mqttConnectionStatus = false;
-        QString mqttAddress = "116.202.96.181:1883";
+        QString mqttAddress = MUONPI_MQTT_SERVER;
         QString stationID="0";
         QString username;
         QString password;
         std::string clientID;
+		int verbose=0;
 };
 
 #endif // MQTTHANDLER_H

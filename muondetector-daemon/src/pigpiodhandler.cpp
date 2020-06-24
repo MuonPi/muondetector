@@ -196,7 +196,8 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
     {
         pigpioHandler = 0;
         pigpio_stop(pi);
-        qDebug() << "Exception catched : " << e.what();
+        qCritical() << "Exception catched in 'static void cbFunction(int user_pi, unsigned int user_gpio, unsigned int level, uint32_t tick)':" << e.what();
+		qCritical() << "with user_pi="<<user_pi<<"user_gpio="<<user_gpio<<"level="<<level<<"tick="<<tick;
     }
 }
 
@@ -211,9 +212,10 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, unsigned int spi
     spiFlags = spi_flags;
     pi = pigpio_start((char*)"127.0.0.1", (char*)"8888");
     if (pi < 0) {
-        qDebug() << "could not start pigpio. Is pigpiod running?";
-        qDebug() << "you can start pigpiod with: sudo pigpiod -s 1";
-        return;
+        //qDebug() << "could not start pigpio. Is pigpiod running?";
+        //qDebug() << "you can start pigpiod with: sudo pigpiod -s 1";
+        qFatal("Could not connect to pigpio daemon. Is pigpiod running? Start with sudo pigpiod -s 1");
+		return;
     }
 //    gpioPins=gpio_pins;
     for (auto& gpio_pin : gpio_pins) {

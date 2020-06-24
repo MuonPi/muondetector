@@ -3,7 +3,13 @@
 
 
 #define MUONPI_BUILD_TIME				__DATE__
+
+#define MUONPI_MQTT_SERVER				"116.202.96.181:1883"
+#define MUONPI_MQTT_TIMEOUT_MS			30000
+#define MUONPI_MQTT_QOS					1
+
 #define MUONPI_LOG_INTERVAL_MINUTES		1
+
 #define MUONPI_UPLOAD_REMINDER_MINUTES	5
 #define MUONPI_UPLOAD_TIMEOUT_MS		600000UL
 #define MUONPI_UPLOAD_URL				"balu.physik.uni-giessen.de:/cosmicshower"

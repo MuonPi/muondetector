@@ -209,7 +209,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	// general
 	verbose = new_verbose;
 	if (verbose > 4) {
-		cout << "daemon running in thread " << QString("0x%1").arg((intptr_t)this->thread()) << endl;
+		qDebug() << "daemon running in thread " << QString("0x%1").arg((intptr_t)this->thread());
 	}
 
     if (verbose>3)
@@ -222,12 +222,10 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	calib = new ShowerDetectorCalib(eep);
 	if (eep->devicePresent()) {
 		calib->readFromEeprom();
-		if (verbose>1) {
-			cout<<"eep device is present."<<endl;
+		if (verbose>2) {
+			qInfo()<<"EEP device is present";
 //			readEeprom();
 //			calib->readFromEeprom();
-			uint64_t id=calib->getSerialID();
-			cout<<"unique ID: 0x"<<hex<<id<<dec<<endl;
 			
 			// Caution, only for debugging. This code snippet writes a test sequence into the eeprom
 			if (1==0) {
@@ -239,38 +237,28 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 			}
 			if (1==1) {
 				calib->printCalibList();
-
-/*
-				calib->setCalibItem("VERSION", (uint8_t)1);
-				calib->setCalibItem("DATE", (uint32_t)time(NULL));
-				calib->setCalibItem("CALIB_FLAGS", (uint8_t)1);
-				calib->setCalibItem("FEATURE_FLAGS", (uint8_t)1);
-				calib->setCalibItem("RSENSE", (uint16_t)205);
-				calib->setCalibItem("COEFF0", (float)3.1415926535);
-				calib->setCalibItem("COEFF1", (float)-1.23456e-4);
-				calib->setCalibItem("WRITE_CYCLES", (uint32_t)5);
-
-				calib->printCalibList();
-				calib->updateBuffer();
-				calib->printBuffer();
-				//calib->writeToEeprom();
-				readEeprom();
-*/
 			}
 		}
+		uint64_t id=calib->getSerialID();
+		QString hwIdStr="0x"+QString::number(id,16);
+//		qInfo()<<"eep unique ID: 0x"<<hex<<id<<dec;
+		qInfo()<<"EEP unique ID:"<<hwIdStr;
+
+		
         //if (calib->isValid()) {
 
         //}
 	} else {
-		cerr<<"eeprom device NOT present!"<<endl;
+		qCritical()<<"eeprom device NOT present!";
 	}
 	CalibStruct verStruct = calib->getCalibItem("VERSION");
 	unsigned int version=0;
 	ShowerDetectorCalib::getValueFromString(verStruct.value,version);
 	if (version>0) {
 		HW_VERSION=version;
-		if (verbose>1) cout<<"found HW version "<<version<<" in eeprom"<<endl;
-        }
+		//if (verbose)
+		qInfo()<<"Found HW version"<<version<<"in eeprom";
+	}
 
 	// set up the pin definitions (hw version specific)
 	GPIO_PINMAP=GPIO_PINMAP_VERSIONS[HW_VERSION];
@@ -299,7 +287,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	
 	QThread *mqttHandlerThread = new QThread();
 
-    mqttHandler = new MqttHandler(station_ID);
+    mqttHandler = new MqttHandler(station_ID, verbose-1);
     mqttHandler->moveToThread(mqttHandlerThread);
     connect(mqttHandler, &MqttHandler::mqttConnectionStatus, this, &Daemon::sendMqttStatus);
     connect(this, &Daemon::aboutToQuit, mqttHandler, &MqttHandler::deleteLater);
@@ -335,12 +323,12 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	lm75 = new LM75();
 	if (lm75->devicePresent()) {
 		if (verbose>2) {
-			cout<<"LM75 device is present."<<endl;
-			cout<<"temperature is "<<lm75->getTemperature()<<" centigrades Celsius"<<endl;
-			cout<<"readout took "<<lm75->getLastTimeInterval()<<" ms"<<endl;
+			qInfo()<<"LM75 device is present.";
+			qDebug()<<"temperature is "<<lm75->getTemperature()<< DEGREE_CHARCODE <<"C";
+			qDebug()<<"readout took"<<lm75->getLastTimeInterval()<<"ms";
 		}
 	} else {
-		cerr<<"LM75 device NOT present!"<<endl;
+		qWarning()<<"LM75 device NOT present!";
 	}
 	// 4ch, 16/14bit ADC ADS1115/1015
 	adc = new ADS1115();
@@ -351,7 +339,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		adc->setRate(0x07);  // ADS1115::RATE860
 		adc->setAGC(false);
 		if (!adc->setDataReadyPinMode()) {
-			cerr<<"error: failed setting data ready pin mode (setting thresh regs)"<<endl;
+			qWarning()<<"error: failed setting data ready pin mode (setting thresh regs)";
 		}
 
 		// set up sampling timer used for continuous sampling mode
@@ -364,45 +352,49 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		setAdcSamplingMode(ADC_MODE_PEAK);
 			
 		if (verbose>2) {
-			cout<<"ADS1115 device is present."<<endl;
+			qInfo()<<"ADS1115 device is present.";
 			bool ok=adc->setLowThreshold(0b00000000);
 			ok = ok && adc->setHighThreshold(0b10000000);
-			if (ok) cout<<"successfully setting threshold registers"<<endl;
-			else cerr<<"error: failed setting threshold registers"<<endl;
-			cout<<"single ended channels:"<<endl;
-			cout<<"ch0: "<<adc->readADC(0)<<" ch1: "<<adc->readADC(1)
-			<<" ch2: "<<adc->readADC(2)<<" ch3: "<<adc->readADC(3)<<endl;
+			if (ok) qDebug()<<"successfully setting threshold registers";
+			else qWarning()<<"error: failed setting threshold registers";
+			qDebug()<<"single ended channels:";
+			qDebug()<<"ch0: "<<adc->readADC(0)<<" ch1: "<<adc->readADC(1)
+			<<" ch2: "<<adc->readADC(2)<<" ch3: "<<adc->readADC(3);
 			adc->setDiffMode(true);
-			cout<<"diff channels:"<<endl;
-			cout<<"ch0-1: "<<adc->readADC(0)<<" ch0-3: "<<adc->readADC(1)
-			<<" ch1-3: "<<adc->readADC(2)<<" ch2-3: "<<adc->readADC(3)<<endl;
+			qDebug()<<"diff channels:";
+			qDebug()<<"ch0-1: "<<adc->readADC(0)<<" ch0-3: "<<adc->readADC(1)
+			<<" ch1-3: "<<adc->readADC(2)<<" ch2-3: "<<adc->readADC(3);
 			adc->setDiffMode(false);
-			cout<<"readout took "<<adc->getLastTimeInterval()<<" ms"<<endl;
+			qDebug()<<"readout took "<<adc->getLastTimeInterval()<<" ms";
 		}
 	} else {
 		adcSamplingMode = ADC_MODE_DISABLED;
-		cerr<<"ADS1115 device NOT present!"<<endl;
+		qWarning()<<"ADS1115 device NOT present!";
 	}
 	
 	// 4ch DAC MCP4728
 	dac = new MCP4728();
 	if (dac->devicePresent()) {
 		if (verbose>2) {
-			cout<<"MCP4728 device is present."<<endl;
-			cout<<"DAC registers / output voltages:"<<endl;
+			qInfo()<<"MCP4728 device is present.";
+			qDebug()<<"DAC registers / output voltages:";
 			for (int i=0; i<4; i++) {
 				MCP4728::DacChannel dacChannel;
 				MCP4728::DacChannel eepromChannel;
 				eepromChannel.eeprom=true;
 				dac->readChannel(i, dacChannel);
 				dac->readChannel(i, eepromChannel);
-				cout<<"  ch"<<i<<": "<<dacChannel.value<<" = "<<MCP4728::code2voltage(dacChannel)<<" V"
-				"  (stored: "<<eepromChannel.value<<" = "<<MCP4728::code2voltage(eepromChannel)<<" V)"<<endl;
+				qDebug()<<"  ch"<<i<<": "<<dacChannel.value<<" = "<<MCP4728::code2voltage(dacChannel)<<" V"
+				"  (stored: "<<eepromChannel.value<<" = "<<MCP4728::code2voltage(eepromChannel)<<" V)";
 			}
-			cout<<"readout took "<<dac->getLastTimeInterval()<<" ms"<<endl;
+			qDebug()<<"readout took "<<dac->getLastTimeInterval()<<" ms";
 		}
 	} else {
-		cerr<<"MCP4728 device NOT present!"<<endl;
+		qCritical("MCP4728 device NOT present!");
+		// this error is critical, since the whole concept of counting muons is based on
+		// the function of the threshold discriminator
+		// we should quit here returning an error code (?)
+		//exit(-1);
 	}
 	float *tempThresh = new_dacThresh;
 	for (int i=std::min(DAC_TH1, DAC_TH2); i<=std::max(DAC_TH1, DAC_TH2); i++) {
@@ -434,14 +426,14 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	pca = new PCA9536();
 	if (pca->devicePresent()) {
 		if (verbose>2) {
-			cout<<"PCA9536 device is present."<<endl;
-			cout<<" inputs: 0x"<<hex<<(int)pca->getInputState()<<endl;
-			cout<<"readout took "<<dec<<pca->getLastTimeInterval()<<" ms"<<endl;
+			qInfo()<<"PCA9536 device is present."<<endl;
+			qDebug()<<" inputs: 0x"<<hex<<(int)pca->getInputState();
+			qDebug()<<"readout took "<<dec<<pca->getLastTimeInterval()<<" ms";
 		}
 		pca->setOutputPorts(0b00000111);
 		setPcaChannel(new_pcaPortMask);
 	} else {
-		cerr<<"PCA9536 device NOT present!"<<endl;
+		qCritical()<<"PCA9536 device NOT present!";
 	}
     
 	if (dac->devicePresent()) {
@@ -457,11 +449,11 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	ubloxI2c = new UbloxI2c(0x42);
 	ubloxI2c->lock();
 	if (ubloxI2c->devicePresent()) {
-		if (verbose>1) {
-			cout<<"ublox I2C device interface is present."<<endl;
+		if (verbose>2) {
+			qInfo()<<"ublox I2C device interface is present.";
 			uint16_t bufcnt = 0;
 			bool ok = ubloxI2c->getTxBufCount(bufcnt);
-			if (ok) cout<<"bytes in TX buf: "<<bufcnt<<endl;
+			if (ok) qDebug()<<"bytes in TX buf: "<<bufcnt;
 
  			//unsigned long int argh=0;
 			//while (argh++<100UL) {
@@ -478,15 +470,15 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 
 		}
 	} else {
-		cerr<<"ublox I2C device interface NOT present!"<<endl;
+		//cout<<"ublox I2C device interface NOT present"<<endl;
 	}
 
 	// check if also an Adafruit-SSD1306 compatible i2c OLED display is present
 	// initialize and start loop for display of several state variables
 	oled = new Adafruit_SSD1306(0x3c);
 	if (oled->devicePresent()) {
-		if (verbose>1) {
-			cout<<"I2C OLED display is present."<<endl;
+		if (verbose>-1) {
+			qInfo()<<"I2C SSD1306-type OLED display found at address 0x3c";
 		}
 		oled->begin();
 		oled->clearDisplay();
@@ -496,7 +488,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		oled->setTextColor(Adafruit_SSD1306::WHITE);
 		oled->setCursor(0,2);
 		oled->print("*Cosmic Shower Det.*\n");
-		oled->print("V 1.1.2\n");
+		oled->print("V 1.2.0\n");
 		//  display.setTextColor(BLACK, WHITE); // 'inverted' text
 /*
 		struct timespec tNow;
@@ -514,7 +506,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		connect(&oledUpdateTimer, SIGNAL(timeout()), this, SLOT(updateOledDisplay()));
 		oledUpdateTimer.start(OLED_UPDATE_PERIOD);
 	} else {
-		cerr<<"I2C OLED display NOT present!"<<endl;
+		//cout<<"I2C OLED display NOT present"<<endl;
 	}
 	
 	// for pigpio signals:
@@ -563,8 +555,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	if (new_daemonAddress.isEmpty()) {
 		// if not otherwise specified: listen on all available addresses
 		daemonAddress = QHostAddress(QHostAddress::Any);
-		if (verbose > 1) {
-			cout << daemonAddress.toString() << endl;
+		if (verbose > 3) {
+			qDebug() << "daemon address: "<<daemonAddress.toString();
 		}
 	}
 	daemonPort = new_daemonPort;
@@ -573,11 +565,11 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		daemonPort = 51508;
 	}
 	if (!this->listen(daemonAddress, daemonPort)) {
-		cerr << tr("Unable to start the server: %1.\n").arg(this->errorString());
+		qCritical() << tr("Unable to start the server: %1.\n").arg(this->errorString());
 	}
 	else {
-		if (verbose > 4) {
-			cout << tr("\nThe server is running on\n\nIP: %1\nport: %2\n\n")
+		if (verbose > 3) {
+			qInfo() << tr("\nThe server is running on\n\nIP: %1\nport: %2\n")
 				.arg(daemonAddress.toString()).arg(serverPort());
 		}
 	}
@@ -684,8 +676,8 @@ void Daemon::connectToPigpiod(){
 
     struct timespec ts_res;
     clock_getres(CLOCK_REALTIME, &ts_res);
-    if (verbose>1) {
-        cout<<"the timing resolution of the system clock is "<<ts_res.tv_nsec<<" ns"<<endl;
+    if (verbose>3) {
+        qInfo()<<"the timing resolution of the system clock is "<<ts_res.tv_nsec<<" ns";
     }
 
     /* looks good but using QPointer should be safer
@@ -746,7 +738,7 @@ void Daemon::connectToGps() {
 	prepareSerial.waitForFinished();
 
 	// here is where the magic threading happens look closely
-	qtGps = new QtSerialUblox(gpsdevname, gpsTimeout, baudrate, dumpRaw, verbose, showout, showin);
+	qtGps = new QtSerialUblox(gpsdevname, gpsTimeout, baudrate, dumpRaw, verbose-1, showout, showin);
 	QThread *gpsThread = new QThread();
 	qtGps->moveToThread(gpsThread);
 	// connect all signals about quitting
@@ -805,7 +797,7 @@ void Daemon::connectToGps() {
 
 void Daemon::incomingConnection(qintptr socketDescriptor) {
 	if (verbose > 4) {
-		cout << "incoming connection" << endl;
+		qDebug() << "incoming connection";
 	}
 	QThread *thread = new QThread();
 	TcpConnection *tcpConnection = new TcpConnection(socketDescriptor, verbose);
@@ -953,9 +945,9 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         uint8_t channel;
         float threshold;
         *(tcpMessage.dStream) >> channel >> threshold;
-        if (threshold<0.001)
-			cout<<"Warning: setting DAC "<<channel<<" to 0!"<<endl;
-        else setDacThresh(channel, threshold);
+        if (threshold<0.001) {
+			if (verbose>2) qWarning()<<"setting DAC "<<channel<<" to 0!";
+		} else setDacThresh(channel, threshold);
         sendDacThresh(DAC_TH1);
         sendDacThresh(DAC_TH2);
         return;
@@ -1575,8 +1567,8 @@ void Daemon::setEventTriggerSelection(GPIO_PIN signal) {
     auto it=GPIO_PINMAP.find(signal);
     if (it==GPIO_PINMAP.end()) return;
 	
-    if (verbose > 1){
-        qDebug() << "changed event selection to signal " << (unsigned int)signal;
+    if (verbose > 0){
+        qInfo() << "changed event selection to signal " << (unsigned int)signal;
     }
     emit setSamplingTriggerSignal(signal);
 	emit logParameter(LogParameter("gpioTriggerSelection", "0x"+QString::number((int)pigHandler->samplingTriggerSignal,16), LogParameter::LOG_EVERY));
@@ -1589,11 +1581,11 @@ void Daemon::setPcaChannel(uint8_t channel) {
 		return;
 	}
 	if (channel > ((HW_VERSION==1)?3:7)) {
-        cerr << "invalid PCA channel selected (ch " <<(int)channel<<")"<< endl;
+        qWarning() << "invalid PCA channel selection: ch" <<(int)channel<<"...ignoring";
 		return;
 	}
-    if (verbose > 1){
-        qDebug() << "changed pcaPortMask to " << channel;
+    if (verbose > 0){
+        qInfo() << "changed pcaPortMask to " << channel;
     }
     pcaPortMask = channel;
     pca->setOutputState(channel);
@@ -1603,8 +1595,8 @@ void Daemon::setPcaChannel(uint8_t channel) {
 
 void Daemon::setBiasVoltage(float voltage) {
     biasVoltage = voltage;
-    if (verbose > 1){
-        qDebug() << "change biasVoltage to " << voltage;
+    if (verbose > 0){
+        qInfo() << "change biasVoltage to " << voltage;
     }
     if (dac && dac->devicePresent()) {
 		dac->setVoltage(DAC_BIAS, voltage);
@@ -1616,8 +1608,8 @@ void Daemon::setBiasVoltage(float voltage) {
 
 void Daemon::setBiasStatus(bool status){
     biasON = status;
-    if (verbose > 1){
-        qDebug() << "change biasStatus to " << status;
+    if (verbose > 0){
+        qInfo() << "change biasStatus to " << status;
     }
     //emit GpioSetState(UBIAS_EN, status);
 
@@ -1643,8 +1635,8 @@ void Daemon::setDacThresh(uint8_t channel, float threshold) {
     if (threshold > 4.095){
         threshold = 4.095;
     }
-    if (verbose > 1){
-        qDebug() << "change dacThresh " << channel << " to " << threshold;
+    if (verbose > 0){
+        qInfo() << "change dacThresh " << channel << " to " << threshold;
     }
     dacThresh[channel] = threshold;
     clearRates();
@@ -1929,7 +1921,7 @@ void Daemon::onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
 }
 
 void Daemon::onUBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssConfigStruct>& gnssConfigs) {
-	if (verbose > 2) {
+	if (verbose > 3) {
 		// put some verbose output here
 	}
     int N=gnssConfigs.size();
@@ -1943,7 +1935,7 @@ void Daemon::onUBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssCon
 }
 
 void Daemon::onUBXReceivedTP5(const UbxTimePulseStruct& tp) {
-	if (verbose > 2) {
+	if (verbose > 3) {
 		// put some verbose output here
 	}
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_CFG_TP5);
@@ -1953,9 +1945,9 @@ void Daemon::onUBXReceivedTP5(const UbxTimePulseStruct& tp) {
 
 void Daemon::onUBXReceivedTxBuf(uint8_t txUsage, uint8_t txPeakUsage) {
 	TcpMessage* tcpMessage;
-	if (verbose>2) {
-		cout << "TX buf usage: " << (int)txUsage << " %" << endl;
-		cout << "TX buf peak usage: " << (int)txPeakUsage << " %" << endl;
+	if (verbose>3) {
+		qDebug() << "TX buf usage: " << (int)txUsage << " %";
+		qDebug() << "TX buf peak usage: " << (int)txPeakUsage << " %";
 	}
 	tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_TXBUF);
 	*(tcpMessage->dStream) << (quint8)txUsage << (quint8)txPeakUsage;
@@ -1967,9 +1959,9 @@ void Daemon::onUBXReceivedTxBuf(uint8_t txUsage, uint8_t txPeakUsage) {
 
 void Daemon::onUBXReceivedRxBuf(uint8_t rxUsage, uint8_t rxPeakUsage) {
 	TcpMessage* tcpMessage;
-	if (verbose>2) {
-		cout << "RX buf usage: " << (int)rxUsage << " %" << endl;
-		cout << "RX buf peak usage: " << (int)rxPeakUsage << " %" << endl;
+	if (verbose>3) {
+		qDebug() << "RX buf usage: " << (int)rxUsage << " %";
+		qDebug() << "RX buf peak usage: " << (int)rxPeakUsage << " %";
 	}
 	tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_RXBUF);
 	*(tcpMessage->dStream) << (quint8)rxUsage << (quint8)rxPeakUsage;
@@ -1984,13 +1976,13 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
 	TcpMessage* tcpMessage;
 	switch (propertyName) {
 	case 's':
-		if (verbose>2)
+		if (verbose>3)
 			cout << std::chrono::system_clock::now()
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "Nr of available satellites: " << (int)data << endl;
 		break;
 	case 'e':
-		if (verbose>2)
+		if (verbose>3)
 			cout << std::chrono::system_clock::now()
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "quant error: " << (int)data << " ps" << endl;
@@ -2020,7 +2012,7 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
 		break;
 	*/
 	case 'f':
-		if (verbose>2)
+		if (verbose>3)
 			cout << std::chrono::system_clock::now()
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "Fix value: " << (int)data << endl;
@@ -2043,7 +2035,7 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
 	TcpMessage* tcpMessage;
 	switch (propertyName) {
 	case 'a':
-		if (verbose>2)
+		if (verbose>3)
 			cout << std::chrono::system_clock::now()
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "time accuracy: " << data << " ns" << endl;
@@ -2054,7 +2046,7 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
 		emit logParameter(LogParameter("timeAccuracy", QString::number(data)+" ns", LogParameter::LOG_AVERAGE));
 		break;
 	case 'f':
-		if (verbose>2)
+		if (verbose>3)
 			cout << std::chrono::system_clock::now()
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "frequency accuracy: " << data << " ps/s" << endl;
@@ -2065,7 +2057,7 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
 		emit logParameter(LogParameter("freqAccuracy", QString::number(data)+" ps/s", LogParameter::LOG_AVERAGE));
 		break;
 	case 'u':
-		if (verbose>2)
+		if (verbose>3)
 			cout << std::chrono::system_clock::now()
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "Ublox uptime: " << data << " s" << endl;
@@ -2076,7 +2068,7 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
 		emit logParameter(LogParameter("ubloxUptime", QString::number(data)+" s", LogParameter::LOG_LATEST));
 		break;
 	case 'c':
-		if (verbose>2)
+		if (verbose>3)
 			cout << std::chrono::system_clock::now()
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "rising edge counter: " << data << endl;
@@ -2095,7 +2087,7 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
 	char propertyName) {
 	switch (propertyName) {
 	case 'd':
-		if (verbose>2)
+		if (verbose>3)
 			cout << std::chrono::system_clock::now()
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "clock drift: " << data << " ns/s" << endl;
@@ -2103,7 +2095,7 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
 		propertyMap["clkDrift"]=Property("clkDrift",(qint32)data);
 		break;
 	case 'b':
-		if (verbose>2)
+		if (verbose>3)
 			cout << std::chrono::system_clock::now()
 				- std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
 				<< "clock bias: " << data << " ns" << endl;
@@ -2165,31 +2157,30 @@ void Daemon::onMadeConnection(QString remotePeerAddress, quint16 remotePeerPort,
 void Daemon::onStoppedConnection(QString remotePeerAddress, quint16 remotePeerPort, QString localAddress, quint16 localPort,
 		quint32 timeoutTime, quint32 connectionDuration) {
 	if (verbose>3) {
-		cout << "stopped connection with " << remotePeerAddress << ":" << remotePeerPort << endl;
-		cout << "connection timeout at " << timeoutTime << "  connection lasted " << connectionDuration << "s" << endl;
+		qDebug() << "stopped connection with " << remotePeerAddress << ":" << remotePeerPort << endl;
+		qDebug() << "connection timeout at " << timeoutTime << "  connection lasted " << connectionDuration << "s" << endl;
 	}
 }
 
 void Daemon::displayError(QString message)
 {
-	cout << "Daemon: " << message << endl;
+	qDebug() << "Daemon: " << message;
 }
 
 void Daemon::displaySocketError(int socketError, QString message)
 {
 	switch (socketError) {
 	case QAbstractSocket::HostNotFoundError:
-		cout << tr("The host was not found. Please check the "
-			"host and port settings.\n");
+		qCritical() << tr("The host was not found. Please check the host and port settings.");
 		break;
 	case QAbstractSocket::ConnectionRefusedError:
-		cout << tr("The connection was refused by the peer. "
+		qCritical() << tr("The connection was refused by the peer. "
 			"Make sure the server is running, "
 			"and check that the host name and port "
-			"settings are correct.\n");
+			"settings are correct.");
 		break;
 	default:
-		cout << tr("The following error occurred: %1.\n").arg(message);
+		qCritical() << tr("The following error occurred: %1.").arg(message);
 	}
 	flush(cout);
 }
@@ -2255,7 +2246,7 @@ void Daemon::aquireMonitoringParameters()
 			double rsense;
 			istr >> rsense;
 			if (verbose>2){
-				cout<<"rsense:"<<calib->getCalibItem("RSENSE").value<<" ("<<rsense<<")"<<endl;
+				qDebug()<<"rsense:"<<QString::fromStdString(calib->getCalibItem("RSENSE").value)<<" ("<<rsense<<")";
 			}
 			rsense /= 10.*1000.; // yields Rsense in MOhm
 			logParameter(LogParameter("calib_rsense", QString::number(rsense*1000.)+" kOhm", LogParameter::LOG_ONCE));
@@ -2276,7 +2267,7 @@ void Daemon::aquireMonitoringParameters()
 			istr.str(flagItem.value);
 			istr >> calFlags;
 			if (verbose>2){
-				cout<<"cal flags:"<<flagItem.value<<" ("<<(int)calFlags<<dec<<")"<<endl;
+				qDebug()<<"cal flags:"<<QString::fromStdString(flagItem.value)<<" ("<<(int)calFlags<<dec<<")";
 			}
 			double icorr = 0.;
 			if (calFlags & CalibStruct::CALIBFLAGS_CURRENT_COEFFS) {
@@ -2355,7 +2346,7 @@ void Daemon::onLogParameterPolled(){
 	}
     
     sendLogInfo();
-    if (verbose>3)
+    if (verbose>2)
     { 
 	    qDebug() << "current data file: " << fileHandler->dataFileInfo().absoluteFilePath();
 	    qDebug() << " file size: " << fileHandler->dataFileInfo().size()/(1024*1024) << "MiB";

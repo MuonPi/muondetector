@@ -37,8 +37,9 @@ void delivery_action_listener::on_success(const mqtt::token& tok) {
     done_ = true;
 }
 
-MqttHandler::MqttHandler(QString station_ID){
+MqttHandler::MqttHandler(QString station_ID, int verbosity){
     stationID = station_ID;
+	verbose=verbosity;
 }
 
 void MqttHandler::start(QString username, QString password){
@@ -74,11 +75,11 @@ void MqttHandler::mqttConnect(){
         log_topic = new mqtt::topic(*mqttClient, "muonpi/log/"+username.toStdString()+"/"+stationID.toStdString(),qos);
         emit mqttConnectionStatus(true);
         _mqttConnectionStatus = true;
-        qDebug() << "MQTT connected";
+        qInfo() << "MQTT connected";
     }
     catch (const mqtt::exception& exc) {
         emit mqttConnectionStatus(false);
-        std::cerr << exc.what() << std::endl;
+		qWarning() << QString::fromStdString(exc.what());
         reconnectTimer->start();
     }
 }
@@ -95,7 +96,7 @@ void MqttHandler::mqttDisconnect(){
         _mqttConnectionStatus = false;
     }
     catch (const mqtt::exception& exc) {
-        std::cerr << exc.what() << std::endl;
+		qWarning() << QString::fromStdString(exc.what());
     }
 }
 
@@ -107,12 +108,13 @@ void MqttHandler::sendData(const QString &message){
         data_topic->publish(message.toStdString())->wait();
     }
     catch (const mqtt::exception& exc) {
-        std::cerr << exc.what() << std::endl;
-        std::cerr << "trying to reconnect..." << std::endl;
+		qDebug() << QString::fromStdString(exc.what());
+		qDebug() << "trying to reconnect...";
 		try {
 			if (mqttClient!=nullptr) mqttClient->reconnect();
+			qInfo() << "MQTT reconnected";
 		} catch (const mqtt::exception& exc) {
-			std::cerr << exc.what() << std::endl;
+			qDebug() << QString::fromStdString(exc.what());
 		}
     }
 }
@@ -125,7 +127,7 @@ void MqttHandler::sendLog(const QString &message){
         log_topic->publish(message.toStdString());
     }
     catch (const mqtt::exception& exc) {
-        std::cerr << exc.what() << std::endl;
+		qDebug() << QString::fromStdString(exc.what());
     }
 }
 
