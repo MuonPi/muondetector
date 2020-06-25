@@ -1430,7 +1430,12 @@ void Daemon::sendEventTriggerSelection(){
 void Daemon::sendMqttStatus(bool connected){
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_MQTT_STATUS);
     *(tcpMessage.dStream) << connected;
-    emit sendTcpMessage(tcpMessage);
+	if (connected != mqttConnectionStatus) {
+		if (connected) qInfo()<<"MQTT (re)connected";
+		else qWarning()<<"MQTT connection lost";
+	}
+    	mqttConnectionStatus=connected;
+	emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::rateCounterIntervalActualisation(){
@@ -2155,6 +2160,7 @@ void Daemon::UBXReceivedVersion(const QString& swString, const QString& hwString
 	logParameter(LogParameter("UBX_Prot_Version", protString, LogParameter::LOG_ONCE));
 	if (initialVersionInfo) {
 		configGpsForVersion();
+		qInfo()<<"Ublox version: "<<hwString<<" (fw:"<<swString<<"prot:"<<protString<<")";
 	}
 	initialVersionInfo = false;
 }

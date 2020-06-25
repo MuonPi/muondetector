@@ -79,11 +79,11 @@ void MqttHandler::mqttConnect(){
         log_topic = new mqtt::topic(*mqttClient, "muonpi/log/"+username.toStdString()+"/"+stationID.toStdString(),qos);
         emit mqttConnectionStatus(true);
         _mqttConnectionStatus = true;
-        qInfo() << "MQTT connected";
+//        qInfo() << "MQTT connected";
     }
     catch (const mqtt::exception& exc) {
         emit mqttConnectionStatus(false);
-		qWarning() << QString::fromStdString(exc.what());
+	qWarning() << QString::fromStdString(exc.what());
         reconnectTimer->start();
     }
 }
@@ -113,12 +113,17 @@ void MqttHandler::sendData(const QString &message){
     }
     catch (const mqtt::exception& exc) {
 		qDebug() << QString::fromStdString(exc.what());
-		qDebug() << "trying to reconnect...";
+//		qDebug() << "trying to reconnect...";
 		try {
 			if (mqttClient!=nullptr) mqttClient->reconnect();
-			qInfo() << "MQTT reconnected";
+//			qInfo() << "MQTT reconnected";
+			emit mqttConnectionStatus(true);
+			_mqttConnectionStatus = true;
 		} catch (const mqtt::exception& exc) {
 			qDebug() << QString::fromStdString(exc.what());
+			emit mqttConnectionStatus(false);
+			_mqttConnectionStatus = false;
+
 		}
     }
 }
@@ -131,7 +136,9 @@ void MqttHandler::sendLog(const QString &message){
         log_topic->publish(message.toStdString());
     }
     catch (const mqtt::exception& exc) {
-		qDebug() << QString::fromStdString(exc.what());
+	qDebug() << QString::fromStdString(exc.what());
+	emit mqttConnectionStatus(false);
+	_mqttConnectionStatus = false;
     }
 }
 
