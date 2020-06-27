@@ -291,6 +291,7 @@ private:
 	int verbose, baudrate;
 	int gpsTimeout = 5000;
 	bool dumpRaw, configGnss, showout, showin;
+	bool mqttConnectionStatus=false;
 
     // file handling
     QPointer<FileHandler> fileHandler;
