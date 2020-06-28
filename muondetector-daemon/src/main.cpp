@@ -82,20 +82,26 @@ void messageOutput(QtMsgType type, const QMessageLogContext &context, const QStr
     const char *function = context.function ? context.function : "";
     switch (type) {
     case QtDebugMsg:
-        if (verbose)
+        if (verbose) {
 			fprintf(stdout, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
+			fflush(stdout);
+		}
         break;
     case QtInfoMsg:
         fprintf(stdout, "Info: %s\n", localMsg.constData());
+		fflush(stdout);
         break;
     case QtWarningMsg:
         fprintf(stderr, "Warning: %s\n", localMsg.constData());
+		fflush(stderr);
         break;
     case QtCriticalMsg:
         fprintf(stderr, "Critical: %s\n", localMsg.constData());
+		fflush(stderr);
         break;
     case QtFatalMsg:
         fprintf(stderr, "Fatal: %s\n", localMsg.constData());
+		fflush(stderr);
         break;
     }
 }
