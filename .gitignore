@@ -3,3 +3,4 @@
 *.o
 *.stash
 myon_detector/upload_script.sh
+*.pdf
