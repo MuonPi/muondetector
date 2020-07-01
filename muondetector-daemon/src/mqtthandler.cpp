@@ -109,21 +109,48 @@ void MqttHandler::sendData(const QString &message){
         return;
     }
     try {
-        data_topic->publish(message.toStdString())->wait();
+        mqtt::token_ptr pubtok = data_topic->publish(message.toStdString());
+        bool ok=pubtok->wait_for(timeout);
+        if (ok)
+        {
+            if (!_mqttConnectionStatus) {
+                //qDebug() << "MQTT publish succeeded";
+                emit mqttConnectionStatus(true);
+                _mqttConnectionStatus = true;
+            }
+        } else {
+            //qDebug() << "MQTT publish timeout";
+            if (_mqttConnectionStatus) {
+                emit mqttConnectionStatus(false);
+                _mqttConnectionStatus = false;
+            }
+        }
     }
     catch (const mqtt::exception& exc) {
 		qDebug() << QString::fromStdString(exc.what());
-//		qDebug() << "trying to reconnect...";
+        qDebug() << "MQTT publish failed";
+		qDebug() << "trying to reconnect...";
 		try {
-			if (mqttClient!=nullptr) mqttClient->reconnect();
-//			qInfo() << "MQTT reconnected";
-			emit mqttConnectionStatus(true);
-			_mqttConnectionStatus = true;
+			if (mqttClient!=nullptr) {
+                mqtt::token_ptr conntok = mqttClient->reconnect();
+                bool ok=conntok->wait_for(timeout);
+                if (ok)
+                {
+                    //qDebug() << "MQTT reconnected";
+                    emit mqttConnectionStatus(true);
+                    _mqttConnectionStatus = true;
+                } else {
+                    
+                    qDebug() << "MQTT reconnect timeout";
+                    emit mqttConnectionStatus(false);
+                    _mqttConnectionStatus = false;
+                }
+            }
 		} catch (const mqtt::exception& exc) {
+            qDebug() << "MQTT reconnect failed";
 			qDebug() << QString::fromStdString(exc.what());
 			emit mqttConnectionStatus(false);
 			_mqttConnectionStatus = false;
-
 		}
     }
 }
