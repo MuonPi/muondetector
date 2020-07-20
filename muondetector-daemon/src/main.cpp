@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 	qInstallMessageHandler(messageOutput);
 	QCoreApplication a(argc, argv);
     QCoreApplication::setApplicationName("muondetector-daemon");
-    QCoreApplication::setApplicationVersion("1.2.0");
+    QCoreApplication::setApplicationVersion("1.2.1");
 
 	// config file handling
 	libconfig::Config cfg;
