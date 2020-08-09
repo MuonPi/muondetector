@@ -73,9 +73,11 @@ enum class TCP_MSG_KEY : quint16
 	MSG_RATE_SCAN = 317,
     MSG_MQTT_STATUS = 331,
 	MSG_GPIO_INHIBIT = 337,
-	MSG_UBX_TIMEMARK = 349
+	MSG_UBX_TIMEMARK = 349,
+	MSG_POLARITY_SWITCH = 353,
+	MSG_POLARITY_SWITCH_REQUEST = 359
 };
-// 307    311    313    317    331    337    347    349
+
 /*
 static const quint16 ping = 2;
 static const quint16 quitConnectionSig = 3;

@@ -131,7 +131,8 @@ public:
     Daemon(QString username, QString password, QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
         float *new_dacThresh, float new_biasVoltage, bool bias_ON, bool new_dumpRaw, int new_baudrate,
         bool new_configGnss, unsigned int new_eventTrigger, QString new_PeerAddress, quint16 new_PpeerPort,
-        QString new_serverAddress, quint16 new_serverPort, bool new_showout, bool new_showin, bool preamp1, bool preamp2, bool gain, QString station_ID, QObject *parent = 0);
+        QString new_serverAddress, quint16 new_serverPort, bool new_showout, bool new_showin, bool preamp1, bool preamp2, bool gain, QString station_ID, 
+		bool new_polarity1, bool new_polarity2, QObject *parent = 0);
     ~Daemon() override;
 	void configGps();
 	void configGpsForVersion();
@@ -238,6 +239,7 @@ private:
     void sendGainSwitchStatus();
     void setBiasStatus(bool status);
     void sendPreampStatus(uint8_t channel);
+	void sendPolarityStatus();
 	void setUbxMsgRates(QMap<uint16_t,int>& ubxMsgRates);
     void sendUbxMsgRates();
     void sendGpioRates(int number = 0, quint8 whichRate = 0);
@@ -292,6 +294,8 @@ private:
 	int gpsTimeout = 5000;
 	bool dumpRaw, configGnss, showout, showin;
 	bool mqttConnectionStatus=false;
+	bool polarity1 = true;	// input polarity switch: true=pos, false=neg
+	bool polarity2 = true;
 
     // file handling
     QPointer<FileHandler> fileHandler;

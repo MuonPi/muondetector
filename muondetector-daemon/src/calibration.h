@@ -35,8 +35,7 @@ static const std::vector<std::tuple<std::string, std::string, std::string>> CALI
 													std::make_tuple("COEFF2", "FLOAT", "1.0") ,
 													std::make_tuple("COEFF3", "FLOAT", "1.0") ,
 													std::make_tuple("WRITE_CYCLES", "UINT32", "1")
-													/* std::make_tuple("CALIB_FLAGS", "UINT8", "1") 
-													 * alternative, since list init formally introduced in C++17
+													/* list init formally introduced in C++17
 													 * but it works with the current gnu c++ compiler with gnu++11 extensions.
 													 * if your compiler is more strict, you should use init via make_tuple*/
 													};

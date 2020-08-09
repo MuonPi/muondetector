@@ -11,7 +11,7 @@
 // EVT_AND, EVT_XOR are the event inputs from AND and XOR gates
 // Note: The pin definitions are enum constants and have nothing to do with the actual pin numbers
 // of the RPi GPIO header. To be independent of the specific hardware implementation,
-// the pin numbers for these signals are defined in pin_mapping.h on the daemon side
+// the pin numbers for these signals are defined in gpio_pin_mapping.h on the daemon side
 
 enum GPIO_PIN {		UBIAS_EN, 
 					PREAMP_1, PREAMP_2, 
@@ -23,7 +23,8 @@ enum GPIO_PIN {		UBIAS_EN,
                     PREAMP_FAULT, EXT_TRIGGER,
                     TDC_INTB,
                     TDC_STATUS,
-					UNDEFINED_PIN
+					IN_POL1, IN_POL2,
+					UNDEFINED_PIN=255
 				};
 
 enum SIGNAL_DIRECTION { DIR_UNDEFINED, DIR_IN, DIR_OUT, DIR_IO };
@@ -42,18 +43,20 @@ static const QMap<GPIO_PIN, GpioSignalDescriptor> GPIO_SIGNAL_MAP =
 		{ GAIN_HL,			{ "GAIN_HL", DIR_OUT } },
 		{ ADC_READY,		{ "ADC_READY", DIR_IN } },
 		{ TIMEPULSE,		{ "TIMEPULSE", DIR_IN }},
-		{ TIME_MEAS_OUT,{ "TIME_MEAS_OUT", DIR_IN } },
+		{ TIME_MEAS_OUT,	{ "TIME_MEAS_OUT", DIR_IN } },
 		{ STATUS1,			{ "STATUS1", DIR_OUT } },
 		{ STATUS2,			{ "STATUS2", DIR_OUT } },
 		{ STATUS3,			{ "STATUS3", DIR_OUT } },
-		{ PREAMP_FAULT,	{ "PREAMP_FAULT", DIR_IN } },
-        { EXT_TRIGGER,	{ "EXT_TRIGGER", DIR_IN } },
-        { TDC_INTB, { "TDC_INTB", DIR_IN } },
-        { TDC_STATUS, { "TDC_STATUS", DIR_IN} },
-		{ UNDEFINED_PIN, { "UNDEFINED_PIN", DIR_UNDEFINED} }
+		{ PREAMP_FAULT,		{ "PREAMP_FAULT", DIR_IN } },
+        { EXT_TRIGGER,		{ "EXT_TRIGGER", DIR_IN } },
+        { TDC_INTB, 		{ "TDC_INTB", DIR_IN } },
+        { TDC_STATUS, 		{ "TDC_STATUS", DIR_OUT} },
+		{ IN_POL1, 			{ "IN_POL1", DIR_OUT} },
+		{ IN_POL2, 			{ "IN_POL2", DIR_OUT} },
+		{ UNDEFINED_PIN, 	{ "UNDEFINED_PIN", DIR_UNDEFINED} }
 	};
 
-
+/*
 static const QMap<GPIO_PIN, QString> GPIO_PIN_NAMES = 
 	{	{ UBIAS_EN,		"UBIAS_EN" },
 		{ PREAMP_1,		"PREAMP_1" },
@@ -73,6 +76,6 @@ static const QMap<GPIO_PIN, QString> GPIO_PIN_NAMES =
         { TDC_STATUS, "TDC_STATUS" },
 		{ UNDEFINED_PIN, "UNDEFINED_PIN" }
 	};
-
+*/
 
 #endif // GPIO_PIN_DEFINITIONS_H

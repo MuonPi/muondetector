@@ -222,7 +222,10 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, unsigned int spi
         set_mode(pi, gpio_pin, PI_INPUT);
         if (gpio_pin==GPIO_PINMAP[ADC_READY]) set_pull_up_down(pi, gpio_pin, PI_PUD_UP);
         if (gpio_pin==GPIO_PINMAP[TDC_INTB]){
-            callback(pi, gpio_pin, FALLING_EDGE, cbFunction);
+            int result=callback(pi, gpio_pin, FALLING_EDGE, cbFunction);
+			if (result<0) {
+				qCritical()<<"error registering gpio callback for BCM pin"<<gpio_pin;
+			}
         } else {
             //qDebug() << "set callback for pin " << gpio_pin;
             int result=callback(pi, gpio_pin, RISING_EDGE, cbFunction);
@@ -340,7 +343,7 @@ bool PigpiodHandler::isSpiInitialised(){
 
 bool PigpiodHandler::spiInitialise(){
     if (!isInitialised){
-        qDebug() << "pigpiohandler not initialised";
+        qCritical() << "pigpiohandler not initialised";
         return false;
     }
     if (spiInitialised){

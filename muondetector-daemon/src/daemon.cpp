@@ -155,7 +155,8 @@ void Daemon::handleSigInt()
 Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
     float *new_dacThresh, float new_biasVoltage, bool bias_ON, bool new_dumpRaw, int new_baudrate,
     bool new_configGnss, unsigned int new_eventTrigger, QString new_peerAddress, quint16 new_peerPort,
-    QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, bool preamp1, bool preamp2, bool gain, QString station_ID, QObject *parent)
+    QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, bool preamp1, bool preamp2, bool gain, QString station_ID,
+	bool new_polarity1, bool new_polarity2, QObject *parent)
 	: QTcpServer(parent)
 {
 	// first, we must set the locale to be independent of the number format of the system's locale.
@@ -499,7 +500,10 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		oled->setTextColor(Adafruit_SSD1306::WHITE);
 		oled->setCursor(0,2);
 		oled->print("*Cosmic Shower Det.*\n");
-		oled->print("V 1.2.0\n");
+		oled->print("V");
+		oled->print(MUONPI_VERSION);
+		oled->print("\n");
+		//oled->print("V 1.2.0\n");
 		//  display.setTextColor(BLACK, WHITE); // 'inverted' text
 /*
 		struct timespec tNow;
@@ -526,6 +530,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	gainSwitch=gain;
 	biasON = bias_ON;
 	eventTrigger = (GPIO_PIN)new_eventTrigger;
+	polarity1=new_polarity1;
+	polarity2=new_polarity2;
 
 
 	// for diagnostics:
@@ -742,13 +748,20 @@ void Daemon::connectToPigpiod(){
     rateBufferReminder.start();
     emit GpioSetOutput(GPIO_PINMAP[UBIAS_EN]);
     emit GpioSetState(GPIO_PINMAP[UBIAS_EN], (HW_VERSION==1)?(biasON?1:0):(biasON?0:1));
-
     emit GpioSetOutput(GPIO_PINMAP[PREAMP_1]);
     emit GpioSetOutput(GPIO_PINMAP[PREAMP_2]);
     emit GpioSetOutput(GPIO_PINMAP[GAIN_HL]);
     emit GpioSetState(GPIO_PINMAP[PREAMP_1],preampStatus[0]);
     emit GpioSetState(GPIO_PINMAP[PREAMP_2],preampStatus[1]);
     emit GpioSetState(GPIO_PINMAP[GAIN_HL],gainSwitch);
+	
+    if (HW_VERSION>=3) {
+		emit GpioSetOutput(GPIO_PINMAP[IN_POL1]);
+		emit GpioSetOutput(GPIO_PINMAP[IN_POL2]);
+		emit GpioSetState(GPIO_PINMAP[IN_POL1],polarity1);
+		emit GpioSetState(GPIO_PINMAP[IN_POL2],polarity2);
+	}
+
 	if (HW_VERSION>1) {
 		emit GpioSetInput(GPIO_PINMAP[PREAMP_FAULT]);
 		emit GpioRegisterForCallback(GPIO_PINMAP[PREAMP_FAULT], 0);
@@ -1038,7 +1051,25 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         sendPreampStatus(0);
         sendPreampStatus(1);
     }
-    if (msgID == TCP_MSG_KEY::MSG_GAIN_SWITCH){
+    if (msgID == TCP_MSG_KEY::MSG_POLARITY_SWITCH){
+		bool pol1,pol2;
+		*(tcpMessage.dStream) >> pol1 >> pol2;
+		if (HW_VERSION>=3 && pol1 != polarity1) {
+			polarity1=pol1;
+			emit GpioSetState(GPIO_PINMAP[IN_POL1], polarity1);
+			emit logParameter(LogParameter("polaritySwitch1", QString::number((int)polarity1), LogParameter::LOG_EVERY));
+		}
+		if (HW_VERSION>=3 && pol2 != polarity2) {
+			polarity2=pol2;
+			emit GpioSetState(GPIO_PINMAP[IN_POL2], polarity2);
+			emit logParameter(LogParameter("polaritySwitch2", QString::number((int)polarity2), LogParameter::LOG_EVERY));
+		}
+		sendPolarityStatus();
+	}
+    if (msgID == TCP_MSG_KEY::MSG_POLARITY_SWITCH_REQUEST){
+		sendPolarityStatus();
+	}
+	if (msgID == TCP_MSG_KEY::MSG_GAIN_SWITCH){
         bool status;
         *(tcpMessage.dStream) >> status;
         gainSwitch=status;
@@ -1411,6 +1442,12 @@ void Daemon::sendPreampStatus(uint8_t channel) {
     if (channel > 1){ return; }
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_PREAMP_SWITCH);
     *(tcpMessage.dStream) << (quint8)channel << preampStatus [channel];
+    emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::sendPolarityStatus() {
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_POLARITY_SWITCH);
+    *(tcpMessage.dStream) << polarity1 << polarity2;
     emit sendTcpMessage(tcpMessage);
 }
 
@@ -2354,6 +2391,8 @@ void Daemon::onLogParameterPolled(){
     emit logParameter(LogParameter("preampSwitch1", QString::number((int)preampStatus[0]), LogParameter::LOG_ON_CHANGE));
     emit logParameter(LogParameter("preampSwitch2", QString::number((int)preampStatus[1]), LogParameter::LOG_ON_CHANGE));
     emit logParameter(LogParameter("gainSwitch", QString::number((int)gainSwitch), LogParameter::LOG_ON_CHANGE));
+	emit logParameter(LogParameter("polaritySwitch1", QString::number((int)polarity1), LogParameter::LOG_ON_CHANGE));
+	emit logParameter(LogParameter("polaritySwitch2", QString::number((int)polarity2), LogParameter::LOG_ON_CHANGE));
 //    if (lm75 && lm75->devicePresent()) emit logParameter(LogParameter("temperature", QString::number(lm75->getTemperature())+" degC", LogParameter::LOG_AVERAGE));
 
     if (dac && dac->devicePresent()) {

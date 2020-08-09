@@ -4,7 +4,7 @@
 #include "gpio_pin_definitions.h"
 
 
-#define MAX_HW_VER 2
+#define MAX_HW_VER 3
 
 
 // define pins on the raspberry pi, UBIAS_EN is the power on/off pin for bias voltage
@@ -63,7 +63,8 @@ static const std::map<GPIO_PIN, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER+1]
             { STATUS2 , 19 },
             { STATUS3 , 26 },
             { TDC_INTB, 20 },
-            { TDC_STATUS, 21 }
+            { TDC_STATUS, 21 },
+			{ EXT_TRIGGER, 21 }
 		} ,
 		{
 			/* Pin mapping, HW Version 2 */
@@ -80,7 +81,28 @@ static const std::map<GPIO_PIN, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER+1]
             { STATUS2 , 19 },
             { PREAMP_FAULT , 23 },
             { TDC_INTB, 20 },
-            { TDC_STATUS, 21 }
+            { TDC_STATUS, 21 },
+			{ EXT_TRIGGER, 21 }
+		} ,
+		{
+			/* Pin mapping, HW Version 3 */
+            { UBIAS_EN , 26 },
+            { PREAMP_1 , 4 },
+            { PREAMP_2 , 17 },
+            { EVT_AND , 22 },
+            { EVT_XOR , 27 },
+            { GAIN_HL , 6 },
+            { ADC_READY , 12 },
+			{ TIMEPULSE , 18 },
+			{ TIME_MEAS_OUT , 5 },
+            { STATUS1 , 13 },
+            { STATUS2 , 19 },
+            { PREAMP_FAULT , 23 },
+            { TDC_INTB, 20 },
+            { TDC_STATUS, 21 },
+			{ EXT_TRIGGER, 16 },
+			{ IN_POL1, 24 },
+			{ IN_POL2, 25 }
 		}
 	};
 

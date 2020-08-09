@@ -20,8 +20,10 @@
 #include <custom_io_operators.h>
 #include <daemon.h>
 #include <gpio_pin_definitions.h>
+#include <config.h>
 
-static const char* CONFIG_FILE = "/etc/muondetector/muondetector.conf";
+//static const char* CONFIG_FILE = "/etc/muondetector/muondetector.conf";
+static const char* CONFIG_FILE = MUONPI_DEFAULT_CONFIG_FILE;
 static int verbose = 0;
 
 using namespace std;
@@ -114,8 +116,8 @@ int main(int argc, char *argv[])
 	qInstallMessageHandler(messageOutput);
 	QCoreApplication a(argc, argv);
     QCoreApplication::setApplicationName("muondetector-daemon");
-    QCoreApplication::setApplicationVersion("1.2.1");
-
+//    QCoreApplication::setApplicationVersion("1.2.1");
+    QCoreApplication::setApplicationVersion(MUONPI_VERSION);
 	// config file handling
 	libconfig::Config cfg;
 	
@@ -142,7 +144,7 @@ int main(int argc, char *argv[])
 	QCommandLineParser parser;
 	parser.setApplicationDescription("MuonPi cosmic shower muon detector control and configuration program (daemon)\n"
 		"with added tcp implementation for synchronisation of "
-		"data with a central server");
+		"data with a central server through MQTT protocol");
 	parser.addHelpOption();
 	parser.addVersionOption();
 
@@ -165,7 +167,7 @@ int main(int argc, char *argv[])
 	// verbosity option
 	QCommandLineOption verbosityOption(QStringList() << "e" << "verbose",
 		QCoreApplication::translate("main", "set verbosity level\n"
-			"3 is max"),
+			"5 is max"),
 		QCoreApplication::translate("main", "verbosity"));
 	parser.addOption(verbosityOption);
 
@@ -237,19 +239,24 @@ int main(int argc, char *argv[])
 			"\n0 - coincidence (AND)"
 			"\n1 - anti-coincidence (XOR)"
 			"\n2 - discr 1"
-			"\n3 - discr 2"),
+			"\n3 - discr 2"
+			"\n4 - vcc"
+			"\n5 - timepulse"
+			"\n6 - N/A"
+			"\n7 - ext signal"
+		),
 		QCoreApplication::translate("main", "channel"));
 	parser.addOption(pcaChannelOption);
 
-	// biasVoltage for SciPM
+	// biasVoltage for SiPM
 	QCommandLineOption biasVoltageOption(QStringList() << "bias" << "vout",
-		QCoreApplication::translate("main", "set voltage for SiPM"),
+		QCoreApplication::translate("main", "set bias voltage for SiPM"),
 		QCoreApplication::translate("main", "bias voltage"));
 	parser.addOption(biasVoltageOption);
 
 	// biasVoltage on or off
 	QCommandLineOption biasPowerOnOff(QStringList() << "p",
-		QCoreApplication::translate("main", "bias voltage on or off?"));
+		QCoreApplication::translate("main", "bias voltage on or off"));
 	parser.addOption(biasPowerOnOff);
 
     // preamps on:
@@ -265,7 +272,7 @@ int main(int argc, char *argv[])
         QCoreApplication::translate("main", "gain high"));
     parser.addOption(gainOption);
 
-	// biasVoltage on or off
+	// event trigger for ADC
 	QCommandLineOption eventInputOption(QStringList() << "t" << "trigger",
 		QCoreApplication::translate("main", "event (trigger) signal input:"
 			"\n0 - coincidence (AND)"
@@ -273,6 +280,13 @@ int main(int argc, char *argv[])
 			QCoreApplication::translate("main", "trigger"));
 	parser.addOption(eventInputOption);
 	
+    // input polarity switch:
+    QCommandLineOption pol1Option(QStringList() << "pol1" << "polarity1",
+        QCoreApplication::translate("main", "input polarity ch1 negative (0) or positive (1)"));
+    parser.addOption(pol1Option);
+    QCommandLineOption pol2Option(QStringList() << "pol2" << "polarity2",
+        QCoreApplication::translate("main", "input polarity ch2 negative (0) or positive (1)"));
+    parser.addOption(pol2Option);
 
 	// process the actual command line arguments given by the user
 	parser.process(a);
@@ -475,8 +489,8 @@ int main(int argc, char *argv[])
 		//if (verbose>2)
 		qWarning() << "No 'preamp2_switch' setting in configuration file. Assuming " << (int)preamp2;
 	}
-    
-    
+
+	
     bool gain = false;
     if (parser.isSet(gainOption)) {
         gain = true;
@@ -532,6 +546,53 @@ int main(int argc, char *argv[])
 	}
 
 
+    bool pol1 = true;
+    if (parser.isSet(pol1Option)) {
+		unsigned int pol1int = parser.value(pol1Option).toUInt(&ok);
+		if (!ok || pol1int>1) {
+			qCritical() << "wrong input polarity setting ch1 (valid: 0,1)";
+			return -1;
+		} else {
+			pol1=(bool)pol1int;
+		}
+    } else {
+		try
+		{
+			int pol1Cfg = cfg.lookup("input1_polarity");
+			if (verbose>2) qDebug() << "input polarity ch1:" << pol1Cfg;
+			pol1 = (bool)pol1Cfg;
+		}
+		catch(const libconfig::SettingNotFoundException &nfex)
+		{
+			if (verbose>0)
+				qWarning() << "No 'input1_polarity' setting in configuration file. Assuming" << (int)pol1;
+		}
+	}
+
+    bool pol2 = true;
+    if (parser.isSet(pol2Option)) {
+		unsigned int pol2int = parser.value(pol2Option).toUInt(&ok);
+		if (!ok || pol2int>1) {
+			qCritical() << "wrong input polarity setting ch2 (valid: 0,1)";
+			return -1;
+		} else {
+			pol2=(bool)pol2int;
+		}
+    } else {
+		try
+		{
+			int pol2Cfg = cfg.lookup("input2_polarity");
+			if (verbose>2) qDebug() << "input polarity ch2:" << pol2Cfg;
+			pol2 = (bool)pol2Cfg;
+		}
+		catch(const libconfig::SettingNotFoundException &nfex)
+		{
+			if (verbose>0)
+				qWarning() << "No 'input2_polarity' setting in configuration file. Assuming" << (int)pol2;
+		}
+	}
+	
+	
     std::string username="";
     std::string password="";
     if (parser.isSet(mqttLoginOption)){
@@ -622,7 +683,7 @@ int main(int argc, char *argv[])
     openlog ("muondetector-daemon", LOG_PID, LOG_DAEMON);
     */
     Daemon daemon(QString::fromStdString(username), QString::fromStdString(password), gpsdevname, verbose, pcaChannel, dacThresh, biasVoltage, biasPower, dumpRaw,
-        baudrate, showGnssConfig, eventSignal, peerAddress, peerPort, daemonAddress, daemonPort, showout, showin, preamp1, preamp2, gain, stationID);
+        baudrate, showGnssConfig, eventSignal, peerAddress, peerPort, daemonAddress, daemonPort, showout, showin, preamp1, preamp2, gain, stationID, pol1, pol2);
 	
 	return a.exec();
 }
