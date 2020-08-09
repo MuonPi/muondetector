@@ -2019,6 +2019,15 @@ void Daemon::onUBXReceivedTP5(const UbxTimePulseStruct& tp) {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_CFG_TP5);
     (*tcpMessage.dStream) << tp;
     emit sendTcpMessage(tcpMessage);
+	// check here if UTC is selected as time source
+	// this should probably implemented somewhere else, maybe at ublox init
+	// however, for the timestamping to work correctly, setting the time grid to UTC is mandatory!
+	int timeGrid = (tp.flags & UbxTimePulseStruct::GRID_UTC_GPS)>>7;
+	if (timeGrid != 0) {
+		UbxTimePulseStruct newTp = tp;
+		newTp.flags &= ~((uint32_t)UbxTimePulseStruct::GRID_UTC_GPS);
+		emit UBXSetCfgTP5(newTp);
+	}
 }
 
 void Daemon::onUBXReceivedTxBuf(uint8_t txUsage, uint8_t txPeakUsage) {
