@@ -58,7 +58,7 @@ win32:OBJECTS_DIR = build/o/win32
 macx:OBJECTS_DIR = build/o/mac
 
 INCLUDEPATH += \
-    $$PWD/src/main \
+    $$PWD/src \
     $$PWD/qml
 
 INCLUDEPATH += $$PWD/../muondetector-shared/src/
@@ -79,59 +79,59 @@ win32:LIBS += -L./lib -lmuondetector-shared1
 #QT5_ADD_RESOURCES(RESOURCES resources.qrc)
 
 FORMS += \
-    $$PWD/src/main/calibform.ui \
-    $$PWD/src/main/gpssatsform.ui \
-    $$PWD/src/main/histogramdataform.ui \
-    $$PWD/src/main/i2cform.ui \
-    $$PWD/src/main/mainwindow.ui \
-    $$PWD/src/main/map.ui \
-    $$PWD/src/main/settings.ui \
-    $$PWD/src/main/spiform.ui \
-    $$PWD/src/main/status.ui \
-    $$PWD/src/main/parametermonitorform.ui \
-    src/main/calibscandialog.ui \
-    src/main/logplotswidget.ui \
-    src/main/gnssposwidget.ui \
-    src/main/scanform.ui
+    $$PWD/src/calibform.ui \
+    $$PWD/src/gpssatsform.ui \
+    $$PWD/src/histogramdataform.ui \
+    $$PWD/src/i2cform.ui \
+    $$PWD/src/mainwindow.ui \
+    $$PWD/src/map.ui \
+    $$PWD/src/settings.ui \
+    $$PWD/src/spiform.ui \
+    $$PWD/src/status.ui \
+    $$PWD/src/parametermonitorform.ui \
+    $$PWD/src/calibscandialog.ui \
+    $$PWD/src/logplotswidget.ui \
+    $$PWD/src/gnssposwidget.ui \
+    $$PWD/src/scanform.ui
 
 HEADERS += \
-    $$PWD/src/main/calibform.h \
-    $$PWD/src/main/custom_histogram_widget.h \
-    $$PWD/src/main/custom_plot_widget.h \
-    $$PWD/src/main/gpssatsform.h \
-    $$PWD/src/main/histogramdataform.h \
-    $$PWD/src/main/i2cform.h \
-    $$PWD/src/main/mainwindow.h \
-    $$PWD/src/main/map.h \
-    $$PWD/src/main/plotcustom.h \
-    $$PWD/src/main/settings.h \
-    $$PWD/src/main/spiform.h \
-    $$PWD/src/main/status.h \
-    $$PWD/src/main/parametermonitorform.h \
-    $$PWD/src/main/calibscandialog.h \
-    $$PWD/src/main/logplotswidget.h \
-    $$PWD/src/main/gnssposwidget.h \
-    $$PWD/src/main/scanform.h
+    $$PWD/src/calibform.h \
+    $$PWD/src/custom_histogram_widget.h \
+    $$PWD/src/custom_plot_widget.h \
+    $$PWD/src/gpssatsform.h \
+    $$PWD/src/histogramdataform.h \
+    $$PWD/src/i2cform.h \
+    $$PWD/src/mainwindow.h \
+    $$PWD/src/map.h \
+    $$PWD/src/plotcustom.h \
+    $$PWD/src/settings.h \
+    $$PWD/src/spiform.h \
+    $$PWD/src/status.h \
+    $$PWD/src/parametermonitorform.h \
+    $$PWD/src/calibscandialog.h \
+    $$PWD/src/logplotswidget.h \
+    $$PWD/src/gnssposwidget.h \
+    $$PWD/src/scanform.h
 
 SOURCES += \
-    $$PWD/src/main/calibform.cpp \
-    $$PWD/src/main/custom_histogram_widget.cpp \
-    $$PWD/src/main/custom_plot_widget.cpp \
-    $$PWD/src/main/gpssatsform.cpp \
-    $$PWD/src/main/histogramdataform.cpp \
-    $$PWD/src/main/i2cform.cpp \
-    $$PWD/src/main/main.cpp \
-    $$PWD/src/main/mainwindow.cpp \
-    $$PWD/src/main/map.cpp \
-    $$PWD/src/main/plotcustom.cpp \
-    $$PWD/src/main/settings.cpp \
-    $$PWD/src/main/spiform.cpp \
-    $$PWD/src/main/status.cpp   \
-    $$PWD/src/main/parametermonitorform.cpp \
-    $$PWD/src/main/calibscandialog.cpp \
-    $$PWD/src/main/logplotswidget.cpp \
-    $$PWD/src/main/gnssposwidget.cpp \
-    $$PWD/src/main/scanform.cpp
+    $$PWD/src/calibform.cpp \
+    $$PWD/src/custom_histogram_widget.cpp \
+    $$PWD/src/custom_plot_widget.cpp \
+    $$PWD/src/gpssatsform.cpp \
+    $$PWD/src/histogramdataform.cpp \
+    $$PWD/src/i2cform.cpp \
+    $$PWD/src/main.cpp \
+    $$PWD/src/mainwindow.cpp \
+    $$PWD/src/map.cpp \
+    $$PWD/src/plotcustom.cpp \
+    $$PWD/src/settings.cpp \
+    $$PWD/src/spiform.cpp \
+    $$PWD/src/status.cpp   \
+    $$PWD/src/parametermonitorform.cpp \
+    $$PWD/src/calibscandialog.cpp \
+    $$PWD/src/logplotswidget.cpp \
+    $$PWD/src/gnssposwidget.cpp \
+    $$PWD/src/scanform.cpp
 
 RESOURCES += \
     resources.qrc

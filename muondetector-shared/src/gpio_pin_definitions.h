@@ -56,7 +56,7 @@ static const QMap<GPIO_PIN, GpioSignalDescriptor> GPIO_SIGNAL_MAP =
 		{ UNDEFINED_PIN, 	{ "UNDEFINED_PIN", DIR_UNDEFINED} }
 	};
 
-/*
+
 static const QMap<GPIO_PIN, QString> GPIO_PIN_NAMES = 
 	{	{ UBIAS_EN,		"UBIAS_EN" },
 		{ PREAMP_1,		"PREAMP_1" },
@@ -76,6 +76,6 @@ static const QMap<GPIO_PIN, QString> GPIO_PIN_NAMES =
         { TDC_STATUS, "TDC_STATUS" },
 		{ UNDEFINED_PIN, "UNDEFINED_PIN" }
 	};
-*/
+
 
 #endif // GPIO_PIN_DEFINITIONS_H
