@@ -4,9 +4,10 @@
 #include <iostream>
 #include <QDataStream>
 #include <QThread>
+#if defined(Q_OS_UNIX)
 #include <unistd.h>
 #include <sys/syscall.h>
-
+#endif
 /*
 std::vector<TcpConnection*> TcpConnection::globalConnectionList;
 uint32_t TcpConnection::globalNrBytesRead;
@@ -50,9 +51,11 @@ void TcpConnection::makeConnection()
 // this function gets called with a signal from client-thread
 // (TcpConnection runs in a separate thread only communicating with main thread through messages)
 {
-	if (verbose > 4) {
+#if defined(Q_OS_UNIX)
+    if (verbose > 4) {
         qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
-	}
+    }
+#endif
 	tcpSocket = new QTcpSocket(this);
     in = new QDataStream();
 	in->setVersion(QDataStream::Qt_4_0);
@@ -88,9 +91,11 @@ void TcpConnection::makeConnection()
 void TcpConnection::receiveConnection()
 {   // setting up tcpSocket.
     // only done once
+#if defined(Q_OS_UNIX)
     if (verbose > 4) {
         qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
-	}
+    }
+#endif
 	tcpSocket = new QTcpSocket(this);
 	if (!tcpSocket->setSocketDescriptor(socketDescriptor)) {
 		emit error(tcpSocket->error(), tcpSocket->errorString());
