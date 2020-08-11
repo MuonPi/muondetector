@@ -41,6 +41,7 @@ signals:
 	// void stopTimePulser();
 	void connected();
 	void receivedTcpMessage(TcpMessage tcpMessage);
+    void finished();
 
 public slots:
 	void makeConnection();

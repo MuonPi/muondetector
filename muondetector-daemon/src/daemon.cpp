@@ -849,10 +849,10 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
     tcpThread->setObjectName("muondetector-daemon-tcp");
 	TcpConnection *tcpConnection = new TcpConnection(socketDescriptor, verbose);
     tcpConnection->moveToThread(tcpThread);
-	// connect all signals about quitting
-    connect(this, &Daemon::aboutToQuit, tcpThread, &QThread::quit);
+    // connect all signals about quitting
     connect(this, &Daemon::aboutToQuit, tcpConnection, &TcpConnection::closeThisConnection);
     connect(this, &Daemon::closeConnection, tcpConnection, &TcpConnection::closeConnection);
+    connect(tcpConnection, &TcpConnection::finished, tcpThread, &QThread::quit);
     connect(tcpThread, &QThread::finished, tcpThread, &QThread::deleteLater);
     connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
 	// connect all other signals

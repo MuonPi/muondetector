@@ -140,6 +140,7 @@ void TcpConnection::closeThisConnection(){
     TcpMessage quitMessage(TCP_MSG_KEY::MSG_QUIT_CONNECTION);
     *(quitMessage.dStream) << localAddress;
     sendTcpMessage(quitMessage);
+    emit finished();
     return;
 }
 

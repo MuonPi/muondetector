@@ -273,15 +273,18 @@ MainWindow::~MainWindow()
 void MainWindow::makeConnection(QString ipAddress, quint16 port) {
     // add popup windows for errors!!!
 	QThread *tcpThread = new QThread();
-	if (!tcpConnection) {
+    tcpThread->setObjectName("muondetector-gui-tcp");
+    if (!tcpConnection) {
 		delete(tcpConnection);
 	}
 	tcpConnection = new TcpConnection(ipAddress, port, verbose);
 	tcpConnection->moveToThread(tcpThread);
 	connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::makeConnection);
-    connect(tcpThread, &QThread::finished, tcpThread, &TcpConnection::deleteLater);
+    connect(tcpThread, &QThread::finished, tcpThread, &QThread::deleteLater);
+    connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
 	connect(tcpConnection, &TcpConnection::connected, this, &MainWindow::connected);
     connect(this, &MainWindow::closeConnection, tcpConnection, &TcpConnection::closeThisConnection);
+    connect(tcpConnection, &TcpConnection::finished, tcpThread, &QThread::quit);
     connect(this, &MainWindow::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
     connect(tcpConnection, &TcpConnection::receivedTcpMessage, this, &MainWindow::receivedTcpMessage);
     tcpThread->start();
