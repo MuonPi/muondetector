@@ -7,7 +7,7 @@
 QT       += network
 
 QT       -= gui
-VERSION = 1.2.1
+VERSION = 1.2.2
 CONFIG += c++11
 CONFIG += warn_on
 CONFIG += release
