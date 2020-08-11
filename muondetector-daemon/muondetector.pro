@@ -3,6 +3,7 @@ QT += core
 QT += network
 QT += serialport
 VERSION = 1.2.2
+DEFINES += VERSION_STRING=\\\"v$${VERSION}\\\"
 CONFIG += c++11 console
 CONFIG -= app_bundle
 

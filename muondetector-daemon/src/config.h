@@ -3,7 +3,6 @@
 
 
 #define MUONPI_BUILD_TIME				__DATE__
-#define MUONPI_VERSION					"1.2.1"
 #define MUONPI_DEFAULT_HW_VERSION		2
 #define MUONPI_DEFAULT_CONFIG_FILE		"/etc/muondetector/muondetector.conf"
 
