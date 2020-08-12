@@ -54,6 +54,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	qRegisterMetaType<timespec>("timespec");
 
     ui->setupUi(this);
+    this->setWindowTitle(QString("muondetector-gui  "+QString::fromStdString(VERSION_STRING)));
+
 	ui->discr1Layout->setAlignment(ui->discr1Slider, Qt::AlignHCenter);
     ui->discr2Layout->setAlignment(ui->discr2Slider, Qt::AlignHCenter); // aligns the slider in their vertical layout centered
     QIcon icon(":/res/muon.ico");
