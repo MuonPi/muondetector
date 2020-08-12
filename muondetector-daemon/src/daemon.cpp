@@ -501,7 +501,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 		oled->setCursor(0,2);
 		oled->print("*Cosmic Shower Det.*\n");
 		oled->print("V");
-		oled->print(MUONPI_VERSION);
+        oled->print(VERSION_STRING);
 		oled->print("\n");
 		//oled->print("V 1.2.0\n");
 		//  display.setTextColor(BLACK, WHITE); // 'inverted' text
