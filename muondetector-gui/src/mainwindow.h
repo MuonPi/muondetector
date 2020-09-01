@@ -102,7 +102,7 @@ private slots:
     void sendRequestGpioRateBuffer();
     void sendValueUpdateRequests();
 
-    void on_ipButton_clicked();
+    void onIpButtonClicked();
     void connected();
     void sendInputSwitch(int id);
     void on_discr1Edit_editingFinished();

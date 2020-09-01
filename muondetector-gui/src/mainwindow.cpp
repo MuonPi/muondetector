@@ -76,8 +76,11 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->discr2Hit->setStyleSheet("QLabel {background-color : darkRed;}");*/
 
 	// setup event filter
-	ui->ipBox->installEventFilter(this);
-	ui->ipButton->installEventFilter(this);
+    ui->ipBox->installEventFilter(this);
+    ui->ipButton->installEventFilter(this);
+
+    // setup signal/slots
+    connect(ui->ipButton, &QPushButton::pressed, this, &MainWindow::onIpButtonClicked);
 
 	// set timer for and/xor label color change after hit
     int timerInterval = 100; // in msec
@@ -349,24 +352,41 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
 {
 	if (event->type() == QEvent::KeyPress) {
 		QKeyEvent *ke = static_cast<QKeyEvent *>(event);
-		auto combobox = dynamic_cast<QComboBox *>(object);
-		if (combobox == ui->ipBox) {
+        if (ke->key() == Qt::Key_Escape) {
+            QCoreApplication::quit();
+            return true;
+        }
+        /*
+        if (ke->key() == Qt::Key_Escape) {
+            if (connectedToDemon){
+                onIpButtonClicked();
+            }else{
+                QCoreApplication::quit();
+            }
+            return true;
+        }
+        if (ke->key() == Qt::Key_Enter && !connectedToDemon){
+            onIpButtonClicked();
+            return true;
+        }*/ // crashes when alternating escape and enter ...why?
+        auto combobox = dynamic_cast<QComboBox *>(object);
+        if (combobox == ui->ipBox) {
 			if (ke->key() == Qt::Key_Delete) {
 				ui->ipBox->removeItem(ui->ipBox->currentIndex());
-			}
-		}
-		if (ke->key() == Qt::Key_Escape) {
-			QCoreApplication::quit();
-			//this->deleteLater();
-		}
-		if (ke->key() == Qt::Key_Enter) {
-			this->on_ipButton_clicked();
-		}
-		return false;
+            }else if (ke->key() == Qt::Key_Enter || ke->key() == Qt::Key_Return) {
+                onIpButtonClicked();
+            }else{
+                return QObject::eventFilter(object, event);
+            }
+        }else {
+            return QObject::eventFilter(object, event);
+        }
+        return true;
 	}
-	else {
-		return false;
+    else {
+        return QObject::eventFilter(object, event);
 	}
+    return false;
 }
 
 void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
@@ -985,7 +1005,7 @@ void MainWindow::sendValueUpdateRequests() {
 //    sendRequest(calibRequestSig);
 }
 
-void MainWindow::on_ipButton_clicked()
+void MainWindow::onIpButtonClicked()
 {
 	if (connectedToDemon) {
 		// it is connected and the button shows "disconnect" -> here comes disconnect code

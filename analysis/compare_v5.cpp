@@ -4,7 +4,7 @@
 	und zusammen mit den Zeitdifferenzen in eine Datei schreibt
 	Ziel: mehr als 2 Eingabe-Dateien (mehrere RasPi-Stationen) -> erfuellt
 	Ziel: Einstellbarkeit der match-Kriterien (ab wann gelten  -> erfuellt
-	Einträge als Zeitlich korreliert?) und versehen der
+	Eintrï¿½ge als Zeitlich korreliert?) und versehen der
 	Coincidents mit einem Guetefaktor  -> momentan Guetefaktor == Anzahl Coincidents (an einem Zeitpunkt) -> (erfuellt)
 */
 //  Geschrieben von <Marvin.Peter@physik.uni-giessen.de>, Teilelemente sind geklaut von <Lukas.Nies@physik.uni-giessen.de>
@@ -404,6 +404,7 @@ int main(int argc, char*argv[])
 		switch ((char)ch)
 		{
 		case 's':  notSorted = false;
+			break;
 		case 'o':  outputDateiName = optarg;
 			//printf("Output wurde gewaehlt. %s.c_str()\n", out.c_str());
 			break;
@@ -491,13 +492,10 @@ int main(int argc, char*argv[])
 				system(outs);
 			}
 		}
-	}
-	else {
-		// lese oder schätze zeilenmenge!!!
-		for (unsigned int i = 0; i < dateiName.size(); i++)
-		{
-			lines[i] = 10000;
-
+	}else {
+		// lese oder schaetze zeilenmenge!!!
+		for (unsigned int i = 0; i < dateiName.size(); i++){
+			lines.push_back(10000);
 		}
 	}
 	unsigned long int overallLines = 0;
@@ -548,7 +546,7 @@ int main(int argc, char*argv[])
 	{
 		iterator.push_back(0);
 		//hier werden die Vectors mit einer "festen Laenge" also Anzahl der Dateien gebaut
-		//iterator und der aeußerste Container von "values" sind korelliert mit dem "dateiName" vector,
+		//iterator und der aeuï¿½erste Container von "values" sind korelliert mit dem "dateiName" vector,
 		//haben also die gleiche Anzahl Eintraege wie es Dateien gibt
 		//iterator gibt an, welcher index in der jeweiligen Datei (an welcher stelle in Datei i gerade gelesen wird)
 	}
