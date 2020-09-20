@@ -148,8 +148,8 @@ int main(int argc, char *argv[])
 	parser.addVersionOption();
 
 	// add module path for example /dev/gps0 or /dev/ttyAMA0
-	parser.addPositionalArgument("device", QCoreApplication::translate("main", "Path to gps device\n"
-		"for example: /dev/ttyAMA0"));
+	parser.addPositionalArgument("device", QCoreApplication::translate("main", "path to u-blox GNSS device\n"
+		"e.g. /dev/ttyAMA0"));
 
     // login option
     QCommandLineOption mqttLoginOption(QStringList() << "l" << "login",
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 
     // station ID (some name for individual stations if someone has multiple)
     QCommandLineOption stationIdOption("id",
-        QCoreApplication::translate("main", "Set station ID"),
+        QCoreApplication::translate("main", "set station ID"),
         QCoreApplication::translate("main", "ID"));
     parser.addOption(stationIdOption);
 
@@ -260,15 +260,15 @@ int main(int argc, char *argv[])
 
     // preamps on:
     QCommandLineOption preamp1Option(QStringList() << "pre1" << "preamp1",
-        QCoreApplication::translate("main", "pre-amplifier 1 on or off"));
+        QCoreApplication::translate("main", "preamplifier channel 1 on/off (0/1)"));
     parser.addOption(preamp1Option);
     QCommandLineOption preamp2Option(QStringList() << "pre2" << "preamp2",
-        QCoreApplication::translate("main", "pre-amplifier 2 on or off"));
+        QCoreApplication::translate("main", "preamplifier channel 2 on/off (0/1)"));
     parser.addOption(preamp2Option);
 
     // gain:
     QCommandLineOption gainOption(QStringList() << "g" << "gain",
-        QCoreApplication::translate("main", "gain high"));
+        QCoreApplication::translate("main", "peak detector high gain select"));
     parser.addOption(gainOption);
 
 	// event trigger for ADC

@@ -82,7 +82,7 @@ static const std::map<GPIO_PIN, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER+1]
             { PREAMP_FAULT , 23 },
             { TDC_INTB, 20 },
             { TDC_STATUS, 21 },
-			{ EXT_TRIGGER, 21 }
+			{ EXT_TRIGGER, 16 }
 		} ,
 		{
 			/* Pin mapping, HW Version 3 */
@@ -108,5 +108,12 @@ static const std::map<GPIO_PIN, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER+1]
 
 
 extern std::map<GPIO_PIN, unsigned int> GPIO_PINMAP;
+
+inline GPIO_PIN bcmToGpioSignal(unsigned int bcmGpioNumber) {
+	std::map<GPIO_PIN, unsigned int>::const_iterator i = GPIO_PINMAP.cbegin();
+	while (i != GPIO_PINMAP.cend() && i->second!=bcmGpioNumber)	++i;
+	if (i==GPIO_PINMAP.cend()) return UNDEFINED_PIN;
+	return i->first;
+}
 
 #endif //GPIO_MAPPING_H

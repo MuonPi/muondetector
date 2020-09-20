@@ -100,6 +100,7 @@ static int setup_unix_signal_handlers()
 int Daemon::sighupFd[2];
 int Daemon::sigtermFd[2];
 int Daemon::sigintFd[2];
+
 void Daemon::handleSigTerm()
 {
 	snTerm->setEnabled(false);
@@ -110,10 +111,16 @@ void Daemon::handleSigTerm()
 	if (verbose > 1) {
 		cout << "\nSIGTERM received" << endl;
 	}
+	
+	// save ublox config in built-in flash to provide latest orbit info of sats for next start-up
+	// and effectively reduce time-to-first-fix (TTFF)
+	emit UBXSaveCfg();
+
     emit aboutToQuit();
 	exit(0);
 	snTerm->setEnabled(true);
 }
+
 void Daemon::handleSigHup()
 {
 	snHup->setEnabled(false);
@@ -124,10 +131,16 @@ void Daemon::handleSigHup()
 	if (verbose > 1) {
 		cout << "\nSIGHUP received" << endl;
 	}
-    emit aboutToQuit();
+
+	// save ublox config in built-in flash to provide latest orbit info of sats for next start-up
+	// and effectively reduce time-to-first-fix (TTFF)
+	emit UBXSaveCfg();
+    
+	emit aboutToQuit();
 	exit(0);
 	snHup->setEnabled(true);
 }
+
 void Daemon::handleSigInt()
 {
 	snInt->setEnabled(false);
@@ -145,7 +158,12 @@ void Daemon::handleSigInt()
 			qDebug().nospace() << "0x" << hex << (uint8_t)(it.key() >> 8) << " 0x" << hex << (uint8_t)(it.key() & 0xff) << " " << dec << it.value();
 		}
 	}
-    emit aboutToQuit();
+
+	// save ublox config in built-in flash to provide latest orbit info of sats for next start-up
+	// and effectively reduce time-to-first-fix (TTFF)
+	emit UBXSaveCfg();
+
+	emit aboutToQuit();
 	exit(0);
 	snInt->setEnabled(true);
 }
@@ -648,9 +666,8 @@ Daemon::~Daemon() {
 }
 
 void Daemon::connectToPigpiod(){
-    const QVector<unsigned int> gpio_pins({ GPIO_PINMAP[TDC_INTB], GPIO_PINMAP[PREAMP_1], GPIO_PINMAP[PREAMP_2],
-                                            GPIO_PINMAP[UBIAS_EN], GPIO_PINMAP[EVT_AND], GPIO_PINMAP[EVT_XOR],
-                                            /*GPIO_PINMAP[ADC_READY],*/ GPIO_PINMAP[TIMEPULSE], GPIO_PINMAP[GAIN_HL] });
+    const QVector<unsigned int> gpio_pins({ GPIO_PINMAP[EVT_AND], GPIO_PINMAP[EVT_XOR],
+                                            GPIO_PINMAP[TIMEPULSE], GPIO_PINMAP[EXT_TRIGGER] });
     pigHandler = new PigpiodHandler(gpio_pins);
     tdc7200 = new TDC7200(GPIO_PINMAP[TDC_INTB]);
     pigThread = new QThread();
@@ -688,6 +705,7 @@ void Daemon::connectToPigpiod(){
     connect(this, &Daemon::GpioSetPullUp, pigHandler, &PigpiodHandler::setPullUp);
     connect(this, &Daemon::GpioSetPullDown, pigHandler, &PigpiodHandler::setPullDown);
     connect(this, &Daemon::GpioSetState, pigHandler, &PigpiodHandler::setGpioState);
+    connect(this, &Daemon::GpioRegisterForCallback, pigHandler, &PigpiodHandler::registerForCallback);
     connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
     connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
     connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) 
@@ -754,7 +772,22 @@ void Daemon::connectToPigpiod(){
     emit GpioSetState(GPIO_PINMAP[PREAMP_1],preampStatus[0]);
     emit GpioSetState(GPIO_PINMAP[PREAMP_2],preampStatus[1]);
     emit GpioSetState(GPIO_PINMAP[GAIN_HL],gainSwitch);
+	emit GpioSetOutput(GPIO_PINMAP[STATUS1]);
+	emit GpioSetOutput(GPIO_PINMAP[STATUS2]);
+	emit GpioSetState(GPIO_PINMAP[STATUS1], 0);
+	emit GpioSetState(GPIO_PINMAP[STATUS2], 0);
+    emit GpioSetPullUp(GPIO_PINMAP[ADC_READY]);
+	emit GpioRegisterForCallback(GPIO_PINMAP[ADC_READY], 1);
 	
+	if (HW_VERSION>1) {
+		emit GpioSetInput(GPIO_PINMAP[PREAMP_FAULT]);
+		emit GpioRegisterForCallback(GPIO_PINMAP[PREAMP_FAULT], 0);
+		emit GpioSetPullUp(GPIO_PINMAP[PREAMP_FAULT]);
+		emit GpioSetInput(GPIO_PINMAP[TDC_INTB]);
+		emit GpioRegisterForCallback(GPIO_PINMAP[TDC_INTB], 0);
+		emit GpioSetInput(GPIO_PINMAP[TIME_MEAS_OUT]);
+		emit GpioRegisterForCallback(GPIO_PINMAP[TIME_MEAS_OUT], 0);
+	}
     if (HW_VERSION>=3) {
 		emit GpioSetOutput(GPIO_PINMAP[IN_POL1]);
 		emit GpioSetOutput(GPIO_PINMAP[IN_POL2]);
@@ -762,11 +795,6 @@ void Daemon::connectToPigpiod(){
 		emit GpioSetState(GPIO_PINMAP[IN_POL2],polarity2);
 	}
 
-	if (HW_VERSION>1) {
-		emit GpioSetInput(GPIO_PINMAP[PREAMP_FAULT]);
-		emit GpioRegisterForCallback(GPIO_PINMAP[PREAMP_FAULT], 0);
-		//emit GpioSetPullUp(GPIO_PINMAP[PREAMP_FAULT]);
-	}
 }
 
 void Daemon::connectToGps() {
@@ -1190,27 +1218,26 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
         *(tcpMessage.dStream) >> nrEntries;
         for (int i=0; i<nrEntries; i++) {
 			GnssConfigStruct config;
-			*(tcpMessage.dStream) >> config.gnssId >> config.resTrkCh >>
-                config.maxTrkCh >> config.flags;
+			*(tcpMessage.dStream) >> config.gnssId >> config.resTrkCh >> config.maxTrkCh >> config.flags;
 			configs.push_back(config);
 		}
 		emit setGnssConfig(configs);
 		usleep(150000L);
 		emit sendPollUbxMsg(UBX_CFG_GNSS);
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_CFG_TP5){
-        UbxTimePulseStruct tp;
-        *(tcpMessage.dStream) >> tp;
-        emit UBXSetCfgTP5(tp);
-        emit sendPollUbxMsg(UBX_CFG_TP5);
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_CFG_SAVE){
-        emit UBXSaveCfg();
-        emit sendPollUbxMsg(UBX_CFG_TP5);
-	emit sendPollUbxMsg(UBX_CFG_GNSS);
-        return;
-    }
+	}
+	if (msgID == TCP_MSG_KEY::MSG_UBX_CFG_TP5){
+		UbxTimePulseStruct tp;
+		*(tcpMessage.dStream) >> tp;
+		emit UBXSetCfgTP5(tp);
+		emit sendPollUbxMsg(UBX_CFG_TP5);
+		return;
+	}
+	if (msgID == TCP_MSG_KEY::MSG_UBX_CFG_SAVE){
+		emit UBXSaveCfg();
+		emit sendPollUbxMsg(UBX_CFG_TP5);
+		emit sendPollUbxMsg(UBX_CFG_GNSS);
+		return;
+	}
     if (msgID == TCP_MSG_KEY::MSG_QUIT_CONNECTION){
         QString closeAddress;
         *(tcpMessage.dStream) >> closeAddress;
@@ -1468,8 +1495,14 @@ void Daemon::sendMqttStatus(bool connected){
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_MQTT_STATUS);
     *(tcpMessage.dStream) << connected;
 	if (connected != mqttConnectionStatus) {
-		if (connected) qInfo()<<"MQTT (re)connected";
-		else qWarning()<<"MQTT connection lost";
+		if (connected) {
+			qInfo()<<"MQTT (re)connected";
+			emit GpioSetState(GPIO_PINMAP[STATUS1],1);
+		}
+		else {
+			qWarning()<<"MQTT connection lost";
+			emit GpioSetState(GPIO_PINMAP[STATUS1],0);
+		}
 	}
     	mqttConnectionStatus=connected;
 	emit sendTcpMessage(tcpMessage);

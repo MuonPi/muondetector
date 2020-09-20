@@ -201,7 +201,7 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
     }
 }
 
-PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, unsigned int spi_freq, uint32_t spi_flags, QObject *parent)
+PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpioPins, unsigned int spi_freq, uint32_t spi_flags, QObject *parent)
 	: QObject(parent)
 {
     startOfProgram = QDateTime::currentDateTimeUtc();
@@ -217,22 +217,20 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, unsigned int spi
         qFatal("Could not connect to pigpio daemon. Is pigpiod running? Start with sudo pigpiod -s 1");
 		return;
     }
+
+    isInitialised = true;
+
 //    gpioPins=gpio_pins;
-    for (auto& gpio_pin : gpio_pins) {
-        set_mode(pi, gpio_pin, PI_INPUT);
-        if (gpio_pin==GPIO_PINMAP[ADC_READY]) set_pull_up_down(pi, gpio_pin, PI_PUD_UP);
-        if (gpio_pin==GPIO_PINMAP[TDC_INTB]){
-            int result=callback(pi, gpio_pin, FALLING_EDGE, cbFunction);
-			if (result<0) {
-				qCritical()<<"error registering gpio callback for BCM pin"<<gpio_pin;
-			}
-        } else {
+	for (auto& gpioPin : gpioPins) {
+        //if (GPIO_SIGNAL_MAP[gpioPin].direction!=DIR_IN) continue;
+		set_mode(pi, gpioPin, PI_INPUT);
+//        if (gpioPin==ADC_READY) set_pull_up_down(pi, GPIO_PINMAP[gpioPin], PI_PUD_UP);
+
             //qDebug() << "set callback for pin " << gpio_pin;
-            int result=callback(pi, gpio_pin, RISING_EDGE, cbFunction);
+            int result=callback(pi, gpioPin, RISING_EDGE, cbFunction);
 			if (result<0) {
-				qCritical()<<"error registering gpio callback for BCM pin"<<gpio_pin;
+				qCritical()<<"error registering gpio callback for BCM pin"<<gpioPin;
 			}
-        }
 //        callback(pi, gpio_pin, FALLING_EDGE, cbFunction);
         //        if (value==pigif_bad_malloc||
         //            value==pigif_dublicate_callback||
@@ -240,7 +238,6 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpio_pins, unsigned int spi
         //            continue;
         //        }
     }
-    isInitialised = true;
     gpioClockTimeMeasurementTimer.setInterval(GPIO_CLOCK_MEASUREMENT_INTERVAL_MS);
 	gpioClockTimeMeasurementTimer.setSingleShot(false);
 	connect(&gpioClockTimeMeasurementTimer, &QTimer::timeout, this, &PigpiodHandler::measureGpioClockTime);
@@ -270,7 +267,11 @@ void PigpiodHandler::setGpioState(unsigned int gpio, bool state) {
 }
 
 void PigpiodHandler::registerForCallback(unsigned int gpio, bool edge) {
-	callback(pi, gpio, edge?FALLING_EDGE:RISING_EDGE, cbFunction);
+	int result=callback(pi, gpio, edge?FALLING_EDGE:RISING_EDGE, cbFunction);
+	if (result<0) {
+		GPIO_PIN pin=bcmToGpioSignal(gpio);
+		qCritical()<<"error registering gpio callback for BCM pin"<<GPIO_SIGNAL_MAP[pin].name;
+	}
 }
 
 void PigpiodHandler::writeSpi(uint8_t command, std::string data){
@@ -281,7 +282,7 @@ void PigpiodHandler::writeSpi(uint8_t command, std::string data){
     }
     char txBuf[data.size()+1];
     txBuf[0] = (char)command;
-    for (int i = 1; i < data.size() +1; i++){
+    for (unsigned int i = 1; i < data.size() +1; i++){
         txBuf[i] = data[i-1];
     }
     /*qDebug() << "trying to write: ";
@@ -309,7 +310,7 @@ void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead){
     char rxBuf[bytesToRead+1];
     char txBuf[bytesToRead+1];
     txBuf[0] = (char)command;
-    for (int i = 1; i < bytesToRead; i++){
+    for (unsigned int i = 1; i < bytesToRead; i++){
         txBuf[i] = 0;
     }
     if (spi_xfer(pi, spiHandle, txBuf, rxBuf, bytesToRead+1)!=1+bytesToRead){
@@ -318,7 +319,7 @@ void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead){
     }
 
     std::string data;
-    for (int i = 1; i < bytesToRead+1; i++){
+    for (unsigned int i = 1; i < bytesToRead+1; i++){
         data += rxBuf[i];
     }
 //    qDebug() << "read back from reg "<<hex<<command<<":";
