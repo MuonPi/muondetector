@@ -2046,6 +2046,7 @@ void Daemon::onUBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssCon
 }
 
 void Daemon::onUBXReceivedTP5(const UbxTimePulseStruct& tp) {
+	static uint8_t forceUtcSetCounter = 0;
 	if (verbose > 3) {
 		// put some verbose output here
 	}
@@ -2053,13 +2054,15 @@ void Daemon::onUBXReceivedTP5(const UbxTimePulseStruct& tp) {
     (*tcpMessage.dStream) << tp;
     emit sendTcpMessage(tcpMessage);
 	// check here if UTC is selected as time source
-	// this should probably implemented somewhere else, maybe at ublox init
+	// this should probably be implemented somewhere else, maybe at ublox init
 	// however, for the timestamping to work correctly, setting the time grid to UTC is mandatory!
 	int timeGrid = (tp.flags & UbxTimePulseStruct::GRID_UTC_GPS)>>7;
-	if (timeGrid != 0) {
+	if (timeGrid != 0 && forceUtcSetCounter++ < 3) {
 		UbxTimePulseStruct newTp = tp;
 		newTp.flags &= ~((uint32_t)UbxTimePulseStruct::GRID_UTC_GPS);
 		emit UBXSetCfgTP5(newTp);
+		qDebug() << "forced time grid to UTC";
+		emit sendPollUbxMsg(UBX_CFG_TP5);
 	}
 }
 
