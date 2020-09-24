@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>613</width>
-    <height>586</height>
+    <height>620</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -405,7 +405,7 @@
      </layout>
     </widget>
    </item>
-   <item row="0" column="1" rowspan="2">
+   <item row="0" column="1" rowspan="3">
     <widget class="QGroupBox" name="adcTraceGroupBox">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -420,7 +420,7 @@
       <bool>true</bool>
      </property>
      <property name="checked">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_5">
       <item row="0" column="0">
@@ -429,7 +429,7 @@
      </layout>
     </widget>
    </item>
-   <item row="1" column="0" rowspan="2">
+   <item row="1" column="0">
     <widget class="QGroupBox" name="groupBox_2">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -524,6 +524,12 @@
         </item>
         <item row="0" column="1">
          <widget class="QDoubleSpinBox" name="dacSpinBox1">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="font">
            <font>
             <pointsize>9</pointsize>
@@ -576,6 +582,12 @@
         </item>
         <item row="0" column="1">
          <widget class="QDoubleSpinBox" name="dacSpinBox2">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="font">
            <font>
             <pointsize>9</pointsize>
@@ -641,6 +653,12 @@
        <layout class="QGridLayout" name="gridLayout_7">
         <item row="0" column="1">
          <widget class="QDoubleSpinBox" name="dacSpinBox3">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="font">
            <font>
             <pointsize>9</pointsize>
@@ -730,6 +748,12 @@
        <layout class="QGridLayout" name="gridLayout_9">
         <item row="0" column="1">
          <widget class="QDoubleSpinBox" name="dacSpinBox4">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="font">
            <font>
             <pointsize>9</pointsize>
@@ -813,7 +837,281 @@
      </layout>
     </widget>
    </item>
-   <item row="2" column="1" rowspan="2">
+   <item row="2" column="0" rowspan="2">
+    <widget class="QGroupBox" name="groupBox_3">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="title">
+      <string>Switches</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="biasEnCheckBox">
+        <property name="font">
+         <font>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>SiPM Bias Enabled</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1" rowspan="2">
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QLabel" name="label_17">
+          <property name="font">
+           <font>
+            <pointsize>9</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Ublox Timing Input</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignBottom|Qt::AlignHCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="timingSelectionComboBox">
+          <property name="font">
+           <font>
+            <pointsize>9</pointsize>
+           </font>
+          </property>
+          <item>
+           <property name="text">
+            <string>AND</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>XOR</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Discr1</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Discr2</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>In4</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>In5</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>In6</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>In7</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="1" column="0" rowspan="4">
+       <widget class="QGroupBox" name="groupBox_4">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>200</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="title">
+         <string>Channel Settings</string>
+        </property>
+        <widget class="QWidget" name="">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>30</y>
+           <width>125</width>
+           <height>80</height>
+          </rect>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="0" column="1">
+           <widget class="QLabel" name="label_31">
+            <property name="text">
+             <string>Ch 1</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_32">
+            <property name="text">
+             <string>Ch 2</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_33">
+            <property name="text">
+             <string>Preamp
+Bias</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+            <property name="wordWrap">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QCheckBox" name="preamp1EnCheckBox">
+            <property name="layoutDirection">
+             <enum>Qt::LeftToRight</enum>
+            </property>
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QCheckBox" name="preamp2EnCheckBox">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_34">
+            <property name="text">
+             <string>Polarity</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+            <property name="wordWrap">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QCheckBox" name="pol1CheckBox">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="layoutDirection">
+             <enum>Qt::LeftToRight</enum>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QCheckBox" name="pol2CheckBox">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+            <property name="tristate">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QLabel" name="label_18">
+          <property name="font">
+           <font>
+            <pointsize>9</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>ADC Trigger</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignBottom|Qt::AlignHCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="adcTriggerSelectionComboBox">
+          <property name="font">
+           <font>
+            <pointsize>9</pointsize>
+           </font>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="3" column="1">
+       <widget class="QCheckBox" name="gpioInhibitCheckBox">
+        <property name="text">
+         <string>GPIO Inhibit</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QCheckBox" name="hiGainCheckBox">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Peak Det Hi Gain</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="3" column="1">
     <widget class="QFrame" name="frame">
      <property name="frameShape">
       <enum>QFrame::StyledPanel</enum>
@@ -1317,192 +1615,6 @@
          </widget>
         </item>
        </layout>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="3" column="0">
-    <widget class="QGroupBox" name="groupBox_3">
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>0</height>
-      </size>
-     </property>
-     <property name="title">
-      <string>Switches</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_4">
-      <item row="0" column="0" rowspan="3">
-       <layout class="QVBoxLayout" name="verticalLayout">
-        <item>
-         <widget class="QCheckBox" name="biasEnCheckBox">
-          <property name="font">
-           <font>
-            <pointsize>9</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>SiPM Bias Enabled</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QGroupBox" name="groupBox_4">
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>16777215</width>
-            <height>70</height>
-           </size>
-          </property>
-          <property name="font">
-           <font>
-            <pointsize>10</pointsize>
-           </font>
-          </property>
-          <property name="title">
-           <string>Preamp Bias Enable</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_3">
-           <item row="0" column="0">
-            <widget class="QCheckBox" name="preamp1EnCheckBox">
-             <property name="text">
-              <string>Ch 1</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QCheckBox" name="preamp2EnCheckBox">
-             <property name="text">
-              <string>Ch 2</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="hiGainCheckBox">
-          <property name="font">
-           <font>
-            <pointsize>10</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>Peak Det High Gain</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item row="0" column="1">
-       <layout class="QVBoxLayout" name="verticalLayout_2">
-        <item>
-         <widget class="QLabel" name="label_17">
-          <property name="font">
-           <font>
-            <pointsize>9</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>Ublox Timing Input</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignBottom|Qt::AlignHCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QComboBox" name="timingSelectionComboBox">
-          <property name="font">
-           <font>
-            <pointsize>9</pointsize>
-           </font>
-          </property>
-          <item>
-           <property name="text">
-            <string>AND</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>XOR</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Discr1</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Discr2</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>In4</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>In5</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>In6</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>In7</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item row="1" column="1">
-       <layout class="QVBoxLayout" name="verticalLayout_3">
-        <item>
-         <widget class="QLabel" name="label_18">
-          <property name="font">
-           <font>
-            <pointsize>9</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>ADC Trigger</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignBottom|Qt::AlignHCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QComboBox" name="adcTriggerSelectionComboBox">
-          <property name="font">
-           <font>
-            <pointsize>9</pointsize>
-           </font>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item row="2" column="1">
-       <widget class="QCheckBox" name="gpioInhibitCheckBox">
-        <property name="text">
-         <string>GPIO Inhibit</string>
-        </property>
-       </widget>
       </item>
      </layout>
     </widget>

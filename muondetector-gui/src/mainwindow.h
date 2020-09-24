@@ -94,6 +94,7 @@ public slots:
     void onAdcModeChanged(quint8 mode);
 	void onRateScanStart(uint8_t ch);
 	void gpioInhibit(bool inhibit);
+	void onPolarityChanged(bool pol1, bool pol2);
 
 private slots:
     void resetAndHit();
@@ -101,6 +102,9 @@ private slots:
     void sendRequestGpioRates();
     void sendRequestGpioRateBuffer();
     void sendValueUpdateRequests();
+    void sendPreamp1Switch(bool status);
+    void sendPreamp2Switch(bool status);
+    void sendSetBiasStatus(bool status);
 
     void onIpButtonClicked();
     void connected();
@@ -135,11 +139,8 @@ private:
     void sendRequest(quint16 requestSig, quint8 par);
     void sendRequest(TCP_MSG_KEY requestSig, quint8 par);
     void sendSetBiasVoltage(float voltage);
-    void sendSetBiasStatus(bool status);
     void sendSetThresh(uint8_t channel, float value);
     void setMaxThreshVoltage(float voltage);
-    void sendPreamp1Switch(bool status);
-    void sendPreamp2Switch(bool status);
     void sendGainSwitch(bool status);
 
     void updateUiProperties();

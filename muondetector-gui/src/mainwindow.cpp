@@ -234,6 +234,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::timeMarkReceived, paramTab, &ParameterMonitorForm::onTimeMarkReceived);
     connect(paramTab, &ParameterMonitorForm::adcModeChanged, this, &MainWindow::onAdcModeChanged);
     connect(paramTab, &ParameterMonitorForm::setDacVoltage, this, &MainWindow::sendSetThresh);
+    connect(paramTab, &ParameterMonitorForm::preamp1EnableChanged, this, &MainWindow::sendPreamp1Switch);
+    connect(paramTab, &ParameterMonitorForm::preamp2EnableChanged, this, &MainWindow::sendPreamp2Switch);
+    connect(paramTab, &ParameterMonitorForm::biasEnableChanged, this, &MainWindow::sendSetBiasStatus);
+    connect(paramTab, &ParameterMonitorForm::polarityChanged, this, &MainWindow::onPolarityChanged);
     connect(paramTab, &ParameterMonitorForm::gpioInhibitChanged, this, &MainWindow::gpioInhibit);
     ui->tabWidget->addTab(paramTab,"Parameters");
 
@@ -1248,3 +1252,11 @@ void MainWindow::gpioInhibit(bool inhibit) {
     *(tcpMessage.dStream) << inhibit;
     emit sendTcpMessage(tcpMessage);	
 }
+
+void MainWindow::onPolarityChanged(bool pol1, bool pol2){
+	TcpMessage tcpMessage(TCP_MSG_KEY::MSG_POLARITY_SWITCH);
+    *(tcpMessage.dStream) << pol1 << pol2;
+    emit sendTcpMessage(tcpMessage);	
+}
+
+

@@ -28,7 +28,21 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget *parent) :
         {
             emit adcModeChanged((checked)?ADC_MODE_TRACE:ADC_MODE_PEAK);
         } );
-
+	connect(ui->preamp1EnCheckBox, &QCheckBox::clicked, this, [this](bool checked)
+        {
+            emit preamp1EnableChanged(checked);
+        } );
+	connect(ui->preamp2EnCheckBox, &QCheckBox::clicked, this, [this](bool checked)
+        {
+            emit preamp2EnableChanged(checked);
+        } );
+	connect(ui->biasEnCheckBox, &QCheckBox::clicked, this, [this](bool checked)
+        {
+            emit biasEnableChanged(checked);
+        } );
+	connect(ui->pol1CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked);
+	connect(ui->pol2CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked);
+	
 }
 
 ParameterMonitorForm::~ParameterMonitorForm()
@@ -227,6 +241,12 @@ void ParameterMonitorForm::onIntCounterReceived(quint32 cnt)
     //ui->ubloxCounterLabel->setText(QString::number(cnt));
 }
 
+void ParameterMonitorForm::onPolarityReceived(bool pol1, bool pol2) 
+{
+//	
+
+}
+
 
 void ParameterMonitorForm::on_dacSpinBox1_valueChanged(double arg1)
 {
@@ -290,8 +310,16 @@ bool ParameterMonitorForm::currentCalibValid()
     return false;
 }
 
-void ParameterMonitorForm::on_gpioInhibitCheckBox_toggled(bool checked)
+void ParameterMonitorForm::on_gpioInhibitCheckBox_clicked(bool checked)
 {
     emit gpioInhibitChanged(checked);
 //	qDebug()<<"set inhibit to "<<QString((checked)?"true":"false");
 }
+
+void ParameterMonitorForm::onPolarityCheckBoxClicked(bool checked){
+//	
+	bool pol1=ui->pol1CheckBox->isChecked();
+	bool pol2=ui->pol2CheckBox->isChecked();
+	emit polarityChanged(pol1, pol2);
+}
+
