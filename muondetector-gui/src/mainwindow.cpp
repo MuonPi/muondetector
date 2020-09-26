@@ -184,7 +184,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(calib, &CalibForm::setBiasDacVoltage, this, &MainWindow::sendSetBiasVoltage);
     connect(calib, &CalibForm::setDacVoltage, this, &MainWindow::sendSetThresh);
     connect(calib, &CalibForm::updatedCalib, this, &MainWindow::onCalibUpdated);
-    connect(calib, &CalibForm::startRateScan, this, &MainWindow::onRateScanStart);
 
     GpsSatsForm *satsTab = new GpsSatsForm(this);
     connect(this, &MainWindow::setUiEnabledStates, satsTab, &GpsSatsForm::onUiEnabledStateChange);

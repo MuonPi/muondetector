@@ -45,18 +45,12 @@ private slots:
     void updateCalibTable();
     void on_calibItemTableWidget_cellChanged(int row, int column);
 
-    void on_rateScanPushButton_clicked();
-
 private:
     Ui::CalibForm *ui;
     QVector<CalibStruct> fCalibList;
-    bool fCalibRunning=false;
-    float fCurrBias=0.;
     QVector<QPointF> fPoints1, fPoints2, fPoints3;
     double fSlope1=0.,fOffs1=0.;
     double fSlope2=0.,fOffs2=0.;
-    double fLastRSenseHiVoltage = 0.;
-    double fLastRSenseLoVoltage = 0.;
 	
 	CalibScanDialog* calScan = nullptr;
 };
