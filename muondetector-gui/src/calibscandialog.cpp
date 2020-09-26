@@ -1,6 +1,9 @@
 #include "calibscandialog.h"
 #include "ui_calibscandialog.h"
 #include <muondetector_structs.h>
+#include <QMessageBox>
+#include <calibform.h>
+#include <QThread>
 
 #define calVoltMin 0.3
 #define calVoltMax 2.5
@@ -76,6 +79,7 @@ CalibScanDialog::CalibScanDialog(QWidget *parent) :
     ui(new Ui::CalibScanDialog)
 {
     ui->setupUi(this);
+	connect(ui->startCurrentCalibPushButton, &QPushButton::clicked, this, &CalibScanDialog::startManualCurrentCalib);
 }
 
 CalibScanDialog::~CalibScanDialog()
@@ -112,14 +116,15 @@ void CalibScanDialog::onAdcSampleReceived(uint8_t channel, float value)
         if (result!="") {
             double vdiv = result.toDouble(NULL);
             ubias = vdiv*value/100.;
-//            ui->biasVoltageLineEdit->setText(QString::number(ubias));
         }
     }
     if (channel == 3) {
-        //ui->biasAdcLineEdit->setText(QString::number(value));
-        //ui->biasVoltageLineEdit->setText(QString::number(ubias));
+        double vdiv=getCalibParameter("VDIV").toDouble()*0.01;
+        double rsense = getCalibParameter("RSENSE").toDouble()*0.1/1000.; // RSense in MOhm
+        double ibias=vdiv*(fLastRSenseHiVoltage-value)/rsense;
+		if (fCurrentCalibRunning) manualCurrentCalibProgress(ubias, ibias);
 /*
-        if (fCalibRunning) {
+        if (fAutoCalibRunning) {
             if (fCurrBias>calVoltMax) { on_doBiasCalibPushButton_clicked(); return; }
             QPointF p(fCurrBias, ubias);
             fCurrBias+=BIAS_SCAN_INCREMENT;
@@ -141,7 +146,7 @@ void CalibScanDialog::onAdcSampleReceived(uint8_t channel, float value)
         fLastRSenseLoVoltage = value;
     } else if (channel == 2) {
 /*
-        if (fCalibRunning) {
+        if (fAutoCalibRunning) {
             QPointF p(fCurrBias, ubias);
             fPoints1.push_back(p);
             ui->biasVoltageCalibPlot->curve("curve1").setSamples(fPoints1);
@@ -153,6 +158,61 @@ void CalibScanDialog::onAdcSampleReceived(uint8_t channel, float value)
     }
 }
 
+void CalibScanDialog::startManualCurrentCalib() {
+	if (fCurrentCalibRunning) { fCurrentCalibRunning=0; return; }
+	fCurrentCalibRunning=1;
+	QMessageBox msgBox;
+	msgBox.setText("Disconnect the bias voltage");
+	msgBox.setInformativeText("Disconnect the cable at the bias connector of the MuonPi PCB!");
+	msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+	msgBox.setDefaultButton(QMessageBox::Ok);
+	int ret = msgBox.exec();
+	if (ret == QMessageBox::Cancel) {
+		fCurrentCalibRunning=0;
+		return;
+	}
+	fCurrentCalibRunning=2;
+	emit dynamic_cast<CalibForm*>(parent())->setBiasSwitch(false);
+	QThread::msleep(500);
+}
+
+void CalibScanDialog::manualCurrentCalibProgress(double vbias, double ibias) {
+	const int N=5;
+	static int measurementCount=0;
+	static double currentMeasurements[3] = { 0., 0., 0. };
+
+	if (fCurrentCalibRunning==2) {
+		//emit dynamic_cast<CalibForm*>(parent())->setBiasSwitch(true);
+		currentMeasurements[0]=ibias;
+		emit dynamic_cast<CalibForm*>(parent())->setBiasSwitch(true);
+		QThread::msleep(500);
+		fCurrentCalibRunning++;
+	} else
+	if (fCurrentCalibRunning==3) {
+		currentMeasurements[1]=ibias;
+		fCurrentCalibRunning++;
+		QMessageBox msgBox;
+		msgBox.setText("Reconnect the bias voltage");
+		msgBox.setInformativeText("Connect the cable again to the bias connector of the MuonPi PCB!");
+		msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+		msgBox.setDefaultButton(QMessageBox::Ok);
+		int ret = msgBox.exec();
+		if (ret == QMessageBox::Cancel) {
+			fCurrentCalibRunning=0;
+			return;
+		}
+		//emit dynamic_cast<CalibForm*>(parent())->setBiasSwitch(true);
+		QThread::msleep(500);
+		fCurrentCalibRunning++;
+	} else if (fCurrentCalibRunning==5) {
+		currentMeasurements[2]=ibias;
+		fCurrentCalibRunning=0;
+		double offs=currentMeasurements[0];
+		double slope=(currentMeasurements[1]-currentMeasurements[2])/vbias;
+		ui->currentCalibOffsetLineEdit->setText(QString::number(offs,'g',4));
+		ui->currentCalibSlopeLineEdit->setText(QString::number(slope,'g',4));
+	}
+}
 
 void CalibScanDialog::setCalibParameter(const QString &name, const QString &value)
 {

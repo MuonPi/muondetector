@@ -173,6 +173,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(calib, &CalibForm::setBiasDacVoltage, this, &MainWindow::sendSetBiasVoltage);
     connect(calib, &CalibForm::setDacVoltage, this, &MainWindow::sendSetThresh);
     connect(calib, &CalibForm::updatedCalib, this, &MainWindow::onCalibUpdated);
+    connect(calib, &CalibForm::setBiasSwitch, this, &MainWindow::sendSetBiasStatus);
     ui->tabWidget->addTab(calib,"Calibration");
 
     calibscandialog = new CalibScanDialog(this);
