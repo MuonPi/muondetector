@@ -4,6 +4,7 @@
 #include <qwt_symbol.h>
 #include <string>
 #include <muondetector_structs.h>
+#include "calibscandialog.h"
 
 #define calVoltMin 0.3
 #define calVoltMax 2.5
@@ -85,6 +86,15 @@ CalibForm::CalibForm(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->calibItemTableWidget->resizeColumnsToContents();
+	
+	calScan = new CalibScanDialog(this);
+	calScan->setWindowTitle("Calibration Scan");
+	calScan->hide();
+	
+	connect(ui->calibrationScanPushButton, &QPushButton::clicked, this, [this]() { this->calScan->show();} );
+	
+	
+	
 /*
     ui->biasVoltageCalibPlot->setTitle("Ubias calibration");
     ui->biasVoltageCalibPlot->setAxisTitle(QwtPlot::xBottom,"DAC voltage / V");
@@ -475,8 +485,3 @@ void CalibForm::on_calibItemTableWidget_cellChanged(int row, int column)
     }
 }
 
-
-void CalibForm::on_rateScanPushButton_clicked()
-{
-    emit startRateScan(1);
-}

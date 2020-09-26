@@ -6,6 +6,7 @@
 #include <string>
 
 struct CalibStruct;
+class CalibScanDialog;
 
 namespace Ui {
 class CalibForm;
@@ -24,7 +25,6 @@ signals:
     void setBiasDacVoltage(float val);
     void setDacVoltage(uint8_t ch, float val);
     void updatedCalib(const QVector<CalibStruct>& items);
-    void startRateScan(uint8_t ch);
 
 public slots:
     void onCalibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct>& calibList);
@@ -57,9 +57,8 @@ private:
     double fSlope2=0.,fOffs2=0.;
     double fLastRSenseHiVoltage = 0.;
     double fLastRSenseLoVoltage = 0.;
-
-
-
+	
+	CalibScanDialog* calScan = nullptr;
 };
 
 #endif // CALIBFORM_H
