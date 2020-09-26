@@ -2,6 +2,7 @@
 #define GPIO_PIN_DEFINITIONS_H
 #include <muondetector_shared_global.h>
 #include <QMap>
+#include <QVector>
 #include <QString>
 #include <map>
 
@@ -58,7 +59,7 @@ static const QMap<GPIO_PIN, GpioSignalDescriptor> GPIO_SIGNAL_MAP =
 		{ UNDEFINED_PIN, 	{ "UNDEFINED_PIN", DIR_UNDEFINED} }
 	};
 
-
+/*
 static const QMap<GPIO_PIN, QString> GPIO_PIN_NAMES = 
 	{	{ UBIAS_EN,		"UBIAS_EN" },
 		{ PREAMP_1,		"PREAMP_1" },
@@ -80,6 +81,20 @@ static const QMap<GPIO_PIN, QString> GPIO_PIN_NAMES =
 		{ IN_POL2,		"IN_POL2" },
 		{ UNDEFINED_PIN, "UNDEFINED_PIN" }
 	};
+*/
 
+static const QVector<QString> TIMING_MUX_SIGNAL_NAMES = 
+	{	
+		"AND", "XOR", "DISCR1", "DISCR2", "N/A", "TIMEPULSE", "N/A", "EXT"	
+	};
 
+enum class TIMING_MUX_SELECTION : uint8_t {
+	AND 	= 0,
+	XOR 	= 1,
+	DISCR1 	= 2,
+	DISCR2	= 3,
+	TIMEPULSE = 5,
+	EXT		= 7
+};
+	
 #endif // GPIO_PIN_DEFINITIONS_H

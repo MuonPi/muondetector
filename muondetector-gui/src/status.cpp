@@ -160,10 +160,10 @@ void Status::clearRatePlot()
 
 void Status::onTriggerSelectionReceived(GPIO_PIN signal)
 {
-    if (GPIO_PIN_NAMES.find(signal)==GPIO_PIN_NAMES.end()) return;
-    unsigned int i=0;
+//    if (GPIO_PIN_NAMES.find(signal)==GPIO_PIN_NAMES.end()) return;
+    int i=0;
     while (i<statusUi->triggerSelectionComboBox->count()) {
-        if (statusUi->triggerSelectionComboBox->itemText(i).compare(GPIO_PIN_NAMES[signal])==0) break;
+        if (statusUi->triggerSelectionComboBox->itemText(i).compare(GPIO_SIGNAL_MAP[signal].name)==0) break;
         i++;
     }
     if (i>=statusUi->triggerSelectionComboBox->count()) return;
@@ -290,10 +290,13 @@ Status::~Status()
 
 void Status::on_triggerSelectionComboBox_currentIndexChanged(const QString &arg1)
 {
-    int i=statusUi->triggerSelectionComboBox->currentIndex();
-    auto it=qFind(GPIO_PIN_NAMES, arg1);
-    if (it==GPIO_PIN_NAMES.end()) return;
-    emit triggerSelectionChanged(it.key());
+	for (auto signalIt=GPIO_SIGNAL_MAP.begin(); signalIt!=GPIO_SIGNAL_MAP.end(); ++signalIt) {
+		const GPIO_PIN signalId=signalIt.key();
+		if (GPIO_SIGNAL_MAP[signalId].name==arg1) {
+			emit triggerSelectionChanged(signalId);
+			return;
+		}
+	}
 }
 
 void Status::onMqttStatusChanged(bool connected){

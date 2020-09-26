@@ -29,6 +29,8 @@ signals:
     void preamp1EnableChanged(bool state);
     void preamp2EnableChanged(bool state);
     void polarityChanged(bool pol1, bool pol2);
+	void timingSelectionChanged(uint8_t sel);
+	void triggerSelectionChanged(GPIO_PIN signal);
 
 public slots:
     void onCalibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct> &calibList);
@@ -59,6 +61,8 @@ private slots:
     void on_dacSlider4_valueChanged(int value);
     void on_gpioInhibitCheckBox_clicked(bool checked);
 	void onPolarityCheckBoxClicked(bool checked);
+	void on_timingSelectionComboBox_currentIndexChanged(int index);
+	void on_adcTriggerSelectionComboBox_currentIndexChanged(int index);
 
 private:
     Ui::ParameterMonitorForm *ui;

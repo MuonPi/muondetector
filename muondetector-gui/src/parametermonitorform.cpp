@@ -24,6 +24,10 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget *parent) :
     foreach (GpioSignalDescriptor item, GPIO_SIGNAL_MAP) {
         if (item.direction==DIR_IN) ui->adcTriggerSelectionComboBox->addItem(item.name);
     }
+    ui->timingSelectionComboBox->clear();
+    foreach (QString item, TIMING_MUX_SIGNAL_NAMES) {
+        ui->timingSelectionComboBox->addItem(item);
+    }
     connect(ui->adcTraceGroupBox, &QGroupBox::clicked, this, [this](bool checked)
         {
             emit adcModeChanged((checked)?ADC_MODE_TRACE:ADC_MODE_PEAK);
@@ -43,6 +47,22 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget *parent) :
 	connect(ui->pol1CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked);
 	connect(ui->pol2CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked);
 	
+}
+
+void ParameterMonitorForm::on_timingSelectionComboBox_currentIndexChanged(int index)
+{
+	emit timingSelectionChanged(index);
+}
+
+void ParameterMonitorForm::on_adcTriggerSelectionComboBox_currentIndexChanged(int index)
+{
+	for (auto signalIt=GPIO_SIGNAL_MAP.begin(); signalIt!=GPIO_SIGNAL_MAP.end(); ++signalIt) {
+		const GPIO_PIN signalId=signalIt.key();
+		if (GPIO_SIGNAL_MAP[signalId].name==ui->adcTriggerSelectionComboBox->itemText(index)) {
+			emit triggerSelectionChanged(signalId);
+			return;
+		}
+	}
 }
 
 ParameterMonitorForm::~ParameterMonitorForm()
@@ -178,10 +198,10 @@ void ParameterMonitorForm::onPreampSwitchReceived(uint8_t channel, bool state)
 
 void ParameterMonitorForm::onTriggerSelectionReceived(GPIO_PIN signal)
 {
-    if (GPIO_PIN_NAMES.find(signal)==GPIO_PIN_NAMES.end()) return;
+    //if (GPIO_PIN_NAMES.find(signal)==GPIO_PIN_NAMES.end()) return;
     int i=0;
     while (i<ui->adcTriggerSelectionComboBox->count()) {
-        if (ui->adcTriggerSelectionComboBox->itemText(i).compare(GPIO_PIN_NAMES[signal])==0) break;
+        if (ui->adcTriggerSelectionComboBox->itemText(i).compare(GPIO_SIGNAL_MAP[signal].name)==0) break;
         i++;
     }
     if (i>=ui->adcTriggerSelectionComboBox->count()) return;

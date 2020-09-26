@@ -238,6 +238,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(paramTab, &ParameterMonitorForm::preamp2EnableChanged, this, &MainWindow::sendPreamp2Switch);
     connect(paramTab, &ParameterMonitorForm::biasEnableChanged, this, &MainWindow::sendSetBiasStatus);
     connect(paramTab, &ParameterMonitorForm::polarityChanged, this, &MainWindow::onPolarityChanged);
+	connect(paramTab, &ParameterMonitorForm::timingSelectionChanged, this, &MainWindow::sendInputSwitch);
+	connect(paramTab, &ParameterMonitorForm::triggerSelectionChanged, this, &MainWindow::onTriggerSelectionChanged);
     connect(paramTab, &ParameterMonitorForm::gpioInhibitChanged, this, &MainWindow::gpioInhibit);
     ui->tabWidget->addTab(paramTab,"Parameters");
 
@@ -1147,7 +1149,7 @@ void MainWindow::on_biasPowerButton_clicked()
     sendSetBiasStatus(!biasON);
 }
 
-void MainWindow::sendInputSwitch(int id) {
+void MainWindow::sendInputSwitch(uint8_t id) {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_PCA_SWITCH);
     *(tcpMessage.dStream) << (quint8)id;
     emit sendTcpMessage(tcpMessage);

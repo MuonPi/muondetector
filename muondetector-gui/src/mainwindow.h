@@ -108,7 +108,7 @@ private slots:
 
     void onIpButtonClicked();
     void connected();
-    void sendInputSwitch(int id);
+    void sendInputSwitch(uint8_t id);
     void on_discr1Edit_editingFinished();
     void on_discr1Slider_sliderReleased();
     void on_discr1Slider_valueChanged(int value);
