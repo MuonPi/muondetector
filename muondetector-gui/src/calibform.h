@@ -36,6 +36,7 @@ public slots:
     bool voltageCalibValid();
     bool currentCalibValid();
     void onUiEnabledStateChange(bool connected);
+    void updateCalibTable();
 
 private slots:
     void on_readCalibPushButton_clicked();
@@ -43,7 +44,6 @@ private slots:
     void on_doBiasCalibPushButton_clicked();
     void doFit();
     void on_transferBiasCoeffsPushButton_clicked();
-    void updateCalibTable();
     void on_calibItemTableWidget_cellChanged(int row, int column);
 
 private:

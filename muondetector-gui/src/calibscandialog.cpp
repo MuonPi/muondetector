@@ -80,6 +80,10 @@ CalibScanDialog::CalibScanDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 	connect(ui->startCurrentCalibPushButton, &QPushButton::clicked, this, &CalibScanDialog::startManualCurrentCalib);
+	connect(ui->transferCurrentBiasPushButton, &QPushButton::clicked, this, &CalibScanDialog::transferCurrentCalibCoeffs);
+	ui->transferCurrentBiasPushButton->setEnabled(false);
+	ui->currentCalibProgressBar->setEnabled(false);
+	ui->currentCalibProgressBar->setMaximum(5);
 }
 
 CalibScanDialog::~CalibScanDialog()
@@ -161,6 +165,8 @@ void CalibScanDialog::onAdcSampleReceived(uint8_t channel, float value)
 void CalibScanDialog::startManualCurrentCalib() {
 	if (fCurrentCalibRunning) { fCurrentCalibRunning=0; return; }
 	fCurrentCalibRunning=1;
+	ui->currentCalibProgressBar->setEnabled(true);
+	ui->currentCalibProgressBar->setValue(fCurrentCalibRunning);
 	QMessageBox msgBox;
 	msgBox.setText("Disconnect the bias voltage");
 	msgBox.setInformativeText("Disconnect the cable at the bias connector of the MuonPi PCB!");
@@ -169,6 +175,8 @@ void CalibScanDialog::startManualCurrentCalib() {
 	int ret = msgBox.exec();
 	if (ret == QMessageBox::Cancel) {
 		fCurrentCalibRunning=0;
+		ui->currentCalibProgressBar->setValue(fCurrentCalibRunning);
+		ui->currentCalibProgressBar->setEnabled(false);
 		return;
 	}
 	fCurrentCalibRunning=2;
@@ -181,6 +189,7 @@ void CalibScanDialog::manualCurrentCalibProgress(double vbias, double ibias) {
 	static int measurementCount=0;
 	static double currentMeasurements[3] = { 0., 0., 0. };
 
+	ui->currentCalibProgressBar->setValue(fCurrentCalibRunning);
 	if (fCurrentCalibRunning==2) {
 		//emit dynamic_cast<CalibForm*>(parent())->setBiasSwitch(true);
 		currentMeasurements[0]=ibias;
@@ -199,6 +208,8 @@ void CalibScanDialog::manualCurrentCalibProgress(double vbias, double ibias) {
 		int ret = msgBox.exec();
 		if (ret == QMessageBox::Cancel) {
 			fCurrentCalibRunning=0;
+			ui->currentCalibProgressBar->setValue(fCurrentCalibRunning);
+			ui->currentCalibProgressBar->setEnabled(false);
 			return;
 		}
 		//emit dynamic_cast<CalibForm*>(parent())->setBiasSwitch(true);
@@ -207,11 +218,24 @@ void CalibScanDialog::manualCurrentCalibProgress(double vbias, double ibias) {
 	} else if (fCurrentCalibRunning==5) {
 		currentMeasurements[2]=ibias;
 		fCurrentCalibRunning=0;
-		double offs=currentMeasurements[0];
-		double slope=(currentMeasurements[1]-currentMeasurements[2])/vbias;
-		ui->currentCalibOffsetLineEdit->setText(QString::number(offs,'g',4));
-		ui->currentCalibSlopeLineEdit->setText(QString::number(slope,'g',4));
+		fOffs2=currentMeasurements[0];
+		fSlope2=(currentMeasurements[1]-currentMeasurements[2])/vbias;
+		ui->currentCalibOffsetLineEdit->setText(QString::number(fOffs2,'g',4));
+		ui->currentCalibSlopeLineEdit->setText(QString::number(fSlope2,'g',4));
+		ui->transferCurrentBiasPushButton->setEnabled(true);
+		ui->currentCalibProgressBar->setValue(fCurrentCalibRunning);
+		ui->currentCalibProgressBar->setEnabled(false);
 	}
+}
+
+void CalibScanDialog::transferCurrentCalibCoeffs() {
+	emit dynamic_cast<CalibForm*>(parent())->setCalibParameter("COEFF2", QString::number(fOffs2));
+	emit dynamic_cast<CalibForm*>(parent())->setCalibParameter("COEFF3", QString::number(fSlope2));
+    uint8_t flags=getCalibParameter("CALIB_FLAGS").toUInt();
+    flags |= CalibStruct::CalibStruct::CALIBFLAGS_CURRENT_COEFFS;
+	emit dynamic_cast<CalibForm*>(parent())->setCalibParameter("CALIB_FLAGS",QString::number(flags));
+    emit dynamic_cast<CalibForm*>(parent())->updateCalibTable();
+	ui->transferCurrentBiasPushButton->setEnabled(false);
 }
 
 void CalibScanDialog::setCalibParameter(const QString &name, const QString &value)

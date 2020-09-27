@@ -165,7 +165,8 @@ void CalibForm::on_readCalibPushButton_clicked()
 void CalibForm::on_writeEepromPushButton_clicked()
 {
     // write eeprom clicked
-    emit writeCalibToEeprom();
+    emit updatedCalib(fCalibList);
+	emit writeCalibToEeprom();
 }
 
 

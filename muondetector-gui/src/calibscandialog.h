@@ -23,7 +23,8 @@ public slots:
     void onAdcSampleReceived(uint8_t channel, float value);
 private slots:
 	void startManualCurrentCalib();
-	
+	void transferCurrentCalibCoeffs();
+
 private:
     Ui::CalibScanDialog *ui;
     QVector<CalibStruct> fCalibList;
@@ -39,6 +40,7 @@ private:
     void setCalibParameter(const QString &name, const QString &value);
     QString getCalibParameter(const QString &name);
 	void manualCurrentCalibProgress(double vbias, double ibias);
+	
 };
 
 #endif // CALIBSCANDIALOG_H
