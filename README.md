@@ -55,9 +55,9 @@ When trying to create a Makefile with qmake (qt version 5.7.1 on raspbian) there
 - You may also install "lftp" for uploading acquired data to our server.
 - For TDC7200 it may be required to manually add "dtoverlay=spi0-hw-cs" to /boot/config.txt
 
-Cheat-Sheet Cpoy&Past:
+Cheat-Sheet Copy&Paste:
 
-`sudo apt get install qt5-default pyqt5-dev qt5-qmake libqt5serialport5-dev libqt5svg5-dev libqwt-qt5-dev libqwt-dev libcrypto++-dev libcrypto++-doc libcrypto++-utils libcrypto++-dev libcrypto++-doc libcrypto++-utils lftp libpaho-mqttpp`
+`sudo apt-get install qt5-default pyqt5-dev qt5-qmake libqt5serialport5-dev libqt5svg5-dev libqwt-qt5-dev libqwt-dev libcrypto++-dev libcrypto++-doc libcrypto++-utils libcrypto++-dev libcrypto++-doc libcrypto++-utils lftp libpaho-mqttpp qtdeclarative5-dev`
 
 ### Troubleshooting
 
