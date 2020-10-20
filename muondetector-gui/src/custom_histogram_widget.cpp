@@ -7,8 +7,11 @@
 #include <QFileDialog>
 #include <numeric>
 #include <histogram.h>
+#include <limits>
 
 #include "custom_histogram_widget.h"
+
+typedef std::numeric_limits<double> dbl;
 
 CustomHistogram::~CustomHistogram(){
     if (grid!=nullptr) { delete grid; grid=nullptr;}
@@ -147,7 +150,7 @@ void CustomHistogram::exportToFile() {
             QTextStream out(&file);
 
             for (int i=0; i<fNrBins; i++) {
-                out << bin2Value(i) << "  " << fHistogramMap[i] << "\n";
+                out << QString::number(bin2Value(i), 'g', dbl::max_digits10) << "  " << fHistogramMap[i] << "\n";
             }
         }
     }
