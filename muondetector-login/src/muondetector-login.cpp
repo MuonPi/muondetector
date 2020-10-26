@@ -191,7 +191,9 @@ int main()
     std::cin >> username;
     std::string password = getpass("please enter password:",true);
     QString hashedMacAddress = QString(QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex());
-    saveLoginData(QString("/var/muondetector/"+hashedMacAddress+"/loginData.save"),QString::fromStdString(username),QString::fromStdString(password));
+    if (!saveLoginData(QString("/var/muondetector/"+hashedMacAddress+"/loginData.save"),QString::fromStdString(username),QString::fromStdString(password))) {
+        return 1;
+    }
     MqttHandler mqttHandler("");
     std::unique_ptr<QObject> context{new QObject};
     QObject::connect(&mqttHandler, &MqttHandler::mqttConnectionStatus, [context = std::move(context)](bool connected) mutable{
