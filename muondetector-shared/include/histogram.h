@@ -1,7 +1,8 @@
 #ifndef HISTOGRAM_H
 #define HISTOGRAM_H
 
-#include <muondetector_shared_global.h>
+#include "muondetector_shared_global.h"
+
 #include <map>
 #include <string>
 #include <cmath>

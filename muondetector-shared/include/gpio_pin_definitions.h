@@ -1,6 +1,8 @@
 #ifndef GPIO_PIN_DEFINITIONS_H
 #define GPIO_PIN_DEFINITIONS_H
-#include <muondetector_shared_global.h>
+
+#include "muondetector_shared_global.h"
+
 #include <QMap>
 #include <QVector>
 #include <QString>

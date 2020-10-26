@@ -1,6 +1,9 @@
 #ifndef UBX_UBX_KEY_NAME_MAP_H
 #define UBX_UBX_KEY_NAME_MAP_H
-#include <muondetector_shared_global.h>
+
+#include "muondetector_shared_global.h"
+#include "ublox_messages.h"
+
 #include <QString>
 #include <ublox_messages.h>
 #include <QMap>

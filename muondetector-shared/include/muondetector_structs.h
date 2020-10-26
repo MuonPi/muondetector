@@ -1,7 +1,9 @@
 #ifndef MUONDETECTOR_STRUCTS_H
 #define MUONDETECTOR_STRUCTS_H
 
-#include <muondetector_shared_global.h>
+#include "muondetector_shared_global.h"
+#include "histogram.h"
+
 #include <sys/types.h>
 #include <string>
 #include <iostream>
@@ -10,7 +12,6 @@
 #include <QDataStream>
 #include <QList>
 #include <QMap>
-#include <histogram.h>
 
 
 enum ADC_SAMPLING_MODE {ADC_MODE_DISABLED=0, ADC_MODE_PEAK=1, ADC_MODE_TRACE=2 };

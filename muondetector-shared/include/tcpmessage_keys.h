@@ -1,6 +1,7 @@
 #ifndef TCPMESSAGE_KEYS_H
 #define TCPMESSAGE_KEYS_H
-#include <muondetector_shared_global.h>
+
+#include "muondetector_shared_global.h"
 
 // no specific reason but the codes are all prime numbers :)
 enum class TCP_MSG_KEY : quint16

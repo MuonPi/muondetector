@@ -1,6 +1,8 @@
 #ifndef TCPMESSAGE_H
 #define TCPMESSAGE_H
-#include <muondetector_shared_global.h>
+
+#include "muondetector_shared_global.h"
+
 #include <QByteArray>
 #include <QDataStream>
 

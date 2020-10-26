@@ -1,5 +1,6 @@
-#include <tcpconnection.h>
-#include <tcpmessage_keys.h>
+#include "tcpconnection.h"
+#include "tcpmessage_keys.h"
+
 #include <QtNetwork>
 #include <iostream>
 #include <QDataStream>

@@ -1,6 +1,7 @@
-#include <tcpmessage.h>
+#include "tcpmessage.h"
+#include "muondetector_structs.h"
+
 #include <QDebug>
-#include <muondetector_structs.h>
 
 TcpMessage::TcpMessage(quint16 tcpMsgID)
 {
