@@ -9,6 +9,14 @@ set(PROJECT_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
+if(${MUONDETECTOR_BUILD_TIDY})
+  set(CMAKE_CXX_CLANG_TIDY
+      clang-tidy;
+      -header-filter=^global;
+      -checks=-*,readability-*,bugprone-*,performace-*,clang-analyzer-*,modernize-*,hicpp-*;
+      -fix)
+endif(${MUONDETECTOR_BUILD_TIDY})
+
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
