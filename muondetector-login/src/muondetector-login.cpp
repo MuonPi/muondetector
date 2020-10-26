@@ -35,15 +35,15 @@ using namespace CryptoPP;
 
 auto getch() -> char
 {
-    char ch {};
-    struct termios t_old, t_new;
+    termios t_old {};
+    termios t_new {};
 
     tcgetattr(STDIN_FILENO, &t_old);
     t_new = t_old;
     t_new.c_lflag &= static_cast<unsigned int>(~(ICANON | ECHO));
     tcsetattr(STDIN_FILENO, TCSANOW, &t_new);
 
-    ch = static_cast<char>(getchar());
+    char ch { static_cast<char>(getchar()) };
 
     tcsetattr(STDIN_FILENO, TCSANOW, &t_old);
     return ch;
@@ -54,7 +54,7 @@ auto getpass(const char* prompt, const bool show_asterisk) -> std::string
     const char BACKSPACE = 127;
     const char RETURN = 10;
 
-    std::string password;
+    std::string password {};
     char ch { getch() };
     std::cout << prompt << std::endl;
     while ((ch = getch()) != RETURN) {
@@ -66,8 +66,9 @@ auto getpass(const char* prompt, const bool show_asterisk) -> std::string
             }
         } else {
             password += ch;
-            if (show_asterisk)
+            if (show_asterisk) {
                 std::cout << '*';
+            }
         }
     }
     std::cout << std::endl;
@@ -76,8 +77,8 @@ auto getpass(const char* prompt, const bool show_asterisk) -> std::string
 
 auto SHA256HashString(const std::string& aString) -> std::string
 {
-    std::string digest;
-    CryptoPP::SHA256 hash;
+    std::string digest {};
+    CryptoPP::SHA256 hash {};
 
     CryptoPP::StringSource foo(
         aString, true,
@@ -87,9 +88,11 @@ auto SHA256HashString(const std::string& aString) -> std::string
 
 auto getMacAddress() -> QString
 {
-    QNetworkConfiguration nc;
-    QNetworkConfigurationManager ncm;
-    QList<QNetworkConfiguration> configsForEth, configsForWLAN, allConfigs;
+    QNetworkConfiguration nc {};
+    QNetworkConfigurationManager ncm {};
+    QList<QNetworkConfiguration> configsForEth {};
+    QList<QNetworkConfiguration> configsForWLAN {};
+    QList<QNetworkConfiguration> allConfigs {};
     // getting all the configs we can
     foreach (nc, ncm.allConfigurations(QNetworkConfiguration::Active)) {
         if (nc.type() == QNetworkConfiguration::InternetAccessPoint) {
@@ -105,7 +108,7 @@ auto getMacAddress() -> QString
     // further in the code WLAN's and Eth's were treated differently
     allConfigs.append(configsForWLAN);
     allConfigs.append(configsForEth);
-    QString MAC;
+    QString MAC {};
     foreach (nc, allConfigs) {
         QNetworkSession networkSession(nc);
         QNetworkInterface netInterface = networkSession.interface();
@@ -124,9 +127,9 @@ auto getMacAddressByteArray() -> QByteArray
     // QString::fromLocal8Bit(temp.data()).toStdString();
     // return QByteArray(getMacAddress().toStdString().c_str());
     //    return QByteArray::fromStdString(getMacAddress().toStdString());
-    QString mac = getMacAddress();
+    QString mac { getMacAddress() };
     // qDebug()<<"MAC address: "<<mac;
-    QByteArray byteArray;
+    QByteArray byteArray {};
     byteArray.append(mac);
     return byteArray;
     // return QByteArray::fromRawData(mac.toStdString().c_str(),mac.size());
@@ -136,7 +139,7 @@ auto saveLoginData(const QString& loginFilePath,
     const QString& username,
     const QString& password) -> bool
 {
-    QFile loginDataFile(loginFilePath);
+    QFile loginDataFile { loginFilePath };
     loginDataFile.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner);
     if (!loginDataFile.open(QIODevice::ReadWrite)) {
         qDebug() << "could not open login data save file";
@@ -144,17 +147,17 @@ auto saveLoginData(const QString& loginFilePath,
     }
     loginDataFile.resize(0);
 
-    AutoSeededRandomPool rnd;
-    std::string plainText = QString(username + ";" + password).toStdString();
-    std::string keyText;
-    std::string encrypted;
+    AutoSeededRandomPool rnd {};
+    std::string plainText { QString(username + ";" + password).toStdString() };
+    std::string keyText {};
+    std::string encrypted {};
 
     keyText = SHA256HashString(getMacAddress().toStdString());
-    SecByteBlock key(reinterpret_cast<const byte*>(keyText.data()),
-        keyText.size());
+    SecByteBlock key { reinterpret_cast<const byte*>(keyText.data()),
+        keyText.size() };
 
     // Generate a random IV
-    SecByteBlock iv(AES::BLOCKSIZE);
+    SecByteBlock iv { AES::BLOCKSIZE };
     rnd.GenerateBlock(iv, iv.size());
 
     // qDebug() << "key length = " << keyText.size();
@@ -165,13 +168,13 @@ auto saveLoginData(const QString& loginFilePath,
     //////////////////////////////////////////////////////////////////////////
     // Encrypt
 
-    CFB_Mode<AES>::Encryption cfbEncryption;
+    CFB_Mode<AES>::Encryption cfbEncryption {};
     cfbEncryption.SetKeyWithIV(key, key.size(), iv, iv.size());
     // cfbEncryption.ProcessData(cypheredText, plainText, messageLen);
 
-    StringSource encryptor(
+    StringSource encryptor {
         plainText, true,
-        new StreamTransformationFilter(cfbEncryption, new StringSink(encrypted)));
+        new StreamTransformationFilter(cfbEncryption, new StringSink(encrypted)) };
     // qDebug() << "encrypted = " <<
     // QByteArray::fromStdString(encrypted).toHex(); write encrypted message and
     // IV to file
@@ -186,18 +189,16 @@ int main()
     // QCoreApplication a(argc, argv);
     std::cout << "To set the login for the mqtt-server, please enter user name:"
               << std::endl;
-    std::string username;
+    std::string username {};
     std::cin >> username;
-    std::string password = getpass("please enter password:", true);
-    QString hashedMacAddress = QString(QCryptographicHash::hash(getMacAddressByteArray(),
-        QCryptographicHash::Sha224)
-                                           .toHex());
+    std::string password { getpass("please enter password:", true) };
+    QString hashedMacAddress { QString{QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex() } };
     if (!saveLoginData(
-            QString("/var/muondetector/" + hashedMacAddress + "/loginData.save"),
+            QString { "/var/muondetector/" + hashedMacAddress + "/loginData.save" },
             QString::fromStdString(username), QString::fromStdString(password))) {
         return 1;
     }
-    MqttHandler mqttHandler("");
+    MqttHandler mqttHandler {""};
     std::unique_ptr<QObject> context { new QObject };
     QObject::connect(&mqttHandler, &MqttHandler::mqttConnectionStatus,
         [context = std::move(context)](bool connected) mutable {
@@ -210,8 +211,7 @@ int main()
             }
             context.release();
         });
-    mqttHandler.start(QString::fromStdString(username),
-        QString::fromStdString(password));
+    mqttHandler.start(QString::fromStdString(username), QString::fromStdString(password));
     mqttHandler.mqttDisconnect();
     return 0;
 }
