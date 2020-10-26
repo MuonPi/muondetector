@@ -22,7 +22,15 @@ using namespace CryptoPP;
 
 // crypto related stuff
 
-int getch() {
+[[nodiscard]] auto getch() -> int;
+[[nodiscard]] auto getpass(const char *prompt, bool show_asterisk) -> std::string;
+[[nodiscard]] auto SHA256HashString(std::string aString) -> std::string;
+[[nodiscard]] auto getMacAddress() -> QString;
+[[nodiscard]] auto getMacAddressByteArray() -> QByteArray;
+[[nodiscard]] auto saveLoginData(QString loginFilePath, QString username, QString password) -> bool;
+
+
+auto getch() -> int {
     int ch;
     struct termios t_old, t_new;
 
@@ -37,7 +45,7 @@ int getch() {
     return ch;
 }
 
-std::string getpass(const char *prompt, bool show_asterisk)
+auto getpass(const char *prompt, bool show_asterisk) -> std::string
 {
   const char BACKSPACE=127;
   const char RETURN=10;
@@ -68,7 +76,8 @@ std::string getpass(const char *prompt, bool show_asterisk)
   return password;
 }
 
-static std::string SHA256HashString(std::string aString){
+auto SHA256HashString(std::string aString) -> std::string
+{
     std::string digest;
     CryptoPP::SHA256 hash;
 
@@ -77,7 +86,8 @@ static std::string SHA256HashString(std::string aString){
     return digest;
 }
 
-static QString getMacAddress(){
+auto getMacAddress() -> QString
+{
     QNetworkConfiguration nc;
     QNetworkConfigurationManager ncm;
     QList<QNetworkConfiguration> configsForEth,configsForWLAN,allConfigs;
@@ -118,7 +128,8 @@ static QString getMacAddress(){
     return MAC;
 }
 
-static QByteArray getMacAddressByteArray(){
+auto getMacAddressByteArray() -> QByteArray
+{
     //QString::fromLocal8Bit(temp.data()).toStdString();
     //return QByteArray(getMacAddress().toStdString().c_str());
 //    return QByteArray::fromStdString(getMacAddress().toStdString());
@@ -130,7 +141,8 @@ static QByteArray getMacAddressByteArray(){
     //return QByteArray::fromRawData(mac.toStdString().c_str(),mac.size());
 }
 
-bool saveLoginData(QString loginFilePath, QString username, QString password){
+auto saveLoginData(QString loginFilePath, QString username, QString password) -> bool
+{
     QFile loginDataFile(loginFilePath);
     loginDataFile.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner);
     if(!loginDataFile.open(QIODevice::ReadWrite)){
