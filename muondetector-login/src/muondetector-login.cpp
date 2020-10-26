@@ -183,7 +183,7 @@ auto saveLoginData(const QString &loginFilePath, const QString &username, const 
     return true;
 }
 
-int main(int argc, char *argv[])
+int main()
 {
     //QCoreApplication a(argc, argv);
     std::cout << "To set the login for the mqtt-server, please enter user name:"<<std::endl;
@@ -194,7 +194,6 @@ int main(int argc, char *argv[])
     saveLoginData(QString("/var/muondetector/"+hashedMacAddress+"/loginData.save"),QString::fromStdString(username),QString::fromStdString(password));
     MqttHandler mqttHandler("");
     std::unique_ptr<QObject> context{new QObject};
-    QObject* pcontext = context.get();
     QObject::connect(&mqttHandler, &MqttHandler::mqttConnectionStatus, [context = std::move(context)](bool connected) mutable{
         if (connected){
             std::cout << "login data is correct!" << std::endl;
