@@ -50,8 +50,14 @@ set(PROJECT_HEADER_FILES
     )
 
 
-add_library(${PROJECT_NAME} ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES})
+add_library(${PROJECT_NAME} SHARED ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_HEADER_DIR})
 target_link_libraries(${PROJECT_NAME} Qt5::Network)
 
-install(TARGETS ${PROJECT_NAME} DESTINATION lib)
+add_library(muondetector_static STATIC ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES})
+set_target_properties(muondetector_static PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+target_include_directories(muondetector_static PUBLIC ${PROJECT_HEADER_DIR})
+target_link_libraries(muondetector_static Qt5::Network)
+
+install(TARGETS ${PROJECT_NAME} muondetector_static DESTINATION lib)
+install(FILES ${PROJECT_HEADER_FILES} DESTINATION include)
