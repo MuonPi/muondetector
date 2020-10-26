@@ -13,7 +13,7 @@ if(${MUONDETECTOR_BUILD_TIDY})
       clang-tidy;
       -header-filter=^global;
       -checks=-*,readability-*,bugprone-*,performace-*,clang-analyzer-*,modernize-*,hicpp-*;
-      -fix)
+      )
 endif(${MUONDETECTOR_BUILD_TIDY})
 
 set(CMAKE_AUTOUIC ON)
