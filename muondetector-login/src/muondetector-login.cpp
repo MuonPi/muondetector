@@ -22,7 +22,7 @@ using namespace CryptoPP;
 
 // crypto related stuff
 
-[[nodiscard]] auto getch() -> int;
+[[nodiscard]] auto getch() -> char;
 [[nodiscard]] auto getpass(const char *prompt, const bool show_asterisk) -> std::string;
 [[nodiscard]] auto SHA256HashString(const std::string& aString) -> std::string;
 [[nodiscard]] auto getMacAddress() -> QString;
@@ -30,16 +30,16 @@ using namespace CryptoPP;
 [[nodiscard]] auto saveLoginData(const QString& loginFilePath, const QString& username, const QString& password) -> bool;
 
 
-auto getch() -> int {
-    int ch;
+auto getch() -> char {
+    char ch {};
     struct termios t_old, t_new;
 
     tcgetattr(STDIN_FILENO, &t_old);
     t_new = t_old;
-    t_new.c_lflag &= ~(ICANON | ECHO);
+    t_new.c_lflag &= static_cast<unsigned int>(~(ICANON | ECHO));
     tcsetattr(STDIN_FILENO, TCSANOW, &t_new);
 
-    ch = getchar();
+    ch = static_cast<char>(getchar());
 
     tcsetattr(STDIN_FILENO, TCSANOW, &t_old);
     return ch;
@@ -51,10 +51,9 @@ auto getpass(const char *prompt, const bool show_asterisk) -> std::string
   const char RETURN=10;
 
   std::string password;
-  unsigned char ch=0;
-  ch=getch();
+  char ch { getch() };
   std::cout <<prompt<<std::endl;
-  while((ch=getch())!=RETURN)
+  while((ch = getch()) != RETURN)
     {
        if(ch==BACKSPACE)
          {
