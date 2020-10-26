@@ -19,9 +19,6 @@
 
 #include "mqtthandler.h"
 
-using namespace CryptoPP;
-
-// crypto related stuff
 
 [[nodiscard]] auto getch() -> char;
 [[nodiscard]] auto getpass(const char* prompt, const bool show_asterisk)
@@ -139,6 +136,7 @@ auto saveLoginData(const QString& loginFilePath,
     const QString& username,
     const QString& password) -> bool
 {
+    using namespace CryptoPP;
     QFile loginDataFile { loginFilePath };
     loginDataFile.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner);
     if (!loginDataFile.open(QIODevice::ReadWrite)) {
