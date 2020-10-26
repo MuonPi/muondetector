@@ -43,7 +43,6 @@ set(PROJECT_INSTALL_FILES
     "${PROJECT_CONFIG_DIR}/muondetector-login.sh")
 
 
-
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC

@@ -52,22 +52,22 @@ class MqttHandler : public QObject
 
     private:
         void mqttConnect();
-        const int qos = MUONPI_MQTT_QOS;
-        int timeout = MUONPI_MQTT_TIMEOUT_MS;
-        QPointer<QTimer> reconnectTimer;
-        mqtt::async_client *mqttClient = nullptr;
-        mqtt::topic *data_topic = nullptr;
-        mqtt::topic *log_topic = nullptr;
-        mqtt::connect_options *conopts = nullptr;
-        mqtt::message *willmsg = nullptr;
-        mqtt::will_options *will = nullptr;
-        bool _mqttConnectionStatus = false;
-        QString mqttAddress = MUONPI_MQTT_SERVER;
-        QString stationID="0";
-        QString username;
-        QString password;
-        std::string clientID;
-		int verbose=0;
+        const int m_qos { MUONPI_MQTT_QOS };
+        int m_timeout { MUONPI_MQTT_TIMEOUT_MS };
+        QPointer<QTimer>  m_reconnectTimer {};
+        mqtt::async_client *m_mqttClient { nullptr };
+        mqtt::topic *m_data_topic { nullptr };
+        mqtt::topic *m_log_topic { nullptr };
+        mqtt::connect_options *m_conopts { nullptr };
+        mqtt::message *m_willmsg { nullptr };
+        mqtt::will_options *m_will { nullptr };
+        bool m_mqttConnectionStatus { false };
+        QString m_mqttAddress { MUONPI_MQTT_SERVER };
+        QString m_stationID { "0" };
+        QString m_username {};
+        QString m_password {};
+        std::string m_clientID {};
+        int m_verbose { 0 };
 };
 
 #endif // MQTTHANDLER_H
