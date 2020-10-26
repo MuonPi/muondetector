@@ -35,12 +35,12 @@ void action_listener::on_success(const mqtt::token& tok) {
 
 void delivery_action_listener::on_failure(const mqtt::token& tok) {
     action_listener::on_failure(tok);
-    done_ = true;
+    m_done = true;
 }
 
 void delivery_action_listener::on_success(const mqtt::token& tok) {
     action_listener::on_success(tok);
-    done_ = true;
+    m_done = true;
 }
 
 MqttHandler::MqttHandler(QString station_ID, int verbosity){

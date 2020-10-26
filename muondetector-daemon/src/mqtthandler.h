@@ -23,12 +23,12 @@ protected:
 
 class delivery_action_listener : public action_listener{
 public:
-    delivery_action_listener() : done_(false) {}
     void on_failure(const mqtt::token& tok) override;
     void on_success(const mqtt::token& tok) override;
-    bool is_done() const { return done_; }
+    bool is_done() const { return m_done; }
+
 private:
-    std::atomic<bool> done_;
+    std::atomic<bool> m_done { false };
 };
 
 class MqttHandler : public QObject
