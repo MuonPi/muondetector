@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(muondetector-shared LANGUAGES CXX)
 
-set(MUONDETECTOR_SHARED_LIBRARY ON)
-
 set(PROJECT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(PROJECT_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(PROJECT_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
@@ -37,15 +35,13 @@ add_compile_options(
     -O3
     )
 
-configure_file("${PROJECT_CONFIG_DIR}/muondetector_shared_global.h"
-               "${PROJECT_HEADER_DIR}/muondetector_shared_global.h")
-
 set(PROJECT_SOURCE_FILES
     "${PROJECT_SRC_DIR}/tcpconnection.cpp"
     "${PROJECT_SRC_DIR}/tcpmessage.cpp"
     )
 
 set(PROJECT_HEADER_FILES
+    "${PROJECT_HEADER_DIR}/muondetector_shared_global.h"
     "${PROJECT_HEADER_DIR}/gpio_pin_definitions.h"
     "${PROJECT_HEADER_DIR}/histogram.h"
     "${PROJECT_HEADER_DIR}/tcpconnection.h"
@@ -57,6 +53,7 @@ set(PROJECT_HEADER_FILES
     "${PROJECT_HEADER_DIR}/muondetector_structs.h"
     )
 
+add_definitions(-DMUONDETECTOR_SHARED_LIBRARY)
 
 add_library(${PROJECT_NAME} SHARED ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_HEADER_DIR})
