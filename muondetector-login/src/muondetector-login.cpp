@@ -156,7 +156,7 @@ auto saveLoginData(const QString &loginFilePath, const QString &username, const 
     std::string encrypted;
 
     keyText = SHA256HashString(getMacAddress().toStdString());
-    SecByteBlock key((const byte*)keyText.data(),keyText.size());
+    SecByteBlock key(reinterpret_cast<const byte*>(keyText.data()), keyText.size());
 
     // Generate a random IV
     SecByteBlock iv(AES::BLOCKSIZE);
@@ -178,7 +178,7 @@ auto saveLoginData(const QString &loginFilePath, const QString &username, const 
                                                           new StringSink(encrypted)));
     //qDebug() << "encrypted = " << QByteArray::fromStdString(encrypted).toHex();
     // write encrypted message and IV to file
-    loginDataFile.write((const char*)iv.data(),iv.size());
+    loginDataFile.write(reinterpret_cast<const char*>(iv.data()), static_cast<qint64>(iv.size()));
     loginDataFile.write(encrypted.c_str());
     return true;
 }
