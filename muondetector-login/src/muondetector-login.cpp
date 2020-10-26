@@ -23,11 +23,11 @@ using namespace CryptoPP;
 // crypto related stuff
 
 [[nodiscard]] auto getch() -> int;
-[[nodiscard]] auto getpass(const char *prompt, bool show_asterisk) -> std::string;
-[[nodiscard]] auto SHA256HashString(std::string aString) -> std::string;
+[[nodiscard]] auto getpass(const char *prompt, const bool show_asterisk) -> std::string;
+[[nodiscard]] auto SHA256HashString(const std::string& aString) -> std::string;
 [[nodiscard]] auto getMacAddress() -> QString;
 [[nodiscard]] auto getMacAddressByteArray() -> QByteArray;
-[[nodiscard]] auto saveLoginData(QString loginFilePath, QString username, QString password) -> bool;
+[[nodiscard]] auto saveLoginData(const QString& loginFilePath, const QString& username, const QString& password) -> bool;
 
 
 auto getch() -> int {
@@ -45,7 +45,7 @@ auto getch() -> int {
     return ch;
 }
 
-auto getpass(const char *prompt, bool show_asterisk) -> std::string
+auto getpass(const char *prompt, const bool show_asterisk) -> std::string
 {
   const char BACKSPACE=127;
   const char RETURN=10;
@@ -76,7 +76,7 @@ auto getpass(const char *prompt, bool show_asterisk) -> std::string
   return password;
 }
 
-auto SHA256HashString(std::string aString) -> std::string
+auto SHA256HashString(const std::string& aString) -> std::string
 {
     std::string digest;
     CryptoPP::SHA256 hash;
@@ -141,7 +141,7 @@ auto getMacAddressByteArray() -> QByteArray
     //return QByteArray::fromRawData(mac.toStdString().c_str(),mac.size());
 }
 
-auto saveLoginData(QString loginFilePath, QString username, QString password) -> bool
+auto saveLoginData(const QString &loginFilePath, const QString &username, const QString &password) -> bool
 {
     QFile loginDataFile(loginFilePath);
     loginDataFile.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner);
