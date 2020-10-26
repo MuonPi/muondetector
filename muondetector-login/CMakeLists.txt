@@ -33,7 +33,8 @@ add_compile_options(
 
 
 set(PROJECT_SOURCE_FILES
-    "${PROJECT_SRC_DIR}/muondetector-login.cpp")
+    "${PROJECT_SRC_DIR}/muondetector-login.cpp"
+    "${DAEMON_INCLUDE_DIR}/mqtthandler.cpp")
 
 set(PROJECT_HEADER_FILES
     "${DAEMON_INCLUDE_DIR}/mqtthandler.h")
