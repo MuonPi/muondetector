@@ -42,10 +42,12 @@ add_compile_options(
 
 set(PROJECT_SOURCE_FILES
     "${PROJECT_SRC_DIR}/muondetector-login.cpp"
-    "${DAEMON_INCLUDE_DIR}/mqtthandler.cpp")
+    "${CMAKE_CURRENT_SOURCE_DIR}/../muondetector-shared/src/mqtthandler.cpp"
+    )
 
 set(PROJECT_HEADER_FILES
-    "${DAEMON_INCLUDE_DIR}/mqtthandler.h")
+    "${CMAKE_CURRENT_SOURCE_DIR}/../muondetector-shared/include/mqtthandler.h"
+    )
 
 set(PROJECT_INSTALL_FILES
     "${PROJECT_CONFIG_DIR}/muondetector-login.sh")
