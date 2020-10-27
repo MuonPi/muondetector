@@ -1,27 +1,31 @@
 #ifndef MQTTHANDLER_H
 #define MQTTHANDLER_H
 
+#include "muondetector_shared_global.h"
+#include "config.h"
+
 #include <QObject>
 #include <QTimer>
 #include <QPointer>
 #include <async_client.h>
 #include <connect_options.h>
 #include <string>
-#include <config.h>
 
-class callback : public virtual mqtt::callback{
+namespace MuonPi {
+
+class MUONDETECTORSHARED callback : public virtual mqtt::callback{
 public:
     void connection_lost(const std::string& cause) override;
     void delivery_complete(mqtt::delivery_token_ptr tok) override;
 };
 
-class action_listener : public virtual mqtt::iaction_listener{
+class MUONDETECTORSHARED action_listener : public virtual mqtt::iaction_listener{
 protected:
     void on_failure(const mqtt::token& tok) override;
     void on_success(const mqtt::token& tok) override;
 };
 
-class delivery_action_listener : public action_listener{
+class MUONDETECTORSHARED delivery_action_listener : public action_listener{
 public:
     void on_failure(const mqtt::token& tok) override;
     void on_success(const mqtt::token& tok) override;
@@ -31,7 +35,7 @@ private:
     std::atomic<bool> m_done { false };
 };
 
-class MqttHandler : public QObject
+class MUONDETECTORSHARED MqttHandler : public QObject
 {
     Q_OBJECT
 
@@ -69,5 +73,6 @@ class MqttHandler : public QObject
         std::string m_clientID {};
         int m_verbose { 0 };
 };
+} // namespace MuonPi
 
 #endif // MQTTHANDLER_H

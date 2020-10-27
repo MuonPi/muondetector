@@ -12,6 +12,8 @@
 
 #include <iostream>
 
+namespace MuonPi {
+
 
 void callback::connection_lost(const std::string& cause) {
     std::cout << "\nConnection lost" << std::endl;
@@ -175,3 +177,4 @@ void MqttHandler::sendLog(const QString &message){
 void MqttHandler::onRequestConnectionStatus(){
     emit mqttConnectionStatus(m_mqttConnectionStatus);
 }
+} // namespace MuonPi

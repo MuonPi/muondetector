@@ -1,30 +1,54 @@
-#ifndef _CONFIG_H_
-#define _CONFIG_H_
+#ifndef MUONPI_CONFIG_H
+#define MUONPI_CONFIG_H
+
+#include <cstdint>
+#include <string>
 
 
-#define MUONPI_BUILD_TIME				__DATE__
-#define MUONPI_DEFAULT_HW_VERSION		2
-#define MUONPI_DEFAULT_CONFIG_FILE		"/etc/muondetector/muondetector.conf"
+namespace MonPi::Version {
+constexpr struct {
+    int major;
+    int minor;
+    int patch;
+}
+    hardware { 2, 0, 0 },
+    software { 1, 2, 0 };
+}
 
-#define MUONPI_MQTT_SERVER				"116.202.96.181:1883"
-#define MUONPI_MQTT_TIMEOUT_MS			30000
-#define MUONPI_MQTT_QOS					1
+namespace MuonPi::Config {
+constexpr const char* file { "/etc/muondetector/muondetector.conf" };
 
-#define MUONPI_LOG_INTERVAL_MINUTES		1
+namespace MQTT {
+constexpr const char* server { "116.202.96.181:1883" };
+constexpr int timeout { 30000 };
+constexpr int qos { 1 };
+constexpr int keepalive_interval { 45 };
+}
+namespace Log {
+constexpr int interval { 1 };
+}
+namespace Upload {
+constexpr int reminder { 5 };
+constexpr std::size_t timeout { 600000UL };
+constexpr const char* url { "balu.physik.uni-giessen.de:/cosmicshower" };
+constexpr int port { 35221 };
+}
+namespace Hardware {
+namespace OLED {
+constexpr int update_interval { 2000 };
+}
+namespace ADC {
+constexpr int buffer_size { 50 };
+constexpr int pretrigger { 10 };
+}
+constexpr int trace_sampling_interval { 5 };
+constexpr int monitor_interval { 5000 };
+namespace RateScan {
+constexpr int iterations { 10 };
+constexpr int interval { 400 };
+}
+}
 
-#define MUONPI_UPLOAD_REMINDER_MINUTES	5
-#define MUONPI_UPLOAD_TIMEOUT_MS		600000UL
-#define MUONPI_UPLOAD_URL				"balu.physik.uni-giessen.de:/cosmicshower"
-#define MUONPI_UPLOAD_PORT				35221
+} // namespace MuonPi::Config
 
-#define OLED_UPDATE_PERIOD 				2000
-
-#define ADC_SAMPLEBUFFER_SIZE 			50
-#define ADC_PRETRIGGER 					10
-#define TRACE_SAMPLING_INTERVAL 		5  // free running adc sampling interval in ms
-#define PARAMETER_MONITOR_INTERVAL		5000
-
-#define RATE_SCAN_ITERATIONS			10
-#define RATE_SCAN_TIME_INTERVAL_MS		400
-
-#endif // _CONFIG_H_
+#endif // MUONPI_CONFIG_H

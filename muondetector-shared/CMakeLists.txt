@@ -53,6 +53,7 @@ set(PROJECT_HEADER_FILES
     "${PROJECT_HEADER_DIR}/ubx_msg_key_name_map.h"
     "${PROJECT_HEADER_DIR}/ublox_structs.h"
     "${PROJECT_HEADER_DIR}/muondetector_structs.h"
+    "${PROJECT_HEADER_DIR}/config.h"
     )
 
 add_definitions(-DMUONDETECTOR_SHARED_LIBRARY)
