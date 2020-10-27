@@ -43,21 +43,19 @@ class MUONDETECTORSHARED MqttHandler : public QObject
         void mqttConnectionStatus(bool connected);
 
     public slots:
-        void start(QString username, QString password);
+        void start(const QString& username, const QString& password);
         void sendData(const QString &message);
         void sendLog(const QString &message);
         void onRequestConnectionStatus();
 
     public:
-        MqttHandler(QString station_ID, int verbosity=0);
+        MqttHandler(const QString& station_ID, const int verbosity=0);
         //using QObject::QObject;
         void mqttStartConnection();
         void mqttDisconnect();
 
     private:
         void mqttConnect();
-        const int m_qos { MUONPI_MQTT_QOS };
-        int m_timeout { MUONPI_MQTT_TIMEOUT_MS };
         QPointer<QTimer>  m_reconnectTimer {};
         mqtt::async_client *m_mqttClient { nullptr };
         mqtt::topic *m_data_topic { nullptr };
@@ -66,10 +64,9 @@ class MUONDETECTORSHARED MqttHandler : public QObject
         mqtt::message *m_willmsg { nullptr };
         mqtt::will_options *m_will { nullptr };
         bool m_mqttConnectionStatus { false };
-        QString m_mqttAddress { MUONPI_MQTT_SERVER };
-        QString m_stationID { "0" };
-        QString m_username {};
-        QString m_password {};
+        std::string m_stationID { "0" };
+        std::string m_username {};
+        std::string m_password {};
         std::string m_clientID {};
         int m_verbose { 0 };
 };
