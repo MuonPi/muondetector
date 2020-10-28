@@ -17,6 +17,7 @@ class MUONDETECTORSHARED callback : public virtual mqtt::callback{
 public:
     void connection_lost(const std::string& cause) override;
     void delivery_complete(mqtt::delivery_token_ptr tok) override;
+    void message_arrived(mqtt::const_message_ptr message) override;
 };
 
 class MUONDETECTORSHARED action_listener : public virtual mqtt::iaction_listener{
@@ -59,6 +60,7 @@ class MUONDETECTORSHARED MqttHandler : public QObject
         QPointer<QTimer>  m_reconnectTimer {};
         mqtt::async_client *m_mqttClient { nullptr };
         mqtt::topic *m_data_topic { nullptr };
+        mqtt::topic *m_config_topic { nullptr };
         mqtt::topic *m_log_topic { nullptr };
         mqtt::connect_options *m_conopts { nullptr };
         mqtt::message *m_willmsg { nullptr };

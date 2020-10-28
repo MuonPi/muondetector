@@ -26,6 +26,11 @@ void callback::delivery_complete(mqtt::delivery_token_ptr tok) {
     std::cout << "\tDelivery complete for token: "
         << (tok ? tok->get_message_id() : -1) << std::endl;
 }
+
+void callback::message_arrived(mqtt::const_message_ptr /*message*/)
+{
+}
+
 void action_listener::on_failure(const mqtt::token& tok) {
     std::cout << "\tListener failure for token: "
         << tok.get_message_id() << std::endl;
@@ -82,7 +87,10 @@ void MqttHandler::mqttStartConnection(){
 void MqttHandler::mqttConnect(){
     try {
         m_mqttClient->connect(*m_conopts)->wait();
+        // TODO add callback
         m_data_topic = new mqtt::topic(*m_mqttClient, "muonpi/data/"+m_username+"/"+m_stationID,Config::MQTT::qos);
+        m_config_topic = new mqtt::topic(*m_mqttClient, "muonpi/config/"+m_username+"/"+m_stationID,Config::MQTT::qos);
+        m_config_topic->subscribe();
         m_log_topic = new mqtt::topic(*m_mqttClient, "muonpi/log/"+m_username+"/"+m_stationID,Config::MQTT::qos);
         emit mqttConnectionStatus(true);
         m_mqttConnectionStatus = true;
