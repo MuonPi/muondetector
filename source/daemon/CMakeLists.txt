@@ -5,7 +5,7 @@ project(muondetector-daemon LANGUAGES CXX C)
 set(PROJECT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(PROJECT_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(PROJECT_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
-set(SHARED_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../muondetector_shared/include")
+set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../library/include/")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
@@ -119,11 +119,13 @@ set(LIBRT_LIBRARIES "rt")
 set(LIBCONFIG_LIBRARIES "config++")
 set(LIBPAHO_MQTT_LIBRARIES "paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3")
 
+
+
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${PROJECT_HEADER_DIR}>
-    $<BUILD_INTERFACE:${SHARED_INCLUDE_DIR}>)
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:/usr/local/include/mqtt>
@@ -136,6 +138,7 @@ target_link_libraries(${PROJECT_NAME}
     ${LIBRT_LIBRARIES}
     ${LIBCONFIG_LIBRARIES}
     ${LIBPAHO_MQTT_LIBRARIES}
+    "${CMAKE_CURRENT_BINARY_DIR}/lib/libmuondetector.a"
     )
 
 install(FILES ${PROJECT_INSTALL_FILES} DESTINATION etc)

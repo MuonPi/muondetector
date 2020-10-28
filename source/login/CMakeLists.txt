@@ -4,7 +4,7 @@ project(muondetector-login LANGUAGES CXX)
 
 set(PROJECT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(PROJECT_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
-set(DAEMON_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../muondetector-daemon/src/")
+set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../library/include/")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
@@ -42,21 +42,16 @@ add_compile_options(
 
 set(PROJECT_SOURCE_FILES
     "${PROJECT_SRC_DIR}/muondetector-login.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../muondetector-shared/src/mqtthandler.cpp"
-    )
-
-set(PROJECT_HEADER_FILES
-    "${CMAKE_CURRENT_SOURCE_DIR}/../muondetector-shared/include/mqtthandler.h"
     )
 
 set(PROJECT_INSTALL_FILES
     "${PROJECT_CONFIG_DIR}/muondetector-login.sh")
 
 
-add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES})
+add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_FILES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    $<BUILD_INTERFACE:${DAEMON_INCLUDE_DIR}>)
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:/usr/local/include/mqtt>
     $<INSTALL_INTERFACE:include/mqtt>)
