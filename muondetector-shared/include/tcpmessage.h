@@ -17,26 +17,22 @@ class MUONDETECTORSHARED TcpMessage
 {
 public:
     TcpMessage(quint16 tcpMsgID = 0);
-    TcpMessage(TCP_MSG_KEY tcpMsgID) {
-	msgID = static_cast<quint16>(tcpMsgID);
-	dStream = new QDataStream(&data, QIODevice::ReadWrite);
-	byteCount = 0;
-	*dStream << (quint16)0;
-	*dStream << msgID;
-    }
-
+    TcpMessage(TCP_MSG_KEY tcpMsgID);
     TcpMessage(QByteArray& rawdata);
     TcpMessage(const TcpMessage &tcpMessage);
     ~TcpMessage();
-    QDataStream *dStream = nullptr;
+
     void setMsgID(quint16 tcpMsgID);
     void setData(QByteArray& data);
     const QByteArray& getData() const;
     quint16 getMsgID() const;
     quint16 getByteCount() const;
+
+    QDataStream *dStream = nullptr;
 private:
-    quint16 msgID, byteCount;
-    QByteArray data;
+    QByteArray m_data {};
+    quint16 m_msgID {};
+    quint16 m_byteCount {};
 };
 
 #endif // TCPMESSAGE_H
