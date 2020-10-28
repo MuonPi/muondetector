@@ -76,7 +76,6 @@ set(DAEMON_SOURCE_FILES
     )
 
 set(DAEMON_HEADER_FILES
-    "${PROJECT_HEADER_DIR}/config.h"
     "${PROJECT_HEADER_DIR}/unixtime_from_gps.h"
     "${PROJECT_HEADER_DIR}/time_from_rtc.h"
     "${PROJECT_HEADER_DIR}/qtserialublox.h"
@@ -154,7 +153,8 @@ target_include_directories(muondetector-daemon PUBLIC
 
 target_include_directories(muondetector-daemon PUBLIC
     $<BUILD_INTERFACE:/usr/local/include/mqtt>
-    $<INSTALL_INTERFACE:include/mqtt>)
+    $<INSTALL_INTERFACE:include/mqtt>
+    )
 
 target_link_libraries(muondetector-daemon
     Qt5::Network Qt5::SerialPort
