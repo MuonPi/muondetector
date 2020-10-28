@@ -5,7 +5,7 @@ set(PROJECT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(PROJECT_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(PROJECT_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib")
 
 set(MUONDETECTOR_BUILD_TIDY ON)
 
@@ -60,20 +60,12 @@ set(PROJECT_HEADER_FILES
 
 add_definitions(-DMUONDETECTOR_SHARED_LIBRARY)
 
-add_library(${PROJECT_NAME} SHARED ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES})
+add_library(${PROJECT_NAME} STATIC ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_HEADER_DIR})
 target_link_libraries(${PROJECT_NAME} Qt5::Network paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3)
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:/usr/local/include/mqtt>
     $<INSTALL_INTERFACE:include/mqtt>)
 
-add_library(muondetector_static STATIC ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES})
-set_target_properties(muondetector_static PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
-target_include_directories(muondetector_static PUBLIC ${PROJECT_HEADER_DIR})
-target_link_libraries(muondetector_static Qt5::Network paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3)
-target_include_directories(muondetector_static PUBLIC
-    $<BUILD_INTERFACE:/usr/local/include/mqtt>
-    $<INSTALL_INTERFACE:include/mqtt>)
-
-install(TARGETS ${PROJECT_NAME} muondetector_static DESTINATION lib)
+install(TARGETS ${PROJECT_NAME} DESTINATION lib)
 install(FILES ${PROJECT_HEADER_FILES} DESTINATION include)
