@@ -3,6 +3,7 @@ project(muondetector-gui LANGUAGES CXX)
 
 set(PROJECT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(PROJECT_UI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(PROJECT_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(PROJECT_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(PROJECT_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
 set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../library/include/")
@@ -93,8 +94,11 @@ set(PROJECT_UI_FILES
     "${PROJECT_UI_DIR}/spiform.ui"
     "${PROJECT_UI_DIR}/status.ui"
     )
+set(PROJECT_RESOURCE_FILES
+    "${PROJECT_RES_DIR}/resources.qrc"
+    )
 
-add_executable(muondetector-gui ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES} ${PROJECT_UI_FILES})
+add_executable(muondetector-gui ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES} ${PROJECT_UI_FILES} ${PROJECT_RESOURCE_FILES})
 target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:${PROJECT_HEADER_DIR}>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
