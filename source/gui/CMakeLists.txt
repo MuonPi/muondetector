@@ -38,6 +38,14 @@ add_compile_options(
     -O3
     )
 
+if (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
+add_compile_options(
+    -mthumb
+    -mthumb-interwork
+    -march=armv7-a
+    )
+endif (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
+
 set(PROJECT_SOURCE_FILES
     "${PROJECT_SRC_DIR}/calibform.cpp"
     "${PROJECT_SRC_DIR}/calibscandialog.cpp"
