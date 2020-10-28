@@ -7,7 +7,7 @@ set(PROJECT_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(PROJECT_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
 set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../library/include/")
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../bin")
 
 if(${MUONDETECTOR_BUILD_TIDY})
   set(CMAKE_CXX_CLANG_TIDY
@@ -44,7 +44,7 @@ add_compile_options(
 
 
 
-set(PROJECT_SOURCE_FILES
+set(DAEMON_SOURCE_FILES
     "${PROJECT_SRC_DIR}/main.cpp"
     "${PROJECT_SRC_DIR}/qtserialublox.cpp"
     "${PROJECT_SRC_DIR}/qtserialublox_processmessages.cpp"
@@ -75,7 +75,7 @@ set(PROJECT_SOURCE_FILES
     "${PROJECT_SRC_DIR}/i2c/i2cdevices/glcdfont.c"
     )
 
-set(PROJECT_HEADER_FILES
+set(DAEMON_HEADER_FILES
     "${PROJECT_HEADER_DIR}/config.h"
     "${PROJECT_HEADER_DIR}/unixtime_from_gps.h"
     "${PROJECT_HEADER_DIR}/time_from_rtc.h"
@@ -110,8 +110,17 @@ set(PROJECT_HEADER_FILES
     "${PROJECT_HEADER_DIR}/i2c/i2cdevices/i2cdevice.h"
     )
 
-set(PROJECT_INSTALL_FILES
-    "${PROJECT_CONFIG_DIR}/ubx_rates_config.cfg")
+set(LOGIN_SOURCE_FILES
+    "${PROJECT_SRC_DIR}/muondetector-login.cpp"
+    )
+
+set(LOGIN_INSTALL_FILES
+    "${PROJECT_CONFIG_DIR}/muondetector-login.sh"
+    )
+
+set(DAEMON_INSTALL_FILES
+    "${PROJECT_CONFIG_DIR}/ubx_rates_config.cfg"
+    )
 
 set(LIBCRYPTO_LIBRARIES "crypto++")
 set(LIBPIGPIOD_LIBRARIES "pigpiod_if2")
@@ -121,25 +130,41 @@ set(LIBPAHO_MQTT_LIBRARIES "paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as pa
 
 
 
-add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES})
 
-target_include_directories(${PROJECT_NAME} PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_HEADER_DIR}>
+add_executable(muondetector-login ${LOGIN_SOURCE_FILES})
+
+target_include_directories(muondetector-login PUBLIC
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-
-target_include_directories(${PROJECT_NAME} PUBLIC
+target_include_directories(muondetector-login PUBLIC
     $<BUILD_INTERFACE:/usr/local/include/mqtt>
     $<INSTALL_INTERFACE:include/mqtt>)
 
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(muondetector-login
+    Qt5::Network Qt5::SerialPort
+    ${LIBCRYPTO_LIBRARIES}
+    ${LIBPAHO_MQTT_LIBRARIES}
+    "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
+    )
+
+add_executable(muondetector-daemon ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES})
+
+target_include_directories(muondetector-daemon PUBLIC
+    $<BUILD_INTERFACE:${PROJECT_HEADER_DIR}>
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+
+target_include_directories(muondetector-daemon PUBLIC
+    $<BUILD_INTERFACE:/usr/local/include/mqtt>
+    $<INSTALL_INTERFACE:include/mqtt>)
+
+target_link_libraries(muondetector-daemon
     Qt5::Network Qt5::SerialPort
     ${LIBCRYPTO_LIBRARIES}
     ${LIBPIGPIOD_LIBRARIES}
     ${LIBRT_LIBRARIES}
     ${LIBCONFIG_LIBRARIES}
     ${LIBPAHO_MQTT_LIBRARIES}
-    "${CMAKE_CURRENT_BINARY_DIR}/lib/libmuondetector.a"
+    "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
     )
 
-install(FILES ${PROJECT_INSTALL_FILES} DESTINATION etc)
-install(TARGETS ${PROJECT_NAME} DESTINATION bin)
+install(FILES ${DAEMON_INSTALL_FILES} DESTINATION etc)
+install(TARGETS muondetector-daemon muondetector-login DESTINATION bin)
