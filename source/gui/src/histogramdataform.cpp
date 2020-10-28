@@ -10,11 +10,11 @@ histogramDataForm::histogramDataForm(QWidget *parent) :
     connect(ui->histoWidget, &CustomHistogram::histogramCleared, [this](const QString histogramName){
         emit histogramCleared(histogramName);
 /*
-		auto it = fHistoMap.find(histogramName);
-		if (it!=fHistoMap.end()) {
-			it->clear();
-			this->updateHistoTable();
-		}
+        auto it = fHistoMap.find(histogramName);
+        if (it!=fHistoMap.end()) {
+            it->clear();
+            this->updateHistoTable();
+        }
 */
 //        qDebug()<<"sent signal histogramDataForm::histogramCleared("<<histogramName<<")";
     });
@@ -27,10 +27,10 @@ histogramDataForm::~histogramDataForm()
 
 void histogramDataForm::onHistogramReceived(const Histogram &h)
 {
-    int oldMapSize=fHistoMap.size();
+//    int oldMapSize=fHistoMap.size();
     QString name=QString::fromStdString(h.getName());
     fHistoMap[name]=h;
-    int newMapSize=fHistoMap.size();
+//    int newMapSize=fHistoMap.size();
 //    if (newMapSize!=oldMapSize)
         updateHistoTable();
     ui->nrHistosLabel->setText(QString::number(fHistoMap.size()));
@@ -55,15 +55,15 @@ void histogramDataForm::updateHistoTable()
         i++;
     }
     if (fCurrentHisto.size()) {
-        for (int i=0; i<ui->tableWidget->rowCount(); i++) {
-            if (ui->tableWidget->item(i,0)->text()==fCurrentHisto) {
-                on_tableWidget_cellClicked(i,0);
+        for (int j=0; i<ui->tableWidget->rowCount(); j++) {
+            if (ui->tableWidget->item(j,0)->text()==fCurrentHisto) {
+                on_tableWidget_cellClicked(j,0);
             }
         }
     }
 }
 
-void histogramDataForm::on_tableWidget_cellClicked(int row, int column)
+void histogramDataForm::on_tableWidget_cellClicked(int row, int /*column*/)
 {
     QString name = ui->tableWidget->item(row,0)->text();
 //    ui->nrHistosLabel->setText(name);

@@ -109,16 +109,16 @@ void LogPlotsWidget::updateLogTable()
     }
 
     if (fCurrentLog.size()) {
-        for (int i=0; i<ui->tableWidget->rowCount(); i++) {
-            if (ui->tableWidget->item(i,0)->text()==fCurrentLog) {
-                on_tableWidget_cellClicked(i,0);
+        for (int j=0; i<ui->tableWidget->rowCount(); j++) {
+            if (ui->tableWidget->item(j,0)->text()==fCurrentLog) {
+                on_tableWidget_cellClicked(j,0);
             }
         }
     }
 
 }
 
-void LogPlotsWidget::on_tableWidget_cellClicked(int row, int column)
+void LogPlotsWidget::on_tableWidget_cellClicked(int row, int /*column*/)
 {
     QString name = ui->tableWidget->item(row,0)->text();
 //    ui->nrHistosLabel->setText(name);

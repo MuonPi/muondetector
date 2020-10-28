@@ -54,8 +54,8 @@ private:
 //    int cnrColorRange=40;
 
     QPointF polar2cartUnity(const QPointF &pol);
-	QPolygonF getPolarUnitPolygon(const QPointF& pos, int controlPoints=DEFAULT_CONTROL_POINTS);
-	QPolygonF getCartPolygonUnity(const QPointF& polarPos);
+    QPolygonF getPolarUnitPolygon(const QPointF& pos, int controlPoints=DEFAULT_CONTROL_POINTS);
+    QPolygonF getCartPolygonUnity(const QPointF& polarPos);
     void drawPolarPixMap(QPixmap& pm);
     void drawCartesianPixMap(QPixmap& pm);
     int alphaFromCnr(int cnr);

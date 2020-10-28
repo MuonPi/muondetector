@@ -100,7 +100,7 @@ void GpsSatsForm::onSatsReceived(const QVector<GnssSatellite> &satlist)
         if (transp<0.) transp=0.;
         if (transp>1.) transp=1.;
         color.setAlphaF(transp);
-        newItem7->setBackgroundColor(color);
+        newItem7->setBackground(color);
 
         newItem7->setSizeHint(QSize(25,24));
         ui->satsTableWidget->setItem(i, 6, newItem7);

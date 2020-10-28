@@ -17,11 +17,11 @@ public:
     ~CustomPlot();
     void initialize();
     QwtPlotGrid *grid = nullptr;
-    
-	QwtPlotCurve& curve(const QString& curveName);
-	void addCurve(const QString& name, const QColor& curveColor=Qt::blue);
-	
-	void setStatusEnabled(bool status);
+
+    QwtPlotCurve& curve(const QString& curveName);
+    void addCurve(const QString& name, const QColor& curveColor=Qt::blue);
+
+    void setStatusEnabled(bool status);
 
     // for other plots: subclass "CustomPlot" and put all specific functions (like below) to the new class
 
@@ -43,7 +43,7 @@ private slots:
     void popUpMenu(const QPoint &pos);
 
 private:
-	QMap<QString, QwtPlotCurve*> fCurveMap;
+    QMap<QString, QwtPlotCurve*> fCurveMap;
     bool fLogY=false;
     bool fLogX=false;
 

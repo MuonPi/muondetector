@@ -14,9 +14,9 @@ QwtPlotCurve CustomPlot::INVALID_CURVE;
 
 CustomPlot::~CustomPlot(){
     for (auto it=fCurveMap.begin(); it!=fCurveMap.end(); ++it) {
-		if (*it!=nullptr) delete *it;
-	}
-	if (grid!=nullptr) { delete grid; grid=nullptr;}
+        if (*it!=nullptr) delete *it;
+    }
+    if (grid!=nullptr) { delete grid; grid=nullptr;}
 }
 
 void CustomPlot::initialize(){
@@ -41,25 +41,25 @@ void CustomPlot::initialize(){
 
 QwtPlotCurve& CustomPlot::curve(const QString& curveName)
 {
-	auto it = fCurveMap.find(curveName);
-	if (it!=fCurveMap.end()) return **it;
-	return INVALID_CURVE;
+    auto it = fCurveMap.find(curveName);
+    if (it!=fCurveMap.end()) return **it;
+    return INVALID_CURVE;
 }
 
 
 void CustomPlot::addCurve(const QString& name, const QColor& curveColor)
 {
-	QwtPlotCurve *curve = new QwtPlotCurve();
-	curve->setYAxis(QwtPlot::yLeft);
-	curve->setRenderHint(QwtPlotCurve::RenderAntialiased, true);
-	//curve->setStyle(QwtPlotCurve::Steps);
-	//QColor curveColor = Qt::darkGreen;
-	//curveColor.setAlphaF(0.3);
-	const QPen pen(curveColor);
-	curve->setPen(pen);
-	//curve->setBrush(curveColor);
-	fCurveMap[name]=curve;
-	fCurveMap[name]->attach(this);
+    QwtPlotCurve *curve = new QwtPlotCurve();
+    curve->setYAxis(QwtPlot::yLeft);
+    curve->setRenderHint(QwtPlotCurve::RenderAntialiased, true);
+    //curve->setStyle(QwtPlotCurve::Steps);
+    //QColor curveColor = Qt::darkGreen;
+    //curveColor.setAlphaF(0.3);
+    const QPen pen(curveColor);
+    curve->setPen(pen);
+    //curve->setBrush(curveColor);
+    fCurveMap[name]=curve;
+    fCurveMap[name]->attach(this);
 }
 
 void CustomPlot::popUpMenu(const QPoint & pos)
@@ -87,7 +87,7 @@ void CustomPlot::popUpMenu(const QPoint & pos)
 }
 
 void CustomPlot::rescale() {
-    bool succ=false;
+//    bool succ=false;
     double ymin=1e30;
     double ymax=-1e30;
     double xmin=1e30;
@@ -99,7 +99,7 @@ void CustomPlot::rescale() {
             if (xmax<(*it)->maxXValue()) xmax=(*it)->maxXValue();
             if (ymin>(*it)->minYValue()) ymin=(*it)->minYValue();
             if (ymax<(*it)->maxYValue()) ymax=(*it)->maxYValue();
-            succ=true;
+//            succ=true;
         }
     }
 
@@ -153,7 +153,7 @@ void CustomPlot::setStatusEnabled(bool status){
 
 
 void CustomPlot::exportToFile() {
-    QPixmap qPix = QPixmap::grabWidget(this);
+    QPixmap qPix = grab();
     if(qPix.isNull()){
         qDebug("Failed to capture the plot for saving");
         return;
@@ -220,8 +220,8 @@ void CustomPlot::exportToFile() {
                 out << "# " << this->title().text() << "\n";
                 out << "# " << curve->title().text() << "\n";
                 out << "# " << this->axisTitle(QwtPlot::xBottom).text() << " " << this->axisTitle(QwtPlot::yLeft).text() << "\n";
-                for (int i=0; i<curve->dataSize(); i++) {
-                    out << QString::number(curve->sample(i).x(),'g',10) << "  " << QString::number(curve->sample(i).y(), 'g', 10) << "\n";
+                for (size_t i=0; i < curve->dataSize(); i++) {
+                    out << QString::number(curve->sample(static_cast<int>(i)).x(),'g',10) << "  " << QString::number(curve->sample(static_cast<int>(i)).y(), 'g', 10) << "\n";
                 }
             }
         }

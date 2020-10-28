@@ -18,15 +18,15 @@ CalibForm::CalibForm(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->calibItemTableWidget->resizeColumnsToContents();
-	
-	calScan = new CalibScanDialog(this);
-	calScan->setWindowTitle("Calibration Scan");
-	calScan->hide();
-	
-	connect(ui->calibrationScanPushButton, &QPushButton::clicked, this, [this]() { this->calScan->show();} );
-	
-	
-	
+
+    calScan = new CalibScanDialog(this);
+    calScan->setWindowTitle("Calibration Scan");
+    calScan->hide();
+
+    connect(ui->calibrationScanPushButton, &QPushButton::clicked, this, [this]() { this->calScan->show();} );
+
+
+
 /*
     ui->biasVoltageCalibPlot->setTitle("Ubias calibration");
     ui->biasVoltageCalibPlot->setAxisTitle(QwtPlot::xBottom,"DAC voltage / V");
@@ -76,8 +76,8 @@ CalibForm::~CalibForm()
 void CalibForm::onCalibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct> & calibList)
 {
     calScan->onCalibReceived(valid, eepromValid, id, calibList);
-	
-	QString str = "invalid";
+
+    QString str = "invalid";
     if (eepromValid) str="valid";
     ui->eepromValidLabel->setText(str);
     str = "invalid";
@@ -166,7 +166,7 @@ void CalibForm::on_writeEepromPushButton_clicked()
 {
     // write eeprom clicked
     emit updatedCalib(fCalibList);
-	emit writeCalibToEeprom();
+    emit writeCalibToEeprom();
 }
 
 
@@ -352,7 +352,7 @@ void CalibForm::on_calibItemTableWidget_cellChanged(int row, int column)
         QString valstr=ui->calibItemTableWidget->item(row,2)->text();
         if (valstr=="") { updateCalibTable(); return; }
         bool ok=false;
-        double val=valstr.toDouble(&ok);
+//        double val=valstr.toDouble(&ok);
         if (!ok) { updateCalibTable(); return; }
         setCalibParameter(name,valstr);
         QVector<CalibStruct> items;

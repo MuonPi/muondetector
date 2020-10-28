@@ -19,33 +19,33 @@ CustomHistogram::~CustomHistogram(){
 }
 
 void CustomHistogram::initialize(){
-	setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-	setStyleSheet("background-color: white; border: 0px;");
-	setAutoReplot(true);
-	enableAxis(QwtPlot::yLeft,true);
-	enableAxis(QwtPlot::yRight,false);
-	setAxisAutoScale(QwtPlot::xBottom,true);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    setStyleSheet("background-color: white; border: 0px;");
+    setAutoReplot(true);
+    enableAxis(QwtPlot::yLeft,true);
+    enableAxis(QwtPlot::yRight,false);
+    setAxisAutoScale(QwtPlot::xBottom,true);
 //       setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine());
-	setAxisAutoScale(QwtPlot::yLeft,true);
+    setAxisAutoScale(QwtPlot::yLeft,true);
        //setAxisAutoScale(QwtPlot::yRight,true);
-	grid = new QwtPlotGrid();
+    grid = new QwtPlotGrid();
     const QPen grayPen(Qt::gray);
     grid->setPen(grayPen);
-	grid->attach(this);
-	fBarChart = new QwtPlotHistogram( title );
-		//fBarChart = new QwtPlotBarChart( title );
-		//fBarChart->setLayoutPolicy( QwtPlotBarChart::AutoAdjustSamples );
-		//fBarChart->setSpacing( 0 );
-		//fBarChart->setMargin( 3 );
-	
-	fBarChart->setBrush(QBrush(Qt::darkBlue, Qt::SolidPattern));
-	fBarChart->attach( this );
+    grid->attach(this);
+    fBarChart = new QwtPlotHistogram( title );
+        //fBarChart = new QwtPlotBarChart( title );
+        //fBarChart->setLayoutPolicy( QwtPlotBarChart::AutoAdjustSamples );
+        //fBarChart->setSpacing( 0 );
+        //fBarChart->setMargin( 3 );
+
+    fBarChart->setBrush(QBrush(Qt::darkBlue, Qt::SolidPattern));
+    fBarChart->attach( this );
 
     this->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(this,SIGNAL(customContextMenuRequested(const QPoint &  )),this,SLOT(popUpMenu(const QPoint &)));
 
-	replot();
-	show();
+    replot();
+    show();
 }
 
 void CustomHistogram::setData(const Histogram &hist)
@@ -74,7 +74,7 @@ void CustomHistogram::popUpMenu(const QPoint & pos)
     contextMenu.addSeparator();
     QAction action2("&Clear", this);
 //    connect(&action2, &QAction::triggered, this, &CustomHistogram::clear );
-    connect(&action2, &QAction::triggered, this,  [this](bool checked){ this->clear(); this->update(); });
+    connect(&action2, &QAction::triggered, this,  [this](bool /*checked*/){ this->clear(); this->update(); });
     contextMenu.addAction(&action2);
 
     QAction action3("&Export", this);
@@ -86,7 +86,7 @@ void CustomHistogram::popUpMenu(const QPoint & pos)
 }
 
 void CustomHistogram::exportToFile() {
-    QPixmap qPix = QPixmap::grabWidget(this);
+    QPixmap qPix = grab();
     if(qPix.isNull()){
         qDebug("Failed to capture the plot for saving");
         return;
@@ -158,35 +158,35 @@ void CustomHistogram::exportToFile() {
 
 void CustomHistogram::update()
 {
-	//QwtPlot::replot();
-	//return;
-	if (!isEnabled()) return;
+    //QwtPlot::replot();
+    //return;
+    if (!isEnabled()) return;
     if (fHistogramMap.empty() || fNrBins<=1) { fBarChart->detach(); QwtPlot::replot(); return; }
     fBarChart->attach(this);
-	QVector<QwtIntervalSample> intervals;
+    QVector<QwtIntervalSample> intervals;
     double rangeX=fMax-fMin;
-	double xBinSize = rangeX/(fNrBins-1);
-	double max=0;
-	for (int i=0; i<fNrBins; i++) {
-		if (fHistogramMap[i]>max) max=fHistogramMap[i];
+    double xBinSize = rangeX/(fNrBins-1);
+    double max=0;
+    for (int i=0; i<fNrBins; i++) {
+        if (fHistogramMap[i]>max) max=fHistogramMap[i];
         double xval=bin2Value(i);
-		QwtIntervalSample interval(fHistogramMap[i]+1e-12, xval-xBinSize/2., xval+xBinSize/2.);
-		intervals.push_back(interval);
-	}
-	if (intervals.size() && fBarChart != nullptr) fBarChart->setSamples(intervals);
-	if (fLogY) {
-		setAxisScale(QwtPlot::yLeft,0.1, 1.5*max);
-	}
-	replot();
+        QwtIntervalSample interval(fHistogramMap[i]+1e-12, xval-xBinSize/2., xval+xBinSize/2.);
+        intervals.push_back(interval);
+    }
+    if (intervals.size() && fBarChart != nullptr) fBarChart->setSamples(intervals);
+    if (fLogY) {
+        setAxisScale(QwtPlot::yLeft,0.1, 1.5*max);
+    }
+    replot();
 }
 
 void CustomHistogram::clear()
 {
 //	fHistogramMap.clear();
 //	fOverflow=fUnderflow=0;
-	Histogram::clear();
+    Histogram::clear();
     emit histogramCleared(QString::fromStdString(fName));
-	fName="defaultHisto";
+    fName="defaultHisto";
     update();
 }
 
@@ -207,33 +207,33 @@ void CustomHistogram::setStatusEnabled(bool status){
 }
 
 void CustomHistogram::setLogY(bool logscale){
-	if (logscale) {
+    if (logscale) {
 #if	QWT_VERSION > 0x060100
-		setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine());
+        setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine());
 #else
-		setAxisScaleEngine(QwtPlot::yLeft, new QwtLog10ScaleEngine());
+        setAxisScaleEngine(QwtPlot::yLeft, new QwtLog10ScaleEngine());
 #endif
-		setAxisAutoScale(QwtPlot::yLeft,false);
-		fBarChart->setBaseline(1e-12);
-		fLogY=true;
-	} else {
-		setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine());
-		setAxisAutoScale(QwtPlot::yLeft,true);
-		fBarChart->setBaseline(0);
-		fLogY=false;
-	}
+        setAxisAutoScale(QwtPlot::yLeft,false);
+        fBarChart->setBaseline(1e-12);
+        fLogY=true;
+    } else {
+        setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine());
+        setAxisAutoScale(QwtPlot::yLeft,true);
+        fBarChart->setBaseline(0);
+        fLogY=false;
+    }
 }
 
 void CustomHistogram::setXMin(double val)
 {
     fMin = val;
-	rescalePlot();
+    rescalePlot();
 }
 
 void CustomHistogram::setXMax(double val)
 {
     fMax = val;
-	rescalePlot();
+    rescalePlot();
 }
 
 void CustomHistogram::rescalePlot()

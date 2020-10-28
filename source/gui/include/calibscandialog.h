@@ -20,10 +20,10 @@ public:
 
 public slots:
     void onCalibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct>& calibList);
-    void onAdcSampleReceived(uint8_t channel, float value);
+    void onAdcSampleReceived(uint8_t channel, double value);
 private slots:
-	void startManualCurrentCalib();
-	void transferCurrentCalibCoeffs();
+    void startManualCurrentCalib();
+    void transferCurrentCalibCoeffs();
 
 private:
     Ui::CalibScanDialog *ui;
@@ -39,8 +39,8 @@ private:
 
     void setCalibParameter(const QString &name, const QString &value);
     QString getCalibParameter(const QString &name);
-	void manualCurrentCalibProgress(double vbias, double ibias);
-	
+    void manualCurrentCalibProgress(double vbias, double ibias);
+
 };
 
 #endif // CALIBSCANDIALOG_H

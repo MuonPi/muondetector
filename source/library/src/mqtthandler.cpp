@@ -161,9 +161,9 @@ void MqttHandler::sendData(const QString &message){
                     m_mqttConnectionStatus = false;
                 }
             }
-        } catch (const mqtt::exception& exc) {
+        } catch (const mqtt::exception& e) {
             qDebug() << "MQTT reconnect failed";
-            qDebug() << QString::fromStdString(exc.what());
+            qDebug() << QString::fromStdString(e.what());
             emit mqttConnectionStatus(false);
             m_mqttConnectionStatus = false;
         }
