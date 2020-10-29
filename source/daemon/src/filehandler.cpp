@@ -24,9 +24,9 @@
 
 using namespace CryptoPP;
 
-const unsigned long int lftpUploadTimeout = MUONPI_UPLOAD_TIMEOUT_MS; // in msecs
-const int uploadReminderInterval = MUONPI_UPLOAD_REMINDER_MINUTES; // in minutes
-const int logReminderInterval = MUONPI_LOG_INTERVAL_MINUTES; // in minutes
+const unsigned long int lftpUploadTimeout = MuonPi::Config::Upload::timeout/*MUONPI_UPLOAD_TIMEOUT_MS*/; // in msecs
+const int uploadReminderInterval = MuonPi::Config::Upload::reminder/*MUONPI_UPLOAD_REMINDER_MINUTES*/; // in minutes
+const int logReminderInterval = MuonPi::Config::Log::interval/*MUONPI_LOG_INTERVAL_MINUTES*/; // in minutes
 
 static std::string SHA256HashString(std::string aString){
     std::string digest;
@@ -188,7 +188,7 @@ void FileHandler::start(){
     uploadReminder->setSingleShot(false);
     connect(uploadReminder, &QTimer::timeout, this, &FileHandler::onUploadRemind);
     uploadReminder->start();
-	// open files that are currently written
+    // open files that are currently written
     openFiles();
     emit mqttConnect(username,password);
     qDebug() << "sent mqttConnect";
@@ -205,7 +205,7 @@ void FileHandler::onUploadRemind(){
     }
     if (lastUploadDateTime<todaysRegularUploadTime&&QDateTime::currentDateTimeUtc()>todaysRegularUploadTime){
         switchFiles();
-        if (!password.size()==0 || !username.size()==0){
+        if (password.size() != 0 || username.size() != 0){
             //uploadRecentDataFiles(); // commented out because the upload server is not online
         }
         lastUploadDateTime = QDateTime::currentDateTimeUtc();
@@ -237,9 +237,9 @@ bool FileHandler::openFiles(bool writeHeader){
     if (!dataFile->open(QIODevice::ReadWrite | QIODevice::Append)) {
         qDebug() << "file open failed in 'ReadWrite' mode at location " << currentWorkingFilePath;
         // the following return statement induced wrong behavior:
-	// in case the data file couldn't be opened, the log file QFile object would never be instantiated
-	// this would prevent local logging
-	//return false;
+    // in case the data file couldn't be opened, the log file QFile object would never be instantiated
+    // this would prevent local logging
+    //return false;
     }
     logFile = new QFile(currentWorkingLogPath);
     logFile->setPermissions(defaultPermissions);
@@ -365,9 +365,9 @@ bool FileHandler::uploadDataFile(QString fileName){
     lftpProcess.setProgram("lftp");
     QStringList arguments;
     arguments << "--env-password";
-    arguments << "-p" << QString::number(MUONPI_UPLOAD_PORT);
+    arguments << "-p" << QString::number(MuonPi::Config::Upload::port/*MUONPI_UPLOAD_PORT*/);
     arguments << "-u" << QString(username);
-    arguments << MUONPI_UPLOAD_URL;
+    arguments << MuonPi::Config::Upload::url/*MUONPI_UPLOAD_URL*/;
     arguments << "-e" << QString("mkdir "+hashedMacAddress+" ; cd "+hashedMacAddress+" && put "+fileName+" ; exit");
     lftpProcess.setArguments(arguments);
     //qDebug() << lftpProcess.arguments();
