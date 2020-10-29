@@ -28,6 +28,12 @@ set(Qt5_DIR "/usr/lib/x86_64-linux-gnu/cmake/Qt5/")
 
 find_package(Qt5 COMPONENTS Network REQUIRED)
 
+find_library(PAHO_MQTT3C paho-mqtt3c REQUIRED)
+find_library(PAHO_MQTT3A paho-mqtt3a REQUIRED)
+find_library(PAHO_MQTT3CS paho-mqtt3cs REQUIRED)
+find_library(PAHO_MQTT3AS paho-mqtt3as REQUIRED)
+find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
+
 add_compile_options(
     -Wall
     -Wextra
