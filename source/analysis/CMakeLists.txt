@@ -76,6 +76,63 @@ target_link_libraries(compare_v6
     Qt5::Widgets
     )
 
-
-
 install(TARGETS compare_v4 compare_v5 compare_v6 DESTINATION bin)
+
+option(MUONDETECTOR_BUILD_SHOWER_ANALYSIS "Build the shower analysis and shower simulate targets" OFF)
+
+if (MUONDETECTOR_BUILD_SHOWER_ANALYSIS)
+set(SHOWER_ANALYSIS_SOURCE_FILES
+    "${PROJECT_SRC_DIR}/shower_analysis/shower_analysis.cpp"
+    )
+
+set(SHOWER_ANALYSIS_HEADER_FILES
+    "${PROJECT_HEADER_DIR}/shower_analysis/shower_analysis.h"
+    "${PROJECT_HEADER_DIR}/shower_analysis/shower_analysis_structs.h"
+    "${PROJECT_HEADER_DIR}/shower_analysis/shower_analysis_functions.h"
+    "${PROJECT_HEADER_DIR}/shower_analysis/shower_analysis_globals.h"
+    )
+
+set(SHOWER_SIMULATE_SOURCE_FILES
+    "${PROJECT_SRC_DIR}/shower_analysis/shower_simulate.cpp"
+    )
+
+set(SHOWER_SIMULATE_HEADER_FILES
+    "${PROJECT_HEADER_DIR}/shower_analysis/shower_simulate_functions.h"
+    "${PROJECT_HEADER_DIR}/shower_analysis/shower_simulate_globals.h"
+    )
+
+add_executable(shower_analysis ${SHOWER_ANALYSIS_SOURCE_FILES} ${SHOWER_ANALYSIS_HEADER_FILES})
+add_executable(shower_simulate ${SHOWER_SIMULATE_SOURCE_FILES} ${SHOWER_SIMULATE_HEADER_FILES})
+
+target_include_directories(shower_analysis PRIVATE
+    "${PROJECT_HEADER_DIR}/shower_analysis/"
+    )
+
+target_include_directories(shower_simulate PRIVATE
+    "${PROJECT_HEADER_DIR}/shower_analysis/"
+    )
+
+target_link_libraries(shower_simulate
+    MathMore
+    Spectrum
+    RootStats
+    RootFit
+    RootFitCore
+    Html
+    Minuit
+    )
+
+target_link_libraries(shower_analysis
+    MathMore
+    Spectrum
+    RootStats
+    RootFit
+    RootFitCore
+    Html
+    Minuit
+    )
+
+
+install(TARGETS shower_analysis shower_simulate DESTINATION bin)
+
+endif (MUONDETECTOR_BUILD_SHOWER_ANALYSIS)
