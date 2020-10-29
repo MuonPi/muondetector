@@ -38,6 +38,7 @@ add_compile_options(
     )
 
 set(PROJECT_SOURCE_FILES
+    "${PROJECT_SRC_DIR}/config.cpp"
     "${PROJECT_SRC_DIR}/tcpconnection.cpp"
     "${PROJECT_SRC_DIR}/tcpmessage.cpp"
     "${PROJECT_SRC_DIR}/mqtthandler.cpp"
@@ -62,7 +63,9 @@ add_definitions(-DMUONDETECTOR_SHARED_LIBRARY)
 
 add_library(muondetector STATIC ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES})
 target_include_directories(muondetector PUBLIC ${PROJECT_HEADER_DIR})
+
 target_link_libraries(muondetector Qt5::Network paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3)
+
 target_include_directories(muondetector PUBLIC
     $<BUILD_INTERFACE:/usr/local/include/mqtt>
     $<INSTALL_INTERFACE:include/mqtt>)

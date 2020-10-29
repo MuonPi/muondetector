@@ -114,7 +114,12 @@ target_include_directories(muondetector-gui PUBLIC
 target_link_libraries(muondetector-gui
     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
     "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
+    pthread
+    crypto++
+    qwt-qt5
+    paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
     )
+
 target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:/usr/local/include/mqtt>
     $<BUILD_INTERFACE:/usr/include/qwt>
