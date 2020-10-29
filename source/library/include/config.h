@@ -19,6 +19,7 @@ constexpr struct Version {
 
 namespace MuonPi::Config {
 constexpr const char* file { "/etc/muondetector/muondetector.conf" };
+constexpr int event_count_deadtime_ticks { 50000 };
 
 namespace MQTT {
 constexpr const char* server { "116.202.96.181:1883" };
@@ -42,6 +43,11 @@ constexpr int update_interval { 2000 };
 namespace ADC {
 constexpr int buffer_size { 50 };
 constexpr int pretrigger { 10 };
+constexpr int deadtime { 8 };
+}
+namespace GPIO::Clock::Measurement {
+constexpr int interval { 100 };
+constexpr int buffer_size { 500 };
 }
 constexpr int trace_sampling_interval { 5 };
 constexpr int monitor_interval { 5000 };

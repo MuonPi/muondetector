@@ -15,11 +15,9 @@ extern "C" {
 #endif
  extern char *g_fmt(char *, double);
 #ifdef __cplusplus
-	}
+    }
 #endif
 */
-
-const int logReminderInterval = MUONPI_LOG_INTERVAL_MINUTES; // in minutes
 
 
 static QString dateStringNow(){
@@ -29,9 +27,9 @@ static QString dateStringNow(){
 // but would involve several changes to the existing analysis tools
 /*
 #if QT_VERSION >= 0x050800
-	return QString::number(QDateTime::currentSecsSinceEpoch());
+    return QString::number(QDateTime::currentSecsSinceEpoch());
 #else
-	return QString::number(QDateTime::currentMSecsSinceEpoch()/1000);
+    return QString::number(QDateTime::currentMSecsSinceEpoch()/1000);
 #endif
 */
 }
@@ -40,7 +38,7 @@ static QString dateStringNow(){
 LogEngine::LogEngine(QObject *parent) : QObject(parent)
 {
     QTimer *logReminder = new QTimer(this);
-    logReminder->setInterval(60*1000*logReminderInterval);
+    logReminder->setInterval(60*1000*MuonPi::Config::Log::interval);
     logReminder->setSingleShot(false);
     connect(logReminder, &QTimer::timeout, this, &LogEngine::onLogInterval);
     logReminder->start();

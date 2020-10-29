@@ -13,11 +13,6 @@ extern "C" {
 #include <pigpiod_if2.h>
 }
 
-const static int EVENT_COUNT_DEADTIME_TICKS = 50000L;
-const static int ADC_SAMPLE_DEADTIME_MS = 8;
-int constexpr GPIO_CLOCK_MEASUREMENT_INTERVAL_MS = 100;
-int constexpr GPIO_CLOCK_MEASUREMENT_BUFFER_SIZE = 500;
-
 static int pi = -1;
 static int spiHandle = -1;
 static QPointer<PigpiodHandler> pigHandlerAddress; // QPointer automatically clears itself if pigHandler object is destroyed
@@ -141,20 +136,20 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
 		QDateTime now = QDateTime::currentDateTimeUtc();
         //qDebug()<<"gpio evt: gpio="<<user_gpio<<"  GPIO_PINMAP[EVT_XOR]="<<GPIO_PINMAP[EVT_XOR];
 //        if (user_gpio == GPIO_PINMAP[EVT_AND] || user_gpio == GPIO_PINMAP[EVT_XOR]){
-        
-		if (user_gpio == GPIO_PINMAP[pigpioHandler->samplingTriggerSignal]){
-			if (pigpioHandler->lastSamplingTime.msecsTo(now)>=ADC_SAMPLE_DEADTIME_MS) {
-				emit pigpioHandler->samplingTrigger();
-				pigpioHandler->lastSamplingTime = now;
-			}
-			quint64 nsecsElapsed=pigpioHandler->elapsedEventTimer.nsecsElapsed();
-			pigpioHandler->elapsedEventTimer.start();
-			//emit pigpioHandler->eventInterval(nsecsElapsed);
-			emit pigpioHandler->eventInterval((tick-lastTriggerTick)*1000);
-			lastTriggerTick=tick;
-		}
-		
-		if (user_gpio == GPIO_PINMAP[TIMEPULSE]) {
+
+        if (user_gpio == GPIO_PINMAP[pigpioHandler->samplingTriggerSignal]){
+            if (pigpioHandler->lastSamplingTime.msecsTo(now) >= MuonPi::Config::Hardware::ADC::deadtime/*ADC_SAMPLE_DEADTIME_MS*/) {
+                emit pigpioHandler->samplingTrigger();
+                pigpioHandler->lastSamplingTime = now;
+            }
+            quint64 nsecsElapsed=pigpioHandler->elapsedEventTimer.nsecsElapsed();
+            pigpioHandler->elapsedEventTimer.start();
+            //emit pigpioHandler->eventInterval(nsecsElapsed);
+            emit pigpioHandler->eventInterval((tick-lastTriggerTick)*1000);
+            lastTriggerTick=tick;
+        }
+
+        if (user_gpio == GPIO_PINMAP[TIMEPULSE]) {
 //			std::cout<<"Timepulse"<<std::endl;
 			struct timespec ts;
 			clock_gettime(CLOCK_REALTIME, &ts);
@@ -176,21 +171,21 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
 
 			long double ppsOffs = (ts_sec-ts.tv_sec)+ts_nsec*1e-9;
 //			qDebug() << "PPS Offset: " << (double)(ppsOffs)*1e6 << " us";
-			if (std::fabs(ppsOffs) < 3600.) {
-				qint32 t_diff_us = (double)(ppsOffs)*1e6;
-				emit pigpioHandler->timePulseDiff(t_diff_us);
-			}
-			/*
-			qint32 t_diff_us=ts.tv_nsec/1000;
-			if (t_diff_us>500000L) t_diff_us=t_diff_us-1000000L;
-			*/
-		}
-		if (tick-lastXorAndTick>EVENT_COUNT_DEADTIME_TICKS) {
-			lastXorAndTick = tick;
-			emit pigpioHandler->signal(user_gpio);
-		}
-		// level gives the information if it is up or down (only important if trigger is
-		// at both: rising and falling edge)
+            if (std::fabs(ppsOffs) < 3600.) {
+                qint32 t_diff_us = (double)(ppsOffs)*1e6;
+                emit pigpioHandler->timePulseDiff(t_diff_us);
+            }
+            /*
+            qint32 t_diff_us=ts.tv_nsec/1000;
+            if (t_diff_us>500000L) t_diff_us=t_diff_us-1000000L;
+            */
+        }
+        if (tick-lastXorAndTick > MuonPi::Config::event_count_deadtime_ticks/*EVENT_COUNT_DEADTIME_TICKS*/) {
+            lastXorAndTick = tick;
+            emit pigpioHandler->signal(user_gpio);
+        }
+        // level gives the information if it is up or down (only important if trigger is
+        // at both: rising and falling edge)
     }
     catch (std::exception& e)
     {
@@ -238,10 +233,10 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpioPins, unsigned int spi_
         //            continue;
         //        }
     }
-    gpioClockTimeMeasurementTimer.setInterval(GPIO_CLOCK_MEASUREMENT_INTERVAL_MS);
-	gpioClockTimeMeasurementTimer.setSingleShot(false);
-	connect(&gpioClockTimeMeasurementTimer, &QTimer::timeout, this, &PigpiodHandler::measureGpioClockTime);
-	gpioClockTimeMeasurementTimer.start();
+    gpioClockTimeMeasurementTimer.setInterval(MuonPi::Config::Hardware::GPIO::Clock::Measurement::interval/*GPIO_CLOCK_MEASUREMENT_INTERVAL_MS*/);
+    gpioClockTimeMeasurementTimer.setSingleShot(false);
+    connect(&gpioClockTimeMeasurementTimer, &QTimer::timeout, this, &PigpiodHandler::measureGpioClockTime);
+    gpioClockTimeMeasurementTimer.start();
 }
 
 void PigpiodHandler::setInput(unsigned int gpio) {
@@ -392,7 +387,7 @@ void PigpiodHandler::measureGpioClockTime() {
     if (!isInitialised) return;
     static uint32_t oldTick = 0;
 //    static uint64_t llTick = 0;
-	const int N = GPIO_CLOCK_MEASUREMENT_BUFFER_SIZE;
+    const int N = MuonPi::Config::Hardware::GPIO::Clock::Measurement::buffer_size/*GPIO_CLOCK_MEASUREMENT_BUFFER_SIZE*/;
     static int nrSamples=0;
     static int arrayIndex=0;
     static qint64 diff_array[N];
