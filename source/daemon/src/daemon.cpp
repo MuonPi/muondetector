@@ -22,7 +22,7 @@
 
 // for i2cdetect:
 extern "C" {
-#include <custom_i2cdetect.h>
+#include "i2c/custom_i2cdetect.h"
 }
 
 #define DAC_BIAS 2 // channel of the dac where bias voltage is set

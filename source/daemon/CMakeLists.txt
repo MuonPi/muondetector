@@ -90,6 +90,7 @@ set(DAEMON_HEADER_FILES
     "${PROJECT_HEADER_DIR}/logengine.h"
     "${PROJECT_HEADER_DIR}/geohash.h"
     "${PROJECT_HEADER_DIR}/i2c/addresses.h"
+    "${PROJECT_HEADER_DIR}/i2c/custom_i2cdetect.h"
     "${PROJECT_HEADER_DIR}/i2c/i2cbusses.h"
     "${PROJECT_HEADER_DIR}/i2c/i2cdevices.h"
     "${PROJECT_HEADER_DIR}/i2c/i2cdevices/adafruit_ssd1306/adafruit_ssd1306.h"
