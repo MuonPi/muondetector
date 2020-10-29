@@ -60,6 +60,7 @@ set(COMPARE_V6_SOURCE_FILES
     )
 
 set(COMPARE_V6_HEADER_FILES
+    "${PROJECT_HEADER_DIR}/compare_v6/compare_v6.h"
     "${PROJECT_HEADER_DIR}/compare_v6/filemodel.h"
     "${PROJECT_HEADER_DIR}/compare_v6/mainwindow.h"
     "${PROJECT_HEADER_DIR}/compare_v6/selectionmodel.h"

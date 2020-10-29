@@ -1,10 +1,10 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "compare_v6.h"
 #include <QFileDialog>
 #include <QStandardPaths>
 #include <QDebug>
 #include <selectionmodel.h>
-#include <compare_v6.cpp>
 #include <QTreeWidget>
 #include <QAction>
 #include <QMenu>

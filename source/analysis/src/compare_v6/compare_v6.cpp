@@ -13,10 +13,13 @@
 
 // On Linux compile with 'g++ -std=gnu++11 -o compare compare_v5.cpp -O'
 // Vielleicht kann man mit openmp noch etwas mehr optimieren durch multithreading aber eher nicht so viel, weshalb diese Option verworfen wurde
+
+#include "compare_v6.h"
+
+#define DO_NOT_USE_COMPARE_MAIN_CPP
+
 #include <iostream>
 #include <sstream>
-#include <string>
-#include <vector>
 #include <math.h>
 #include <algorithm>
 #include <time.h>
@@ -31,28 +34,16 @@
 
 
 // max allowed timing error of a single station in ns
-#define MAX_ERR_LIMIT 100000.
 
-using namespace std;
-
-struct timestamp_t {
-	timespec ts;
-	double err;
-	double length;
-};
-
-
-static unsigned long int oldBalken = 0;
-void prozentanzeige(unsigned long int prozent, string& ausgabe)
+void prozentanzeige(unsigned long int prozent, std::string& ausgabe)
 {
-    unsigned width = 50;
-    unsigned balken;
+    unsigned int width = 50;
+    unsigned int balken { static_cast<unsigned int>(prozent) * width / 100 };
     char a = '|';
-	balken = prozent * width / 100;
 	if (balken > oldBalken)
 	{
-		string prozentbalken = "";
-		stringstream convert;
+		std::string prozentbalken = "";
+		std::stringstream convert;
 		convert << prozent;
 		prozentbalken += "\r ";
 		prozentbalken += ausgabe;
@@ -60,12 +51,12 @@ void prozentanzeige(unsigned long int prozent, string& ausgabe)
 		if (prozent < 100)
 		{
 			//sonst length_error
-			prozentbalken += string(balken, a);
-			prozentbalken += string(width - balken, ' ');
+			prozentbalken += std::string(balken, a);
+			prozentbalken += std::string(width - balken, ' ');
 		}
 		else
 		{
-			prozentbalken += string(width, a);
+			prozentbalken += std::string(width, a);
 		}
 		prozentbalken += "|";
 		prozentbalken += " ";
@@ -79,7 +70,7 @@ void prozentanzeige(unsigned long int prozent, string& ausgabe)
 		}
 		prozentbalken += "%";
 		prozentbalken += "     ";
-		cout << prozentbalken << flush;// <<endl;
+		std::cout << prozentbalken << std::flush;// <<endl;
 		//cout<<"\r[%3d%%]"<<prozentbalken; 
 		oldBalken = balken;
 	}
@@ -94,25 +85,25 @@ long long int ts_diff_ns(timespec& ts1, timespec& ts2)
 	return diff;
 }
 
-void skipColumn(istream& data, int col)
+void skipColumn(std::istream& data, int col)
 {
 	for (int i = 0; i < col; ++i)
-		data.ignore(numeric_limits<streamsize>::max(), ' '); // col Leerzeichen-getrennte Werte uberspringen
+		data.ignore(std::numeric_limits<std::streamsize>::max(), ' '); // col Leerzeichen-getrennte Werte uberspringen
 }
 
-bool areTimestampsInOrder(string dateiName, bool verbose, unsigned long int& lineCounter, int tsCol)
+bool areTimestampsInOrder(std::string dateiName, bool verbose, unsigned long int& lineCounter, int tsCol)
 {   //ueberpruefe ob die Timestamps in der Datei mit Dateinamen der als string uebergeben wird zeitlich geordnet sind
-	ifstream dateiInputstream(dateiName.c_str());
+	std::ifstream dateiInputstream(dateiName.c_str());
 	if (!dateiInputstream.good())
 	{
-		cout << "failed to read from file (in check Timestamp order section of code)" << endl;
+		std::cout << "failed to read from file (in check Timestamp order section of code)" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	timespec oldValue = { 0, 0 };
 	timespec newValue = { 0, 0 };
 	lineCounter = 0;
 	bool isInOrder = true;
-	string oneLine;
+	std::string oneLine;
 	while (!dateiInputstream.eof())
 	{
 		//skipvalues();
@@ -122,7 +113,7 @@ bool areTimestampsInOrder(string dateiName, bool verbose, unsigned long int& lin
 			skipColumn(dateiInputstream, tsCol);
 		}
 		getline(dateiInputstream, oneLine);
-		stringstream str(oneLine);
+		std::stringstream str(oneLine);
 		long int v1, v2;
 		char c;
 
@@ -135,8 +126,8 @@ bool areTimestampsInOrder(string dateiName, bool verbose, unsigned long int& lin
 
 		//cout<<"v1="<<v1<<" v2="<<v2<<endl;
 
-		cout.precision(9);
-		cout << fixed;
+		std::cout.precision(9);
+		std::cout << std::fixed;
 		//cout<<" diff(old-new)= "<<ts_diff_ns(newValue, oldValue)<<" ns"<<endl;
 		if (ts_diff_ns(oldValue, newValue) >= 0)
 			//		if (oldValue<=newValue)
@@ -147,7 +138,7 @@ bool areTimestampsInOrder(string dateiName, bool verbose, unsigned long int& lin
 		{
 			if (verbose)
 			{
-				cout << "line " << lineCounter << " in " << dateiName << " is not in order: " << endl;
+				std::cout << "line " << lineCounter << " in " << dateiName << " is not in order: " << std::endl;
 				//cout<<"..."<<endl<<oldValue<<endl<<newValue<<endl<<"..."<<endl<<endl;
 			}
 			isInOrder = false;
@@ -158,13 +149,13 @@ bool areTimestampsInOrder(string dateiName, bool verbose, unsigned long int& lin
 }//end of areTimestampsInOrder																							
 
 
-void readToVector(ifstream& inputstream, vector<timestamp_t>& oneVector, int& maxValues, int tsCol, int errCol)
+void readToVector(std::ifstream& inputstream, std::vector<timestamp_t>& oneVector, int& maxValues, int tsCol, int errCol)
 {
 	// ueberschreibt einen Vektor mit neuen Werten aus der Datei (aus dem inputstream)
 	// es werden maximal "maxValues" viele Eintraege hinzugefuegt,
 	// es wird gestoppt falls keine weiteren Daten im InputFile sind
 	oneVector.clear();
-	string oneLine;
+	std::string oneLine;
 	timestamp_t oneValue;
     maxValues = abs(maxValues); // maxValues<0 should never be true
     for (int i = 0; i < maxValues; i++)
@@ -192,7 +183,7 @@ void readToVector(ifstream& inputstream, vector<timestamp_t>& oneVector, int& ma
 		timespec ts1, ts2;
 		double v3=0.;
 		
-		string helperString="";
+		std::string helperString="";
         tsCol<0?tsCol=0:true;
         std::istringstream tokenStream(results[static_cast<unsigned>(tsCol)]);
 		std::getline(tokenStream, helperString,'.');
@@ -232,35 +223,34 @@ void readToVector(ifstream& inputstream, vector<timestamp_t>& oneVector, int& ma
 
 void Usage()
 {
-	cout << endl;
-	cout << "timestamp compare program (v5)" << endl;
-	cout << "sort <File1>, ... <File n> unless in chronological order" << endl;
-	cout << "Compares <File1>, ... <File n> and searches for coincident timestamps." << endl;
-	cout << "mutual time differences are output under consideration of single timing errors (if available)." << endl;
-	cout << "The resulting output is written in format" << endl;
-	cout << "[%Y.%m.%d %H:%M:%S] ... [difference1] ... [difference n] ... [coincidents]" << endl;
-	cout << "to file <output>. <file1> and <file2> should provide unix timestamps and error in ns (if available):" << endl;
-	cout << "[Timestamp] [err]		" << endl << endl;
-	cout << "Usage:    " << "compare" << " [-vh?][-o<output> -b<interval>] file1 file2 ... filen" << endl;
-	cout << "		Optionen:" << endl;
-	cout << "		-h?		  : shows this help page." << endl;
-	cout << "		-c 		  : column from which the timestamp is extracted (standard col 0). format is unix timestamp with floating point precision up to 1ns" << endl;
-	cout << "		-e 		  : column from which the timing error (in ns) is to be extracted (default = -1  to ignore and assume error=0) " << endl;
-	cout << "		-v		  : increase verbosity level" << endl;
-	cout << "		-o <output>	  : path/name of the output file" << endl;
-	cout << "		-b <time interval>  : coincidence range in [us] (default 1.0us)." << endl;
-	cout << "     	-m <maxValues>: number of timestamps which are read into vectors simultaneously. default 10k" << endl;
-	cout << endl;
-	cout << "written by <Marvin.Peter@physik.uni-giessen.de> and <Hans-Georg.Zaunick@exp2.physik.uni-giessen.de>" << endl;
-	cout << "(fragments are reused with permission of <Lukas.Nies@physik.uni-giessen.de>" << endl;
-	cout << "---status 18.07.2018---bugs inclusive" << endl << endl;
+	std::cout << std::flush
+	 << "timestamp compare program (v5)\n"
+	 << "sort <File1>, ... <File n> unless in chronological order\n"
+	 << "Compares <File1>, ... <File n> and searches for coincident timestamps.\n"
+	 << "mutual time differences are output under consideration of single timing errors (if available).\n"
+	 << "The resulting output is written in format\n"
+	 << "[%Y.%m.%d %H:%M:%S] ... [difference1] ... [difference n] ... [coincidents]\n"
+	 << "to file <output>. <file1> and <file2> should provide unix timestamps and error in ns (if available):\n"
+	 << "[Timestamp] [err]		\n\n"
+	 << "Usage:    compare [-vh?][-o<output> -b<interval>] file1 file2 ... filen\n"
+	 << "		Optionen:\n"
+	 << "		-h?		  : shows this help page.\n"
+	 << "		-c 		  : column from which the timestamp is extracted (standard col 0). format is unix timestamp with floating point precision up to 1ns\n"
+	 << "		-e 		  : column from which the timing error (in ns) is to be extracted (default = -1  to ignore and assume error=0) \n"
+	 << "		-v		  : increase verbosity level\n"
+	 << "		-o <output>	  : path/name of the output file\n"
+	 << "		-b <time interval>  : coincidence range in [us] (default 1.0us).\n"
+	 << "     	-m <maxValues>: number of timestamps which are read into vectors simultaneously. default 10k\n\n"
+	 << "written by <Marvin.Peter@physik.uni-giessen.de> and <Hans-Georg.Zaunick@exp2.physik.uni-giessen.de>\n"
+	 << "(fragments are reused with permission of <Lukas.Nies@physik.uni-giessen.de>\n"
+	 << "---status 18.07.2018---bugs inclusive\n\n"<<std::flush;
 }//end of Usage()
 
-void compareAlgorithm(vector<unsigned int> it,
-	vector<vector<timestamp_t> >& values,
+void compareAlgorithm(std::vector<unsigned int> it,
+	std::vector<std::vector<timestamp_t> >& values,
 	double& matchKriterium,
-	ofstream& output,
-	vector<unsigned int>& rewriteToVectors)
+	std::ofstream& output,
+	std::vector<unsigned int>& rewriteToVectors)
 {
 	time_t t;
 	/*
@@ -269,7 +259,7 @@ void compareAlgorithm(vector<unsigned int> it,
 						- nutze aus, dass keine Werte kleiner diesem Match fuer ein Match in Frage kommen
 	*/
 	rewriteToVectors.clear();
-    vector<bool> dateiEmpty;
+    std::vector<bool> dateiEmpty;
     dateiEmpty.resize(it.size());
     for (unsigned int i = 0; i < it.size(); i++)
 	{
@@ -371,11 +361,11 @@ void compareAlgorithm(vector<unsigned int> it,
 						strftime(date, sizeof(date), "%Y.%m.%d %H:%M:%S", tm);
                         output << date << "  " << values[indexSmallest][it[indexSmallest]].ts.tv_sec << ".";
 						output.width(9);
-                        output << setfill('0') << values[indexSmallest][it[indexSmallest]].ts.tv_nsec << "  ";
+                        output << std::setfill('0') << values[indexSmallest][it[indexSmallest]].ts.tv_nsec << "  ";
 						coincidents++;
 					}
 					rewriteToVectors.push_back(i);
-                    output << ts_diff_ns(values[min(i,indexSmallest)][it[min(i,indexSmallest)]].ts, values[max(i,indexSmallest)][it[max(i,indexSmallest)]].ts) << "   ";
+                    output << ts_diff_ns(values[std::min(i,indexSmallest)][it[std::min(i,indexSmallest)]].ts, values[std::max(i,indexSmallest)][it[std::max(i,indexSmallest)]].ts) << "   ";
 					//output << indexSmallest << "-" << i <<"  ";
                     output << static_cast<int>(sqrt(err1*err1+err2*err2))<< "    err: "<<err1 << " " << err2 <<" ns  ";
 					output << "    len: "<<len1 << " " << len2 <<" ns  ";
@@ -386,45 +376,46 @@ void compareAlgorithm(vector<unsigned int> it,
 		}
 		if (coincidents > 0)
 		{
-			output << coincidents << endl;
+			output << coincidents << std::endl;
 		}
         it[indexSmallest]++;
 	}
 }//end of Algorithmus																																			  
 
-int compare(string outputDateiName, vector <string> dateiName, double matchKriterium = 0.001/*micro seconds*/, int maxTimestampsAtOnce = 10000, int column1 = 0, int errColumn = -1, unsigned long int overallLines = 0, bool verbose = false){
+int compare(std::string outputDateiName, std::vector <std::string> dateiName, double matchKriterium, int maxTimestampsAtOnce, int column1, int errColumn, unsigned long int overallLines, bool verbose)
+{
     time_t start, end, algorithmTime;
     int maxTimestampsInVector = maxTimestampsAtOnce / 4;
 	// Erstellen der iostreams
-	vector<ifstream*> data;
+	std::vector<std::ifstream*> data;
 	for (size_t i = 0; i < dateiName.size(); i++)
 	{
-		ifstream* in = new ifstream;
+		std::ifstream* in = new std::ifstream;
 		data.push_back(in);
 		(*data[i]).open(dateiName[i].c_str());
         //data enthaelt alle ifstreams, einen fuer jede Datei
 	}
-	ofstream output(outputDateiName.c_str());
+	std::ofstream output(outputDateiName.c_str());
 	output.precision(9);
-	output << fixed;
+	output << std::fixed;
 
 	//Prozentanzeige:
 	unsigned long int prozent = 0;
 	unsigned long int prozentCounter = 0;
 	unsigned long int oldCounter = 0;
-	string ausgabeAlgorithmString = "comparing...";
+	std::string ausgabeAlgorithmString = "comparing...";
 	//Prozentanzeige
 
 
 	if (verbose)
 	{
-		cout << endl << "launch comparison of " << overallLines << " timestamps in " << dateiName.size() <<" files...." << endl << endl;
+		std::cout << "\nlaunch comparison of " << overallLines << " timestamps in " << dateiName.size() <<" files....\n\n" << std::flush;
 	}
-	vector<vector<timestamp_t> > values;
+	std::vector<std::vector<timestamp_t> > values;
 	values.resize(dateiName.size());
 	//values [index der Datei] [werte in timespec]
-    vector<unsigned int> it;
-	vector<unsigned int> rewriteToVectors;
+    std::vector<unsigned int> it;
+	std::vector<unsigned int> rewriteToVectors;
 	for (unsigned int i = 0; i < dateiName.size(); i++)
 	{
         it.push_back(0);
@@ -455,7 +446,7 @@ int compare(string outputDateiName, vector <string> dateiName, double matchKrite
 	}
 	catch (int e)
 	{
-        cout << "percent counter error: " << prozentCounter << " error code "<<e<< endl;
+        std::cout << "percent counter error: " << prozentCounter << " error code "<<e<<'\n'<<std::flush;
 		exit(EXIT_FAILURE);
 
 	}
@@ -488,7 +479,7 @@ int compare(string outputDateiName, vector <string> dateiName, double matchKrite
 		}
 		catch (int e)
 		{
-            cout << "percent counter error: " << prozentCounter << " error code "<<e<< endl;
+            std::cout << "percent counter error: " << prozentCounter << " error code "<<e<<'\n'<<std::flush;
 			exit(EXIT_FAILURE);
 
 		}
@@ -502,11 +493,11 @@ int compare(string outputDateiName, vector <string> dateiName, double matchKrite
 		}
 	} //end of while
 	// ab hier: letzte reste die noch in den Vektoren sind, werden abgearbeitet
-    for (unsigned i = 0; i < dateiName.size() * 2; i++)
+    for (size_t i = 0; i < dateiName.size() * 2; i++)
 	{
-		for (auto i : rewriteToVectors) {
-            it[i] = 0;
-			readToVector(*data[i], values[i], maxTimestampsInVector, column1, errColumn);
+		for (auto j : rewriteToVectors) {
+            it[j] = 0;
+			readToVector(*data[j], values[j], maxTimestampsInVector, column1, errColumn);
 		}
         compareAlgorithm(it, values, matchKriterium, output, rewriteToVectors);
 		try
@@ -523,17 +514,17 @@ int compare(string outputDateiName, vector <string> dateiName, double matchKrite
 		}
 		catch (int e)
 		{
-            cout << "percent counter error: " << prozentCounter << " error code "<<e<< endl;
+            std::cout << "percent counter error: " << prozentCounter << " error code "<<e<<'\n'<<std::flush;
 			exit(EXIT_FAILURE);
 		}
 	}//end of for  
 	prozentanzeige(100, ausgabeAlgorithmString);
-	cout << endl << endl;
+	std::cout <<"\n\n";
     end = time(nullptr);
 	algorithmTime = end - start;
 	if (verbose)
 	{
-		cout << "finalized program. duration: " << algorithmTime << "s" << endl;
+		std::cout << "finalized program. duration: " << algorithmTime << "s\n";
 	}
     return static_cast<int>(true);
 }// end of compare
@@ -541,11 +532,12 @@ int compare(string outputDateiName, vector <string> dateiName, double matchKrite
 #ifndef DO_NOT_USE_COMPARE_MAIN_CPP
 int main(int argc, char*argv[])
 {
-    string outputDateiName = "";
-    vector <string> dateiName;
-    time_t start, end, readToVectorTime, checkTimestampOrderTime, algorithmTime;
+    std::string outputDateiName = "";
+    std::vector <std::string> dateiName;
+    time_t start;
+	time_t end;
+	time_t checkTimestampOrderTime;
     double matchKriterium = 0.001;//[us]
-    timestamp_t oneValue;
     int maxTimestampsAtOnce = 10000;
 
     // Einlesen der Zusatzinformationen aus der Konsole
@@ -558,13 +550,15 @@ int main(int argc, char*argv[])
     bool notSorted = true;
     while ((ch = getopt(argc, argv, "svm:c:e:o:b:h?")) != EOF)
     {
-        switch ((char)ch)
+        switch (static_cast<char>(ch))
         {
         case 's':  notSorted = false;
-        case 'o':  outputDateiName = optarg;
+        [[fallthrough]]; case 'o':
+            outputDateiName = optarg;
             //printf("Output wurde gewaehlt. %s.c_str()\n", out.c_str());
             break;
-        case 'h': Usage();
+        case 'h':
+            Usage();
             return -1;
             break;
         case 'v': verbose = true;
@@ -584,7 +578,7 @@ int main(int argc, char*argv[])
         Usage();
         return -1;
     }
-    int maxTimestampsInVector = maxTimestampsAtOnce / 4;
+    
     matchKriterium = b * 1e-6; //[us]
     if (argc - optind < 2)
     {
@@ -594,34 +588,34 @@ int main(int argc, char*argv[])
     }
     if (verbose)
     {
-        cout << "launched program...." << endl;
-        cout << endl << "reading at most " << maxTimestampsAtOnce << " values at once" << endl << endl;
-        cout << "coincidence window: " << b << " us" << endl;
+        std::cout << "launched program....\n"
+        		<< "\nreading at most " << maxTimestampsAtOnce << " values at once\n\n"
+        		<< "coincidence window: " << b << " us\n"<<std::flush;
     }
-    int index = 0;
-    for (int i = optind; i < argc; i++)
+    size_t index = 0;
+    for (int i { optind }; i < argc; i++)
     {
         //
         dateiName.push_back("");
-        string temp = argv[i];
+        std::string temp = argv[i];
         dateiName[index] = temp;
         if (verbose)
         {
-            cout << index << ". file name is " << dateiName[index].c_str() << "." << endl;
+            std::cout << index << ". file name is " << dateiName[index].c_str() << ".\n";
         }
         index++;
     }
 
 
     // Ueberpruefung der Dateien auf Reihenfolge
-    cout << endl << "check files...." << flush<<endl;
+    std::cout << "\ncheck files....\n"<<std::flush;
     if (verbose)
     {
-        cout << endl << endl;
+        std::cout<<"\n\n";
     }
 
-    start = time(0);
-    vector<unsigned long int> lines;
+    start = time(nullptr);
+    std::vector<unsigned long int> lines;
     if (notSorted)
     {
         for (unsigned int i = 0; i < dateiName.size(); i++)
@@ -634,9 +628,9 @@ int main(int argc, char*argv[])
                     // falls die Timestamps nicht in der richtigen Reihenfolge gespeichert sind,
                     // werden sie automatisch mit Unix sort sortiert, ob dann auch gleich ueberschrieben
                     // laesst sich einstellen, momentan ja
-                    cout << "sort " << dateiName[i] << " with Unix sort" << endl << endl;
+                    std::cout << "sort " << dateiName[i] << " with Unix sort\n\n";
                 }
-                string systemOut = "sort -n ";
+                std::string systemOut = "sort -n ";
                 systemOut += dateiName[i];
                 systemOut += " > ";
                 systemOut += "tmp";
@@ -664,11 +658,11 @@ int main(int argc, char*argv[])
         // und addiert sie. Ist wichtig fuer den Ladebalken
         overallLines += lines[i];
     }
-    end = time(0);
+    end = time(nullptr);
     checkTimestampOrderTime = end - start;
     if (verbose)
     {
-        cout << endl << "check for sort order concluded. duration: " << checkTimestampOrderTime << "s" << endl;
+        std::cout << "\ncheck for sort order concluded. duration: " << checkTimestampOrderTime << "s\n";
     }
     return compare(outputDateiName,dateiName,matchKriterium,maxTimestampsAtOnce,column1,errColumn,overallLines,verbose);
 }//end of int main()
