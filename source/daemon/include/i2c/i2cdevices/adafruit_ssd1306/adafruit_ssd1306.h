@@ -1,11 +1,11 @@
 #ifndef _ADAFRUIT_SSD1306_H_
 #define _ADAFRUIT_SSD1306_H_
 
-#include "../i2cdevice.h"
+#include "i2c/i2cdevices/i2cdevice.h"
 
 //class Adafruit_GFX;
 
-#include "../Adafruit_GFX.h"
+#include "i2c/i2cdevices/Adafruit_GFX.h"
 // OLED defines
 #define OLED_I2C_RESET RPI_V2_GPIO_P1_22 /* GPIO 25 pin 12  */
 // Oled supported display

@@ -1,4 +1,4 @@
-#include "x9119.h"
+#include "i2c/i2cdevices/x9119/x9119.h"
 #include <stdio.h>
 #include <stdint.h>
 

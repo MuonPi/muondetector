@@ -1,4 +1,4 @@
-#include "bmp180.h"
+#include "i2c/i2cdevices/bmp180/bmp180.h"
 #include <stdint.h>
 #include <stdio.h>
 

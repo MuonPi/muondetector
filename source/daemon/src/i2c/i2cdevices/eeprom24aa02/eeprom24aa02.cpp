@@ -1,4 +1,4 @@
-#include "eeprom24aa02.h"
+#include "i2c/i2cdevices/eeprom24aa02/eeprom24aa02.h"
 #include <stdint.h>
 #include <unistd.h>
 

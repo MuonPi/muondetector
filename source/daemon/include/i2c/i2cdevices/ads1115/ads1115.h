@@ -1,7 +1,7 @@
 #ifndef _ADS1115_H_
 #define _ADS1115_H_
 
-#include "../i2cdevice.h"
+#include "i2c/i2cdevices/i2cdevice.h"
 
 // ADC ADS1x13/4/5 sampling readout delay
 #define READ_WAIT_DELAY_INIT 10

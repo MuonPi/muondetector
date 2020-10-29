@@ -1,7 +1,7 @@
 #ifndef _BMP180_H_
 #define _BMP180_H_
 
-#include "../i2cdevice.h"
+#include "i2c/i2cdevices/i2cdevice.h"
 
 /* BMP180  */
 

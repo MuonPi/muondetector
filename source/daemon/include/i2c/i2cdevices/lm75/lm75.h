@@ -1,6 +1,6 @@
 #ifndef _LM75_H_
 #define _LM75_H_
-#include "../i2cdevice.h"
+#include "i2c/i2cdevices/i2cdevice.h"
 class LM75 : public i2cDevice {
 public:
 	LM75() : i2cDevice(0x4f) { fTitle = "LM75A"; }

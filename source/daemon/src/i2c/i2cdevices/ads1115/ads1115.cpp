@@ -1,4 +1,4 @@
-#include "ads1115.h"
+#include "i2c/i2cdevices/ads1115/ads1115.h"
 /*
 * ADS1115 4ch 16 bit ADC
 */

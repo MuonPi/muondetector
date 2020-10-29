@@ -1,4 +1,4 @@
-#include "sht21.h"
+#include "i2c/i2cdevices/sht21/sht21.h"
 #include <stdint.h>
 #include <stdio.h>
 

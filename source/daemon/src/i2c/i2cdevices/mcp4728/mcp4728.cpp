@@ -1,4 +1,4 @@
-#include "mcp4728.h"
+#include "i2c/i2cdevices/mcp4728/mcp4728.h"
 #include <stdint.h>
 
 /*

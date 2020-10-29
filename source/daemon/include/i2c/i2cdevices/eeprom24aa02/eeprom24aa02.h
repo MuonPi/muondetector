@@ -1,7 +1,7 @@
 #ifndef _EEPROM24AA02_H_
 #define _EEPROM24AA02_H_
 
-#include "../i2cdevice.h"
+#include "i2c/i2cdevices/i2cdevice.h"
 
 /* EEPROM24AA02  */
 

@@ -1,4 +1,4 @@
-#include "bme280.h"
+#include "i2c/i2cdevices/bme280/bme280.h"
 #include <unistd.h>
 #include <stdint.h>
 #include <stdio.h>

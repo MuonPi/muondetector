@@ -41,7 +41,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
-#include "linux/i2c-dev.h"
+#include <linux/i2c-dev.h>
 
 struct i2c_adap {
 	int nr;

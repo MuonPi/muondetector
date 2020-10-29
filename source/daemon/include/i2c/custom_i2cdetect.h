@@ -6,6 +6,9 @@ Now it can be called by the main program and it's the only purpose of custom_i2c
 #ifndef _CUSTOM_I2CDETECT_H
 #define _CUSTOM_I2CDETECT_H
 
+#include "i2c/i2cbusses.h"
+#include "i2c/addresses.h"
+
 #include <sys/ioctl.h>
 #include <errno.h>
 #include <string.h>
@@ -14,8 +17,6 @@ Now it can be called by the main program and it's the only purpose of custom_i2c
 #include <stdbool.h>
 #include <unistd.h>
 #include <linux/i2c-dev.h>
-#include <i2cbusses.h>
-#include <addresses.h>
 
 #define MODE_AUTO 0
 #define I2C_BUS 1

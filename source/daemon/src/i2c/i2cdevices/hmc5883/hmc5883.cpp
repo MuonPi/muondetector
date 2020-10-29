@@ -1,4 +1,4 @@
-#include "hmc5883.h"
+#include "i2c/i2cdevices/hmc5883/hmc5883.h"
 #include <unistd.h>
 #include <stdint.h>
 #include <stdio.h>

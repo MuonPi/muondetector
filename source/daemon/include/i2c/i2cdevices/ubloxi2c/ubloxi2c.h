@@ -1,7 +1,7 @@
 #ifndef _UBLOXI2C_H_
 #define _UBLOXI2C_H_
 
-#include "../i2cdevice.h"
+#include "i2c/i2cdevices/i2cdevice.h"
 
 /* Ublox GPS receiver, I2C interface  */
 
