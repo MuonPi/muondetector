@@ -150,6 +150,7 @@ add_executable(muondetector-daemon ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES}
 
 target_include_directories(muondetector-daemon PUBLIC
     $<BUILD_INTERFACE:${PROJECT_HEADER_DIR}>
+    $<BUILD_INTERFACE:${PROJECT_HEADER_DIR}/i2c>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 
 target_include_directories(muondetector-daemon PUBLIC
