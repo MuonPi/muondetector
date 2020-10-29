@@ -6,7 +6,7 @@
 #include "i2c/i2cdevices/bme280/bme280.h"
 #include "i2c/i2cdevices/bmp180/bmp180.h"
 #include "i2c/i2cdevices/eeprom24aa02/eeprom24aa02.h"
-#include "i2c/2cdevices/hmc5883/hmc5883.h"
+#include "i2c/i2cdevices/hmc5883/hmc5883.h"
 #include "i2c/i2cdevices/lm75/lm75.h"
 #include "i2c/i2cdevices/mcp4728/mcp4728.h"
 #include "i2c/i2cdevices/pca9536/pca9536.h"

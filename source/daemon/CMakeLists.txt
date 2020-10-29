@@ -108,6 +108,7 @@ set(DAEMON_HEADER_FILES
     "${PROJECT_HEADER_DIR}/i2c/i2cdevices/x9119/x9119.h"
     "${PROJECT_HEADER_DIR}/i2c/i2cdevices/Adafruit_GFX.h"
     "${PROJECT_HEADER_DIR}/i2c/i2cdevices/i2cdevice.h"
+    "${PROJECT_HEADER_DIR}/i2c/linux/i2c-dev.h"
     )
 
 set(LOGIN_SOURCE_FILES

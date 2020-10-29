@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h> // ioctl
 #include <inttypes.h>  	    // uint8_t, etc
-#include <linux/i2c-dev.h> // I2C bus definitions for linux like systems
+#include "i2c/linux/i2c-dev.h" // I2C bus definitions for linux like systems
 #include <sys/time.h>                // for gettimeofday()
 #include <vector>
 #include <string>
