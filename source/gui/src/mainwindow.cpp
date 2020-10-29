@@ -1,34 +1,38 @@
-#include <mainwindow.h>
-#include <ui_mainwindow.h>
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+#include "config.h"
+#include "ublox_structs.h"
+#include "settings.h"
+#include "status.h"
+#include "tcpmessage_keys.h"
+#include "map.h"
+#include "i2cform.h"
+#include "calibform.h"
+#include "calibscandialog.h"
+#include "gpssatsform.h"
+#include "histogram.h"
+#include "histogramdataform.h"
+#include "muondetector_structs.h"
+#include "parametermonitorform.h"
+#include "logplotswidget.h"
+#include "scanform.h"
+
 #include <QThread>
 #include <QFile>
 #include <QKeyEvent>
 #include <QDebug>
 #include <QErrorMessage>
-//#include <gnsssatellite.h>
-#include <ublox_structs.h>
-#include <settings.h>
-#include <status.h>
-#include <tcpmessage_keys.h>
-#include <map.h>
-#include <i2cform.h>
-#include <calibform.h>
-#include <calibscandialog.h>
-#include <gpssatsform.h>
+
 #include <iostream>
-#include <histogram.h>
-#include <histogramdataform.h>
-#include <muondetector_structs.h>
-#include <parametermonitorform.h>
-#include <logplotswidget.h>
-#include <scanform.h>
+
+//#include <gnsssatellite.h>
 
 using namespace std;
 
 
 MainWindow::MainWindow(QWidget *parent) :
-	QMainWindow(parent),
-	ui(new Ui::MainWindow)
+    QMainWindow(parent),
+    ui(new Ui::MainWindow)
 {
     qRegisterMetaType<TcpMessage>("TcpMessage");
     qRegisterMetaType<GeodeticPos>("GeodeticPos");
@@ -38,61 +42,61 @@ MainWindow::MainWindow(QWidget *parent) :
     qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
     qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
     qRegisterMetaType<GPIO_PIN>("GPIO_PIN");
-	qRegisterMetaType<GnssMonHwStruct>("GnssMonHwStruct");
-	qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
+    qRegisterMetaType<GnssMonHwStruct>("GnssMonHwStruct");
+    qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
     qRegisterMetaType<UbxTimeMarkStruct>("UbxTimeMarkStruct");
-	qRegisterMetaType<int32_t>("int32_t");
-	qRegisterMetaType<uint32_t>("uint32_t");
-	qRegisterMetaType<uint16_t>("uint16_t");
-	qRegisterMetaType<uint8_t>("uint8_t");
-	qRegisterMetaType<int8_t>("int8_t");
-	qRegisterMetaType<std::vector<GnssConfigStruct>>("std::vector<GnssConfigStruct>");
-	qRegisterMetaType<std::chrono::duration<double>>("std::chrono::duration<double>");
-	qRegisterMetaType<std::string>("std::string");
+    qRegisterMetaType<int32_t>("int32_t");
+    qRegisterMetaType<uint32_t>("uint32_t");
+    qRegisterMetaType<uint16_t>("uint16_t");
+    qRegisterMetaType<uint8_t>("uint8_t");
+    qRegisterMetaType<int8_t>("int8_t");
+    qRegisterMetaType<std::vector<GnssConfigStruct>>("std::vector<GnssConfigStruct>");
+    qRegisterMetaType<std::chrono::duration<double>>("std::chrono::duration<double>");
+    qRegisterMetaType<std::string>("std::string");
 //	qRegisterMetaType<LogParameter>("LogParameter");
-	qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
-	qRegisterMetaType<timespec>("timespec");
+    qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
+    qRegisterMetaType<timespec>("timespec");
 
     ui->setupUi(this);
-    this->setWindowTitle(QString("muondetector-gui  "+QString::fromStdString(VERSION_STRING)));
+    this->setWindowTitle(QString("muondetector-gui  "+QString::fromStdString(MuonPi::Version::software.string())));
 
-	ui->discr1Layout->setAlignment(ui->discr1Slider, Qt::AlignHCenter);
+    ui->discr1Layout->setAlignment(ui->discr1Slider, Qt::AlignHCenter);
     ui->discr2Layout->setAlignment(ui->discr2Slider, Qt::AlignHCenter); // aligns the slider in their vertical layout centered
     QIcon icon(":/res/muon.ico");
-	this->setWindowIcon(icon);
+    this->setWindowIcon(icon);
     setMaxThreshVoltage(1.0);
 
     // setup ipBox and load addresses etc.
     addresses = new QStandardItemModel(this);
     loadSettings(addresses);
-	ui->ipBox->setModel(addresses);
-	ui->ipBox->setAutoCompletion(true);
-	ui->ipBox->setEditable(true);
-	//ui->ipBox->installEventFilter(this);
+    ui->ipBox->setModel(addresses);
+    ui->ipBox->setCompleter(new QCompleter{});
+    ui->ipBox->setEditable(true);
+    //ui->ipBox->installEventFilter(this);
 
-	// setup colors
-	ui->ipStatusLabel->setStyleSheet("QLabel {color : darkGray;}");/*
-	ui->discr1Hit->setStyleSheet("QLabel {background-color : darkRed;}");
-	ui->discr2Hit->setStyleSheet("QLabel {background-color : darkRed;}");*/
+    // setup colors
+    ui->ipStatusLabel->setStyleSheet("QLabel {color : darkGray;}");/*
+    ui->discr1Hit->setStyleSheet("QLabel {background-color : darkRed;}");
+    ui->discr2Hit->setStyleSheet("QLabel {background-color : darkRed;}");*/
 
-	// setup event filter
+    // setup event filter
     ui->ipBox->installEventFilter(this);
     ui->ipButton->installEventFilter(this);
 
     // setup signal/slots
     connect(ui->ipButton, &QPushButton::pressed, this, &MainWindow::onIpButtonClicked);
 
-	// set timer for and/xor label color change after hit
+    // set timer for and/xor label color change after hit
     int timerInterval = 100; // in msec
-	andTimer.setSingleShot(true);
-	xorTimer.setSingleShot(true);
-	andTimer.setInterval(timerInterval);
-	xorTimer.setInterval(timerInterval);
-	connect(&andTimer, &QTimer::timeout, this, &MainWindow::resetAndHit);
-	connect(&xorTimer, &QTimer::timeout, this, &MainWindow::resetXorHit);
-	
-	ui->ANDHit->setFocusPolicy(Qt::NoFocus);
-	ui->XORHit->setFocusPolicy(Qt::NoFocus);
+    andTimer.setSingleShot(true);
+    xorTimer.setSingleShot(true);
+    andTimer.setInterval(timerInterval);
+    xorTimer.setInterval(timerInterval);
+    connect(&andTimer, &QTimer::timeout, this, &MainWindow::resetAndHit);
+    connect(&xorTimer, &QTimer::timeout, this, &MainWindow::resetXorHit);
+
+    ui->ANDHit->setFocusPolicy(Qt::NoFocus);
+    ui->XORHit->setFocusPolicy(Qt::NoFocus);
 
     // set timer for automatic rate poll
     if (automaticRatePoll){
@@ -206,7 +210,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(calibTab, &CalibForm::calibRequest, this, [this]() { this->sendRequest(calibRequestSig); } );
     connect(calibTab, &CalibForm::writeCalibToEeprom, this, [this]() { this->sendRequest(calibWriteEepromSig); } );
     connect(this, &MainWindow::adcSampleReceived, calibTab, &CalibForm::onAdcSampleReceived);
-*/    
+*/
     ui->tabWidget->addTab(satsTab,"GNSS Data");
 
 
@@ -238,8 +242,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(paramTab, &ParameterMonitorForm::preamp2EnableChanged, this, &MainWindow::sendPreamp2Switch);
     connect(paramTab, &ParameterMonitorForm::biasEnableChanged, this, &MainWindow::sendSetBiasStatus);
     connect(paramTab, &ParameterMonitorForm::polarityChanged, this, &MainWindow::onPolarityChanged);
-	connect(paramTab, &ParameterMonitorForm::timingSelectionChanged, this, &MainWindow::sendInputSwitch);
-	connect(paramTab, &ParameterMonitorForm::triggerSelectionChanged, this, &MainWindow::onTriggerSelectionChanged);
+    connect(paramTab, &ParameterMonitorForm::timingSelectionChanged, this, &MainWindow::sendInputSwitch);
+    connect(paramTab, &ParameterMonitorForm::triggerSelectionChanged, this, &MainWindow::onTriggerSelectionChanged);
     connect(paramTab, &ParameterMonitorForm::gpioInhibitChanged, this, &MainWindow::gpioInhibit);
     ui->tabWidget->addTab(paramTab,"Parameters");
 
@@ -264,7 +268,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //sendRequest(calibRequestSig);
 
     //settings->show();
-	// set menu bar actions
+    // set menu bar actions
     //connect(ui->actionsettings, &QAction::triggered, this, &MainWindow::settings_clicked);
 
     const QStandardItemModel *model = dynamic_cast<QStandardItemModel*>(ui->biasControlTypeComboBox->model());
@@ -276,24 +280,24 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
-	emit closeConnection();
+    emit closeConnection();
     saveSettings(addresses);
     delete ui;
 }
 
 void MainWindow::makeConnection(QString ipAddress, quint16 port) {
     // add popup windows for errors!!!
-	QThread *tcpThread = new QThread();
+    QThread *tcpThread = new QThread();
     tcpThread->setObjectName("muondetector-gui-tcp");
     if (!tcpConnection) {
-		delete(tcpConnection);
-	}
-	tcpConnection = new TcpConnection(ipAddress, port, verbose);
-	tcpConnection->moveToThread(tcpThread);
-	connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::makeConnection);
+        delete(tcpConnection);
+    }
+    tcpConnection = new TcpConnection(ipAddress, port, verbose);
+    tcpConnection->moveToThread(tcpThread);
+    connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::makeConnection);
     connect(tcpThread, &QThread::finished, tcpThread, &QThread::deleteLater);
     connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
-	connect(tcpConnection, &TcpConnection::connected, this, &MainWindow::connected);
+    connect(tcpConnection, &TcpConnection::connected, this, &MainWindow::connected);
     connect(this, &MainWindow::closeConnection, tcpConnection, &TcpConnection::closeThisConnection);
     connect(tcpConnection, &TcpConnection::finished, tcpThread, &QThread::quit);
     connect(this, &MainWindow::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
@@ -319,16 +323,16 @@ bool MainWindow::saveSettings(QStandardItemModel *model) {
 #endif
     if (!file.open(QIODevice::ReadWrite)) {
         qDebug() << "file open failed in 'ReadWrite' mode at location " << file.fileName();
-		return false;
-	}
-	QDataStream stream(&file);
-	qint32 n(model->rowCount());
-	stream << n;
-	for (int i = 0; i < n; i++) {
-		model->item(i)->write(stream);
-	}
-	file.close();
-	return true;
+        return false;
+    }
+    QDataStream stream(&file);
+    qint32 n(model->rowCount());
+    stream << n;
+    for (int i = 0; i < n; i++) {
+        model->item(i)->write(stream);
+    }
+    file.close();
+    return true;
 }
 
 bool MainWindow::loadSettings(QStandardItemModel* model) {
@@ -341,23 +345,23 @@ bool MainWindow::loadSettings(QStandardItemModel* model) {
 #endif
     if (!file.open(QIODevice::ReadOnly)) {
         qDebug() << "file open failed in 'ReadOnly' mode at location " << file.fileName();
-		return false;
-	}
-	QDataStream stream(&file);
-	qint32 n;
-	stream >> n;
-	for (int i = 0; i < n; i++) {
-		model->appendRow(new QStandardItem());
-		model->item(i)->read(stream);
-	}
-	file.close();
-	return true;
+        return false;
+    }
+    QDataStream stream(&file);
+    qint32 n;
+    stream >> n;
+    for (int i = 0; i < n; i++) {
+        model->appendRow(new QStandardItem());
+        model->item(i)->read(stream);
+    }
+    file.close();
+    return true;
 }
 
 bool MainWindow::eventFilter(QObject *object, QEvent *event)
 {
-	if (event->type() == QEvent::KeyPress) {
-		QKeyEvent *ke = static_cast<QKeyEvent *>(event);
+    if (event->type() == QEvent::KeyPress) {
+        QKeyEvent *ke = static_cast<QKeyEvent *>(event);
         if (ke->key() == Qt::Key_Escape) {
             QCoreApplication::quit();
             return true;
@@ -377,8 +381,8 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
         }*/ // crashes when alternating escape and enter ...why?
         auto combobox = dynamic_cast<QComboBox *>(object);
         if (combobox == ui->ipBox) {
-			if (ke->key() == Qt::Key_Delete) {
-				ui->ipBox->removeItem(ui->ipBox->currentIndex());
+            if (ke->key() == Qt::Key_Delete) {
+                ui->ipBox->removeItem(ui->ipBox->currentIndex());
             }else if (ke->key() == Qt::Key_Enter || ke->key() == Qt::Key_Return) {
                 onIpButtonClicked();
             }else{
@@ -388,11 +392,10 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
             return QObject::eventFilter(object, event);
         }
         return true;
-	}
+    }
     else {
         return QObject::eventFilter(object, event);
-	}
-    return false;
+    }
 }
 
 void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
@@ -406,19 +409,19 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_MSG_RATE) {
-	QMap<uint16_t, int> msgRateCfgs;
+    QMap<uint16_t, int> msgRateCfgs;
         *(tcpMessage.dStream) >> msgRateCfgs;
-	emit addUbxMsgRates(msgRateCfgs);
-	return;
+    emit addUbxMsgRates(msgRateCfgs);
+    return;
     }
     if (msgID == TCP_MSG_KEY::MSG_THRESHOLD){
-	quint8 channel;
-	float threshold;
-	*(tcpMessage.dStream) >> channel >> threshold;
-	if (threshold > maxThreshVoltage){
-	    sendSetThresh(channel,maxThreshVoltage);
-	    return;
-	}
+    quint8 channel;
+    float threshold;
+    *(tcpMessage.dStream) >> channel >> threshold;
+    if (threshold > maxThreshVoltage){
+        sendSetThresh(channel,maxThreshVoltage);
+        return;
+    }
         sliderValues[channel] = (int)(2000 * threshold);
         updateUiProperties();
         return;
@@ -530,24 +533,24 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_I2C_STATS){
-	quint8 nrDevices=0;
-	quint32 bytesRead = 0;
-	quint32 bytesWritten = 0;
-    	*(tcpMessage.dStream) >> nrDevices >> bytesRead >> bytesWritten;
+    quint8 nrDevices=0;
+    quint32 bytesRead = 0;
+    quint32 bytesWritten = 0;
+        *(tcpMessage.dStream) >> nrDevices >> bytesRead >> bytesWritten;
 
-	QVector<I2cDeviceEntry> deviceList;
-	for (uint8_t i=0; i<nrDevices; i++)
-	{
-	    uint8_t addr = 0;
-	    QString title = "none";
-	    uint8_t status = 0;
-	    *(tcpMessage.dStream) >> addr >> title >> status;
-	    I2cDeviceEntry entry;
-	    entry.address=addr;
-	    entry.name = title;
-	    entry.status=status;
-	    deviceList.push_back(entry);
-	}
+    QVector<I2cDeviceEntry> deviceList;
+    for (uint8_t i=0; i<nrDevices; i++)
+    {
+        uint8_t addr = 0;
+        QString title = "none";
+        uint8_t status = 0;
+        *(tcpMessage.dStream) >> addr >> title >> status;
+        I2cDeviceEntry entry;
+        entry.address=addr;
+        entry.name = title;
+        entry.status=status;
+        deviceList.push_back(entry);
+    }
         emit i2cStatsReceived(bytesRead, bytesWritten, deviceList);
         //updateUiProperties();
         return;
@@ -558,33 +561,33 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         emit spiStatsReceived(spiPresent);
     }
     if (msgID == TCP_MSG_KEY::MSG_CALIB_SET){
-	quint16 nrPars=0;
-	quint64 id = 0;
-	bool valid = false;
-	bool eepromValid = 0;
-    	*(tcpMessage.dStream) >> valid >> eepromValid >> id >> nrPars;
+    quint16 nrPars=0;
+    quint64 id = 0;
+    bool valid = false;
+    bool eepromValid = 0;
+        *(tcpMessage.dStream) >> valid >> eepromValid >> id >> nrPars;
 
-	QVector<CalibStruct> calibList;
-	for (uint8_t i=0; i<nrPars; i++)
-	{
-	    CalibStruct item;
-	    *(tcpMessage.dStream) >> item;
-	    calibList.push_back(item);
-	}
+    QVector<CalibStruct> calibList;
+    for (uint8_t i=0; i<nrPars; i++)
+    {
+        CalibStruct item;
+        *(tcpMessage.dStream) >> item;
+        calibList.push_back(item);
+    }
         emit calibReceived(valid, eepromValid, id, calibList);
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_GNSS_SATS){
-	int nrSats=0;    	
-	*(tcpMessage.dStream) >> nrSats;
+    int nrSats=0;
+    *(tcpMessage.dStream) >> nrSats;
 
-	QVector<GnssSatellite> satList;
-	for (uint8_t i=0; i<nrSats; i++)
-	{
-	    GnssSatellite sat;
-	    *(tcpMessage.dStream) >> sat;
-	    satList.push_back(sat);
-	}
+    QVector<GnssSatellite> satList;
+    for (uint8_t i=0; i<nrSats; i++)
+    {
+        GnssSatellite sat;
+        *(tcpMessage.dStream) >> sat;
+        satList.push_back(sat);
+    }
         emit satsReceived(satList);
         return;
     }
@@ -662,24 +665,24 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_MONHW){
-        quint16 noise=0;
+/*        quint16 noise=0;
         quint16 agc=0;
         quint8 antStatus=0;
         quint8 antPower=0;
         quint8 jamInd=0;
-        quint8 flags=0;
+        quint8 flags=0;*/
         GnssMonHwStruct hw;
-	//*(tcpMessage.dStream) >> noise >> agc >> antStatus >> antPower >> jamInd >> flags;
-	*(tcpMessage.dStream) >> hw;
+    //*(tcpMessage.dStream) >> noise >> agc >> antStatus >> antPower >> jamInd >> flags;
+    *(tcpMessage.dStream) >> hw;
         //emit gpsMonHWReceived(noise,agc,antStatus,antPower,jamInd,flags);
         emit gpsMonHWReceived(hw);
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_MONHW2){
-        qint8 ofsI=0, ofsQ=0;
+/*        qint8 ofsI=0, ofsQ=0;
         quint8 magI=0, magQ=0;
-        quint8 cfgSrc=0;
-	GnssMonHw2Struct hw2;
+        quint8 cfgSrc=0;*/
+    GnssMonHw2Struct hw2;
 //        *(tcpMessage.dStream) >> hw2.ofsI >> hw2.magI >> hw2.ofsQ >> hw2.magQ >> hw2.cfgSrc;
         *(tcpMessage.dStream) >> hw2;
         //qDebug()<<"ofsI="<<ofsI<<" magI="<<magI<<"ofsQ="<<ofsQ<<" magQ="<<magQ<<" cfgSrc="<<cfgSrc;
@@ -714,24 +717,24 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_ADC_MODE) {
-		quint8 mode;
-		*(tcpMessage.dStream) >> mode;
-		emit adcModeReceived(mode);
-		return;
+        quint8 mode;
+        *(tcpMessage.dStream) >> mode;
+        emit adcModeReceived(mode);
+        return;
     }
-	if (msgID == TCP_MSG_KEY::MSG_LOG_INFO){
-		LogInfoStruct lis;
-		*(tcpMessage.dStream) >> lis;
-		emit logInfoReceived(lis);
-		return;
+    if (msgID == TCP_MSG_KEY::MSG_LOG_INFO){
+        LogInfoStruct lis;
+        *(tcpMessage.dStream) >> lis;
+        emit logInfoReceived(lis);
+        return;
     }
-	if (msgID == TCP_MSG_KEY::MSG_UBX_TIMEMARK){
-		UbxTimeMarkStruct tm;
-		*(tcpMessage.dStream) >> tm;
-		emit timeMarkReceived(tm);
-		return;
-	}
-	if (msgID == TCP_MSG_KEY::MSG_MQTT_STATUS){
+    if (msgID == TCP_MSG_KEY::MSG_UBX_TIMEMARK){
+        UbxTimeMarkStruct tm;
+        *(tcpMessage.dStream) >> tm;
+        emit timeMarkReceived(tm);
+        return;
+    }
+    if (msgID == TCP_MSG_KEY::MSG_MQTT_STATUS){
         bool connected = false;
         *(tcpMessage.dStream) >> connected;
         emit mqttStatusChanged(connected);
@@ -874,12 +877,12 @@ void MainWindow::sendRequestGpioRateBuffer(){
 }
 
 void MainWindow::receivedGpioRisingEdge(GPIO_PIN pin) {
-	if (pin == EVT_AND) {
+    if (pin == EVT_AND) {
         ui->ANDHit->setStyleSheet("QLabel {background-color: darkGreen;}");
-		andTimer.start();
+        andTimer.start();
     } else if (pin == EVT_XOR) {
         ui->XORHit->setStyleSheet("QLabel {background-color: darkGreen;}");
-		xorTimer.start();
+        xorTimer.start();
     } else if (pin == TIMEPULSE) {
         emit timepulseReceived();
     }
@@ -893,43 +896,43 @@ void MainWindow::resetXorHit() {
 }
 
 void MainWindow::uiSetDisconnectedState() {
-	// set button and color of label
-	ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGray;}");
-	ui->ipStatusLabel->setText("not connected");
-	ui->ipButton->setText("connect");
-	ui->ipBox->setEnabled(true);
+    // set button and color of label
+    ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGray;}");
+    ui->ipStatusLabel->setText("not connected");
+    ui->ipButton->setText("connect");
+    ui->ipBox->setEnabled(true);
     // disable all relevant objects of mainwindow
-	ui->discr1Label->setStyleSheet("QLabel {color: darkGray;}");
-	ui->discr2Label->setStyleSheet("QLabel {color: darkGray;}");
-	ui->discr1Slider->setValue(0);
-	ui->discr1Slider->setDisabled(true);
-	ui->discr1Edit->clear();
-	ui->discr1Edit->setDisabled(true);
-	ui->discr2Slider->setValue(0);
-	ui->discr2Slider->setDisabled(true);
-	ui->discr2Edit->clear();
-	ui->discr2Edit->setDisabled(true);
-	ui->ANDHit->setDisabled(true);
+    ui->discr1Label->setStyleSheet("QLabel {color: darkGray;}");
+    ui->discr2Label->setStyleSheet("QLabel {color: darkGray;}");
+    ui->discr1Slider->setValue(0);
+    ui->discr1Slider->setDisabled(true);
+    ui->discr1Edit->clear();
+    ui->discr1Edit->setDisabled(true);
+    ui->discr2Slider->setValue(0);
+    ui->discr2Slider->setDisabled(true);
+    ui->discr2Edit->clear();
+    ui->discr2Edit->setDisabled(true);
+    ui->ANDHit->setDisabled(true);
     ui->ANDHit->setStyleSheet("QLabel {background-color: Window;}");
-	ui->XORHit->setDisabled(true);
+    ui->XORHit->setDisabled(true);
     ui->XORHit->setStyleSheet("QLabel {background-color: Window;}");
     ui->rate1->setDisabled(true);
     ui->rate2->setDisabled(true);
-	ui->biasPowerLabel->setDisabled(true);
-	ui->biasPowerLabel->setStyleSheet("QLabel {color: darkGray;}");
-	ui->biasPowerButton->setDisabled(true);
+    ui->biasPowerLabel->setDisabled(true);
+    ui->biasPowerLabel->setStyleSheet("QLabel {color: darkGray;}");
+    ui->biasPowerButton->setDisabled(true);
     // disable other widgets
     emit setUiEnabledStates(false);
 }
 
 void MainWindow::uiSetConnectedState() {
-	// change color and text of labels and buttons
-	ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGreen;}");
-	ui->ipStatusLabel->setText("connected");
-	ui->ipButton->setText("disconnect");
-	ui->ipBox->setDisabled(true);
-	ui->discr1Label->setStyleSheet("QLabel {color: black;}");
-	ui->discr2Label->setStyleSheet("QLabel {color: black;}");
+    // change color and text of labels and buttons
+    ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGreen;}");
+    ui->ipStatusLabel->setText("connected");
+    ui->ipButton->setText("disconnect");
+    ui->ipBox->setDisabled(true);
+    ui->discr1Label->setStyleSheet("QLabel {color: black;}");
+    ui->discr2Label->setStyleSheet("QLabel {color: black;}");
     // enable other widgets
     emit setUiEnabledStates(true);
 }
@@ -957,25 +960,25 @@ void MainWindow::updateUiProperties() {
     // UBias = c1*UDac + c0
     // (UBias - c0)/c1 = UDac
 
-	ui->ANDHit->setEnabled(true);
+    ui->ANDHit->setEnabled(true);
     //ui->ANDHit->setStyleSheet("QLabel {background-color: darkRed; color: white;}");
-	ui->XORHit->setEnabled(true);
+    ui->XORHit->setEnabled(true);
     //ui->XORHit->setStyleSheet("QLabel {background-color: darkRed; color: white;}");
     ui->rate1->setEnabled(true);
     ui->rate2->setEnabled(true);
-	ui->biasPowerButton->setEnabled(true);
-	ui->biasPowerLabel->setEnabled(true);
+    ui->biasPowerButton->setEnabled(true);
+    ui->biasPowerLabel->setEnabled(true);
     if (biasON) {
-		ui->biasPowerButton->setText("Disable Bias");
-		ui->biasPowerLabel->setText("Bias ON");
-		ui->biasPowerLabel->setStyleSheet("QLabel {background-color: darkGreen; color: white;}");
-	}
-	else {
-		ui->biasPowerButton->setText("Enable Bias");
-		ui->biasPowerLabel->setText("Bias OFF");
-		ui->biasPowerLabel->setStyleSheet("QLabel {background-color: red; color: white;}");
-	}
-	mouseHold = false;
+        ui->biasPowerButton->setText("Disable Bias");
+        ui->biasPowerLabel->setText("Bias ON");
+        ui->biasPowerLabel->setStyleSheet("QLabel {background-color: darkGreen; color: white;}");
+    }
+    else {
+        ui->biasPowerButton->setText("Enable Bias");
+        ui->biasPowerLabel->setText("Bias OFF");
+        ui->biasPowerLabel->setStyleSheet("QLabel {background-color: red; color: white;}");
+    }
+    mouseHold = false;
 }
 
 void MainWindow::connected() {
@@ -1013,96 +1016,96 @@ void MainWindow::sendValueUpdateRequests() {
 
 void MainWindow::onIpButtonClicked()
 {
-	if (connectedToDemon) {
-		// it is connected and the button shows "disconnect" -> here comes disconnect code
-		connectedToDemon = false;
-		emit closeConnection();
-		andTimer.stop();
-		xorTimer.stop();
-		uiSetDisconnectedState();
-		return;
-	}
-	QString ipBoxText = ui->ipBox->currentText();
+    if (connectedToDemon) {
+        // it is connected and the button shows "disconnect" -> here comes disconnect code
+        connectedToDemon = false;
+        emit closeConnection();
+        andTimer.stop();
+        xorTimer.stop();
+        uiSetDisconnectedState();
+        return;
+    }
+    QString ipBoxText = ui->ipBox->currentText();
     QStringList ipAndPort = ipBoxText.split(':');
     if (ipAndPort.size() > 2 || ipAndPort.size() < 1) {
         QString errorMess = "error, size of ipAndPort not 1 or 2";
-		errorM.showMessage(errorMess);
+        errorM.showMessage(errorMess);
         return;
     }
-	QString ipAddress = ipAndPort.at(0);
-	if (ipAddress == "local" || ipAddress == "localhost") {
-		ipAddress = "127.0.0.1";
+    QString ipAddress = ipAndPort.at(0);
+    if (ipAddress == "local" || ipAddress == "localhost") {
+        ipAddress = "127.0.0.1";
     }
-	QString portString;
+    QString portString;
     if (ipAndPort.size() == 2) {
-		portString = ipAndPort.at(1);
-	}
-	else {
-		portString = "51508";
+        portString = ipAndPort.at(1);
+    }
+    else {
+        portString = "51508";
     }
     makeConnection(ipAddress, portString.toUInt());
     if (!ui->ipBox->currentText().isEmpty() && ui->ipBox->findText(ui->ipBox->currentText()) == -1) {
-		// if text not already in there, put it in there
-		ui->ipBox->addItem(ui->ipBox->currentText());
-	}
+        // if text not already in there, put it in there
+        ui->ipBox->addItem(ui->ipBox->currentText());
+    }
 }
 
 void MainWindow::on_discr1Slider_sliderPressed()
 {
-	mouseHold = true;
+    mouseHold = true;
 }
 
 void MainWindow::on_discr1Slider_sliderReleased()
 {
-	mouseHold = false;
-	on_discr1Slider_valueChanged(ui->discr1Slider->value());
+    mouseHold = false;
+    on_discr1Slider_valueChanged(ui->discr1Slider->value());
 }
 
 void MainWindow::on_discr1Edit_editingFinished()
 {
-	float value = parseValue(ui->discr1Edit->text());
-	if (value < 0) {
-		return;
-	}
-	ui->discr1Slider->setValue((int)(value * 2 + 0.5));
+    float value = parseValue(ui->discr1Edit->text());
+    if (value < 0) {
+        return;
+    }
+    ui->discr1Slider->setValue((int)(value * 2 + 0.5));
 }
 
 void MainWindow::on_discr1Slider_valueChanged(int value)
 {
     float thresh0 = (float)(value / 2000.0);
-	ui->discr1Edit->setText(QString::number((float)value / 2.0) + "mV");
+    ui->discr1Edit->setText(QString::number((float)value / 2.0) + "mV");
     if (!mouseHold) {
         sendSetThresh(0, thresh0);
-	}
+    }
 }
 
 void MainWindow::on_discr2Slider_sliderPressed()
 {
-	mouseHold = true;
+    mouseHold = true;
 }
 
 void MainWindow::on_discr2Slider_sliderReleased()
 {
-	mouseHold = false;
-	on_discr2Slider_valueChanged(ui->discr2Slider->value());
+    mouseHold = false;
+    on_discr2Slider_valueChanged(ui->discr2Slider->value());
 }
 
 void MainWindow::on_discr2Edit_editingFinished()
 {
-	float value = parseValue(ui->discr2Edit->text());
-	if (value < 0) {
-		return;
-	}
-	ui->discr2Slider->setValue((int)(value * 2 + 0.5));
+    float value = parseValue(ui->discr2Edit->text());
+    if (value < 0) {
+        return;
+    }
+    ui->discr2Slider->setValue((int)(value * 2 + 0.5));
 }
 
 void MainWindow::on_discr2Slider_valueChanged(int value)
 {
     float thresh1 =  (float)(value / 2000.0);
-	ui->discr2Edit->setText(QString::number((float)(value / 2.0)) + "mV");
+    ui->discr2Edit->setText(QString::number((float)(value / 2.0)) + "mV");
     if (!mouseHold) {
         sendSetThresh(1, thresh1);
-	}
+    }
 }
 void MainWindow::setMaxThreshVoltage(float voltage){
     // we have 0.5 mV resolution so we have (int)(mVolts)*2 steps on the slider
@@ -1120,22 +1123,22 @@ void MainWindow::setMaxThreshVoltage(float voltage){
     }
 }
 float MainWindow::parseValue(QString text) {
-	// ignores everything that is not a number or at least most of it
-	QRegExp alphabetical = QRegExp("[a-z]+[A-Z]+");
-	QRegExp specialCharacters = QRegExp(
-		QString::fromUtf8("[\\-`~!@#\\$%\\^\\&\\*()_\\—\\+=|:;<>«»\\?/{}\'\"ß\\\\]+"));
-	text = text.simplified();
-	text = text.replace(" ", "");
-	text = text.remove(alphabetical);
-	text = text.replace(",", ".");
-	text = text.remove(specialCharacters);
-	bool ok;
-	float value = text.toFloat(&ok);
-	if (!ok) {
-		errorM.showMessage("failed to parse discr1Edit to float");
-		return -1;
-	}
-	return value;
+    // ignores everything that is not a number or at least most of it
+    QRegExp alphabetical = QRegExp("[a-z]+[A-Z]+");
+    QRegExp specialCharacters = QRegExp(
+        QString::fromUtf8("[\\-`~!@#\\$%\\^\\&\\*()_\\—\\+=|:;<>«»\\?/{}\'\"ß\\\\]+"));
+    text = text.simplified();
+    text = text.replace(" ", "");
+    text = text.remove(alphabetical);
+    text = text.replace(",", ".");
+    text = text.remove(specialCharacters);
+    bool ok;
+    float value = text.toFloat(&ok);
+    if (!ok) {
+        errorM.showMessage("failed to parse discr1Edit to float");
+        return -1;
+    }
+    return value;
 }
 
 void MainWindow::on_saveDacButton_clicked()
@@ -1250,15 +1253,15 @@ void MainWindow::on_biasVoltageDoubleSpinBox_valueChanged(double arg1)
 }
 
 void MainWindow::gpioInhibit(bool inhibit) {
-	TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GPIO_INHIBIT);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GPIO_INHIBIT);
     *(tcpMessage.dStream) << inhibit;
-    emit sendTcpMessage(tcpMessage);	
+    emit sendTcpMessage(tcpMessage);
 }
 
 void MainWindow::onPolarityChanged(bool pol1, bool pol2){
-	TcpMessage tcpMessage(TCP_MSG_KEY::MSG_POLARITY_SWITCH);
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_POLARITY_SWITCH);
     *(tcpMessage.dStream) << pol1 << pol2;
-    emit sendTcpMessage(tcpMessage);	
+    emit sendTcpMessage(tcpMessage);
 }
 
 

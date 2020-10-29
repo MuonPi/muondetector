@@ -32,37 +32,37 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget *parent) :
         {
             emit adcModeChanged((checked)?ADC_MODE_TRACE:ADC_MODE_PEAK);
         } );
-	connect(ui->preamp1EnCheckBox, &QCheckBox::clicked, this, [this](bool checked)
+    connect(ui->preamp1EnCheckBox, &QCheckBox::clicked, this, [this](bool checked)
         {
             emit preamp1EnableChanged(checked);
         } );
-	connect(ui->preamp2EnCheckBox, &QCheckBox::clicked, this, [this](bool checked)
+    connect(ui->preamp2EnCheckBox, &QCheckBox::clicked, this, [this](bool checked)
         {
             emit preamp2EnableChanged(checked);
         } );
-	connect(ui->biasEnCheckBox, &QCheckBox::clicked, this, [this](bool checked)
+    connect(ui->biasEnCheckBox, &QCheckBox::clicked, this, [this](bool checked)
         {
             emit biasEnableChanged(checked);
         } );
-	connect(ui->pol1CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked);
-	connect(ui->pol2CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked);
-	
+    connect(ui->pol1CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked);
+    connect(ui->pol2CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked);
+
 }
 
 void ParameterMonitorForm::on_timingSelectionComboBox_currentIndexChanged(int index)
 {
-	emit timingSelectionChanged(index);
+    emit timingSelectionChanged(index);
 }
 
 void ParameterMonitorForm::on_adcTriggerSelectionComboBox_currentIndexChanged(int index)
 {
-	for (auto signalIt=GPIO_SIGNAL_MAP.begin(); signalIt!=GPIO_SIGNAL_MAP.end(); ++signalIt) {
-		const GPIO_PIN signalId=signalIt.key();
-		if (GPIO_SIGNAL_MAP[signalId].name==ui->adcTriggerSelectionComboBox->itemText(index)) {
-			emit triggerSelectionChanged(signalId);
-			return;
-		}
-	}
+    for (auto signalIt=GPIO_SIGNAL_MAP.begin(); signalIt!=GPIO_SIGNAL_MAP.end(); ++signalIt) {
+        const GPIO_PIN signalId=signalIt.key();
+        if (GPIO_SIGNAL_MAP[signalId].name==ui->adcTriggerSelectionComboBox->itemText(index)) {
+            emit triggerSelectionChanged(signalId);
+            return;
+        }
+    }
 }
 
 ParameterMonitorForm::~ParameterMonitorForm()
@@ -70,7 +70,7 @@ ParameterMonitorForm::~ParameterMonitorForm()
     delete ui;
 }
 
-void ParameterMonitorForm::onCalibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct> & calibList)
+void ParameterMonitorForm::onCalibReceived(bool /*valid*/, bool /*eepromValid*/, quint64 /*id*/, const QVector<CalibStruct> & calibList)
 {
     fCalibList.clear();
     for (int i=0; i<calibList.size(); i++)
@@ -228,7 +228,7 @@ void ParameterMonitorForm::onTimepulseReceived()
 
 void ParameterMonitorForm::onTimeMarkReceived(const UbxTimeMarkStruct& tm)
 {
-	ui->ubloxCounterLabel->setText(QString::number(tm.evtCounter));
+    ui->ubloxCounterLabel->setText(QString::number(tm.evtCounter));
 }
 
 void ParameterMonitorForm::onAdcTraceReceived(const QVector<float> &sampleBuffer)
@@ -251,19 +251,19 @@ void ParameterMonitorForm::onTimeAccReceived(quint32 acc)
     ui->timePrecLabel->setText(QString::number(acc*1e-9, 'g', 6));
 }
 
-void ParameterMonitorForm::onFreqAccReceived(quint32 acc)
+void ParameterMonitorForm::onFreqAccReceived(quint32 /*acc*/)
 {//
 
 }
 
-void ParameterMonitorForm::onIntCounterReceived(quint32 cnt)
+void ParameterMonitorForm::onIntCounterReceived(quint32 /*cnt*/)
 {
     //ui->ubloxCounterLabel->setText(QString::number(cnt));
 }
 
-void ParameterMonitorForm::onPolarityReceived(bool pol1, bool pol2) 
+void ParameterMonitorForm::onPolarityReceived(bool /*pol1*/, bool /*pol2*/)
 {
-//	
+//
 
 }
 
@@ -336,10 +336,10 @@ void ParameterMonitorForm::on_gpioInhibitCheckBox_clicked(bool checked)
 //	qDebug()<<"set inhibit to "<<QString((checked)?"true":"false");
 }
 
-void ParameterMonitorForm::onPolarityCheckBoxClicked(bool checked){
-//	
-	bool pol1=ui->pol1CheckBox->isChecked();
-	bool pol2=ui->pol2CheckBox->isChecked();
-	emit polarityChanged(pol1, pol2);
+void ParameterMonitorForm::onPolarityCheckBoxClicked(bool /*checked*/){
+//
+    bool pol1=ui->pol1CheckBox->isChecked();
+    bool pol2=ui->pol2CheckBox->isChecked();
+    emit polarityChanged(pol1, pol2);
 }
 

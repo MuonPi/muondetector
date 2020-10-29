@@ -7,8 +7,9 @@
 class TimeScaleDraw : public QwtScaleDraw
 {
 public:
-    TimeScaleDraw(const QTime &base, const bool invert = true):
-        baseTime(base), invertValues(invert)
+    TimeScaleDraw(const QTime &base, const bool invert = true)
+        : invertValues(invert)
+        , baseTime(base)
     {
     }
     virtual QwtText label(qreal v) const
@@ -64,7 +65,7 @@ void PlotCustom::initialize(){
        andCurve.setPen(bluePen);
        andCurve.setBrush(andCurveColor);
        andCurve.attach(this);
-       connect(legend, &QwtLegend::checked, this, [this](const QVariant &itemInfo, bool on, int index){
+       connect(legend, &QwtLegend::checked, this, [this](const QVariant &itemInfo, bool on, int /*index*/){
             if (on){
                 if (itemInfo=="xor-curve"){
                     xorCurve.show();
@@ -106,8 +107,8 @@ void PlotCustom::plotSamples(QVector<QPointF>& samples, QwtPlotCurve& curve){
         step = (double)(int)((xMax-xMin)/3);
     }
     setAxisScale(QwtPlot::xBottom,xMin,xMax,step);
-    QwtPointSeriesData *data = new QwtPointSeriesData(someSamples);
-    curve.setData(data);
+    QwtPointSeriesData *dat = new QwtPointSeriesData(someSamples);
+    curve.setData(dat);
     replot();
 }
 

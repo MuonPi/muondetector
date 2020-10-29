@@ -83,7 +83,7 @@ void Settings::addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates) {
     ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(true);
     ui->ubloxSignalStates->blockSignals(true);
     oldSettings = ubxMsgRates;
-	for (QMap<uint16_t, int>::iterator it = ubxMsgRates.begin(); it != ubxMsgRates.end(); it++) {
+    for (QMap<uint16_t, int>::iterator it = ubxMsgRates.begin(); it != ubxMsgRates.end(); it++) {
         UbxMsgRateTableItem *item = new UbxMsgRateTableItem();
         UbxMsgRateTableItem *value = new UbxMsgRateTableItem();
         item->setCheckState(Qt::CheckState::Checked);
@@ -103,7 +103,7 @@ void Settings::addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates) {
         // I don't know why item gets (sometimes) uncheckd when transfered to the TableView
         // it seems to work now though:
         item->setCheckState(Qt::CheckState::Checked);
-	}
+    }
     ui->ubloxSignalStates->blockSignals(false);
     ui->ubloxSignalStates->resizeColumnsToContents();
     ui->ubloxSignalStates->resizeRowsToContents();
@@ -364,7 +364,7 @@ void Settings::writeTpConfig()
 }
 
 
-void Settings::on_timeGridComboBox_currentIndexChanged(int index)
+void Settings::on_timeGridComboBox_currentIndexChanged(int /*index*/)
 {
     fTpConfigChanged = true;
     ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(false);
@@ -374,7 +374,7 @@ void Settings::on_timeGridComboBox_currentIndexChanged(int index)
 void Settings::on_freqPeriodLineEdit_editingFinished()
 {
     bool ok = false;
-    int freqPeriod = ui->freqPeriodLineEdit->text().toLong(&ok);
+//    int freqPeriod = ui->freqPeriodLineEdit->text().toLong(&ok);
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
@@ -389,7 +389,7 @@ void Settings::on_freqPeriodLineEdit_editingFinished()
 void Settings::on_freqPeriodLockLineEdit_editingFinished()
 {
     bool ok = false;
-    int freqPeriod = ui->freqPeriodLockLineEdit->text().toLong(&ok);
+//    int freqPeriod = ui->freqPeriodLockLineEdit->text().toLong(&ok);
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
@@ -404,7 +404,7 @@ void Settings::on_freqPeriodLockLineEdit_editingFinished()
 void Settings::on_pulseLenLineEdit_editingFinished()
 {
     bool ok = false;
-    int len = ui->pulseLenLineEdit->text().toLong(&ok);
+//    int len = ui->pulseLenLineEdit->text().toLong(&ok);
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
@@ -419,7 +419,7 @@ void Settings::on_pulseLenLineEdit_editingFinished()
 void Settings::on_pulseLenLockLineEdit_editingFinished()
 {
     bool ok = false;
-    int len = ui->pulseLenLockLineEdit->text().toLong(&ok);
+//    int len = ui->pulseLenLockLineEdit->text().toLong(&ok);
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
@@ -434,7 +434,7 @@ void Settings::on_pulseLenLockLineEdit_editingFinished()
 void Settings::on_antDelayLineEdit_editingFinished()
 {
     bool ok = false;
-    int delay = ui->antDelayLineEdit->text().toInt(&ok);
+//    int delay = ui->antDelayLineEdit->text().toInt(&ok);
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
@@ -449,7 +449,7 @@ void Settings::on_antDelayLineEdit_editingFinished()
 void Settings::on_groupDelayLineEdit_editingFinished()
 {
     bool ok = false;
-    int delay = ui->groupDelayLineEdit->text().toInt(&ok);
+//    int delay = ui->groupDelayLineEdit->text().toInt(&ok);
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
@@ -464,7 +464,7 @@ void Settings::on_groupDelayLineEdit_editingFinished()
 void Settings::on_userDelayLineEdit_editingFinished()
 {
     bool ok = false;
-    int delay = ui->userDelayLineEdit->text().toLong(&ok);
+//    int delay = ui->userDelayLineEdit->text().toLong(&ok);
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;

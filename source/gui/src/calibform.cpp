@@ -129,7 +129,7 @@ void CalibForm::updateCalibTable()
         QString type = QString::fromStdString(fCalibList[i].type);
         QString numberstr = "";
         if (type=="FLOAT") {
-            double val = QString::fromStdString(fCalibList[i].value).toDouble(NULL);
+            double val = QString::fromStdString(fCalibList[i].value).toDouble(nullptr);
             numberstr = QString::number(val);
         } else {
             numberstr = QString::fromStdString(fCalibList[i].value);
@@ -352,7 +352,7 @@ void CalibForm::on_calibItemTableWidget_cellChanged(int row, int column)
         QString valstr=ui->calibItemTableWidget->item(row,2)->text();
         if (valstr=="") { updateCalibTable(); return; }
         bool ok=false;
-//        double val=valstr.toDouble(&ok);
+        valstr.toDouble(&ok);
         if (!ok) { updateCalibTable(); return; }
         setCalibParameter(name,valstr);
         QVector<CalibStruct> items;

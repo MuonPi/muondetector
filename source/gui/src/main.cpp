@@ -2,11 +2,13 @@
 #include <QApplication>
 #include <QCommandLineParser>
 
+#include "config.h"
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     QCoreApplication::setApplicationName("muondetector-gui");
-    QCoreApplication::setApplicationVersion(VERSION_STRING);
+    QCoreApplication::setApplicationVersion(QString::fromStdString(MuonPi::Version::software.string()));
     QCommandLineParser parser;
     parser.addVersionOption();
     parser.process(a);

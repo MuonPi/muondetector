@@ -5,11 +5,13 @@
 #include <string>
 
 
-namespace MonPi::Version {
-constexpr struct {
+namespace MuonPi::Version {
+constexpr struct Version {
     int major;
     int minor;
     int patch;
+
+    [[nodiscard]] auto string() const -> std::string;
 }
     hardware { 2, 0, 0 },
     software { 1, 2, 0 };
