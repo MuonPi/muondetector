@@ -36,7 +36,7 @@ add_compile_options(
     -Wextra
     -Wshadow
     -Wpedantic
-    -Werror
+#    -Werror
     -O3
     )
 
