@@ -143,7 +143,7 @@ target_include_directories(muondetector-login PUBLIC
 target_link_libraries(muondetector-login
     Qt5::Network Qt5::SerialPort
     ${LIBCRYPTO_LIBRARIES}
-    ${LIBPAHO_MQTT_LIBRARIES}
+    paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
     "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
     )
 
@@ -164,7 +164,7 @@ target_link_libraries(muondetector-daemon
     ${LIBPIGPIOD_LIBRARIES}
     ${LIBRT_LIBRARIES}
     ${LIBCONFIG_LIBRARIES}
-    ${LIBPAHO_MQTT_LIBRARIES}
+    paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
     "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
     )
 

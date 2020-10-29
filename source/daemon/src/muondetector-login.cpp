@@ -196,9 +196,9 @@ int main()
             QString::fromStdString(username), QString::fromStdString(password))) {
         return 1;
     }
-    MqttHandler mqttHandler {""};
+    MuonPi::MqttHandler mqttHandler {""};
     std::unique_ptr<QObject> context { new QObject };
-    QObject::connect(&mqttHandler, &MqttHandler::mqttConnectionStatus,
+    QObject::connect(&mqttHandler, &MuonPi::MqttHandler::mqttConnectionStatus,
         [context = std::move(context)](bool connected) mutable {
             if (connected) {
                 std::cout << "login data is correct!" << std::endl;
