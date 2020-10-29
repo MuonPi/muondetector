@@ -76,5 +76,5 @@ target_include_directories(muondetector PUBLIC
     $<BUILD_INTERFACE:/usr/local/include/mqtt>
     $<INSTALL_INTERFACE:include/mqtt>)
 
-install(TARGETS muondetector DESTINATION lib)
-install(FILES ${PROJECT_HEADER_FILES} DESTINATION include)
+install(TARGETS muondetector DESTINATION lib COMPONENT library)
+install(FILES ${PROJECT_HEADER_FILES} DESTINATION include COMPONENT library)

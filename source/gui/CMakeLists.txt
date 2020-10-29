@@ -137,4 +137,27 @@ target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:/usr/include/qwt>
     $<INSTALL_INTERFACE:include/mqtt>)
 
-install(TARGETS muondetector-gui DESTINATION bin)
+install(TARGETS muondetector-gui DESTINATION bin COMPONENT gui)
+install(FILES "${PROJECT_CONFIG_DIR}/muon.ico" DESTINATION "share/pixmaps/" COMPONENT gui)
+install(FILES "${PROJECT_CONFIG_DIR}/muondetector-gui.desktop" DESTINATION "share/applications/" COMPONENT gui)
+
+
+set(CPACK_GENERATOR "DEB")
+set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
+set(CPACK_PACKAGE_VENDOR "MuonPi.org")
+set(CPACK_DEBIAN_PACKAGE_SECTION "net")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
+set(CPACK_PACKAGE_VERSION_MAJOR "1")
+set(CPACK_PACKAGE_VERSION_MINOR "3")
+set(CPACK_PACKAGE_VERSION_PATCH "2")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Muondetector gui")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "GUI for monitoring and controlling the muondetector-daemon.
+It connects to muondetector-daemon via TCP. It is based on Qt and C++.
+It lets you change the settings for the muondetector hardware and
+uses qml for displaying the current position on the map if connected
+the muondetector-daemon.
+It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi.org <support@muonpi.org>")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=5), libqt5widgets5 (>=5), libqt5core5a (>=5), libqt5quickwidgets5 (>=5.3), libqt5network5 (>=5), qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), qml-module-qtquick-layouts (>=5), qml-module-qtquick-controls2 (>=5), qml-module-qtquick-controls (>=5), qml-module-qtquick-templates2 (>=5), libmuondetector-shared (>=1.2.2), libqwt-qt5-6 (>=6.1.2)")
+
+include(CPack)

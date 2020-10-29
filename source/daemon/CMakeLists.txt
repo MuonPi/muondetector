@@ -119,10 +119,6 @@ set(LOGIN_INSTALL_FILES
     "${PROJECT_CONFIG_DIR}/muondetector-login.sh"
     )
 
-set(DAEMON_INSTALL_FILES
-    "${PROJECT_CONFIG_DIR}/ubx_rates_config.cfg"
-    )
-
 set(LIBCRYPTO_LIBRARIES "crypto++")
 set(LIBPIGPIOD_LIBRARIES "pigpiod_if2")
 set(LIBRT_LIBRARIES "rt")
@@ -168,5 +164,37 @@ target_link_libraries(muondetector-daemon
     "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
     )
 
-install(FILES ${DAEMON_INSTALL_FILES} DESTINATION etc)
-install(TARGETS muondetector-daemon muondetector-login DESTINATION bin)
+
+set(DAEMON_INSTALL_FILES
+    "${PROJECT_CONFIG_DIR}/ubx_rates_config.cfg"
+    "${PROJECT_CONFIG_DIR}/muondetector.conf"
+    )
+
+
+install(TARGETS muondetector-daemon muondetector-login DESTINATION bin COMPONENT daemon)
+install(FILES ${DAEMON_INSTALL_FILES} DESTINATION "shared/muondetector/daemon/" COMPONENT daemon)
+install(FILES "${PROJECT_CONFIG_DIR}/muondetector-daemon.service" DESTINATION "lib/systemd/system" COMPONENT daemon)
+install(FILES ${LOGIN_INSTALL_FILES} DESTINATION bin COMPONENT daemon)
+
+
+
+
+set(CPACK_GENERATOR "DEB")
+set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${PROJECT_CONFIG_DIR}/preinst;${PROJECT_CONFIG_DIR}/postinst;${PROJECT_CONFIG_DIR}/prerm")
+set(CPACK_PACKAGE_VENDOR "MuonPi.org")
+set(CPACK_DEBIAN_PACKAGE_SECTION "net")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
+set(CPACK_PACKAGE_VERSION_MAJOR "1")
+set(CPACK_PACKAGE_VERSION_MINOR "3")
+set(CPACK_PACKAGE_VERSION_PATCH "2")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Muondetector daemon")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Daemon that controls the muon detector board
+It connects to the ublox gps module on the detector board via serial (rx tx) ubx protocol and to the other chips on the board via i2c. It is based on Qt and C++ and a little bit of C.
+It does the measuring in the background and sends the data to the central server.
+It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi.org <support@muonpi.org>")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "lftp (>=4.7), libcrypto++6, libmuondetector-shared (>=1.2.2), libqt5serialport5 (>= 5), libpaho-mqttpp (>=1.1.0), libconfig++-dev")
+
+
+include(CPack)
