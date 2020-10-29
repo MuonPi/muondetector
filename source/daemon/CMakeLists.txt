@@ -166,7 +166,6 @@ target_link_libraries(muondetector-daemon
 
 
 set(DAEMON_INSTALL_FILES
-    "${PROJECT_CONFIG_DIR}/ubx_rates_config.cfg"
     "${PROJECT_CONFIG_DIR}/muondetector.conf"
     )
 
