@@ -17,7 +17,7 @@
 #include "tdc7200.h"
 #include "filehandler.h"
 #include "mqtthandler.h"
-#include "i2cdevices.h"
+#include "i2c/i2cdevices.h"
 #include "calibration.h"
 #include "logparameter.h"
 #include "histogram.h"
@@ -302,7 +302,7 @@ private:
     QPointer<FileHandler> fileHandler;
 
     // mqtt
-    QPointer<MqttHandler> mqttHandler;
+    QPointer<MuonPi::MqttHandler> mqttHandler;
 
     // signal handling
     static int sighupFd[2];

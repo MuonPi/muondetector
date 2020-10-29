@@ -92,7 +92,7 @@ public slots:
 
     void setDynamicModel(uint8_t model);
     static const std::string& getProtVersionString() { return fProtVersionString; }
-    static float getProtVersion();
+    static double getProtVersion();
     /*
     float getProtVersion();
     int getProtVersionMajor();
@@ -146,7 +146,7 @@ private:
     // all global variables used in QtSerialUblox class until UbxMessage was created
     QPointer<QSerialPort> serialPort;
     QString _portName;
-    std::string buffer = "";
+    std::string m_buffer = "";
     int _baudRate = 0;
     int verbose = 0;
     int timeout = 5000;
@@ -174,7 +174,7 @@ private:
     gpsProperty<uint32_t> eventCounter;
     gpsProperty<int32_t> clkBias;
     gpsProperty<int32_t> clkDrift;
-    gpsProperty<std::vector<GnssSatellite> > satList;
+    gpsProperty<std::vector<GnssSatellite> > m_satList;
     gpsProperty<GeodeticPos> geodeticPos;
     const int	MSGTIMEOUT = 1500;
     std::queue<gpsTimestamp> fTimestamps;
