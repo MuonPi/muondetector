@@ -1,4 +1,4 @@
-#include "i2cbusses.h"
+#include "i2c/i2cbusses.h"
 
 enum adt { adt_dummy, adt_isa, adt_i2c, adt_smbus, adt_unknown };
 
