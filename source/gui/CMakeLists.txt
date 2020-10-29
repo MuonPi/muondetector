@@ -143,7 +143,10 @@ install(FILES "${PROJECT_CONFIG_DIR}/muondetector-gui.desktop" DESTINATION "shar
 
 
 if(WIN32)
-# TODO: create installer for windows: https://cmake.org/cmake/help/v3.3/module/CPackNSIS.html
+# TODO: create installer for windows:
+# Options:
+# https://cmake.org/cmake/help/v3.10/module/CPackNSIS.html
+# https://cmake.org/cmake/help/v3.10/module/CPackWIX.html
 else()
 set(CPACK_GENERATOR "DEB")
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
