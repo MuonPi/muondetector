@@ -31,6 +31,17 @@ set(Qt5_DIR "/usr/lib/x86_64-linux-gnu/cmake/Qt5/")
 
 find_package(Qt5 COMPONENTS Network SerialPort REQUIRED)
 
+find_library(PAHO_MQTT3C paho-mqtt3c REQUIRED)
+find_library(PAHO_MQTT3A paho-mqtt3a REQUIRED)
+find_library(PAHO_MQTT3CS paho-mqtt3cs REQUIRED)
+find_library(PAHO_MQTT3AS paho-mqtt3as REQUIRED)
+find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
+
+find_library(CRYPTOPP crypto++ REQUIRED)
+find_library(CONFIGPP config++ REQUIRED)
+find_library(PIGPIOD_IF2 pigpiod_if2 REQUIRED)
+find_library(RT rt REQUIRED)
+
 add_compile_options(
     -Wall
     -Wextra
@@ -119,12 +130,6 @@ set(LOGIN_INSTALL_FILES
     "${PROJECT_CONFIG_DIR}/muondetector-login.sh"
     )
 
-set(LIBCRYPTO_LIBRARIES "crypto++")
-set(LIBPIGPIOD_LIBRARIES "pigpiod_if2")
-set(LIBRT_LIBRARIES "rt")
-set(LIBCONFIG_LIBRARIES "config++")
-set(LIBPAHO_MQTT_LIBRARIES "paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3")
-
 
 
 
@@ -138,7 +143,7 @@ target_include_directories(muondetector-login PUBLIC
 
 target_link_libraries(muondetector-login
     Qt5::Network Qt5::SerialPort
-    ${LIBCRYPTO_LIBRARIES}
+    crypto++
     paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
     "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
     )
@@ -156,10 +161,10 @@ target_include_directories(muondetector-daemon PUBLIC
 
 target_link_libraries(muondetector-daemon
     Qt5::Network Qt5::SerialPort
-    ${LIBCRYPTO_LIBRARIES}
-    ${LIBPIGPIOD_LIBRARIES}
-    ${LIBRT_LIBRARIES}
-    ${LIBCONFIG_LIBRARIES}
+    crypto++
+    pigpiod_if2
+    rt
+    config++
     paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
     "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
     )
