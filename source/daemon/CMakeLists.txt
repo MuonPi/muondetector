@@ -193,9 +193,9 @@ set(CPACK_PACKAGE_VERSION_MINOR "3")
 set(CPACK_PACKAGE_VERSION_PATCH "2")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Muondetector daemon")
 set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Daemon that controls the muon detector board
-It connects to the ublox gps module on the detector board via serial (rx tx) ubx protocol and to the other chips on the board via i2c. It is based on Qt and C++ and a little bit of C.
-It does the measuring in the background and sends the data to the central server.
-It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
+    It connects to the ublox gps module on the detector board via serial (rx tx) ubx protocol and to the other chips on the board via i2c. It is based on Qt and C++ and a little bit of C.
+    It does the measuring in the background and sends the data to the central server.
+    It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi.org <support@muonpi.org>")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "lftp (>=4.7), libcrypto++6, libmuondetector-shared (>=1.2.2), libqt5serialport5 (>= 5), libpaho-mqttpp (>=1.1.0), libconfig++-dev, pigpiod")
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../packages/")
