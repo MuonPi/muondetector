@@ -167,7 +167,7 @@ set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi.org <support@muonpi.org>")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=5), libqt5widgets5 (>=5), libqt5core5a (>=5), libqt5quickwidgets5 (>=5.3), libqt5network5 (>=5), qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), qml-module-qtquick-layouts (>=5), qml-module-qtquick-controls2 (>=5), qml-module-qtquick-controls (>=5), qml-module-qtquick-templates2 (>=5), libmuondetector-shared (>=1.2.2), libqwt-qt5-6 (>=6.1.2)")
 
 endif()
-
+set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../packages/")
 set(CPACK_PACKAGE_VENDOR "MuonPi.org")
 set(CPACK_PACKAGE_VERSION "1.3.2")
 set(CPACK_PACKAGE_VERSION_MAJOR "1")
