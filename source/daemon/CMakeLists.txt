@@ -171,7 +171,7 @@ set(DAEMON_INSTALL_FILES
 
 
 install(TARGETS muondetector-daemon muondetector-login DESTINATION bin COMPONENT daemon)
-install(FILES ${DAEMON_INSTALL_FILES} DESTINATION "shared/muondetector/daemon/" COMPONENT daemon)
+install(FILES ${DAEMON_INSTALL_FILES} DESTINATION "/etc/muondetector/" COMPONENT daemon)
 install(FILES "${PROJECT_CONFIG_DIR}/muondetector-daemon.service" DESTINATION "lib/systemd/system" COMPONENT daemon)
 install(FILES ${LOGIN_INSTALL_FILES} DESTINATION bin COMPONENT daemon)
 
@@ -179,7 +179,7 @@ install(FILES ${LOGIN_INSTALL_FILES} DESTINATION bin COMPONENT daemon)
 
 set(CPACK_GENERATOR "DEB")
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
-set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${PROJECT_CONFIG_DIR}/preinst;${PROJECT_CONFIG_DIR}/postinst;${PROJECT_CONFIG_DIR}/prerm")
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${PROJECT_CONFIG_DIR}/preinst;${PROJECT_CONFIG_DIR}/postinst;${PROJECT_CONFIG_DIR}/prerm;${PROJECT_CONFIG_DIR}/conffiles")
 set(CPACK_PACKAGE_VENDOR "MuonPi.org")
 set(CPACK_DEBIAN_PACKAGE_SECTION "net")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
