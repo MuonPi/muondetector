@@ -374,7 +374,7 @@ void Settings::on_timeGridComboBox_currentIndexChanged(int /*index*/)
 void Settings::on_freqPeriodLineEdit_editingFinished()
 {
     bool ok = false;
-//    int freqPeriod = ui->freqPeriodLineEdit->text().toLong(&ok);
+    ui->freqPeriodLineEdit->text().toLong(&ok);
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
@@ -389,7 +389,7 @@ void Settings::on_freqPeriodLineEdit_editingFinished()
 void Settings::on_freqPeriodLockLineEdit_editingFinished()
 {
     bool ok = false;
-//    int freqPeriod = ui->freqPeriodLockLineEdit->text().toLong(&ok);
+    ui->freqPeriodLockLineEdit->text().toLong(&ok);
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
@@ -404,7 +404,7 @@ void Settings::on_freqPeriodLockLineEdit_editingFinished()
 void Settings::on_pulseLenLineEdit_editingFinished()
 {
     bool ok = false;
-//    int len = ui->pulseLenLineEdit->text().toLong(&ok);
+    ui->pulseLenLineEdit->text().toLong(&ok);
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
@@ -419,7 +419,7 @@ void Settings::on_pulseLenLineEdit_editingFinished()
 void Settings::on_pulseLenLockLineEdit_editingFinished()
 {
     bool ok = false;
-//    int len = ui->pulseLenLockLineEdit->text().toLong(&ok);
+    ui->pulseLenLockLineEdit->text().toLong(&ok);
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
@@ -434,7 +434,7 @@ void Settings::on_pulseLenLockLineEdit_editingFinished()
 void Settings::on_antDelayLineEdit_editingFinished()
 {
     bool ok = false;
-//    int delay = ui->antDelayLineEdit->text().toInt(&ok);
+    ui->antDelayLineEdit->text().toInt(&ok);
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
@@ -449,7 +449,7 @@ void Settings::on_antDelayLineEdit_editingFinished()
 void Settings::on_groupDelayLineEdit_editingFinished()
 {
     bool ok = false;
-//    int delay = ui->groupDelayLineEdit->text().toInt(&ok);
+    ui->groupDelayLineEdit->text().toInt(&ok);
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
@@ -464,7 +464,7 @@ void Settings::on_groupDelayLineEdit_editingFinished()
 void Settings::on_userDelayLineEdit_editingFinished()
 {
     bool ok = false;
-//    int delay = ui->userDelayLineEdit->text().toLong(&ok);
+    ui->userDelayLineEdit->text().toLong(&ok);
     if (!ok) onTP5Received(fTpConfig);
     else {
         fTpConfigChanged = true;
