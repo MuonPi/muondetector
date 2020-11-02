@@ -31,7 +31,6 @@ set(CRYPTOPP_DIR "C:/cryptopp/")
 set(MQTT_CPP_DIR "C:/paho-mqtt-cpp-1.1.0-win64")
 set(MQTT_C_DIR "C:/eclipse-paho-mqtt-c-win64-1.3.6")
 list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5")
-link_directories("${MQTT_CPP_DIR}/lib" "${MQTT_C_DIR}/lib" "${QWT_DIR}/lib" "${CRYPTOPP_DIR}/lib")
 
 else()
 
@@ -136,8 +135,10 @@ target_include_directories(muondetector PUBLIC
 
 if(WIN32)
 target_link_directories(muondetector PUBLIC
-    ${MQTT_C_DIR}/lib
-    ${MQTT_CPP_DIR}/lib
+    "${MQTT_C_DIR}/lib"
+    "${MQTT_CPP_DIR}/lib"
+    "${QWT_DIR}/lib"
+    "${CRYPTOPP_DIR}/lib"
     )
 target_link_libraries(muondetector qwt.lib Qt5::Network paho-mqtt3c.lib paho-mqtt3a.lib paho-mqtt3cs.lib paho-mqtt3as.lib paho-mqttpp3.lib cryptlib.lib)
 target_include_directories(muondetector PUBLIC
