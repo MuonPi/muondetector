@@ -95,6 +95,7 @@ target_include_directories(muondetector PUBLIC
     $<INSTALL_INTERFACE:${MQTT_C_DIR}/include>
     $<BUILD_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
     $<INSTALL_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
+    ${Qt5Network_INCLUDE_DIRS}
     )
 endif()
 target_include_directories(muondetector PUBLIC

@@ -162,6 +162,17 @@ target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:/usr/include/qwt>
     $<INSTALL_INTERFACE:include/mqtt>)
 
+if (WIN32)
+target_include_directories(muondetector-gui PUBLIC
+    ${Qt5Widgets_INCLUDE_DIRS}
+    ${Qt5Svg_INCLUDE_DIRS}
+    ${Qt5Network_INCLUDE_DIRS}
+    ${Qt5Quick_INCLUDE_DIRS}
+    ${Qt5QuickWidgets_INCLUDE_DIRS}
+    ${Qt5Qml_INCLUDE_DIRS}
+    )
+endif()
+
 install(TARGETS muondetector-gui DESTINATION bin COMPONENT gui)
 install(FILES "${PROJECT_CONFIG_DIR}/muon.ico" DESTINATION "share/pixmaps/" COMPONENT gui)
 install(FILES "${PROJECT_CONFIG_DIR}/muondetector-gui.desktop" DESTINATION "share/applications/" COMPONENT gui)
