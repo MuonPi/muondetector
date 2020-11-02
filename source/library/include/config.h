@@ -1,6 +1,8 @@
 #ifndef MUONPI_CONFIG_H
 #define MUONPI_CONFIG_H
 
+#include "version.h"
+
 #include <cstdint>
 #include <string>
 
@@ -14,7 +16,7 @@ constexpr struct Version {
     [[nodiscard]] auto string() const -> std::string;
 }
     hardware { 2, 0, 0 },
-    software { 1, 2, 0 };
+    software { CMake::Version::major, CMake::Version::major, CMake::Version::major };
 }
 
 namespace MuonPi::Config {

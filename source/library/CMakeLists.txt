@@ -9,6 +9,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../lib")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../bin")
 
+include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/version.cmake")
+
 if(${MUONDETECTOR_BUILD_TIDY})
   set(CMAKE_CXX_CLANG_TIDY
       clang-tidy;
@@ -101,6 +103,11 @@ add_compile_options(
     )
 endif()
 
+
+configure_file(
+    "${PROJECT_CONFIG_DIR}/version.h"
+    "${PROJECT_HEADER_DIR}/version.h"
+    )
 
 set(PROJECT_SOURCE_FILES
     "${PROJECT_SRC_DIR}/config.cpp"
