@@ -29,8 +29,6 @@ endif()
 
 find_package(Qt5 COMPONENTS Network Svg Widgets Gui Quick QuickWidgets Qml REQUIRED)
 
-#find_library(MUONDETECTOR_LIBRARY muondetector libmuondetector.a PATH "${CMAKE_CURRENT_BINARY_DIR}/../lib/" REQUIRED)
-
 find_library(PAHO_MQTT3C paho-mqtt3c REQUIRED)
 find_library(PAHO_MQTT3A paho-mqtt3a REQUIRED)
 find_library(PAHO_MQTT3CS paho-mqtt3cs REQUIRED)
@@ -39,6 +37,7 @@ find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
 
 find_library(CRYPTOPP crypto++ REQUIRED)
 find_library(QWT_QT5 qwt-qt5 REQUIRED)
+find_library(MUONDETECTOR_LIB NAMES muondetector HINTS "${CMAKE_CURRENT_BINARY_DIR}/../lib/" REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -148,9 +147,10 @@ target_include_directories(muondetector-gui PUBLIC
     $<INSTALL_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
     )
 endif()
+target_link_directories(muondetector-gui PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../lib/")
 target_link_libraries(muondetector-gui
     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
-    "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
+    muondetector
     pthread
     crypto++
     qwt-qt5

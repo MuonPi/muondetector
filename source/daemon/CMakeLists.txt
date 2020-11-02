@@ -41,6 +41,7 @@ find_library(CRYPTOPP crypto++ REQUIRED)
 find_library(CONFIGPP config++ REQUIRED)
 find_library(PIGPIOD_IF2 pigpiod_if2 REQUIRED)
 find_library(RT rt REQUIRED)
+find_library(MUONDETECTOR_LIB NAMES muondetector HINTS "${CMAKE_CURRENT_BINARY_DIR}/../lib/" REQUIRED)
 
 add_compile_options(
     -Wall
@@ -141,11 +142,12 @@ target_include_directories(muondetector-login PUBLIC
     $<BUILD_INTERFACE:/usr/local/include/mqtt>
     $<INSTALL_INTERFACE:include/mqtt>)
 
+target_link_directories(muondetector-login PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../lib/")
 target_link_libraries(muondetector-login
     Qt5::Network Qt5::SerialPort
     crypto++
     paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
-    "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
+    muondetector
     )
 
 add_executable(muondetector-daemon ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES})
@@ -159,6 +161,7 @@ target_include_directories(muondetector-daemon PUBLIC
     $<INSTALL_INTERFACE:include/mqtt>
     )
 
+target_link_directories(muondetector-daemon PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../lib/")
 target_link_libraries(muondetector-daemon
     Qt5::Network Qt5::SerialPort
     crypto++
@@ -166,7 +169,7 @@ target_link_libraries(muondetector-daemon
     rt
     config++
     paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
-    "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
+    muondetector
     )
 
 
