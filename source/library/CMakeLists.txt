@@ -128,7 +128,11 @@ set(PROJECT_HEADER_FILES
 add_definitions(-DMUONDETECTOR_LIBRARY_EXPORT)
 
 add_library(muondetector STATIC ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES})
-target_include_directories(muondetector PUBLIC ${PROJECT_HEADER_DIR})
+target_include_directories(muondetector PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:/usr/local/include/mqtt>
+    $<INSTALL_INTERFACE:include/mqtt>
+    )
 
 if(WIN32)
 target_link_directories(muondetector PUBLIC
@@ -148,10 +152,6 @@ target_include_directories(muondetector PUBLIC
 else()
 target_link_libraries(muondetector Qt5::Network paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3)
 endif()
-
-target_include_directories(muondetector PUBLIC
-    $<BUILD_INTERFACE:/usr/local/include/mqtt>
-    $<INSTALL_INTERFACE:include/mqtt>)
 
 install(TARGETS muondetector DESTINATION lib COMPONENT library)
 install(FILES ${PROJECT_HEADER_FILES} DESTINATION include COMPONENT library)

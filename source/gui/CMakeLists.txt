@@ -195,7 +195,12 @@ add_executable(muondetector-gui ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES} 
 target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:${PROJECT_HEADER_DIR}>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
+    $<BUILD_INTERFACE:/usr/local/include/mqtt>
+    $<BUILD_INTERFACE:/usr/include/qwt>
+    $<INSTALL_INTERFACE:include/mqtt>
     )
+target_link_directories(muondetector-gui PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../lib/")
+
 if(WIN32)
 add_definitions(-DQWT_DLL)
 
@@ -222,7 +227,8 @@ target_link_directories(muondetector-gui PUBLIC
 
 
 target_link_libraries(muondetector-gui
-    #pthread
+    Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
+    muondetector
     paho-mqtt3c.lib
     paho-mqtt3a.lib
     paho-mqtt3cs.lib
@@ -235,27 +241,19 @@ target_link_libraries(muondetector-gui
 else()
 
 target_link_libraries(muondetector-gui
+    Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
+    muondetector
+    pthread
     paho-mqtt3c
     paho-mqtt3a
     paho-mqtt3cs
     paho-mqtt3as
-    pthread
     crypto++
     qwt-qt5
     paho-mqttpp3
     )
 
 endif()
-
-target_link_directories(muondetector-gui PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../lib/")
-target_link_libraries(muondetector-gui
-    Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
-    muondetector
-    )
-target_include_directories(muondetector-gui PUBLIC
-    $<BUILD_INTERFACE:/usr/local/include/mqtt>
-    $<BUILD_INTERFACE:/usr/include/qwt>
-    $<INSTALL_INTERFACE:include/mqtt>)
 
 install(TARGETS muondetector-gui DESTINATION bin COMPONENT gui)
 install(FILES "${PROJECT_CONFIG_DIR}/muon.ico" DESTINATION "share/pixmaps/" COMPONENT gui)
