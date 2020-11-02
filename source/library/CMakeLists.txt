@@ -25,8 +25,54 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(WIN32)
+
+set(QWT_DIR "C:/Qwt-6.1.4/")
+set(CRYPTOPP_DIR "C:/cryptopp/")
+set(MQTT_CPP_DIR "C:/paho-mqtt-cpp-1.1.0-win64")
+set(MQTT_C_DIR "C:/eclipse-paho-mqtt-c-win64-1.3.6")
+list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5")
+link_directories("${MQTT_CPP_DIR}/lib" "${MQTT_C_DIR}/lib" "${QWT_DIR}/lib" "${CRYPTOPP_DIR}/lib")
+
 else()
+
 set(Qt5_DIR "/usr/lib/x86_64-linux-gnu/cmake/Qt5/")
+
+endif()
+
+if (MSVC)
+    if("${MSVC_RUNTIME}" STREQUAL "")
+        set(MSVC_RUNTIME "static")
+    endif()
+        # Set compiler options.
+    set(variables
+      CMAKE_C_FLAGS_DEBUG
+      CMAKE_C_FLAGS_MINSIZEREL
+      CMAKE_C_FLAGS_RELEASE
+      CMAKE_C_FLAGS_RELWITHDEBINFO
+      CMAKE_CXX_FLAGS_DEBUG
+      CMAKE_CXX_FLAGS_MINSIZEREL
+      CMAKE_CXX_FLAGS_RELEASE
+      CMAKE_CXX_FLAGS_RELWITHDEBINFO
+    )
+    if(${MSVC_RUNTIME} STREQUAL "static")
+      message(STATUS
+        "MSVC -> forcing use of statically-linked runtime."
+      )
+      foreach(variable ${variables})
+        if(${variable} MATCHES "/MD")
+          string(REGEX REPLACE "/MD" "/MT" ${variable} "${${variable}}")
+        endif()
+      endforeach()
+    else()
+      message(STATUS
+        "MSVC -> forcing use of dynamically-linked runtime."
+      )
+      foreach(variable ${variables})
+        if(${variable} MATCHES "/MT")
+          string(REGEX REPLACE "/MT" "/MD" ${variable} "${${variable}}")
+        endif()
+      endforeach()
+    endif()
 endif()
 
 find_package(Qt5 COMPONENTS Network REQUIRED)
@@ -39,16 +85,8 @@ find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
 
 add_compile_options(
     -Wall
-#    -Werror
     -O3
     )
-if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-add_compile_options(
-    -Wextra
-    -Wshadow
-    -Wpedantic
-    )
-endif()
 if(MSVC)
   # Force to always compile with W4
   if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
@@ -56,6 +94,12 @@ if(MSVC)
   else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
   endif()
+else()
+add_compile_options(
+    -Wextra
+    -Wshadow
+    -Wpedantic
+    )
 endif()
 
 
@@ -91,15 +135,7 @@ target_link_directories(muondetector PUBLIC
     ${MQTT_C_DIR}/lib
     ${MQTT_CPP_DIR}/lib
     )
-endif()
-
-if(WIN32)
 target_link_libraries(muondetector qwt.lib Qt5::Network paho-mqtt3c.lib paho-mqtt3a.lib paho-mqtt3cs.lib paho-mqtt3as.lib paho-mqttpp3.lib cryptlib.lib)
-else()
-target_link_libraries(muondetector Qt5::Network paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3)
-endif()
-
-if(WIN32)
 target_include_directories(muondetector PUBLIC
     ${CRYPTOPP_DIR}/include/
     $<BUILD_INTERFACE:${QWT_DIR}/include>
@@ -109,7 +145,10 @@ target_include_directories(muondetector PUBLIC
     $<INSTALL_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
     ${Qt5Network_INCLUDE_DIRS}
     )
+else()
+target_link_libraries(muondetector Qt5::Network paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3)
 endif()
+
 target_include_directories(muondetector PUBLIC
     $<BUILD_INTERFACE:/usr/local/include/mqtt>
     $<INSTALL_INTERFACE:include/mqtt>)
