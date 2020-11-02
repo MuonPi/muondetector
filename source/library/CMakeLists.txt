@@ -65,7 +65,7 @@ set(PROJECT_HEADER_FILES
     "${PROJECT_HEADER_DIR}/config.h"
     )
 
-add_definitions(-DMUONDETECTOR_SHARED_LIBRARY)
+add_definitions(-DMUONDETECTOR_LIBRARY_EXPORT)
 
 add_library(muondetector STATIC ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES})
 target_include_directories(muondetector PUBLIC ${PROJECT_HEADER_DIR})
