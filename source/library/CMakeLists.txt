@@ -94,7 +94,7 @@ target_link_directories(muondetector PUBLIC
 endif()
 
 if(WIN32)
-target_link_libraries(muondetector qwt Qt5::Network paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3-static cryptlib)
+target_link_libraries(muondetector qwt.lib Qt5::Network paho-mqtt3c.lib paho-mqtt3a.lib paho-mqtt3cs.lib paho-mqtt3as.lib paho-mqttpp3.lib cryptlib.lib)
 else()
 target_link_libraries(muondetector Qt5::Network paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3)
 endif()

@@ -153,17 +153,25 @@ target_link_directories(muondetector-gui PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../
 target_link_libraries(muondetector-gui
     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
     muondetector
-    paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as
     )
 if(WIN32)
+add_definitions(-DQWT_DLL)
 target_link_libraries(muondetector-gui
     #pthread
-    qwt
-    cryptlib
-    paho-mqttpp3-static
+    paho-mqtt3c.lib
+    paho-mqtt3a.lib
+    paho-mqtt3cs.lib
+    paho-mqtt3as.lib
+    qwt.lib
+    cryptlib.lib
+    paho-mqttpp3.lib
     )
 else()
 target_link_libraries(muondetector-gui
+    paho-mqtt3c
+    paho-mqtt3a
+    paho-mqtt3cs
+    paho-mqtt3as
     pthread
     crypto++
     qwt-qt5
