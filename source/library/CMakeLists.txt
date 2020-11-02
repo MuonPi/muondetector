@@ -24,7 +24,10 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if(WIN32)
+else()
 set(Qt5_DIR "/usr/lib/x86_64-linux-gnu/cmake/Qt5/")
+endif()
 
 find_package(Qt5 COMPONENTS Network REQUIRED)
 
@@ -36,12 +39,25 @@ find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
 
 add_compile_options(
     -Wall
-    -Wextra
-    -Wshadow
-    -Wpedantic
 #    -Werror
     -O3
     )
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+add_compile_options(
+    -Wextra
+    -Wshadow
+    -Wpedantic
+    )
+endif()
+if(MSVC)
+  # Force to always compile with W4
+  if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+    string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+  endif()
+endif()
+
 
 set(PROJECT_SOURCE_FILES
     "${PROJECT_SRC_DIR}/config.cpp"
@@ -72,6 +88,15 @@ target_include_directories(muondetector PUBLIC ${PROJECT_HEADER_DIR})
 
 target_link_libraries(muondetector Qt5::Network paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3)
 
+if(WIN32)
+target_include_directories(muondetector PUBLIC
+    $<BUILD_INTERFACE:${QWT_DIR}/include>
+    $<BUILD_INTERFACE:${MQTT_C_DIR}/include>
+    $<INSTALL_INTERFACE:${MQTT_C_DIR}/include>
+    $<BUILD_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
+    $<INSTALL_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
+    )
+endif()
 target_include_directories(muondetector PUBLIC
     $<BUILD_INTERFACE:/usr/local/include/mqtt>
     $<INSTALL_INTERFACE:include/mqtt>)

@@ -22,7 +22,10 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+if(WIN32)
+else()
 set(Qt5_DIR "/usr/lib/x86_64-linux-gnu/cmake/Qt5/")
+endif()
 
 find_package(Qt5 COMPONENTS Network Svg Widgets Gui Quick QuickWidgets Qml REQUIRED)
 
@@ -43,12 +46,25 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_compile_options(
     -Wall
-    -Wextra
-    -Wshadow
-    -Wpedantic
 #    -Werror
     -O3
     )
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+add_compile_options(
+    -Wextra
+    -Wshadow
+    -Wpedantic
+    )
+endif()
+if(MSVC)
+  # Force to always compile with W4
+  if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+    string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+  endif()
+endif()
+
 
 if (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
 add_compile_options(
@@ -123,6 +139,15 @@ target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:${PROJECT_HEADER_DIR}>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
     )
+if(WIN32)
+target_include_directories(muondetector-gui PUBLIC
+    $<BUILD_INTERFACE:${QWT_DIR}/include>
+    $<BUILD_INTERFACE:${MQTT_C_DIR}/include>
+    $<INSTALL_INTERFACE:${MQTT_C_DIR}/include>
+    $<BUILD_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
+    $<INSTALL_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
+    )
+endif()
 target_link_libraries(muondetector-gui
     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
     "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
