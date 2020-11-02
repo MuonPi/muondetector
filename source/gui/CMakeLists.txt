@@ -140,13 +140,14 @@ target_include_directories(muondetector-gui PUBLIC
     )
 if(WIN32)
 target_include_directories(muondetector-gui PUBLIC
+    ${CRYPTOPP_DIR}/include/
     $<BUILD_INTERFACE:${QWT_DIR}/include>
     $<BUILD_INTERFACE:${MQTT_C_DIR}/include>
     $<INSTALL_INTERFACE:${MQTT_C_DIR}/include>
     $<BUILD_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
     $<INSTALL_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
     )
-target_link_directories(muondetector-gui PUBLIC "${MQTT_CPP_DIR}/lib/" "${MQTT_C_DIR}/lib/" "${QWT_DIR}/lib/")
+target_link_directories(muondetector-gui PUBLIC "${MQTT_CPP_DIR}/lib/" "${MQTT_C_DIR}/lib/" "${QWT_DIR}/lib/" "${CRYPTOPP_DIR}/lib/")
 endif()
 target_link_directories(muondetector-gui PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../lib/")
 target_link_libraries(muondetector-gui
@@ -156,10 +157,9 @@ target_link_libraries(muondetector-gui
     )
 if(WIN32)
 target_link_libraries(muondetector-gui
-    qwt
     #pthread
-    #crypto++
-    #qwt-qt5
+    qwt
+    cryptlib
     paho-mqttpp3-static
     )
 else()
