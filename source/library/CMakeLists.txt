@@ -63,7 +63,7 @@ set(PROJECT_SOURCE_FILES
     "${PROJECT_SRC_DIR}/config.cpp"
     "${PROJECT_SRC_DIR}/tcpconnection.cpp"
     "${PROJECT_SRC_DIR}/tcpmessage.cpp"
-    "${PROJECT_SRC_DIR}/mqtthandler.cpp"
+    #"${PROJECT_SRC_DIR}/mqtthandler.cpp"
     )
 
 set(PROJECT_HEADER_FILES
@@ -86,7 +86,16 @@ add_definitions(-DMUONDETECTOR_LIBRARY_EXPORT)
 add_library(muondetector STATIC ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES})
 target_include_directories(muondetector PUBLIC ${PROJECT_HEADER_DIR})
 
+target_link_directories(muondetector PUBLIC
+    ${MQTT_C_DIR}/lib
+    ${MQTT_CPP_DIR}/lib
+    )
+
+if(WIN32)
+target_link_libraries(muondetector Qt5::Network paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3-static)
+else()
 target_link_libraries(muondetector Qt5::Network paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3)
+endif()
 
 if(WIN32)
 target_include_directories(muondetector PUBLIC

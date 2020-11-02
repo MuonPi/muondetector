@@ -146,16 +146,30 @@ target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
     $<INSTALL_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
     )
+target_link_directories(muondetector-gui PUBLIC "${MQTT_CPP_DIR}/lib/" "${MQTT_C_DIR}/lib/" "${QWT_DIR}/lib/")
 endif()
 target_link_directories(muondetector-gui PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../lib/")
 target_link_libraries(muondetector-gui
     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
     muondetector
+    paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as
+    )
+if(WIN32)
+target_link_libraries(muondetector-gui
+    qwt
+    #pthread
+    #crypto++
+    #qwt-qt5
+    paho-mqttpp3-static
+    )
+else()
+target_link_libraries(muondetector-gui
     pthread
     crypto++
     qwt-qt5
-    paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
+    paho-mqttpp3
     )
+endif()
 
 target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:/usr/local/include/mqtt>
