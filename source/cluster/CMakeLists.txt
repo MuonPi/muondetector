@@ -56,11 +56,41 @@ add_compile_options(
 
 set(DAEMON_SOURCE_FILES
     "${PROJECT_SRC_DIR}/main.cpp"
-    "${PROJECT_SRC_DIR}/cluster.cpp"
+    "${PROJECT_SRC_DIR}/core.cpp"
+    "${PROJECT_SRC_DIR}/abstractevent.cpp"
+    "${PROJECT_SRC_DIR}/combinedevent.cpp"
+    "${PROJECT_SRC_DIR}/databasesink.cpp"
+    "${PROJECT_SRC_DIR}/mqttlink.cpp"
+    "${PROJECT_SRC_DIR}/singleevent.cpp"
+    "${PROJECT_SRC_DIR}/abstracteventsink.cpp"
+    "${PROJECT_SRC_DIR}/databasesource.cpp"
+    "${PROJECT_SRC_DIR}/mqttsink.cpp"
+    "${PROJECT_SRC_DIR}/abstracteventsource.cpp"
+    "${PROJECT_SRC_DIR}/criterion.cpp"
+    "${PROJECT_SRC_DIR}/mqttsource.cpp"
+    "${PROJECT_SRC_DIR}/coincidence.cpp"
+    "${PROJECT_SRC_DIR}/databaselink.cpp"
+    "${PROJECT_SRC_DIR}/messagebypass.cpp"
+    "${PROJECT_SRC_DIR}/plausability.cpp"
     )
 
 set(DAEMON_HEADER_FILES
-    "${PROJECT_HEADER_DIR}/cluster.h"
+    "${PROJECT_HEADER_DIR}/core.h"
+    "${PROJECT_HEADER_DIR}/abstractevent.h"
+    "${PROJECT_HEADER_DIR}/abstracteventsink.h"
+    "${PROJECT_HEADER_DIR}/abstracteventsource.h"
+    "${PROJECT_HEADER_DIR}/coincidence.h"
+    "${PROJECT_HEADER_DIR}/combinedevent.h"
+    "${PROJECT_HEADER_DIR}/criterion.h"
+    "${PROJECT_HEADER_DIR}/databaselink.h"
+    "${PROJECT_HEADER_DIR}/databasesink.h"
+    "${PROJECT_HEADER_DIR}/databasesource.h"
+    "${PROJECT_HEADER_DIR}/messagebypass.h"
+    "${PROJECT_HEADER_DIR}/mqttlink.h"
+    "${PROJECT_HEADER_DIR}/mqttsink.h"
+    "${PROJECT_HEADER_DIR}/mqttsource.h"
+    "${PROJECT_HEADER_DIR}/plausability.h"
+    "${PROJECT_HEADER_DIR}/singleevent.h"
     )
 
 
@@ -86,32 +116,31 @@ target_link_libraries(muondetector-cluster
     )
 
 
-set(DAEMON_INSTALL_FILES
-    "${PROJECT_CONFIG_DIR}/muondetector.conf"
+set(CLUSTER_INSTALL_FILES
+#    "${PROJECT_CONFIG_DIR}/muondetector.conf"
     )
 
 
-install(TARGETS muondetector-cluster muondetector-login DESTINATION bin COMPONENT cluster)
-install(FILES ${DAEMON_INSTALL_FILES} DESTINATION "/etc/muondetector/" COMPONENT cluster)
+install(TARGETS muondetector-cluster DESTINATION bin COMPONENT cluster)
+#install(FILES ${CLUSTER_INSTALL_FILES} DESTINATION "/etc/muondetector/" COMPONENT cluster)
 install(FILES "${PROJECT_CONFIG_DIR}/muondetector-cluster.service" DESTINATION "lib/systemd/system" COMPONENT cluster)
-install(FILES ${LOGIN_INSTALL_FILES} DESTINATION bin COMPONENT cluster)
 
 
+#
+#set(CPACK_GENERATOR "DEB")
+#set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
+#set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${PROJECT_CONFIG_DIR}/preinst;${PROJECT_CONFIG_DIR}/postinst;${PROJECT_CONFIG_DIR}/prerm;${PROJECT_CONFIG_DIR}/conffiles")
+#set(CPACK_PACKAGE_VENDOR "MuonPi.org")
+#set(CPACK_DEBIAN_PACKAGE_SECTION "net")
+#set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
+#set(CPACK_PACKAGE_VERSION_MAJOR "1")
+#set(CPACK_PACKAGE_VERSION_MINOR "3")
+#set(CPACK_PACKAGE_VERSION_PATCH "2")
+#set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Muondetector cluster")
+#set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Cluster daemon
+#    It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
+#set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi.org <support@muonpi.org>")
+#set(CPACK_DEBIAN_PACKAGE_DEPENDS "lftp (>=4.7), libcrypto++6, libmuondetector-shared (>=1.2.2), libqt5serialport5 (>= 5), libpaho-mqttpp (>=1.1.0), libconfig++-dev, pigpiod")
+#set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../packages/")
 
-set(CPACK_GENERATOR "DEB")
-set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
-set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${PROJECT_CONFIG_DIR}/preinst;${PROJECT_CONFIG_DIR}/postinst;${PROJECT_CONFIG_DIR}/prerm;${PROJECT_CONFIG_DIR}/conffiles")
-set(CPACK_PACKAGE_VENDOR "MuonPi.org")
-set(CPACK_DEBIAN_PACKAGE_SECTION "net")
-set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
-set(CPACK_PACKAGE_VERSION_MAJOR "1")
-set(CPACK_PACKAGE_VERSION_MINOR "3")
-set(CPACK_PACKAGE_VERSION_PATCH "2")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Muondetector cluster")
-set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Cluster daemon
-    It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi.org <support@muonpi.org>")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "lftp (>=4.7), libcrypto++6, libmuondetector-shared (>=1.2.2), libqt5serialport5 (>= 5), libpaho-mqttpp (>=1.1.0), libconfig++-dev, pigpiod")
-set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../packages/")
-
-include(CPack)
+#include(CPack)
