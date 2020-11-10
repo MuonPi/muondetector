@@ -174,9 +174,7 @@ set(PROJECT_UI_FILES
     "${PROJECT_UI_DIR}/status.ui"
     )
 
-set(PROJECT_RESOURCE_FILES
-    "${PROJECT_RES_DIR}/resources.qrc"
-    )
+set(PROJECT_RESOURCE_FILES "")
 
 if (WIN32)
 set(PROJECT_RESOURCE_FILES
@@ -191,7 +189,7 @@ endif()
 find_package(Qt5QuickCompiler)
 qtquick_compiler_add_resources(qml_QRC "${PROJECT_RES_DIR}/resources.qrc")
 #qt5_add_resources(qml_QRC "${PROJECT_RES_DIR}/resources.qrc")
-add_executable(muondetector-gui ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES} ${PROJECT_UI_FILES} ${PROJECT_RESOURCE_FILES})
+add_executable(muondetector-gui ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES} ${PROJECT_UI_FILES} ${PROJECT_RESOURCE_FILES} ${qml_QRC})
 #qt5_use_modules(muondetector-gui Network Svg Widgets Gui Quick QuickWidgets Qml)
 
 target_include_directories(muondetector-gui PUBLIC
