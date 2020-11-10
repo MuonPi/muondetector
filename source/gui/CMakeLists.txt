@@ -28,6 +28,7 @@ set(QWT_DIR "C:/Qwt-6.1.4/")
 set(CRYPTOPP_DIR "C:/cryptopp/")
 set(MQTT_CPP_DIR "C:/paho-mqtt-cpp-1.1.0-win64")
 set(MQTT_C_DIR "C:/eclipse-paho-mqtt-c-win64-1.3.6")
+list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5QuickCompiler")
 list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5")
 
 else()
@@ -86,7 +87,6 @@ find_library(MUONDETECTOR_LIB NAMES muondetector HINTS "${CMAKE_CURRENT_BINARY_D
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 
 add_compile_options(
     -Wall
@@ -188,8 +188,11 @@ configure_file(
     "${CMAKE_CURRENT_BINARY_DIR}/muon.ico"
     )
 endif()
-
+find_package(Qt5QuickCompiler)
+qtquick_compiler_add_resources(qml_QRC "${PROJECT_RES_DIR}/resources.qrc")
+#qt5_add_resources(qml_QRC "${PROJECT_RES_DIR}/resources.qrc")
 add_executable(muondetector-gui ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES} ${PROJECT_UI_FILES} ${PROJECT_RESOURCE_FILES})
+#qt5_use_modules(muondetector-gui Network Svg Widgets Gui Quick QuickWidgets Qml)
 
 target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:${PROJECT_HEADER_DIR}>
