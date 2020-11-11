@@ -3,8 +3,10 @@
 #include <QDebug>
 #include <QTimer>
 #include <QThread>
+#ifdef Q_OS_UNIX
 #include <unistd.h>
 #include <sys/syscall.h>
+#endif
 #include <cryptopp/sha.h>
 #include <cryptopp/filters.h>
 #include <cryptopp/hex.h>

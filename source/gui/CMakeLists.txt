@@ -10,6 +10,8 @@ set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../library/include/")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../bin")
 
+include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/version.cmake")
+
 if(${MUONDETECTOR_BUILD_TIDY})
   set(CMAKE_CXX_CLANG_TIDY
       clang-tidy;
@@ -22,11 +24,58 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+if(WIN32)
+
+set(QWT_DIR "C:/Qwt-6.1.4/")
+set(CRYPTOPP_DIR "C:/cryptopp/")
+set(MQTT_CPP_DIR "C:/paho-mqtt-cpp-1.1.0-win64")
+set(MQTT_C_DIR "C:/eclipse-paho-mqtt-c-win64-1.3.6")
+list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5QuickCompiler")
+list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5")
+
+else()
+
 set(Qt5_DIR "/usr/lib/x86_64-linux-gnu/cmake/Qt5/")
 
-find_package(Qt5 COMPONENTS Network Svg Widgets Gui Quick QuickWidgets Qml REQUIRED)
+endif()
 
-#find_library(MUONDETECTOR_LIBRARY muondetector libmuondetector.a PATH "${CMAKE_CURRENT_BINARY_DIR}/../lib/" REQUIRED)
+if (MSVC)
+    if("${MSVC_RUNTIME}" STREQUAL "")
+        set(MSVC_RUNTIME "static")
+    endif()
+        # Set compiler options.
+    set(variables
+      CMAKE_C_FLAGS_DEBUG
+      CMAKE_C_FLAGS_MINSIZEREL
+      CMAKE_C_FLAGS_RELEASE
+      CMAKE_C_FLAGS_RELWITHDEBINFO
+      CMAKE_CXX_FLAGS_DEBUG
+      CMAKE_CXX_FLAGS_MINSIZEREL
+      CMAKE_CXX_FLAGS_RELEASE
+      CMAKE_CXX_FLAGS_RELWITHDEBINFO
+    )
+    if(${MSVC_RUNTIME} STREQUAL "static")
+      message(STATUS
+        "MSVC -> forcing use of statically-linked runtime."
+      )
+      foreach(variable ${variables})
+        if(${variable} MATCHES "/MD")
+          string(REGEX REPLACE "/MD" "/MT" ${variable} "${${variable}}")
+        endif()
+      endforeach()
+    else()
+      message(STATUS
+        "MSVC -> forcing use of dynamically-linked runtime."
+      )
+      foreach(variable ${variables})
+        if(${variable} MATCHES "/MT")
+          string(REGEX REPLACE "/MT" "/MD" ${variable} "${${variable}}")
+        endif()
+      endforeach()
+    endif()
+endif()
+
+find_package(Qt5 COMPONENTS Network Svg Widgets Gui Quick QuickWidgets Qml REQUIRED)
 
 find_library(PAHO_MQTT3C paho-mqtt3c REQUIRED)
 find_library(PAHO_MQTT3A paho-mqtt3a REQUIRED)
@@ -36,19 +85,31 @@ find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
 
 find_library(CRYPTOPP crypto++ REQUIRED)
 find_library(QWT_QT5 qwt-qt5 REQUIRED)
+find_library(MUONDETECTOR_LIB NAMES muondetector HINTS "${CMAKE_CURRENT_BINARY_DIR}/../lib/" REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-
 add_compile_options(
     -Wall
+    -O3
+    )
+if (MSVC)
+  # Force to always compile with W4
+  if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+    string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+  endif()
+else()
+
+add_compile_options(
     -Wextra
     -Wshadow
     -Wpedantic
-#    -Werror
-    -O3
     )
+
+endif()
 
 if (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
 add_compile_options(
@@ -114,28 +175,84 @@ set(PROJECT_UI_FILES
     "${PROJECT_UI_DIR}/spiform.ui"
     "${PROJECT_UI_DIR}/status.ui"
     )
-set(PROJECT_RESOURCE_FILES
-    "${PROJECT_RES_DIR}/resources.qrc"
-    )
 
-add_executable(muondetector-gui ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES} ${PROJECT_UI_FILES} ${PROJECT_RESOURCE_FILES})
+set(PROJECT_RESOURCE_FILES "")
+
+if (WIN32)
+set(PROJECT_RESOURCE_FILES
+    "${PROJECT_RESOURCE_FILES}"
+    "${PROJECT_RES_DIR}/windows.rc"
+    )
+configure_file(
+    "${PROJECT_RES_DIR}/res/muon.ico"
+    "${CMAKE_CURRENT_BINARY_DIR}/muon.ico"
+    )
+endif()
+find_package(Qt5QuickCompiler)
+qtquick_compiler_add_resources(qml_QRC "${PROJECT_RES_DIR}/resources.qrc")
+add_executable(muondetector-gui ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES} ${PROJECT_UI_FILES} ${PROJECT_RESOURCE_FILES} ${qml_QRC})
+
 target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:${PROJECT_HEADER_DIR}>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
-    )
-target_link_libraries(muondetector-gui
-    Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
-    "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
-    pthread
-    crypto++
-    qwt-qt5
-    paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
-    )
-
-target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:/usr/local/include/mqtt>
     $<BUILD_INTERFACE:/usr/include/qwt>
-    $<INSTALL_INTERFACE:include/mqtt>)
+    $<INSTALL_INTERFACE:include/mqtt>
+    )
+target_link_directories(muondetector-gui PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../lib/")
+
+if(WIN32)
+add_definitions(-DQWT_DLL)
+
+target_include_directories(muondetector-gui PUBLIC
+    ${CRYPTOPP_DIR}/include/
+    $<BUILD_INTERFACE:${QWT_DIR}/include>
+    $<BUILD_INTERFACE:${MQTT_C_DIR}/include>
+    $<INSTALL_INTERFACE:${MQTT_C_DIR}/include>
+    $<BUILD_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
+    $<INSTALL_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
+    ${Qt5Widgets_INCLUDE_DIRS}
+    ${Qt5Svg_INCLUDE_DIRS}
+    ${Qt5Network_INCLUDE_DIRS}
+    ${Qt5Quick_INCLUDE_DIRS}
+    ${Qt5QuickWidgets_INCLUDE_DIRS}
+    ${Qt5Qml_INCLUDE_DIRS}
+    )
+target_link_directories(muondetector-gui PUBLIC
+    "${MQTT_CPP_DIR}/lib/"
+    "${MQTT_C_DIR}/lib/"
+    "${QWT_DIR}/lib/"
+    "${CRYPTOPP_DIR}/lib/"
+    )
+
+target_link_libraries(muondetector-gui
+    Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
+    muondetector
+    paho-mqtt3c.lib
+    paho-mqtt3a.lib
+    paho-mqtt3cs.lib
+    paho-mqtt3as.lib
+    qwt.lib
+    cryptlib.lib
+    paho-mqttpp3.lib
+    )
+
+else()
+
+target_link_libraries(muondetector-gui
+    Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
+    muondetector
+    pthread
+    paho-mqtt3c
+    paho-mqtt3a
+    paho-mqtt3cs
+    paho-mqtt3as
+    crypto++
+    qwt-qt5
+    paho-mqttpp3
+    )
+
+endif()
 
 install(TARGETS muondetector-gui DESTINATION bin COMPONENT gui)
 install(FILES "${PROJECT_CONFIG_DIR}/muon.ico" DESTINATION "share/pixmaps/" COMPONENT gui)
@@ -169,10 +286,10 @@ set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=5), libqt5widgets5 (>=5), libqt5
 endif()
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../packages/")
 set(CPACK_PACKAGE_VENDOR "MuonPi.org")
-set(CPACK_PACKAGE_VERSION "1.3.2")
-set(CPACK_PACKAGE_VERSION_MAJOR "1")
-set(CPACK_PACKAGE_VERSION_MINOR "3")
-set(CPACK_PACKAGE_VERSION_PATCH "2")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Muondetector gui")
 
 include(CPack)
