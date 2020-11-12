@@ -36,19 +36,18 @@ endif()
 
 # Add commands that copy the Qt runtime to the target's output directory after
 # build and install the Qt runtime to the specified directory
-function(windeployqt target directory)
+function(windeployqt target directory options)
 
     # Run windeployqt immediately after build
     add_custom_command(TARGET ${target} POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E
             env PATH="${_qt_bin_dir}" "${WINDEPLOYQT_EXECUTABLE}"
                 --verbose 0
-                --qmldir "${PROJECT_QML_DIR}"
+                ${options}
                 --release
                 --no-compiler-runtime
                 --no-angle
                 --no-opengl-sw
-                -opengl
                 \"$<TARGET_FILE:${target}>\"
     )
 
@@ -66,13 +65,12 @@ function(windeployqt target directory)
         execute_process(
             COMMAND \"${CMAKE_COMMAND}\" -E
                 env PATH=\"${_qt_bin_dir}\" \"${WINDEPLOYQT_EXECUTABLE}\"
-                    --qmldir \"${PROJECT_QML_DIR}\"
                     --release
+                    \"${options}\"
                     --dry-run
                     --no-compiler-runtime
                     --no-angle
                     --no-opengl-sw
-                    -opengl
                     --list mapping
                     \${_file}
             OUTPUT_VARIABLE _output

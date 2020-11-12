@@ -66,6 +66,12 @@ target_link_libraries(getmacaddresses
     Qt5::Network
     )
 
+if(WIN32)
 
+include("${PROJECT_SOURCE_DIR}/../cmake/Windeployqt.cmake")
+set(windeploy_options "") # additional options for windeployqt.exe
+windeployqt(getmacaddresses "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}" "${windeploy_options}")
+
+endif()
 
 install(TARGETS getmacaddresses DESTINATION bin)

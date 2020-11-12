@@ -265,8 +265,14 @@ if(WIN32)
 # TODO: create installer for windows:
 # https://cmake.org/cmake/help/v3.10/module/CPackNSIS.html
 
-include(Windeployqt.cmake)
-windeployqt(muondetector-gui "${PROJECT_BINARY_DIR}")
+include("${PROJECT_SOURCE_DIR}/../cmake/Windeployqt.cmake")
+set(windeploy_options 
+    --qmldir "${PROJECT_QML_DIR}"
+    -opengl
+    -printsupport
+) # additional options for windeployqt.exe
+                
+windeployqt(muondetector-gui "${PROJECT_BINARY_DIR}" "${windeploy_options}")
 # create a list of files to copy
 set( THIRD_PARTY_DLLS
    "${OPENSSL_DIR}/bin/libcrypto-1_1-x64.dll"
