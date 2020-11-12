@@ -255,15 +255,12 @@ target_link_libraries(muondetector-gui
 
 endif()
 
-install(TARGETS muondetector-gui DESTINATION bin COMPONENT gui)
+install(TARGETS muondetector-gui DESTINATION . COMPONENT gui)
 install(FILES "${PROJECT_CONFIG_DIR}/muon.ico" DESTINATION "share/pixmaps/" COMPONENT gui)
 install(FILES "${PROJECT_CONFIG_DIR}/muondetector-gui.desktop" DESTINATION "share/applications/" COMPONENT gui)
 
 
 if(WIN32)
-
-# TODO: create installer for windows:
-# https://cmake.org/cmake/help/v3.10/module/CPackNSIS.html
 
 include("${PROJECT_SOURCE_DIR}/../cmake/Windeployqt.cmake")
 set(windeploy_options
@@ -294,6 +291,7 @@ foreach( file_i ${THIRD_PARTY_DLLS})
                     "${file_i}"
                     "${PROJECT_BINARY_DIR}/../bin/"
     )
+    install(FILES "${file_i}" DESTINATION "." COMPONENT gui)
 endforeach( file_i )
 
 
