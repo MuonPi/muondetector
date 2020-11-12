@@ -255,12 +255,19 @@ target_link_libraries(muondetector-gui
 
 endif()
 
-install(TARGETS muondetector-gui DESTINATION . COMPONENT gui)
+
 install(FILES "${PROJECT_CONFIG_DIR}/muon.ico" DESTINATION "share/pixmaps/" COMPONENT gui)
 install(FILES "${PROJECT_CONFIG_DIR}/muondetector-gui.desktop" DESTINATION "share/applications/" COMPONENT gui)
 
+if(NOT WIN32)
+
+install(TARGETS muondetector-gui DESTINATION bin COMPONENT gui)
+
+endif()
 
 if(WIN32)
+
+install(TARGETS muondetector-gui DESTINATION . COMPONENT gui)
 
 include("${PROJECT_SOURCE_DIR}/../cmake/Windeployqt.cmake")
 set(windeploy_options
@@ -309,6 +316,8 @@ set(CPACK_NSIS_DISPLAY_NAME "Muondetector gui")
 set(CPACK_NSIS_HELP_LINK "https://muonpi.org")
 set(CPACK_NSIS_URL_INFO_ABOUT "https://muonpi.org")
 set(CPACK_NSIS_CONTACT "support@muonpi.org")
+set(CPACK_NSIS_MUI_ICON "${PROJECT_RES_DIR}/res/muon.ico")
+set(CPACK_NSIS_MUI_UNIICON "${PROJECT_RES_DIR}/res/muon.ico")
 set(CPACK_PACKAGE_EXECUTABLES "muondetector-gui" "muondetector-gui")
 
 else()
@@ -327,7 +336,6 @@ set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=5), libqt5widgets5 (>=5), libqt5
 
 endif()
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
-#set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/res/muon.ico")
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../packages/")
 set(CPACK_PACKAGE_VENDOR "MuonPi.org")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
