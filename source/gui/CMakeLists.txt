@@ -27,8 +27,8 @@ set(CMAKE_AUTORCC ON)
 
 if(WIN32)
 
-set(QWT_DIR "C:/Qwt-6.1.4/")
-set(CRYPTOPP_DIR "C:/cryptopp/")
+set(QWT_DIR "C:/Qwt-6.1.4")
+set(OPENSSL_DIR "C:/Qt/Tools/OpenSSL/Win_x64")
 set(MQTT_CPP_DIR "C:/paho-mqtt-cpp-1.1.0-win64")
 set(MQTT_C_DIR "C:/eclipse-paho-mqtt-c-win64-1.3.6")
 list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5QuickCompiler")
@@ -206,7 +206,7 @@ if(WIN32)
 add_definitions(-DQWT_DLL)
 
 target_include_directories(muondetector-gui PUBLIC
-    ${CRYPTOPP_DIR}/include/
+    ${OPENSSL_DIR}/include/
     $<BUILD_INTERFACE:${QWT_DIR}/include>
     $<BUILD_INTERFACE:${MQTT_C_DIR}/include>
     $<INSTALL_INTERFACE:${MQTT_C_DIR}/include>
@@ -223,7 +223,7 @@ target_link_directories(muondetector-gui PUBLIC
     "${MQTT_CPP_DIR}/lib/"
     "${MQTT_C_DIR}/lib/"
     "${QWT_DIR}/lib/"
-    "${CRYPTOPP_DIR}/lib/"
+    "${OPENSSL_DIR}/lib/"
     )
 
 target_link_libraries(muondetector-gui
@@ -267,12 +267,27 @@ if(WIN32)
 
 include(Windeployqt.cmake)
 windeployqt(muondetector-gui "${PROJECT_BINARY_DIR}")
-add_custom_command(
-        TARGET muondetector-gui POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-                "${QWT_DIR}lib/qwt.dll"
-                "${CMAKE_CURRENT_BINARY_DIR}/bin/"
+# create a list of files to copy
+set( THIRD_PARTY_DLLS
+   "${OPENSSL_DIR}/bin/libcrypto-1_1-x64.dll"
+   "${OPENSSL_DIR}/bin/libssl-1_1-x64.dll"
+   "${QWT_DIR}/lib/qwt.dll"
+   "${MQTT_CPP_DIR}/lib/paho-mqttpp3.dll"
+   "${MQTT_C_DIR}/lib/paho-mqtt3a.dll"
+   "${MQTT_C_DIR}/lib/paho-mqtt3as.dll"
+   "${MQTT_C_DIR}/lib/paho-mqtt3c.dll"
+   "${MQTT_C_DIR}/lib/paho-mqtt3cs.dll"
 )
+
+# do the copying
+foreach( file_i ${THIRD_PARTY_DLLS})
+    add_custom_command(
+            TARGET muondetector-gui POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+                    "${file_i}"
+                    "${PROJECT_BINARY_DIR}/../bin/"
+    )
+endforeach( file_i )
 
 
 set(CPACK_GENERATOR NSIS)

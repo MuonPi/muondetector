@@ -43,10 +43,12 @@ function(windeployqt target directory)
         COMMAND "${CMAKE_COMMAND}" -E
             env PATH="${_qt_bin_dir}" "${WINDEPLOYQT_EXECUTABLE}"
                 --verbose 0
+                --qmldir "${PROJECT_QML_DIR}"
+                --release
                 --no-compiler-runtime
                 --no-angle
                 --no-opengl-sw
-                --qmldir "${PROJECT_QML_DIR}"
+                -opengl
                 \"$<TARGET_FILE:${target}>\"
     )
 
@@ -64,12 +66,14 @@ function(windeployqt target directory)
         execute_process(
             COMMAND \"${CMAKE_COMMAND}\" -E
                 env PATH=\"${_qt_bin_dir}\" \"${WINDEPLOYQT_EXECUTABLE}\"
+                    --qmldir \"${PROJECT_QML_DIR}\"
+                    --release
                     --dry-run
                     --no-compiler-runtime
                     --no-angle
                     --no-opengl-sw
+                    -opengl
                     --list mapping
-                    --qmldir "${PROJECT_QML_DIR}"
                     \${_file}
             OUTPUT_VARIABLE _output
             OUTPUT_STRIP_TRAILING_WHITESPACE
