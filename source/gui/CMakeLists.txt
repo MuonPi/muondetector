@@ -6,6 +6,7 @@ set(PROJECT_UI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(PROJECT_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(PROJECT_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(PROJECT_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
+set(PROJECT_QML_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qml")
 set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../library/include/")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../bin")
@@ -264,10 +265,19 @@ if(WIN32)
 # TODO: create installer for windows:
 # https://cmake.org/cmake/help/v3.10/module/CPackNSIS.html
 
+include(Windeployqt.cmake)
+windeployqt(muondetector-gui "${PROJECT_BINARY_DIR}")
+add_custom_command(
+        TARGET muondetector-gui POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+                "${QWT_DIR}lib/qwt.dll"
+                "${CMAKE_CURRENT_BINARY_DIR}/bin/"
+)
+
+
 set(CPACK_GENERATOR NSIS)
 set(CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_CONFIG_DIR}/description.txt")
-SET(CPACK_NSIS_MODIFY_PATH ON)
-
+set(CPACK_NSIS_MODIFY_PATH ON)
 else()
 
 set(CPACK_GENERATOR "DEB")
