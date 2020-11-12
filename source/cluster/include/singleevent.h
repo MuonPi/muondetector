@@ -13,6 +13,7 @@ namespace MuonPi {
 class SingleEvent : public AbstractEvent
 {
 public:
+    ~SingleEvent() override;
     /**
      * @brief site_id
      * @return The site_id of the detector

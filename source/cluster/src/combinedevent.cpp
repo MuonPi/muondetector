@@ -2,6 +2,8 @@
 
 namespace MuonPi {
 
+CombinedEvent::~CombinedEvent() = default;
+
 auto CombinedEvent::add_event(std::unique_ptr<AbstractEvent> /*event*/) -> bool
 {
     return false;

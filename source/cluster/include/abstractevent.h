@@ -12,6 +12,7 @@ namespace MuonPi {
 class AbstractEvent
 {
 public:
+    virtual ~AbstractEvent();
     /**
      * @brief time
      * @return The time when the event happened.

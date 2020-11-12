@@ -2,6 +2,8 @@
 
 namespace MuonPi {
 
+SingleEvent::~SingleEvent() = default;
+
 auto SingleEvent::site_id() const -> std::string
 {
     return m_site_id;
