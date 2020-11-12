@@ -1,0 +1,21 @@
+cmake_minimum_required (VERSION 3.10)
+project (muondetector)
+
+option(MUONDETECTOR_BUILD_TIDY "Execute clang-tidy when building the project" OFF)
+option(MUONDETECTOR_BUILD_GUI "Build the gui subproject" ON)
+
+
+set(CMAKE_BUILD_TYPE Release)
+message("${CMAKE_HOST_SYSTEM_PROCESSOR}")
+add_subdirectory(library)
+if (MUONDETECTOR_BUILD_GUI)
+add_subdirectory(gui)
+endif (MUONDETECTOR_BUILD_GUI)
+if (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
+add_subdirectory(daemon)
+else (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
+option(MUONDETECTOR_BUILD_TOOLS "Build the tools subproject" ON)
+if (MUONDETECTOR_BUILD_TOOLS)
+add_subdirectory(tools)
+endif (MUONDETECTOR_BUILD_TOOLS)
+endif (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
