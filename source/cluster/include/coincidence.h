@@ -31,7 +31,7 @@ public:
     [[nodiscard]] auto met(const bool& value) const -> bool override;
 
 private:
-    std::chrono::steady_clock::duration m_time {};
+    [[maybe_unused]] std::chrono::steady_clock::duration m_time {};
 };
 
 }
