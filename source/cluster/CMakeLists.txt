@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(muondetector-cluster LANGUAGES CXX C)
 
+option(MUONDETECTOR_ENABLE_TESTING ON)
 
 set(PROJECT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(PROJECT_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -18,35 +19,19 @@ if(${MUONDETECTOR_BUILD_TIDY})
       )
 endif(${MUONDETECTOR_BUILD_TIDY})
 
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-
-set(Qt5_DIR "/usr/lib/x86_64-linux-gnu/cmake/Qt5/")
-
-find_package(Qt5 COMPONENTS Network SerialPort REQUIRED)
-
-find_library(PAHO_MQTT3C paho-mqtt3c REQUIRED)
-find_library(PAHO_MQTT3A paho-mqtt3a REQUIRED)
-find_library(PAHO_MQTT3CS paho-mqtt3cs REQUIRED)
-find_library(PAHO_MQTT3AS paho-mqtt3as REQUIRED)
-find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
-
-find_library(CRYPTOPP crypto++ REQUIRED)
-find_library(CONFIGPP config++ REQUIRED)
+if (MUONDETECTOR_ENABLE_TESTING)
+find_library(CPP_UNIT cppunit REQUIRED)
+endif ()
 
 add_compile_options(
     -Wall
     -Wextra
     -Wshadow
     -Wpedantic
-#    -Werror
+    -Werror
     -O3
     )
 
@@ -97,7 +82,7 @@ set(DAEMON_HEADER_FILES
 add_executable(muondetector-cluster ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES})
 
 target_include_directories(muondetector-cluster PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_HEADER_DIR}>
+    ${PROJECT_HEADER_DIR}
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 
 target_include_directories(muondetector-cluster PUBLIC
@@ -106,51 +91,105 @@ target_include_directories(muondetector-cluster PUBLIC
     )
 
 target_link_libraries(muondetector-cluster
-    Qt5::Network Qt5::SerialPort
     crypto++
-    pigpiod_if2
-    rt
     config++
     paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
     "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
     )
 
 
-set(CLUSTER_INSTALL_FILES
-#    "${PROJECT_CONFIG_DIR}/muondetector.conf"
-    )
-
 
 install(TARGETS muondetector-cluster DESTINATION bin COMPONENT cluster)
-#install(FILES ${CLUSTER_INSTALL_FILES} DESTINATION "/etc/muondetector/" COMPONENT cluster)
-install(FILES "${PROJECT_CONFIG_DIR}/muondetector-cluster.service" DESTINATION "lib/systemd/system" COMPONENT cluster)
 
+
+if (MUONDETECTOR_ENABLE_TESTING)
 enable_testing()
 
-add_executable(test-coincicence "${PROJECT_TEST_DIR}/coincidence.cpp")
+add_executable(test-coincidence "${PROJECT_TEST_DIR}/coincidence.cpp")
+target_include_directories(test-coincidence PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-coincidence cppunit)
 add_test(NAME "Coincidence Class Test" COMMAND test-coincidence)
+
 add_executable(test-combinedevent "${PROJECT_TEST_DIR}/combinedevent.cpp")
+target_include_directories(test-combinedevent PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-combinedevent cppunit)
 add_test(NAME "CombinedEvent Class Test" COMMAND test-combinedevent)
+
 add_executable(test-core "${PROJECT_TEST_DIR}/core.cpp")
+target_include_directories(test-core PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-core cppunit)
 add_test(NAME "Core Class Test" COMMAND test-core)
+
 add_executable(test-databaselink "${PROJECT_TEST_DIR}/databaselink.cpp")
+target_include_directories(test-databaselink PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-databaselink cppunit)
 add_test(NAME "DatabaseLink Class Test" COMMAND test-databaselink)
+
 add_executable(test-databasesink "${PROJECT_TEST_DIR}/databasesink.cpp")
+target_include_directories(test-databasesink PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-databasesink cppunit)
 add_test(NAME "DatabaseSink Class Test" COMMAND test-databasesink)
+
 add_executable(test-databasesource "${PROJECT_TEST_DIR}/databasesource.cpp")
+target_include_directories(test-databasesource PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-databasesource cppunit)
 add_test(NAME "DatabaseSource Class Test" COMMAND test-databasesource)
+
 add_executable(test-messagebypass "${PROJECT_TEST_DIR}/messagebypass.cpp")
+target_include_directories(test-messagebypass PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-messagebypass cppunit)
 add_test(NAME "MessageBypass Class Test" COMMAND test-messagebypass)
+
 add_executable(test-mqttlink "${PROJECT_TEST_DIR}/mqttlink.cpp")
+target_include_directories(test-mqttlink PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-mqttlink cppunit)
 add_test(NAME "MqttLink Class Test" COMMAND test-mqttlink)
+
 add_executable(test-mqttsink "${PROJECT_TEST_DIR}/mqttsink.cpp")
+target_include_directories(test-mqttsink PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-mqttsink cppunit)
 add_test(NAME "MqttSink Class Test" COMMAND test-mqttsink)
+
 add_executable(test-mqttsource "${PROJECT_TEST_DIR}/mqttsource.cpp")
+target_include_directories(test-mqttsource PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-mqttsource cppunit)
 add_test(NAME "MqqtSource Class Test" COMMAND test-mqttsource)
+
 add_executable(test-plausability "${PROJECT_TEST_DIR}/plausability.cpp")
+target_include_directories(test-plausability PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-plausability cppunit)
 add_test(NAME "Plausability Class Test" COMMAND test-plausability)
+
 add_executable(test-singleevent "${PROJECT_TEST_DIR}/singleevent.cpp")
+target_include_directories(test-singleevent PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-singleevent cppunit)
 add_test(NAME "SingleEvent Class Test" COMMAND test-singleevent)
+
+endif ()
 
 
 #
