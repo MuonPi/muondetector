@@ -14,7 +14,7 @@ auto CombinedEvent::add_event(std::unique_ptr<AbstractEvent> /*event*/) noexcept
     return false;
 }
 
-auto CombinedEvent::n() const -> std::size_t
+auto CombinedEvent::n() const noexcept -> std::size_t
 {
     return 0;
 }

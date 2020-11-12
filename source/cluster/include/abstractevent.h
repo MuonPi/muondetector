@@ -24,13 +24,13 @@ public:
      * @brief time
      * @return The time when the event happened.
      */
-    [[nodiscard]] auto time() const -> std::chrono::steady_clock::time_point;
+    [[nodiscard]] auto time() const noexcept -> std::chrono::steady_clock::time_point;
 
     /**
      * @brief id
      * @return The id of this event
      */
-    [[nodiscard]] auto id() const -> std::uint64_t;
+    [[nodiscard]] auto id() const noexcept -> std::uint64_t;
 
 private:
     std::uint64_t m_id {};

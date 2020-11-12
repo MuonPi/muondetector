@@ -28,13 +28,13 @@ public:
      * 				The unique_ptr will be moved.
      * @return false in the case of an invalid Event, true otherwise
      */
-    [[nodiscard]] auto add_event(std::unique_ptr<AbstractEvent> event) -> bool;
+    [[nodiscard]] auto add_event(std::unique_ptr<AbstractEvent> event) noexcept -> bool;
 
     /**
      * @brief n The current number of events in the combination
      * @return The current number of events in this combined event
      */
-    [[nodiscard]] auto n() const -> std::size_t;
+    [[nodiscard]] auto n() const noexcept -> std::size_t;
 
 private:
     std::vector<std::unique_ptr<AbstractEvent>> m_events {};

@@ -7,12 +7,14 @@ AbstractEvent::AbstractEvent(uint64_t id, std::chrono::steady_clock::time_point 
     , m_time { event_time }
 {}
 
-auto AbstractEvent::time() const -> std::chrono::steady_clock::time_point
+AbstractEvent::~AbstractEvent() noexcept = default;
+
+auto AbstractEvent::time() const noexcept -> std::chrono::steady_clock::time_point
 {
     return m_time;
 }
 
-auto AbstractEvent::id() const -> std::uint64_t
+auto AbstractEvent::id() const noexcept -> std::uint64_t
 {
     return m_id;
 }

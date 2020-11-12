@@ -25,12 +25,12 @@ public:
      * @brief site_id
      * @return The site_id of the detector
      */
-    [[nodiscard]] auto site_id() const -> std::string;
+    [[nodiscard]] auto site_id() const noexcept -> std::string;
     /**
      * @brief username
      * @return The username of the owner of the detector
      */
-    [[nodiscard]] auto username() const -> std::string;
+    [[nodiscard]] auto username() const noexcept -> std::string;
 
 private:
     std::string m_site_id {};
