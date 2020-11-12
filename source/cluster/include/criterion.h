@@ -16,7 +16,7 @@ template <typename T>
 class Criterion
 {
 public:
-    virtual ~Criterion();
+    virtual ~Criterion() = default;
     /**
      * @brief criterion Assigns a value of type T to a pair of events
      * @param first The first event to check

@@ -50,7 +50,6 @@ set(DAEMON_SOURCE_FILES
     "${PROJECT_SRC_DIR}/databasesource.cpp"
     "${PROJECT_SRC_DIR}/mqttsink.cpp"
     "${PROJECT_SRC_DIR}/abstracteventsource.cpp"
-    "${PROJECT_SRC_DIR}/criterion.cpp"
     "${PROJECT_SRC_DIR}/mqttsource.cpp"
     "${PROJECT_SRC_DIR}/coincidence.cpp"
     "${PROJECT_SRC_DIR}/databaselink.cpp"
