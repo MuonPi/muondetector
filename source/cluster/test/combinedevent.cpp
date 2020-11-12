@@ -12,7 +12,7 @@ private:
     std::unique_ptr<MuonPi::CombinedEvent> m_combined_event { nullptr };
 public:
     void setUp() {
-        m_combined_event = std::make_unique<MuonPi::CombinedEvent>();
+        m_combined_event = std::make_unique<MuonPi::CombinedEvent>(0);
     }
 
     void tearDown() {
@@ -24,7 +24,7 @@ public:
         CPPUNIT_ASSERT(m_combined_event->add_event(nullptr) == false);
         CPPUNIT_ASSERT(m_combined_event->n() == 0);
 
-        std::unique_ptr<MuonPi::AbstractEvent> event { std::make_unique<MuonPi::SingleEvent>()};
+        std::unique_ptr<MuonPi::AbstractEvent> event { std::make_unique<MuonPi::SingleEvent>(0, std::chrono::steady_clock::time_point{})};
         CPPUNIT_ASSERT(m_combined_event->add_event(std::move(event)) == true);
         CPPUNIT_ASSERT(m_combined_event->n() == 1);
     }

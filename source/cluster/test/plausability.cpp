@@ -21,15 +21,15 @@ public:
     }
 
     void testSingleEvents() {
-        std::unique_ptr<MuonPi::AbstractEvent> first { std::make_unique<MuonPi::SingleEvent>()};
-        std::unique_ptr<MuonPi::AbstractEvent> second { std::make_unique<MuonPi::SingleEvent>()};
+        std::unique_ptr<MuonPi::AbstractEvent> first { std::make_unique<MuonPi::SingleEvent>(0, std::chrono::steady_clock::time_point{})};
+        std::unique_ptr<MuonPi::AbstractEvent> second { std::make_unique<MuonPi::SingleEvent>(0, std::chrono::steady_clock::time_point{})};
 
         CPPUNIT_ASSERT(m_coincidence->criterion(first, second) == 0.0);
     }
 
     void testCombinedEvents() {
-        std::unique_ptr<MuonPi::AbstractEvent> first { std::make_unique<MuonPi::CombinedEvent>()};
-        std::unique_ptr<MuonPi::AbstractEvent> second { std::make_unique<MuonPi::CombinedEvent>()};
+        std::unique_ptr<MuonPi::AbstractEvent> first { std::make_unique<MuonPi::CombinedEvent>(0)};
+        std::unique_ptr<MuonPi::AbstractEvent> second { std::make_unique<MuonPi::CombinedEvent>(0)};
 
         CPPUNIT_ASSERT(m_coincidence->criterion(first, second) == 0.0);
     }

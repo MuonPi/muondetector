@@ -11,7 +11,7 @@ private:
     std::unique_ptr<MuonPi::SingleEvent> m_single_event { nullptr };
 public:
     void setUp() {
-        m_single_event = std::make_unique<MuonPi::SingleEvent>();
+        m_single_event = std::make_unique<MuonPi::SingleEvent>(0, std::chrono::steady_clock::time_point{});
     }
 
     void tearDown() {
