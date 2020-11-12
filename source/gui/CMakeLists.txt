@@ -266,12 +266,13 @@ if(WIN32)
 # https://cmake.org/cmake/help/v3.10/module/CPackNSIS.html
 
 include("${PROJECT_SOURCE_DIR}/../cmake/Windeployqt.cmake")
-set(windeploy_options 
+set(windeploy_options
     --qmldir "${PROJECT_QML_DIR}"
     -opengl
     -printsupport
 ) # additional options for windeployqt.exe
-                
+
+            
 windeployqt(muondetector-gui "${PROJECT_BINARY_DIR}" "${windeploy_options}")
 # create a list of files to copy
 set( THIRD_PARTY_DLLS
@@ -296,13 +297,25 @@ foreach( file_i ${THIRD_PARTY_DLLS})
 endforeach( file_i )
 
 
-set(CPACK_GENERATOR NSIS)
+set(CPACK_GENERATOR "NSIS")
 set(CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_CONFIG_DIR}/description.txt")
 set(CPACK_NSIS_MODIFY_PATH ON)
+include(InstallRequiredSystemLibraries)
+
+#set(CPACK_PACKAGE_INSTALL_DIRECTORY "CMake ${CMake_VERSION_MAJOR}.${CMake_VERSION_MINOR}")
+
+# There is a bug in NSI that does not handle full UNIX paths properly.
+# Make sure there is at least one set of four backlashes.
+#set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\muondetector-gui.exe")
+set(CPACK_NSIS_DISPLAY_NAME "Muondetector gui")
+set(CPACK_NSIS_HELP_LINK "https://muonpi.org")
+set(CPACK_NSIS_URL_INFO_ABOUT "https://muonpi.org")
+set(CPACK_NSIS_CONTACT "support@muonpi.org")
+set(CPACK_PACKAGE_EXECUTABLES "muondetector-gui" "muondetector-gui")
+
 else()
 
 set(CPACK_GENERATOR "DEB")
-set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
 set(CPACK_DEBIAN_PACKAGE_SECTION "net")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
 set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "GUI for monitoring and controlling the muondetector-daemon.
@@ -315,6 +328,8 @@ set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi.org <support@muonpi.org>")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=5), libqt5widgets5 (>=5), libqt5core5a (>=5), libqt5quickwidgets5 (>=5.3), libqt5network5 (>=5), qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), qml-module-qtquick-layouts (>=5), qml-module-qtquick-controls2 (>=5), qml-module-qtquick-controls (>=5), qml-module-qtquick-templates2 (>=5), libqwt-qt5-6 (>=6.1.2)")
 
 endif()
+set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
+#set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/res/muon.ico")
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../packages/")
 set(CPACK_PACKAGE_VENDOR "MuonPi.org")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")

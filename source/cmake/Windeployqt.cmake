@@ -66,7 +66,7 @@ function(windeployqt target directory options)
             COMMAND \"${CMAKE_COMMAND}\" -E
                 env PATH=\"${_qt_bin_dir}\" \"${WINDEPLOYQT_EXECUTABLE}\"
                     --release
-                    \"${options}\"
+                    ${options}
                     --dry-run
                     --no-compiler-runtime
                     --no-angle
@@ -82,7 +82,7 @@ function(windeployqt target directory options)
             list(GET _files 1 _dest)
             execute_process(
                 COMMAND \"${CMAKE_COMMAND}\" -E
-                    copy \${_src} \"\${CMAKE_INSTALL_PREFIX}/${directory}/\${_dest}\"
+                    copy \${_src} \"\${CMAKE_INSTALL_PREFIX}/\${_dest}\"
             )
             list(REMOVE_AT _files 0 1)
         endwhile()
