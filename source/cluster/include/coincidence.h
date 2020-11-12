@@ -28,6 +28,9 @@ public:
      * @return true if the value corresponds to a valid value, false if not
      */
     [[nodiscard]] auto met(const bool& value) const -> bool override;
+
+private:
+    std::chrono::steady_clock::duration m_time {};
 };
 
 }
