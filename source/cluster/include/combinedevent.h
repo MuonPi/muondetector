@@ -15,7 +15,13 @@ namespace MuonPi {
 class CombinedEvent : public AbstractEvent
 {
 public:
-    ~CombinedEvent() override;
+    /**
+     * @brief CombinedEvent
+     * @param id The id of the event
+     */
+    CombinedEvent(std::uint64_t id) noexcept;
+
+    ~CombinedEvent() noexcept override;
     /**
      * @brief add_event Adds an event to the CombinedEvent.
      * @param event The event to add. In the case that the abstract event is a combined event, the child events will be added instead of their combination.

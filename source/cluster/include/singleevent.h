@@ -13,7 +13,14 @@ namespace MuonPi {
 class SingleEvent : public AbstractEvent
 {
 public:
-    ~SingleEvent() override;
+    /**
+     * @brief SingleEvent
+     * @param id The id of the event
+     * @param time The time of the event
+     */
+    SingleEvent(std::uint64_t id, std::chrono::steady_clock::time_point time) noexcept;
+
+    ~SingleEvent() noexcept override;
     /**
      * @brief site_id
      * @return The site_id of the detector

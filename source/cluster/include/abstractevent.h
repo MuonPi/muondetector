@@ -12,7 +12,14 @@ namespace MuonPi {
 class AbstractEvent
 {
 public:
-    virtual ~AbstractEvent();
+    /**
+     * @brief AbstractEvent
+     * @param id The id of the event
+     * @param time The time of the event
+     */
+    AbstractEvent(std::uint64_t id, std::chrono::steady_clock::time_point time) noexcept;
+
+    virtual ~AbstractEvent() noexcept;
     /**
      * @brief time
      * @return The time when the event happened.

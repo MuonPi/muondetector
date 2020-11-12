@@ -2,7 +2,10 @@
 
 namespace MuonPi {
 
-AbstractEvent::~AbstractEvent() = default;
+AbstractEvent::AbstractEvent(uint64_t id, std::chrono::steady_clock::time_point event_time) noexcept
+    : m_id { id}
+    , m_time { event_time }
+{}
 
 auto AbstractEvent::time() const -> std::chrono::steady_clock::time_point
 {
