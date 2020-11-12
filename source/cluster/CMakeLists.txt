@@ -40,7 +40,6 @@ add_compile_options(
 
 
 set(DAEMON_SOURCE_FILES
-    "${PROJECT_SRC_DIR}/main.cpp"
     "${PROJECT_SRC_DIR}/core.cpp"
     "${PROJECT_SRC_DIR}/abstractevent.cpp"
     "${PROJECT_SRC_DIR}/combinedevent.cpp"
@@ -79,7 +78,7 @@ set(DAEMON_HEADER_FILES
     )
 
 
-add_executable(muondetector-cluster ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES})
+add_executable(muondetector-cluster ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES} "${PROJECT_SRC_DIR}/main.cpp")
 
 target_include_directories(muondetector-cluster PUBLIC
     ${PROJECT_HEADER_DIR}
@@ -105,84 +104,84 @@ install(TARGETS muondetector-cluster DESTINATION bin COMPONENT cluster)
 if (MUONDETECTOR_ENABLE_TESTING)
 enable_testing()
 
-add_executable(test-coincidence "${PROJECT_TEST_DIR}/coincidence.cpp")
+add_executable(test-coincidence ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES} "${PROJECT_TEST_DIR}/coincidence.cpp")
 target_include_directories(test-coincidence PUBLIC
     ${PROJECT_HEADER_DIR}
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 target_link_libraries(test-coincidence cppunit)
 add_test(NAME "Coincidence Class Test" COMMAND test-coincidence)
 
-add_executable(test-combinedevent "${PROJECT_TEST_DIR}/combinedevent.cpp")
+add_executable(test-combinedevent ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES} "${PROJECT_TEST_DIR}/combinedevent.cpp")
 target_include_directories(test-combinedevent PUBLIC
     ${PROJECT_HEADER_DIR}
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 target_link_libraries(test-combinedevent cppunit)
 add_test(NAME "CombinedEvent Class Test" COMMAND test-combinedevent)
 
-add_executable(test-core "${PROJECT_TEST_DIR}/core.cpp")
+add_executable(test-core ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES} "${PROJECT_TEST_DIR}/core.cpp")
 target_include_directories(test-core PUBLIC
     ${PROJECT_HEADER_DIR}
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 target_link_libraries(test-core cppunit)
 add_test(NAME "Core Class Test" COMMAND test-core)
 
-add_executable(test-databaselink "${PROJECT_TEST_DIR}/databaselink.cpp")
+add_executable(test-databaselink ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES} "${PROJECT_TEST_DIR}/databaselink.cpp")
 target_include_directories(test-databaselink PUBLIC
     ${PROJECT_HEADER_DIR}
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 target_link_libraries(test-databaselink cppunit)
 add_test(NAME "DatabaseLink Class Test" COMMAND test-databaselink)
 
-add_executable(test-databasesink "${PROJECT_TEST_DIR}/databasesink.cpp")
+add_executable(test-databasesink ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES} "${PROJECT_TEST_DIR}/databasesink.cpp")
 target_include_directories(test-databasesink PUBLIC
     ${PROJECT_HEADER_DIR}
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 target_link_libraries(test-databasesink cppunit)
 add_test(NAME "DatabaseSink Class Test" COMMAND test-databasesink)
 
-add_executable(test-databasesource "${PROJECT_TEST_DIR}/databasesource.cpp")
+add_executable(test-databasesource ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES} "${PROJECT_TEST_DIR}/databasesource.cpp")
 target_include_directories(test-databasesource PUBLIC
     ${PROJECT_HEADER_DIR}
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 target_link_libraries(test-databasesource cppunit)
 add_test(NAME "DatabaseSource Class Test" COMMAND test-databasesource)
 
-add_executable(test-messagebypass "${PROJECT_TEST_DIR}/messagebypass.cpp")
+add_executable(test-messagebypass ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES} "${PROJECT_TEST_DIR}/messagebypass.cpp")
 target_include_directories(test-messagebypass PUBLIC
     ${PROJECT_HEADER_DIR}
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 target_link_libraries(test-messagebypass cppunit)
 add_test(NAME "MessageBypass Class Test" COMMAND test-messagebypass)
 
-add_executable(test-mqttlink "${PROJECT_TEST_DIR}/mqttlink.cpp")
+add_executable(test-mqttlink ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES} "${PROJECT_TEST_DIR}/mqttlink.cpp")
 target_include_directories(test-mqttlink PUBLIC
     ${PROJECT_HEADER_DIR}
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 target_link_libraries(test-mqttlink cppunit)
 add_test(NAME "MqttLink Class Test" COMMAND test-mqttlink)
 
-add_executable(test-mqttsink "${PROJECT_TEST_DIR}/mqttsink.cpp")
+add_executable(test-mqttsink ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES} "${PROJECT_TEST_DIR}/mqttsink.cpp")
 target_include_directories(test-mqttsink PUBLIC
     ${PROJECT_HEADER_DIR}
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 target_link_libraries(test-mqttsink cppunit)
 add_test(NAME "MqttSink Class Test" COMMAND test-mqttsink)
 
-add_executable(test-mqttsource "${PROJECT_TEST_DIR}/mqttsource.cpp")
+add_executable(test-mqttsource ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES} "${PROJECT_TEST_DIR}/mqttsource.cpp")
 target_include_directories(test-mqttsource PUBLIC
     ${PROJECT_HEADER_DIR}
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 target_link_libraries(test-mqttsource cppunit)
 add_test(NAME "MqqtSource Class Test" COMMAND test-mqttsource)
 
-add_executable(test-plausability "${PROJECT_TEST_DIR}/plausability.cpp")
+add_executable(test-plausability ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES} "${PROJECT_TEST_DIR}/plausability.cpp")
 target_include_directories(test-plausability PUBLIC
     ${PROJECT_HEADER_DIR}
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 target_link_libraries(test-plausability cppunit)
 add_test(NAME "Plausability Class Test" COMMAND test-plausability)
 
-add_executable(test-singleevent "${PROJECT_TEST_DIR}/singleevent.cpp")
+add_executable(test-singleevent ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES} "${PROJECT_TEST_DIR}/singleevent.cpp")
 target_include_directories(test-singleevent PUBLIC
     ${PROJECT_HEADER_DIR}
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
