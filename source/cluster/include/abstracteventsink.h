@@ -24,7 +24,7 @@ public:
 protected:
     [[nodiscard]] virtual auto step() -> bool;
 
-    [[nodiscard]] auto next_event() -> std::future<std::unique_ptr<AbstractEvent>> ;
+    [[nodiscard]] auto next_event() -> std::future<std::unique_ptr<AbstractEvent>>;
 
 private:
     void run();
