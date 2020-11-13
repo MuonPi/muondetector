@@ -76,7 +76,7 @@ set(CLUSTER_HEADER_FILES
     "${PROJECT_HEADER_DIR}/singleevent.h"
     )
 
-add_library(source-files OBJECT ${CLUSTER_SOURCE_FILES})
+add_library(source-files OBJECT ${CLUSTER_SOURCE_FILES} ${CLUSTER_HEADER_FILES})
 target_include_directories(source-files PUBLIC
     ${PROJECT_HEADER_DIR}
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
@@ -86,7 +86,7 @@ target_include_directories(source-files PUBLIC
     $<INSTALL_INTERFACE:include/mqtt>
     )
 
-add_executable(muondetector-cluster ${CLUSTER_HEADER_FILES} "${PROJECT_SRC_DIR}/main.cpp")
+add_executable(muondetector-cluster "${PROJECT_SRC_DIR}/main.cpp")
 
 target_include_directories(muondetector-cluster PUBLIC
     ${PROJECT_HEADER_DIR}
