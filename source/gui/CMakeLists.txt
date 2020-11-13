@@ -258,16 +258,9 @@ endif()
 
 install(FILES "${PROJECT_CONFIG_DIR}/muon.ico" DESTINATION "share/pixmaps/" COMPONENT gui)
 install(FILES "${PROJECT_CONFIG_DIR}/muondetector-gui.desktop" DESTINATION "share/applications/" COMPONENT gui)
-
-if(NOT WIN32)
-
 install(TARGETS muondetector-gui DESTINATION bin COMPONENT gui)
 
-endif()
-
 if(WIN32)
-
-install(TARGETS muondetector-gui DESTINATION . COMPONENT gui)
 
 include("${PROJECT_SOURCE_DIR}/../cmake/Windeployqt.cmake")
 set(windeploy_options
@@ -277,7 +270,7 @@ set(windeploy_options
 ) # additional options for windeployqt.exe
 
             
-windeployqt(muondetector-gui "${PROJECT_BINARY_DIR}" "${windeploy_options}")
+windeployqt(muondetector-gui "${PROJECT_BINARY_DIR}/bin" "${windeploy_options}")
 # create a list of files to copy
 set( THIRD_PARTY_DLLS
    "${OPENSSL_DIR}/bin/libcrypto-1_1-x64.dll"
@@ -298,7 +291,7 @@ foreach( file_i ${THIRD_PARTY_DLLS})
                     "${file_i}"
                     "${PROJECT_BINARY_DIR}/../bin/"
     )
-    install(FILES "${file_i}" DESTINATION "." COMPONENT gui)
+    install(FILES "${file_i}" DESTINATION "bin" COMPONENT gui)
 endforeach( file_i )
 
 

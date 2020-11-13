@@ -82,7 +82,7 @@ function(windeployqt target directory options)
             list(GET _files 1 _dest)
             execute_process(
                 COMMAND \"${CMAKE_COMMAND}\" -E
-                    copy \${_src} \"\${CMAKE_INSTALL_PREFIX}/\${_dest}\"
+                    copy \${_src} \"\${CMAKE_INSTALL_PREFIX}/bin/\${_dest}\"
             )
             list(REMOVE_AT _files 0 1)
         endwhile()
