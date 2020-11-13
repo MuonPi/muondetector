@@ -2,7 +2,7 @@
 #include <cppunit/TestFixture.h>
 #include <cppunit/TestCaller.h>
 
-class MqttLinkTest : public CppUnit::TestFixture {
+class EventConstructorTest : public CppUnit::TestFixture {
 public:
     void setUp() {
     }
@@ -16,9 +16,9 @@ public:
 
     static auto suite() -> CppUnit::Test*
     {
-        CppUnit::TestSuite* suite { new CppUnit::TestSuite{ "MqttLinkTest" } };
+        CppUnit::TestSuite* suite { new CppUnit::TestSuite{ "EventConstructorTest" } };
 
-        suite->addTest( new CppUnit::TestCaller<MqttLinkTest>{ "testInitial", &MqttLinkTest::testInitial } );
+        suite->addTest( new CppUnit::TestCaller<EventConstructorTest>{ "testInitial", &EventConstructorTest::testInitial } );
 
         return suite;
     }
@@ -28,7 +28,7 @@ public:
 auto main() -> int
 {
     CppUnit::TextUi::TestRunner runner {};
-    runner.addTest( MqttLinkTest::suite() );
+    runner.addTest( EventConstructorTest::suite() );
 
     return (runner.run("", false))?0:1;
 }

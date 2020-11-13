@@ -203,6 +203,16 @@ target_link_libraries(test-messagebypass
     )
 add_test(NAME "MessageBypass-Test" COMMAND test-messagebypass)
 
+add_executable(test-bypasscriterion "${PROJECT_TEST_DIR}/bypasscriterion.cpp")
+target_include_directories(test-bypasscriterion PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-bypasscriterion
+    cppunit
+    source-files
+    )
+add_test(NAME "BypassCriterion-Test" COMMAND test-bypasscriterion)
+
 add_executable(test-mqttlink "${PROJECT_TEST_DIR}/mqttlink.cpp")
 target_include_directories(test-mqttlink PUBLIC
     ${PROJECT_HEADER_DIR}
@@ -252,6 +262,26 @@ target_link_libraries(test-singleevent
     source-files
     )
 add_test(NAME "SingleEvent-Test" COMMAND test-singleevent)
+
+add_executable(test-ratesupervisor "${PROJECT_TEST_DIR}/ratesupervisor.cpp")
+target_include_directories(test-ratesupervisor PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-ratesupervisor
+    cppunit
+    source-files
+    )
+add_test(NAME "RateSupervisor-Test" COMMAND test-ratesupervisor)
+
+add_executable(test-eventconstructor "${PROJECT_TEST_DIR}/eventconstructor.cpp")
+target_include_directories(test-eventconstructor PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-eventconstructor
+    cppunit
+    source-files
+    )
+add_test(NAME "EventConstructor-Test" COMMAND test-eventconstructor)
 
 endif ()
 
