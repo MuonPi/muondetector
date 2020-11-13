@@ -1,4 +1,5 @@
 #include "coincidence.h"
+#include "abstractevent.h"
 
 namespace MuonPi {
 

@@ -4,6 +4,7 @@
 #include "criterion.h"
 
 #include <memory>
+#include <chrono>
 
 namespace MuonPi {
 

@@ -1,12 +1,12 @@
 #ifndef CRITERION_H
 #define CRITERION_H
 
-#include "abstractevent.h"
 
 #include <memory>
 
 namespace MuonPi {
 
+class AbstractEvent;
 
 template <typename T>
 /**

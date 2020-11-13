@@ -1,4 +1,5 @@
 #include "plausability.h"
+#include "abstractevent.h"
 
 namespace MuonPi {
 
