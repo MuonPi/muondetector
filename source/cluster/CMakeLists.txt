@@ -133,6 +133,26 @@ target_link_libraries(test-combinedevent
     )
 add_test(NAME "CombinedEvent-Test" COMMAND test-combinedevent)
 
+add_executable(test-abstracteventsink "${PROJECT_TEST_DIR}/abstracteventsink.cpp")
+target_include_directories(test-abstracteventsink PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-abstracteventsink
+    cppunit
+    source-files
+    )
+add_test(NAME "AbstractEventSink-Test" COMMAND test-abstracteventsink)
+
+add_executable(test-abstracteventsource "${PROJECT_TEST_DIR}/abstracteventsource.cpp")
+target_include_directories(test-abstracteventsource PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-abstracteventsource
+    cppunit
+    source-files
+    )
+add_test(NAME "AbstractEventSource-Test" COMMAND test-abstracteventsource)
+
 add_executable(test-core "${PROJECT_TEST_DIR}/core.cpp")
 target_include_directories(test-core PUBLIC
     ${PROJECT_HEADER_DIR}
