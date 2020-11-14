@@ -6,6 +6,7 @@ set(PROJECT_UI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(PROJECT_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(PROJECT_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(PROJECT_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
+set(PROJECT_QML_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qml")
 set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../library/include/")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../bin")
@@ -26,8 +27,8 @@ set(CMAKE_AUTORCC ON)
 
 if(WIN32)
 
-set(QWT_DIR "C:/Qwt-6.1.4/")
-set(CRYPTOPP_DIR "C:/cryptopp/")
+set(QWT_DIR "C:/Qwt-6.1.4")
+set(OPENSSL_DIR "C:/Qt/Tools/OpenSSL/Win_x64")
 set(MQTT_CPP_DIR "C:/paho-mqtt-cpp-1.1.0-win64")
 set(MQTT_C_DIR "C:/eclipse-paho-mqtt-c-win64-1.3.6")
 list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5QuickCompiler")
@@ -216,7 +217,7 @@ if(WIN32)
 add_definitions(-DQWT_DLL)
 
 target_include_directories(muondetector-gui PUBLIC
-    ${CRYPTOPP_DIR}/include/
+    ${OPENSSL_DIR}/include/
     $<BUILD_INTERFACE:${QWT_DIR}/include>
     $<BUILD_INTERFACE:${MQTT_C_DIR}/include>
     $<INSTALL_INTERFACE:${MQTT_C_DIR}/include>
@@ -233,7 +234,7 @@ target_link_directories(muondetector-gui PUBLIC
     "${MQTT_CPP_DIR}/lib/"
     "${MQTT_C_DIR}/lib/"
     "${QWT_DIR}/lib/"
-    "${CRYPTOPP_DIR}/lib/"
+    "${OPENSSL_DIR}/lib/"
     )
 
 target_link_libraries(muondetector-gui
@@ -265,24 +266,67 @@ target_link_libraries(muondetector-gui
 
 endif()
 
-install(TARGETS muondetector-gui DESTINATION bin COMPONENT gui)
+
 install(FILES "${PROJECT_CONFIG_DIR}/muon.ico" DESTINATION "share/pixmaps/" COMPONENT gui)
 install(FILES "${PROJECT_CONFIG_DIR}/muondetector-gui.desktop" DESTINATION "share/applications/" COMPONENT gui)
-
+install(TARGETS muondetector-gui DESTINATION bin COMPONENT gui)
 
 if(WIN32)
 
-# TODO: create installer for windows:
-# https://cmake.org/cmake/help/v3.10/module/CPackNSIS.html
+include("${PROJECT_SOURCE_DIR}/../cmake/Windeployqt.cmake")
+set(windeploy_options
+    --qmldir "${PROJECT_QML_DIR}"
+    -opengl
+    -printsupport
+) # additional options for windeployqt.exe
 
-set(CPACK_GENERATOR NSIS)
+            
+windeployqt(muondetector-gui "${PROJECT_BINARY_DIR}/bin" "${windeploy_options}")
+# create a list of files to copy
+set( THIRD_PARTY_DLLS
+   "${OPENSSL_DIR}/bin/libcrypto-1_1-x64.dll"
+   "${OPENSSL_DIR}/bin/libssl-1_1-x64.dll"
+   "${QWT_DIR}/lib/qwt.dll"
+   "${MQTT_CPP_DIR}/lib/paho-mqttpp3.dll"
+   "${MQTT_C_DIR}/lib/paho-mqtt3a.dll"
+   "${MQTT_C_DIR}/lib/paho-mqtt3as.dll"
+   "${MQTT_C_DIR}/lib/paho-mqtt3c.dll"
+   "${MQTT_C_DIR}/lib/paho-mqtt3cs.dll"
+)
+
+# do the copying
+foreach( file_i ${THIRD_PARTY_DLLS})
+    add_custom_command(
+            TARGET muondetector-gui POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+                    "${file_i}"
+                    "${PROJECT_BINARY_DIR}/../bin/"
+    )
+    install(FILES "${file_i}" DESTINATION "bin" COMPONENT gui)
+endforeach( file_i )
+
+
+set(CPACK_GENERATOR "NSIS")
 set(CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_CONFIG_DIR}/description.txt")
-SET(CPACK_NSIS_MODIFY_PATH ON)
+set(CPACK_NSIS_MODIFY_PATH ON)
+include(InstallRequiredSystemLibraries)
+
+#set(CPACK_PACKAGE_INSTALL_DIRECTORY "CMake ${CMake_VERSION_MAJOR}.${CMake_VERSION_MINOR}")
+
+# There is a bug in NSI that does not handle full UNIX paths properly.
+# Make sure there is at least one set of four backlashes.
+#set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\muondetector-gui.exe")
+set(CPACK_NSIS_DISPLAY_NAME "Muondetector gui")
+set(CPACK_NSIS_HELP_LINK "https://muonpi.org")
+set(CPACK_NSIS_URL_INFO_ABOUT "https://muonpi.org")
+set(CPACK_NSIS_CONTACT "support@muonpi.org")
+set(CPACK_NSIS_MUI_ICON "${PROJECT_RES_DIR}/res/muon.ico")
+set(CPACK_NSIS_MUI_UNIICON "${PROJECT_RES_DIR}/res/muon.ico")
+set(CPACK_PACKAGE_EXECUTABLES "muondetector-gui" "muondetector-gui")
 
 else()
 
 set(CPACK_GENERATOR "DEB")
-set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
 set(CPACK_DEBIAN_PACKAGE_SECTION "net")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
 set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "GUI for monitoring and controlling the muondetector-daemon.
@@ -295,6 +339,7 @@ set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi.org <support@muonpi.org>")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=5), libqt5widgets5 (>=5), libqt5core5a (>=5), libqt5quickwidgets5 (>=5.3), libqt5network5 (>=5), qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), qml-module-qtquick-layouts (>=5), qml-module-qtquick-controls2 (>=5), qml-module-qtquick-controls (>=5), qml-module-qtquick-templates2 (>=5), libqwt-qt5-6 (>=6.1.2)")
 
 endif()
+set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../packages/")
 set(CPACK_PACKAGE_VENDOR "MuonPi.org")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
