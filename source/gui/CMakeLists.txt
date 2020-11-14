@@ -188,8 +188,19 @@ configure_file(
     "${CMAKE_CURRENT_BINARY_DIR}/muon.ico"
     )
 endif()
+
 find_package(Qt5QuickCompiler)
+
+if(Qt5QuickCompiler_FOUND)
+
 qtquick_compiler_add_resources(qml_QRC "${PROJECT_RES_DIR}/resources.qrc")
+
+else()
+
+qt5_add_resources(qml_QRC "${PROJECT_RES_DIR}/resources.qrc")
+
+endif()
+
 add_executable(muondetector-gui ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES} ${PROJECT_UI_FILES} ${PROJECT_RESOURCE_FILES} ${qml_QRC})
 
 target_include_directories(muondetector-gui PUBLIC
