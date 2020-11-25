@@ -19,7 +19,7 @@ public:
      * @brief CombinedEvent
      * @param id The id of the event
      */
-    CombinedEvent(std::uint64_t id) noexcept;
+    CombinedEvent(std::uint64_t id, std::unique_ptr<AbstractEvent> event) noexcept;
 
     ~CombinedEvent() noexcept override;
     /**
@@ -36,8 +36,15 @@ public:
      */
     [[nodiscard]] auto n() const noexcept -> std::size_t;
 
+    /**
+      * @brief Get the list of events. Moves the vector.
+      * @return The list of events contained in this combined event
+      */
+    [[nodiscard]] auto events() -> std::vector<std::unique_ptr<AbstractEvent>>;
+
 private:
     std::vector<std::unique_ptr<AbstractEvent>> m_events {};
+    bool m_valid { true };
 };
 }
 

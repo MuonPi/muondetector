@@ -2,20 +2,22 @@
 
 namespace MuonPi {
 
-SingleEvent::SingleEvent(std::uint64_t id, std::chrono::steady_clock::time_point time) noexcept
-    : AbstractEvent{id, time}
+SingleEvent::SingleEvent(std::size_t hash, std::uint64_t id, std::chrono::steady_clock::time_point time, std::chrono::steady_clock::duration duration) noexcept
+    : AbstractEvent{hash, id, time}
+    , m_duration { duration }
+{}
+
+SingleEvent::SingleEvent(std::size_t hash, std::uint64_t id, std::chrono::steady_clock::time_point rising, std::chrono::steady_clock::time_point falling) noexcept
+    : AbstractEvent{hash, id, rising}
+    , m_duration { falling - rising }
 {}
 
 SingleEvent::~SingleEvent() noexcept = default;
 
-auto SingleEvent::site_id() const noexcept -> std::string
-{
-    return m_site_id;
-}
 
-auto SingleEvent::username() const noexcept -> std::string
+auto SingleEvent::duration() const -> std::chrono::steady_clock::duration
 {
-    return m_username;
+    return m_duration;
 }
 
 }

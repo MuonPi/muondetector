@@ -15,26 +15,33 @@ class SingleEvent : public AbstractEvent
 public:
     /**
      * @brief SingleEvent
+     * @param hash a hash of the username and detector site_id
      * @param id The id of the event
      * @param time The time of the event
+     * @param duration The time difference between falling and rising edge time
      */
-    SingleEvent(std::uint64_t id, std::chrono::steady_clock::time_point time) noexcept;
+    SingleEvent(std::size_t hash, std::uint64_t id, std::chrono::steady_clock::time_point time, std::chrono::steady_clock::duration duration) noexcept;
+
+    /**
+     * @brief SingleEvent
+     * @param hash a hash of the username and detector site_id
+     * @param id The id of the event
+     * @param rising The time point of the rising edge time
+     * @param falling The time point of the falling edge time
+     */
+    SingleEvent(std::size_t hash, std::uint64_t id, std::chrono::steady_clock::time_point rising, std::chrono::steady_clock::time_point falling) noexcept;
 
     ~SingleEvent() noexcept override;
+
     /**
-     * @brief site_id
-     * @return The site_id of the detector
-     */
-    [[nodiscard]] auto site_id() const noexcept -> std::string;
-    /**
-     * @brief username
-     * @return The username of the owner of the detector
-     */
-    [[nodiscard]] auto username() const noexcept -> std::string;
+      * @brief duration
+      * @return The time difference between the falling and rising edge time
+      */
+    [[nodiscard]] auto duration() const -> std::chrono::steady_clock::duration;
 
 private:
-    std::string m_site_id {};
-    std::string m_username {};
+    std::chrono::steady_clock::duration m_duration {};
+
 };
 }
 
