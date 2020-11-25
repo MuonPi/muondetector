@@ -49,8 +49,8 @@ constexpr int deadtime { 8 };
 }
 namespace DAC {
 namespace Voltage {
-constexpr float bias {0.0};
-constexpr float threshold[2] {0.0, 0.0};
+constexpr float bias {0.5};
+constexpr float threshold[2] {0.1, 1.0};
 }
 }
 namespace GPIO::Clock::Measurement {
