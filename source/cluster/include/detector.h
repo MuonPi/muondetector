@@ -24,9 +24,9 @@ class Detector
 {
 public:
 private:
-    [[maybe_unused]] std::size_t m_hash { 0 };
-    [[maybe_unused]] std::unique_ptr<RateSupervisor> m_supervisor { nullptr };
-    [[maybe_unused]] RateListener* m_listener { nullptr };
+    std::size_t m_hash { 0 };
+    std::unique_ptr<RateSupervisor> m_supervisor { nullptr };
+    RateListener* m_listener { nullptr };
 };
 
 }

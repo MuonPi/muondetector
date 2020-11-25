@@ -1461,7 +1461,7 @@
         <dia:point val="15.1643,2.16113"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="15.1143,2.11113;42.2793,9.61113"/>
+        <dia:rectangle val="15.1143,2.11113;42.2793,8.81113"/>
       </dia:attribute>
       <dia:attribute name="elem_corner">
         <dia:point val="15.1643,2.16113"/>
@@ -1470,7 +1470,7 @@
         <dia:real val="27.064999999999998"/>
       </dia:attribute>
       <dia:attribute name="elem_height">
-        <dia:real val="7.4000000000000004"/>
+        <dia:real val="6.6000000000000005"/>
       </dia:attribute>
       <dia:attribute name="name">
         <dia:string>#CombinedEvent#</dia:string>
@@ -1586,29 +1586,6 @@
             <dia:boolean val="false"/>
           </dia:attribute>
         </dia:composite>
-        <dia:composite type="umlattribute">
-          <dia:attribute name="name">
-            <dia:string>#m_valid#</dia:string>
-          </dia:attribute>
-          <dia:attribute name="type">
-            <dia:string>#bool#</dia:string>
-          </dia:attribute>
-          <dia:attribute name="value">
-            <dia:string>#true#</dia:string>
-          </dia:attribute>
-          <dia:attribute name="comment">
-            <dia:string>##</dia:string>
-          </dia:attribute>
-          <dia:attribute name="visibility">
-            <dia:enum val="1"/>
-          </dia:attribute>
-          <dia:attribute name="abstract">
-            <dia:boolean val="false"/>
-          </dia:attribute>
-          <dia:attribute name="class_scope">
-            <dia:boolean val="false"/>
-          </dia:attribute>
-        </dia:composite>
       </dia:attribute>
       <dia:attribute name="operations">
         <dia:composite type="umloperation">
@@ -1619,7 +1596,7 @@
             <dia:string>##</dia:string>
           </dia:attribute>
           <dia:attribute name="type">
-            <dia:string>#void#</dia:string>
+            <dia:string>#bool#</dia:string>
           </dia:attribute>
           <dia:attribute name="visibility">
             <dia:enum val="0"/>
@@ -1762,7 +1739,7 @@
             <dia:string>##</dia:string>
           </dia:attribute>
           <dia:attribute name="type">
-            <dia:string>#std::vector&lt;std::unique_ptr&lt;AbstractEvent&gt;&gt;#</dia:string>
+            <dia:string>#const std::vector&lt;std::unique_ptr&lt;AbstractEvent&gt;&gt;&amp;#</dia:string>
           </dia:attribute>
           <dia:attribute name="visibility">
             <dia:enum val="0"/>
@@ -1842,18 +1819,18 @@
     </dia:object>
     <dia:object type="UML - Realizes" version="1" id="O6">
       <dia:attribute name="obj_pos">
-        <dia:point val="28.6968,9.56113"/>
+        <dia:point val="28.6968,8.76113"/>
       </dia:attribute>
       <dia:attribute name="obj_bb">
-        <dia:rectangle val="22.6826,9.51113;29.5468,12.0743"/>
+        <dia:rectangle val="22.6826,8.71113;29.5468,12.0743"/>
       </dia:attribute>
       <dia:attribute name="meta">
         <dia:composite type="dict"/>
       </dia:attribute>
       <dia:attribute name="orth_points">
-        <dia:point val="28.6968,9.56113"/>
-        <dia:point val="28.6968,11.1927"/>
-        <dia:point val="22.7326,11.1927"/>
+        <dia:point val="28.6968,8.76113"/>
+        <dia:point val="28.6968,10.7927"/>
+        <dia:point val="22.7326,10.7927"/>
         <dia:point val="22.7326,12.0243"/>
       </dia:attribute>
       <dia:attribute name="orth_orient">

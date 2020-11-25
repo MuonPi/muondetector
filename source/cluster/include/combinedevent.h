@@ -40,11 +40,11 @@ public:
       * @brief Get the list of events. Moves the vector.
       * @return The list of events contained in this combined event
       */
-    [[nodiscard]] auto events() -> std::vector<std::unique_ptr<AbstractEvent>>;
+    [[nodiscard]] auto events() -> const std::vector<std::unique_ptr<AbstractEvent>>&;
 
+    [[nodiscard]] auto time() const noexcept -> std::vector<std::chrono::steady_clock::time_point> override;
 private:
     std::vector<std::unique_ptr<AbstractEvent>> m_events {};
-    bool m_valid { true };
 };
 }
 

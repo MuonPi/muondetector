@@ -41,8 +41,8 @@ public:
     [[nodiscard]] auto factor() const -> float;
 
 private:
-    [[maybe_unused]] float m_mean { 0.0 };
-    [[maybe_unused]] float m_std_deviation { 0.0 };
+    float m_mean { 0.0 };
+    float m_std_deviation { 0.0 };
 };
 
 }

@@ -10,9 +10,9 @@ AbstractEvent::AbstractEvent(std::size_t hash, std::uint64_t id, std::chrono::st
 
 AbstractEvent::~AbstractEvent() noexcept = default;
 
-auto AbstractEvent::time() const noexcept -> std::chrono::steady_clock::time_point
+auto AbstractEvent::time() const noexcept -> std::vector<std::chrono::steady_clock::time_point>
 {
-    return m_time;
+    return {m_time};
 }
 
 auto AbstractEvent::id() const noexcept -> std::uint64_t

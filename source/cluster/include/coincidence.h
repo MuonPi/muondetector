@@ -26,7 +26,7 @@ public:
     [[nodiscard]] auto criterion(const std::unique_ptr<AbstractEvent>& first, const std::unique_ptr<AbstractEvent>& second) const -> bool override;
 
 private:
-    [[maybe_unused]] std::chrono::steady_clock::duration m_time {};
+    std::chrono::steady_clock::duration m_time { std::chrono::microseconds{100} };
 };
 
 }

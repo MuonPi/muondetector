@@ -52,10 +52,10 @@ public:
     [[nodiscard]] auto timed_out() const -> bool;
 
 private:
-    [[maybe_unused]] std::chrono::steady_clock::duration m_timeout {};
-    [[maybe_unused]] std::chrono::steady_clock::time_point m_start { std::chrono::steady_clock::now() };
-    [[maybe_unused]] std::unique_ptr<CombinedEvent> m_event { nullptr };
-    [[maybe_unused]] std::shared_ptr<Criterion> m_criterion { nullptr };
+    std::chrono::steady_clock::duration m_timeout {};
+    std::chrono::steady_clock::time_point m_start { std::chrono::steady_clock::now() };
+    std::unique_ptr<CombinedEvent> m_event { nullptr };
+    std::shared_ptr<Criterion> m_criterion { nullptr };
 };
 
 }

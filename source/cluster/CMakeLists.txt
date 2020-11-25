@@ -100,10 +100,10 @@ target_include_directories(muondetector-cluster PUBLIC
     )
 
 target_link_libraries(muondetector-cluster
-    crypto++
-    config++
-    paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
-    "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
+#    crypto++
+#    config++
+#    paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
+#    "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
     source-files
     )
 

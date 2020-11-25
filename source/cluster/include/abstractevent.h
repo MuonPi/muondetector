@@ -2,6 +2,7 @@
 #define ABSTRACTEVENT_H
 
 #include <chrono>
+#include <vector>
 
 namespace MuonPi {
 
@@ -18,14 +19,14 @@ public:
      * @param id The id of the event
      * @param time The time of the event
      */
-    AbstractEvent(std::size_t hash, std::uint64_t id, std::chrono::steady_clock::time_point time) noexcept;
+    AbstractEvent(std::size_t hash, std::uint64_t id, std::chrono::steady_clock::time_point time = {}) noexcept;
 
     virtual ~AbstractEvent() noexcept;
     /**
      * @brief time
      * @return The time when the event happened.
      */
-    [[nodiscard]] auto time() const noexcept -> std::chrono::steady_clock::time_point;
+    [[nodiscard]] virtual auto time() const noexcept -> std::vector<std::chrono::steady_clock::time_point>;
 
     /**
      * @brief id

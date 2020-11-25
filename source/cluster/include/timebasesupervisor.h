@@ -34,11 +34,11 @@ public:
     [[nodiscard]] auto current() const -> std::chrono::steady_clock::duration;
 
 private:
-    [[maybe_unused]] std::chrono::steady_clock::time_point m_start { std::chrono::steady_clock::now() };
-    [[maybe_unused]] std::chrono::steady_clock::time_point m_earliest {};
-    [[maybe_unused]] std::chrono::steady_clock::time_point m_latest {};
-    [[maybe_unused]] std::size_t m_n { 0 };
-    [[maybe_unused]] std::chrono::steady_clock::duration m_current {};
+    std::chrono::steady_clock::time_point m_start { std::chrono::steady_clock::now() };
+    std::chrono::steady_clock::time_point m_earliest {};
+    std::chrono::steady_clock::time_point m_latest {};
+    std::size_t m_n { 0 };
+    std::chrono::steady_clock::duration m_current {};
 
 };
 
