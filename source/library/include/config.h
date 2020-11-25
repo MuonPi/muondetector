@@ -47,6 +47,12 @@ constexpr int buffer_size { 50 };
 constexpr int pretrigger { 10 };
 constexpr int deadtime { 8 };
 }
+namespace DAC {
+namespace Voltage {
+constexpr float bias {0.0};
+constexpr float threshold[2] {0.0, 0.0};
+}
+}
 namespace GPIO::Clock::Measurement {
 constexpr int interval { 100 };
 constexpr int buffer_size { 500 };
