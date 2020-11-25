@@ -13,7 +13,7 @@ namespace MuonPi {
  * @brief The Coincidence class
  * Defines the parameters for a coincidence between two events
  */
-class Coincidence : public Criterion<bool>
+class Coincidence : public Criterion
 {
 public:
     ~Coincidence() override;
@@ -24,12 +24,6 @@ public:
      * @return true if the events have a coincidence
      */
     [[nodiscard]] auto criterion(const std::unique_ptr<AbstractEvent>& first, const std::unique_ptr<AbstractEvent>& second) const -> bool override;
-    /**
-     * @brief met Checks whether the value corresponds to a valid value or not
-     * @param value The value to test
-     * @return true if the value corresponds to a valid value, false if not
-     */
-    [[nodiscard]] auto met(const bool& value) const -> bool override;
 
 private:
     [[maybe_unused]] std::chrono::steady_clock::duration m_time {};

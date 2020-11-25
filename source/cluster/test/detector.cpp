@@ -2,7 +2,7 @@
 #include <cppunit/TestFixture.h>
 #include <cppunit/TestCaller.h>
 
-class CombinedEventTest : public CppUnit::TestFixture {
+class DetectorTest : public CppUnit::TestFixture {
 public:
     void setUp() {
     }
@@ -16,9 +16,9 @@ public:
 
     static auto suite() -> CppUnit::Test*
     {
-        CppUnit::TestSuite* suite { new CppUnit::TestSuite{ "CombinedEventTest" } };
+        CppUnit::TestSuite* suite { new CppUnit::TestSuite{ "DetectorTest" } };
 
-        suite->addTest( new CppUnit::TestCaller<CombinedEventTest>{ "testInitial", &CombinedEventTest::testInitial } );
+        suite->addTest( new CppUnit::TestCaller<DetectorTest>{ "testInitial", &DetectorTest::testInitial } );
 
         return suite;
     }
@@ -28,7 +28,7 @@ public:
 auto main() -> int
 {
     CppUnit::TextUi::TestRunner runner {};
-    runner.addTest( CombinedEventTest::suite() );
+    runner.addTest( DetectorTest::suite() );
 
     return (runner.run("", false))?0:1;
 }

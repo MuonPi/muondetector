@@ -47,14 +47,15 @@ set(CLUSTER_SOURCE_FILES
     "${PROJECT_SRC_DIR}/mqttlink.cpp"
     "${PROJECT_SRC_DIR}/singleevent.cpp"
     "${PROJECT_SRC_DIR}/abstracteventsink.cpp"
-    "${PROJECT_SRC_DIR}/databasesource.cpp"
     "${PROJECT_SRC_DIR}/mqttsink.cpp"
     "${PROJECT_SRC_DIR}/abstracteventsource.cpp"
     "${PROJECT_SRC_DIR}/mqttsource.cpp"
     "${PROJECT_SRC_DIR}/coincidence.cpp"
     "${PROJECT_SRC_DIR}/databaselink.cpp"
-    "${PROJECT_SRC_DIR}/messagebypass.cpp"
-    "${PROJECT_SRC_DIR}/plausability.cpp"
+    "${PROJECT_SRC_DIR}/ratesupervisor.cpp"
+    "${PROJECT_SRC_DIR}/timebasesupervisor.cpp"
+    "${PROJECT_SRC_DIR}/eventconstructor.cpp"
+    "${PROJECT_SRC_DIR}/detector.cpp"
     )
 
 set(CLUSTER_HEADER_FILES
@@ -67,13 +68,14 @@ set(CLUSTER_HEADER_FILES
     "${PROJECT_HEADER_DIR}/criterion.h"
     "${PROJECT_HEADER_DIR}/databaselink.h"
     "${PROJECT_HEADER_DIR}/databasesink.h"
-    "${PROJECT_HEADER_DIR}/databasesource.h"
-    "${PROJECT_HEADER_DIR}/messagebypass.h"
     "${PROJECT_HEADER_DIR}/mqttlink.h"
     "${PROJECT_HEADER_DIR}/mqttsink.h"
     "${PROJECT_HEADER_DIR}/mqttsource.h"
-    "${PROJECT_HEADER_DIR}/plausability.h"
     "${PROJECT_HEADER_DIR}/singleevent.h"
+    "${PROJECT_HEADER_DIR}/ratesupervisor.h"
+    "${PROJECT_HEADER_DIR}/timebasesupervisor.h"
+    "${PROJECT_HEADER_DIR}/eventconstructor.h"
+    "${PROJECT_HEADER_DIR}/detector.h"
     )
 
 add_library(source-files OBJECT ${CLUSTER_SOURCE_FILES} ${CLUSTER_HEADER_FILES})
@@ -122,16 +124,6 @@ target_link_libraries(test-coincidence
     source-files
     )
 add_test(NAME "Coincidence-Test" COMMAND test-coincidence)
-
-add_executable(test-combinedevent "${PROJECT_TEST_DIR}/combinedevent.cpp")
-target_include_directories(test-combinedevent PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-combinedevent
-    cppunit
-    source-files
-    )
-add_test(NAME "CombinedEvent-Test" COMMAND test-combinedevent)
 
 add_executable(test-abstracteventsink "${PROJECT_TEST_DIR}/abstracteventsink.cpp")
 target_include_directories(test-abstracteventsink PUBLIC
@@ -183,36 +175,6 @@ target_link_libraries(test-databasesink
     )
 add_test(NAME "DatabaseSink-Test" COMMAND test-databasesink)
 
-add_executable(test-databasesource "${PROJECT_TEST_DIR}/databasesource.cpp")
-target_include_directories(test-databasesource PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-databasesource
-    cppunit
-    source-files
-    )
-add_test(NAME "DatabaseSource-Test" COMMAND test-databasesource)
-
-add_executable(test-messagebypass "${PROJECT_TEST_DIR}/messagebypass.cpp")
-target_include_directories(test-messagebypass PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-messagebypass
-    cppunit
-    source-files
-    )
-add_test(NAME "MessageBypass-Test" COMMAND test-messagebypass)
-
-add_executable(test-bypasscriterion "${PROJECT_TEST_DIR}/bypasscriterion.cpp")
-target_include_directories(test-bypasscriterion PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-bypasscriterion
-    cppunit
-    source-files
-    )
-add_test(NAME "BypassCriterion-Test" COMMAND test-bypasscriterion)
-
 add_executable(test-mqttlink "${PROJECT_TEST_DIR}/mqttlink.cpp")
 target_include_directories(test-mqttlink PUBLIC
     ${PROJECT_HEADER_DIR}
@@ -243,26 +205,6 @@ target_link_libraries(test-mqttsource
     )
 add_test(NAME "MqqtSource-Test" COMMAND test-mqttsource)
 
-add_executable(test-plausability "${PROJECT_TEST_DIR}/plausability.cpp")
-target_include_directories(test-plausability PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-plausability
-    cppunit
-    source-files
-    )
-add_test(NAME "Plausability-Test" COMMAND test-plausability)
-
-add_executable(test-singleevent "${PROJECT_TEST_DIR}/singleevent.cpp")
-target_include_directories(test-singleevent PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-singleevent
-    cppunit
-    source-files
-    )
-add_test(NAME "SingleEvent-Test" COMMAND test-singleevent)
-
 add_executable(test-ratesupervisor "${PROJECT_TEST_DIR}/ratesupervisor.cpp")
 target_include_directories(test-ratesupervisor PUBLIC
     ${PROJECT_HEADER_DIR}
@@ -272,6 +214,26 @@ target_link_libraries(test-ratesupervisor
     source-files
     )
 add_test(NAME "RateSupervisor-Test" COMMAND test-ratesupervisor)
+
+add_executable(test-timebasesupervisor "${PROJECT_TEST_DIR}/timebasesupervisor.cpp")
+target_include_directories(test-timebasesupervisor PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-timebasesupervisor
+    cppunit
+    source-files
+    )
+add_test(NAME "TimeBaseSupervisor-Test" COMMAND test-timebasesupervisor)
+
+add_executable(test-detector "${PROJECT_TEST_DIR}/detector.cpp")
+target_include_directories(test-detector PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-detector
+    cppunit
+    source-files
+    )
+add_test(NAME "Detector-Test" COMMAND test-detector)
 
 add_executable(test-eventconstructor "${PROJECT_TEST_DIR}/eventconstructor.cpp")
 target_include_directories(test-eventconstructor PUBLIC

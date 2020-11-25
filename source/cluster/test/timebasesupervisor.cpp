@@ -2,7 +2,7 @@
 #include <cppunit/TestFixture.h>
 #include <cppunit/TestCaller.h>
 
-class PlausabilityTest : public CppUnit::TestFixture {
+class TimeBaseSupervisorTest : public CppUnit::TestFixture {
 public:
     void setUp() {
     }
@@ -16,9 +16,9 @@ public:
 
     static auto suite() -> CppUnit::Test*
     {
-        CppUnit::TestSuite* suite { new CppUnit::TestSuite{ "PlausabilityTest" } };
+        CppUnit::TestSuite* suite { new CppUnit::TestSuite{ "TimeBaseSupervisorTest" } };
 
-        suite->addTest( new CppUnit::TestCaller<PlausabilityTest>{ "testInitial", &PlausabilityTest::testInitial } );
+        suite->addTest( new CppUnit::TestCaller<TimeBaseSupervisorTest>{ "testInitial", &TimeBaseSupervisorTest::testInitial } );
 
         return suite;
     }
@@ -28,7 +28,7 @@ public:
 auto main() -> int
 {
     CppUnit::TextUi::TestRunner runner {};
-    runner.addTest( PlausabilityTest::suite() );
+    runner.addTest( TimeBaseSupervisorTest::suite() );
 
     return (runner.run("", false))?0:1;
 }
