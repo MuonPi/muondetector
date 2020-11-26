@@ -15,35 +15,34 @@ class Event;
 class RateSupervisor
 {
 public:
+    struct Rate {
+        float m {};
+        float s {};
+        float n {};
+    };
+
     /**
      * @brief RateSupervisor
-     * @param mean
-     * @param std_deviation
+     * @param allowable The allowable rate definition
      */
-    RateSupervisor(float mean, float std_deviation, float allowable_factor);
+    RateSupervisor(Rate allowable);
 
     /**
      * @brief tick
-     * @param message
+     * @param message whether this tick contains a message
      */
     void tick(bool message);
 
     /**
      * @brief current
-     * @return
+     * @return The current Rate measurement
      */
-    [[nodiscard]] auto current() const -> float;
-
-    /**
-     * @brief factor
-     * @return
-     */
-    [[nodiscard]] auto factor() const -> float;
+    [[nodiscard]] auto current() const -> Rate;
 
 private:
-    float m_mean { 0.0 };
-    float m_std_deviation { 0.0 };
-    float m_allowable_factor { 0.0 };
+    Rate m_allowed {};
+    Rate m_current {};
+    float m_history[100] {};
     std::chrono::steady_clock::time_point m_last { std::chrono::steady_clock::now() };
 };
 
