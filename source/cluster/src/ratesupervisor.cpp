@@ -2,7 +2,7 @@
 
 namespace MuonPi {
 
-RateSupervisor::RateSupervisor(float /*mean*/, float /*std_deviation*/)
+RateSupervisor::RateSupervisor(float /*mean*/, float /*std_deviation*/, float /*allowable_factor*/)
 {
 
 }
