@@ -6,7 +6,7 @@
 
 namespace MuonPi {
 
-class AbstractEvent;
+class Event;
 
 
 /**

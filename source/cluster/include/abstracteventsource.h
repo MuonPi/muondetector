@@ -9,7 +9,7 @@
 namespace MuonPi {
 
 // +++ forward declarations
-class AbstractEvent;
+class Event;
 // --- forward declarations
 
 /**
@@ -34,7 +34,7 @@ public:
       * Should the event buffer be empty, a promise is created which will be filled once a new event is availabale.
       * @return a future to the next available Event.
       */
-    [[nodiscard]] auto next_event() -> std::future<std::unique_ptr<AbstractEvent>> ;
+    [[nodiscard]] auto next_event() -> std::future<std::unique_ptr<Event>> ;
 
     /**
      * @brief stop
@@ -54,7 +54,7 @@ protected:
      * @brief push_event pushes an Event into the event sink
      * @param event The event to push
      */
-    void push_event(std::unique_ptr<AbstractEvent> event);
+    void push_event(std::unique_ptr<Event> event);
 
 private:
     /**
@@ -65,10 +65,10 @@ private:
     std::atomic<bool> m_run { true };
     std::future<void> m_run_future {};
 
-    std::promise<std::unique_ptr<AbstractEvent>> m_event_promise {};
+    std::promise<std::unique_ptr<Event>> m_event_promise {};
     std::atomic<bool> m_has_event_promise { false };
 
-    std::queue<std::unique_ptr<AbstractEvent>> m_event_queue {};
+    std::queue<std::unique_ptr<Event>> m_event_queue {};
 
 };
 

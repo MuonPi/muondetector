@@ -7,7 +7,7 @@
 
 namespace MuonPi {
 
-class AbstractEvent;
+class Event;
 class CombinedEvent;
 class Criterion;
 /**
@@ -21,13 +21,13 @@ public:
      * @param event
      * @param criterion
      */
-    EventConstructor(std::unique_ptr<AbstractEvent> event, std::shared_ptr<Criterion> criterion);
+    EventConstructor(std::unique_ptr<Event> event, std::shared_ptr<Criterion> criterion);
     ~EventConstructor();
     /**
      * @brief add_event
      * @param event
      */
-    void add_event(std::unique_ptr<AbstractEvent> event);
+    void add_event(std::unique_ptr<Event> event);
     /**
      * @brief set_timeout
      * @param timeout
@@ -39,12 +39,12 @@ public:
      * @param event
      * @return
      */
-    [[nodiscard]] auto event_fits(std::unique_ptr<AbstractEvent> event) -> bool;
+    [[nodiscard]] auto event_fits(std::unique_ptr<Event> event) -> bool;
     /**
      * @brief commit
      * @return
      */
-    [[nodiscard]] auto commit() -> std::unique_ptr<AbstractEvent>;
+    [[nodiscard]] auto commit() -> std::unique_ptr<Event>;
     /**
      * @brief timed_out
      * @return

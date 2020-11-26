@@ -23,9 +23,11 @@ public:
      * @param second the second event to check
      * @return true if the events have a coincidence
      */
-    [[nodiscard]] auto criterion(const std::unique_ptr<AbstractEvent>& first, const std::unique_ptr<AbstractEvent>& second) const -> bool override;
+    [[nodiscard]] auto criterion(const std::unique_ptr<Event>& first, const std::unique_ptr<Event>& second) const -> bool override;
 
 private:
+    [[nodiscard]] auto compare(std::chrono::steady_clock::time_point first, std::chrono::steady_clock::time_point second) const -> bool;
+
     std::chrono::steady_clock::duration m_time { std::chrono::microseconds{100} };
 };
 

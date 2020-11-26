@@ -1,19 +1,33 @@
 #include "coincidence.h"
-#include "abstractevent.h"
+#include "event.h"
+
+#include <cmath>
+
+#include <chrono>
 
 namespace MuonPi {
 
 Coincidence::~Coincidence() = default;
 
-auto Coincidence::criterion(const std::unique_ptr<AbstractEvent>& first, const std::unique_ptr<AbstractEvent>& second) const -> bool
+auto Coincidence::criterion(const std::unique_ptr<Event>& first, const std::unique_ptr<Event>& second) const -> bool
 {
-    for (const auto& t1 : first->time()) {
-        for (const auto& t2 : second->time()) {
-            if (std::abs(std::chrono::duration_cast<std::chrono::microseconds>(t1 - t2).count()) > std::chrono::duration_cast<std::chrono::microseconds>(m_time).count()) {
-                return false;
-            }
-        }
+    const std::chrono::steady_clock::time_point s1 {first->start()};
+    const std::chrono::steady_clock::time_point s2 {second->start()};
+    std::chrono::steady_clock::time_point e1 {first->start()};
+    std::chrono::steady_clock::time_point e2 {second->start()};
+
+    if (first->n() > 1) {
+        e1 = first->end();
     }
-    return true;
+    if (second->n() > 1) {
+        e2 = second->end();
+    }
+
+    return compare(s1, s2) && compare(s1, e2) && compare(e1, s2) && compare(e1, e2);
+}
+
+auto Coincidence::compare(std::chrono::steady_clock::time_point t1, std::chrono::steady_clock::time_point t2) const -> bool
+{
+    return std::chrono::abs(t1 - t2) <= m_time;
 }
 }

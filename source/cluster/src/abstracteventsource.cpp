@@ -1,5 +1,5 @@
 #include "abstracteventsource.h"
-#include "abstractevent.h"
+#include "event.h"
 
 namespace MuonPi {
 
@@ -12,7 +12,7 @@ AbstractEventSource::~AbstractEventSource()
 
 }
 
-auto AbstractEventSource::next_event() -> std::future<std::unique_ptr<AbstractEvent>>
+auto AbstractEventSource::next_event() -> std::future<std::unique_ptr<Event>>
 {
     return {};
 }
@@ -27,7 +27,7 @@ auto AbstractEventSource::step() -> bool
     return false;
 }
 
-void AbstractEventSource::push_event(std::unique_ptr<AbstractEvent> /*event*/)
+void AbstractEventSource::push_event(std::unique_ptr<Event> /*event*/)
 {
 
 }

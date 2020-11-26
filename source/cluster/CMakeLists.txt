@@ -33,6 +33,7 @@ add_compile_options(
     -Wpedantic
     -Werror
     -O3
+    -Wno-unused-private-field
     )
 
 
@@ -41,11 +42,10 @@ add_compile_options(
 
 set(CLUSTER_SOURCE_FILES
     "${PROJECT_SRC_DIR}/core.cpp"
-    "${PROJECT_SRC_DIR}/abstractevent.cpp"
+    "${PROJECT_SRC_DIR}/event.cpp"
     "${PROJECT_SRC_DIR}/combinedevent.cpp"
     "${PROJECT_SRC_DIR}/databasesink.cpp"
     "${PROJECT_SRC_DIR}/mqttlink.cpp"
-    "${PROJECT_SRC_DIR}/singleevent.cpp"
     "${PROJECT_SRC_DIR}/abstracteventsink.cpp"
     "${PROJECT_SRC_DIR}/mqttsink.cpp"
     "${PROJECT_SRC_DIR}/abstracteventsource.cpp"
@@ -60,7 +60,7 @@ set(CLUSTER_SOURCE_FILES
 
 set(CLUSTER_HEADER_FILES
     "${PROJECT_HEADER_DIR}/core.h"
-    "${PROJECT_HEADER_DIR}/abstractevent.h"
+    "${PROJECT_HEADER_DIR}/event.h"
     "${PROJECT_HEADER_DIR}/abstracteventsink.h"
     "${PROJECT_HEADER_DIR}/abstracteventsource.h"
     "${PROJECT_HEADER_DIR}/coincidence.h"
@@ -71,7 +71,6 @@ set(CLUSTER_HEADER_FILES
     "${PROJECT_HEADER_DIR}/mqttlink.h"
     "${PROJECT_HEADER_DIR}/mqttsink.h"
     "${PROJECT_HEADER_DIR}/mqttsource.h"
-    "${PROJECT_HEADER_DIR}/singleevent.h"
     "${PROJECT_HEADER_DIR}/ratesupervisor.h"
     "${PROJECT_HEADER_DIR}/timebasesupervisor.h"
     "${PROJECT_HEADER_DIR}/eventconstructor.h"
@@ -124,6 +123,16 @@ target_link_libraries(test-coincidence
     source-files
     )
 add_test(NAME "Coincidence-Test" COMMAND test-coincidence)
+
+add_executable(test-combinedevent "${PROJECT_TEST_DIR}/combinedevent.cpp")
+target_include_directories(test-combinedevent PUBLIC
+    ${PROJECT_HEADER_DIR}
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+target_link_libraries(test-combinedevent
+    cppunit
+    source-files
+    )
+add_test(NAME "CombinedEvent-Test" COMMAND test-combinedevent)
 
 add_executable(test-abstracteventsink "${PROJECT_TEST_DIR}/abstracteventsink.cpp")
 target_include_directories(test-abstracteventsink PUBLIC

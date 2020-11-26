@@ -7,7 +7,7 @@
 
 namespace MuonPi {
 
-class AbstractEvent;
+class Event;
 
 /**
  * @brief The TimeBaseSupervisor class
@@ -25,7 +25,7 @@ public:
      * @brief process_event
      * @param event
      */
-    void process_event(const std::unique_ptr<AbstractEvent>& event);
+    void process_event(const std::unique_ptr<Event>& event);
 
     /**
      * @brief current

@@ -6,7 +6,7 @@
 
 namespace MuonPi {
 
-class AbstractEvent;
+class Event;
 
 /**
  * @brief The Criterion class
@@ -22,7 +22,7 @@ public:
      * @param second the second event to check
      * @return a value of type T corresponding to the relationship between both events
      */
-    [[nodiscard]] virtual auto criterion(const std::unique_ptr<AbstractEvent>& first, const std::unique_ptr<AbstractEvent>& second) const -> bool = 0;
+    [[nodiscard]] virtual auto criterion(const std::unique_ptr<Event>& first, const std::unique_ptr<Event>& second) const -> bool = 0;
 };
 
 }

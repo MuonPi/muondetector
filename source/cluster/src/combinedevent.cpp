@@ -4,38 +4,32 @@
 namespace MuonPi {
 
 
-CombinedEvent::CombinedEvent(std::uint64_t id, std::unique_ptr<AbstractEvent> event) noexcept
-    : AbstractEvent{event->hash(), id}
+CombinedEvent::CombinedEvent(std::uint64_t id, std::unique_ptr<Event> event) noexcept
+    : Event{event->hash(), id, event->start(), event->start()}
 {}
 
 CombinedEvent::~CombinedEvent() noexcept = default;
 
-auto CombinedEvent::add_event(std::unique_ptr<AbstractEvent> event) noexcept -> bool
+void CombinedEvent::add_event(std::unique_ptr<Event> event) noexcept
 {
-    if (event == nullptr) {
-        return false;
+    if (event->start() <= start()) {
+        m_start = event->start();
+    }
+    if (event->start() >= end()) {
+        m_end = event->start();
     }
     m_events.push_back(std::move(event));
-    return true;
+    m_n++;
 }
 
-auto CombinedEvent::n() const noexcept -> std::size_t
-{
-    return m_events.size();
-}
-
-auto CombinedEvent::events() -> const std::vector<std::unique_ptr<AbstractEvent> >&
+auto CombinedEvent::events_ref() -> const std::vector<std::unique_ptr<Event>>&
 {
     return m_events;
 }
 
-auto CombinedEvent::time() const noexcept -> std::vector<std::chrono::steady_clock::time_point>
+auto CombinedEvent::events() -> std::vector<std::unique_ptr<Event>>
 {
-    std::vector<std::chrono::steady_clock::time_point> vector {};
-    for (const auto& event: m_events) {
-        auto time { std::move(event->time()) };
-        vector.insert(vector.end(), time.begin(), time.end());
-    }
-    return std::move(vector);
+    return std::move(m_events);
 }
+
 }
