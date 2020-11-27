@@ -129,6 +129,7 @@ set(PROJECT_HEADER_FILES
     "${PROJECT_HEADER_DIR}/ublox_structs.h"
     "${PROJECT_HEADER_DIR}/muondetector_structs.h"
     "${PROJECT_HEADER_DIR}/config.h"
+    "${PROJECT_HEADER_DIR}/units.h"
     )
 
 add_definitions(-DMUONDETECTOR_LIBRARY_EXPORT)
