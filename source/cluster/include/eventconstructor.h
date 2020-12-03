@@ -27,19 +27,14 @@ public:
      * @brief add_event
      * @param event
      */
-    void add_event(std::unique_ptr<Event> event);
+    auto add_event(std::unique_ptr<Event> event) -> bool;
+
     /**
      * @brief set_timeout
      * @param timeout
      */
     void set_timeout(std::chrono::steady_clock::duration timeout);
 
-    /**
-     * @brief event_fits
-     * @param event
-     * @return
-     */
-    [[nodiscard]] auto event_fits(std::unique_ptr<Event> event) -> bool;
     /**
      * @brief commit
      * @return
@@ -52,7 +47,7 @@ public:
     [[nodiscard]] auto timed_out() const -> bool;
 
 private:
-    std::chrono::steady_clock::duration m_timeout {};
+    std::chrono::steady_clock::duration m_timeout { std::chrono::minutes{1} };
     std::chrono::steady_clock::time_point m_start { std::chrono::steady_clock::now() };
     std::unique_ptr<CombinedEvent> m_event { nullptr };
     std::shared_ptr<Criterion> m_criterion { nullptr };
