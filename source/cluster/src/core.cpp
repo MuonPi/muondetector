@@ -1,10 +1,11 @@
 #include "core.h"
 
-#include "abstracteventsink.h"
-#include "abstracteventsource.h"
+#include "abstractsink.h"
+#include "abstractsource.h"
 #include "criterion.h"
 #include "eventconstructor.h"
 #include "event.h"
+#include "logmessage.h"
 #include "timebasesupervisor.h"
 
 namespace MuonPi {

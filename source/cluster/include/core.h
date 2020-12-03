@@ -10,9 +10,10 @@
 
 namespace MuonPi {
 
-
-class AbstractEventSink;
-class AbstractEventSource;
+template <typename T>
+class AbstractSink;
+template <typename T>
+class AbstractSource;
 class Criterion;
 class EventConstructor;
 class TimeBaseSupervisor;
@@ -34,8 +35,9 @@ private:
     void handle_event(std::unique_ptr<Event> event);
     void handle_log(std::unique_ptr<LogMessage> log);
 
-    std::unique_ptr<AbstractEventSink> m_event_sink { nullptr };
-    std::unique_ptr<AbstractEventSource> m_event_source { nullptr };
+    std::unique_ptr<AbstractSink<Event>> m_event_sink { nullptr };
+    std::unique_ptr<AbstractSource<Event>> m_event_source { nullptr };
+    std::unique_ptr<AbstractSource<LogMessage>> m_log_source { nullptr };
 
     std::unique_ptr<Criterion> m_criterion { nullptr };
 

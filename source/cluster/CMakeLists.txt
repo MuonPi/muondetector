@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(muondetector-cluster LANGUAGES CXX C)
 
-set(MUONDETECTOR_ENABLE_TESTING ON)
+set(MUONDETECTOR_ENABLE_TESTING OFF)
 
 set(PROJECT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(PROJECT_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -44,12 +44,11 @@ set(CLUSTER_SOURCE_FILES
     "${PROJECT_SRC_DIR}/core.cpp"
     "${PROJECT_SRC_DIR}/event.cpp"
     "${PROJECT_SRC_DIR}/combinedevent.cpp"
-    "${PROJECT_SRC_DIR}/databasesink.cpp"
+    "${PROJECT_SRC_DIR}/databaseeventsink.cpp"
     "${PROJECT_SRC_DIR}/mqttlink.cpp"
-    "${PROJECT_SRC_DIR}/abstracteventsink.cpp"
-    "${PROJECT_SRC_DIR}/mqttsink.cpp"
-    "${PROJECT_SRC_DIR}/abstracteventsource.cpp"
-    "${PROJECT_SRC_DIR}/mqttsource.cpp"
+    "${PROJECT_SRC_DIR}/mqtteventsink.cpp"
+    "${PROJECT_SRC_DIR}/mqtteventsource.cpp"
+    "${PROJECT_SRC_DIR}/mqttlogsource.cpp"
     "${PROJECT_SRC_DIR}/coincidence.cpp"
     "${PROJECT_SRC_DIR}/databaselink.cpp"
     "${PROJECT_SRC_DIR}/ratesupervisor.cpp"
@@ -63,16 +62,17 @@ set(CLUSTER_SOURCE_FILES
 set(CLUSTER_HEADER_FILES
     "${PROJECT_HEADER_DIR}/core.h"
     "${PROJECT_HEADER_DIR}/event.h"
-    "${PROJECT_HEADER_DIR}/abstracteventsink.h"
-    "${PROJECT_HEADER_DIR}/abstracteventsource.h"
+    "${PROJECT_HEADER_DIR}/abstractsink.h"
+    "${PROJECT_HEADER_DIR}/abstractsource.h"
     "${PROJECT_HEADER_DIR}/coincidence.h"
     "${PROJECT_HEADER_DIR}/combinedevent.h"
     "${PROJECT_HEADER_DIR}/criterion.h"
     "${PROJECT_HEADER_DIR}/databaselink.h"
-    "${PROJECT_HEADER_DIR}/databasesink.h"
+    "${PROJECT_HEADER_DIR}/databaseeventsink.h"
     "${PROJECT_HEADER_DIR}/mqttlink.h"
-    "${PROJECT_HEADER_DIR}/mqttsink.h"
-    "${PROJECT_HEADER_DIR}/mqttsource.h"
+    "${PROJECT_HEADER_DIR}/mqtteventsink.h"
+    "${PROJECT_HEADER_DIR}/mqtteventsource.h"
+    "${PROJECT_HEADER_DIR}/mqttlogsource.h"
     "${PROJECT_HEADER_DIR}/ratesupervisor.h"
     "${PROJECT_HEADER_DIR}/timebasesupervisor.h"
     "${PROJECT_HEADER_DIR}/eventconstructor.h"
@@ -108,6 +108,7 @@ target_link_libraries(muondetector-cluster
 #    paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
 #    "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
     source-files
+    pthread
     )
 
 
@@ -125,6 +126,7 @@ target_include_directories(test-coincidence PUBLIC
 target_link_libraries(test-coincidence
     cppunit
     source-files
+    pthread
     )
 add_test(NAME "Coincidence-Test" COMMAND test-coincidence)
 
@@ -135,6 +137,7 @@ target_include_directories(test-combinedevent PUBLIC
 target_link_libraries(test-combinedevent
     cppunit
     source-files
+    pthread
     )
 add_test(NAME "CombinedEvent-Test" COMMAND test-combinedevent)
 
@@ -145,6 +148,7 @@ target_include_directories(test-abstracteventsink PUBLIC
 target_link_libraries(test-abstracteventsink
     cppunit
     source-files
+    pthread
     )
 add_test(NAME "AbstractEventSink-Test" COMMAND test-abstracteventsink)
 
@@ -155,6 +159,7 @@ target_include_directories(test-abstracteventsource PUBLIC
 target_link_libraries(test-abstracteventsource
     cppunit
     source-files
+    pthread
     )
 add_test(NAME "AbstractEventSource-Test" COMMAND test-abstracteventsource)
 
@@ -165,6 +170,7 @@ target_include_directories(test-core PUBLIC
 target_link_libraries(test-core
     cppunit
     source-files
+    pthread
     )
 add_test(NAME "Core-Test" COMMAND test-core)
 
@@ -175,6 +181,7 @@ target_include_directories(test-databaselink PUBLIC
 target_link_libraries(test-databaselink
     cppunit
     source-files
+    pthread
     )
 add_test(NAME "DatabaseLink-Test" COMMAND test-databaselink)
 
@@ -185,6 +192,7 @@ target_include_directories(test-databasesink PUBLIC
 target_link_libraries(test-databasesink
     cppunit
     source-files
+    pthread
     )
 add_test(NAME "DatabaseSink-Test" COMMAND test-databasesink)
 
@@ -195,6 +203,7 @@ target_include_directories(test-mqttlink PUBLIC
 target_link_libraries(test-mqttlink
     cppunit
     source-files
+    pthread
     )
 add_test(NAME "MqttLink-Test" COMMAND test-mqttlink)
 
@@ -205,6 +214,7 @@ target_include_directories(test-mqttsink PUBLIC
 target_link_libraries(test-mqttsink
     cppunit
     source-files
+    pthread
     )
 add_test(NAME "MqttSink-Test" COMMAND test-mqttsink)
 
@@ -215,6 +225,7 @@ target_include_directories(test-mqttsource PUBLIC
 target_link_libraries(test-mqttsource
     cppunit
     source-files
+    pthread
     )
 add_test(NAME "MqqtSource-Test" COMMAND test-mqttsource)
 
@@ -225,6 +236,7 @@ target_include_directories(test-ratesupervisor PUBLIC
 target_link_libraries(test-ratesupervisor
     cppunit
     source-files
+    pthread
     )
 add_test(NAME "RateSupervisor-Test" COMMAND test-ratesupervisor)
 
@@ -235,6 +247,7 @@ target_include_directories(test-timebasesupervisor PUBLIC
 target_link_libraries(test-timebasesupervisor
     cppunit
     source-files
+    pthread
     )
 add_test(NAME "TimeBaseSupervisor-Test" COMMAND test-timebasesupervisor)
 
@@ -245,6 +258,7 @@ target_include_directories(test-detector PUBLIC
 target_link_libraries(test-detector
     cppunit
     source-files
+    pthread
     )
 add_test(NAME "Detector-Test" COMMAND test-detector)
 
@@ -255,6 +269,7 @@ target_include_directories(test-eventconstructor PUBLIC
 target_link_libraries(test-eventconstructor
     cppunit
     source-files
+    pthread
     )
 add_test(NAME "EventConstructor-Test" COMMAND test-eventconstructor)
 
