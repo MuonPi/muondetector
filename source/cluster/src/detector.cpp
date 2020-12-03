@@ -11,7 +11,7 @@ Detector::Detector(Listener* listener, const std::unique_ptr<LogMessage> &initia
     , m_location { initial_log->location()}
     , m_hash { initial_log->hash() }
     , m_listener { listener }
-    , m_supervisor { std::make_unique<RateSupervisor>() }
+    , m_supervisor { std::make_unique<RateSupervisor>(RateSupervisor::Rate{}) }
 {
 }
 
