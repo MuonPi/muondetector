@@ -6,7 +6,7 @@
 namespace MuonPi {
 
 EventConstructor::EventConstructor(std::unique_ptr<Event> event, std::shared_ptr<Criterion> criterion)
-    : m_event { std::make_unique<CombinedEvent>(std::move(event)) }
+    : m_event { std::make_unique<CombinedEvent>(event->id(), std::move(event)) }
     , m_criterion { criterion }
 {
 }

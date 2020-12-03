@@ -25,11 +25,6 @@ auto AbstractEventSource::next_event() -> std::future<std::unique_ptr<Event>>
         return evt;});
 }
 
-auto AbstractEventSource::step() -> bool
-{
-    return false;
-}
-
 void AbstractEventSource::push_event(std::unique_ptr<Event> event)
 {
     if (m_has_event_promise) {

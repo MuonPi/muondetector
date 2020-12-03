@@ -25,11 +25,6 @@ auto AbstractEventSink::next_event() -> std::future<std::unique_ptr<Event>>
         return evt;});
 }
 
-auto AbstractEventSink::step() -> bool
-{
-    return false;
-}
-
 void AbstractEventSink::push_event(std::unique_ptr<Event> event)
 {
     if (m_has_event_promise) {
