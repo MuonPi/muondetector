@@ -6,10 +6,10 @@ namespace MuonPi {
 
 Detector::Listener::~Listener() = default;
 
-Detector::Detector(Listener* listener, const std::unique_ptr<LogMessage> &initial_log)
+Detector::Detector(Listener* listener, const LogMessage &initial_log)
     : ThreadRunner {}
-    , m_location { initial_log->location()}
-    , m_hash { initial_log->hash() }
+    , m_location { initial_log.location()}
+    , m_hash { initial_log.hash() }
     , m_listener { listener }
     , m_supervisor { std::make_unique<RateSupervisor>(RateSupervisor::Rate{}) }
 {
@@ -20,9 +20,9 @@ Detector::~Detector()
     ThreadRunner::~ThreadRunner();
 }
 
-auto Detector::process(const std::unique_ptr<Event>& event) -> bool
+auto Detector::process(const Event& event) -> bool
 {
-    if (event->hash() != m_hash) {
+    if (event.hash() != m_hash) {
         return false;
     }
 
@@ -31,15 +31,15 @@ auto Detector::process(const std::unique_ptr<Event>& event) -> bool
     return true;
 }
 
-auto Detector::process(const std::unique_ptr<LogMessage>& log) -> bool
+auto Detector::process(const LogMessage &log) -> bool
 {
-    if (log->hash() != m_hash) {
+    if (log.hash() != m_hash) {
         return false;
     }
 
     m_last_log = std::chrono::steady_clock::now();
 
-    m_location = log->location();
+    m_location = log.location();
 
     return true;
 }

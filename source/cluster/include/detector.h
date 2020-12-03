@@ -45,7 +45,7 @@ public:
      * @param listener The event listener for changes to this detector
      * @param initial_log The initial log message from which this detector object originates
      */
-    Detector(Listener* listener, const std::unique_ptr<LogMessage>& initial_log);
+    Detector(Listener* listener, const LogMessage& initial_log);
 
     ~Detector() override;
 
@@ -54,14 +54,14 @@ public:
      * @param event the event to process
      * @return true if the event is part of this detector
      */
-    [[nodiscard]] auto process(const std::unique_ptr<Event>& event) -> bool;
+    [[nodiscard]] auto process(const Event& event) -> bool;
 
     /**
      * @brief process Processes a log message. Checks for regular log messages and warns the event listener if they are delayed or have subpar location accuracy.
      * @param log The logmessage to process
      * @return true if the log message matches this detector
      */
-    [[nodiscard]] auto process(const std::unique_ptr<LogMessage>& log) -> bool;
+    [[nodiscard]] auto process(const LogMessage& log) -> bool;
 
 protected:
     /**

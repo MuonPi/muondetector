@@ -3996,7 +3996,7 @@
                 <dia:string>#event#</dia:string>
               </dia:attribute>
               <dia:attribute name="type">
-                <dia:string>#const std::unique_ptr&lt;Event&gt;&amp;#</dia:string>
+                <dia:string>#const Event&amp;#</dia:string>
               </dia:attribute>
               <dia:attribute name="value">
                 <dia:string>##</dia:string>
@@ -4859,7 +4859,7 @@
                 <dia:string>#initial_log#</dia:string>
               </dia:attribute>
               <dia:attribute name="type">
-                <dia:string>#const std::unique_ptr&lt;LogMessage&gt;&amp;#</dia:string>
+                <dia:string>#const LogMessage&amp;#</dia:string>
               </dia:attribute>
               <dia:attribute name="value">
                 <dia:string>##</dia:string>
@@ -4937,7 +4937,7 @@
                 <dia:string>#event#</dia:string>
               </dia:attribute>
               <dia:attribute name="type">
-                <dia:string>#const std::unique_ptr&lt;Event&gt;&amp;#</dia:string>
+                <dia:string>#const Event&amp;#</dia:string>
               </dia:attribute>
               <dia:attribute name="value">
                 <dia:string>##</dia:string>
@@ -4985,7 +4985,7 @@
                 <dia:string>#log#</dia:string>
               </dia:attribute>
               <dia:attribute name="type">
-                <dia:string>#const std::unique_ptr&lt;LogMessage&gt;&amp;#</dia:string>
+                <dia:string>#const LogMessage&amp;#</dia:string>
               </dia:attribute>
               <dia:attribute name="value">
                 <dia:string>##</dia:string>
@@ -5693,7 +5693,7 @@
                 <dia:string>#event#</dia:string>
               </dia:attribute>
               <dia:attribute name="type">
-                <dia:string>#const std::unique_ptr&lt;Event&gt;&amp;#</dia:string>
+                <dia:string>#const Event&amp;#</dia:string>
               </dia:attribute>
               <dia:attribute name="value">
                 <dia:string>##</dia:string>

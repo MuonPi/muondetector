@@ -10,14 +10,14 @@ auto TimeBaseSupervisor::restart() -> std::chrono::steady_clock::duration
     return m_current;
 }
 
-void TimeBaseSupervisor::process_event(const std::unique_ptr<Event>& event)
+void TimeBaseSupervisor::process_event(const Event &event)
 {
     m_n++;
-    if (event->start() < m_earliest) {
-        m_earliest = event->start();
+    if (event.start() < m_earliest) {
+        m_earliest = event.start();
     }
-    if (event->end() > m_latest) {
-        m_latest = event->start();
+    if (event.end() > m_latest) {
+        m_latest = event.start();
     }
 }
 

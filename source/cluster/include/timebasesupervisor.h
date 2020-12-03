@@ -25,7 +25,7 @@ public:
      * @brief process_event
      * @param event
      */
-    void process_event(const std::unique_ptr<Event>& event);
+    void process_event(const Event& event);
 
     /**
      * @brief current
