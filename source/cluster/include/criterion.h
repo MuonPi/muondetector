@@ -22,7 +22,7 @@ public:
      * @param second the second event to check
      * @return a value of type T corresponding to the relationship between both events
      */
-    [[nodiscard]] virtual auto criterion(const std::unique_ptr<Event>& first, const std::unique_ptr<Event>& second) const -> float = 0;
+    [[nodiscard]] virtual auto criterion(const Event& first, const Event& second) const -> float = 0;
 
     /**
      * @brief maximum_false

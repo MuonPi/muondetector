@@ -23,7 +23,7 @@ public:
      * @param second the second event to check
      * @return true if the events have a coincidence
      */
-    [[nodiscard]] auto criterion(const std::unique_ptr<Event>& first, const std::unique_ptr<Event>& second) const -> float override;
+    [[nodiscard]] auto criterion(const Event& first, const Event& second) const -> float override;
 
     /**
      * @brief maximum_false

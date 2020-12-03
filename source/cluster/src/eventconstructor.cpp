@@ -15,14 +15,12 @@ EventConstructor::~EventConstructor() = default;
 
 auto EventConstructor::add_event(std::unique_ptr<Event> event) -> bool
 {
-    std::unique_ptr<Event> evt { std::make_unique<Event>(std::move(m_event)) };
 
-    const float criterion { m_criterion->criterion(evt, event) };
+    const float criterion { m_criterion->criterion(*m_event, *event) };
 
     if (criterion < m_criterion->maximum_false()) {
         return false;
     }
-    m_event = std::make_unique<CombinedEvent>( std::move(evt) );
 
     m_event->add_event(std::move(event));
 
@@ -39,7 +37,7 @@ void EventConstructor::set_timeout(std::chrono::steady_clock::duration timeout)
 
 auto EventConstructor::commit() -> std::unique_ptr<Event>
 {
-    auto ptr { std::make_unique<Event>(m_event.release()) };
+    auto ptr { std::move(m_event) };
 
     m_event = nullptr;
 
