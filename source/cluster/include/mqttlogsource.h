@@ -10,6 +10,9 @@ namespace MuonPi {
 class LogMessage;
 class MqttLink;
 
+/**
+ * @brief The MqttLogSource class
+ */
 class MqttLogSource : public AbstractSource<LogMessage>
 {
 protected:

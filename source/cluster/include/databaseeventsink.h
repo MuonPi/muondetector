@@ -10,6 +10,9 @@ namespace MuonPi {
 class Event;
 class DatabaseLink;
 
+/**
+ * @brief The DatabaseEventSink class
+ */
 class DatabaseEventSink : public AbstractSink<Event>
 {
 protected:

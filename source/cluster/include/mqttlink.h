@@ -3,6 +3,9 @@
 
 namespace MuonPi {
 
+/**
+ * @brief The MqttLink class
+ */
 class MqttLink
 {
 public:

@@ -10,6 +10,9 @@ namespace MuonPi {
 class Event;
 class MqttLink;
 
+/**
+ * @brief The MqttEventSink class
+ */
 class MqttEventSink : public AbstractSink<Event>
 {
 protected:

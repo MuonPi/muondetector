@@ -18,21 +18,48 @@ class Criterion;
 class EventConstructor;
 class TimeBaseSupervisor;
 
+/**
+ * @brief The Core class
+ */
 class Core : public Detector::Listener, public ThreadRunner
 {
 public:
     Core();
+
     ~Core() override;
 
-
+    /**
+     * @brief factor_changed reimplemented from Detector::Listener
+     * @param hash The hash of the detector
+     * @param factor the new time factor
+     */
     void factor_changed(std::size_t hash, float factor) override;
+
+    /**
+     * @brief detector_status_changed reimplemented from Detector::Listener
+     * @param hash The hash of the detector
+     * @param status The new state of the detector
+     */
     void detector_status_changed(std::size_t hash, Detector::Status status) override;
 
 protected:
+    /**
+     * @brief step reimplemented from ThreadRunner
+     * @return true if the step succeeded.
+     */
     [[nodiscard]] auto step() -> bool override;
 
 private:
+    /**
+     * @brief handle_event Called from step(). Handles a new event arriving
+     * @param event The event to process
+     */
     void handle_event(std::unique_ptr<Event> event);
+
+    /**
+     * @brief handle_log Called from step(). Handles a new logmessage arriving
+     * @param log The log message to process
+     */
     void handle_log(std::unique_ptr<LogMessage> log);
 
     std::unique_ptr<AbstractSink<Event>> m_event_sink { nullptr };

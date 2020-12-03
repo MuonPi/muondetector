@@ -16,6 +16,9 @@ struct Location {
     static constexpr double maximum_iop { 1.0 };
 };
 
+/**
+ * @brief The LogMessage class
+ */
 class LogMessage
 {
 public:

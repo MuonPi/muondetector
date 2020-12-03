@@ -44,6 +44,12 @@ public:
     }
 
 private:
+    /**
+     * @brief compare Compare two timestaps to each other
+     * @param first first timestamp
+     * @param second second timestamp
+     * @return returns a value indicating the coincidence time between the two timestamps. @see maximum_fals @see minimum_true for the limits of the values.
+     */
     [[nodiscard]] auto compare(std::chrono::steady_clock::time_point first, std::chrono::steady_clock::time_point second) const -> float;
 
     std::chrono::steady_clock::duration m_time { std::chrono::microseconds{100} };

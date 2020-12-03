@@ -3,6 +3,9 @@
 
 namespace MuonPi {
 
+/**
+ * @brief The DatabaseLink class
+ */
 class DatabaseLink
 {
 public:
