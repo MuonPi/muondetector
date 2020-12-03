@@ -23,10 +23,28 @@ public:
      * @param second the second event to check
      * @return true if the events have a coincidence
      */
-    [[nodiscard]] auto criterion(const std::unique_ptr<Event>& first, const std::unique_ptr<Event>& second) const -> bool override;
+    [[nodiscard]] auto criterion(const std::unique_ptr<Event>& first, const std::unique_ptr<Event>& second) const -> float override;
+
+    /**
+     * @brief maximum_false
+     * @return The upper limit where the criterion is false.
+     */
+    [[nodiscard]] auto maximum_false() const -> float override
+    {
+        return -3.5f;
+    }
+
+    /**
+     * @brief minimum_true
+     * @return The lower limit where the criterion is true.
+     */
+    [[nodiscard]] auto minimum_true() const -> float override
+    {
+        return 3.5f;
+    }
 
 private:
-    [[nodiscard]] auto compare(std::chrono::steady_clock::time_point first, std::chrono::steady_clock::time_point second) const -> bool;
+    [[nodiscard]] auto compare(std::chrono::steady_clock::time_point first, std::chrono::steady_clock::time_point second) const -> float;
 
     std::chrono::steady_clock::duration m_time { std::chrono::microseconds{100} };
 };
