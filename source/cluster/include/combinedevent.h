@@ -30,10 +30,22 @@ public:
     void add_event(std::unique_ptr<Event> event) noexcept;
 
     /**
+     * @brief mark_contested Mark this combined event as containing a set of events which have at least one possible subset of events though does not work as an event in its totality.
+     */
+    void mark_contested();
+
+    /**
+     * @brief contested
+     * @return Return whether this event is contested or not.
+     * @see mark_contested
+     */
+    [[nodiscard]] auto contested() const -> bool;
+
+    /**
       * @brief Get the list of events. Moves the vector.
       * @return The list of events contained in this combined event as const ref
       */
-    [[nodiscard]] auto events_ref() -> const std::vector<std::unique_ptr<Event>>&;
+    [[nodiscard]] auto events_ref() const -> const std::vector<std::unique_ptr<Event>>&;
 
     /**
       * @brief Get the list of events. Moves the vector.
@@ -43,6 +55,7 @@ public:
 
 private:
     std::vector<std::unique_ptr<Event>> m_events {};
+    bool m_contested { false };
 
 };
 }

@@ -22,7 +22,17 @@ void CombinedEvent::add_event(std::unique_ptr<Event> event) noexcept
     m_n++;
 }
 
-auto CombinedEvent::events_ref() -> const std::vector<std::unique_ptr<Event>>&
+void CombinedEvent::mark_contested()
+{
+    m_contested = true;
+}
+
+auto CombinedEvent::contested() const -> bool
+{
+    return m_contested;
+}
+
+auto CombinedEvent::events_ref() const -> const std::vector<std::unique_ptr<Event>>&
 {
     return m_events;
 }
