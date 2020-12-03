@@ -24,7 +24,7 @@ public:
     /**
      * @brief ~AbstractEventSink The destructor. If this gets called while the event loop is still running, it will tell the loop to finish and wait for it to be done.
      */
-    virtual ~AbstractEventSink();
+    virtual ~AbstractEventSink() override;
     /**
      * @brief push_event pushes an Event into the event sink
      * @param event The event to push
@@ -32,11 +32,6 @@ public:
     void push_event(std::unique_ptr<Event> event);
 
 protected:
-    /**
-      * @brief step method to be reimplemented from ThreadRunner.
-      * @return Whether the step was successfully executed or not.
-      */
-    [[nodiscard]] virtual auto step() -> bool;
 
     /**
       * @brief next_event gets the next available Event from the internal event buffer.

@@ -24,7 +24,7 @@ public:
     /**
      * @brief ~AbstractEventSource The destructor. If this gets called while the event loop is still running, it will tell the loop to finish and wait for it to be done.
      */
-    virtual ~AbstractEventSource();
+    virtual ~AbstractEventSource() override;
 
     /**
       * @brief next_event gets the next available Event from the internal event buffer.
@@ -34,11 +34,6 @@ public:
     [[nodiscard]] auto next_event() -> std::future<std::unique_ptr<Event>>;
 
 protected:
-    /**
-      * @brief step method to be reimplemented from ThreadRunner.
-      * @return Whether the step was successfully executed or not.
-      */
-    [[nodiscard]] virtual auto step() -> bool;
 
     /**
      * @brief push_event pushes an Event into the event sink
