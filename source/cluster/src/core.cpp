@@ -23,7 +23,7 @@ Core::~Core()
     ThreadRunner::~ThreadRunner();
 }
 
-auto Core::step() -> bool
+auto Core::step() -> int
 {
     m_timeout = std::chrono::milliseconds{static_cast<long>(std::chrono::duration_cast<std::chrono::milliseconds>(m_time_base_supervisor->current()).count() * m_detector_tracker->factor())};
 
@@ -56,7 +56,18 @@ auto Core::step() -> bool
     }
     // --- handle incoming events, maximum 10 at a time to prevent blocking
     std::this_thread::sleep_for( std::chrono::milliseconds{1} );
-    return true;
+    return 0;
+}
+
+auto Core::post_run() -> int
+{
+    m_detector_tracker->stop();
+    m_event_sink->stop();
+    m_event_source->stop();
+    m_detector_tracker->join();
+    m_event_sink->join();
+    m_event_source->join();
+    return m_detector_tracker->wait() + m_event_sink->wait() + m_event_source->wait();
 }
 
 void Core::process(std::unique_ptr<Event> event)

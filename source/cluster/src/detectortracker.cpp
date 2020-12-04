@@ -33,7 +33,7 @@ auto DetectorTracker::factor() const -> float
     return m_factor;
 }
 
-auto DetectorTracker::step() -> bool
+auto DetectorTracker::step() -> int
 {
     float largest { 0.0 };
     for (auto& [hash, detector]: m_detectors) {
@@ -61,6 +61,6 @@ auto DetectorTracker::step() -> bool
     // --- handle incoming log messages, maximum 10 at a time to prevent blocking
 
     std::this_thread::sleep_for( std::chrono::milliseconds{1} );
-    return true;
+    return 0;
 }
 }

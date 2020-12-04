@@ -2,12 +2,12 @@
 #define RATESUPERVISOR_H
 
 
+#include "event.h"
+
 #include <chrono>
 #include <atomic>
 
 namespace MuonPi {
-
-class Event;
 
 
 /**

@@ -5,7 +5,7 @@
 
 namespace MuonPi {
 
-auto MqttEventSource::step() -> bool
+auto MqttEventSource::step() -> int
 {
     return {};
 }

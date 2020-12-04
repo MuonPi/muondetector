@@ -5,6 +5,7 @@
 #include "detector.h"
 #include "coincidence.h"
 #include "timebasesupervisor.h"
+#include "eventconstructor.h"
 
 #include <queue>
 #include <map>
@@ -32,9 +33,17 @@ public:
 protected:
     /**
      * @brief step reimplemented from ThreadRunner
-     * @return true if the step succeeded.
+     * @return zero if the step succeeded.
      */
-    [[nodiscard]] auto step() -> bool override;
+    [[nodiscard]] auto step() -> int override;
+
+    /**
+     * @brief post_run reimplemented from ThreadRunner
+     * @return zero in case of success.
+     */
+    [[nodiscard]] auto post_run() -> int override;
+
+
 
 private:
     /**

@@ -24,16 +24,21 @@ public:
     void stop();
 
     /**
+     * @brief join waits for the thread to finish
+     */
+    void join();
+
+    /**
      * @brief wait Wait for the main loop to finish
      * @return the return value of the main loop
      */
-    [[nodiscard]] auto wait() -> bool;
+    [[nodiscard]] auto wait() -> int;
 
 protected:
     /**
      * @brief run executed as the main loop
      */
-    [[nodiscard]] auto run() -> bool;
+    [[nodiscard]] auto run() -> int;
 
     /**
      * @brief finish Tells the main loop to finish and waits for the thread to exit
@@ -44,12 +49,24 @@ protected:
      * @brief step executed each loop
      * @return false if the loop should stop immediatly, true otherwise
      */
-    [[nodiscard]] virtual auto step() -> bool;
+    [[nodiscard]] virtual auto step() -> int;
+
+    /**
+     * @brief pre_run Executed before the thread loop starts
+     * @return Thread loop will not start with a nonzero return value
+     */
+    [[nodiscard]] virtual auto pre_run() -> int;
+
+    /**
+     * @brief post_run Executed after the thread loop stops
+     * @return The return value will be returned from the thread loop
+     */
+    [[nodiscard]] virtual auto post_run() -> int;
 
 private:
     std::atomic<bool> m_run { true };
 
-    std::future<bool> m_run_future { std::async(std::launch::async, &ThreadRunner::run, this) };
+    std::future<int> m_run_future { std::async(std::launch::async, &ThreadRunner::run, this) };
 };
 
 }

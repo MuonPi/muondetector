@@ -5,7 +5,7 @@
 
 namespace MuonPi {
 
-auto DatabaseEventSink::step() -> bool
+auto DatabaseEventSink::step() -> int
 {
     return {};
 }
