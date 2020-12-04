@@ -48,7 +48,7 @@ private:
     std::unique_ptr<DetectorTracker> m_detector_tracker { nullptr };
     std::unique_ptr<TimeBaseSupervisor> m_time_base_supervisor { std::make_unique<TimeBaseSupervisor>( std::chrono::seconds{2} ) };
 
-    std::unique_ptr<Criterion> m_criterion { std::make_unique<Coincidence>() };
+    std::shared_ptr<Criterion> m_criterion { std::make_shared<Coincidence>() };
 
     std::map<std::uint64_t, std::unique_ptr<EventConstructor>> m_constructors {};
 
