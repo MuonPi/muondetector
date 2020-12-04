@@ -3,6 +3,7 @@
 
 
 #include <chrono>
+#include <atomic>
 
 namespace MuonPi {
 
@@ -16,9 +17,9 @@ class RateSupervisor
 {
 public:
     struct Rate {
-        float m {};
-        float s {};
-        float n {};
+        float m {}; //!< The mean value
+        float s {}; //!< The standard deviation
+        float n {}; //!< The factor for the standard deviation
     };
 
     /**
@@ -52,10 +53,17 @@ public:
     [[nodiscard]] auto dirty() -> bool;
 
 private:
+    /**
+     * @brief mark_dirty Marks this RateSupervisor to have a changed value
+     */
+    void mark_dirty();
+
+    static constexpr std::size_t s_history_length { 100 };
+
     Rate m_allowed {};
     Rate m_current {};
-    float m_history[100] {};
-    bool m_dirty { false };
+    float m_history[s_history_length] {}; //!< contains the time differences between each points, in microseconds
+    std::atomic<bool> m_dirty { false };
     std::chrono::steady_clock::time_point m_last { std::chrono::steady_clock::now() };
 };
 

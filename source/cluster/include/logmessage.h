@@ -23,6 +23,11 @@ class LogMessage
 {
 public:
 
+    /**
+     * @brief LogMessage
+     * @param hash The hash of the detector identifier
+     * @param location The detector Location information
+     */
     LogMessage(std::size_t hash, Location location);
 
     /**

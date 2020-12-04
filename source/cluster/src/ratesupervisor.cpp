@@ -2,7 +2,8 @@
 
 namespace MuonPi {
 
-RateSupervisor::RateSupervisor(Rate /*allowable*/)
+RateSupervisor::RateSupervisor(Rate allowable)
+    : m_allowed { allowable }
 {
 
 }
@@ -29,6 +30,12 @@ auto RateSupervisor::dirty() -> bool
         return true;
     }
     return false;
+}
+
+
+void RateSupervisor::mark_dirty()
+{
+    m_dirty = true;
 }
 
 }

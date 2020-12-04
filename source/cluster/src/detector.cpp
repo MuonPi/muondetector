@@ -4,52 +4,34 @@
 
 namespace MuonPi {
 
-Detector::Listener::~Listener() = default;
-
-Detector::Detector(Listener* listener, const LogMessage &initial_log)
-    : ThreadRunner {}
-    , m_location { initial_log.location()}
+Detector::Detector(const LogMessage &initial_log)
+    : m_location { initial_log.location()}
     , m_hash { initial_log.hash() }
-    , m_listener { listener }
     , m_supervisor { std::make_unique<RateSupervisor>(RateSupervisor::Rate{}) }
 {
 }
 
-Detector::~Detector()
+void Detector::process(const Event& /*event*/)
 {
-    ThreadRunner::~ThreadRunner();
-}
-
-auto Detector::process(const Event& event) -> bool
-{
-    if (event.hash() != m_hash) {
-        return false;
-    }
-
     m_tick = true;
-
-    return true;
 }
 
-auto Detector::process(const LogMessage &log) -> bool
+void Detector::process(const LogMessage &log)
 {
-    if (log.hash() != m_hash) {
-        return false;
-    }
-
     m_last_log = std::chrono::steady_clock::now();
 
     m_location = log.location();
 
-    return true;
+    if ((m_location.prec > Location::minimum_prec) || (m_location.iop < Location::maximum_iop)) {
+        set_status(Status::Unreliable);
+    } else {
+        set_status(Status::Reliable);
+    }
 }
 
 void Detector::set_status(Status status)
 {
-    if (status != m_status) {
-        m_status = status;
-        m_listener->detector_status_changed(m_hash, status);
-    }
+    m_status = status;
 }
 
 auto Detector::is(Status status) const -> bool
@@ -57,12 +39,17 @@ auto Detector::is(Status status) const -> bool
     return m_status == status;
 }
 
+auto Detector::factor() const -> float
+{
+    return m_supervisor->factor();
+}
+
 auto Detector::step() -> bool
 {
     auto diff { std::chrono::steady_clock::now() - std::chrono::steady_clock::time_point { m_last_log } };
     if (diff > s_log_interval) {
-        if (diff > s_wait_interval) {
-            set_status(Status::Quitting);
+        if (diff > s_quit_interval) {
+            return false;
         } else {
             set_status(Status::Unreliable);
         }
@@ -73,16 +60,10 @@ auto Detector::step() -> bool
             set_status(Status::Reliable);
         }
     }
-    if (is(Status::Reliable)) {
-        m_supervisor->tick(m_tick);
-        if (m_tick) {
-            m_tick = false;
-        }
-        if (m_supervisor->dirty()) {
-            m_listener->factor_changed(m_hash, m_supervisor->factor());
-        }
+    m_supervisor->tick(m_tick);
+    if (m_tick) {
+        m_tick = false;
     }
-    std::this_thread::sleep_for( std::chrono::milliseconds{10} );
 
     return true;
 }

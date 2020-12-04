@@ -16,29 +16,29 @@ class TimeBaseSupervisor
 {
 public:
     /**
-     * @brief restart
-     * @return
+     * @brief TimeBaseSupervisor
+     * @param sample_time The sampling time of the Supervisor
      */
-    [[nodiscard]] auto restart() -> std::chrono::steady_clock::duration;
+    TimeBaseSupervisor(std::chrono::steady_clock::duration sample_time);
 
     /**
-     * @brief process_event
-     * @param event
+     * @brief process_event Handle one incoming event
+     * @param event The event to check
      */
     void process_event(const Event& event);
 
     /**
-     * @brief current
-     * @return
+     * @brief current get the current rate
+     * @return The current time base of incoming events
      */
-    [[nodiscard]] auto current() const -> std::chrono::steady_clock::duration;
+    [[nodiscard]] auto current() -> std::chrono::steady_clock::duration;
 
 private:
+    std::chrono::steady_clock::duration m_sample_time { std::chrono::seconds{2} };
     std::chrono::steady_clock::time_point m_start { std::chrono::steady_clock::now() };
-    std::chrono::steady_clock::time_point m_earliest {std::chrono::steady_clock::now() + std::chrono::hours{24}};
-    std::chrono::steady_clock::time_point m_latest {std::chrono::steady_clock::now() - std::chrono::hours{24}};
-    std::size_t m_n { 0 };
-    std::chrono::steady_clock::duration m_current {};
+    std::chrono::steady_clock::time_point m_earliest {std::chrono::steady_clock::now() + std::chrono::seconds{5}};
+    std::chrono::steady_clock::time_point m_latest {std::chrono::steady_clock::now() - std::chrono::seconds{5}};
+    std::chrono::steady_clock::duration m_current { std::chrono::seconds{2} };
 
 };
 
