@@ -2,19 +2,25 @@
 #define MQTTEVENTSINK_H
 
 #include "abstractsink.h"
+#include "mqttlink.h"
 
 #include <memory>
 
 namespace MuonPi {
 
 class Event;
-class MqttLink;
 
 /**
  * @brief The MqttEventSink class
  */
 class MqttEventSink : public AbstractSink<Event>
 {
+public:
+    /**
+     * @brief MqttEventSink
+     * @param publisher The topic from which the messages should be published
+     */
+    MqttEventSink(std::shared_ptr<MqttLink::Publisher> publisher);
 protected:
     /**
      * @brief step implementation from ThreadRunner
@@ -23,7 +29,7 @@ protected:
     [[nodiscard]] auto step() -> int override;
 
 private:
-    std::unique_ptr<MqttLink> m_link { nullptr };
+    std::shared_ptr<MqttLink::Publisher> m_link { nullptr };
 };
 
 }

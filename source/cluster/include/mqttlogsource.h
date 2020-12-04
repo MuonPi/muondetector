@@ -15,6 +15,12 @@ class LogMessage;
  */
 class MqttLogSource : public AbstractSource<LogMessage>
 {
+public:
+    /**
+     * @brief MqttLogSource
+     * @param subscriber The Mqtt Topic this Log source should be subscribed to
+     */
+    MqttLogSource(std::shared_ptr<MqttLink::Subscriber> subscriber);
 protected:
     /**
      * @brief step implementation from ThreadRunner
@@ -23,7 +29,7 @@ protected:
     [[nodiscard]] auto step() -> int override;
 
 private:
-    std::unique_ptr<MqttLink> m_link { nullptr };
+    std::shared_ptr<MqttLink::Subscriber> m_link { nullptr };
 };
 
 }

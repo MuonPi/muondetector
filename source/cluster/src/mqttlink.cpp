@@ -125,4 +125,49 @@ void MqttLink::message_arrived(mqtt::const_message_ptr message)
 void MqttLink::delivery_complete(mqtt::delivery_token_ptr /*token*/)
 {
 }
+
+
+MqttLink::Publisher::Publisher(mqtt::async_client& client, const std::string& topic)
+    : m_topic{client, topic}
+{
+}
+
+auto MqttLink::Publisher::publish(const std::string& content) -> bool
+{
+    try {
+        m_topic.publish(content);
+        return true;
+    }  catch (...) {
+        return false;
+    }
+}
+
+
+MqttLink::Subscriber::Subscriber(mqtt::async_client& client, const std::string& topic)
+    : m_topic { client, topic}
+{
+    m_topic.subscribe();
+}
+
+auto MqttLink::Subscriber::has_message() const -> bool
+{
+    return !m_messages.empty();
+}
+
+auto MqttLink::Subscriber::get_message() -> std::pair<std::string, std::chrono::steady_clock::time_point>
+{
+    std::scoped_lock<std::mutex> lock {m_mutex};
+    if (m_messages.empty()) {
+        return {};
+    }
+    auto msg { m_messages.front() };
+    m_messages.pop();
+    return msg;
+}
+
+void MqttLink::Subscriber::push_message(std::pair<std::string, std::chrono::steady_clock::time_point> message)
+{
+    std::scoped_lock<std::mutex> lock {m_mutex};
+    m_messages.push(message);
+}
 }

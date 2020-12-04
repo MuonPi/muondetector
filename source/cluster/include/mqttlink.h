@@ -34,6 +34,8 @@ public:
          * @return true if the sending was successful
          */
         [[nodiscard]] auto publish(const std::string& content) -> bool;
+    private:
+        mqtt::topic m_topic;
     };
 
     /**
@@ -63,7 +65,9 @@ public:
          */
         void push_message(std::pair<std::string, std::chrono::steady_clock::time_point> message);
     private:
+        mqtt::topic m_topic;
         std::queue<std::pair<std::string, std::chrono::steady_clock::time_point>> m_messages {};
+        std::mutex m_mutex {};
     };
 
     struct LoginData
