@@ -43,6 +43,8 @@ find_library(PAHO_MQTT3CS paho-mqtt3cs REQUIRED)
 find_library(PAHO_MQTT3AS paho-mqtt3as REQUIRED)
 find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
 
+find_library(CRYPTOPP crypto++ REQUIRED)
+
 
 
 
@@ -111,7 +113,7 @@ target_include_directories(muondetector-cluster PUBLIC
     )
 
 target_link_libraries(muondetector-cluster
-#    crypto++
+    crypto++
 #    config++
     paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
 #    "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"

@@ -74,8 +74,9 @@ public:
     {
         std::string username {};
         std::string station_id {};
-        std::string client_id {};
         std::string password {};
+
+        [[nodiscard]] auto client_id() const -> std::string;
     };
 
     enum class Status {

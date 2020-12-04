@@ -3,12 +3,16 @@
 #include <functional>
 #include <sstream>
 
+#include <cryptopp/sha.h>
+#include <cryptopp/filters.h>
+#include <cryptopp/hex.h>
+
 namespace MuonPi {
 
 MqttLink::MqttLink(const std::string& server, const LoginData& login)
     : m_server { server }
     , m_login_data { login }
-    , m_client { std::make_unique<mqtt::async_client>(server, login.client_id) }
+    , m_client { std::make_unique<mqtt::async_client>(server, login.client_id()) }
 {
     m_conn_options.set_user_name(login.username);
     m_conn_options.set_password(login.password);
@@ -126,7 +130,6 @@ void MqttLink::delivery_complete(mqtt::delivery_token_ptr /*token*/)
 {
 }
 
-
 MqttLink::Publisher::Publisher(mqtt::async_client& client, const std::string& topic)
     : m_topic{client, topic}
 {
@@ -169,5 +172,15 @@ void MqttLink::Subscriber::push_message(std::pair<std::string, std::chrono::stea
 {
     std::scoped_lock<std::mutex> lock {m_mutex};
     m_messages.push(message);
+}
+
+auto MqttLink::LoginData::client_id() const -> std::string
+{
+    CryptoPP::SHA1 sha1;
+
+    std::string source {username + station_id};
+    std::string id {};
+    CryptoPP::StringSource{source, true, new CryptoPP::HashFilter(sha1, new CryptoPP::HexEncoder(new CryptoPP::StringSink(id)))};
+    return id;
 }
 }
