@@ -22,6 +22,7 @@ public:
      */
     MqttEventSource(std::shared_ptr<MqttLink::Subscriber> subscriber);
 
+    ~MqttEventSource() override;
 protected:
     /**
      * @brief step implementation from ThreadRunner

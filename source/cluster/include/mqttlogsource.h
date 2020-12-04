@@ -21,6 +21,9 @@ public:
      * @param subscriber The Mqtt Topic this Log source should be subscribed to
      */
     MqttLogSource(std::shared_ptr<MqttLink::Subscriber> subscriber);
+
+    ~MqttLogSource() override;
+
 protected:
     /**
      * @brief step implementation from ThreadRunner

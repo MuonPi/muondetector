@@ -9,6 +9,12 @@ MqttEventSink::MqttEventSink(std::shared_ptr<MqttLink::Publisher> publisher)
 {
 
 }
+
+MqttEventSink::~MqttEventSink()
+{
+    AbstractSink<Event>::~AbstractSink();
+}
+
 auto MqttEventSink::step() -> int
 {
     return {};

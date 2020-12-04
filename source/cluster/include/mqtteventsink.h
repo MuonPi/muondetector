@@ -21,6 +21,8 @@ public:
      * @param publisher The topic from which the messages should be published
      */
     MqttEventSink(std::shared_ptr<MqttLink::Publisher> publisher);
+
+    ~MqttEventSink() override;
 protected:
     /**
      * @brief step implementation from ThreadRunner

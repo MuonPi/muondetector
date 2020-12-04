@@ -9,6 +9,11 @@ MqttLogSource::MqttLogSource(std::shared_ptr<MqttLink::Subscriber> subscriber)
 {
 }
 
+MqttLogSource::~MqttLogSource()
+{
+    AbstractSource<LogMessage>::~AbstractSource();
+}
+
 auto MqttLogSource::step() -> int
 {
     return {};
