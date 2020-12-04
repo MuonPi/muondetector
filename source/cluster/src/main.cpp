@@ -18,7 +18,7 @@ auto main() -> int
     login.password = "goodpassword";
     login.station_id = "ds9";
 
-    MuonPi::MqttLink source_link {"", {}};
+    MuonPi::MqttLink source_link {"", login};
     auto log_source { std::make_unique<MuonPi::MqttLogSource>(source_link.subscribe("muonpi/log/...")) };
     auto event_source { std::make_unique<MuonPi::MqttEventSource>(source_link.subscribe("muonpi/data/...")) };
 
@@ -27,7 +27,7 @@ auto main() -> int
 #ifdef CLUSTER_RUN_SERVER
     auto event_sink { std::make_unique<MuonPi::DatabaseEventSink>() };
 #else
-    MuonPi::MqttLink sink_link {"", {}};
+    MuonPi::MqttLink sink_link {"", login};
     auto event_sink { std::make_unique<MuonPi::MqttEventSink>(sink_link.publish("muonpi/l1data/...")) };
 #endif
 
