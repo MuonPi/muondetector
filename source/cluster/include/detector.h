@@ -2,6 +2,7 @@
 #define DETECTOR_H
 
 #include "threadrunner.h"
+#include "ratesupervisor.h"
 #include "logmessage.h"
 
 #include <memory>
@@ -12,7 +13,6 @@ namespace MuonPi {
 
 
 // +++ forward declarations
-class RateSupervisor;
 class Event;
 // --- forward declarations
 

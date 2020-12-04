@@ -1,5 +1,4 @@
 #include "detector.h"
-#include "ratesupervisor.h"
 #include "event.h"
 
 namespace MuonPi {
