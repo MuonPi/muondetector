@@ -84,7 +84,7 @@ void Core::process(std::unique_ptr<Event> event)
     // --- Event matches exactly one existing constructor
 
     // +++ Event matches either no, or more than one constructor
-    auto constructor { std::make_unique<EventConstructor>(event, m_criterion, m_timeout) };
+    std::unique_ptr<EventConstructor> constructor { std::make_unique<EventConstructor>(std::move(event), m_criterion, m_timeout) };
 
     // +++ Event matches more than one constructor
     // Combines all contesting constructors into one contesting coincience
