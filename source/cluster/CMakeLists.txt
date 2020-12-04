@@ -57,6 +57,7 @@ set(CLUSTER_SOURCE_FILES
     "${PROJECT_SRC_DIR}/detector.cpp"
     "${PROJECT_SRC_DIR}/threadrunner.cpp"
     "${PROJECT_SRC_DIR}/logmessage.cpp"
+    "${PROJECT_SRC_DIR}/detectortracker.cpp"
     )
 
 set(CLUSTER_HEADER_FILES
@@ -79,6 +80,7 @@ set(CLUSTER_HEADER_FILES
     "${PROJECT_HEADER_DIR}/detector.h"
     "${PROJECT_HEADER_DIR}/threadrunner.h"
     "${PROJECT_HEADER_DIR}/logmessage.h"
+    "${PROJECT_HEADER_DIR}/detectortracker.h"
     )
 
 add_library(source-files OBJECT ${CLUSTER_SOURCE_FILES} ${CLUSTER_HEADER_FILES})

@@ -7,12 +7,15 @@
 #include "event.h"
 #include "logmessage.h"
 #include "timebasesupervisor.h"
+#include "detectortracker.h"
 
 namespace MuonPi {
 
-Core::Core()
+Core::Core(std::unique_ptr<AbstractSink<Event>> event_sink, std::unique_ptr<AbstractSource<Event>> event_source, std::unique_ptr<DetectorTracker> detector_tracker)
+    : m_event_sink { std::move(event_sink) }
+    , m_event_source { std::move(event_source) }
+    , m_detector_tracker { std::move(detector_tracker) }
 {
-
 }
 
 Core::~Core()
@@ -20,29 +23,79 @@ Core::~Core()
     ThreadRunner::~ThreadRunner();
 }
 
-void Core::factor_changed(std::size_t /*hash*/, float /*factor*/)
-{
-
-}
-
-void Core::detector_status_changed(std::size_t /*hash*/, Detector::Status /*status*/)
-{
-
-}
-
 auto Core::step() -> bool
 {
-    return {};
+    m_timeout = std::chrono::milliseconds{static_cast<long>(std::chrono::duration_cast<std::chrono::milliseconds>(m_time_base_supervisor->current()).count() * m_detector_tracker->factor())};
+
+
+    // +++ Send finished constructors off to the event sink
+    for (auto& [id, constructor]: m_constructors) {
+        constructor->set_timeout(m_timeout);
+        if (constructor->timed_out()) {
+            m_delete_constructors.push(id);
+
+            m_event_sink->push_item(constructor->commit());
+        }
+    }
+
+    // +++ Delete finished constructors
+    while (!m_delete_constructors.empty()) {
+        m_constructors.erase(m_delete_constructors.front());
+        m_delete_constructors.pop();
+    }
+    // --- Delete finished constructors
+
+    // --- Send finished constructors off to the event sink
+
+
+    // +++ handle incoming events, maximum 10 at a time to prevent blocking
+    std::size_t i { 0 };
+    while (m_event_source->has_items() && (i < 10)) {
+        process(m_event_source->next_item());
+        i++;
+    }
+    // --- handle incoming events, maximum 10 at a time to prevent blocking
+    std::this_thread::sleep_for( std::chrono::milliseconds{1} );
+    return true;
 }
 
-void Core::handle_event(std::unique_ptr<Event> /*event*/)
+void Core::process(std::unique_ptr<Event> event)
 {
+    m_time_base_supervisor->process_event(*event);
 
-}
+    if (!m_detector_tracker->accept(*event)) {
+        return;
+    }
 
-void Core::handle_log(std::unique_ptr<LogMessage> /*log*/)
-{
+    std::queue<std::pair<std::uint64_t, bool>> matches {};
+    for (auto& [id, constructor]: m_constructors) {
+        auto result { constructor->event_matches(*event) };
+        if ( EventConstructor::Type::NoMatch != result) {
+            matches.push(std::make_pair(id, (result == EventConstructor::Type::Contested)));
+        }
+    }
 
+    // +++ Event matches exactly one existing constructor
+    if (matches.size() == 1) {
+        m_constructors[matches.front().first]->add_event(std::move(event), matches.front().second);
+        matches.pop();
+        return;
+    }
+    // --- Event matches exactly one existing constructor
+
+    // +++ Event matches either no, or more than one constructor
+    auto constructor { std::make_unique<EventConstructor>(event, m_criterion, m_timeout) };
+
+    // +++ Event matches more than one constructor
+    // Combines all contesting constructors into one contesting coincience
+    while (!matches.empty()) {
+        constructor->add_event(m_constructors[matches.front().first]->commit(), true);
+        m_constructors.erase(matches.front().first);
+        matches.pop();
+    }
+    // --- Event matches more than one constructor
+    m_constructors[event->id()] = std::move(constructor);
+    // --- Event matches either no, or more than one constructor
 }
 
 }
