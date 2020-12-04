@@ -11,7 +11,7 @@
 
 namespace MuonPi {
 
-Core::Core(std::unique_ptr<AbstractSink<Event>> event_sink, std::unique_ptr<AbstractSource<Event>> event_source, std::unique_ptr<DetectorTracker> detector_tracker)
+Core::Core(std::unique_ptr<AbstractSink<Event>> event_sink, std::unique_ptr<AbstractSource<Event>> event_source, std::unique_ptr<AbstractDetectorTracker> detector_tracker)
     : m_event_sink { std::move(event_sink) }
     , m_event_source { std::move(event_source) }
     , m_detector_tracker { std::move(detector_tracker) }

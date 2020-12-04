@@ -17,8 +17,7 @@ template <typename T>
 class AbstractSink;
 template <typename T>
 class AbstractSource;
-class EventConstructor;
-class DetectorTracker;
+class AbstractDetectorTracker;
 
 /**
  * @brief The Core class
@@ -26,7 +25,7 @@ class DetectorTracker;
 class Core : public ThreadRunner
 {
 public:
-    Core(std::unique_ptr<AbstractSink<Event>> event_sink, std::unique_ptr<AbstractSource<Event>> event_source, std::unique_ptr<DetectorTracker> detector_tracker);
+    Core(std::unique_ptr<AbstractSink<Event>> event_sink, std::unique_ptr<AbstractSource<Event>> event_source, std::unique_ptr<AbstractDetectorTracker> detector_tracker);
 
     ~Core() override;
 
@@ -54,7 +53,7 @@ private:
 
     std::unique_ptr<AbstractSink<Event>> m_event_sink { nullptr };
     std::unique_ptr<AbstractSource<Event>> m_event_source { nullptr };
-    std::unique_ptr<DetectorTracker> m_detector_tracker { nullptr };
+    std::unique_ptr<AbstractDetectorTracker> m_detector_tracker { nullptr };
     std::unique_ptr<TimeBaseSupervisor> m_time_base_supervisor { std::make_unique<TimeBaseSupervisor>( std::chrono::seconds{2} ) };
 
     std::shared_ptr<Criterion> m_criterion { std::make_shared<Coincidence>() };

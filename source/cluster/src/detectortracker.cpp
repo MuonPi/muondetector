@@ -7,9 +7,31 @@
 
 namespace MuonPi {
 
+
+AbstractDetectorTracker::~AbstractDetectorTracker()
+{
+    ThreadRunner::~ThreadRunner();
+}
+
+auto AbstractDetectorTracker::accept(const Event& /*event*/) const -> bool
+{
+    return true;
+}
+
+auto AbstractDetectorTracker::factor() const -> float
+{
+    return 1.0;
+}
+
 DetectorTracker::DetectorTracker(std::unique_ptr<AbstractSource<LogMessage> > log_source)
     : m_log_source { std::move(log_source) }
 {
+}
+
+
+DetectorTracker::~DetectorTracker()
+{
+    AbstractDetectorTracker::~AbstractDetectorTracker();
 }
 
 auto DetectorTracker::accept(const Event& event) const -> bool
