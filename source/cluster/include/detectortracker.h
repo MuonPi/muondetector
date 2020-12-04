@@ -1,5 +1,5 @@
 #ifndef DETECTORTRACKER_H
-#define DETECTORTACKER_H
+#define DETECTORTRACKER_H
 
 #include "threadrunner.h"
 
