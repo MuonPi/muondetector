@@ -33,6 +33,7 @@ add_compile_options(
     -Wpedantic
     -Werror
     -O3
+    -Wno-unused-private-field
     )
 
 
