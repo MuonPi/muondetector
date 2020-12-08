@@ -20,8 +20,13 @@ auto main() -> int
 
     MuonPi::MqttLink source_link {"", login};
 
+    MuonPi::MqttEventSource::Subscribers source_topics;
+
+    source_topics.single = source_link.subscribe("muonpi/events/...");
+    source_topics.combined = source_link.subscribe("muonpi/l1data/...");
+
     auto log_source { std::make_unique<MuonPi::MqttLogSource>(source_link.subscribe("muonpi/log/...")) };
-    auto event_source { std::make_unique<MuonPi::MqttEventSource>(source_link.subscribe("muonpi/data/...")) };
+    auto event_source { std::make_unique<MuonPi::MqttEventSource>(std::move(source_topics)) };
 
     auto detector_tracker { std::make_unique<MuonPi::DetectorTracker>(std::move(log_source)) };
 
@@ -29,12 +34,12 @@ auto main() -> int
     auto event_sink { std::make_unique<MuonPi::DatabaseEventSink>() };
 #else
     MuonPi::MqttLink sink_link {"", login};
-    MuonPi::MqttEventSink::Publishers topics;
+    MuonPi::MqttEventSink::Publishers sink_topics;
 
-    topics.single = sink_link.publish("muonpi/events/...");
-    topics.combined = sink_link.publish("muonpi/l1data/...");
+    sink_topics.single = sink_link.publish("muonpi/events/...");
+    sink_topics.combined = sink_link.publish("muonpi/l1data/...");
 
-    auto event_sink { std::make_unique<MuonPi::MqttEventSink>(std::move(topics)) };
+    auto event_sink { std::make_unique<MuonPi::MqttEventSink>(std::move(sink_topics)) };
 #endif
 
     MuonPi::Core core{std::move(event_sink), std::move(event_source), std::move(detector_tracker)};

@@ -4,8 +4,8 @@
 
 namespace MuonPi {
 
-MqttEventSource::MqttEventSource(std::shared_ptr<MqttLink::Subscriber> subscriber)
-    : m_link { subscriber }
+MqttEventSource::MqttEventSource(Subscribers subscribers)
+    : m_link { std::move(subscribers) }
 {
 
 }

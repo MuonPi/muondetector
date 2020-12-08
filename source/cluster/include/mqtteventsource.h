@@ -16,11 +16,15 @@ class Event;
 class MqttEventSource : public AbstractSource<Event>
 {
 public:
+    struct Subscribers {
+        std::shared_ptr<MqttLink::Subscriber> single { nullptr };
+        std::shared_ptr<MqttLink::Subscriber> combined { nullptr };
+    };
     /**
      * @brief MqttEventSource
      * @param subscriber The Mqtt Topic this event source should be subscribed to
      */
-    MqttEventSource(std::shared_ptr<MqttLink::Subscriber> subscriber);
+    MqttEventSource(Subscribers subscribers);
 
     ~MqttEventSource() override;
 protected:
@@ -31,7 +35,7 @@ protected:
     [[nodiscard]] auto step() -> int override;
 
 private:
-    std::shared_ptr<MqttLink::Subscriber> m_link { nullptr };
+    Subscribers m_link {};
 };
 
 }
