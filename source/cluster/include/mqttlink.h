@@ -58,15 +58,15 @@ public:
          * @brief get_message Gets the next message from the queue.
          * @return an std::pair containting the message
          */
-        [[nodiscard]] auto get_message() -> std::pair<std::string, std::chrono::steady_clock::time_point>;
+        [[nodiscard]] auto get_message() -> std::string;
         /**
          * @brief push_message Only called from within the MqttLink class
          * @param message The message to push into the queue
          */
-        void push_message(std::pair<std::string, std::chrono::steady_clock::time_point> message);
+        void push_message(std::string message);
     private:
         mqtt::topic m_topic;
-        std::queue<std::pair<std::string, std::chrono::steady_clock::time_point>> m_messages {};
+        std::queue<std::string> m_messages {};
         std::mutex m_mutex {};
     };
 
@@ -76,6 +76,11 @@ public:
         std::string station_id {};
         std::string password {};
 
+        /**
+         * @brief client_id Creates a client_id from the username and the station id.
+         * This hashes the concatenation of the two fields.
+         * @return The client id as string
+         */
         [[nodiscard]] auto client_id() const -> std::string;
     };
 

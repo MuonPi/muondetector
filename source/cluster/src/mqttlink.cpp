@@ -118,12 +118,12 @@ void MqttLink::connection_lost(const std::string& /*cause*/)
 
 void MqttLink::message_arrived(mqtt::const_message_ptr message)
 {
-    auto now { std::chrono::steady_clock::now() };
-    auto subscriber { m_subscribers.find(message->get_topic()) };
-    if (subscriber == m_subscribers.end()) {
-        return;
+    std::string message_topic {message->get_topic()};
+    for (auto& [topic, subscriber]: m_subscribers) {
+        if (message_topic.find(topic) == 0) {
+            subscriber->push_message(message->to_string());
+        }
     }
-    (*subscriber).second->push_message(std::make_pair(message->to_string(), now));
 }
 
 void MqttLink::delivery_complete(mqtt::delivery_token_ptr /*token*/)
@@ -157,7 +157,7 @@ auto MqttLink::Subscriber::has_message() const -> bool
     return !m_messages.empty();
 }
 
-auto MqttLink::Subscriber::get_message() -> std::pair<std::string, std::chrono::steady_clock::time_point>
+auto MqttLink::Subscriber::get_message() -> std::string
 {
     std::scoped_lock<std::mutex> lock {m_mutex};
     if (m_messages.empty()) {
@@ -168,7 +168,7 @@ auto MqttLink::Subscriber::get_message() -> std::pair<std::string, std::chrono::
     return msg;
 }
 
-void MqttLink::Subscriber::push_message(std::pair<std::string, std::chrono::steady_clock::time_point> message)
+void MqttLink::Subscriber::push_message(std::string message)
 {
     std::scoped_lock<std::mutex> lock {m_mutex};
     m_messages.push(message);

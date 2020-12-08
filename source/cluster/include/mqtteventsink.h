@@ -9,6 +9,7 @@
 namespace MuonPi {
 
 class Event;
+class CombinedEvent;
 
 /**
  * @brief The MqttEventSink class
@@ -31,6 +32,10 @@ protected:
     [[nodiscard]] auto step() -> int override;
 
 private:
+
+    void process(std::unique_ptr<Event> evt);
+    void process(std::unique_ptr<CombinedEvent> evt);
+
     std::shared_ptr<MqttLink::Publisher> m_link { nullptr };
 };
 
