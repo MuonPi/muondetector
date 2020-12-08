@@ -15,8 +15,7 @@ MqttEventSink::~MqttEventSink() = default;
 
 auto MqttEventSink::step() -> int
 {
-    std::size_t i { 0 };
-    while (has_items() && (i < 5)) {
+    if (has_items()) {
         std::unique_ptr<Event> e { next_item()};
         if (e->n() > 1) {
             std::unique_ptr<CombinedEvent> evt_ptr {dynamic_cast<CombinedEvent*>(e.get())};
@@ -24,17 +23,31 @@ auto MqttEventSink::step() -> int
         } else {
             process(std::move(e));
         }
-        i++;
     }
-    return {};
+    std::this_thread::sleep_for(std::chrono::microseconds{50});
+    return 0;
 }
 
 void MqttEventSink::process(std::unique_ptr<Event> /*evt*/)
 {
+    std::string message {};
+
+    // todo: construct message string
+
+    if (m_link.single->publish(message)) {
+        // todo: error handling
+    }
 }
 
 void MqttEventSink::process(std::unique_ptr<CombinedEvent> /*evt*/)
 {
+    std::string message {};
+
+    // todo: construct message string
+
+    if (m_link.combined->publish(message)) {
+        // todo: error handling
+    }
 }
 
 }
