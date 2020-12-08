@@ -21,7 +21,7 @@ void Detector::process(const LogMessage &log)
 
     m_location = log.location();
 
-    if ((m_location.prec > Location::minimum_prec) || (m_location.iop < Location::maximum_iop)) {
+    if ((m_location.prec > Location::minimum_prec) || (m_location.dop < Location::maximum_dop)) {
         set_status(Status::Unreliable);
     } else {
         set_status(Status::Reliable);
@@ -53,7 +53,7 @@ auto Detector::step() -> bool
             set_status(Status::Unreliable);
         }
     } else {
-        if ((m_location.prec > Location::minimum_prec) || (m_location.iop < Location::maximum_iop)) {
+        if ((m_location.prec > Location::minimum_prec) || (m_location.dop < Location::maximum_dop)) {
             set_status(Status::Unreliable);
         } else {
             set_status(Status::Reliable);

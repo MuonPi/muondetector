@@ -19,6 +19,7 @@ auto main() -> int
     login.station_id = "ds9";
 
     MuonPi::MqttLink source_link {"", login};
+
     auto log_source { std::make_unique<MuonPi::MqttLogSource>(source_link.subscribe("muonpi/log/...")) };
     auto event_source { std::make_unique<MuonPi::MqttEventSource>(source_link.subscribe("muonpi/data/...")) };
 

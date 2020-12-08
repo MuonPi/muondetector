@@ -10,10 +10,10 @@ struct Location {
     double lon { 0.0 };
     double h { 0.0 };
     double prec { std::numeric_limits<double>::max() };
-    double iop { std::numeric_limits<double>::min() };
+    double dop { std::numeric_limits<double>::min() };
 
     static constexpr double minimum_prec { 1.0 };
-    static constexpr double maximum_iop { 1.0 };
+    static constexpr double maximum_dop { 1.0 };
 };
 
 /**
