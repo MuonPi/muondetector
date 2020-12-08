@@ -29,7 +29,12 @@ auto main() -> int
     auto event_sink { std::make_unique<MuonPi::DatabaseEventSink>() };
 #else
     MuonPi::MqttLink sink_link {"", login};
-    auto event_sink { std::make_unique<MuonPi::MqttEventSink>(sink_link.publish("muonpi/l1data/...")) };
+    MuonPi::MqttEventSink::Publishers topics;
+
+    topics.single = sink_link.publish("muonpi/events/...");
+    topics.combined = sink_link.publish("muonpi/l1data/...");
+
+    auto event_sink { std::make_unique<MuonPi::MqttEventSink>(std::move(topics)) };
 #endif
 
     MuonPi::Core core{std::move(event_sink), std::move(event_source), std::move(detector_tracker)};

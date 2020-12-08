@@ -5,8 +5,8 @@
 
 namespace MuonPi {
 
-MqttEventSink::MqttEventSink(std::shared_ptr<MqttLink::Publisher> publisher)
-    : m_link { publisher }
+MqttEventSink::MqttEventSink(Publishers publishers)
+    : m_link { std::move(publishers) }
 {
 
 }

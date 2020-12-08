@@ -17,11 +17,15 @@ class CombinedEvent;
 class MqttEventSink : public AbstractSink<Event>
 {
 public:
+    struct Publishers {
+        std::shared_ptr<MqttLink::Publisher> single { nullptr };
+        std::shared_ptr<MqttLink::Publisher> combined { nullptr };
+    };
     /**
      * @brief MqttEventSink
-     * @param publisher The topic from which the messages should be published
+     * @param publishers The topics from which the messages should be published
      */
-    MqttEventSink(std::shared_ptr<MqttLink::Publisher> publisher);
+    MqttEventSink(Publishers publishers);
 
     ~MqttEventSink() override;
 protected:
@@ -36,7 +40,7 @@ private:
     void process(std::unique_ptr<Event> evt);
     void process(std::unique_ptr<CombinedEvent> evt);
 
-    std::shared_ptr<MqttLink::Publisher> m_link { nullptr };
+    Publishers m_link {};
 };
 
 }
