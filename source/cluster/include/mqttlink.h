@@ -59,12 +59,16 @@ public:
          * @return an std::pair containting the message
          */
         [[nodiscard]] auto get_message() -> std::string;
+
+    private:
+        friend class MqttLink;
         /**
          * @brief push_message Only called from within the MqttLink class
          * @param message The message to push into the queue
          */
         void push_message(std::string message);
-    private:
+
+
         mqtt::topic m_topic;
         std::queue<std::string> m_messages {};
         std::mutex m_mutex {};
