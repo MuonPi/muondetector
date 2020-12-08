@@ -19,7 +19,8 @@ auto MqttEventSink::step() -> int
     while (has_items() && (i < 5)) {
         std::unique_ptr<Event> e { next_item()};
         if (e->n() > 1) {
-            process(std::make_unique<CombinedEvent>(dynamic_cast<CombinedEvent*>(e.get())));
+            std::unique_ptr<CombinedEvent> evt_ptr {dynamic_cast<CombinedEvent*>(e.get())};
+            process(std::move(evt_ptr));
         } else {
             process(std::move(e));
         }
