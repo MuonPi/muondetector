@@ -18,10 +18,7 @@ Core::Core(std::unique_ptr<AbstractSink<Event>> event_sink, std::unique_ptr<Abst
 {
 }
 
-Core::~Core()
-{
-    ThreadRunner::~ThreadRunner();
-}
+Core::~Core() = default;
 
 auto Core::step() -> int
 {

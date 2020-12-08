@@ -8,10 +8,7 @@
 namespace MuonPi {
 
 
-AbstractDetectorTracker::~AbstractDetectorTracker()
-{
-    ThreadRunner::~ThreadRunner();
-}
+AbstractDetectorTracker::~AbstractDetectorTracker() = default;
 
 auto AbstractDetectorTracker::accept(const Event& /*event*/) const -> bool
 {

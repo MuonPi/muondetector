@@ -58,10 +58,7 @@ private:
 
 
 template <typename T>
-AbstractSource<T>::~AbstractSource()
-{
-    ThreadRunner::~ThreadRunner();
-}
+AbstractSource<T>::~AbstractSource() = default;
 
 template <typename T>
 auto AbstractSource<T>::next_item() -> std::unique_ptr<T>

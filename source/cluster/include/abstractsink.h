@@ -58,10 +58,7 @@ private:
 
 
 template <typename T>
-AbstractSink<T>::~AbstractSink()
-{
-    ThreadRunner::~ThreadRunner();
-}
+AbstractSink<T>::~AbstractSink() = default;
 
 template <typename T>
 auto AbstractSink<T>::next_item() -> std::unique_ptr<T>

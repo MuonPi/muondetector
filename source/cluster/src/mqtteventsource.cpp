@@ -10,10 +10,7 @@ MqttEventSource::MqttEventSource(std::shared_ptr<MqttLink::Subscriber> subscribe
 
 }
 
-MqttEventSource::~MqttEventSource()
-{
-    AbstractSource<Event>::~AbstractSource();
-}
+MqttEventSource::~MqttEventSource() = default;
 
 auto MqttEventSource::step() -> int
 {
