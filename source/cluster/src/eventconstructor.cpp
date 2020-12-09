@@ -2,6 +2,7 @@
 #include "event.h"
 #include "combinedevent.h"
 #include "criterion.h"
+#include "log.h"
 
 namespace MuonPi {
 

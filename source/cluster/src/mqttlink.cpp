@@ -1,4 +1,5 @@
 #include "mqttlink.h"
+#include "log.h"
 
 #include <functional>
 #include <sstream>
@@ -59,6 +60,7 @@ auto MqttLink::connect() -> bool
 
     if (n > max_tries) {
         set_status(Status::Error);
+        syslog(Log::Error, "Giving up trying to connect to MQTT.");
         return false;
     }
     try {
@@ -66,10 +68,12 @@ auto MqttLink::connect() -> bool
         set_status(Status::Connected);
         m_client->set_callback(*this);
         n = 0;
+        syslog(Log::Debug, "Connected to MQTT.");
         return true;
-    } catch (const mqtt::exception& /*exc*/) {
+    } catch (const mqtt::exception& exc) {
         std::this_thread::sleep_for( std::chrono::seconds{1} );
         n++;
+        syslog(Log::Warning, "Received exception while tryig to connect to MQTT, but retrying: %s", exc.what());
         return connect();
     }
 }
@@ -82,8 +86,10 @@ auto MqttLink::disconnect() -> bool
     try {
         m_client->disconnect()->wait();
         set_status(Status::Disconnected);
+        syslog(Log::Debug, "Disconnected from MQTT.");
         return true;
-    } catch (const mqtt::exception& /*exc*/) {
+    } catch (const mqtt::exception& exc) {
+        syslog(Log::Error, "Received exception while tryig to disconnect from MQTT: %s", exc.what());
         return false;
     }
 }
@@ -93,11 +99,14 @@ auto MqttLink::reconnect() -> bool
     set_status(Status::Disconnected);
     try {
         if (!m_client->reconnect()->wait_for(std::chrono::seconds{5})) {
+            syslog(Log::Error, "Could not reconnect to MQTT");
             return false;
         }
         set_status(Status::Connected);
+        syslog(Log::Debug, "Connected to MQTT.");
         return true;
-    } catch (const mqtt::exception& /*exc*/) {
+    } catch (const mqtt::exception& exc) {
+        syslog(Log::Error, "Received exception while tryig to reconnect to MQTT: %s", exc.what());
         return false;
     }
 }
@@ -140,7 +149,8 @@ auto MqttLink::Publisher::publish(const std::string& content) -> bool
     try {
         m_topic.publish(content);
         return true;
-    }  catch (...) {
+    } catch (const mqtt::exception& exc) {
+        syslog(Log::Error, "Received exception while tryig to publish MQTT message: %s", exc.what());
         return false;
     }
 }
