@@ -1,4 +1,5 @@
 #include "core.h"
+#include "log.h"
 
 #include "abstractsink.h"
 #include "abstractsource.h"
@@ -18,7 +19,10 @@ Core::Core(std::unique_ptr<AbstractSink<Event>> event_sink, std::unique_ptr<Abst
 {
 }
 
-Core::~Core() = default;
+Core::~Core()
+{
+    Log::finish();
+}
 
 auto Core::step() -> int
 {

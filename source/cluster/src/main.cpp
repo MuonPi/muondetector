@@ -1,3 +1,4 @@
+#include "log.h"
 #include "core.h"
 #include "detectortracker.h"
 
@@ -26,6 +27,8 @@ void signal_handler(int signal)
 
 auto main() -> int
 {
+    MuonPi::Log::init(MuonPi::Log::Level::Debug);
+
     MuonPi::MqttLink::LoginData login;
     login.username = "benjamin";
     login.password = "goodpassword";
