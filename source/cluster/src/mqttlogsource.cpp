@@ -1,6 +1,7 @@
 #include "mqttlogsource.h"
 
 #include "logmessage.h"
+#include "utility.h"
 
 namespace MuonPi {
 
@@ -15,6 +16,8 @@ auto MqttLogSource::step() -> int
 {
     if (m_link->has_message()) {
         MqttLink::Message msg = m_link->get_message();
+        MessageParser topic { msg.topic, '/'};
+        MessageParser content { msg.content, ' '};
         // todo: parsing of message
         push_item(nullptr);
     }

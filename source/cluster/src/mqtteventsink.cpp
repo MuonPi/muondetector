@@ -2,6 +2,7 @@
 #include "event.h"
 #include "combinedevent.h"
 #include "log.h"
+#include "utility.h"
 
 namespace MuonPi {
 
@@ -30,22 +31,22 @@ auto MqttEventSink::step() -> int
 
 void MqttEventSink::process(std::unique_ptr<Event> /*evt*/)
 {
-    std::string message {};
+    MessageConstructor message {' '};
 
     // todo: construct message string
 
-    if (m_link.single->publish(message)) {
+    if (m_link.single->publish(message.get_string())) {
         syslog(Log::Warning, "Could not publish MQTT message.");
     }
 }
 
 void MqttEventSink::process(std::unique_ptr<CombinedEvent> /*evt*/)
 {
-    std::string message {};
+    MessageConstructor message {' '};
 
     // todo: construct message string
 
-    if (m_link.combined->publish(message)) {
+    if (m_link.combined->publish(message.get_string())) {
         syslog(Log::Warning, "Could not publish MQTT message.");
     }
 }
