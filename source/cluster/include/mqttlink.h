@@ -17,6 +17,11 @@ namespace MuonPi {
 class MqttLink : public mqtt::callback
 {
 public:
+    struct Message
+    {
+        std::string topic {};
+        std::string content{};
+    };
     /**
      * @brief The Publisher class. Only gets instantiated from within the MqttLink class.
      */
@@ -58,7 +63,7 @@ public:
          * @brief get_message Gets the next message from the queue.
          * @return an std::pair containting the message
          */
-        [[nodiscard]] auto get_message() -> std::string;
+        [[nodiscard]] auto get_message() -> Message;
 
     private:
         friend class MqttLink;
@@ -66,11 +71,11 @@ public:
          * @brief push_message Only called from within the MqttLink class
          * @param message The message to push into the queue
          */
-        void push_message(std::string message);
+        void push_message(const Message& message);
 
 
         mqtt::topic m_topic;
-        std::queue<std::string> m_messages {};
+        std::queue<Message> m_messages {};
         std::mutex m_mutex {};
     };
 

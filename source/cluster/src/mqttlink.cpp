@@ -130,7 +130,7 @@ void MqttLink::message_arrived(mqtt::const_message_ptr message)
     std::string message_topic {message->get_topic()};
     for (auto& [topic, subscriber]: m_subscribers) {
         if (message_topic.find(topic) == 0) {
-            subscriber->push_message(message->to_string());
+            subscriber->push_message({message_topic, message->to_string()});
         }
     }
 }
@@ -167,7 +167,7 @@ auto MqttLink::Subscriber::has_message() const -> bool
     return !m_messages.empty();
 }
 
-auto MqttLink::Subscriber::get_message() -> std::string
+auto MqttLink::Subscriber::get_message() -> Message
 {
     std::scoped_lock<std::mutex> lock {m_mutex};
     if (m_messages.empty()) {
@@ -178,7 +178,7 @@ auto MqttLink::Subscriber::get_message() -> std::string
     return msg;
 }
 
-void MqttLink::Subscriber::push_message(std::string message)
+void MqttLink::Subscriber::push_message(const Message &message)
 {
     std::scoped_lock<std::mutex> lock {m_mutex};
     m_messages.push(message);

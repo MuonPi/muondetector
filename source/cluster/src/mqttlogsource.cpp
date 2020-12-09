@@ -14,7 +14,7 @@ MqttLogSource::~MqttLogSource() = default;
 auto MqttLogSource::step() -> int
 {
     if (m_link->has_message()) {
-        std::string msg = m_link->get_message();
+        MqttLink::Message msg = m_link->get_message();
         // todo: parsing of message
         push_item(nullptr);
     }
