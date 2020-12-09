@@ -11,6 +11,19 @@
 #include "mqtteventsink.h"
 #endif
 
+#include <csignal>
+#include <functional>
+
+void signal_handler(int signal);
+
+
+static std::function<void(int)> shutdown_handler;
+
+void signal_handler(int signal)
+{
+    shutdown_handler(signal);
+}
+
 auto main() -> int
 {
     MuonPi::MqttLink::LoginData login;
@@ -43,6 +56,16 @@ auto main() -> int
 #endif
 
     MuonPi::Core core{std::move(event_sink), std::move(event_source), std::move(detector_tracker)};
+
+    shutdown_handler = [&](int signal) {
+        if (signal == SIGINT) {
+            core.stop();
+        }
+    };
+
+    std::signal(SIGINT, signal_handler);
+
+
 
     return core.wait();
 }
