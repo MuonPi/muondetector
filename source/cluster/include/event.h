@@ -7,6 +7,12 @@
 namespace MuonPi {
 
 /**
+ * @brief Event ID generator function
+ *  function to generate a unique event id from the system time and a random number
+ */
+std::size_t generate_unique_event_id();
+
+/**
  * @brief The Event class
  *  class, which is used as an interface for single events and combined events
  */
