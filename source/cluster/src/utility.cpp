@@ -24,7 +24,11 @@ MessageParser::MessageParser(const std::string& message, char delimiter)
     : m_content { message }
     , m_iterator { m_content.begin() }
     , m_delimiter { delimiter }
-{}
+{
+    while (!at_end()) {
+        read_field();
+    }
+}
 
 void MessageParser::skip_delimiter()
 {
@@ -33,20 +37,39 @@ void MessageParser::skip_delimiter()
     }
 }
 
-auto MessageParser::consume_field() -> std::string
+void MessageParser::read_field()
 {
-    std::string buffer {};
     skip_delimiter();
+    std::string::iterator start { m_iterator };
     while ((*m_iterator != m_delimiter) && (m_iterator != m_content.end())) {
-        buffer += *m_iterator;
         m_iterator++;
     }
-    return buffer;
+    std::string::iterator end { m_iterator };
+
+    if (start != end) {
+        m_fields.push_back(std::make_pair(start, end));
+    }
 }
 
-auto MessageParser::has_field() -> bool
+auto MessageParser::at_end() -> bool
 {
-    return (m_iterator != m_content.end());
+    skip_delimiter();
+    return m_iterator == m_content.end();
+}
+
+auto MessageParser::size() const -> std::size_t
+{
+    return m_fields.size();
+}
+
+auto MessageParser::empty() const -> bool
+{
+    return m_fields.empty();
+}
+
+auto MessageParser::operator[](std::size_t i) const -> std::string
+{
+    return std::string{ m_fields[i].first, m_fields[i].second };
 }
 
 }
