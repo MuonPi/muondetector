@@ -17,31 +17,28 @@ MqttEventSource::~MqttEventSource() = default;
 auto MqttEventSource::step() -> int
 {
     const std::string DATA_TOPIC_STR {"muonpi/data"};
-	if (m_link.single->has_message()) {
+    if (m_link.single->has_message()) {
         MqttLink::Message msg = m_link.single->get_message();
         MessageParser topic { msg.topic, '/'};
         MessageParser content { msg.content, ' '};
-        std::unique_ptr<Event> event { nullptr };
-		if (msg.topic.find(DATA_TOPIC_STR)!=std::string::npos) {
-			// todo: generate appropriate event id
-			std::uint64_t id=generate_unique_event_id();
-			std::string reststr=msg.content;
-			while (reststr.size() && reststr[0]==' ') reststr.erase(0,1);
-			MessageParser parser(reststr, ' ');
-			std::string ts_string = parser.consume_field();
-			std::uint64_t ts = std::stoull(ts_string, nullptr);
-			std::chrono::steady_clock::time_point start = std::chrono::steady_clock::time_point(std::chrono::nanoseconds(ts));
-			
-			ts_string = parser.consume_field();
-			ts = std::stoull(ts_string, nullptr);
-			std::chrono::steady_clock::time_point end = std::chrono::steady_clock::time_point(std::chrono::nanoseconds(ts));
-			
-			std::string site_id = msg.topic.erase(msg.topic.find_first_of(DATA_TOPIC_STR), std::string(DATA_TOPIC_STR).size());
-			site_id.erase(site_id.find('/'));
-			std::size_t hash(std::hash<std::string>{}(site_id));
-			event=std::make_unique<Event>(Event(hash,id,start,end));
-		}
-        push_item(std::move(event));
+        if ((topic.size() == 4) && (content.size() >= 2)) {
+
+            std::size_t hash {std::hash<std::string>{}(topic[2] + topic[3])};
+
+            std::string ts_string = content[0];
+            std::uint64_t ts = std::stoull(ts_string, nullptr);
+
+            std::chrono::steady_clock::time_point start = std::chrono::steady_clock::time_point(std::chrono::nanoseconds(ts));
+
+            ts_string = content[1];
+            ts = std::stoull(ts_string, nullptr);
+
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::time_point(std::chrono::nanoseconds(ts));
+
+            std::uint64_t id {hash & 0xFFFFFFFF00000000 + 0x00000000FFFFFFFF & ts};
+
+            push_item(std::make_unique<Event>(Event(hash,id,start,end)));
+        }
     }
     if (m_link.combined->has_message()) {
         MqttLink::Message msg = m_link.combined->get_message();
