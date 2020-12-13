@@ -37,8 +37,8 @@ auto main() -> int
     login.password = "goodpassword";
     login.station_id = "ds9";
 
-//    MuonPi::MqttLink source_link {"116.202.96.181:1883", login};
-    MuonPi::MqttLink source_link {"168.119.243.171:1883", login};
+    MuonPi::MqttLink source_link {"116.202.96.181:1883", login};
+//    MuonPi::MqttLink source_link {"168.119.243.171:1883", login};
 
     if (!source_link.wait_for(MuonPi::MqttLink::Status::Connected, std::chrono::seconds{5})) {
         return -1;

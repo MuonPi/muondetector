@@ -28,7 +28,7 @@ auto MqttLogSource::step() -> int
         MessageParser topic { msg.topic, '/'};
         MessageParser content { msg.content, ' '};
         // todo: parsing of message
-        push_item(nullptr);
+//        push_item(nullptr);
     }
     std::this_thread::sleep_for(std::chrono::microseconds{50});
     return 0;

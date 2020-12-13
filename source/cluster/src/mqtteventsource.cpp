@@ -27,7 +27,6 @@ auto MqttEventSource::pre_run() -> int
 auto MqttEventSource::step() -> int
 {
     if (m_link.single->has_message()) {
-        Log::debug()<<"Got package.";
         MqttLink::Message msg = m_link.single->get_message();
         MessageParser topic { msg.topic, '/'};
         MessageParser content { msg.content, ' '};
