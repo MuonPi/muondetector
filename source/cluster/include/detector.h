@@ -84,7 +84,7 @@ private:
     std::size_t m_hash { 0 };
 
     std::unique_ptr<RateSupervisor> m_supervisor { nullptr };
-    std::atomic<std::chrono::steady_clock::time_point> m_last_log { std::chrono::steady_clock::now() };
+    std::chrono::steady_clock::time_point m_last_log { std::chrono::steady_clock::now() };
 
     static constexpr std::chrono::steady_clock::duration s_log_interval { std::chrono::minutes { 7 } };
     static constexpr std::chrono::steady_clock::duration s_quit_interval { s_log_interval * 3 };
