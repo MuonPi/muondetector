@@ -32,13 +32,11 @@ auto ThreadRunner::step() -> int
 
 auto ThreadRunner::pre_run() -> int
 {
-    syslog(Log::Info, "started thread.");
     return 0;
 }
 
 auto ThreadRunner::post_run() -> int
 {
-    syslog(Log::Info, "stopping thread.");
     return 0;
 }
 
@@ -53,6 +51,7 @@ auto ThreadRunner::wait() -> int
 
 auto ThreadRunner::run() -> int
 {
+    Log::debug()<<"Starting thread " + m_name;
     int pre_result { pre_run() };
     m_started = true;
     if (pre_result != 0) {
@@ -64,6 +63,7 @@ auto ThreadRunner::run() -> int
             return result;
         }
     }
+    Log::debug()<<"Stopping thread " + m_name;
     return post_run();
 }
 

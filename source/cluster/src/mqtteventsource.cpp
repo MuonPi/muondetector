@@ -26,13 +26,13 @@ auto MqttEventSource::pre_run() -> int
 
 auto MqttEventSource::step() -> int
 {
-    const std::string DATA_TOPIC_STR {"muonpi/data"};
     if (m_link.single->has_message()) {
+        Log::debug()<<"Got package.";
         MqttLink::Message msg = m_link.single->get_message();
         MessageParser topic { msg.topic, '/'};
         MessageParser content { msg.content, ' '};
         if ((topic.size() == 4) && (content.size() >= 2)) {
-
+            Log::info()<<"Got package from " + topic[2] + topic[3];
             std::size_t hash {std::hash<std::string>{}(topic[2] + topic[3])};
 
             std::string ts_string = content[0];

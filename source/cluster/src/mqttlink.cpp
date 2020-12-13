@@ -61,6 +61,7 @@ auto MqttLink::step() -> int
 {
     mqtt::const_message_ptr* message = new mqtt::const_message_ptr{};
     if (m_client->try_consume_message(message)) {
+        Log::debug()<<"Got message.";
         std::string message_topic {(*message)->get_topic()};
         for (auto& [topic, subscriber]: m_subscribers) {
             std::regex regex{topic};
@@ -98,6 +99,7 @@ auto MqttLink::publish(const std::string& topic) -> std::shared_ptr<Publisher>
         return nullptr;
     }
     m_publishers[topic] = std::make_shared<Publisher>(*m_client, topic);
+    Log::debug()<<"Starting to publish on topic " + topic;
     return m_publishers[topic];
 }
 
@@ -111,6 +113,7 @@ auto MqttLink::subscribe(const std::string& topic, const std::string& regex) -> 
         return nullptr;
     }
     m_subscribers[regex] = std::make_shared<Subscriber>(*m_client, topic);
+    Log::debug()<<"Starting to subscribe to topic " + topic;
     return m_subscribers[regex];
 }
 
@@ -122,19 +125,19 @@ auto MqttLink::connect() -> bool
 
     if (n > max_tries) {
         set_status(Status::Error);
-        syslog(Log::Error, "Giving up trying to connect to MQTT.");
+        Log::error()<<"Giving up trying to connect to MQTT.";
         return false;
     }
     try {
         m_client->connect(m_conn_options)->wait();
         set_status(Status::Connected);
         n = 0;
-        syslog(Log::Debug, "Connected to MQTT.");
+        Log::info()<<"Connected to MQTT";
         return true;
     } catch (const mqtt::exception& exc) {
         std::this_thread::sleep_for( std::chrono::seconds{1} );
         n++;
-        syslog(Log::Warning, "Received exception while tryig to connect to MQTT, but retrying: %s", exc.what());
+        Log::warning()<<"Received exception while tryig to connect to MQTT, but retrying: " + std::string{exc.what()};
         return connect();
     }
 }
@@ -147,10 +150,10 @@ auto MqttLink::disconnect() -> bool
     try {
         m_client->disconnect()->wait();
         set_status(Status::Disconnected);
-        syslog(Log::Debug, "Disconnected from MQTT.");
+        Log::info()<<"Disconnected from MQTT.";
         return true;
     } catch (const mqtt::exception& exc) {
-        syslog(Log::Error, "Received exception while tryig to disconnect from MQTT: %s", exc.what());
+        Log::error()<<"Received exception while tryig to disconnect from MQTT: " + std::string{exc.what()};
         return false;
     }
 }
@@ -160,14 +163,14 @@ auto MqttLink::reconnect() -> bool
     set_status(Status::Disconnected);
     try {
         if (!m_client->reconnect()->wait_for(std::chrono::seconds{5})) {
-            syslog(Log::Error, "Could not reconnect to MQTT");
+            Log::error()<<"Could not reconnect to MQTT.";
             return false;
         }
         set_status(Status::Connected);
-        syslog(Log::Debug, "Connected to MQTT.");
+        Log::info()<<"Connected to MQTT";
         return true;
     } catch (const mqtt::exception& exc) {
-        syslog(Log::Error, "Received exception while tryig to reconnect to MQTT: %s", exc.what());
+        Log::error()<<"Received exception while tryig to reconnect from MQTT: " + std::string{exc.what()};
         return false;
     }
 }
@@ -188,7 +191,7 @@ auto MqttLink::Publisher::publish(const std::string& content) -> bool
         m_client.publish(m_topic, content);
         return true;
     } catch (const mqtt::exception& exc) {
-        syslog(Log::Error, "Received exception while tryig to publish MQTT message: %s", exc.what());
+        Log::error()<<"Received exception while tryig to publish MQTT message: " + std::string{exc.what()};
         return false;
     }
 }
