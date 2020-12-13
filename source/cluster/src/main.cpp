@@ -10,6 +10,7 @@
 #include "databaseeventsink.h"
 #else
 #include "mqtteventsink.h"
+#include "asciieventsink.h"
 #endif
 
 #include <csignal>
@@ -34,28 +35,38 @@ auto main() -> int
     login.password = "goodpassword";
     login.station_id = "ds9";
 
-    MuonPi::MqttLink source_link {"", login};
+    MuonPi::MqttLink source_link {"168.119.243.171:1883", login};
+
+    if (!source_link.wait_for(MuonPi::MqttLink::Status::Connected, std::chrono::seconds{5})) {
+        return -1;
+    }
 
     MuonPi::MqttEventSource::Subscribers source_topics;
 
-    source_topics.single = source_link.subscribe("muonpi/events/...");
-    source_topics.combined = source_link.subscribe("muonpi/l1data/...");
+    source_topics.single = source_link.subscribe("muonpi/data/#", "muonpi/data/[/a-zA-Z0-9]+");
+    source_topics.combined = source_link.subscribe("muonpi/l1data/#", "muonpi/l1data/[/a-zA-Z0-9]+");
 
-    auto log_source { std::make_unique<MuonPi::MqttLogSource>(source_link.subscribe("muonpi/log/...")) };
+    auto log_source { std::make_unique<MuonPi::MqttLogSource>(source_link.subscribe("muonpi/log/#", "muonpi/log/[/a-zA-Z0-9]+")) };
+
     auto event_source { std::make_unique<MuonPi::MqttEventSource>(std::move(source_topics)) };
 
     auto detector_tracker { std::make_unique<MuonPi::DetectorTracker>(std::move(log_source)) };
 
+    source_link.startup();
+
 #ifdef CLUSTER_RUN_SERVER
     auto event_sink { std::make_unique<MuonPi::DatabaseEventSink>() };
 #else
+    /*
     MuonPi::MqttLink sink_link {"", login};
     MuonPi::MqttEventSink::Publishers sink_topics;
 
     sink_topics.single = sink_link.publish("muonpi/events/...");
     sink_topics.combined = sink_link.publish("muonpi/l1data/...");
 
-    auto event_sink { std::make_unique<MuonPi::MqttEventSink>(std::move(sink_topics)) };
+    auto event_sink { std::make_unique<MuonPi::MqttEventSink>(std::move(sink_topics)) };*/
+
+    auto event_sink { std::make_unique<MuonPi::AsciiEventSink>(std::cout) };
 #endif
 
     MuonPi::Core core{std::move(event_sink), std::move(event_source), std::move(detector_tracker)};
@@ -69,6 +80,8 @@ auto main() -> int
     std::signal(SIGINT, signal_handler);
 
 
+    core.join();
 
+    source_link.stop();
     return core.wait();
 }

@@ -19,6 +19,7 @@ class Detector;
 class AbstractDetectorTracker : public ThreadRunner
 {
 public:
+    AbstractDetectorTracker();
 
     virtual ~AbstractDetectorTracker() override;
 

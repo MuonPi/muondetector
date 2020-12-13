@@ -1,7 +1,12 @@
 #include "threadrunner.h"
 
+#include "log.h"
+
 namespace MuonPi {
 
+ThreadRunner::ThreadRunner(const std::string& name)
+    : m_name { name }
+{}
 
 ThreadRunner::~ThreadRunner()
 {
@@ -27,11 +32,13 @@ auto ThreadRunner::step() -> int
 
 auto ThreadRunner::pre_run() -> int
 {
+    syslog(Log::Info, "started thread.");
     return 0;
 }
 
 auto ThreadRunner::post_run() -> int
 {
+    syslog(Log::Info, "stopping thread.");
     return 0;
 }
 
@@ -40,15 +47,14 @@ auto ThreadRunner::wait() -> int
     if (!m_run_future.valid()) {
         return -1;
     }
+    join();
     return m_run_future.get();
 }
 
 auto ThreadRunner::run() -> int
 {
-    if (m_run_future.valid()) {
-        return -2;
-    }
     int pre_result { pre_run() };
+    m_started = true;
     if (pre_result != 0) {
         return pre_result;
     }
@@ -65,6 +71,14 @@ void ThreadRunner::finish()
 {
     stop();
     join();
+}
+
+void ThreadRunner::start()
+{
+    if (m_started) {
+        return;
+    }
+    m_run_future = std::async(std::launch::async, &ThreadRunner::run, this);
 }
 
 }

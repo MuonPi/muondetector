@@ -13,6 +13,7 @@ namespace MuonPi {
 class ThreadRunner
 {
 public:
+    ThreadRunner(const std::string& name);
     /**
      * @brief ~ThreadRunner Stops the thread and waits for it to finish.
      */
@@ -63,10 +64,15 @@ protected:
      */
     [[nodiscard]] virtual auto post_run() -> int;
 
+    void start();
+
 private:
     std::atomic<bool> m_run { true };
+    std::atomic<bool> m_started { false };
 
-    std::future<int> m_run_future { std::async(std::launch::async, &ThreadRunner::run, this) };
+    std::future<int> m_run_future {};
+
+    std::string m_name {};
 };
 
 }

@@ -1,11 +1,14 @@
 #ifndef MQTTLINK_H
 #define MQTTLINK_H
 
+#include "threadrunner.h"
+
 #include <string>
 #include <memory>
 #include <chrono>
 #include <map>
 #include <future>
+#include <regex>
 
 #include <mqtt/async_client.h>
 
@@ -14,7 +17,7 @@ namespace MuonPi {
 /**
  * @brief The MqttLink class. Connects to a Mqtt server and offers publish and subscribe methods.
  */
-class MqttLink : public mqtt::callback
+class MqttLink : public ThreadRunner
 {
 public:
     struct Message
@@ -40,7 +43,8 @@ public:
          */
         [[nodiscard]] auto publish(const std::string& content) -> bool;
     private:
-        mqtt::topic m_topic;
+        mqtt::async_client& m_client;
+        std::string m_topic {};
     };
 
     /**
@@ -54,6 +58,7 @@ public:
          * @param topic The topic to connect to.
          */
         Subscriber(mqtt::async_client& client, const std::string& topic);
+
         /**
          * @brief has_message Check whether there are messages available.
          * @return true if there is at least one message in the queue.
@@ -74,9 +79,14 @@ public:
         void push_message(const Message& message);
 
 
-        mqtt::topic m_topic;
+        void unsubscribe();
+
+
         std::queue<Message> m_messages {};
         std::mutex m_mutex {};
+
+        mqtt::async_client& m_client;
+        std::string m_topic {};
     };
 
     struct LoginData
@@ -111,6 +121,8 @@ public:
 
     ~MqttLink() override;
 
+    void startup();
+
     /**
      * @brief publish Create a publisher object
      * @param topic The topic over which the messages should be published
@@ -123,30 +135,16 @@ public:
      * @param topic The topic for which the subscriber should listen
      * @return A shared_ptr to a subscriber object, or nullptr in the case of failure.
      */
-    [[nodiscard]] auto subscribe(const std::string& topic) -> std::shared_ptr<Subscriber>;
+    [[nodiscard]] auto subscribe(const std::string& topic, const std::string& regex) -> std::shared_ptr<Subscriber>;
 
-    /**
-     * @brief connected reimplemented from mqtt::callback
-     * @param cause The cause of the connection?
-     */
-    void connected(const std::string& cause) override;
-    /**
-     * @brief connection_lost Reimplemented from mqtt::callback
-     * @param cause The cause of the connection loss
-     */
-    void connection_lost(const std::string& cause) override;
-    /**
-     * @brief message_arrived Reimplemented from mqtt::callback
-     * @param message A pointer to the message
-     */
-    void message_arrived(mqtt::const_message_ptr message) override;
-    /**
-     * @brief delivery_complete Reimplemented from mqtt::callback
-     * @param token A pointer to the delivery token
-     */
-    void delivery_complete(mqtt::delivery_token_ptr token) override;
+    [[nodiscard]] auto wait_for(Status status, std::chrono::seconds duration) -> bool;
 
+protected:
+    [[nodiscard]] auto pre_run() -> int override;
+    [[nodiscard]] auto step() -> int override;
+    [[nodiscard]] auto post_run() -> int override;
 private:
+
     /**
      * @brief connects to the Server synchronuously. This method blocks until it is connected.
      * @return true if the connection was successful
@@ -168,6 +166,7 @@ private:
      * @param status The new status of the connection
      */
     void set_status(Status status);
+
 
     std::string m_server {};
     LoginData m_login_data {};

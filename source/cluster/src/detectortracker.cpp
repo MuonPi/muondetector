@@ -8,6 +8,11 @@
 
 namespace MuonPi {
 
+AbstractDetectorTracker::AbstractDetectorTracker()
+    : ThreadRunner{"DetectorTracker"}
+{
+    start();
+}
 
 AbstractDetectorTracker::~AbstractDetectorTracker() = default;
 

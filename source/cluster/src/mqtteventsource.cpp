@@ -2,17 +2,27 @@
 
 #include "event.h"
 #include "utility.h"
+#include "log.h"
 
 namespace MuonPi {
 
 MqttEventSource::MqttEventSource(Subscribers subscribers)
-    : m_link { std::move(subscribers) }
+    : AbstractSource<Event>{}
+    , m_link { std::move(subscribers) }
 {
-
+    start();
 }
 
 MqttEventSource::~MqttEventSource() = default;
 
+
+auto MqttEventSource::pre_run() -> int
+{
+    if ((m_link.single == nullptr) || (m_link.combined == nullptr)) {
+        return -1;
+    }
+    return 0;
+}
 
 auto MqttEventSource::step() -> int
 {
@@ -44,9 +54,9 @@ auto MqttEventSource::step() -> int
         MqttLink::Message msg = m_link.combined->get_message();
         MessageParser topic { msg.topic, '/'};
         MessageParser content { msg.content, ' '};
-        std::unique_ptr<Event> event { nullptr };
+//        std::unique_ptr<Event> event { nullptr };
         // todo: parsing of message
-        push_item(std::move(event));
+//        push_item(std::move(event));
     }
     std::this_thread::sleep_for(std::chrono::microseconds{50});
     return 0;

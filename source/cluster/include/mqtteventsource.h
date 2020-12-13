@@ -33,6 +33,7 @@ protected:
      * @return zero if the step succeeded.
      */
     [[nodiscard]] auto step() -> int override;
+    [[nodiscard]] auto pre_run() -> int override;
 
 private:
     Subscribers m_link {};

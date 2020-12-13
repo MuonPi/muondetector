@@ -22,6 +22,7 @@ template <typename T>
 class AbstractSource : public ThreadRunner
 {
 public:
+    AbstractSource();
     /**
      * @brief ~AbstractSource The destructor. If this gets called while the event loop is still running, it will tell the loop to finish and wait for it to be done.
      */
@@ -56,6 +57,12 @@ private:
 
 };
 
+
+
+template <typename T>
+AbstractSource<T>::AbstractSource()
+    : ThreadRunner{"AbstractSource"}
+{}
 
 template <typename T>
 AbstractSource<T>::~AbstractSource() = default;

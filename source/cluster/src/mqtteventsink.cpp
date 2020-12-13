@@ -7,9 +7,10 @@
 namespace MuonPi {
 
 MqttEventSink::MqttEventSink(Publishers publishers)
-    : m_link { std::move(publishers) }
+    : AbstractSink<Event>{}
+    , m_link { std::move(publishers) }
 {
-
+    start();
 }
 
 MqttEventSink::~MqttEventSink() = default;

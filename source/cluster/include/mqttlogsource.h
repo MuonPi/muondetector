@@ -31,6 +31,8 @@ protected:
      */
     [[nodiscard]] auto step() -> int override;
 
+    [[nodiscard]] auto pre_run() -> int override;
+
 private:
     std::shared_ptr<MqttLink::Subscriber> m_link { nullptr };
 };

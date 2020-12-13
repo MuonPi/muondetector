@@ -22,6 +22,7 @@ template <typename T>
 class AbstractSink : public ThreadRunner
 {
 public:
+    AbstractSink();
     /**
      * @brief ~AbstractSink The destructor. If this gets called while the event loop is still running, it will tell the loop to finish and wait for it to be done.
      */
@@ -56,6 +57,10 @@ private:
 
 };
 
+template <typename T>
+AbstractSink<T>::AbstractSink()
+    : ThreadRunner{"AbstractSink"}
+{}
 
 template <typename T>
 AbstractSink<T>::~AbstractSink() = default;

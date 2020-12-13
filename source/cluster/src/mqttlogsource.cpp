@@ -8,9 +8,18 @@ namespace MuonPi {
 MqttLogSource::MqttLogSource(std::shared_ptr<MqttLink::Subscriber> subscriber)
     : m_link { subscriber }
 {
+    start();
 }
 
 MqttLogSource::~MqttLogSource() = default;
+
+auto MqttLogSource::pre_run() -> int
+{
+    if (m_link == nullptr) {
+        return -1;
+    }
+    return 0;
+}
 
 auto MqttLogSource::step() -> int
 {

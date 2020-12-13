@@ -4,13 +4,15 @@
 #include "log.h"
 #include "utility.h"
 #include <iostream>
+#include <sstream>
 
 namespace MuonPi {
 
 AsciiEventSink::AsciiEventSink(std::ostream& a_ostream)
-    : m_ostream { a_ostream }
+    : AbstractSink<Event>{}
+    , m_ostream { a_ostream }
 {
-
+    start();
 }
 
 AsciiEventSink::~AsciiEventSink() = default;

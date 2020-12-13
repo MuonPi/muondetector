@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <sstream>
+#include <regex>
 
 #include <cryptopp/sha.h>
 #include <cryptopp/filters.h>
@@ -11,7 +12,8 @@
 namespace MuonPi {
 
 MqttLink::MqttLink(const std::string& server, const LoginData& login)
-    : m_server { server }
+    : ThreadRunner{"MqttLink"}
+    , m_server { server }
     , m_login_data { login }
     , m_client { std::make_unique<mqtt::async_client>(server, login.client_id()) }
 {
@@ -28,6 +30,65 @@ MqttLink::~MqttLink()
     }
 }
 
+void MqttLink::startup()
+{
+    start();
+}
+
+
+auto MqttLink::wait_for(Status status, std::chrono::seconds duration) -> bool
+{
+    std::chrono::steady_clock::time_point start { std::chrono::steady_clock::now() };
+    while (status != m_status) {
+        std::this_thread::sleep_for(duration / 10);
+        if ((std::chrono::steady_clock::now() - start) >= duration) {
+            return false;
+        }
+    }
+    return true;
+}
+
+auto MqttLink::pre_run() -> int
+{
+    if (m_status != Status::Connected) {
+        return -1;
+    }
+    m_client->start_consuming();
+    return 0;
+}
+
+auto MqttLink::step() -> int
+{
+    mqtt::const_message_ptr* message = new mqtt::const_message_ptr{};
+    if (m_client->try_consume_message(message)) {
+        std::string message_topic {(*message)->get_topic()};
+        for (auto& [topic, subscriber]: m_subscribers) {
+            std::regex regex{topic};
+            std::smatch match;
+            if (std::regex_match(message_topic, match, regex)) {
+                subscriber->push_message({message_topic, (*message)->to_string()});
+            }
+        }
+    }
+    std::this_thread::sleep_for(std::chrono::microseconds{10});
+    return 0;
+}
+
+auto MqttLink::post_run() -> int
+{
+    for (auto& subscriber : m_subscribers) {
+        subscriber.second->unsubscribe();
+    }
+
+    m_subscribers.clear();
+    m_publishers.clear();
+    m_client->stop_consuming();
+    if (!disconnect()) {
+        return -1;
+    }
+    return 0;
+}
+
 auto MqttLink::publish(const std::string& topic) -> std::shared_ptr<Publisher>
 {
     if (m_status != Status::Connected) {
@@ -40,16 +101,17 @@ auto MqttLink::publish(const std::string& topic) -> std::shared_ptr<Publisher>
     return m_publishers[topic];
 }
 
-auto MqttLink::subscribe(const std::string& topic) -> std::shared_ptr<Subscriber>
+auto MqttLink::subscribe(const std::string& topic, const std::string& regex) -> std::shared_ptr<Subscriber>
 {
     if (m_status != Status::Connected) {
         return nullptr;
     }
-    if (m_subscribers.find(topic) != m_subscribers.end()) {
+    std::string check_topic { topic};
+    if (m_subscribers.find(regex) != m_subscribers.end()) {
         return nullptr;
     }
-    m_subscribers[topic] = std::make_shared<Subscriber>(*m_client, topic);
-    return m_subscribers[topic];
+    m_subscribers[regex] = std::make_shared<Subscriber>(*m_client, topic);
+    return m_subscribers[regex];
 }
 
 auto MqttLink::connect() -> bool
@@ -66,7 +128,6 @@ auto MqttLink::connect() -> bool
     try {
         m_client->connect(m_conn_options)->wait();
         set_status(Status::Connected);
-        m_client->set_callback(*this);
         n = 0;
         syslog(Log::Debug, "Connected to MQTT.");
         return true;
@@ -115,39 +176,16 @@ void MqttLink::set_status(Status status) {
     m_status = status;
 }
 
-void MqttLink::connected(const std::string& /*cause*/)
-{
-
-}
-
-void MqttLink::connection_lost(const std::string& /*cause*/)
-{
-
-}
-
-void MqttLink::message_arrived(mqtt::const_message_ptr message)
-{
-    std::string message_topic {message->get_topic()};
-    for (auto& [topic, subscriber]: m_subscribers) {
-        if (message_topic.find(topic) == 0) {
-            subscriber->push_message({message_topic, message->to_string()});
-        }
-    }
-}
-
-void MqttLink::delivery_complete(mqtt::delivery_token_ptr /*token*/)
-{
-}
-
 MqttLink::Publisher::Publisher(mqtt::async_client& client, const std::string& topic)
-    : m_topic{client, topic}
+    : m_client { client }
+    , m_topic { topic }
 {
 }
 
 auto MqttLink::Publisher::publish(const std::string& content) -> bool
 {
     try {
-        m_topic.publish(content);
+        m_client.publish(m_topic, content);
         return true;
     } catch (const mqtt::exception& exc) {
         syslog(Log::Error, "Received exception while tryig to publish MQTT message: %s", exc.what());
@@ -157,9 +195,16 @@ auto MqttLink::Publisher::publish(const std::string& content) -> bool
 
 
 MqttLink::Subscriber::Subscriber(mqtt::async_client& client, const std::string& topic)
-    : m_topic { client, topic}
+    : m_client { client }
+    , m_topic { topic }
 {
-    m_topic.subscribe();
+    auto token {m_client.subscribe(m_topic, 1)};
+    token->wait();
+}
+
+void MqttLink::Subscriber::unsubscribe()
+{
+    m_client.unsubscribe(m_topic)->wait();
 }
 
 auto MqttLink::Subscriber::has_message() const -> bool
