@@ -23,7 +23,6 @@ auto MqttLogSource::pre_run() -> int
 
 auto MqttLogSource::step() -> int
 {
-	static std::uint8_t _location_complete_flags = 0x00;
 	if (m_link->has_message()) {
 		MqttLink::Message msg = m_link->get_message();
         MessageParser topic { msg.topic, '/'};
@@ -34,6 +33,7 @@ auto MqttLogSource::step() -> int
 			std::size_t hash {std::hash<std::string>{}(topic[2] + topic[3])};
 			if (m_logbuffer.find(hash)!=std::end(m_logbuffer)) {
 				// the detector already exists, so we assume that other logdata was sent before and will complement the entry
+				static std::uint8_t _location_complete_flags = 0x00;
 				LogMessage logmessage ( m_logbuffer.at(hash) );
 				std::string parname = content[1];
 				std::string valstring = content[2];
