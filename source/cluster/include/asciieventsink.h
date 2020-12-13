@@ -18,9 +18,9 @@ class AsciiEventSink : public AbstractSink<Event>
 public:
     /**
      * @brief AsciiEventSink
-     * @param publishers The topics from which the messages should be published
+     * @param a_ostream The stream to which the output should be written
      */
-    AsciiEventSink(std::ostream* a_ostream);
+    AsciiEventSink(std::ostream& a_ostream);
 
     ~AsciiEventSink() override;
 protected:
@@ -35,7 +35,7 @@ private:
     void process(std::unique_ptr<Event> evt);
     void process(std::unique_ptr<CombinedEvent> evt);
 
-    std::ostream* m_ostream { nullptr };
+    std::ostream& m_ostream;
 };
 
 }

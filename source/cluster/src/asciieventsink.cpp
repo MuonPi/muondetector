@@ -7,7 +7,7 @@
 
 namespace MuonPi {
 
-AsciiEventSink::AsciiEventSink(std::ostream* a_ostream)
+AsciiEventSink::AsciiEventSink(std::ostream& a_ostream)
     : m_ostream { a_ostream }
 {
 
