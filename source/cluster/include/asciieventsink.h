@@ -35,6 +35,8 @@ private:
     void process(std::unique_ptr<Event> evt);
     void process(std::unique_ptr<CombinedEvent> evt);
 
+    [[nodiscard]] auto to_string(Event& evt) const -> std::string;
+
     std::ostream& m_ostream;
 };
 
