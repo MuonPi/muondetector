@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <vector>
+#include <string>
 
 namespace MuonPi {
 
@@ -19,6 +20,18 @@ std::size_t generate_unique_event_id();
 class Event
 {
 public:
+    struct Data {
+        std::string user {};
+        std::string station_id {};
+        std::chrono::system_clock::time_point start {};
+        std::chrono::system_clock::time_point end {};
+        std::uint32_t time_acc {};
+        std::uint16_t ublox_counter {};
+        std::uint8_t fix {};
+        std::uint8_t utc {};
+        std::uint8_t gnss_time_grid {};
+    };
+
     /**
      * @brief Event
      * @param hash a hash of the username and detector site_id
@@ -28,6 +41,7 @@ public:
      */
     Event(std::size_t hash, std::uint64_t id, std::chrono::system_clock::time_point start = {}, std::chrono::system_clock::time_point end = {}) noexcept;
 
+    Event(std::size_t hash, std::uint64_t id, Data data) noexcept;
     /**
      * @brief Event
      * @param hash a hash of the username and detector site_id
@@ -110,6 +124,10 @@ public:
 
     [[nodiscard]] auto valid() const -> bool;
 
+    [[nodiscard]] auto data() const -> Data;
+
+    void set_data(const Data& data);
+
 private:
     std::chrono::system_clock::time_point m_start {};
     std::chrono::system_clock::time_point m_end {};
@@ -119,6 +137,8 @@ private:
     std::uint64_t m_hash {};
     std::uint64_t m_id {};
     bool m_valid { true };
+
+    Data m_data {};
 };
 }
 

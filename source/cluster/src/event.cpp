@@ -22,6 +22,15 @@ Event::Event(std::size_t hash, std::uint64_t id, std::chrono::system_clock::time
     , m_id { id}
 {}
 
+Event::Event(std::size_t hash, std::uint64_t id, Data data) noexcept
+    : m_start { data.start }
+    , m_end { data.end }
+    , m_hash { hash }
+    , m_id { id }
+    , m_data { std::move(data) }
+{
+}
+
 Event::Event(std::size_t hash, std::uint64_t id, std::chrono::system_clock::time_point start, std::chrono::system_clock::duration duration) noexcept
     : m_start { start }
     , m_end { start + duration }
@@ -49,6 +58,7 @@ Event::Event(const Event& other)
     , m_hash { other.m_hash }
     , m_id { other.m_id }
     , m_valid { other.m_valid }
+    , m_data { other.m_data }
 {
 }
 
@@ -61,6 +71,7 @@ Event::Event(Event&& other)
     , m_hash { std::move(other.m_hash) }
     , m_id { std::move(other.m_id) }
     , m_valid { std::move(other.m_valid) }
+    , m_data { std::move(other.m_data) }
 {
 }
 
@@ -126,6 +137,15 @@ auto Event::events() -> std::vector<Event>
 auto Event::valid() const -> bool
 {
     return m_valid;
+}
+auto Event::data() const -> Data
+{
+    return m_data;
+}
+
+void Event::set_data(const Data& data)
+{
+    m_data = data;
 }
 
 

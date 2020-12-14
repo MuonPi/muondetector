@@ -49,6 +49,8 @@ void RateSupervisor::tick(bool message)
                 float av = mean_average();
                 if (((m_default.m - av) / m_default.s) < m_default.n) {
                     m_allowed.m = av;
+                } else {
+                    m_allowed .m = (m_default.m - m_default.s*m_default.n);
                 }
             }
         }

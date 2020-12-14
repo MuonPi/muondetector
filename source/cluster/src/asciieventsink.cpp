@@ -38,24 +38,36 @@ void AsciiEventSink::process(Event event)
 
         m_ostream<<output + "\n";
     } else {
-//	    m_ostream<<"Single Event:" + to_string(event) + "\n";
+/*        std::string output { "Single Event: " };
+        for (auto& evt: event.events()) {
+            output += to_string(evt);
+        }
+        m_ostream<<output + "\n";*/
     }
 }
 
 auto AsciiEventSink::to_string(Event& evt) const -> std::string
 {
+    Event::Data data { evt.data() };
     std::string output {};
     std::ostringstream out { output };
-    std::chrono::seconds start { std::chrono::duration_cast<std::chrono::seconds>(evt.start().time_since_epoch()).count() };
+    std::chrono::seconds start { std::chrono::duration_cast<std::chrono::seconds>(data.start.time_since_epoch()).count() };
     std::int64_t start_s { start.count() };
-    std::int64_t offset_start { std::chrono::duration_cast<std::chrono::nanoseconds>(evt.start().time_since_epoch() - start).count() };
-    std::int64_t offset_end { std::chrono::duration_cast<std::chrono::nanoseconds>(evt.end().time_since_epoch() - start).count() };
+    std::int64_t offset_start { std::chrono::duration_cast<std::chrono::nanoseconds>(data.start.time_since_epoch() - start).count() };
+    std::int64_t offset_end { std::chrono::duration_cast<std::chrono::nanoseconds>(data.end.time_since_epoch() - start).count() };
+
     out
             <<evt.hash()
+            <<' '<<data.user
+            <<' '<<data.station_id
             <<' '<<start_s
             <<' '<<offset_start
-            <<' '<<offset_end;
-
+            <<' '<<offset_end
+            <<' '<<data.time_acc
+            <<' '<<data.ublox_counter
+            <<' '<<data.fix
+            <<' '<<data.utc
+            <<' '<<data.gnss_time_grid;
     return out.str();
 }
 }
