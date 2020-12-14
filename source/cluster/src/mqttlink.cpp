@@ -59,14 +59,14 @@ auto MqttLink::pre_run() -> int
 
 auto MqttLink::step() -> int
 {
-    mqtt::const_message_ptr* message = new mqtt::const_message_ptr{};
-    if (m_client->try_consume_message(message)) {
-        std::string message_topic {(*message)->get_topic()};
+    mqtt::const_message_ptr message;
+    if (m_client->try_consume_message(&message)) {
+        std::string message_topic {message->get_topic()};
         for (auto& [topic, subscriber]: m_subscribers) {
             std::regex regex{topic};
             std::smatch match;
             if (std::regex_match(message_topic, match, regex)) {
-                subscriber->push_message({message_topic, (*message)->to_string()});
+                subscriber->push_message({message_topic, message->to_string()});
             }
         }
     }
