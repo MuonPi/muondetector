@@ -35,7 +35,7 @@ struct LogItem {
 
     void reset();
 
-    [[nodiscard]] auto add(MessageParser& message) -> bool;
+    auto add(MessageParser& message) -> bool;
 
     [[nodiscard]] auto complete() -> bool;
 

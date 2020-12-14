@@ -18,33 +18,39 @@ auto LogItem::add(MessageParser& message) -> bool
         reset();
         id = message[0];
     }
-    if (message[1] == "geoHeightMSL") {
-        geo.h = std::stod(message[2], nullptr);
-        status &= ~1;
-    } else if (message[1] == "geoHorAccuracy") {
-        geo.h_acc = std::stod(message[2], nullptr);
-        status &= ~2;
-    } else if (message[1] == "geoLatitude") {
-        geo.lat = std::stod(message[2], nullptr);
-        status &= ~4;
-    } else if (message[1] == "geoLongitude") {
-        geo.lon = std::stod(message[2], nullptr);
-        status &= ~8;
-    } else if (message[1] == "geoVertAccuracy") {
-        geo.v_acc = std::stod(message[2], nullptr);
-        status &= ~16;
-    } else if (message[1] == "positionDOP") {
-        geo.dop = std::stod(message[2], nullptr);
-        status &= ~32;
-    } else if (message[1] == "timeAccuracy") {
-        time.accuracy = std::stod(message[2], nullptr);
-        status &= ~64;
-    } else if (message[1] == "timeDOP") {
-        time.dop = std::stod(message[2], nullptr);
-        status &= ~128;
-    } else {
+    try {
+        if (message[1] == "geoHeightMSL") {
+            geo.h = std::stod(message[2], nullptr);
+            status &= ~1;
+        } else if (message[1] == "geoHorAccuracy") {
+            geo.h_acc = std::stod(message[2], nullptr);
+            status &= ~2;
+        } else if (message[1] == "geoLatitude") {
+            geo.lat = std::stod(message[2], nullptr);
+            status &= ~4;
+        } else if (message[1] == "geoLongitude") {
+            geo.lon = std::stod(message[2], nullptr);
+            status &= ~8;
+        } else if (message[1] == "geoVertAccuracy") {
+            geo.v_acc = std::stod(message[2], nullptr);
+            status &= ~16;
+        } else if (message[1] == "positionDOP") {
+            geo.dop = std::stod(message[2], nullptr);
+            status &= ~32;
+        } else if (message[1] == "timeAccuracy") {
+            time.accuracy = std::stod(message[2], nullptr);
+            status &= ~64;
+        } else if (message[1] == "timeDOP") {
+            time.dop = std::stod(message[2], nullptr);
+            status &= ~128;
+        } else {
+            return false;
+        }
+    } catch(std::invalid_argument& e) {
+        Log::warning()<<"received exception when parsing log item: " + std::string(e.what());
         return false;
     }
+
     return true;
 }
 
@@ -81,8 +87,7 @@ auto MqttLogSource::step() -> int
 
             if (m_buffer.find(hash) != m_buffer.end()) {
                 auto& item { m_buffer[hash] };
-                if (item.add(content)) {
-                }
+                item.add(content);
                 if (item.complete()) {
                     process(hash, item);
                     m_buffer.erase(hash);
@@ -90,8 +95,7 @@ auto MqttLogSource::step() -> int
             } else {
                 LogItem item;
                 item.id = content[0];
-                if (item.add(content)) {
-                }
+                item.add(content);
                 m_buffer[hash] = item;
             }
         }
