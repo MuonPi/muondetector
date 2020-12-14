@@ -20,10 +20,11 @@ AsciiEventSink::~AsciiEventSink() = default;
 auto AsciiEventSink::step() -> int
 {
     if (has_items()) {
-        std::unique_ptr<Event> e { next_item()};
+        std::unique_ptr<Event> e { next_item() };
         if (e->n() > 1) {
             std::unique_ptr<CombinedEvent> evt_ptr {dynamic_cast<CombinedEvent*>(e.get())};
             process(std::move(evt_ptr));
+            e.release();
         } else {
             process(std::move(e));
         }
