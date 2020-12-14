@@ -82,10 +82,8 @@ auto MqttLogSource::step() -> int
             if (m_buffer.find(hash) != m_buffer.end()) {
                 auto& item { m_buffer[hash] };
                 if (item.add(content)) {
-                    Log::info()<<"Got log from " + topic[2] + topic[3] + ": " + content[1];
                 }
                 if (item.complete()) {
-                    Log::info()<<"Got last log from " + topic[2] + topic[3];
                     process(hash, item);
                     m_buffer.erase(hash);
                 }
@@ -93,8 +91,6 @@ auto MqttLogSource::step() -> int
                 LogItem item;
                 item.id = content[0];
                 if (item.add(content)) {
-                    Log::info()<<"Got first log from " + topic[2] + topic[3];
-                    Log::info()<<"Got log from " + topic[2] + topic[3] + ": " + content[1];
                 }
                 m_buffer[hash] = item;
             }

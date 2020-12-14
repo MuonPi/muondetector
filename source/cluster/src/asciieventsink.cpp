@@ -33,19 +33,22 @@ auto AsciiEventSink::step() -> int
     return 0;
 }
 
-void AsciiEventSink::process(std::unique_ptr<Event> /*evt*/)
+void AsciiEventSink::process(std::unique_ptr<Event> /*event*/)
 {
-    // todo: stream the message into m_ostream
+//    m_ostream<<"Single Event:" + to_string(*event) + "\n";
 }
 
 void AsciiEventSink::process(std::unique_ptr<CombinedEvent> evt)
 {
-    m_ostream
-            <<"Combined Event:\n";
-    for (auto& event: evt->events()) {
-        m_ostream<<' '<<to_string(*event);
+    std::string output { "Combined Event:" };
+    if (evt->contested()) {
+        output += " (contested)";
     }
-    // todo: stream the message into m_ostream
+    for (auto& event: evt->events()) {
+        output += "\n\t" + to_string(*event);
+    }
+
+    m_ostream<<output + "\n";
 }
 
 auto AsciiEventSink::to_string(Event& evt) const -> std::string
