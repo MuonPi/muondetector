@@ -6,7 +6,9 @@ namespace MuonPi {
 
 CombinedEvent::CombinedEvent(std::uint64_t id, std::unique_ptr<Event> event) noexcept
     : Event{event->hash(), id, event->start(), event->start()}
-{}
+{
+    m_events.push_back(std::move(event));
+}
 
 CombinedEvent::~CombinedEvent() noexcept = default;
 
