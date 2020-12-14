@@ -65,9 +65,9 @@ auto AsciiEventSink::to_string(Event& evt) const -> std::string
             <<' '<<offset_end
             <<' '<<data.time_acc
             <<' '<<data.ublox_counter
-            <<' '<<data.fix
-            <<' '<<data.utc
-            <<' '<<data.gnss_time_grid;
+            <<' '<<std::to_string(data.fix)
+            <<' '<<std::to_string(data.utc)
+            <<' '<<std::to_string(data.gnss_time_grid);
     return out.str();
 }
 }
