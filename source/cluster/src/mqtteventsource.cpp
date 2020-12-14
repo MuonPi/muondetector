@@ -31,7 +31,7 @@ auto MqttEventSource::step() -> int
         MessageParser topic { msg.topic, '/'};
         MessageParser content { msg.content, ' '};
         if ((topic.size() == 4) && (content.size() >= 2)) {
-            Log::info()<<"Got package from " + topic[2] + topic[3];
+//            Log::info()<<"Got data from " + topic[2] + topic[3];
             std::size_t hash {std::hash<std::string>{}(topic[2] + topic[3])};
 
             std::string ts_string = content[0];

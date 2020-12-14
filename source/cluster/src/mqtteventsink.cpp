@@ -37,7 +37,7 @@ void MqttEventSink::process(std::unique_ptr<Event> /*evt*/)
     // todo: construct message string
 
     if (m_link.single->publish(message.get_string())) {
-        syslog(Log::Warning, "Could not publish MQTT message.");
+        Log::warning()<<"Could not publish MQTT message.";
     }
 }
 
@@ -48,7 +48,7 @@ void MqttEventSink::process(std::unique_ptr<CombinedEvent> /*evt*/)
     // todo: construct message string
 
     if (m_link.combined->publish(message.get_string())) {
-        syslog(Log::Warning, "Could not publish MQTT message.");
+        Log::warning()<<"Could not publish MQTT message.";
     }
 }
 

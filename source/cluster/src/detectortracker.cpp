@@ -47,7 +47,7 @@ void DetectorTracker::process(const LogMessage& log)
 {
     auto detector { m_detectors.find(log.hash()) };
     if (detector == m_detectors.end()) {
-        syslog(Log::Debug, "Found new detector %X", static_cast<unsigned int>(log.hash()));
+        Log::debug()<<"Found new detector " + std::to_string(log.hash());
         m_detectors[log.hash()] = std::make_unique<Detector>(log);
         return;
     }
@@ -65,7 +65,7 @@ auto DetectorTracker::step() -> int
     for (auto& [hash, detector]: m_detectors) {
 
         if (!detector->step()) {
-            syslog(Log::Debug, "Deleting detector %X", static_cast<unsigned int>(hash));
+            Log::debug()<<"Deleting detector " + std::to_string(hash);
             m_delete_detectors.push(hash);
             continue;
         }
