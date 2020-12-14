@@ -9,6 +9,7 @@
 #include "logmessage.h"
 #include "timebasesupervisor.h"
 #include "detectortracker.h"
+#include "log.h"
 
 namespace MuonPi {
 
@@ -73,22 +74,23 @@ auto Core::post_run() -> int
     return m_detector_tracker->wait() + m_event_sink->wait() + m_event_source->wait();
 }
 
-void Core::process(std::unique_ptr<Event> event)
+void Core::process(Event event)
 {
-    m_time_base_supervisor->process_event(*event);
+    m_time_base_supervisor->process_event(event);
 
-    if (!m_detector_tracker->accept(*event)) {
+    if (!m_detector_tracker->accept(event)) {
         return;
     }
 
+
     std::queue<std::pair<std::uint64_t, bool>> matches {};
     for (auto& [id, constructor]: m_constructors) {
-        auto result { constructor->event_matches(*event) };
+        auto result { constructor->event_matches(event) };
         if ( EventConstructor::Type::NoMatch != result) {
             matches.push(std::make_pair(id, (result == EventConstructor::Type::Contested)));
         }
     }
-    std::uint64_t event_id { event->id() };
+    std::uint64_t event_id { event.id() };
 
     // +++ Event matches exactly one existing constructor
     if (matches.size() == 1) {

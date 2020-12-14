@@ -9,7 +9,6 @@
 namespace MuonPi {
 
 class Event;
-class CombinedEvent;
 
 /**
  * @brief The MqttEventSink class
@@ -18,8 +17,8 @@ class MqttEventSink : public AbstractSink<Event>
 {
 public:
     struct Publishers {
-        std::shared_ptr<MqttLink::Publisher> single { nullptr };
-        std::shared_ptr<MqttLink::Publisher> combined { nullptr };
+        MqttLink::Publisher& single;
+        MqttLink::Publisher& combined;
     };
     /**
      * @brief MqttEventSink
@@ -37,10 +36,9 @@ protected:
 
 private:
 
-    void process(std::unique_ptr<Event> evt);
-    void process(std::unique_ptr<CombinedEvent> evt);
+    void process(Event evt);
 
-    Publishers m_link {};
+    Publishers m_link;
 };
 
 }

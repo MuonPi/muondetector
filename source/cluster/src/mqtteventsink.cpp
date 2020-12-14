@@ -1,6 +1,5 @@
 #include "mqtteventsink.h"
 #include "event.h"
-#include "combinedevent.h"
 #include "log.h"
 #include "utility.h"
 
@@ -18,36 +17,19 @@ MqttEventSink::~MqttEventSink() = default;
 auto MqttEventSink::step() -> int
 {
     if (has_items()) {
-        std::unique_ptr<Event> e { next_item()};
-        if (e->n() > 1) {
-            std::unique_ptr<CombinedEvent> evt_ptr {dynamic_cast<CombinedEvent*>(e.get())};
-            process(std::move(evt_ptr));
-        } else {
-            process(std::move(e));
-        }
+        process(next_item());
     }
     std::this_thread::sleep_for(std::chrono::microseconds{50});
     return 0;
 }
 
-void MqttEventSink::process(std::unique_ptr<Event> /*evt*/)
+void MqttEventSink::process(Event /*evt*/)
 {
     MessageConstructor message {' '};
 
     // todo: construct message string
 
-    if (m_link.single->publish(message.get_string())) {
-        Log::warning()<<"Could not publish MQTT message.";
-    }
-}
-
-void MqttEventSink::process(std::unique_ptr<CombinedEvent> /*evt*/)
-{
-    MessageConstructor message {' '};
-
-    // todo: construct message string
-
-    if (m_link.combined->publish(message.get_string())) {
+    if (m_link.single.publish(message.get_string())) {
         Log::warning()<<"Could not publish MQTT message.";
     }
 }

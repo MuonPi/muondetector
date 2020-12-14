@@ -1,6 +1,5 @@
 #include "asciieventsink.h"
 #include "event.h"
-#include "combinedevent.h"
 #include "log.h"
 #include "utility.h"
 #include <iostream>
@@ -20,35 +19,27 @@ AsciiEventSink::~AsciiEventSink() = default;
 auto AsciiEventSink::step() -> int
 {
     if (has_items()) {
-        std::unique_ptr<Event> e { next_item() };
-        if (e->n() > 1) {
-            std::unique_ptr<CombinedEvent> evt_ptr {dynamic_cast<CombinedEvent*>(e.get())};
-            process(std::move(evt_ptr));
-            e.release();
-        } else {
-            process(std::move(e));
-        }
+        process(next_item());
     }
     std::this_thread::sleep_for(std::chrono::microseconds{50});
     return 0;
 }
 
-void AsciiEventSink::process(std::unique_ptr<Event> /*event*/)
+void AsciiEventSink::process(Event event)
 {
-//    m_ostream<<"Single Event:" + to_string(*event) + "\n";
-}
+    if (event.n() > 1) {
+        std::string output { "Combined Event:" };
+        if (event.contested()) {
+            output += " (contested)";
+        }
+        for (auto& evt: event.events()) {
+            output += "\n\t" + to_string(evt);
+        }
 
-void AsciiEventSink::process(std::unique_ptr<CombinedEvent> evt)
-{
-    std::string output { "Combined Event:" };
-    if (evt->contested()) {
-        output += " (contested)";
+        m_ostream<<output + "\n";
+    } else {
+//	    m_ostream<<"Single Event:" + to_string(event) + "\n";
     }
-    for (auto& event: evt->events()) {
-        output += "\n\t" + to_string(*event);
-    }
-
-    m_ostream<<output + "\n";
 }
 
 auto AsciiEventSink::to_string(Event& evt) const -> std::string

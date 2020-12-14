@@ -44,10 +44,11 @@ auto main() -> int
         return -1;
     }
 
-    MuonPi::MqttEventSource::Subscribers source_topics;
+    MuonPi::MqttEventSource::Subscribers source_topics{
+        source_link.subscribe("muonpi/data/#", "muonpi/data/[/a-zA-Z0-9_-]+"),
+        source_link.subscribe("muonpi/l1data/#", "muonpi/l1data/[/a-zA-Z0-9_-]+")
+    };
 
-    source_topics.single = source_link.subscribe("muonpi/data/#", "muonpi/data/[/a-zA-Z0-9_-]+");
-    source_topics.combined = source_link.subscribe("muonpi/l1data/#", "muonpi/l1data/[/a-zA-Z0-9_-]+");
 
     auto log_source { std::make_unique<MuonPi::MqttLogSource>(source_link.subscribe("muonpi/log/#", "muonpi/log/[/a-zA-Z0-9_-]+")) };
 

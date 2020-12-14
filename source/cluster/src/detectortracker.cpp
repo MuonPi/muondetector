@@ -88,7 +88,7 @@ auto DetectorTracker::step() -> int
 
     // +++ handle incoming log messages, maximum 10 at a time to prevent blocking
     if (m_log_source->has_items()) {
-        process(*m_log_source->next_item());
+        process(m_log_source->next_item());
     }
     // --- handle incoming log messages, maximum 10 at a time to prevent blocking
 

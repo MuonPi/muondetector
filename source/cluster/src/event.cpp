@@ -1,4 +1,6 @@
 #include "event.h"
+#include "log.h"
+
 #include <random>
 
 namespace MuonPi {
@@ -26,6 +28,41 @@ Event::Event(std::size_t hash, std::uint64_t id, std::chrono::system_clock::time
     , m_hash { hash }
     , m_id { id}
 {}
+
+Event::Event(std::uint64_t id, Event event) noexcept
+    : Event{event.hash(), id, event.start(), event.start()}
+{
+    m_events.push_back(std::move(event));
+}
+
+Event::Event() noexcept
+    : m_valid { false }
+{
+}
+
+Event::Event(const Event& other)
+    : m_start { other.m_start }
+    , m_end { other.m_end }
+    , m_n { other.m_n }
+    , m_events { other.m_events }
+    , m_contested { other.m_contested }
+    , m_hash { other.m_hash }
+    , m_id { other.m_id }
+    , m_valid { other.m_valid }
+{
+}
+
+Event::Event(Event&& other)
+    : m_start { std::move(other.m_start) }
+    , m_end { std::move(other.m_end) }
+    , m_n { std::move(other.m_n) }
+    , m_events { std::move(other.m_events) }
+    , m_contested { std::move(other.m_contested) }
+    , m_hash { std::move(other.m_hash) }
+    , m_id { std::move(other.m_id) }
+    , m_valid { std::move(other.m_valid) }
+{
+}
 
 Event::~Event() noexcept = default;
 
@@ -57,6 +94,38 @@ auto Event::hash() const noexcept -> std::size_t
 auto Event::n() const noexcept -> std::size_t
 {
     return m_n;
+}
+
+void Event::add_event(Event event) noexcept
+{
+    if (event.start() <= start()) {
+        m_start = event.start();
+    }
+    if (event.start() >= end()) {
+        m_end = event.start();
+    }
+    m_events.push_back(std::move(event));
+    m_n++;
+}
+
+void Event::mark_contested()
+{
+    m_contested = true;
+}
+
+auto Event::contested() const -> bool
+{
+    return m_contested;
+}
+
+auto Event::events() -> std::vector<Event>
+{
+    return m_events;
+}
+
+auto Event::valid() const -> bool
+{
+    return m_valid;
 }
 
 

@@ -49,7 +49,7 @@ private:
      * @brief process Called from step(). Handles a new event arriving
      * @param event The event to process
      */
-    void process(std::unique_ptr<Event> event);
+    void process(Event event);
 
     std::unique_ptr<AbstractSink<Event>> m_event_sink { nullptr };
     std::unique_ptr<AbstractSource<Event>> m_event_source { nullptr };

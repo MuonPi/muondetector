@@ -1,6 +1,7 @@
 #ifndef EVENTCONSTRUCTOR_H
 #define EVENTCONSTRUCTOR_H
 
+#include "event.h"
 
 #include <memory>
 #include <chrono>
@@ -8,7 +9,6 @@
 namespace MuonPi {
 
 class Event;
-class CombinedEvent;
 class Criterion;
 /**
  * @brief The EventConstructor class
@@ -28,7 +28,7 @@ public:
      * @param criterion The criterion to use to check events
      * @param timeout the initial timeout to use
      */
-    EventConstructor(std::unique_ptr<Event> event, std::shared_ptr<Criterion> criterion, std::chrono::system_clock::duration timeout);
+    EventConstructor(Event event, std::shared_ptr<Criterion> criterion, std::chrono::system_clock::duration timeout);
 
     ~EventConstructor();
 
@@ -37,7 +37,7 @@ public:
      * @param event The event to add
      * @param contested Whether the event is contested or not
      */
-    void add_event(std::unique_ptr<Event> event, bool contested = false);
+    void add_event(Event event, bool contested = false);
 
     /**
      * @brief event_matches Check whether an event matches the criterion
@@ -56,7 +56,7 @@ public:
      * @brief commit Hand over the event unique_ptr
      * @return The unique_ptr to the constructed event
      */
-    [[nodiscard]] auto commit() -> std::unique_ptr<Event>;
+    [[nodiscard]] auto commit() -> Event;
 
     /**
      * @brief timed_out Check whether the timeout has been reached
@@ -66,7 +66,7 @@ public:
 
 private:
     std::chrono::system_clock::time_point m_start { std::chrono::system_clock::now() };
-    std::unique_ptr<CombinedEvent> m_event { nullptr };
+    Event m_event;
     std::shared_ptr<Criterion> m_criterion { nullptr };
     std::chrono::system_clock::duration m_timeout { std::chrono::minutes{1} };
 };

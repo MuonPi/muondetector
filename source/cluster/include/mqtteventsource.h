@@ -17,8 +17,8 @@ class MqttEventSource : public AbstractSource<Event>
 {
 public:
     struct Subscribers {
-        std::shared_ptr<MqttLink::Subscriber> single { nullptr };
-        std::shared_ptr<MqttLink::Subscriber> combined { nullptr };
+        MqttLink::Subscriber& single;
+        MqttLink::Subscriber& combined;
     };
     /**
      * @brief MqttEventSource
@@ -36,7 +36,7 @@ protected:
     [[nodiscard]] auto pre_run() -> int override;
 
 private:
-    Subscribers m_link {};
+    Subscribers m_link;
 };
 
 }

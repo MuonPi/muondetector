@@ -34,13 +34,13 @@ public:
     [[nodiscard]] auto current() -> std::chrono::system_clock::duration;
 
 private:
-    static constexpr std::chrono::system_clock::duration s_minimum { std::chrono::seconds{4} };
+    static constexpr std::chrono::system_clock::duration s_minimum { std::chrono::seconds{2} };
 
-    std::chrono::system_clock::duration m_sample_time { std::chrono::seconds{2} };
+    std::chrono::system_clock::duration m_sample_time { std::chrono::seconds{4} };
     std::chrono::system_clock::time_point m_start { std::chrono::system_clock::now() };
     std::chrono::system_clock::time_point m_earliest {std::chrono::system_clock::now() + std::chrono::seconds{5}};
     std::chrono::system_clock::time_point m_latest {std::chrono::system_clock::now() - std::chrono::seconds{5}};
-    std::chrono::system_clock::duration m_current { std::chrono::seconds{2} };
+    std::chrono::system_clock::duration m_current { s_minimum };
 
 };
 

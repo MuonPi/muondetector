@@ -37,6 +37,13 @@ public:
      */
     Event(std::size_t hash, std::uint64_t id, std::chrono::system_clock::time_point start = {}, std::chrono::system_clock::duration duration = {}) noexcept;
 
+    Event(std::uint64_t id, Event event) noexcept;
+
+    Event() noexcept;
+
+    Event(const Event& other);
+    Event(Event&& other);
+
     virtual ~Event() noexcept;
 
     /**
@@ -75,15 +82,43 @@ public:
      */
     [[nodiscard]] auto n() const noexcept -> std::size_t;
 
+    /**
+     * @brief contested
+     * @return Return whether this event is contested or not.
+     * @see mark_contested
+     */
+    [[nodiscard]] auto contested() const -> bool;
 
-protected:
+    /**
+      * @brief Get the list of events. Moves the vector.
+      * @return The list of events contained in this combined event
+      */
+    [[nodiscard]] auto events() -> std::vector<Event>;
+
+
+    /**
+     * @brief add_event Adds an event to the CombinedEvent.
+     * @param event The event to add. In the case that the abstract event is a combined event, the child events will be added instead of their combination.
+     * 				The unique_ptr will be moved.
+     */
+    void add_event(Event event) noexcept;
+
+    /**
+     * @brief mark_contested Mark this combined event as containing a set of events which have at least one possible subset of events though does not work as an event in its totality.
+     */
+    void mark_contested();
+
+    [[nodiscard]] auto valid() const -> bool;
+
+private:
     std::chrono::system_clock::time_point m_start {};
     std::chrono::system_clock::time_point m_end {};
     std::size_t m_n { 1 };
-
-private:
+    std::vector<Event> m_events {};
+    bool m_contested { false };
     std::uint64_t m_hash {};
     std::uint64_t m_id {};
+    bool m_valid { true };
 };
 }
 

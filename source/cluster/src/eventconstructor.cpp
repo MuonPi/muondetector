@@ -1,13 +1,11 @@
 #include "eventconstructor.h"
-#include "event.h"
-#include "combinedevent.h"
 #include "criterion.h"
 #include "log.h"
 
 namespace MuonPi {
 
-EventConstructor::EventConstructor(std::unique_ptr<Event> event, std::shared_ptr<Criterion> criterion, std::chrono::system_clock::duration timeout)
-    : m_event { std::make_unique<CombinedEvent>(event->id(), std::move(event)) }
+EventConstructor::EventConstructor(Event event, std::shared_ptr<Criterion> criterion, std::chrono::system_clock::duration timeout)
+    : m_event { event.id(), std::move(event) }
     , m_criterion { criterion }
     , m_timeout { timeout }
 {
@@ -15,18 +13,18 @@ EventConstructor::EventConstructor(std::unique_ptr<Event> event, std::shared_ptr
 
 EventConstructor::~EventConstructor() = default;
 
-void EventConstructor::add_event(std::unique_ptr<Event> event, bool contested)
+void EventConstructor::add_event(Event event, bool contested)
 {
-    m_event->add_event(std::move(event));
+    m_event.add_event(std::move(event));
 
     if (contested) {
-        m_event->mark_contested();
+        m_event.mark_contested();
     }
 }
 
 auto EventConstructor::event_matches(const Event& event) -> EventConstructor::Type
 {
-    const float criterion { m_criterion->criterion(*m_event, event) };
+    const float criterion { m_criterion->criterion(m_event, event) };
 
     if (criterion < m_criterion->maximum_false()) {
         return Type::NoMatch;
@@ -47,13 +45,9 @@ void EventConstructor::set_timeout(std::chrono::system_clock::duration timeout)
     m_timeout = timeout;
 }
 
-auto EventConstructor::commit() -> std::unique_ptr<Event>
+auto EventConstructor::commit() -> Event
 {
-    auto ptr { std::move(m_event) };
-
-    m_event = nullptr;
-
-    return ptr;
+   return std::move(m_event);
 }
 
 auto EventConstructor::timed_out() const -> bool

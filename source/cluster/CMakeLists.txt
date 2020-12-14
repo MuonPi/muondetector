@@ -51,7 +51,6 @@ find_library(CRYPTOPP crypto++ REQUIRED)
 set(CLUSTER_SOURCE_FILES
     "${PROJECT_SRC_DIR}/core.cpp"
     "${PROJECT_SRC_DIR}/event.cpp"
-    "${PROJECT_SRC_DIR}/combinedevent.cpp"
     "${PROJECT_SRC_DIR}/databaseeventsink.cpp"
     "${PROJECT_SRC_DIR}/mqttlink.cpp"
     "${PROJECT_SRC_DIR}/asciieventsink.cpp"
@@ -77,7 +76,6 @@ set(CLUSTER_HEADER_FILES
     "${PROJECT_HEADER_DIR}/abstractsink.h"
     "${PROJECT_HEADER_DIR}/abstractsource.h"
     "${PROJECT_HEADER_DIR}/coincidence.h"
-    "${PROJECT_HEADER_DIR}/combinedevent.h"
     "${PROJECT_HEADER_DIR}/criterion.h"
     "${PROJECT_HEADER_DIR}/databaselink.h"
     "${PROJECT_HEADER_DIR}/databaseeventsink.h"

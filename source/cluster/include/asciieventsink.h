@@ -8,7 +8,6 @@
 namespace MuonPi {
 
 class Event;
-class CombinedEvent;
 
 /**
  * @brief The AsciiEventSink class
@@ -32,8 +31,7 @@ protected:
 
 private:
 
-    void process(std::unique_ptr<Event> evt);
-    void process(std::unique_ptr<CombinedEvent> evt);
+    void process(Event evt);
 
     [[nodiscard]] auto to_string(Event& evt) const -> std::string;
 

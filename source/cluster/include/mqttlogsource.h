@@ -51,7 +51,7 @@ public:
      * @brief MqttLogSource
      * @param subscriber The Mqtt Topic this Log source should be subscribed to
      */
-    MqttLogSource(std::shared_ptr<MqttLink::Subscriber> subscriber);
+    MqttLogSource(MqttLink::Subscriber& subscriber);
 
     ~MqttLogSource() override;
 
@@ -65,7 +65,7 @@ protected:
     [[nodiscard]] auto step() -> int override;
 
 private:
-    std::shared_ptr<MqttLink::Subscriber> m_link { nullptr };
+    MqttLink::Subscriber& m_link;
 
     void process(std::size_t hash, LogItem item);
 

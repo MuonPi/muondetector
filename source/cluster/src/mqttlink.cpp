@@ -15,7 +15,7 @@ MqttLink::MqttLink(const std::string& server, const LoginData& login)
     : ThreadRunner{"MqttLink"}
     , m_server { server }
     , m_login_data { login }
-    , m_client { std::make_unique<mqtt::async_client>(server, login.client_id()) }
+    , m_client { server, login.client_id() }
 {
     m_conn_options.set_user_name(login.username);
     m_conn_options.set_password(login.password);
@@ -53,14 +53,14 @@ auto MqttLink::pre_run() -> int
     if (m_status != Status::Connected) {
         return -1;
     }
-    m_client->start_consuming();
+    m_client.start_consuming();
     return 0;
 }
 
 auto MqttLink::step() -> int
 {
     mqtt::const_message_ptr message;
-    if (m_client->try_consume_message(&message)) {
+    if (m_client.try_consume_message(&message)) {
         std::string message_topic {message->get_topic()};
         for (auto& [topic, subscriber]: m_subscribers) {
             std::regex regex{topic};
@@ -82,38 +82,38 @@ auto MqttLink::post_run() -> int
 
     m_subscribers.clear();
     m_publishers.clear();
-    m_client->stop_consuming();
+    m_client.stop_consuming();
     if (!disconnect()) {
         return -1;
     }
     return 0;
 }
 
-auto MqttLink::publish(const std::string& topic) -> std::shared_ptr<Publisher>
+auto MqttLink::publish(const std::string& topic) -> Publisher&
 {
     if (m_status != Status::Connected) {
-        return nullptr;
+        throw -1;
     }
     if (m_publishers.find(topic) != m_publishers.end()) {
-        return nullptr;
+        throw -1;
     }
-    m_publishers[topic] = std::make_shared<Publisher>(*m_client, topic);
+    m_publishers.emplace(std::make_pair(topic, std::make_unique<Publisher>(m_client, topic)));
     Log::debug()<<"Starting to publish on topic " + topic;
-    return m_publishers[topic];
+    return *m_publishers[topic];
 }
 
-auto MqttLink::subscribe(const std::string& topic, const std::string& regex) -> std::shared_ptr<Subscriber>
+auto MqttLink::subscribe(const std::string& topic, const std::string& regex) -> Subscriber&
 {
     if (m_status != Status::Connected) {
-        return nullptr;
+        throw -1;
     }
     std::string check_topic { topic};
     if (m_subscribers.find(regex) != m_subscribers.end()) {
-        return nullptr;
+        throw -1;
     }
-    m_subscribers[regex] = std::make_shared<Subscriber>(*m_client, topic);
+    m_subscribers.emplace(std::make_pair(regex, std::make_unique<Subscriber>(m_client, topic)));
     Log::debug()<<"Starting to subscribe to topic " + topic;
-    return m_subscribers[regex];
+    return *m_subscribers[regex];
 }
 
 auto MqttLink::connect() -> bool
@@ -128,7 +128,7 @@ auto MqttLink::connect() -> bool
         return false;
     }
     try {
-        m_client->connect(m_conn_options)->wait();
+        m_client.connect(m_conn_options)->wait();
         set_status(Status::Connected);
         n = 0;
         Log::info()<<"Connected to MQTT";
@@ -147,7 +147,7 @@ auto MqttLink::disconnect() -> bool
         return true;
     }
     try {
-        m_client->disconnect()->wait();
+        m_client.disconnect()->wait();
         set_status(Status::Disconnected);
         Log::info()<<"Disconnected from MQTT.";
         return true;
@@ -161,7 +161,7 @@ auto MqttLink::reconnect() -> bool
 {
     set_status(Status::Disconnected);
     try {
-        if (!m_client->reconnect()->wait_for(std::chrono::seconds{5})) {
+        if (!m_client.reconnect()->wait_for(std::chrono::seconds{5})) {
             Log::error()<<"Could not reconnect to MQTT.";
             return false;
         }

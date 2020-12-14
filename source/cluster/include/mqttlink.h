@@ -36,6 +36,7 @@ public:
          * @param topic The topic to connect to.
          */
         Publisher(mqtt::async_client& client, const std::string& topic);
+
         /**
          * @brief publish Publish a message
          * @param content The content to send
@@ -45,6 +46,7 @@ public:
     private:
         mqtt::async_client& m_client;
         std::string m_topic {};
+        bool m_valid { true };
     };
 
     /**
@@ -58,6 +60,8 @@ public:
          * @param topic The topic to connect to.
          */
         Subscriber(mqtt::async_client& client, const std::string& topic);
+
+        Subscriber();
 
         /**
          * @brief has_message Check whether there are messages available.
@@ -87,6 +91,8 @@ public:
 
         mqtt::async_client& m_client;
         std::string m_topic {};
+
+        bool m_valid { true };
     };
 
     struct LoginData
@@ -128,14 +134,14 @@ public:
      * @param topic The topic over which the messages should be published
      * @return A shared_ptr to a publisher object, or nullptr in the case of failure.
      */
-    [[nodiscard]] auto publish(const std::string& topic) -> std::shared_ptr<Publisher>;
+    [[nodiscard]] auto publish(const std::string& topic) -> Publisher&;
 
     /**
      * @brief subscibe Create a Subscriber object
      * @param topic The topic for which the subscriber should listen
      * @return A shared_ptr to a subscriber object, or nullptr in the case of failure.
      */
-    [[nodiscard]] auto subscribe(const std::string& topic, const std::string& regex) -> std::shared_ptr<Subscriber>;
+    [[nodiscard]] auto subscribe(const std::string& topic, const std::string& regex) -> Subscriber&;
 
     [[nodiscard]] auto wait_for(Status status, std::chrono::seconds duration) -> bool;
 
@@ -173,10 +179,10 @@ private:
 
     Status m_status { Status::Invalid };
 
-    std::map<std::string, std::shared_ptr<Publisher>> m_publishers {};
-    std::map<std::string, std::shared_ptr<Subscriber>> m_subscribers {};
+    std::map<std::string, std::unique_ptr<Publisher>> m_publishers {};
+    std::map<std::string, std::unique_ptr<Subscriber>> m_subscribers {};
 
-    std::unique_ptr<mqtt::async_client> m_client { nullptr };
+    mqtt::async_client m_client;
     mqtt::connect_options m_conn_options {};
 
     std::future<bool> m_connection_status {};

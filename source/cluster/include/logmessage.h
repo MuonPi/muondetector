@@ -30,6 +30,11 @@ public:
      */
     LogMessage(std::size_t hash, Location location);
 
+    LogMessage() noexcept;
+
+    LogMessage(const LogMessage& other);
+    LogMessage(LogMessage&& other);
+
     /**
      * @brief hash
      * @return The hash of the detector for this event
@@ -48,10 +53,14 @@ public:
      */
     [[nodiscard]] auto time() const -> std::chrono::system_clock::time_point;
 
+    [[nodiscard]] auto valid() const -> bool;
+
 private:
     std::size_t m_hash { 0 };
     Location m_location {};
     std::chrono::system_clock::time_point m_time { std::chrono::system_clock::now() };
+
+    bool m_valid { true };
 };
 }
 
