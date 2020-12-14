@@ -88,13 +88,12 @@ void Core::process(std::unique_ptr<Event> event)
             matches.push(std::make_pair(id, (result == EventConstructor::Type::Contested)));
         }
     }
-
+    std::uint64_t event_id { event->id() };
 
     // +++ Event matches exactly one existing constructor
     if (matches.size() == 1) {
         m_constructors[matches.front().first]->add_event(std::move(event), matches.front().second);
         if (matches.front().second) {
-            Log::debug()<<"Found contestant event.";
         }
         matches.pop();
         return;

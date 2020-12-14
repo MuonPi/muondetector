@@ -21,7 +21,7 @@ void Detector::process(const LogMessage &log)
 
     m_location = log.location();
 
-    if ((m_location.prec > Location::minimum_prec) || (m_location.dop < Location::maximum_dop)) {
+    if ((m_location.prec > Location::maximum_prec) || (m_location.dop > Location::maximum_dop)) {
         set_status(Status::Unreliable);
     } else {
         set_status(Status::Reliable);
@@ -30,6 +30,9 @@ void Detector::process(const LogMessage &log)
 
 void Detector::set_status(Status status)
 {
+    if (m_status != status) {
+        Log::notice()<<"Marking detector " + std::to_string(m_hash) + ((status == Status::Reliable)?"Reliable":"Unreliable");
+    }
     m_status = status;
 }
 
@@ -53,7 +56,7 @@ auto Detector::step() -> bool
             set_status(Status::Unreliable);
         }
     } else {
-        if ((m_location.prec > Location::minimum_prec) || (m_location.dop < Location::maximum_dop)) {
+        if ((m_location.prec > Location::maximum_prec) || (m_location.dop > Location::maximum_dop)) {
             set_status(Status::Unreliable);
         } else {
             set_status(Status::Reliable);

@@ -12,7 +12,7 @@ struct Location {
     double prec { std::numeric_limits<double>::max() };
     double dop { std::numeric_limits<double>::min() };
 
-    static constexpr double minimum_prec { 1.0 };
+    static constexpr double maximum_prec { 1.0 };
     static constexpr double maximum_dop { 1.0 };
 };
 
