@@ -56,7 +56,7 @@ auto AsciiEventSink::to_string(Event& evt) const -> std::string
     std::int64_t offset_start { std::chrono::duration_cast<std::chrono::nanoseconds>(data.start.time_since_epoch() - start).count() };
     std::int64_t offset_end { std::chrono::duration_cast<std::chrono::nanoseconds>(data.end.time_since_epoch() - start).count() };
 
-    out
+    out		<<std::hex
             <<evt.hash()
             <<' '<<data.user
             <<' '<<data.station_id
@@ -65,9 +65,9 @@ auto AsciiEventSink::to_string(Event& evt) const -> std::string
             <<' '<<offset_end
             <<' '<<data.time_acc
             <<' '<<data.ublox_counter
-            <<' '<<std::to_string(data.fix)
-            <<' '<<std::to_string(data.utc)
-            <<' '<<std::to_string(data.gnss_time_grid);
+            <<' '<<static_cast<std::uint16_t>(data.fix)
+            <<' '<<static_cast<std::uint16_t>(data.utc)
+            <<' '<<static_cast<std::uint16_t>(data.gnss_time_grid);
     return out.str();
 }
 }
