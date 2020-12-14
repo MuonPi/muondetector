@@ -7,7 +7,7 @@ namespace MuonPi {
 Detector::Detector(const LogMessage &initial_log)
     : m_location { initial_log.location()}
     , m_hash { initial_log.hash() }
-    , m_supervisor { std::make_unique<RateSupervisor>(RateSupervisor::Rate{}) }
+    , m_supervisor { std::make_unique<RateSupervisor>(RateSupervisor::Rate{3.0f, 0.2f, 5.5f}) }
 {
 }
 

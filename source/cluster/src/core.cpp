@@ -25,7 +25,11 @@ Core::Core(std::unique_ptr<AbstractSink<Event>> event_sink, std::unique_ptr<Abst
 auto Core::step() -> int
 {
     m_timeout = std::chrono::milliseconds{static_cast<long>(std::chrono::duration_cast<std::chrono::milliseconds>(m_time_base_supervisor->current()).count() * m_detector_tracker->factor())};
-
+    static std::chrono::system_clock::time_point last { std::chrono::system_clock::now() };
+    if ((std::chrono::system_clock::now() - last) > std::chrono::seconds{5}) {
+        last = std::chrono::system_clock::now();
+        Log::debug()<<"timeout " + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(m_timeout).count()) + "ms";
+    }
 
     // +++ Send finished constructors off to the event sink
     for (auto& [id, constructor]: m_constructors) {

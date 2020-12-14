@@ -6,6 +6,7 @@
 
 #include <chrono>
 #include <atomic>
+#include <array>
 
 namespace MuonPi {
 
@@ -58,11 +59,25 @@ private:
      */
     void mark_dirty();
 
-    static constexpr std::size_t s_history_length { 100 };
+    [[nodiscard]] auto average() -> float;
+    [[nodiscard]] auto mean_average() -> float;
 
+    static constexpr std::size_t s_history_length { 10 };
+
+    std::size_t m_current_count { 0 };
+    std::size_t m_current_index { 0 };
+    std::size_t m_current_mean_index { 0 };
+    std::size_t m_n { 0 };
+
+    bool m_full { false };
+    bool m_mean_full { false };
+
+    float m_factor { 1.0f };
+    Rate m_default {};
     Rate m_allowed {};
     Rate m_current {};
-    float m_history[s_history_length] {}; //!< contains the time differences between each points, in microseconds
+    std::array<float, s_history_length> m_mean_history {};
+    std::array<float, s_history_length> m_history {};
     std::atomic<bool> m_dirty { false };
     std::chrono::system_clock::time_point m_last { std::chrono::system_clock::now() };
 };

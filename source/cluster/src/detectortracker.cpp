@@ -40,7 +40,11 @@ DetectorTracker::~DetectorTracker()
 auto DetectorTracker::accept(const Event& event) const -> bool
 {
     auto detector { m_detectors.find(event.hash()) };
-    return ((detector != m_detectors.end()) && ((*detector).second->is(Detector::Status::Reliable)));
+    if (detector != m_detectors.end()) {
+        (*detector).second->process(event);
+        return ((*detector).second->is(Detector::Status::Reliable));
+    }
+    return false;
 }
 
 void DetectorTracker::process(const LogMessage& log)
