@@ -28,9 +28,8 @@ void signal_handler(int signal)
 
 auto main() -> int
 {
-    MuonPi::Log::init(MuonPi::Log::Level::Debug);
-
     MuonPi::Log::Log::singleton()->add_sink(std::make_shared<MuonPi::Log::StreamSink>(std::cout));
+    MuonPi::Log::Log::singleton()->add_sink(std::make_shared<MuonPi::Log::SyslogSink>());
 
     MuonPi::MqttLink::LoginData login;
     login.username = "benjamin";

@@ -2,16 +2,6 @@
 
 namespace MuonPi::Log {
 
-void init(Level level)
-{
-    setlogmask(LOG_UPTO (level));
-    openlog(appname, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
-}
-
-void finish()
-{
-    closelog();
-}
 
 Sink::Sink(Level level)
     : m_level { level }
@@ -61,6 +51,23 @@ std::shared_ptr<Log> Log::s_singleton { std::make_shared<Log>() };
 void Log::add_sink(std::shared_ptr<Sink> sink)
 {
     m_sinks.push_back(sink);
+}
+
+SyslogSink::SyslogSink(Level level)
+    : Sink { level }
+{
+    setlogmask(LOG_UPTO (level));
+    openlog(appname, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+}
+
+SyslogSink::~SyslogSink()
+{
+    closelog();
+}
+
+void SyslogSink::sink(const Message& msg)
+{
+    syslog(level(), "%s", msg.message.c_str());
 }
 
 void Log::send(const Message& msg)

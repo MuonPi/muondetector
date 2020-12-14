@@ -22,15 +22,6 @@ enum Level : int {
 
 static constexpr const char* appname { "muondetector-cluster" };
 
-/**
- * @brief init Initialises the logging system
- * @param level The minimum log level to show. Inclusive.
- */
-void init(Level level);
-
-void finish();
-
-
 struct Message
 {
     const Level level { Level::Info };
@@ -67,6 +58,17 @@ protected:
 
 private:
     std::ostream& m_ostream;
+};
+
+class SyslogSink : public Sink
+{
+public:
+    SyslogSink(Level level = Level::Debug);
+
+    ~SyslogSink();
+
+protected:
+    void sink(const Message& msg) override;
 };
 
 

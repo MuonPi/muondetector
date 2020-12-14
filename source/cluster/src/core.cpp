@@ -22,11 +22,6 @@ Core::Core(std::unique_ptr<AbstractSink<Event>> event_sink, std::unique_ptr<Abst
     start();
 }
 
-Core::~Core()
-{
-    Log::finish();
-}
-
 auto Core::step() -> int
 {
     m_timeout = std::chrono::milliseconds{static_cast<long>(std::chrono::duration_cast<std::chrono::milliseconds>(m_time_base_supervisor->current()).count() * m_detector_tracker->factor())};

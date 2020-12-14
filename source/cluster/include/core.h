@@ -27,8 +27,6 @@ class Core : public ThreadRunner
 public:
     Core(std::unique_ptr<AbstractSink<Event>> event_sink, std::unique_ptr<AbstractSource<Event>> event_source, std::unique_ptr<AbstractDetectorTracker> detector_tracker);
 
-    ~Core() override;
-
 protected:
     /**
      * @brief step reimplemented from ThreadRunner
