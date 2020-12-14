@@ -30,9 +30,12 @@ auto MqttEventSource::step() -> int
         MqttLink::Message msg = m_link.single->get_message();
         MessageParser topic { msg.topic, '/'};
         MessageParser content { msg.content, ' '};
-        if ((topic.size() == 4) && (content.size() >= 2)) {
-//            Log::info()<<"Got data from " + topic[2] + topic[3];
-            std::size_t hash {std::hash<std::string>{}(topic[2] + topic[3])};
+        if ((topic.size() >= 4) && (content.size() >= 2)) {
+            std::string name { topic[2] + topic[3] };
+            for (std::size_t i = 4; i < topic.size(); i++) {
+                name += "/" + topic[i];
+            }
+            std::size_t hash { std::hash<std::string>{}(name) };
 
             std::string ts_string = content[0];
             std::uint64_t ts = static_cast<std::uint64_t>(std::stod(ts_string, nullptr) * 1.0e9);
