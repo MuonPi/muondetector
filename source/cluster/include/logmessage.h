@@ -46,12 +46,12 @@ public:
      * @brief time The time this log message arrived
      * @return The arrival time
      */
-    [[nodiscard]] auto time() const -> std::chrono::steady_clock::time_point;
+    [[nodiscard]] auto time() const -> std::chrono::system_clock::time_point;
 
 private:
     std::size_t m_hash { 0 };
     Location m_location {};
-    std::chrono::steady_clock::time_point m_time { std::chrono::steady_clock::now() };
+    std::chrono::system_clock::time_point m_time { std::chrono::system_clock::now() };
 };
 }
 

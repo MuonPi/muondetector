@@ -18,7 +18,7 @@ void Detector::process(const Event& /*event*/)
 
 void Detector::process(const LogMessage &log)
 {
-    m_last_log = std::chrono::steady_clock::now();
+    m_last_log = std::chrono::system_clock::now();
 
     m_location = log.location();
 
@@ -49,7 +49,7 @@ auto Detector::factor() const -> float
 
 auto Detector::step() -> bool
 {
-    auto diff { std::chrono::steady_clock::now() - std::chrono::steady_clock::time_point { m_last_log } };
+    auto diff { std::chrono::system_clock::now() - std::chrono::system_clock::time_point { m_last_log } };
     if (diff > s_log_interval) {
         if (diff > s_quit_interval) {
             return false;

@@ -15,7 +15,6 @@ void LogItem::reset()
 auto LogItem::add(MessageParser& message) -> bool
 {
     if (id != message[0]) {
-        Log::debug()<<"Resetting log aggregation.";
         reset();
         id = message[0];
     }

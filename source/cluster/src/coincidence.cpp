@@ -11,10 +11,10 @@ Coincidence::~Coincidence() = default;
 
 auto Coincidence::criterion(const Event &first, const Event &second) const -> float
 {
-    const std::chrono::steady_clock::time_point s1 {first.start()};
-    const std::chrono::steady_clock::time_point s2 {second.start()};
-    std::chrono::steady_clock::time_point e1 {first.start()};
-    std::chrono::steady_clock::time_point e2 {second.start()};
+    const std::chrono::system_clock::time_point s1 {first.start()};
+    const std::chrono::system_clock::time_point s2 {second.start()};
+    std::chrono::system_clock::time_point e1 {first.start()};
+    std::chrono::system_clock::time_point e2 {second.start()};
 
     if (first.n() > 1) {
         e1 = first.end();
@@ -26,7 +26,7 @@ auto Coincidence::criterion(const Event &first, const Event &second) const -> fl
     return compare(s1, s2) + compare(s1, e2) + compare(e1, s2) + compare(e1, e2);
 }
 
-auto Coincidence::compare(std::chrono::steady_clock::time_point t1, std::chrono::steady_clock::time_point t2) const -> float
+auto Coincidence::compare(std::chrono::system_clock::time_point t1, std::chrono::system_clock::time_point t2) const -> float
 {
     return (std::chrono::abs(t1 - t2) <= m_time)?1.0f:-1.0f;
 }

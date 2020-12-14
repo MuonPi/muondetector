@@ -6,7 +6,7 @@
 
 namespace MuonPi {
 
-EventConstructor::EventConstructor(std::unique_ptr<Event> event, std::shared_ptr<Criterion> criterion, std::chrono::steady_clock::duration timeout)
+EventConstructor::EventConstructor(std::unique_ptr<Event> event, std::shared_ptr<Criterion> criterion, std::chrono::system_clock::duration timeout)
     : m_event { std::make_unique<CombinedEvent>(event->id(), std::move(event)) }
     , m_criterion { criterion }
     , m_timeout { timeout }
@@ -39,7 +39,7 @@ auto EventConstructor::event_matches(const Event& event) -> EventConstructor::Ty
     return Type::Match;
 }
 
-void EventConstructor::set_timeout(std::chrono::steady_clock::duration timeout)
+void EventConstructor::set_timeout(std::chrono::system_clock::duration timeout)
 {
     if (timeout <= m_timeout) {
         return;
@@ -58,7 +58,7 @@ auto EventConstructor::commit() -> std::unique_ptr<Event>
 
 auto EventConstructor::timed_out() const -> bool
 {
-    return (std::chrono::steady_clock::now() - m_start) >= m_timeout;
+    return (std::chrono::system_clock::now() - m_start) >= m_timeout;
 }
 
 }

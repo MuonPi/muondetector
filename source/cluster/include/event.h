@@ -26,7 +26,7 @@ public:
      * @param start The start time of the event
      * @param end The end time of the event
      */
-    Event(std::size_t hash, std::uint64_t id, std::chrono::steady_clock::time_point start = {}, std::chrono::steady_clock::time_point end = {}) noexcept;
+    Event(std::size_t hash, std::uint64_t id, std::chrono::system_clock::time_point start = {}, std::chrono::system_clock::time_point end = {}) noexcept;
 
     /**
      * @brief Event
@@ -35,7 +35,7 @@ public:
      * @param start The start time of the event
      * @param duration The duration of the event
      */
-    Event(std::size_t hash, std::uint64_t id, std::chrono::steady_clock::time_point start = {}, std::chrono::steady_clock::duration duration = {}) noexcept;
+    Event(std::size_t hash, std::uint64_t id, std::chrono::system_clock::time_point start = {}, std::chrono::system_clock::duration duration = {}) noexcept;
 
     virtual ~Event() noexcept;
 
@@ -43,19 +43,19 @@ public:
      * @brief start
      * @return The starting time of the event
      */
-    [[nodiscard]] auto start() const noexcept -> std::chrono::steady_clock::time_point;
+    [[nodiscard]] auto start() const noexcept -> std::chrono::system_clock::time_point;
 
     /**
      * @brief duration
      * @return The duration of the event
      */
-    [[nodiscard]] auto duration() const noexcept -> std::chrono::steady_clock::duration;
+    [[nodiscard]] auto duration() const noexcept -> std::chrono::system_clock::duration;
 
     /**
      * @brief end
      * @return The end time of the event
      */
-    [[nodiscard]] auto end() const noexcept -> std::chrono::steady_clock::time_point;
+    [[nodiscard]] auto end() const noexcept -> std::chrono::system_clock::time_point;
 
     /**
      * @brief id
@@ -77,8 +77,8 @@ public:
 
 
 protected:
-    std::chrono::steady_clock::time_point m_start {};
-    std::chrono::steady_clock::time_point m_end {};
+    std::chrono::system_clock::time_point m_start {};
+    std::chrono::system_clock::time_point m_end {};
     std::size_t m_n { 1 };
 
 private:

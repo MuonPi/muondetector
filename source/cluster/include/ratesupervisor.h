@@ -64,7 +64,7 @@ private:
     Rate m_current {};
     float m_history[s_history_length] {}; //!< contains the time differences between each points, in microseconds
     std::atomic<bool> m_dirty { false };
-    std::chrono::steady_clock::time_point m_last { std::chrono::steady_clock::now() };
+    std::chrono::system_clock::time_point m_last { std::chrono::system_clock::now() };
 };
 
 }

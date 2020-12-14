@@ -50,9 +50,9 @@ private:
      * @param second second timestamp
      * @return returns a value indicating the coincidence time between the two timestamps. @see maximum_fals @see minimum_true for the limits of the values.
      */
-    [[nodiscard]] auto compare(std::chrono::steady_clock::time_point first, std::chrono::steady_clock::time_point second) const -> float;
+    [[nodiscard]] auto compare(std::chrono::system_clock::time_point first, std::chrono::system_clock::time_point second) const -> float;
 
-    std::chrono::steady_clock::duration m_time { std::chrono::microseconds{100} };
+    std::chrono::system_clock::duration m_time { std::chrono::microseconds{100} };
 };
 
 }

@@ -38,10 +38,10 @@ void MqttLink::startup()
 
 auto MqttLink::wait_for(Status status, std::chrono::seconds duration) -> bool
 {
-    std::chrono::steady_clock::time_point start { std::chrono::steady_clock::now() };
+    std::chrono::system_clock::time_point start { std::chrono::system_clock::now() };
     while (status != m_status) {
         std::this_thread::sleep_for(duration / 10);
-        if ((std::chrono::steady_clock::now() - start) >= duration) {
+        if ((std::chrono::system_clock::now() - start) >= duration) {
             return false;
         }
     }

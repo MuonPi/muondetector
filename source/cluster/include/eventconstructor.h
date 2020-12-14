@@ -28,7 +28,7 @@ public:
      * @param criterion The criterion to use to check events
      * @param timeout the initial timeout to use
      */
-    EventConstructor(std::unique_ptr<Event> event, std::shared_ptr<Criterion> criterion, std::chrono::steady_clock::duration timeout);
+    EventConstructor(std::unique_ptr<Event> event, std::shared_ptr<Criterion> criterion, std::chrono::system_clock::duration timeout);
 
     ~EventConstructor();
 
@@ -50,7 +50,7 @@ public:
      * @brief set_timeout Set a new timeout for the EventConstructor. Only accepts longer timeouts.
      * @param timeout The timeout to set.
      */
-    void set_timeout(std::chrono::steady_clock::duration timeout);
+    void set_timeout(std::chrono::system_clock::duration timeout);
 
     /**
      * @brief commit Hand over the event unique_ptr
@@ -65,10 +65,10 @@ public:
     [[nodiscard]] auto timed_out() const -> bool;
 
 private:
-    std::chrono::steady_clock::time_point m_start { std::chrono::steady_clock::now() };
+    std::chrono::system_clock::time_point m_start { std::chrono::system_clock::now() };
     std::unique_ptr<CombinedEvent> m_event { nullptr };
     std::shared_ptr<Criterion> m_criterion { nullptr };
-    std::chrono::steady_clock::duration m_timeout { std::chrono::minutes{1} };
+    std::chrono::system_clock::duration m_timeout { std::chrono::minutes{1} };
 };
 
 }

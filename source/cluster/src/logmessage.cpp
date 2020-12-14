@@ -20,7 +20,7 @@ auto LogMessage::location() const -> Location
 }
 
 
-auto LogMessage::time() const -> std::chrono::steady_clock::time_point
+auto LogMessage::time() const -> std::chrono::system_clock::time_point
 {
     return m_time;
 }

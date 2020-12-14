@@ -35,14 +35,15 @@ auto MqttEventSource::step() -> int
             std::size_t hash {std::hash<std::string>{}(topic[2] + topic[3])};
 
             std::string ts_string = content[0];
-            std::uint64_t ts = std::stoull(ts_string, nullptr);
+            std::uint64_t ts = static_cast<std::uint64_t>(std::stod(ts_string, nullptr) * 1.0e9);
 
-            std::chrono::steady_clock::time_point start = std::chrono::steady_clock::time_point(std::chrono::nanoseconds(ts));
+            std::chrono::system_clock::time_point start = std::chrono::system_clock::time_point(std::chrono::nanoseconds(ts));
 
             ts_string = content[1];
-            ts = std::stoull(ts_string, nullptr);
+//            ts = std::stoull(ts_string, nullptr);
+            ts = static_cast<std::uint64_t>(std::stod(ts_string, nullptr) * 1.0e9);
 
-            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::time_point(std::chrono::nanoseconds(ts));
+            std::chrono::system_clock::time_point end = std::chrono::system_clock::time_point(std::chrono::nanoseconds(ts));
 
             std::uint64_t id {hash & 0xFFFFFFFF00000000 + 0x00000000FFFFFFFF & ts};
 
