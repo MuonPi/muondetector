@@ -60,6 +60,7 @@ auto ThreadRunner::run() -> int
     while (m_run) {
         int result { step() };
         if (result != 0) {
+            Log::debug()<<"Thread " + m_name + " Stopped.";
             return result;
         }
     }

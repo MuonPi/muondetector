@@ -35,12 +35,23 @@ auto MqttEventSource::step() -> int
             std::size_t hash { std::hash<std::string>{}(name) };
 
             std::string ts_string = content[0];
-            std::uint64_t ts = static_cast<std::uint64_t>(std::stod(ts_string, nullptr) * 1.0e9);
+            std::uint64_t ts = 0;
+            try {
+                ts = static_cast<std::uint64_t>(std::stod(ts_string, nullptr) * 1.0e9);
+            } catch (std::invalid_argument& e) {
+                Log::warning()<<"Received exception: " + std::string(e.what()) + "\n While converting " + ts_string;
+                return 0;
+            }
 
             std::chrono::system_clock::time_point start = std::chrono::system_clock::time_point(std::chrono::nanoseconds(ts));
 
             ts_string = content[1];
-            ts = static_cast<std::uint64_t>(std::stod(ts_string, nullptr) * 1.0e9);
+            try {
+                ts = static_cast<std::uint64_t>(std::stod(ts_string, nullptr) * 1.0e9);
+            } catch (std::invalid_argument& e) {
+                Log::warning()<<"Received exception: " + std::string(e.what()) + "\n While converting " + ts_string;
+                return 0;
+            }
 
             std::chrono::system_clock::time_point end = std::chrono::system_clock::time_point(std::chrono::nanoseconds(ts));
 

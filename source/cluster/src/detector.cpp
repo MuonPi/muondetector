@@ -32,7 +32,7 @@ void Detector::process(const LogMessage &log)
 void Detector::set_status(Status status)
 {
     if (m_status != status) {
-        Log::notice()<<"Marking detector " + std::to_string(m_hash) + ((status == Status::Reliable)?"Reliable":"Unreliable");
+        Log::notice()<<"Marking detector " + std::to_string(m_hash) + ((status == Status::Reliable)?" Reliable":" Unreliable");
     }
     m_status = status;
 }
