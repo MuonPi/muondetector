@@ -86,7 +86,7 @@ private:
     std::unique_ptr<RateSupervisor> m_supervisor { nullptr };
     std::chrono::system_clock::time_point m_last_log { std::chrono::system_clock::now() };
 
-    static constexpr std::chrono::system_clock::duration s_log_interval { std::chrono::minutes { 7 } };
+    static constexpr std::chrono::system_clock::duration s_log_interval { std::chrono::seconds { 90 } };
     static constexpr std::chrono::system_clock::duration s_quit_interval { s_log_interval * 3 };
 };
 

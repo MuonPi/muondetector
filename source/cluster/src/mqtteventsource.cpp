@@ -39,7 +39,7 @@ auto MqttEventSource::step() -> int
             try {
                 ts = static_cast<std::uint64_t>(std::stod(ts_string, nullptr) * 1.0e9);
             } catch (std::invalid_argument& e) {
-                Log::warning()<<"Received exception: " + std::string(e.what()) + "\n While converting " + ts_string;
+                Log::warning()<<"Received exception: " + std::string(e.what()) + "\n While converting '" + msg.topic + " " + msg.content + "'";
                 return 0;
             }
 
@@ -49,7 +49,7 @@ auto MqttEventSource::step() -> int
             try {
                 ts = static_cast<std::uint64_t>(std::stod(ts_string, nullptr) * 1.0e9);
             } catch (std::invalid_argument& e) {
-                Log::warning()<<"Received exception: " + std::string(e.what()) + "\n While converting " + ts_string;
+                Log::warning()<<"Received exception: " + std::string(e.what()) + "\n While converting '" + msg.topic + " " + msg.content + "'";
                 return 0;
             }
 
