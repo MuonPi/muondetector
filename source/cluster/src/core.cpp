@@ -78,7 +78,6 @@ void Core::process(std::unique_ptr<Event> event)
     m_time_base_supervisor->process_event(*event);
 
     if (!m_detector_tracker->accept(*event)) {
-        syslog(Log::Debug, "Rejecting Event.");
         return;
     }
 
@@ -95,7 +94,7 @@ void Core::process(std::unique_ptr<Event> event)
     if (matches.size() == 1) {
         m_constructors[matches.front().first]->add_event(std::move(event), matches.front().second);
         if (matches.front().second) {
-            syslog(Log::Notice, "Found contestant event");
+            Log::debug()<<"Found contestant event.";
         }
         matches.pop();
         return;
@@ -108,7 +107,7 @@ void Core::process(std::unique_ptr<Event> event)
     // +++ Event matches more than one constructor
     // Combines all contesting constructors into one contesting coincience
     if (!matches.empty()) {
-        syslog(Log::Notice, "Found contestant event");
+        Log::debug()<<"Found contestant event.";
     }
     while (!matches.empty()) {
         constructor->add_event(m_constructors[matches.front().first]->commit(), true);
