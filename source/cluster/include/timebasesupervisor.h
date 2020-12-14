@@ -34,6 +34,8 @@ public:
     [[nodiscard]] auto current() -> std::chrono::steady_clock::duration;
 
 private:
+    static constexpr std::chrono::steady_clock::duration s_minimum { std::chrono::seconds{2} };
+
     std::chrono::steady_clock::duration m_sample_time { std::chrono::seconds{2} };
     std::chrono::steady_clock::time_point m_start { std::chrono::steady_clock::now() };
     std::chrono::steady_clock::time_point m_earliest {std::chrono::steady_clock::now() + std::chrono::seconds{5}};

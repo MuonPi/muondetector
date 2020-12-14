@@ -1,5 +1,6 @@
 #include "timebasesupervisor.h"
 #include "event.h"
+#include "log.h"
 
 namespace MuonPi {
 
@@ -26,6 +27,10 @@ auto TimeBaseSupervisor::current() -> std::chrono::steady_clock::duration
     m_latest = std::chrono::steady_clock::now() - std::chrono::hours{24};
     m_earliest = std::chrono::steady_clock::now() + std::chrono::hours{24};
     m_start = std::chrono::steady_clock::now();
+    if (m_current < s_minimum) {
+        m_current = s_minimum;
+    }
+    Log::debug()<<"TimeBase: " + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(m_current).count()) + "ms";
     return m_current;
 }
 }
