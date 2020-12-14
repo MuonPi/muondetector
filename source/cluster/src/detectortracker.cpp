@@ -65,8 +65,12 @@ auto DetectorTracker::step() -> int
     static std::chrono::system_clock::time_point last { std::chrono::system_clock::now() };
     static std::chrono::system_clock::time_point runtime { std::chrono::system_clock::now() };
     float largest { 0.0 };
+    std::size_t reliable { 0 };
     for (auto& [hash, detector]: m_detectors) {
 
+        if (detector->is(Detector::Status::Reliable)) {
+            reliable++;
+        }
         if (!detector->step()) {
             Log::debug()<<"Deleting detector " + std::to_string(hash);
             m_delete_detectors.push(hash);
@@ -89,7 +93,7 @@ auto DetectorTracker::step() -> int
     // --- handle incoming log messages, maximum 10 at a time to prevent blocking
 
     if ((std::chrono::system_clock::now() - last) >= std::chrono::seconds{5}) {
-        Log::debug()<<std::to_string(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - runtime).count()) + "s: known detectors: " + std::to_string(m_detectors.size());
+        Log::debug()<<std::to_string(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - runtime).count()) + "s: known detectors: " + std::to_string(m_detectors.size()) + "( Reliable: " + std::to_string(reliable) + ")";
         last = std::chrono::system_clock::now();
     }
     std::this_thread::sleep_for( std::chrono::milliseconds{1} );
