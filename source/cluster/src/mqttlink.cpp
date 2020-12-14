@@ -59,6 +59,11 @@ auto MqttLink::pre_run() -> int
 
 auto MqttLink::step() -> int
 {
+    if (!m_client.is_connected()) {
+        if (!reconnect()) {
+            return -1;
+        }
+    }
     mqtt::const_message_ptr message;
     if (m_client.try_consume_message(&message)) {
         std::string message_topic {message->get_topic()};
@@ -160,6 +165,7 @@ auto MqttLink::disconnect() -> bool
 auto MqttLink::reconnect() -> bool
 {
     set_status(Status::Disconnected);
+    Log::info()<<"Trying to reconnect to MQTT.";
     try {
         if (!m_client.reconnect()->wait_for(std::chrono::seconds{5})) {
             Log::error()<<"Could not reconnect to MQTT.";
