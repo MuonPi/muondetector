@@ -86,7 +86,7 @@ auto MqttLogSource::step() -> int
                 }
                 if (item.complete()) {
                     Log::info()<<"Got last log from " + topic[2] + topic[3];
-                    process(item);
+                    process(hash, item);
                     m_buffer.erase(hash);
                 }
             } else {
@@ -104,7 +104,24 @@ auto MqttLogSource::step() -> int
     return 0;
 }
 
-void MqttLogSource::process(LogItem /*item*/)
+void MqttLogSource::process(std::size_t hash, LogItem item)
 {
+    static constexpr struct {
+        const double pos_dop { 1.0e-1 };
+        const double time_dop { 1.0e-1 };
+        const double v_accuracy { 1.0e-1 };
+        const double h_accuracy { 1.0e-1 };
+    } factors; // norming factors for the four values
+
+    Location location;
+
+    location.dop = (factors.pos_dop * item.geo.dop) * (factors.time_dop * item.time.dop);
+    location.prec = (factors.h_accuracy * item.geo.h_acc) * (factors.v_accuracy * item.geo.v_acc);
+
+    location.h = item.geo.h;
+    location.lat = item.geo.lat;
+    location.lon = item.geo.lon;
+
+    std::unique_ptr<LogMessage> message { std::make_unique<LogMessage>(hash, location) };
 }
 }

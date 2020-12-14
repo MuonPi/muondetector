@@ -67,7 +67,7 @@ protected:
 private:
     std::shared_ptr<MqttLink::Subscriber> m_link { nullptr };
 
-    void process(LogItem item);
+    void process(std::size_t hash, LogItem item);
 
     std::map<std::size_t, LogItem> m_buffer {};
 };
