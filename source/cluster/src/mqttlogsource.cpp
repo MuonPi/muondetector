@@ -75,8 +75,12 @@ auto MqttLogSource::step() -> int
         MqttLink::Message msg = m_link->get_message();
         MessageParser topic { msg.topic, '/'};
         MessageParser content { msg.content, ' '};
-        if ((topic.size() == 4) && (content.size() >= 2)) {
-            std::size_t hash {std::hash<std::string>{}(topic[2] + topic[3])};
+        if ((topic.size() >= 4) && (content.size() >= 2)) {
+            std::string name { topic[2] + topic[3] };
+            for (std::size_t i = 4; i < topic.size(); i++) {
+                name += "/" + topic[i];
+            }
+            std::size_t hash { std::hash<std::string>{}(name) };
 
             if (m_buffer.find(hash) != m_buffer.end()) {
                 auto& item { m_buffer[hash] };

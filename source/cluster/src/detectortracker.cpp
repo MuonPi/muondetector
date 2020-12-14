@@ -51,6 +51,7 @@ void DetectorTracker::process(const LogMessage& log)
         m_detectors[log.hash()] = std::make_unique<Detector>(log);
         return;
     }
+    Log::debug()<<"Processing Log from " + std::to_string(log.hash());
     (*detector).second->process(log);
 }
 
@@ -61,6 +62,8 @@ auto DetectorTracker::factor() const -> float
 
 auto DetectorTracker::step() -> int
 {
+    static std::chrono::system_clock::time_point last { std::chrono::system_clock::now() };
+    static std::chrono::system_clock::time_point runtime { std::chrono::system_clock::now() };
     float largest { 0.0 };
     for (auto& [hash, detector]: m_detectors) {
 
@@ -80,13 +83,15 @@ auto DetectorTracker::step() -> int
     }
 
     // +++ handle incoming log messages, maximum 10 at a time to prevent blocking
-    std::size_t i { 0 };
-    while (m_log_source->has_items() && (i < 10)) {
+    if (m_log_source->has_items()) {
         process(*m_log_source->next_item());
-        i++;
     }
     // --- handle incoming log messages, maximum 10 at a time to prevent blocking
 
+    if ((std::chrono::system_clock::now() - last) >= std::chrono::seconds{5}) {
+        Log::debug()<<std::to_string(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - runtime).count()) + "s: known detectors: " + std::to_string(m_detectors.size());
+        last = std::chrono::system_clock::now();
+    }
     std::this_thread::sleep_for( std::chrono::milliseconds{1} );
     return 0;
 }

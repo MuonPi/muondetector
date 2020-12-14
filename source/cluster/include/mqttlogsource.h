@@ -55,7 +55,7 @@ public:
 
     ~MqttLogSource() override;
 
-	auto pre_run() -> int override;
+    auto pre_run() -> int override;
 
 protected:
     /**
