@@ -1,5 +1,6 @@
 #include "detector.h"
 #include "event.h"
+#include "log.h"
 
 namespace MuonPi {
 

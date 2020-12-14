@@ -105,16 +105,13 @@ void Core::process(std::unique_ptr<Event> event)
 
     // +++ Event matches more than one constructor
     // Combines all contesting constructors into one contesting coincience
-    if (!matches.empty()) {
-        Log::debug()<<"Found contestant event.";
-    }
     while (!matches.empty()) {
         constructor->add_event(m_constructors[matches.front().first]->commit(), true);
         m_constructors.erase(matches.front().first);
         matches.pop();
     }
     // --- Event matches more than one constructor
-    m_constructors[event->id()] = std::move(constructor);
+    m_constructors[event_id] = std::move(constructor);
     // --- Event matches either no, or more than one constructor
 }
 

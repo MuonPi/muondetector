@@ -72,8 +72,8 @@ auto MqttLogSource::pre_run() -> int
 
 auto MqttLogSource::step() -> int
 {
-	if (m_link->has_message()) {
-		MqttLink::Message msg = m_link->get_message();
+    if (m_link->has_message()) {
+        MqttLink::Message msg = m_link->get_message();
         MessageParser topic { msg.topic, '/'};
         MessageParser content { msg.content, ' '};
         if ((topic.size() == 4) && (content.size() >= 2)) {
@@ -118,6 +118,6 @@ void MqttLogSource::process(std::size_t hash, LogItem item)
     location.lat = item.geo.lat;
     location.lon = item.geo.lon;
 
-    std::unique_ptr<LogMessage> message { std::make_unique<LogMessage>(hash, location) };
+    push_item( std::make_unique<LogMessage>(hash, location) );
 }
 }
