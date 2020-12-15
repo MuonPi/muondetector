@@ -6,6 +6,7 @@
 #include "coincidence.h"
 #include "timebasesupervisor.h"
 #include "eventconstructor.h"
+#include "statesupervisor.h"
 
 #include <queue>
 #include <map>
@@ -25,7 +26,9 @@ class AbstractDetectorTracker;
 class Core : public ThreadRunner
 {
 public:
-    Core(std::unique_ptr<AbstractSink<Event>> event_sink, std::unique_ptr<AbstractSource<Event>> event_source, std::unique_ptr<AbstractDetectorTracker> detector_tracker);
+    Core(std::unique_ptr<AbstractSink<Event>> event_sink, std::unique_ptr<AbstractSource<Event>> event_source, std::unique_ptr<AbstractDetectorTracker> detector_tracker, StateSupervisor& supervisor);
+
+    [[nodiscard]] auto supervisor() -> StateSupervisor&;
 
 protected:
     /**
@@ -39,7 +42,6 @@ protected:
      * @return zero in case of success.
      */
     [[nodiscard]] auto post_run() -> int override;
-
 
 
 private:
@@ -61,6 +63,8 @@ private:
     std::queue<std::uint64_t> m_delete_constructors {};
 
     std::chrono::system_clock::duration m_timeout { std::chrono::minutes{1} };
+
+    StateSupervisor& m_supervisor;
 
 };
 

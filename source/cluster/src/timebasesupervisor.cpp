@@ -30,7 +30,6 @@ auto TimeBaseSupervisor::current() -> std::chrono::system_clock::duration
     if (m_current < s_minimum) {
         m_current = s_minimum;
     }
-    Log::debug()<<"TimeBase: " + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(m_current).count()) + "ms";
     return m_current;
 }
 }

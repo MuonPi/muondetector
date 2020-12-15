@@ -13,24 +13,43 @@
 
 namespace MuonPi {
 
-Core::Core(std::unique_ptr<AbstractSink<Event>> event_sink, std::unique_ptr<AbstractSource<Event>> event_source, std::unique_ptr<AbstractDetectorTracker> detector_tracker)
+Core::Core(std::unique_ptr<AbstractSink<Event>> event_sink, std::unique_ptr<AbstractSource<Event>> event_source, std::unique_ptr<AbstractDetectorTracker> detector_tracker, StateSupervisor& supervisor)
     : ThreadRunner{"Core"}
     , m_event_sink { std::move(event_sink) }
     , m_event_source { std::move(event_source) }
     , m_detector_tracker { std::move(detector_tracker) }
+    , m_supervisor { supervisor }
 {
     start();
 }
 
+auto Core::supervisor() -> StateSupervisor&
+{
+    return m_supervisor;
+}
+
 auto Core::step() -> int
 {
-    m_timeout = std::chrono::milliseconds{static_cast<long>(std::chrono::duration_cast<std::chrono::milliseconds>(m_time_base_supervisor->current()).count() * m_detector_tracker->factor())};
-    static std::chrono::system_clock::time_point last { std::chrono::system_clock::now() };
-    if ((std::chrono::system_clock::now() - last) > std::chrono::seconds{5}) {
-        last = std::chrono::system_clock::now();
-        Log::debug()<<"timeout " + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(m_timeout).count()) + "ms";
+    if (m_event_sink->state() <= ThreadRunner::State::Stopped) {
+        Log::error()<<"The event sink stopped.";
+        return -1;
     }
-
+    if (m_event_source->state() <= ThreadRunner::State::Stopped) {
+        Log::error()<<"The event source stopped.";
+        return -1;
+    }
+    if (m_detector_tracker->state() <= ThreadRunner::State::Stopped) {
+        Log::error()<<"The Detector tracker stopped.";
+        return -1;
+    }
+    if (m_supervisor.step() != 0) {
+        return -1;
+    }
+    {
+        using namespace std::chrono;
+        m_timeout = milliseconds{static_cast<long>(static_cast<float>(duration_cast<milliseconds>(m_time_base_supervisor->current()).count()) * m_detector_tracker->factor())};
+        m_supervisor.time_status(duration_cast<milliseconds>(m_timeout));
+    }
     // +++ Send finished constructors off to the event sink
     for (auto& [id, constructor]: m_constructors) {
         constructor->set_timeout(m_timeout);

@@ -6,10 +6,13 @@
 #include "detector.h"
 #include "log.h"
 
+#include "statesupervisor.h"
+
 namespace MuonPi {
 
-AbstractDetectorTracker::AbstractDetectorTracker()
+AbstractDetectorTracker::AbstractDetectorTracker(StateSupervisor& supervisor)
     : ThreadRunner{"DetectorTracker"}
+    , m_supervisor { supervisor }
 {
     start();
 }
@@ -26,8 +29,10 @@ auto AbstractDetectorTracker::factor() const -> float
     return 1.0;
 }
 
-DetectorTracker::DetectorTracker(std::unique_ptr<AbstractSource<LogMessage> > log_source)
-    : m_log_source { std::move(log_source) }
+
+DetectorTracker::DetectorTracker(std::unique_ptr<AbstractSource<LogMessage> > log_source, StateSupervisor &supervisor)
+    : AbstractDetectorTracker { supervisor }
+    , m_log_source { std::move(log_source) }
 {
 }
 
@@ -51,11 +56,10 @@ void DetectorTracker::process(const LogMessage& log)
 {
     auto detector { m_detectors.find(log.hash()) };
     if (detector == m_detectors.end()) {
-        Log::debug()<<"Found new detector " + std::to_string(log.hash());
-        m_detectors[log.hash()] = std::make_unique<Detector>(log);
+        m_supervisor.detector_status(log.hash(), Detector::Status::Created);
+       m_detectors[log.hash()] = std::make_unique<Detector>(log, m_supervisor);
         return;
     }
-    Log::debug()<<"Processing Log from " + std::to_string(log.hash());
     (*detector).second->process(log);
 }
 
@@ -66,17 +70,15 @@ auto DetectorTracker::factor() const -> float
 
 auto DetectorTracker::step() -> int
 {
-    static std::chrono::system_clock::time_point last { std::chrono::system_clock::now() };
-    static std::chrono::system_clock::time_point runtime { std::chrono::system_clock::now() };
+    if (m_log_source->state() <= ThreadRunner::State::Stopped) {
+        Log::error()<<"The Log source stopped.";
+        return -1;
+    }
     float largest { 0.0 };
-    std::size_t reliable { 0 };
     for (auto& [hash, detector]: m_detectors) {
 
-        if (detector->is(Detector::Status::Reliable)) {
-            reliable++;
-        }
         if (!detector->step()) {
-            Log::debug()<<"Deleting detector " + std::to_string(hash);
+            m_supervisor.detector_status(hash, Detector::Status::Deleted);
             m_delete_detectors.push(hash);
             continue;
         }
@@ -96,10 +98,6 @@ auto DetectorTracker::step() -> int
     }
     // --- handle incoming log messages, maximum 10 at a time to prevent blocking
 
-    if ((std::chrono::system_clock::now() - last) >= std::chrono::seconds{5}) {
-        Log::debug()<<std::to_string(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - runtime).count()) + "s: known detectors: " + std::to_string(m_detectors.size()) + " (Reliable: " + std::to_string(reliable) + ")";
-        last = std::chrono::system_clock::now();
-    }
     std::this_thread::sleep_for( std::chrono::milliseconds{1} );
     return 0;
 }

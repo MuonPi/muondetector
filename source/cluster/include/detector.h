@@ -14,6 +14,7 @@ namespace MuonPi {
 
 // +++ forward declarations
 class Event;
+class StateSupervisor;
 // --- forward declarations
 
 
@@ -28,6 +29,8 @@ class Detector
 {
 public:
     enum class Status {
+        Created,
+        Deleted,
         Unreliable,
         Reliable
     };
@@ -35,7 +38,7 @@ public:
      * @brief Detector
      * @param initial_log The initial log message from which this detector object originates
      */
-    Detector(const LogMessage& initial_log);
+    Detector(const LogMessage& initial_log, StateSupervisor& supervisor);
 
 
     /**
@@ -88,6 +91,8 @@ private:
 
     static constexpr std::chrono::system_clock::duration s_log_interval { std::chrono::seconds { 90 } };
     static constexpr std::chrono::system_clock::duration s_quit_interval { s_log_interval * 3 };
+
+    StateSupervisor& m_state_supervisor;
 };
 
 }

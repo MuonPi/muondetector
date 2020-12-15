@@ -28,7 +28,7 @@ auto AsciiEventSink::step() -> int
 void AsciiEventSink::process(Event event)
 {
     if (event.n() > 1) {
-        std::string output { "Combined Event:" };
+        std::string output { "Combined Event: (" + std::to_string(event.n()) + ")" };
         if (event.contested()) {
             output += " (contested)";
         }

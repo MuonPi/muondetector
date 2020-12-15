@@ -28,11 +28,11 @@ auto MqttEventSource::step() -> int
         MessageParser topic { msg.topic, '/'};
         MessageParser content { msg.content, ' '};
         if ((topic.size() >= 4) && (content.size() >= 7)) {
-            std::string name { topic[2] + topic[3] };
+            std::string name {topic[3] };
             for (std::size_t i = 4; i < topic.size(); i++) {
                 name += "/" + topic[i];
             }
-            std::size_t hash { std::hash<std::string>{}(name) };
+            std::size_t hash { std::hash<std::string>{}(topic[2] + name) };
 
             std::string ts_string = content[0];
             std::uint64_t ts = 0;
@@ -60,7 +60,7 @@ auto MqttEventSource::step() -> int
             Event::Data data;
             try {
                 data.user = topic[2];
-                data.station_id = topic[3];
+                data.station_id = name;
                 data.start = start;
                 data.end = end;
                 data.time_acc = static_cast<std::uint32_t>(std::stoul(content[2], nullptr));

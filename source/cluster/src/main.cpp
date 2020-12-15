@@ -5,6 +5,7 @@
 #include "mqtteventsource.h"
 #include "mqttlogsource.h"
 #include "mqttlink.h"
+#include "statesupervisor.h"
 
 #ifdef CLUSTER_RUN_SERVER
 #include "databaseeventsink.h"
@@ -31,6 +32,8 @@ auto main() -> int
     MuonPi::Log::Log::singleton()->add_sink(std::make_shared<MuonPi::Log::StreamSink>(std::cout));
     MuonPi::Log::Log::singleton()->add_sink(std::make_shared<MuonPi::Log::SyslogSink>());
 
+    MuonPi::StateSupervisor supervisor;
+
     MuonPi::MqttLink::LoginData login;
     login.username = "benjamin";
     login.password = "goodpassword";
@@ -53,7 +56,7 @@ auto main() -> int
 
     auto event_source { std::make_unique<MuonPi::MqttEventSource>(std::move(source_topics)) };
 
-    auto detector_tracker { std::make_unique<MuonPi::DetectorTracker>(std::move(log_source)) };
+    auto detector_tracker { std::make_unique<MuonPi::DetectorTracker>(std::move(log_source), supervisor) };
 
     source_link.startup();
 
@@ -72,7 +75,7 @@ auto main() -> int
     auto event_sink { std::make_unique<MuonPi::AsciiEventSink>(std::cout) };
 #endif
 
-    MuonPi::Core core{std::move(event_sink), std::move(event_source), std::move(detector_tracker)};
+    MuonPi::Core core{std::move(event_sink), std::move(event_source), std::move(detector_tracker), supervisor};
 
     shutdown_handler = [&](int signal) {
         if (signal == SIGINT) {

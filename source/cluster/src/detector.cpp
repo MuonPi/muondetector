@@ -1,13 +1,15 @@
 #include "detector.h"
 #include "event.h"
 #include "log.h"
+#include "statesupervisor.h"
 
 namespace MuonPi {
 
-Detector::Detector(const LogMessage &initial_log)
+Detector::Detector(const LogMessage &initial_log, StateSupervisor& supervisor)
     : m_location { initial_log.location()}
     , m_hash { initial_log.hash() }
     , m_supervisor { std::make_unique<RateSupervisor>(RateSupervisor::Rate{3.0f, 0.2f, 5.5f}) }
+    , m_state_supervisor { supervisor }
 {
 }
 
@@ -32,7 +34,7 @@ void Detector::process(const LogMessage &log)
 void Detector::set_status(Status status)
 {
     if (m_status != status) {
-        Log::notice()<<"Marking detector " + std::to_string(m_hash) + ((status == Status::Reliable)?" Reliable":" Unreliable");
+        m_state_supervisor.detector_status(m_hash, status);
     }
     m_status = status;
 }

@@ -15,11 +15,12 @@ class LogMessage;
 template <typename T>
 class AbstractSource;
 class Detector;
+class StateSupervisor;
 
 class AbstractDetectorTracker : public ThreadRunner
 {
 public:
-    AbstractDetectorTracker();
+    AbstractDetectorTracker(StateSupervisor& supervisor);
 
     virtual ~AbstractDetectorTracker() override;
 
@@ -35,12 +36,15 @@ public:
      * @return maximum factor between all detectors
      */
     [[nodiscard]] virtual auto factor() const -> float;
+
+protected:
+    StateSupervisor& m_supervisor;
 };
 
 class DetectorTracker : public AbstractDetectorTracker
 {
 public:
-    DetectorTracker(std::unique_ptr<AbstractSource<LogMessage>> log_source);
+    DetectorTracker(std::unique_ptr<AbstractSource<LogMessage>> log_source, StateSupervisor& supervisor);
 
     ~DetectorTracker() override;
     /**

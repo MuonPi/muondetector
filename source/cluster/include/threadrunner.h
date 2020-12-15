@@ -13,6 +13,13 @@ namespace MuonPi {
 class ThreadRunner
 {
 public:
+    enum class State {
+        Error,
+        Stopped,
+        Initialising,
+        Running,
+        Finalising
+    };
     ThreadRunner(const std::string& name);
     /**
      * @brief ~ThreadRunner Stops the thread and waits for it to finish.
@@ -34,6 +41,12 @@ public:
      * @return the return value of the main loop
      */
     [[nodiscard]] auto wait() -> int;
+
+    /**
+     * @brief state Indicates the current state of the thread
+     * @return The current state
+     */
+    [[nodiscard]] auto state() -> State;
 
 protected:
     /**
@@ -68,11 +81,12 @@ protected:
 
 private:
     std::atomic<bool> m_run { true };
-    std::atomic<bool> m_started { false };
 
     std::future<int> m_run_future {};
 
     std::string m_name {};
+
+    State m_state { State::Stopped };
 };
 
 }
