@@ -74,7 +74,7 @@ auto DetectorTracker::step() -> int
         Log::error()<<"The Log source stopped.";
         return -1;
     }
-    float largest { 0.0 };
+    float largest { 1.0 };
     for (auto& [hash, detector]: m_detectors) {
 
         if (!detector->step()) {
@@ -82,7 +82,7 @@ auto DetectorTracker::step() -> int
             m_delete_detectors.push(hash);
             continue;
         }
-        if (detector->factor() > largest) {
+        if ((detector->is(Detector::Status::Reliable)) && (detector->factor() > largest)) {
             largest = detector->factor();
         }
     }

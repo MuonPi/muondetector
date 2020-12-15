@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 #include <chrono>
+#include <fstream>
 
 namespace MuonPi {
 
@@ -23,6 +24,8 @@ public:
 private:
     std::map<std::size_t, Detector::Status> m_detectors;
     std::chrono::milliseconds m_timeout;
+    std::chrono::system_clock::time_point m_start { std::chrono::system_clock::now() };
+    std::ofstream m_outfile { "timeoutdata" };
 };
 
 }
