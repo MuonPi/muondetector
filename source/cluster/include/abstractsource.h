@@ -40,6 +40,12 @@ public:
      */
     [[nodiscard]] auto has_items() const -> bool;
 
+    /**
+     * @brief size Get the number of items currently in the queue
+     * @return number of items in the queue
+     */
+    [[nodiscard]] auto size() const -> std::size_t;
+
 protected:
     /**
      * @brief push_item pushes an item into the source
@@ -50,6 +56,8 @@ protected:
 private:
 
     std::atomic<bool> m_has_items { false };
+
+    std::atomic<std::size_t> m_size { 0 };
 
     std::queue<T> m_queue {};
 
@@ -76,6 +84,7 @@ auto AbstractSource<T>::next_item() -> T
     std::scoped_lock<std::mutex> lock {m_mutex};
     auto item {std::move(m_queue.front())};
     m_queue.pop();
+    m_size = m_size - 1;
     if (m_queue.size() == 0) {
         m_has_items = false;
     }
@@ -88,6 +97,7 @@ void AbstractSource<T>::push_item(T item)
     std::scoped_lock<std::mutex> lock {m_mutex};
     m_queue.push(std::move(item));
     m_has_items = true;
+    m_size = m_size + 1;
 }
 
 template <typename T>
@@ -95,6 +105,14 @@ auto AbstractSource<T>::has_items() const -> bool
 {
     return m_has_items;
 }
+
+
+template <typename T>
+auto AbstractSource<T>::size() const -> std::size_t
+{
+    return m_size;
+}
+
 
 }
 

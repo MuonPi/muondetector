@@ -1,4 +1,4 @@
-#include "core.h"
+﻿#include "core.h"
 #include "log.h"
 
 #include "abstractsink.h"
@@ -47,7 +47,7 @@ auto Core::step() -> int
     }
     {
         using namespace std::chrono;
-        m_timeout = milliseconds{static_cast<long>(static_cast<float>(duration_cast<milliseconds>(m_time_base_supervisor->current()).count()) * m_detector_tracker->factor())};
+        m_timeout = milliseconds{static_cast<long>(static_cast<float>(duration_cast<milliseconds>(m_time_base_supervisor->current()).count()) * m_detector_tracker->factor() * m_scale)};
         m_supervisor.time_status(duration_cast<milliseconds>(m_timeout));
     }
     // +++ Send finished constructors off to the event sink
@@ -69,15 +69,26 @@ auto Core::step() -> int
 
     // --- Send finished constructors off to the event sink
 
-
+    std::size_t before { m_event_source->size() };
     // +++ handle incoming events, maximum 10 at a time to prevent blocking
+
     std::size_t i { 0 };
-    while (m_event_source->has_items() && (i < 10)) {
+    while (m_event_source->has_items() && (i < 100)) {
         process(m_event_source->next_item());
         i++;
     }
     // --- handle incoming events, maximum 10 at a time to prevent blocking
-    std::this_thread::sleep_for( std::chrono::milliseconds{1} );
+
+    // +++ decrease the timeout to level the load if there is a large backlog
+    if ((before != 0) && (before > i)) {
+        m_scale = (static_cast<float>(i) / static_cast<float>(before));
+        Log::warning()<<"Scaling timeout: " + std::to_string(m_scale);
+    } else {
+        m_scale = 1.0f;
+    }
+    // --- decrease the timeout to level the load if there is a large backlog
+
+    std::this_thread::sleep_for( std::chrono::microseconds{500} );
     return 0;
 }
 

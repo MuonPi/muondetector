@@ -66,6 +66,9 @@ private:
 
     StateSupervisor& m_supervisor;
 
+
+    float m_scale { 1.0 };
+
 };
 
 }
