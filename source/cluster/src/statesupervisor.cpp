@@ -9,9 +9,7 @@ namespace MuonPi {
 
 void StateSupervisor::time_status(std::chrono::milliseconds timeout)
 {
-    using namespace std::chrono;
     m_timeout = timeout;
-    m_outfile<<duration_cast<milliseconds>(system_clock::now() - m_start).count()<<','<<duration_cast<milliseconds>(m_timeout).count()<<'\n'<<std::flush;
 }
 
 void StateSupervisor::detector_status(std::size_t hash, Detector::Status status)
