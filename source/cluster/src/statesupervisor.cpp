@@ -65,10 +65,25 @@ auto StateSupervisor::step() -> int
     static system_clock::time_point last { system_clock::now() };
 
     if ((system_clock::now() - last) > seconds{5}) {
-        Log::debug()<<"runtime: " + std::to_string(duration_cast<seconds>(system_clock::now() - m_start).count()) + "s timeout: " + std::to_string(duration_cast<milliseconds>(m_timeout).count()) + "ms";
+        Log::debug()<<"runtime: " + std::to_string(duration_cast<seconds>(system_clock::now() - m_start).count()) + "s timeout: " + std::to_string(duration_cast<milliseconds>(m_timeout).count()) + "ms ( -> " + std::to_string(m_incoming_count) + " [ " + std::to_string(m_queue_size) + " ] " + std::to_string(m_outgoing_count) + " -> )";
         last = system_clock::now();
+        m_incoming_count = 0;
+        m_outgoing_count = 0;
     }
     return 0;
 }
 
+void StateSupervisor::increase_event_count(bool incoming)
+{
+    if (incoming) {
+        m_incoming_count++;
+    } else {
+        m_outgoing_count++;
+    }
+}
+
+void StateSupervisor::set_queue_size(std::size_t size)
+{
+    m_queue_size = size;
+}
 }

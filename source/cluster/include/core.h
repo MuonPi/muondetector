@@ -62,9 +62,7 @@ private:
 
     std::shared_ptr<Criterion> m_criterion { std::make_shared<Coincidence>() };
 
-    std::map<std::uint64_t, std::unique_ptr<EventConstructor>> m_constructors {};
-
-    std::queue<std::uint64_t> m_delete_constructors {};
+    std::vector<std::unique_ptr<EventConstructor>> m_constructors {};
 
     std::chrono::system_clock::duration m_timeout { std::chrono::minutes{1} };
 

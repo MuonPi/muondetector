@@ -35,11 +35,11 @@ void AsciiEventSink::process(Event event)
 
         m_ostream<<output + "\n";
     } else {
-/*        std::string output { "Single Event: " };
-        for (auto& evt: event.events()) {
-            output += to_string(evt);
-        }
-        m_ostream<<output + "\n";*/
+//        std::string output { "Single Event: " };
+//        for (auto& evt: event.events()) {
+//            output += to_string(evt);
+//        }
+//        m_ostream<<output + "\n";
     }
 }
 

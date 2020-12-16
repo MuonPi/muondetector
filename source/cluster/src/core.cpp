@@ -11,6 +11,8 @@
 #include "detectortracker.h"
 #include "log.h"
 
+#include <cinttypes>
+
 namespace MuonPi {
 
 Core::Core(std::vector<std::shared_ptr<AbstractSink<Event>>> event_sinks, std::vector<std::shared_ptr<AbstractSource<Event>>> event_sources, DetectorTracker& detector_tracker, StateSupervisor& supervisor)
@@ -46,30 +48,26 @@ auto Core::step() -> int
         Log::error()<<"The Detector tracker stopped.";
         return -1;
     }
+
     if (m_supervisor.step() != 0) {
         return -1;
     }
+
     {
         using namespace std::chrono;
         m_timeout = milliseconds{static_cast<long>(static_cast<float>(duration_cast<milliseconds>(m_time_base_supervisor->current()).count()) * m_detector_tracker.factor() * m_scale)};
         m_supervisor.time_status(duration_cast<milliseconds>(m_timeout));
     }
     // +++ Send finished constructors off to the event sink
-    for (auto& [id, constructor]: m_constructors) {
+    for (ssize_t i { static_cast<ssize_t>(m_constructors.size()) - 1 }; i >= 0; i--) {
+        auto& constructor { m_constructors[static_cast<std::size_t>(i)] };
         constructor->set_timeout(m_timeout);
         if (constructor->timed_out()) {
-            m_delete_constructors.push(id);
-
             push_event(constructor->commit());
+            m_constructors.erase(m_constructors.begin() + i);
         }
     }
 
-    // +++ Delete finished constructors
-    while (!m_delete_constructors.empty()) {
-        m_constructors.erase(m_delete_constructors.front());
-        m_delete_constructors.pop();
-    }
-    // --- Delete finished constructors
 
     // --- Send finished constructors off to the event sink
 
@@ -80,7 +78,7 @@ auto Core::step() -> int
     for (auto& source: m_event_sources) {
         std::size_t i { 0 };
         before += source->size();
-        while (source->has_items() && (i < 10)) {
+        while (source->has_items() && (i < 100)) {
             process(source->next_item());
             i++;
         }
@@ -97,6 +95,7 @@ auto Core::step() -> int
     }
     // --- decrease the timeout to level the load if there is a large backlog
 
+    m_supervisor.set_queue_size(m_constructors.size());
     std::this_thread::sleep_for( std::chrono::microseconds{500} );
     return 0;
 }
@@ -121,20 +120,23 @@ auto Core::post_run() -> int
 
 void Core::process(Event event)
 {
+
     m_time_base_supervisor->process_event(event);
 
     if (!m_detector_tracker.accept(event)) {
         return;
     }
 
-    std::queue<std::uint64_t> matches {};
-    for (auto& [id, constructor]: m_constructors) {
+    m_supervisor.increase_event_count(true);
+
+    std::queue<std::size_t> matches {};
+    for (std::size_t i { 0 }; i < m_constructors.size(); i++)  {
+        auto& constructor { m_constructors[i] };
         auto result { constructor->event_matches(event) };
         if ( EventConstructor::Type::NoMatch != result) {
-            matches.push(id);
+            matches.push(i);
         }
     }
-    std::uint64_t event_id { event.id() };
 
     // +++ Event matches exactly one existing constructor
     if (matches.size() == 1) {
@@ -151,16 +153,18 @@ void Core::process(Event event)
     // Combines all contesting constructors into one contesting coincience
     while (!matches.empty()) {
         constructor->add_event(m_constructors[matches.front()]->commit());
-        m_constructors.erase(matches.front());
+        m_constructors.erase(m_constructors.begin() + static_cast<ssize_t>(matches.front()));
         matches.pop();
     }
     // --- Event matches more than one constructor
-    m_constructors[event_id] = std::move(constructor);
+    m_constructors.push_back(std::move(constructor));
     // --- Event matches either no, or more than one constructor
 }
 
 void Core::push_event(Event event)
 {
+    m_supervisor.increase_event_count(false);
+
     for (auto& sink: m_event_sinks) {
         sink->push_item(event);
     }

@@ -21,10 +21,17 @@ public:
 
     [[nodiscard]] auto step() -> int;
 
+    void increase_event_count(bool incoming);
+    void set_queue_size(std::size_t size);
+
 private:
     std::map<std::size_t, Detector::Status> m_detectors;
     std::chrono::milliseconds m_timeout;
     std::chrono::system_clock::time_point m_start { std::chrono::system_clock::now() };
+
+    std::size_t m_incoming_count { 0 };
+    std::size_t m_outgoing_count { 0 };
+    std::size_t m_queue_size { 0 };
 };
 
 }
