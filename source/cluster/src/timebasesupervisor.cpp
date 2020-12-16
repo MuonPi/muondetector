@@ -10,23 +10,28 @@ TimeBaseSupervisor::TimeBaseSupervisor(std::chrono::system_clock::duration sampl
 
 void TimeBaseSupervisor::process_event(const Event &event)
 {
-    if (event.start() < m_earliest) {
-        m_earliest = event.start();
-    }
-    if (event.end() > m_latest) {
-        m_latest = event.end();
+    std::int_fast64_t offset { (m_epoch - event.epoch()) * static_cast<std::int_fast64_t>(1e9) + (m_start - event.start()) };
+
+
+    if (offset > 0) {
+        m_start -= offset;
+    } else if ((m_start - offset) > m_end) {
+        m_end = m_start - offset;
     }
 }
 
 auto TimeBaseSupervisor::current() -> std::chrono::system_clock::duration
 {
-    if ((std::chrono::system_clock::now() - m_start) < m_sample_time) {
+    if ((std::chrono::system_clock::now() - m_sample_start) < m_sample_time) {
         return m_current;
     }
-    m_current = m_latest - m_earliest;
-    m_latest = std::chrono::system_clock::now() - std::chrono::minutes{24};
-    m_earliest = std::chrono::system_clock::now() + m_sample_time + std::chrono::minutes{24};
-    m_start = std::chrono::system_clock::now();
+
+    m_current = std::chrono::nanoseconds{m_end - m_start};
+
+    m_epoch = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    m_start = 1000000000;
+    m_end = -1000000000;
+    m_sample_start = std::chrono::system_clock::now();
     if (m_current < s_minimum) {
         m_current = s_minimum;
     }

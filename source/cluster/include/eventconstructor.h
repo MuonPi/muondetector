@@ -37,7 +37,7 @@ public:
      * @param event The event to add
      * @param contested Whether the event is contested or not
      */
-    void add_event(Event event, bool contested = false);
+    void add_event(Event event);
 
     /**
      * @brief event_matches Check whether an event matches the criterion

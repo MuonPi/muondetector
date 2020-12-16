@@ -112,20 +112,18 @@ void Core::process(Event event)
     }
 
 
-    std::queue<std::pair<std::uint64_t, bool>> matches {};
+    std::queue<std::uint64_t> matches {};
     for (auto& [id, constructor]: m_constructors) {
         auto result { constructor->event_matches(event) };
         if ( EventConstructor::Type::NoMatch != result) {
-            matches.push(std::make_pair(id, (result == EventConstructor::Type::Contested)));
+            matches.push(id);
         }
     }
     std::uint64_t event_id { event.id() };
 
     // +++ Event matches exactly one existing constructor
     if (matches.size() == 1) {
-        m_constructors[matches.front().first]->add_event(std::move(event), matches.front().second);
-        if (matches.front().second) {
-        }
+        m_constructors[matches.front()]->add_event(std::move(event));
         matches.pop();
         return;
     }
@@ -137,8 +135,8 @@ void Core::process(Event event)
     // +++ Event matches more than one constructor
     // Combines all contesting constructors into one contesting coincience
     while (!matches.empty()) {
-        constructor->add_event(m_constructors[matches.front().first]->commit(), true);
-        m_constructors.erase(matches.front().first);
+        constructor->add_event(m_constructors[matches.front()]->commit());
+        m_constructors.erase(matches.front());
         matches.pop();
     }
     // --- Event matches more than one constructor

@@ -23,8 +23,9 @@ public:
     struct Data {
         std::string user {};
         std::string station_id {};
-        std::chrono::system_clock::time_point start {};
-        std::chrono::system_clock::time_point end {};
+        std::int_fast64_t epoch {};
+        std::int_fast32_t start {};
+        std::int_fast32_t end {};
         std::uint32_t time_acc {};
         std::uint16_t ublox_counter {};
         std::uint8_t fix {};
@@ -32,24 +33,7 @@ public:
         std::uint8_t gnss_time_grid {};
     };
 
-    /**
-     * @brief Event
-     * @param hash a hash of the username and detector site_id
-     * @param id The id of the event
-     * @param start The start time of the event
-     * @param end The end time of the event
-     */
-    Event(std::size_t hash, std::uint64_t id, std::chrono::system_clock::time_point start = {}, std::chrono::system_clock::time_point end = {}) noexcept;
-
     Event(std::size_t hash, std::uint64_t id, Data data) noexcept;
-    /**
-     * @brief Event
-     * @param hash a hash of the username and detector site_id
-     * @param id The id of the event
-     * @param start The start time of the event
-     * @param duration The duration of the event
-     */
-    Event(std::size_t hash, std::uint64_t id, std::chrono::system_clock::time_point start = {}, std::chrono::system_clock::duration duration = {}) noexcept;
 
     Event(std::uint64_t id, Event event) noexcept;
 
@@ -60,23 +44,30 @@ public:
 
     virtual ~Event() noexcept;
 
-    /**
-     * @brief start
-     * @return The starting time of the event
-     */
-    [[nodiscard]] auto start() const noexcept -> std::chrono::system_clock::time_point;
-
-    /**
-     * @brief duration
-     * @return The duration of the event
-     */
-    [[nodiscard]] auto duration() const noexcept -> std::chrono::system_clock::duration;
 
     /**
      * @brief end
      * @return The end time of the event
      */
-    [[nodiscard]] auto end() const noexcept -> std::chrono::system_clock::time_point;
+    [[nodiscard]] auto epoch() const noexcept -> std::int_fast64_t;
+
+    /**
+     * @brief start
+     * @return The starting time of the event
+     */
+    [[nodiscard]] auto start() const noexcept -> std::int_fast64_t;
+
+    /**
+     * @brief duration
+     * @return The duration of the event
+     */
+    [[nodiscard]] auto duration() const noexcept -> std::int_fast64_t;
+
+    /**
+     * @brief end
+     * @return The end time of the event
+     */
+    [[nodiscard]] auto end() const noexcept -> std::int_fast64_t;
 
     /**
      * @brief id
@@ -97,18 +88,10 @@ public:
     [[nodiscard]] auto n() const noexcept -> std::size_t;
 
     /**
-     * @brief contested
-     * @return Return whether this event is contested or not.
-     * @see mark_contested
-     */
-    [[nodiscard]] auto contested() const -> bool;
-
-    /**
       * @brief Get the list of events. Moves the vector.
       * @return The list of events contained in this combined event
       */
     [[nodiscard]] auto events() -> std::vector<Event>;
-
 
     /**
      * @brief add_event Adds an event to the CombinedEvent.
@@ -117,11 +100,6 @@ public:
      */
     void add_event(Event event) noexcept;
 
-    /**
-     * @brief mark_contested Mark this combined event as containing a set of events which have at least one possible subset of events though does not work as an event in its totality.
-     */
-    void mark_contested();
-
     [[nodiscard]] auto valid() const -> bool;
 
     [[nodiscard]] auto data() const -> Data;
@@ -129,11 +107,8 @@ public:
     void set_data(const Data& data);
 
 private:
-    std::chrono::system_clock::time_point m_start {};
-    std::chrono::system_clock::time_point m_end {};
     std::size_t m_n { 1 };
     std::vector<Event> m_events {};
-    bool m_contested { false };
     std::uint64_t m_hash {};
     std::uint64_t m_id {};
     bool m_valid { true };

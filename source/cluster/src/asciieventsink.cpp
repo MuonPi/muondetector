@@ -29,9 +29,6 @@ void AsciiEventSink::process(Event event)
 {
     if (event.n() > 1) {
         std::string output { "Combined Event: (" + std::to_string(event.n()) + ")" };
-        if (event.contested()) {
-            output += " (contested)";
-        }
         for (auto& evt: event.events()) {
             output += "\n\t" + to_string(evt);
         }
@@ -48,21 +45,17 @@ void AsciiEventSink::process(Event event)
 
 auto AsciiEventSink::to_string(Event& evt) const -> std::string
 {
-    Event::Data data { evt.data() };
+    const Event::Data data { evt.data() };
     std::string output {};
     std::ostringstream out { output };
-    std::chrono::seconds start { std::chrono::duration_cast<std::chrono::seconds>(data.start.time_since_epoch()).count() };
-    std::int64_t start_s { start.count() };
-    std::int64_t offset_start { std::chrono::duration_cast<std::chrono::nanoseconds>(data.start.time_since_epoch() - start).count() };
-    std::int64_t offset_end { std::chrono::duration_cast<std::chrono::nanoseconds>(data.end.time_since_epoch() - start).count() };
 
     out		<<std::hex
             <<evt.hash()
             <<' '<<data.user
             <<' '<<data.station_id
-            <<' '<<start_s
-            <<' '<<offset_start
-            <<' '<<offset_end
+            <<' '<<data.epoch
+            <<' '<<data.start
+            <<' '<<data.end
             <<' '<<data.time_acc
             <<' '<<data.ublox_counter
             <<' '<<static_cast<std::uint16_t>(data.fix)

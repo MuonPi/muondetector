@@ -13,13 +13,9 @@ EventConstructor::EventConstructor(Event event, std::shared_ptr<Criterion> crite
 
 EventConstructor::~EventConstructor() = default;
 
-void EventConstructor::add_event(Event event, bool contested)
+void EventConstructor::add_event(Event event)
 {
     m_event.add_event(std::move(event));
-
-    if (contested) {
-        m_event.mark_contested();
-    }
 }
 
 auto EventConstructor::event_matches(const Event& event) -> EventConstructor::Type
