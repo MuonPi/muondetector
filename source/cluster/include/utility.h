@@ -67,6 +67,8 @@ private:
     double m_variance { 0.0 };
     double m_deviation { 0.0 };
 
+    double m_full { false };
+
     std::array<double, N> m_history { 0.0 };
 
     std::size_t m_index { 0 };
@@ -93,11 +95,20 @@ auto RateMeasurement<N, T>::step() -> bool
 
         m_history[m_index] = m_current;
         m_index = (m_index + 1) % N;
-
-        m_mean = std::accumulate(m_history.begin(), m_history.end(), 0.0) / N;
-        m_variance = 1.0 / ( N - 1.0 ) * std::inner_product(m_history.begin(), m_history.end(), m_history.begin(), 0.0,
-                                           [](double const & x, double const & y) { return x + y; },
-                                           [this](double const & x, double const & y) { return (x - m_mean)*(y - m_mean); });
+        if (!m_full) {
+            if (m_index == 0) {
+                m_full = true;
+            }
+            m_mean = std::accumulate(m_history.begin(), m_history.begin()+m_index, 0.0) / m_index;
+            m_variance = 1.0 / ( m_index - 1 ) * std::inner_product(m_history.begin(), m_history.begin()+m_index, m_history.begin(), 0.0,
+                                               [](double const & x, double const & y) { return x + y; },
+                                               [this](double const & x, double const & y) { return (x - m_mean)*(y - m_mean); });
+        } else {
+            m_mean = std::accumulate(m_history.begin(), m_history.end(), 0.0) / N;
+            m_variance = 1.0 / ( N - 1.0 ) * std::inner_product(m_history.begin(), m_history.end(), m_history.begin(), 0.0,
+                                               [](double const & x, double const & y) { return x + y; },
+                                               [this](double const & x, double const & y) { return (x - m_mean)*(y - m_mean); });
+        }
         m_deviation = std::sqrt( m_variance );
 
         m_current_n = 0;
