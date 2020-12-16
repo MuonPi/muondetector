@@ -94,8 +94,11 @@ auto Event::n() const noexcept -> std::size_t
 
 void Event::add_event(Event event) noexcept
 {
-    if (event.start() <= start()) {
-        m_start = event.start();
+    if (event.n() > 1) {
+        for (auto e: event.events()) {
+            add_event(e);
+        }
+        return;
     }
 
     std::int_fast64_t offset { (epoch() - event.epoch()) * static_cast<std::int_fast64_t>(1e9) + (start() - event.start()) };
