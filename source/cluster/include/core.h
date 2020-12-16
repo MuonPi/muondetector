@@ -58,7 +58,7 @@ private:
     std::vector<std::shared_ptr<AbstractSource<Event>>> m_event_sources;
 
     DetectorTracker& m_detector_tracker;
-    std::unique_ptr<TimeBaseSupervisor> m_time_base_supervisor { std::make_unique<TimeBaseSupervisor>( std::chrono::seconds{2} ) };
+    std::unique_ptr<TimeBaseSupervisor> m_time_base_supervisor { std::make_unique<TimeBaseSupervisor>( std::chrono::seconds{1} ) };
 
     std::shared_ptr<Criterion> m_criterion { std::make_shared<Coincidence>() };
 
@@ -69,7 +69,7 @@ private:
     StateSupervisor& m_supervisor;
 
 
-    float m_scale { 1.0 };
+    double m_scale { 1.0 };
 
 };
 

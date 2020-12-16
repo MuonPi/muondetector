@@ -112,4 +112,15 @@ void ThreadRunner::start()
     m_run_future = std::async(std::launch::async, &ThreadRunner::run, this);
 }
 
+void ThreadRunner::start_synchronuos()
+{
+    if (m_state > State::Stopped) {
+        return;
+    }
+    std::promise<int> promise{};
+    m_run_future = promise.get_future();
+    int value = run();
+    promise.set_value(value);
+}
+
 }

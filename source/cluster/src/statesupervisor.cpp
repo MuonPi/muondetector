@@ -62,11 +62,10 @@ void StateSupervisor::detector_status(std::size_t hash, Detector::Status status)
 auto StateSupervisor::step() -> int
 {
     using namespace std::chrono;
-    static system_clock::time_point last { system_clock::now() };
 
-    if ((system_clock::now() - last) > seconds{5}) {
-        Log::debug()<<"runtime: " + std::to_string(duration_cast<seconds>(system_clock::now() - m_start).count()) + "s timeout: " + std::to_string(duration_cast<milliseconds>(m_timeout).count()) + "ms ( -> " + std::to_string(m_incoming_count) + " [ " + std::to_string(m_queue_size) + " ] " + std::to_string(m_outgoing_count) + " -> )";
-        last = system_clock::now();
+    if (m_outgoing_rate.step()) {
+        m_incoming_rate.step();
+        Log::debug()<<"runtime: " + std::to_string(duration_cast<seconds>(system_clock::now() - m_start).count()) + "s timeout: " + std::to_string(duration_cast<milliseconds>(m_timeout).count()) + "ms ( -> " + std::to_string(m_incoming_count) + " [ " + std::to_string(m_queue_size) + " ] " + std::to_string(m_outgoing_count) + " -> ) " + " i rate: " + std::to_string(m_incoming_rate.mean()) + "Hz outgoing rate: " + std::to_string(m_outgoing_rate.mean()) + "Hz";
         m_incoming_count = 0;
         m_outgoing_count = 0;
     }
@@ -77,8 +76,10 @@ void StateSupervisor::increase_event_count(bool incoming)
 {
     if (incoming) {
         m_incoming_count++;
+        m_incoming_rate.increase_counter();
     } else {
         m_outgoing_count++;
+        m_outgoing_rate.increase_counter();
     }
 }
 

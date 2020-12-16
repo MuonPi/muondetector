@@ -64,7 +64,7 @@ public:
      * @brief factor The current factor from the event supervisor
      * @return the numeric factor
      */
-    [[nodiscard]] auto factor() const -> float;
+    [[nodiscard]] auto factor() const -> double;
     /**
      * @brief step Reimplemented from ThreadRunner
      * @return true

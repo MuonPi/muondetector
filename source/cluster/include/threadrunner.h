@@ -48,6 +48,10 @@ public:
      */
     [[nodiscard]] auto state() -> State;
 
+    void start();
+
+    void start_synchronuos();
+
 protected:
     /**
      * @brief run executed as the main loop
@@ -77,7 +81,6 @@ protected:
      */
     [[nodiscard]] virtual auto post_run() -> int;
 
-    void start();
 
 private:
     std::atomic<bool> m_run { true };

@@ -46,7 +46,7 @@ void DetectorTracker::process(const LogMessage& log)
     (*detector).second->process(log);
 }
 
-auto DetectorTracker::factor() const -> float
+auto DetectorTracker::factor() const -> double
 {
     return m_factor;
 }
@@ -61,7 +61,7 @@ auto DetectorTracker::get(std::size_t hash) const -> std::shared_ptr<Detector>
 
 auto DetectorTracker::step() -> int
 {
-    float largest { 1.0 };
+    double largest { 1.0 };
     for (auto& [hash, detector]: m_detectors) {
 
         if (!detector->step()) {

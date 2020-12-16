@@ -85,8 +85,7 @@ auto main() -> int
 
     std::signal(SIGINT, signal_handler);
 
-
-    core.join();
+    core.start_synchronuos();
 
     source_link.stop();
     return core.wait();

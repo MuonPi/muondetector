@@ -33,7 +33,7 @@ public:
      * @brief factor The current maximum factor
      * @return maximum factor between all detectors
      */
-    [[nodiscard]] auto factor() const -> float;
+    [[nodiscard]] auto factor() const -> double;
 
 
     [[nodiscard]] auto get(std::size_t hash) const -> std::shared_ptr<Detector>;
@@ -60,7 +60,7 @@ private:
 
     std::queue<std::size_t> m_delete_detectors {};
 
-    float m_factor { 1.0 };
+    double m_factor { 1.0 };
 };
 
 }

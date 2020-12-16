@@ -3,6 +3,7 @@
 
 #include "threadrunner.h"
 #include "detector.h"
+#include "utility.h"
 
 #include <cinttypes>
 #include <vector>
@@ -32,6 +33,10 @@ private:
     std::size_t m_incoming_count { 0 };
     std::size_t m_outgoing_count { 0 };
     std::size_t m_queue_size { 0 };
+
+    RateMeasurement<100, 5000> m_incoming_rate {};
+    RateMeasurement<100, 5000> m_outgoing_rate {};
+
 };
 
 }
