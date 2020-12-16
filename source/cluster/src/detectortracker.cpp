@@ -10,39 +10,19 @@
 
 namespace MuonPi {
 
-AbstractDetectorTracker::AbstractDetectorTracker(StateSupervisor& supervisor)
+
+
+DetectorTracker::DetectorTracker(std::vector<std::shared_ptr<AbstractSource<LogMessage>>> log_sources, StateSupervisor &supervisor)
     : ThreadRunner{"DetectorTracker"}
     , m_supervisor { supervisor }
+    , m_log_sources { std::move(log_sources) }
 {
     start();
 }
 
-AbstractDetectorTracker::~AbstractDetectorTracker() = default;
-
-auto AbstractDetectorTracker::accept(const Event& /*event*/) const -> bool
-{
-    return true;
-}
-
-auto AbstractDetectorTracker::factor() const -> float
-{
-    return 1.0;
-}
 
 
-DetectorTracker::DetectorTracker(std::unique_ptr<AbstractSource<LogMessage> > log_source, StateSupervisor &supervisor)
-    : AbstractDetectorTracker { supervisor }
-    , m_log_source { std::move(log_source) }
-{
-}
-
-
-DetectorTracker::~DetectorTracker()
-{
-    AbstractDetectorTracker::~AbstractDetectorTracker();
-}
-
-auto DetectorTracker::accept(const Event& event) const -> bool
+auto DetectorTracker::accept(Event& event) const -> bool
 {
     auto detector { m_detectors.find(event.hash()) };
     if (detector != m_detectors.end()) {
@@ -68,12 +48,16 @@ auto DetectorTracker::factor() const -> float
     return m_factor;
 }
 
+auto DetectorTracker::get(std::size_t hash) const -> std::shared_ptr<Detector>
+{
+    if (m_detectors.find(hash) == m_detectors.end()) {
+        return nullptr;
+    }
+    return m_detectors.at(hash);
+}
+
 auto DetectorTracker::step() -> int
 {
-    if (m_log_source->state() <= ThreadRunner::State::Stopped) {
-        Log::error()<<"The Log source stopped.";
-        return -1;
-    }
     float largest { 1.0 };
     for (auto& [hash, detector]: m_detectors) {
 
@@ -93,8 +77,14 @@ auto DetectorTracker::step() -> int
     }
 
     // +++ handle incoming log messages, maximum 10 at a time to prevent blocking
-    if (m_log_source->has_items()) {
-        process(m_log_source->next_item());
+    for (auto& source: m_log_sources) {
+        if (source->state() <= ThreadRunner::State::Stopped) {
+            Log::error()<<"The Log source stopped.";
+            return -1;
+        }
+        if (source->has_items()) {
+            process(source->next_item());
+        }
     }
     // --- handle incoming log messages, maximum 10 at a time to prevent blocking
 

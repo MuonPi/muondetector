@@ -43,7 +43,7 @@ void EventConstructor::set_timeout(std::chrono::system_clock::duration timeout)
 
 auto EventConstructor::commit() -> Event
 {
-   return std::move(m_event);
+   return m_event;
 }
 
 auto EventConstructor::timed_out() const -> bool

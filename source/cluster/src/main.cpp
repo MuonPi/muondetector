@@ -52,16 +52,16 @@ auto main() -> int
     };
 
 
-    auto log_source { std::make_unique<MuonPi::MqttLogSource>(source_link.subscribe("muonpi/log/#", "muonpi/log/[/a-zA-Z0-9_-]+")) };
+    auto log_source { std::make_shared<MuonPi::MqttLogSource>(source_link.subscribe("muonpi/log/#", "muonpi/log/[/a-zA-Z0-9_-]+")) };
 
-    auto event_source { std::make_unique<MuonPi::MqttEventSource>(std::move(source_topics)) };
+    auto event_source { std::make_shared<MuonPi::MqttEventSource>(std::move(source_topics)) };
 
-    auto detector_tracker { std::make_unique<MuonPi::DetectorTracker>(std::move(log_source), supervisor) };
+    MuonPi::DetectorTracker detector_tracker{{log_source}, supervisor};
 
     source_link.startup();
 
 #ifdef CLUSTER_RUN_SERVER
-    auto event_sink { std::make_unique<MuonPi::DatabaseEventSink>() };
+    auto event_sink { std::make_shared<MuonPi::DatabaseEventSink>() };
 #else
     /*
     MuonPi::MqttLink sink_link {"", login};
@@ -70,12 +70,12 @@ auto main() -> int
     sink_topics.single = sink_link.publish("muonpi/events/...");
     sink_topics.combined = sink_link.publish("muonpi/l1data/...");
 
-    auto event_sink { std::make_unique<MuonPi::MqttEventSink>(std::move(sink_topics)) };*/
+    auto event_sink { std::make_shared<MuonPi::MqttEventSink>(std::move(sink_topics)) };*/
 
-    auto event_sink { std::make_unique<MuonPi::AsciiEventSink>(std::cout) };
+    auto event_sink { std::make_shared<MuonPi::AsciiEventSink>(std::cout) };
 #endif
 
-    MuonPi::Core core{std::move(event_sink), std::move(event_source), std::move(detector_tracker), supervisor};
+    MuonPi::Core core{{event_sink}, {event_source}, detector_tracker, supervisor};
 
     shutdown_handler = [&](int signal) {
         if (signal == SIGINT) {

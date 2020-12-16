@@ -17,49 +17,26 @@ class AbstractSource;
 class Detector;
 class StateSupervisor;
 
-class AbstractDetectorTracker : public ThreadRunner
+class DetectorTracker : public ThreadRunner
 {
 public:
-    AbstractDetectorTracker(StateSupervisor& supervisor);
-
-    virtual ~AbstractDetectorTracker() override;
+    DetectorTracker(std::vector<std::shared_ptr<AbstractSource<LogMessage>>> log_sources, StateSupervisor& supervisor);
 
     /**
      * @brief accept Check if an event is accepted
      * @param event The event to check
      * @return true if the event belongs to a known detector and the detector is reliable
      */
-    [[nodiscard]] virtual auto accept(const Event& event) const -> bool;
+    [[nodiscard]] auto accept(Event &event) const -> bool;
 
     /**
      * @brief factor The current maximum factor
      * @return maximum factor between all detectors
      */
-    [[nodiscard]] virtual auto factor() const -> float;
+    [[nodiscard]] auto factor() const -> float;
 
-protected:
-    StateSupervisor& m_supervisor;
-};
 
-class DetectorTracker : public AbstractDetectorTracker
-{
-public:
-    DetectorTracker(std::unique_ptr<AbstractSource<LogMessage>> log_source, StateSupervisor& supervisor);
-
-    ~DetectorTracker() override;
-    /**
-     * @brief accept Check if an event is accepted
-     * @param event The event to check
-     * @return true if the event belongs to a known detector and the detector is reliable
-     */
-    [[nodiscard]] auto accept(const Event& event) const -> bool override;
-
-    /**
-     * @brief factor The current maximum factor
-     * @return maximum factor between all detectors
-     */
-    [[nodiscard]] auto factor() const -> float override;
-
+    [[nodiscard]] auto get(std::size_t hash) const -> std::shared_ptr<Detector>;
 protected:
 
     /**
@@ -75,9 +52,11 @@ protected:
     [[nodiscard]] auto step() -> int override;
 
 private:
-    std::unique_ptr<AbstractSource<LogMessage>> m_log_source { nullptr };
+    StateSupervisor& m_supervisor;
 
-    std::map<std::size_t, std::unique_ptr<Detector>> m_detectors {};
+    std::vector<std::shared_ptr<AbstractSource<LogMessage>>> m_log_sources {};
+
+    std::map<std::size_t, std::shared_ptr<Detector>> m_detectors {};
 
     std::queue<std::size_t> m_delete_detectors {};
 

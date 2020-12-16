@@ -10,6 +10,7 @@
 
 #include <queue>
 #include <map>
+#include <vector>
 
 
 namespace MuonPi {
@@ -18,7 +19,7 @@ template <typename T>
 class AbstractSink;
 template <typename T>
 class AbstractSource;
-class AbstractDetectorTracker;
+class DetectorTracker;
 
 /**
  * @brief The Core class
@@ -26,7 +27,7 @@ class AbstractDetectorTracker;
 class Core : public ThreadRunner
 {
 public:
-    Core(std::unique_ptr<AbstractSink<Event>> event_sink, std::unique_ptr<AbstractSource<Event>> event_source, std::unique_ptr<AbstractDetectorTracker> detector_tracker, StateSupervisor& supervisor);
+    Core(std::vector<std::shared_ptr<AbstractSink<Event>>> event_sinks, std::vector<std::shared_ptr<AbstractSource<Event>>> event_sources, DetectorTracker& detector_tracker, StateSupervisor& supervisor);
 
     [[nodiscard]] auto supervisor() -> StateSupervisor&;
 
@@ -51,9 +52,12 @@ private:
      */
     void process(Event event);
 
-    std::unique_ptr<AbstractSink<Event>> m_event_sink { nullptr };
-    std::unique_ptr<AbstractSource<Event>> m_event_source { nullptr };
-    std::unique_ptr<AbstractDetectorTracker> m_detector_tracker { nullptr };
+    void push_event(Event event);
+
+    std::vector<std::shared_ptr<AbstractSink<Event>>> m_event_sinks;
+    std::vector<std::shared_ptr<AbstractSource<Event>>> m_event_sources;
+
+    DetectorTracker& m_detector_tracker;
     std::unique_ptr<TimeBaseSupervisor> m_time_base_supervisor { std::make_unique<TimeBaseSupervisor>( std::chrono::seconds{2} ) };
 
     std::shared_ptr<Criterion> m_criterion { std::make_shared<Coincidence>() };

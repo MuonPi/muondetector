@@ -5,15 +5,6 @@
 
 namespace MuonPi {
 
-std::size_t generate_unique_event_id() {
-
-    //std::size_t a;
-    std::random_device rd;  //Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-    std::uniform_int_distribution<std::size_t> distrib;
-    return distrib(gen);
-}
-
 Event::Event(std::size_t hash, std::uint64_t id, Data data) noexcept
     : m_hash { hash }
     , m_id { id }
