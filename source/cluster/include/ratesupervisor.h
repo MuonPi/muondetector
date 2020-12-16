@@ -44,7 +44,7 @@ private:
 
     static constexpr std::size_t s_history_length { 10 };
 
-    RateMeasurement<s_history_length, 2000> m_measurement {};
+    RateMeasurement<s_history_length, 2000> m_current {};
     RateMeasurement<s_history_length * 100, 2000> m_mean {};
 
     double m_factor { 1.0 };
