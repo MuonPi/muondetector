@@ -95,10 +95,10 @@ auto RateMeasurement<N, T>::step() -> bool
 
         m_history[m_index] = m_current;
         m_index = (m_index + 1) % N;
+        if (m_index == 0) {
+            m_full = true;
+        }
         if (!m_full) {
-            if (m_index == 0) {
-                m_full = true;
-            }
             m_mean = std::accumulate(m_history.begin(), m_history.begin()+m_index, 0.0) / m_index;
             m_variance = 1.0 / ( m_index - 1 ) * std::inner_product(m_history.begin(), m_history.begin()+m_index, m_history.begin(), 0.0,
                                                [](double const & x, double const & y) { return x + y; },
