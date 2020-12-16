@@ -27,6 +27,9 @@ auto DetectorTracker::accept(Event& event) const -> bool
     auto detector { m_detectors.find(event.hash()) };
     if (detector != m_detectors.end()) {
         (*detector).second->process(event);
+
+        event.set_detector((*detector).second);
+
         return ((*detector).second->is(Detector::Status::Reliable));
     }
     return false;

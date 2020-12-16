@@ -32,6 +32,7 @@ Event::Event(const Event& other)
     , m_id { other.m_id }
     , m_valid { other.m_valid }
     , m_data { other.m_data }
+    , m_detector { other.m_detector }
 {
 }
 
@@ -42,6 +43,7 @@ Event::Event(Event&& other)
     , m_id { std::move(other.m_id) }
     , m_valid { std::move(other.m_valid) }
     , m_data { std::move(other.m_data) }
+    , m_detector { std::move(other.m_detector) }
 {
 }
 
@@ -123,6 +125,11 @@ auto Event::data() const -> Data
 void Event::set_data(const Data& data)
 {
     m_data = data;
+}
+
+void Event::set_detector(std::shared_ptr<Detector> detector)
+{
+    m_detector = detector;
 }
 
 

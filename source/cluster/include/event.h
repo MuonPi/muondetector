@@ -4,14 +4,11 @@
 #include <chrono>
 #include <vector>
 #include <string>
+#include <memory>
 
 namespace MuonPi {
 
-/**
- * @brief Event ID generator function
- *  function to generate a unique event id from the system time and a random number
- */
-std::size_t generate_unique_event_id();
+class Detector;
 
 /**
  * @brief The Event class
@@ -44,6 +41,8 @@ public:
 
     virtual ~Event() noexcept;
 
+
+    void set_detector(std::shared_ptr<Detector> detector);
 
     /**
      * @brief end
@@ -114,6 +113,8 @@ private:
     bool m_valid { true };
 
     Data m_data {};
+
+    std::shared_ptr<Detector> m_detector { nullptr };
 };
 }
 
