@@ -99,12 +99,13 @@ set(CLUSTER_HEADER_FILES
     "${PROJECT_HEADER_DIR}/log.h"
     "${PROJECT_HEADER_DIR}/utility.h"
     "${PROJECT_HEADER_DIR}/statesupervisor.h"
-    "${PROJECT_HEADER_DIR}/influxdb.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/influxdb.hpp"
     )
 
 add_library(source-files OBJECT ${CLUSTER_SOURCE_FILES} ${CLUSTER_HEADER_FILES})
 target_include_directories(source-files PUBLIC
     ${PROJECT_HEADER_DIR}
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/"
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 
 target_include_directories(source-files PUBLIC
@@ -116,6 +117,7 @@ add_executable(muondetector-cluster "${PROJECT_SRC_DIR}/main.cpp")
 
 target_include_directories(muondetector-cluster PUBLIC
     ${PROJECT_HEADER_DIR}
+    "${CMAKE_CURRENT_SOURCE_DIR}/external/"
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 
 target_include_directories(muondetector-cluster PUBLIC
