@@ -143,11 +143,29 @@ public:
      */
     [[nodiscard]] auto subscribe(const std::string& topic, const std::string& regex) -> Subscriber&;
 
+    /**
+     * @brief wait_for Waits for the status given in the status parameter.
+     * @param status The status to wait for
+     * @param duration The maximum duration to wait
+     * @return true if the status was achieved, false if it timed out
+     */
     [[nodiscard]] auto wait_for(Status status, std::chrono::seconds duration) -> bool;
 
 protected:
+    /**
+     * @brief pre_run Reimplemented from ThreadRunner
+     * @return 0 if the thread should start
+     */
     [[nodiscard]] auto pre_run() -> int override;
+    /**
+     * @brief step Reimplemented from ThreadRunner
+     * @return 0 if the thread should continue running
+     */
     [[nodiscard]] auto step() -> int override;
+    /**
+     * @brief post_run Reimplemented from ThreadRunner
+     * @return The return value of the thread loop
+     */
     [[nodiscard]] auto post_run() -> int override;
 private:
 

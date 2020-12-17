@@ -43,7 +43,7 @@ void AsciiEventSink::process(Event event)
     }
 }
 
-auto AsciiEventSink::to_string(Event& evt) const -> std::string
+auto AsciiEventSink::to_string(const Event &evt) const -> std::string
 {
     const Event::Data data { evt.data() };
     std::string output {};

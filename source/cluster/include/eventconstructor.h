@@ -35,7 +35,6 @@ public:
     /**
      * @brief add_event
      * @param event The event to add
-     * @param contested Whether the event is contested or not
      */
     void add_event(Event event);
 

@@ -108,7 +108,7 @@ void Event::add_event(Event event) noexcept
     m_n++;
 }
 
-auto Event::events() -> std::vector<Event>
+auto Event::events() -> const std::vector<Event>&
 {
     return m_events;
 }

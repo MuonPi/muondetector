@@ -87,15 +87,14 @@ public:
     [[nodiscard]] auto n() const noexcept -> std::size_t;
 
     /**
-      * @brief Get the list of events. Moves the vector.
+      * @brief Get the list of events.
       * @return The list of events contained in this combined event
       */
-    [[nodiscard]] auto events() -> std::vector<Event>;
+    [[nodiscard]] auto events() -> const std::vector<Event>&;
 
     /**
      * @brief add_event Adds an event to the CombinedEvent.
      * @param event The event to add. In the case that the abstract event is a combined event, the child events will be added instead of their combination.
-     * 				The unique_ptr will be moved.
      */
     void add_event(Event event) noexcept;
 

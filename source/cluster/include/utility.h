@@ -14,10 +14,22 @@ namespace MuonPi {
 class MessageConstructor
 {
 public:
+    /**
+     * @brief MessageConstructor
+     * @param delimiter The delimiter which separates the fields
+     */
     MessageConstructor(char delimiter);
 
+    /**
+     * @brief add_field Adds a field to the complete message
+     * @param field THe field to add
+     */
     void add_field(const std::string& field);
 
+    /**
+     * @brief get_string Gets the complete string
+     * @return The completed string
+     */
     [[nodiscard]] auto get_string() const -> std::string;
 
 private:
@@ -29,16 +41,44 @@ private:
 class MessageParser
 {
 public:
+    /**
+     * @brief MessageParser
+     * @param message The message to parse
+     * @param delimiter The delimiter separating the fields in the message
+     */
     MessageParser(const std::string& message, char delimiter);
 
+    /**
+     * @brief size
+     * @return The number of fields in the message
+     */
     [[nodiscard]] auto size() const -> std::size_t;
+    /**
+     * @brief empty
+     * @return true if there are no fields
+     */
     [[nodiscard]] auto empty() const -> bool;
 
+    /**
+     * @brief operator [] Access one field in the message
+     * @param i The index of the field
+     * @return The string contained in the field
+     */
     [[nodiscard]] auto operator[](std::size_t i) const -> std::string;
 
 private:
+    /**
+     * @brief skip_delimiter Skips all delimiters until the next field
+     */
     void skip_delimiter();
+    /**
+     * @brief read_field reads the next field
+     */
     void read_field();
+    /**
+     * @brief at_end
+     * @return True if the iterator is at the end of the string
+     */
     [[nodiscard]] auto at_end() -> bool;
 
     std::string m_content {};
@@ -52,14 +92,33 @@ template <std::size_t N, std::size_t T>
 class RateMeasurement
 {
 public:
+    /**
+     * @brief increase_counter Increases the counter in the current interval
+     */
     void increase_counter();
 
+    /**
+     * @brief step Called periodically
+     * @return True if the timeout was reached and the rates have been determined in this step
+     */
     auto step() -> bool;
 
+    /**
+     * @brief current Get the current rate
+     * @return The current rate. Might be a little unstable
+     */
     [[nodiscard]] auto current() const noexcept -> double;
 
+    /**
+     * @brief mean The mean rate over the specified interval
+     * @return The mean rate
+     */
     [[nodiscard]] auto mean() const noexcept -> double;
 
+    /**
+     * @brief deviation Standar deviation
+     * @return The standard deviation of all entries in the current interval used for the mean
+     */
     [[nodiscard]] auto deviation() const noexcept -> double;
 
 private:

@@ -28,8 +28,18 @@ class DetectorTracker;
 class Core : public ThreadRunner
 {
 public:
+    /**
+     * @brief Core
+     * @param event_sinks A vector of event sinks to use
+     * @param event_sources A vector of event sources to use
+     * @param detector_tracker A reference to the detector tracker which keeps track of connected detectors
+     * @param supervisor A reference to a StateSupervisor, which keeps track of program metadata
+     */
     Core(std::vector<std::shared_ptr<AbstractSink<Event>>> event_sinks, std::vector<std::shared_ptr<AbstractSource<Event>>> event_sources, DetectorTracker& detector_tracker, StateSupervisor& supervisor);
 
+    /**
+     * @brief supervisor Acceess the supervision object
+     */
     [[nodiscard]] auto supervisor() -> StateSupervisor&;
 
 protected:
@@ -53,6 +63,10 @@ private:
      */
     void process(Event event);
 
+    /**
+     * @brief push_event Pushes an event in to the event sinks
+     * @param event The event to push
+     */
     void push_event(Event event);
 
     std::vector<std::shared_ptr<AbstractSink<Event>>> m_event_sinks;

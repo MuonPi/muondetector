@@ -33,7 +33,7 @@ private:
 
     void process(Event evt);
 
-    [[nodiscard]] auto to_string(Event& evt) const -> std::string;
+    [[nodiscard]] auto to_string(const Event& evt) const -> std::string;
 
     std::ostream& m_ostream;
 };

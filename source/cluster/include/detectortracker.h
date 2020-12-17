@@ -20,6 +20,11 @@ class StateSupervisor;
 class DetectorTracker : public ThreadRunner
 {
 public:
+    /**
+     * @brief DetectorTracker
+     * @param log_sources A vector of log sources to use
+     * @param supervisor A reference to a supervisor object, which keeps track of program metadata
+     */
     DetectorTracker(std::vector<std::shared_ptr<AbstractSource<DetectorLog>>> log_sources, StateSupervisor& supervisor);
 
     /**

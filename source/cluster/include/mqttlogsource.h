@@ -33,10 +33,22 @@ struct LogItem {
         double dop;
     } time;
 
+    /**
+     * @brief reset Resets the LogItem to its default state
+     */
     void reset();
 
+    /**
+     * @brief add Tries to add a Message to the Item. The item chooses which messages to keep
+     * @param message The message to pass
+     * @return true if the Message was accepted. False in an error or if the message was not accepted
+     */
     auto add(MessageParser& message) -> bool;
 
+    /**
+     * @brief complete indicates whether the Item has collected all required messages
+     * @return true if it is complete
+     */
     [[nodiscard]] auto complete() -> bool;
 
 };
@@ -55,9 +67,14 @@ public:
 
     ~MqttLogSource() override;
 
-    auto pre_run() -> int override;
 
 protected:
+    /**
+     * @brief pre_run Reimplemented from ThreadRunner
+     * @return 0 if it should continue to run
+     */
+    auto pre_run() -> int override;
+
     /**
      * @brief step implementation from ThreadRunner
      * @return zero if the step succeeded.
@@ -65,9 +82,14 @@ protected:
     [[nodiscard]] auto step() -> int override;
 
 private:
-    MqttLink::Subscriber& m_link;
-
+    /**
+     * @brief process Processes one LogItem
+     * @param hash The hash of the detector
+     * @param item The item to process
+     */
     void process(std::size_t hash, LogItem item);
+
+    MqttLink::Subscriber& m_link;
 
     std::map<std::size_t, LogItem> m_buffer {};
 };

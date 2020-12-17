@@ -49,12 +49,26 @@ public:
      */
     [[nodiscard]] auto state() -> State;
 
+    /**
+     * @brief name The name of the thread
+     * @return the name
+     */
     [[nodiscard]] auto name() -> std::string;
 
+    /**
+     * @brief state_string The current state of the thread
+     * @return The current state of the thread but represented as a string
+     */
     [[nodiscard]] auto state_string() -> std::string;
 
+    /**
+     * @brief start Starts the thread asynchronuosly
+     */
     void start();
 
+    /**
+     * @brief start_synchronuos Starts the thread synchronuosly
+     */
     void start_synchronuos();
 
 protected:
