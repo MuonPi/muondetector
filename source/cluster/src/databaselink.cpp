@@ -12,7 +12,9 @@ DatabaseLink::DatabaseLink(const std::string& server, const LoginData& login, co
     , m_login_data { login }
     , m_database { database }
     , m_server_info { influxdb_cpp::server_info(m_server, 8086, m_database, m_login_data.username, m_login_data.password) }
-{}
+{
+
+}
 
 DatabaseLink::~DatabaseLink() = default;
 
@@ -43,7 +45,7 @@ auto DatabaseLink::write_entry(const DbEntry& entry) -> bool
     if (result == -3) {
         Log::warning()<<"Database not connected.";
     } else if (result != 0) {
-        Log::warning()<<"Unspecified database error";
+        Log::warning()<<"Unspecified database error: " + std::to_string(result);
     }
 
     return result == 0;

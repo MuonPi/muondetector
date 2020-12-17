@@ -15,23 +15,24 @@ class DatabaseLink;
  */
 class DatabaseEventSink : public AbstractSink<Event>
 {
-protected:
+public:
     /**
      * @brief DatabaseEventSink
-     * @param The 
      */
-    DatabaseEventSink();
+    DatabaseEventSink(DatabaseLink& link);
+protected:
 
-	
-	/**
+
+    /**
      * @brief step implementation from ThreadRunner
      * @return zero if the step succeeded.
      */
     [[nodiscard]] auto step() -> int override;
 
 private:
-	void process(Event event);
-	std::unique_ptr<DatabaseLink> m_link { nullptr };
+    void process(Event event);
+
+    DatabaseLink& m_link;
 };
 
 }

@@ -9,6 +9,12 @@
 
 namespace MuonPi {
 
+DatabaseEventSink::DatabaseEventSink(DatabaseLink& link)
+    : m_link { link }
+{
+    start();
+}
+
 auto DatabaseEventSink::step() -> int
 {
     if (has_items()) {
@@ -56,7 +62,7 @@ void DatabaseEventSink::process(Event event)
         entry.fields().push_back(std::make_pair("time_ref", std::to_string(evt.data().gnss_time_grid)));
         entry.fields().push_back(std::make_pair("valid_fix", std::to_string(evt.data().fix)));
 
-        if (!m_link->write_entry(entry)) {
+        if (!m_link.write_entry(entry)) {
             Log::error()<<"Could not write event to database.";
             return;
         }
