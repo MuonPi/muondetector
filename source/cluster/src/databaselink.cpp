@@ -1,5 +1,6 @@
 #include "databaselink.h"
 
+#include "log.h"
 
 namespace MuonPi {
 
@@ -32,11 +33,17 @@ auto DatabaseLink::write_entry(const DbEntry& entry) -> bool
 
     std::scoped_lock<std::mutex> lock { m_mutex };
 
-    reinterpret_cast<influxdb_cpp::detail::field_caller&>(tags)
+    int result = reinterpret_cast<influxdb_cpp::detail::field_caller&>(tags)
             .timestamp(stoull(entry.timestamp(), nullptr))
             .post_http(m_server_info);
 
-    return (entry.measurement() == "doof");
+    if (result == -3) {
+        Log::warning()<<"Database not connected.";
+    } else if (result != 0) {
+        Log::warning()<<"Unspecified database error";
+    }
+
+    return result == 0;
 }
 
 } // namespace MuonPi
