@@ -104,9 +104,33 @@ void ThreadRunner::finish()
     join();
 }
 
+auto ThreadRunner::name() -> std::string
+{
+    return m_name;
+}
+
+auto ThreadRunner::state_string() -> std::string
+{
+    switch (m_state) {
+    case State::Error:
+        return "Error";
+    case State::Stopped:
+        return "Stopped";
+    case State::Initial:
+        return "Initial";
+    case State::Initialising:
+        return "Initialising";
+    case State::Running:
+        return "Running";
+    case State::Finalising:
+        return "Finalising";
+    }
+}
+
 void ThreadRunner::start()
 {
-    if (m_state > State::Stopped) {
+    if (m_state > State::Initial) {
+        Log::debug()<<"Thread " + m_name + " already running, refusing to start.";
         return;
     }
     m_run_future = std::async(std::launch::async, &ThreadRunner::run, this);
@@ -114,7 +138,7 @@ void ThreadRunner::start()
 
 void ThreadRunner::start_synchronuos()
 {
-    if (m_state > State::Stopped) {
+    if (m_state > State::Initial) {
         return;
     }
     std::promise<int> promise{};

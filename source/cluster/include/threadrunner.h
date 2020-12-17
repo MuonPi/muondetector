@@ -16,6 +16,7 @@ public:
     enum class State {
         Error,
         Stopped,
+        Initial,
         Initialising,
         Running,
         Finalising
@@ -47,6 +48,10 @@ public:
      * @return The current state
      */
     [[nodiscard]] auto state() -> State;
+
+    [[nodiscard]] auto name() -> std::string;
+
+    [[nodiscard]] auto state_string() -> std::string;
 
     void start();
 
@@ -89,7 +94,7 @@ private:
 
     std::string m_name {};
 
-    State m_state { State::Stopped };
+    State m_state { State::Initial };
 };
 
 }

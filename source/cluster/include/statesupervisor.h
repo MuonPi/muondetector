@@ -25,6 +25,8 @@ public:
     void increase_event_count(bool incoming);
     void set_queue_size(std::size_t size);
 
+    void add_thread(ThreadRunner* thread);
+
 private:
     std::map<std::size_t, Detector::Status> m_detectors;
     std::chrono::milliseconds m_timeout;
@@ -36,6 +38,8 @@ private:
 
     RateMeasurement<100, 5000> m_incoming_rate {};
     RateMeasurement<100, 5000> m_outgoing_rate {};
+
+    std::vector<ThreadRunner*> m_threads;
 
 };
 

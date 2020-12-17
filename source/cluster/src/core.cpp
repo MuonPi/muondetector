@@ -31,24 +31,8 @@ auto Core::supervisor() -> StateSupervisor&
 
 auto Core::step() -> int
 {
-    for (auto& sink: m_event_sinks) {
-        if (sink->state() <= ThreadRunner::State::Stopped) {
-            Log::error()<<"The event sink stopped.";
-            return -1;
-        }
-    }
-    for (auto& source: m_event_sources) {
-        if (source->state() <= ThreadRunner::State::Stopped) {
-            Log::error()<<"The event source stopped.";
-            return -1;
-        }
-    }
-    if (m_detector_tracker.state() <= ThreadRunner::State::Stopped) {
-        Log::error()<<"The Detector tracker stopped.";
-        return -1;
-    }
-
     if (m_supervisor.step() != 0) {
+        Log::error()<<"The Supervisor stopped.";
         return -1;
     }
 

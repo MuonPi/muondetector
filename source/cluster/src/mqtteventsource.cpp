@@ -18,11 +18,6 @@ MqttEventSource::MqttEventSource(Subscribers subscribers)
 MqttEventSource::~MqttEventSource() = default;
 
 
-auto MqttEventSource::pre_run() -> int
-{
-    return 0;
-}
-
 auto MqttEventSource::step() -> int
 {
     if (m_link.single.has_message()) {

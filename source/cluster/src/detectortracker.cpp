@@ -81,10 +81,6 @@ auto DetectorTracker::step() -> int
 
     // +++ handle incoming log messages, maximum 10 at a time to prevent blocking
     for (auto& source: m_log_sources) {
-        if (source->state() <= ThreadRunner::State::Stopped) {
-            Log::error()<<"The Log source stopped.";
-            return -1;
-        }
         if (source->has_items()) {
             process(source->next_item());
         }

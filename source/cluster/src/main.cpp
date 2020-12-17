@@ -42,7 +42,7 @@ auto main() -> int
     MuonPi::MqttLink source_link {"116.202.96.181:1883", login};
 //    MuonPi::MqttLink source_link {"168.119.243.171:1883", login};
 
-    if (!source_link.wait_for(MuonPi::MqttLink::Status::Connected, std::chrono::seconds{5})) {
+    if (!source_link.startup()) {
         return -1;
     }
 
@@ -58,7 +58,6 @@ auto main() -> int
 
     MuonPi::DetectorTracker detector_tracker{{log_source}, supervisor};
 
-    source_link.startup();
 
 #ifdef CLUSTER_RUN_SERVER
     auto event_sink { std::make_shared<MuonPi::DatabaseEventSink>() };
@@ -74,6 +73,14 @@ auto main() -> int
 
     auto event_sink { std::make_shared<MuonPi::AsciiEventSink>(std::cout) };
 #endif
+
+    supervisor.add_thread(&detector_tracker);
+    supervisor.add_thread(&source_link);
+    supervisor.add_thread(log_source.get());
+    supervisor.add_thread(event_source.get());
+    supervisor.add_thread(event_sink.get());
+
+    source_link.start();
 
     MuonPi::Core core{{event_sink}, {event_source}, detector_tracker, supervisor};
 

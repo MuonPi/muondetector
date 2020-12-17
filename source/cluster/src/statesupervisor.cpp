@@ -63,6 +63,13 @@ auto StateSupervisor::step() -> int
 {
     using namespace std::chrono;
 
+    for (auto& thread: m_threads) {
+        if (thread->state() <= ThreadRunner::State::Stopped) {
+            Log::warning()<<"The thread " + thread->name() + ": " + thread->state_string();
+            return -1;
+        }
+    }
+
     if (m_outgoing_rate.step()) {
         m_incoming_rate.step();
         Log::debug()<<"runtime: " + std::to_string(duration_cast<seconds>(system_clock::now() - m_start).count()) + "s timeout: " + std::to_string(duration_cast<milliseconds>(m_timeout).count()) + "ms ( -> " + std::to_string(m_incoming_count) + " [ " + std::to_string(m_queue_size) + " ] " + std::to_string(m_outgoing_count) + " -> ) " + " i rate: " + std::to_string(m_incoming_rate.mean()) + "Hz outgoing rate: " + std::to_string(m_outgoing_rate.mean()) + "Hz";
@@ -86,5 +93,10 @@ void StateSupervisor::increase_event_count(bool incoming)
 void StateSupervisor::set_queue_size(std::size_t size)
 {
     m_queue_size = size;
+}
+
+void StateSupervisor::add_thread(ThreadRunner* thread)
+{
+    m_threads.push_back(thread);
 }
 }
