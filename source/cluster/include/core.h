@@ -20,6 +20,7 @@ class AbstractSink;
 template <typename T>
 class AbstractSource;
 class DetectorTracker;
+class ClusterLog;
 
 /**
  * @brief The Core class
@@ -56,6 +57,7 @@ private:
 
     std::vector<std::shared_ptr<AbstractSink<Event>>> m_event_sinks;
     std::vector<std::shared_ptr<AbstractSource<Event>>> m_event_sources;
+    std::vector<std::shared_ptr<AbstractSink<ClusterLog>>> m_log_sinks;
 
     DetectorTracker& m_detector_tracker;
     std::unique_ptr<TimeBaseSupervisor> m_time_base_supervisor { std::make_unique<TimeBaseSupervisor>( std::chrono::seconds{2} ) };

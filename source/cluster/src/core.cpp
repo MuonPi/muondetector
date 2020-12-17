@@ -10,6 +10,7 @@
 #include "timebasesupervisor.h"
 #include "detectortracker.h"
 #include "log.h"
+#include "clusterlog.h"
 
 #include <cinttypes>
 
