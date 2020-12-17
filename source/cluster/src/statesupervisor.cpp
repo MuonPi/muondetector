@@ -58,7 +58,8 @@ void StateSupervisor::detector_status(std::size_t hash, Detector::Status status)
         }
     }
 
-    set_detector_status(m_detectors.size(), reliable);
+    m_current_data.total_detectors = m_detectors.size();
+    m_current_data.reliable_detectors = reliable;
 }
 
 
@@ -100,16 +101,14 @@ void StateSupervisor::increase_event_count(bool incoming, std::size_t n)
         m_incoming_rate.increase_counter();
     } else {
         m_current_data.outgoing[n]++;
+
+        if (m_current_data.maximum_n < n) {
+            m_current_data.maximum_n = n;
+        }
         if (n > 1) {
             m_outgoing_rate.increase_counter();
         }
     }
-}
-
-void StateSupervisor::set_detector_status(std::size_t total, std::size_t reliable)
-{
-    m_current_data.total_detectors = total;
-    m_current_data.reliable_detectors = reliable;
 }
 
 void StateSupervisor::set_queue_size(std::size_t size)

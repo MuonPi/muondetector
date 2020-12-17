@@ -31,7 +31,6 @@ public:
 
     void add_thread(ThreadRunner* thread);
 
-    void set_detector_status(std::size_t total, std::size_t reliable);
 
 private:
     std::map<std::size_t, Detector::Status> m_detectors;

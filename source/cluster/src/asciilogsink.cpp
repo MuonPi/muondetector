@@ -39,7 +39,9 @@ auto AsciiLogSink::to_string(ClusterLog log) -> std::string
     for (auto& [n, i]: data.outgoing) {
         out<<"("<<n<<":"<<i<<") ";
     }
-    out<<"\n\tdetectors: "<<data.total_detectors<<"("<<data.reliable_detectors<<")";
+    out
+            <<"\n\tdetectors: "<<data.total_detectors<<"("<<data.reliable_detectors<<")"
+            <<"\n\tmaximum n: "<<data.maximum_n;
 
     return out.str();
 }

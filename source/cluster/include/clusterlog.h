@@ -26,6 +26,7 @@ public:
         std::size_t buffer_length { 0 };
         std::size_t total_detectors { 0 };
         std::size_t reliable_detectors { 0 };
+        std::size_t maximum_n { 0 };
     };
 
     ClusterLog(Data data);
