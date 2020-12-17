@@ -25,7 +25,7 @@ void DatabaseEventSink::process(Event event)
     for (auto& evt: event.events()) {
         DbEntry entry { "L1Event" };
         // timestamp
-        entry.timestamp()=std::to_string(evt.start());
+        entry.timestamp()=std::to_string(event.epoch()*1e9+event.start());
         // tags
         entry.tags().push_back(std::make_pair("user", evt.data().user));
         entry.tags().push_back(std::make_pair("detector", evt.data().station_id));
@@ -45,8 +45,8 @@ void DatabaseEventSink::process(Event event)
 		 * and storage of the coincidence span (diff btw. first to last ts)
 		 */
 		
-		std::uint64_t evt_coinc_time = 0;
-        std::uint64_t cluster_coinc_time = 0;
+		std::int64_t evt_coinc_time = (evt.epoch()-event.epoch())*1e9 + (evt.start()-event.start());
+        std::int64_t cluster_coinc_time = evt.end()-evt.start();
 		entry.fields().push_back(std::make_pair("coinc_time", std::to_string(evt_coinc_time)));
 		entry.fields().push_back(std::make_pair("cluster_coinc_time", std::to_string(cluster_coinc_time)));
         entry.fields().push_back(std::make_pair("time_ref", std::to_string((int)evt.data().gnss_time_grid)));
