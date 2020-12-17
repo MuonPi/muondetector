@@ -14,7 +14,7 @@ AsciiLogSink::AsciiLogSink(std::ostream &ostream)
 auto AsciiLogSink::step() -> int
 {
     if (has_items()) {
-        m_ostream<<to_string(next_item()) + "\n";
+        m_ostream<<to_string(next_item()) + "\n"<<std::flush;
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds{500});
