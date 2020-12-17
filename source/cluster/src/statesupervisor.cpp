@@ -7,6 +7,10 @@
 namespace MuonPi {
 
 
+StateSupervisor::StateSupervisor(std::vector<std::shared_ptr<AbstractSink<ClusterLog>>> log_sinks)
+    : m_log_sinks { std::move(log_sinks) }
+{}
+
 void StateSupervisor::time_status(std::chrono::milliseconds timeout)
 {
     m_timeout = timeout;
@@ -53,37 +57,67 @@ void StateSupervisor::detector_status(std::size_t hash, Detector::Status status)
             reliable++;
         }
     }
-    if (status != Detector::Status::Created) {
-        Log::debug()<<"known detectors: " + std::to_string(m_detectors.size()) + " (reliable: " + std::to_string(reliable) + ")";
-    }
+
+    m_current_data.total_detectors = m_detectors.size();
+    m_current_data.reliable_detectors = reliable;
 }
 
 
 auto StateSupervisor::step() -> int
 {
     using namespace std::chrono;
-    static system_clock::time_point last { system_clock::now() };
 
-    if ((system_clock::now() - last) > seconds{5}) {
-        Log::debug()<<"runtime: " + std::to_string(duration_cast<seconds>(system_clock::now() - m_start).count()) + "s timeout: " + std::to_string(duration_cast<milliseconds>(m_timeout).count()) + "ms ( -> " + std::to_string(m_incoming_count) + " [ " + std::to_string(m_queue_size) + " ] " + std::to_string(m_outgoing_count) + " -> )";
-        last = system_clock::now();
-        m_incoming_count = 0;
-        m_outgoing_count = 0;
+    for (auto& thread: m_threads) {
+        if (thread->state() <= ThreadRunner::State::Stopped) {
+            Log::warning()<<"The thread " + thread->name() + ": " + thread->state_string();
+            return -1;
+        }
+    }
+    static steady_clock::time_point last { steady_clock::now() };
+    steady_clock::time_point now { steady_clock::now() };
+    if ((now - last) >= seconds{30}) {
+        last = now;
+
+        for (auto& sink: m_log_sinks) {
+            sink->push_item(ClusterLog{m_current_data});
+        }
+        m_current_data.incoming = 0;
+        m_current_data.outgoing.clear();
+    }
+
+    if (m_outgoing_rate.step()) {
+        m_incoming_rate.step();
+        m_current_data.timeout = static_cast<double>(duration_cast<milliseconds>(m_timeout).count());
+        m_current_data.frequency.single_in = m_incoming_rate.mean();
+        m_current_data.frequency.l1_out = m_outgoing_rate.mean();
     }
     return 0;
 }
 
-void StateSupervisor::increase_event_count(bool incoming)
+void StateSupervisor::increase_event_count(bool incoming, std::size_t n)
 {
     if (incoming) {
-        m_incoming_count++;
+        m_current_data.incoming++;
+        m_incoming_rate.increase_counter();
     } else {
-        m_outgoing_count++;
+        m_current_data.outgoing[n]++;
+
+        if (m_current_data.maximum_n < n) {
+            m_current_data.maximum_n = n;
+        }
+        if (n > 1) {
+            m_outgoing_rate.increase_counter();
+        }
     }
 }
 
 void StateSupervisor::set_queue_size(std::size_t size)
 {
-    m_queue_size = size;
+    m_current_data.buffer_length = size;
+}
+
+void StateSupervisor::add_thread(ThreadRunner* thread)
+{
+    m_threads.push_back(thread);
 }
 }

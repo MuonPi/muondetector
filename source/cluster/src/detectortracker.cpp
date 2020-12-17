@@ -1,7 +1,7 @@
 #include "detectortracker.h"
 
 #include "event.h"
-#include "logmessage.h"
+#include "detectorlog.h"
 #include "abstractsource.h"
 #include "detector.h"
 #include "log.h"
@@ -12,7 +12,7 @@ namespace MuonPi {
 
 
 
-DetectorTracker::DetectorTracker(std::vector<std::shared_ptr<AbstractSource<LogMessage>>> log_sources, StateSupervisor &supervisor)
+DetectorTracker::DetectorTracker(std::vector<std::shared_ptr<AbstractSource<DetectorLog>>> log_sources, StateSupervisor &supervisor)
     : ThreadRunner{"DetectorTracker"}
     , m_supervisor { supervisor }
     , m_log_sources { std::move(log_sources) }
@@ -35,7 +35,7 @@ auto DetectorTracker::accept(Event& event) const -> bool
     return false;
 }
 
-void DetectorTracker::process(const LogMessage& log)
+void DetectorTracker::process(const DetectorLog& log)
 {
     auto detector { m_detectors.find(log.hash()) };
     if (detector == m_detectors.end()) {
@@ -46,7 +46,7 @@ void DetectorTracker::process(const LogMessage& log)
     (*detector).second->process(log);
 }
 
-auto DetectorTracker::factor() const -> float
+auto DetectorTracker::factor() const -> double
 {
     return m_factor;
 }
@@ -61,7 +61,8 @@ auto DetectorTracker::get(std::size_t hash) const -> std::shared_ptr<Detector>
 
 auto DetectorTracker::step() -> int
 {
-    float largest { 1.0 };
+    double largest { 1.0 };
+    std::size_t reliable { 0 };
     for (auto& [hash, detector]: m_detectors) {
 
         if (!detector->step()) {
@@ -69,10 +70,15 @@ auto DetectorTracker::step() -> int
             m_delete_detectors.push(hash);
             continue;
         }
-        if ((detector->is(Detector::Status::Reliable)) && (detector->factor() > largest)) {
-            largest = detector->factor();
+        if (detector->is(Detector::Status::Reliable)) {
+            reliable++;
+            if (detector->factor() > largest) {
+                largest = detector->factor();
+            }
         }
     }
+
+
     m_factor = largest;
     while (!m_delete_detectors.empty()) {
         m_detectors.erase(m_delete_detectors.front());
@@ -81,10 +87,6 @@ auto DetectorTracker::step() -> int
 
     // +++ handle incoming log messages, maximum 10 at a time to prevent blocking
     for (auto& source: m_log_sources) {
-        if (source->state() <= ThreadRunner::State::Stopped) {
-            Log::error()<<"The Log source stopped.";
-            return -1;
-        }
         if (source->has_items()) {
             process(source->next_item());
         }

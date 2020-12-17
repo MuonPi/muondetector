@@ -6,10 +6,11 @@
 #include "criterion.h"
 #include "eventconstructor.h"
 #include "event.h"
-#include "logmessage.h"
+#include "detectorlog.h"
 #include "timebasesupervisor.h"
 #include "detectortracker.h"
 #include "log.h"
+#include "clusterlog.h"
 
 #include <cinttypes>
 
@@ -22,7 +23,6 @@ Core::Core(std::vector<std::shared_ptr<AbstractSink<Event>>> event_sinks, std::v
     , m_detector_tracker { (detector_tracker) }
     , m_supervisor { supervisor }
 {
-    start();
 }
 
 auto Core::supervisor() -> StateSupervisor&
@@ -32,30 +32,14 @@ auto Core::supervisor() -> StateSupervisor&
 
 auto Core::step() -> int
 {
-    for (auto& sink: m_event_sinks) {
-        if (sink->state() <= ThreadRunner::State::Stopped) {
-            Log::error()<<"The event sink stopped.";
-            return -1;
-        }
-    }
-    for (auto& source: m_event_sources) {
-        if (source->state() <= ThreadRunner::State::Stopped) {
-            Log::error()<<"The event source stopped.";
-            return -1;
-        }
-    }
-    if (m_detector_tracker.state() <= ThreadRunner::State::Stopped) {
-        Log::error()<<"The Detector tracker stopped.";
-        return -1;
-    }
-
     if (m_supervisor.step() != 0) {
+        Log::error()<<"The Supervisor stopped.";
         return -1;
     }
 
     {
         using namespace std::chrono;
-        m_timeout = milliseconds{static_cast<long>(static_cast<float>(duration_cast<milliseconds>(m_time_base_supervisor->current()).count()) * m_detector_tracker.factor() * m_scale)};
+        m_timeout = milliseconds{static_cast<long>(static_cast<double>(duration_cast<milliseconds>(m_time_base_supervisor->current()).count()) * m_detector_tracker.factor() * m_scale)};
         m_supervisor.time_status(duration_cast<milliseconds>(m_timeout));
     }
     // +++ Send finished constructors off to the event sink
@@ -63,6 +47,7 @@ auto Core::step() -> int
         auto& constructor { m_constructors[static_cast<std::size_t>(i)] };
         constructor->set_timeout(m_timeout);
         if (constructor->timed_out()) {
+            m_supervisor.increase_event_count(false, constructor->commit().n());
             push_event(constructor->commit());
             m_constructors.erase(m_constructors.begin() + i);
         }
@@ -88,10 +73,10 @@ auto Core::step() -> int
 
     // +++ decrease the timeout to level the load if there is a large backlog
     if ((before != 0) && (before > processed)) {
-        m_scale = (static_cast<float>(processed) / static_cast<float>(before));
+        m_scale = (static_cast<double>(processed) / static_cast<double>(before));
         Log::warning()<<"Scaling timeout: " + std::to_string(m_scale);
     } else {
-        m_scale = 1.0f;
+        m_scale = 1.0;
     }
     // --- decrease the timeout to level the load if there is a large backlog
 
@@ -163,7 +148,6 @@ void Core::process(Event event)
 
 void Core::push_event(Event event)
 {
-    m_supervisor.increase_event_count(false);
 
     for (auto& sink: m_event_sinks) {
         sink->push_item(event);

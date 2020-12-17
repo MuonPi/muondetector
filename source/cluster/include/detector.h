@@ -3,7 +3,7 @@
 
 #include "threadrunner.h"
 #include "ratesupervisor.h"
-#include "logmessage.h"
+#include "detectorlog.h"
 
 #include <memory>
 #include <chrono>
@@ -38,7 +38,7 @@ public:
      * @brief Detector
      * @param initial_log The initial log message from which this detector object originates
      */
-    Detector(const LogMessage& initial_log, StateSupervisor& supervisor);
+    Detector(const DetectorLog& initial_log, StateSupervisor& supervisor);
 
 
     /**
@@ -51,7 +51,7 @@ public:
      * @brief process Processes a log message. Checks for regular log messages and warns the event listener if they are delayed or have subpar location accuracy.
      * @param log The logmessage to process
      */
-    void process(const LogMessage& log);
+    void process(const DetectorLog& log);
 
     /**
      * @brief is Checks the current detector status against a value
@@ -64,7 +64,7 @@ public:
      * @brief factor The current factor from the event supervisor
      * @return the numeric factor
      */
-    [[nodiscard]] auto factor() const -> float;
+    [[nodiscard]] auto factor() const -> double;
     /**
      * @brief step Reimplemented from ThreadRunner
      * @return true

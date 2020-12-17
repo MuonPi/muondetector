@@ -16,6 +16,7 @@ public:
     enum class State {
         Error,
         Stopped,
+        Initial,
         Initialising,
         Running,
         Finalising
@@ -48,6 +49,14 @@ public:
      */
     [[nodiscard]] auto state() -> State;
 
+    [[nodiscard]] auto name() -> std::string;
+
+    [[nodiscard]] auto state_string() -> std::string;
+
+    void start();
+
+    void start_synchronuos();
+
 protected:
     /**
      * @brief run executed as the main loop
@@ -77,7 +86,6 @@ protected:
      */
     [[nodiscard]] virtual auto post_run() -> int;
 
-    void start();
 
 private:
     std::atomic<bool> m_run { true };
@@ -86,7 +94,7 @@ private:
 
     std::string m_name {};
 
-    State m_state { State::Stopped };
+    State m_state { State::Initial };
 };
 
 }

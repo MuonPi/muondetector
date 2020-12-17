@@ -7,6 +7,7 @@
 #include "timebasesupervisor.h"
 #include "eventconstructor.h"
 #include "statesupervisor.h"
+#include "clusterlog.h"
 
 #include <queue>
 #include <map>
@@ -69,7 +70,8 @@ private:
     StateSupervisor& m_supervisor;
 
 
-    float m_scale { 1.0 };
+    double m_scale { 1.0 };
+
 
 };
 

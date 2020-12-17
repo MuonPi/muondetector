@@ -127,7 +127,7 @@ public:
 
     ~MqttLink() override;
 
-    void startup();
+    [[nodiscard]] auto startup() -> bool;
 
     /**
      * @brief publish Create a publisher object

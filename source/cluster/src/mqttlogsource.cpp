@@ -1,6 +1,5 @@
 #include "mqttlogsource.h"
 
-#include "logmessage.h"
 #include "utility.h"
 #include "log.h"
 
@@ -122,6 +121,6 @@ void MqttLogSource::process(std::size_t hash, LogItem item)
     location.lat = item.geo.lat;
     location.lon = item.geo.lon;
 
-    push_item( LogMessage{hash, location} );
+    push_item( DetectorLog{hash, location} );
 }
 }

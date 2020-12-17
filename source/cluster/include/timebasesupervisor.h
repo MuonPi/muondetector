@@ -34,9 +34,9 @@ public:
     [[nodiscard]] auto current() -> std::chrono::system_clock::duration;
 
 private:
-    static constexpr std::chrono::system_clock::duration s_minimum { std::chrono::milliseconds{1800} };
+    static constexpr std::chrono::system_clock::duration s_minimum { std::chrono::milliseconds{800} };
 
-    std::chrono::system_clock::duration m_sample_time { std::chrono::seconds{4} };
+    std::chrono::system_clock::duration m_sample_time { std::chrono::seconds{1} };
     std::chrono::system_clock::time_point m_sample_start { std::chrono::system_clock::now() };
 
     std::int_fast64_t m_epoch { std::chrono::system_clock::now().time_since_epoch().count() };

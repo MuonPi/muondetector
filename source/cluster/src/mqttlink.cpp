@@ -30,9 +30,12 @@ MqttLink::~MqttLink()
     }
 }
 
-void MqttLink::startup()
+auto MqttLink::startup() -> bool
 {
-    start();
+    if (!wait_for(MuonPi::MqttLink::Status::Connected, std::chrono::seconds{5})) {
+        return false;
+    }
+    return true;
 }
 
 
@@ -50,6 +53,11 @@ auto MqttLink::wait_for(Status status, std::chrono::seconds duration) -> bool
 
 auto MqttLink::pre_run() -> int
 {
+    if (m_connection_status.valid()) {
+        if (!m_connection_status.get()) {
+            return -1;
+        }
+    }
     if (m_status != Status::Connected) {
         return -1;
     }
@@ -165,18 +173,30 @@ auto MqttLink::disconnect() -> bool
 auto MqttLink::reconnect() -> bool
 {
     set_status(Status::Disconnected);
+    static constexpr std::size_t max_tries { 5 };
+    static std::size_t n { 0 };
+
+    if (n > max_tries) {
+        set_status(Status::Error);
+        Log::error()<<"Giving up trying to reconnect to MQTT.";
+        return false;
+    }
+
     Log::info()<<"Trying to reconnect to MQTT.";
     try {
         if (!m_client.reconnect()->wait_for(std::chrono::seconds{5})) {
             Log::error()<<"Could not reconnect to MQTT.";
-            return false;
+            n++;
+            return reconnect();
         }
         set_status(Status::Connected);
         Log::info()<<"Connected to MQTT";
+        n = 0;
         return true;
     } catch (const mqtt::exception& exc) {
         Log::error()<<"Received exception while tryig to reconnect from MQTT: " + std::string{exc.what()};
-        return false;
+        n++;
+        return reconnect();
     }
 }
 
