@@ -7,13 +7,15 @@
 #include "mqttlink.h"
 #include "statesupervisor.h"
 
+#define CLUSTER_RUN_SERVER
+
 #ifdef CLUSTER_RUN_SERVER
 #include "databaseeventsink.h"
-#else
-#include "mqtteventsink.h"
+#include "databaselink.h"
+#endif
+
 #include "asciieventsink.h"
 #include "asciilogsink.h"
-#endif
 
 #include <csignal>
 #include <functional>
@@ -55,16 +57,17 @@ auto main() -> int
     auto log_source { std::make_shared<MuonPi::MqttLogSource>(source_link.subscribe("muonpi/log/#", "muonpi/log/[/a-zA-Z0-9_-]+")) };
 
     auto event_source { std::make_shared<MuonPi::MqttEventSource>(std::move(source_topics)) };
-    auto log_sink { std::make_shared<MuonPi::AsciiLogSink>(std::cout) };
+    auto ascii_log_sink { std::make_shared<MuonPi::AsciiLogSink>(std::cout) };
 
 
-    MuonPi::StateSupervisor supervisor{{log_sink}};
+    MuonPi::StateSupervisor supervisor{{ascii_log_sink}};
 
     MuonPi::DetectorTracker detector_tracker{{log_source}, supervisor};
 
 
 #ifdef CLUSTER_RUN_SERVER
-    auto event_sink { std::make_shared<MuonPi::DatabaseEventSink>() };
+    MuonPi::DatabaseLink db_link {"", {"", ""}, ""};
+    auto event_sink { std::make_shared<MuonPi::DatabaseEventSink>(db_link) };
 #else
     /*
     MuonPi::MqttLink sink_link {"", login};
@@ -72,22 +75,22 @@ auto main() -> int
 
     sink_topics.single = sink_link.publish("muonpi/events/...");
     sink_topics.combined = sink_link.publish("muonpi/l1data/...");
+    auto event_sink { std::make_shared<MuonPi::MqttEventSink>(std::move(sink_topics)) };
+*/
 
-    auto event_sink { std::make_shared<MuonPi::MqttEventSink>(std::move(sink_topics)) };*/
-
-    auto event_sink { std::make_shared<MuonPi::AsciiEventSink>(std::cout) };
 #endif
 
+    auto ascii_event_sink { std::make_shared<MuonPi::AsciiEventSink>(std::cout) };
     supervisor.add_thread(&detector_tracker);
     supervisor.add_thread(&source_link);
     supervisor.add_thread(log_source.get());
     supervisor.add_thread(event_source.get());
-    supervisor.add_thread(event_sink.get());
-    supervisor.add_thread(log_sink.get());
+    supervisor.add_thread(ascii_event_sink.get());
+    supervisor.add_thread(ascii_log_sink.get());
 
     source_link.start();
 
-    MuonPi::Core core{{event_sink}, {event_source}, detector_tracker, supervisor};
+    MuonPi::Core core{{event_sink, ascii_event_sink}, {event_source}, detector_tracker, supervisor};
 
     shutdown_handler = [&](int signal) {
         if (signal == SIGINT) {
