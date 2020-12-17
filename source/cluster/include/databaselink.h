@@ -12,8 +12,8 @@ namespace MuonPi {
 
 class DbEntry {
 public:
-	DbEntry();
-	~DbEntry();
+	DbEntry() = default;
+	~DbEntry() = default;
 	inline auto measurement() -> std::string& { return m_measurement; }
 	inline auto measurement() const -> const std::string& { return m_measurement; }
 	inline auto tags() -> std::vector<std::pair<std::string,std::string>>& { return m_tags; }

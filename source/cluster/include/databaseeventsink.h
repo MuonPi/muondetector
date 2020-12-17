@@ -23,7 +23,8 @@ protected:
     [[nodiscard]] auto step() -> int override;
 
 private:
-    std::unique_ptr<DatabaseLink> m_link { nullptr };
+	void process(Event evt);
+	std::unique_ptr<DatabaseLink> m_link { nullptr };
 };
 
 }
