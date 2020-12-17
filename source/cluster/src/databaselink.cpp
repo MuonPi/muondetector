@@ -10,14 +10,11 @@ DatabaseLink::DatabaseLink(const std::string& server, const LoginData& login, co
     , m_server_info { influxdb_cpp::server_info(m_server, 8086, m_database, m_login_data.username, m_login_data.password) }
 {}
 
-DatabaseLink::~DatabaseLink() {
-
-}
+DatabaseLink::~DatabaseLink() = default;
 
 
 auto DatabaseLink::write_entry(const DbEntry& entry) -> bool
 {
-    std::scoped_lock<std::mutex> lock { m_mutex };
     influxdb_cpp::builder builder{};
     influxdb_cpp::detail::tag_caller& tags { builder.meas(entry.measurement()) };
 
@@ -32,6 +29,8 @@ auto DatabaseLink::write_entry(const DbEntry& entry) -> bool
             tags.field(key, value);
         }
     }
+
+    std::scoped_lock<std::mutex> lock { m_mutex };
 
     reinterpret_cast<influxdb_cpp::detail::field_caller&>(tags)
             .timestamp(stoull(entry.timestamp(), nullptr))
