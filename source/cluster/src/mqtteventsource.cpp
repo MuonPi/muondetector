@@ -60,7 +60,6 @@ auto MqttEventSource::step() -> int
                 std::int_fast64_t d_offset {end - data.start};
 
                 data.end = d_epoch * static_cast<std::int_fast64_t>(1e9) + d_offset;
-
             } catch (...) {
                 Log::warning()<<"Message '" + msg.topic + " " + msg.content + "' is invalid.";
                 return 0;

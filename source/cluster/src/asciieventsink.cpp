@@ -55,8 +55,8 @@ auto AsciiEventSink::to_string(const Event &evt) const -> std::string
             <<' '<<data.station_id
             <<' '<<data.epoch
             <<' '<<data.start
-            <<' '<<data.end
-            <<' '<<data.time_acc
+            <<' '<<std::dec<<data.end
+            <<' '<<std::hex<<data.time_acc
             <<' '<<data.ublox_counter
             <<' '<<static_cast<std::uint16_t>(data.fix)
             <<' '<<static_cast<std::uint16_t>(data.utc)
