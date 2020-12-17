@@ -3,6 +3,7 @@
 #include "event.h"
 #include "databaselink.h"
 #include "utility.h"
+#include "log.h"
 
 #include <sstream>
 
@@ -24,10 +25,11 @@ void DatabaseEventSink::process(Event event)
         return;
     }
 
+    const std::int64_t cluster_coinc_time = event.end() - event.start();
     for (auto& evt: event.events()) {
         DbEntry entry { "L1Event" };
         // timestamp
-        entry.timestamp()=std::to_string(evt.start());
+        entry.timestamp()=std::to_string(static_cast<std::uint64_t>(evt.epoch())*static_cast<std::uint64_t>(1e9) + static_cast<std::uint64_t>(evt.start()));
         // tags
         entry.tags().push_back(std::make_pair("user", evt.data().user));
         entry.tags().push_back(std::make_pair("detector", evt.data().station_id));
@@ -47,14 +49,15 @@ void DatabaseEventSink::process(Event event)
          * and storage of the coincidence span (diff btw. first to last ts)
          */
 
-        std::uint64_t evt_coinc_time = 0;
-        std::uint64_t cluster_coinc_time = 0;
+        const std::int64_t evt_coinc_time = (evt.epoch() - event.epoch()) * static_cast<std::int64_t>(1e9) + (evt.start() - event.start());
+
         entry.fields().push_back(std::make_pair("coinc_time", std::to_string(evt_coinc_time)));
         entry.fields().push_back(std::make_pair("cluster_coinc_time", std::to_string(cluster_coinc_time)));
         entry.fields().push_back(std::make_pair("time_ref", std::to_string(evt.data().gnss_time_grid)));
         entry.fields().push_back(std::make_pair("valid_fix", std::to_string(evt.data().fix)));
 
-        if (m_link->write_entry(entry)) {
+        if (!m_link->write_entry(entry)) {
+            Log::error()<<"Could not write event to database.";
             return;
         }
     }
