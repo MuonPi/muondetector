@@ -47,9 +47,7 @@ auto Core::step() -> int
         auto& constructor { m_constructors[static_cast<std::size_t>(i)] };
         constructor->set_timeout(m_timeout);
         if (constructor->timed_out()) {
-            if (constructor->commit().n() > 1) {
-                m_supervisor.increase_event_count(false);
-            }
+            m_supervisor.increase_event_count(false, constructor->commit().n());
             push_event(constructor->commit());
             m_constructors.erase(m_constructors.begin() + i);
         }

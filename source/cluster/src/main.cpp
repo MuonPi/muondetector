@@ -12,6 +12,7 @@
 #else
 #include "mqtteventsink.h"
 #include "asciieventsink.h"
+#include "asciilogsink.h"
 #endif
 
 #include <csignal>
@@ -32,7 +33,6 @@ auto main() -> int
     MuonPi::Log::Log::singleton()->add_sink(std::make_shared<MuonPi::Log::StreamSink>(std::cout));
     MuonPi::Log::Log::singleton()->add_sink(std::make_shared<MuonPi::Log::SyslogSink>());
 
-    MuonPi::StateSupervisor supervisor;
 
     MuonPi::MqttLink::LoginData login;
     login.username = "benjamin";
@@ -55,6 +55,10 @@ auto main() -> int
     auto log_source { std::make_shared<MuonPi::MqttLogSource>(source_link.subscribe("muonpi/log/#", "muonpi/log/[/a-zA-Z0-9_-]+")) };
 
     auto event_source { std::make_shared<MuonPi::MqttEventSource>(std::move(source_topics)) };
+    auto log_sink { std::make_shared<MuonPi::AsciiLogSink>(std::cout) };
+
+
+    MuonPi::StateSupervisor supervisor{{log_sink}};
 
     MuonPi::DetectorTracker detector_tracker{{log_source}, supervisor};
 
@@ -79,6 +83,7 @@ auto main() -> int
     supervisor.add_thread(log_source.get());
     supervisor.add_thread(event_source.get());
     supervisor.add_thread(event_sink.get());
+    supervisor.add_thread(log_sink.get());
 
     source_link.start();
 
