@@ -18,6 +18,7 @@ DatabaseLink::~DatabaseLink() {
 
 auto DatabaseLink::write_entry(const DbEntry& entry) -> bool
 {
+	std::scoped_lock<std::mutex> lock { m_mutex };
 	influxdb_cpp::builder builder{};
 	influxdb_cpp::detail::tag_caller& tags = builder.meas(entry.measurement());
 	

@@ -7,6 +7,7 @@
 #include <numeric>
 #include <algorithm>
 #include <cmath>
+#include <array>
 
 namespace MuonPi {
 

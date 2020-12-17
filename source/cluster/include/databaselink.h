@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <mutex>
 
 namespace MuonPi {
 
@@ -52,6 +53,7 @@ private:
     LoginData m_login_data {};
 	std::string m_database {};
 	influxdb_cpp::server_info m_server_info {"muonpi.org", 8086, "db", "", ""};
+	std::mutex m_mutex;
 };
 
 }
