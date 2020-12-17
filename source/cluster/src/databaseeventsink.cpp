@@ -16,12 +16,11 @@ auto DatabaseEventSink::step() -> int
 
 void DatabaseEventSink::process(Event evt)
 {
-    DbEntry entry { };
-	entry.measurement()="L1Event";
-	entry.timestamp()=std::to_string(evt.start());
+    DbEntry entry { "L1Event" };
+    entry.timestamp() = std::to_string(evt.start());
 
     // todo: construct message string
 }
- 
- 
+
+
 }

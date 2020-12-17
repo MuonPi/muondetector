@@ -3,6 +3,9 @@
 #include "log.h"
 
 namespace MuonPi {
+DbEntry::DbEntry(const std::string& measurement)
+    : m_measurement { measurement }
+{}
 
 DatabaseLink::DatabaseLink(const std::string& server, const LoginData& login, const std::string& database)
     : m_server { server }

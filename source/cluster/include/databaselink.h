@@ -12,17 +12,17 @@ namespace MuonPi {
 
 class DbEntry {
 public:
-	DbEntry() = default;
-	~DbEntry() = default;
-	inline auto measurement() -> std::string& { return m_measurement; }
-	inline auto measurement() const -> const std::string& { return m_measurement; }
-	inline auto tags() -> std::vector<std::pair<std::string,std::string>>& { return m_tags; }
-	inline auto tags() const -> const std::vector<std::pair<std::string,std::string>>& { return m_tags; }
-	inline auto fields() -> std::vector<std::pair<std::string,std::string>>& { return m_fields; }
-	inline auto fields() const -> const std::vector<std::pair<std::string,std::string>>& { return m_fields; }
-	inline auto timestamp() -> std::string& { return m_time; }
-	inline auto timestamp() const -> const std::string& { return m_time; }
-	
+    DbEntry(const std::string& measurement);
+
+    inline auto measurement() -> std::string& { return m_measurement; }
+    inline auto measurement() const -> const std::string& { return m_measurement; }
+    inline auto tags() -> std::vector<std::pair<std::string,std::string>>& { return m_tags; }
+    inline auto tags() const -> const std::vector<std::pair<std::string,std::string>>& { return m_tags; }
+    inline auto fields() -> std::vector<std::pair<std::string,std::string>>& { return m_fields; }
+    inline auto fields() const -> const std::vector<std::pair<std::string,std::string>>& { return m_fields; }
+    inline auto timestamp() -> std::string& { return m_time; }
+    inline auto timestamp() const -> const std::string& { return m_time; }
+
 private:
     std::string m_measurement {};
     std::vector<std::pair<std::string,std::string>> m_tags {};
