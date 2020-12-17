@@ -29,16 +29,17 @@ auto AsciiLogSink::to_string(ClusterLog log) -> std::string
     std::ostringstream out { out_str };
 
     out
-            << "Log: "
-            <<" timeout: "<<data.timeout<<" ms"
-            <<" in: "<<data.frequency.single_in<<" Hz"
-            <<" out: "<<data.frequency.l1_out<<" Hz"
-            <<" buffer: "<<data.buffer_length
-            <<" events in interval: "<<data.incoming
-            <<" out in interval: ";
+            << "Log:"
+            <<"\n\ttimeout: "<<data.timeout<<" ms"
+            <<"\n\tin: "<<data.frequency.single_in<<" Hz"
+            <<"\n\tout: "<<data.frequency.l1_out<<" Hz"
+            <<"\n\tbuffer: "<<data.buffer_length
+            <<"\n\tevents in interval: "<<data.incoming
+            <<"\n\tout in interval: ";
     for (auto& [n, i]: data.outgoing) {
         out<<"("<<n<<":"<<i<<") ";
     }
+    out<<"\n\tdetectors: "<<data.total_detectors<<"("<<data.reliable_detectors<<")";
 
     return out.str();
 }

@@ -62,6 +62,7 @@ auto DetectorTracker::get(std::size_t hash) const -> std::shared_ptr<Detector>
 auto DetectorTracker::step() -> int
 {
     double largest { 1.0 };
+    std::size_t reliable { 0 };
     for (auto& [hash, detector]: m_detectors) {
 
         if (!detector->step()) {
@@ -69,10 +70,15 @@ auto DetectorTracker::step() -> int
             m_delete_detectors.push(hash);
             continue;
         }
-        if ((detector->is(Detector::Status::Reliable)) && (detector->factor() > largest)) {
-            largest = detector->factor();
+        if (detector->is(Detector::Status::Reliable)) {
+            reliable++;
+            if (detector->factor() > largest) {
+                largest = detector->factor();
+            }
         }
     }
+
+
     m_factor = largest;
     while (!m_delete_detectors.empty()) {
         m_detectors.erase(m_delete_detectors.front());

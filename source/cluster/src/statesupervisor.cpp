@@ -57,9 +57,8 @@ void StateSupervisor::detector_status(std::size_t hash, Detector::Status status)
             reliable++;
         }
     }
-    if (status != Detector::Status::Created) {
-        Log::debug()<<"known detectors: " + std::to_string(m_detectors.size()) + " (reliable: " + std::to_string(reliable) + ")";
-    }
+
+    set_detector_status(m_detectors.size(), reliable);
 }
 
 
@@ -75,7 +74,7 @@ auto StateSupervisor::step() -> int
     }
     static steady_clock::time_point last { steady_clock::now() };
     steady_clock::time_point now { steady_clock::now() };
-    if ((now - last) >= seconds{5}) {
+    if ((now - last) >= seconds{30}) {
         last = now;
 
         for (auto& sink: m_log_sinks) {
@@ -105,6 +104,12 @@ void StateSupervisor::increase_event_count(bool incoming, std::size_t n)
             m_outgoing_rate.increase_counter();
         }
     }
+}
+
+void StateSupervisor::set_detector_status(std::size_t total, std::size_t reliable)
+{
+    m_current_data.total_detectors = total;
+    m_current_data.reliable_detectors = reliable;
 }
 
 void StateSupervisor::set_queue_size(std::size_t size)
