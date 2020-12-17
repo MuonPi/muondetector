@@ -95,6 +95,7 @@ set(CLUSTER_HEADER_FILES
     "${PROJECT_HEADER_DIR}/log.h"
     "${PROJECT_HEADER_DIR}/utility.h"
     "${PROJECT_HEADER_DIR}/statesupervisor.h"
+    "${PROJECT_HEADER_DIR}/influxdb.hpp"
     )
 
 add_library(source-files OBJECT ${CLUSTER_SOURCE_FILES} ${CLUSTER_HEADER_FILES})

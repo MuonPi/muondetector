@@ -137,7 +137,7 @@ public:
     [[nodiscard]] auto publish(const std::string& topic) -> Publisher&;
 
     /**
-     * @brief subscibe Create a Subscriber object
+     * @brief subscribe Create a Subscriber object
      * @param topic The topic for which the subscriber should listen
      * @return A shared_ptr to a subscriber object, or nullptr in the case of failure.
      */
