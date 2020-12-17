@@ -30,16 +30,19 @@ auto DatabaseLink::write_entry(const DbEntry& entry) -> bool
         }
     }
 
-    if (!entry.fields().empty()) {
-        for (auto& [key, value] : entry.fields()) {
-            tags.field(key, value);
-        }
+    if (entry.fields().empty()) {
+        return false;
+    }
+    std::vector<std::pair<std::string, std::string>> field_list { entry.fields() };
+    auto& fields {tags.field(field_list[0].first, field_list[0].second)};
+    field_list.erase(field_list.begin());
+    for (auto& [key, value] : field_list) {
+        fields.field(key, value);
     }
 
     std::scoped_lock<std::mutex> lock { m_mutex };
 
-    int result = reinterpret_cast<influxdb_cpp::detail::field_caller&>(tags)
-            .timestamp(stoull(entry.timestamp(), nullptr))
+    int result = fields.timestamp(stoull(entry.timestamp(), nullptr))
             .post_http(m_server_info);
 
     if (result == -3) {
