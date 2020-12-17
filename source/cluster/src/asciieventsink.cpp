@@ -49,8 +49,10 @@ auto AsciiEventSink::to_string(const Event &evt) const -> std::string
     std::string output {};
     std::ostringstream out { output };
 
+    GUID guid{evt.hash(), static_cast<std::uint64_t>(evt.epoch()) * 1000000000 + static_cast<std::uint64_t>(evt.start())};
+
     out		<<std::hex
-            <<evt.hash()
+            <<guid.to_string()
             <<' '<<data.user
             <<' '<<data.station_id
             <<' '<<data.epoch

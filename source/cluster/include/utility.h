@@ -195,5 +195,20 @@ auto RateMeasurement<N, T>::deviation() const noexcept -> double
     return m_deviation;
 }
 
+class GUID
+{
+public:
+    GUID(std::size_t hash, std::uint64_t time);
+
+    [[nodiscard]] auto to_string() const -> std::string;
+
+private:
+    [[nodiscard]] static auto get_mac() -> std::uint64_t;
+    [[nodiscard]] static auto get_number() -> std::uint64_t;
+
+    std::uint64_t m_first { 0 };
+    std::uint64_t m_second { 0 };
+};
+
 }
 #endif // UTILITY_H

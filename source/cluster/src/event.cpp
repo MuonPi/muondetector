@@ -1,9 +1,12 @@
 #include "event.h"
 #include "log.h"
 
-#include <random>
+
+
 
 namespace MuonPi {
+
+
 
 Event::Event(std::size_t hash, std::uint64_t id, Data data) noexcept
     : m_hash { hash }
@@ -46,6 +49,7 @@ Event::Event(Event&& other)
     , m_detector { std::move(other.m_detector) }
 {
 }
+
 auto Event::operator=(const Event& other) -> Event&
 {
     m_n = other.m_n;
