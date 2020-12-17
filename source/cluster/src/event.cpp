@@ -46,6 +46,31 @@ Event::Event(Event&& other)
     , m_detector { std::move(other.m_detector) }
 {
 }
+auto Event::operator=(const Event& other) -> Event&
+{
+    m_n = other.m_n;
+    m_events = other.m_events;
+    m_hash = other.m_hash;
+    m_id = other.m_id;
+    m_valid = other.m_valid;
+    m_data = other.m_data;
+    m_detector = other.m_detector;
+
+    return *this;
+}
+
+auto Event::operator=(Event&& other) -> Event&
+{
+    m_n = std::move(other.m_n);
+    m_events = std::move(other.m_events);
+    m_hash = std::move(other.m_hash);
+    m_id = std::move(other.m_id);
+    m_valid = std::move(other.m_valid);
+    m_data = std::move(other.m_data);
+    m_detector = std::move(other.m_detector);
+
+    return *this;
+}
 
 Event::~Event() noexcept = default;
 

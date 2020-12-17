@@ -75,9 +75,9 @@ private:
     DetectorTracker& m_detector_tracker;
     std::unique_ptr<TimeBaseSupervisor> m_time_base_supervisor { std::make_unique<TimeBaseSupervisor>( std::chrono::seconds{2} ) };
 
-    std::shared_ptr<Criterion> m_criterion { std::make_shared<Coincidence>() };
+    std::unique_ptr<Criterion> m_criterion { std::make_unique<Coincidence>() };
 
-    std::vector<std::unique_ptr<EventConstructor>> m_constructors {};
+    std::vector<EventConstructor> m_constructors {};
 
     std::chrono::system_clock::duration m_timeout { std::chrono::minutes{1} };
 

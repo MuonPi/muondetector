@@ -32,7 +32,7 @@ public:
      * @brief push_item pushes an item into the sink
      * @param item The item to push
      */
-    void push_item(T item);
+    void push_item(const T& item);
 
 protected:
     /**
@@ -81,10 +81,10 @@ auto AbstractSink<T>::next_item() -> T
 }
 
 template <typename T>
-void AbstractSink<T>::push_item(T item)
+void AbstractSink<T>::push_item(const T& item)
 {
     std::scoped_lock<std::mutex> lock {m_mutex};
-    m_queue.push(std::move(item));
+    m_queue.push(item);
     m_has_items = true;
 }
 

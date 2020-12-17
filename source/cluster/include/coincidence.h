@@ -46,8 +46,7 @@ public:
 private:
     /**
      * @brief compare Compare two timestaps to each other
-     * @param first first timestamp
-     * @param second second timestamp
+     * @param difference difference between both timestamps
      * @return returns a value indicating the coincidence time between the two timestamps. @see maximum_fals @see minimum_true for the limits of the values.
      */
     [[nodiscard]] auto compare(std::int_fast64_t difference) const -> float;

@@ -39,6 +39,9 @@ public:
     Event(const Event& other);
     Event(Event&& other);
 
+    auto operator=(const Event& other) -> Event&;
+    auto operator=(Event&& other) -> Event&;
+
     virtual ~Event() noexcept;
 
 

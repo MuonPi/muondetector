@@ -45,10 +45,10 @@ auto Core::step() -> int
     // +++ Send finished constructors off to the event sink
     for (ssize_t i { static_cast<ssize_t>(m_constructors.size()) - 1 }; i >= 0; i--) {
         auto& constructor { m_constructors[static_cast<std::size_t>(i)] };
-        constructor->set_timeout(m_timeout);
-        if (constructor->timed_out()) {
-            m_supervisor.increase_event_count(false, constructor->commit().n());
-            push_event(constructor->commit());
+        constructor.set_timeout(m_timeout);
+        if (constructor.timed_out()) {
+            m_supervisor.increase_event_count(false, constructor.event.n());
+            push_event(constructor.event);
             m_constructors.erase(m_constructors.begin() + i);
         }
     }
@@ -117,32 +117,47 @@ void Core::process(Event event)
     std::queue<std::size_t> matches {};
     for (std::size_t i { 0 }; i < m_constructors.size(); i++)  {
         auto& constructor { m_constructors[i] };
-        auto result { constructor->event_matches(event) };
-        if ( EventConstructor::Type::NoMatch != result) {
+        if (m_criterion->maximum_false() < m_criterion->criterion(event, constructor.event)) {
             matches.push(i);
         }
     }
 
     // +++ Event matches exactly one existing constructor
     if (matches.size() == 1) {
-        m_constructors[matches.front()]->add_event(std::move(event));
+        EventConstructor& constructor { m_constructors[matches.front()] };
         matches.pop();
+        if (constructor.event.n() == 1) {
+            Event e { std::move(constructor.event) };
+            constructor.event = Event{e.id(), std::move(e)};
+        }
+        constructor.event.add_event(std::move(event));
         return;
     }
     // --- Event matches exactly one existing constructor
 
     // +++ Event matches either no, or more than one constructor
-    std::unique_ptr<EventConstructor> constructor { std::make_unique<EventConstructor>(std::move(event), m_criterion, m_timeout) };
-
+    if (matches.empty()) {
+        EventConstructor constructor {};
+        constructor.event = std::move(event);
+        constructor.timeout = m_timeout;
+        m_constructors.push_back(std::move(constructor));
+        return;
+    }
+    EventConstructor& constructor { m_constructors[matches.front()] };
+    matches.pop();
+    if (constructor.event.n() == 1) {
+        Event e { std::move(constructor.event) };
+        constructor.event = Event{e.id(), std::move(e)};
+    }
+    constructor.event.add_event(event);
     // +++ Event matches more than one constructor
     // Combines all contesting constructors into one contesting coincience
     while (!matches.empty()) {
-        constructor->add_event(m_constructors[matches.front()]->commit());
+        constructor.event.add_event(std::move(m_constructors[matches.front()].event));
         m_constructors.erase(m_constructors.begin() + static_cast<ssize_t>(matches.front()));
         matches.pop();
     }
     // --- Event matches more than one constructor
-    m_constructors.push_back(std::move(constructor));
     // --- Event matches either no, or more than one constructor
 }
 
