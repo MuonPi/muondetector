@@ -5,7 +5,7 @@
 
 namespace MuonPi {
 
-Detector::Detector(const LogMessage &initial_log, StateSupervisor& supervisor)
+Detector::Detector(const DetectorLog &initial_log, StateSupervisor& supervisor)
     : m_location { initial_log.location()}
     , m_hash { initial_log.hash() }
     , m_supervisor { std::make_unique<RateSupervisor>() }
@@ -18,7 +18,7 @@ void Detector::process(const Event& /*event*/)
     m_tick = true;
 }
 
-void Detector::process(const LogMessage &log)
+void Detector::process(const DetectorLog &log)
 {
     m_last_log = std::chrono::system_clock::now();
 

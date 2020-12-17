@@ -6,7 +6,7 @@
 #include "criterion.h"
 #include "eventconstructor.h"
 #include "event.h"
-#include "logmessage.h"
+#include "detectorlog.h"
 #include "timebasesupervisor.h"
 #include "detectortracker.h"
 #include "log.h"

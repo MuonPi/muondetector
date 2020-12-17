@@ -1,5 +1,5 @@
-#ifndef LOGMESSAGE_H
-#define LOGMESSAGE_H
+#ifndef DETECTORLOG_H
+#define DETECTORLOG_H
 
 #include <chrono>
 
@@ -17,23 +17,23 @@ struct Location {
 };
 
 /**
- * @brief The LogMessage class
+ * @brief The DetectorLog class
  */
-class LogMessage
+class DetectorLog
 {
 public:
 
     /**
-     * @brief LogMessage
+     * @brief DetectorLog
      * @param hash The hash of the detector identifier
      * @param location The detector Location information
      */
-    LogMessage(std::size_t hash, Location location);
+    DetectorLog(std::size_t hash, Location location);
 
-    LogMessage() noexcept;
+    DetectorLog() noexcept;
 
-    LogMessage(const LogMessage& other);
-    LogMessage(LogMessage&& other);
+    DetectorLog(const DetectorLog& other);
+    DetectorLog(DetectorLog&& other);
 
     /**
      * @brief hash
@@ -64,4 +64,4 @@ private:
 };
 }
 
-#endif // LOGMESSAGE_H
+#endif // DETECTORLOG_H
