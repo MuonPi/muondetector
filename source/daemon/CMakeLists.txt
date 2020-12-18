@@ -180,7 +180,13 @@ set(DAEMON_INSTALL_FILES
     )
 
 
+
+include(GNUInstallDirs)
+
+add_custom_target(changelog ALL COMMAND gzip -c9 "${PROJECT_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
+
 install(TARGETS muondetector-daemon muondetector-login DESTINATION bin COMPONENT daemon)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT daemon)
 install(FILES ${DAEMON_INSTALL_FILES} DESTINATION "/etc/muondetector/" COMPONENT daemon)
 install(FILES "${PROJECT_CONFIG_DIR}/muondetector-daemon.service" DESTINATION "lib/systemd/system" COMPONENT daemon)
 install(FILES "${PROJECT_CONFIG_DIR}/pigpiod.conf" DESTINATION "/etc/systemd/system/pigpiod.service.d/" COMPONENT daemon)

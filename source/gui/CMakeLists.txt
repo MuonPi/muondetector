@@ -280,7 +280,7 @@ set(windeploy_options
     -printsupport
 ) # additional options for windeployqt.exe
 
-            
+
 windeployqt(muondetector-gui "${PROJECT_BINARY_DIR}/bin" "${windeploy_options}")
 # create a list of files to copy
 set( THIRD_PARTY_DLLS
@@ -325,6 +325,12 @@ set(CPACK_NSIS_MUI_UNIICON "${PROJECT_RES_DIR}/res/muon.ico")
 set(CPACK_PACKAGE_EXECUTABLES "muondetector-gui" "muondetector-gui")
 
 else()
+
+include(GNUInstallDirs)
+
+add_custom_target(changelog ALL COMMAND gzip -c9 "${PROJECT_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT gui)
 
 set(CPACK_GENERATOR "DEB")
 set(CPACK_DEBIAN_PACKAGE_SECTION "net")
