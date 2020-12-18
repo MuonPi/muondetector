@@ -71,6 +71,7 @@ set(CLUSTER_SOURCE_FILES
     "${PROJECT_SRC_DIR}/log.cpp"
     "${PROJECT_SRC_DIR}/utility.cpp"
     "${PROJECT_SRC_DIR}/statesupervisor.cpp"
+    "${PROJECT_SRC_DIR}/mqttlogsink.cpp"
     )
 
 set(CLUSTER_HEADER_FILES
@@ -99,6 +100,7 @@ set(CLUSTER_HEADER_FILES
     "${PROJECT_HEADER_DIR}/log.h"
     "${PROJECT_HEADER_DIR}/utility.h"
     "${PROJECT_HEADER_DIR}/statesupervisor.h"
+    "${PROJECT_HEADER_DIR}/mqttlogsink.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/external/influxdb.hpp"
     )
 
