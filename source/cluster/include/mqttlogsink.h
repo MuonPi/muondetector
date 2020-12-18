@@ -17,15 +17,11 @@ class ClusterLog;
 class MqttLogSink : public AbstractSink<ClusterLog>
 {
 public:
-    struct Publishers {
-        MqttLink::Publisher& single;
-        MqttLink::Publisher& combined;
-    };
     /**
      * @brief MqttLogSink
      * @param publishers The topics from which the messages should be published
      */
-    MqttLogSink(Publishers publishers);
+    MqttLogSink(MqttLink::Publisher& publisher);
 
     ~MqttLogSink() override;
 	
@@ -41,7 +37,7 @@ private:
     void process(ClusterLog log);
 	auto construct_message(const std::string& parname, const std::string& value_string) -> std::string;
 
-    Publishers m_link;
+    MqttLink::Publisher m_link;
 };
 
 }

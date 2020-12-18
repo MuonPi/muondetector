@@ -5,9 +5,9 @@
 
 namespace MuonPi {
 
-MqttLogSink::MqttLogSink(Publishers publishers)
+MqttLogSink::MqttLogSink(MqttLink::Publisher& publisher)
     : AbstractSink<ClusterLog>{}
-    , m_link { std::move(publishers) }
+    , m_link { std::move(publisher) }
 {
     start();
 }
@@ -43,7 +43,7 @@ void MqttLogSink::process(ClusterLog log)
 
 	
 	for (auto& str: message_strings) {
-		if (m_link.single.publish(str)) {
+		if (m_link.publish(str)) {
 			Log::warning()<<"Could not publish MQTT message.";
 		}
 	}
