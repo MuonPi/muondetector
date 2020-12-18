@@ -186,7 +186,7 @@ set(DAEMON_INSTALL_FILES
 
 include(GNUInstallDirs)
 
-add_custom_target(changelog ALL COMMAND gzip -c9 "${PROJECT_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
+add_custom_target(changelog ALL COMMAND gzip -cn9 "${PROJECT_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
 
 install(TARGETS muondetector-daemon muondetector-login DESTINATION bin COMPONENT daemon)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT daemon)
@@ -209,9 +209,9 @@ set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Daemon that controls the muon detector board")
-set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "    It connects to the ublox gps module on the detector board via serial (rx tx) ubx protocol and to the other chips on the board via i2c. It is based on Qt and C++ and a little bit of C.
-    It does the measuring in the background and sends the data to the central server.
-    It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "It connects to the ublox gps module on the detector board via serial (rx tx) ubx protocol and to the other chips on the board via i2c. It is based on Qt and C++ and a little bit of C.
+It does the measuring in the background and sends the data to the central server.
+It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi <developer@muonpi.org>")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>=2.28), libc++ (>=7), lftp (>=4.7), libcrypto++6, libqt5serialport5 (>= 5), libpaho-mqttpp (>=1.1.0), libconfig++-dev, pigpiod")
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../packages/")
