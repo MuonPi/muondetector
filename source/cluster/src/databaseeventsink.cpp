@@ -42,20 +42,20 @@ void DatabaseEventSink::process(Event event)
         entry.tags().push_back(std::make_pair("detector", evt.data().station_id));
         entry.tags().push_back(std::make_pair("site_id", evt.data().user+evt.data().station_id));
         // fields
-        entry.fields().push_back(std::make_pair("accuracy", std::to_string(evt.data().time_acc)));
+        entry.fields().push_back(std::make_pair("accuracy", static_cast<int>(evt.data().time_acc)));
 
         entry.fields().push_back(std::make_pair("uuid", guid.to_string()));
 
-        entry.fields().push_back(std::make_pair("coinc_level", std::to_string(event.n())));
-        entry.fields().push_back(std::make_pair("counter", std::to_string(evt.data().ublox_counter)));
-        entry.fields().push_back(std::make_pair("length", std::to_string(evt.duration())));
+        entry.fields().push_back(std::make_pair("coinc_level", static_cast<long>(event.n())));
+        entry.fields().push_back(std::make_pair("counter", static_cast<short>(evt.data().ublox_counter)));
+        entry.fields().push_back(std::make_pair("length", static_cast<long long>(evt.duration())));
 
         const std::int_fast64_t evt_coinc_time = (evt.start() - event.start());
 
-        entry.fields().push_back(std::make_pair("coinc_time", std::to_string(evt_coinc_time)));
-        entry.fields().push_back(std::make_pair("cluster_coinc_time", std::to_string(cluster_coinc_time)));
-        entry.fields().push_back(std::make_pair("time_ref", std::to_string(evt.data().gnss_time_grid)));
-        entry.fields().push_back(std::make_pair("valid_fix", std::to_string(evt.data().fix)));
+        entry.fields().push_back(std::make_pair("coinc_time", static_cast<long long>(evt_coinc_time)));
+        entry.fields().push_back(std::make_pair("cluster_coinc_time", static_cast<long long>(cluster_coinc_time)));
+        entry.fields().push_back(std::make_pair("time_ref", static_cast<short>(evt.data().gnss_time_grid)));
+        entry.fields().push_back(std::make_pair("valid_fix", static_cast<short>(evt.data().fix)));
 
         if (!m_link.write_entry(entry)) {
             Log::error()<<"Could not write event to database.";

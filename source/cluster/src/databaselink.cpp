@@ -33,11 +33,14 @@ auto DatabaseLink::write_entry(const DbEntry& entry) -> bool
     if (entry.fields().empty()) {
         return false;
     }
-    std::vector<std::pair<std::string, std::string>> field_list { entry.fields() };
-    auto& fields {tags.field(field_list[0].first, field_list[0].second)};
+    std::vector<std::pair<std::string, std::variant<std::string,bool,short,int,long,long long,std::pair<double, int>>>> field_list { entry.fields() };
+
+    influxdb_cpp::detail::field_caller& fields { add_field(field_list[0].first, field_list[0].second, tags) };
+
     field_list.erase(field_list.begin());
+
     for (auto& [key, value] : field_list) {
-        fields.field(key, value);
+        add_field(key, value, fields);
     }
 
     std::scoped_lock<std::mutex> lock { m_mutex };
@@ -52,6 +55,46 @@ auto DatabaseLink::write_entry(const DbEntry& entry) -> bool
     }
 
     return result == 0;
+}
+
+auto DatabaseLink::add_field(const std::string& name, const std::variant<std::string,bool,short,int,long,long long,std::pair<double, int>>& value, influxdb_cpp::detail::field_caller& caller) -> influxdb_cpp::detail::field_caller&
+{
+    if (std::holds_alternative<std::string>(value)) {
+        return caller.field(name, std::get<std::string>(value));
+    } else if (std::holds_alternative<bool>(value)) {
+        return caller.field(name, std::get<bool>(value));
+    } else if (std::holds_alternative<short>(value)) {
+        return caller.field(name, std::get<short>(value));
+    } else if (std::holds_alternative<int>(value)) {
+        return caller.field(name, std::get<int>(value));
+    } else if (std::holds_alternative<long>(value)) {
+        return caller.field(name, std::get<long>(value));
+    } else if (std::holds_alternative<long long>(value)) {
+        return caller.field(name, std::get<long long>(value));
+    } else {
+        auto pair { std::get<std::pair<double, int>>(value) };
+        return caller.field(name, pair.first, pair.second);
+    }
+}
+
+auto DatabaseLink::add_field(const std::string& name, const std::variant<std::string,bool,short,int,long,long long,std::pair<double, int>>& value, influxdb_cpp::detail::tag_caller& caller) -> influxdb_cpp::detail::field_caller&
+{
+    if (std::holds_alternative<std::string>(value)) {
+        return caller.field(name, std::get<std::string>(value));
+    } else if (std::holds_alternative<bool>(value)) {
+        return caller.field(name, std::get<bool>(value));
+    } else if (std::holds_alternative<short>(value)) {
+        return caller.field(name, std::get<short>(value));
+    } else if (std::holds_alternative<int>(value)) {
+        return caller.field(name, std::get<int>(value));
+    } else if (std::holds_alternative<long>(value)) {
+        return caller.field(name, std::get<long>(value));
+    } else if (std::holds_alternative<long long>(value)) {
+        return caller.field(name, std::get<long long>(value));
+    } else {
+        auto pair { std::get<std::pair<double, int>>(value) };
+        return caller.field(name, pair.first, pair.second);
+    }
 }
 
 } // namespace MuonPi
