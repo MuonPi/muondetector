@@ -1,5 +1,5 @@
-#!/bin/bash
-systemctl stop muondetector-daemon.service
-systemctl stop pigpiod.service
-systemctl disable muondetector-daemon.service
-systemctl disable pigpiod.service
+#!/bin/bash -e
+deb-systemd-helper stop muondetector-daemon.service
+deb-systemd-helper stop pigpiod.service
+deb-systemd-helper disable muondetector-daemon.service
+deb-systemd-helper disable pigpiod.service

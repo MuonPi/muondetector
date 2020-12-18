@@ -3,8 +3,9 @@ project (muondetector)
 
 option(MUONDETECTOR_BUILD_TIDY "Execute clang-tidy when building the project" OFF)
 option(MUONDETECTOR_BUILD_GUI "Build the gui subproject" ON)
+option(MUONDETECTOR_BUILD_TOOLS "Build additional tools" OFF)
 
-set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
 message("${CMAKE_HOST_SYSTEM_PROCESSOR}")
 add_subdirectory(library)
 add_subdirectory(cluster)
