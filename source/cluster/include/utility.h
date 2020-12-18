@@ -22,7 +22,7 @@ public:
 
     /**
      * @brief add_field Adds a field to the complete message
-     * @param field THe field to add
+     * @param field The field to add
      */
     void add_field(const std::string& field);
 
