@@ -14,7 +14,7 @@ namespace MuonPi {
 class DetectorLog;
 class MessageParser;
 
-struct LogItem {
+struct DetectorLogItem {
     static constexpr std::uint8_t s_default_status { 0xFF };
     std::string id {};
     std::uint8_t status { s_default_status };
@@ -87,11 +87,11 @@ private:
      * @param hash The hash of the detector
      * @param item The item to process
      */
-    void process(std::size_t hash, LogItem item);
+    void process(std::size_t hash, DetectorLogItem item);
 
     MqttLink::Subscriber& m_link;
 
-    std::map<std::size_t, LogItem> m_buffer {};
+    std::map<std::size_t, DetectorLogItem> m_buffer {};
 };
 
 }

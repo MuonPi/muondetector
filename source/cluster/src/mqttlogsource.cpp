@@ -5,13 +5,13 @@
 
 namespace MuonPi {
 
-void LogItem::reset()
+void DetectorLogItem::reset()
 {
     id = "";
     status = s_default_status;
 }
 
-auto LogItem::add(MessageParser& message) -> bool
+auto DetectorLogItem::add(MessageParser& message) -> bool
 {
     if (id != message[0]) {
         reset();
@@ -53,7 +53,7 @@ auto LogItem::add(MessageParser& message) -> bool
     return true;
 }
 
-auto LogItem::complete() -> bool
+auto DetectorLogItem::complete() -> bool
 {
     return !status;
 }
@@ -92,7 +92,7 @@ auto MqttLogSource::step() -> int
                     m_buffer.erase(hash);
                 }
             } else {
-                LogItem item;
+                DetectorLogItem item;
                 item.id = content[0];
                 item.add(content);
                 m_buffer[hash] = item;
@@ -103,7 +103,7 @@ auto MqttLogSource::step() -> int
     return 0;
 }
 
-void MqttLogSource::process(std::size_t hash, LogItem item)
+void MqttLogSource::process(std::size_t hash, DetectorLogItem item)
 {
     static constexpr struct {
         const double pos_dop { 1.0e-1 };
