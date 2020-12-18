@@ -32,6 +32,7 @@ void DatabaseEventSink::process(Event event)
     }
 
     const std::int64_t cluster_coinc_time = event.end() - event.start();
+    GUID guid{event.hash(), static_cast<std::uint64_t>(event.epoch()) * 1000000000 + static_cast<std::uint64_t>(event.start())};
     for (auto& evt: event.events()) {
         DbEntry entry { "L1Event" };
         // timestamp
@@ -43,17 +44,11 @@ void DatabaseEventSink::process(Event event)
         // fields
         entry.fields().push_back(std::make_pair("accuracy", std::to_string(evt.data().time_acc)));
 
-        GUID guid{evt.hash(), static_cast<std::uint64_t>(evt.epoch()) * 1000000000 + static_cast<std::uint64_t>(evt.start())};
         entry.fields().push_back(std::make_pair("uuid", guid.to_string()));
 
         entry.fields().push_back(std::make_pair("coinc_level", std::to_string(event.n())));
         entry.fields().push_back(std::make_pair("counter", std::to_string(evt.data().ublox_counter)));
         entry.fields().push_back(std::make_pair("length", std::to_string(evt.duration())));
-
-        /*
-         * TODO: Implement calculation of time differences to first event (evt_coinc_time)
-         * and storage of the coincidence span (diff btw. first to last ts)
-         */
 
         const std::int64_t evt_coinc_time = (evt.epoch() - event.epoch()) * static_cast<std::int64_t>(1e9) + (evt.start() - event.start());
 
