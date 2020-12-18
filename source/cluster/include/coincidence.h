@@ -23,24 +23,24 @@ public:
      * @param second the second event to check
      * @return true if the events have a coincidence
      */
-    [[nodiscard]] auto criterion(const Event& first, const Event& second) const -> float override;
+    [[nodiscard]] auto criterion(const Event& first, const Event& second) const -> double override;
 
     /**
      * @brief maximum_false
      * @return The upper limit where the criterion is false.
      */
-    [[nodiscard]] auto maximum_false() const -> float override
+    [[nodiscard]] auto maximum_false() const -> double override
     {
-        return -3.5f;
+        return -3.5;
     }
 
     /**
      * @brief minimum_true
      * @return The lower limit where the criterion is true.
      */
-    [[nodiscard]] auto minimum_true() const -> float override
+    [[nodiscard]] auto minimum_true() const -> double override
     {
-        return 3.5f;
+        return 3.5;
     }
 
 private:
@@ -49,7 +49,7 @@ private:
      * @param difference difference between both timestamps
      * @return returns a value indicating the coincidence time between the two timestamps. @see maximum_fals @see minimum_true for the limits of the values.
      */
-    [[nodiscard]] auto compare(std::int_fast64_t difference) const -> float;
+    [[nodiscard]] auto compare(std::int_fast64_t start, std::int_fast64_t end) const -> double;
 
     std::int_fast64_t m_time { 100000 };
 };

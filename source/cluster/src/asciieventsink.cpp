@@ -28,9 +28,12 @@ auto AsciiEventSink::step() -> int
 void AsciiEventSink::process(Event event)
 {
     if (event.n() > 1) {
-        std::string output { "Combined Event: (" + std::to_string(event.n()) + ")" };
+        GUID guid{event.hash(), static_cast<std::uint64_t>(event.start())};
+        const std::int64_t cluster_coinc_time = event.end() - event.start();
+        std::string output { "Combined Event: (" + std::to_string(event.n()) + "): coinc_time: " + std::to_string(cluster_coinc_time) };
         for (auto& evt: event.events()) {
-            output += "\n\t" + to_string(evt);
+            const std::int64_t evt_coinc_time = evt.start() - event.start();
+            output += "\n\t" + guid.to_string() + " " + std::to_string(evt_coinc_time) + " " + to_string(evt);
         }
 
         m_ostream<<output + "\n"<<std::flush;
@@ -49,15 +52,12 @@ auto AsciiEventSink::to_string(const Event &evt) const -> std::string
     std::string output {};
     std::ostringstream out { output };
 
-    GUID guid{evt.hash(), static_cast<std::uint64_t>(evt.epoch()) * 1000000000 + static_cast<std::uint64_t>(evt.start())};
 
     out		<<std::hex
-            <<guid.to_string()
             <<' '<<data.user
             <<' '<<data.station_id
-            <<' '<<data.epoch
-            <<' '<<data.start
-            <<' '<<std::dec<<data.end
+            <<' '<<std::dec<<data.start
+            <<' '<<(data.end - data.start)
             <<' '<<std::hex<<data.time_acc
             <<' '<<data.ublox_counter
             <<' '<<static_cast<std::uint16_t>(data.fix)

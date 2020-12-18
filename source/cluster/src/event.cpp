@@ -79,11 +79,6 @@ auto Event::operator=(Event&& other) -> Event&
 Event::~Event() noexcept = default;
 
 
-auto Event::epoch() const noexcept -> std::int_fast64_t
-{
-    return m_data.epoch;
-}
-
 auto Event::start() const noexcept -> std::int_fast64_t
 {
     return m_data.start;
@@ -91,7 +86,7 @@ auto Event::start() const noexcept -> std::int_fast64_t
 
 auto Event::duration() const noexcept -> std::int_fast64_t
 {
-    return m_data.end;
+    return m_data.end - m_data.start;
 }
 
 auto Event::end() const noexcept -> std::int_fast64_t
@@ -123,15 +118,11 @@ void Event::add_event(Event event) noexcept
         return;
     }
 
-    std::int_fast64_t offset { (epoch() - event.epoch()) * static_cast<std::int_fast64_t>(1e9) + (start() - event.start()) };
-
-
-    if (offset > 0) {
-        m_data.start -= offset;
-    } else if ((start() - offset) > end()) {
-        m_data.end = start() - offset;
+    if (event.start() < start()) {
+        m_data.start = event.start();
+    } else if (event.start() > end()) {
+        m_data.end = event.start();
     }
-
 
     m_events.push_back(std::move(event));
     m_n++;

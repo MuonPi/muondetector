@@ -35,7 +35,7 @@ void DatabaseEventSink::process(Event event)
     for (auto& evt: event.events()) {
         DbEntry entry { "L1Event" };
         // timestamp
-        entry.timestamp()=std::to_string(static_cast<std::uint64_t>(evt.epoch())*static_cast<std::uint64_t>(1e9) + static_cast<std::uint64_t>(evt.start()));
+        entry.timestamp()=std::to_string(evt.start());
         // tags
         entry.tags().push_back(std::make_pair("user", evt.data().user));
         entry.tags().push_back(std::make_pair("detector", evt.data().station_id));
@@ -43,7 +43,7 @@ void DatabaseEventSink::process(Event event)
         // fields
         entry.fields().push_back(std::make_pair("accuracy", std::to_string(evt.data().time_acc)));
 
-        GUID guid{evt.hash(), static_cast<std::uint64_t>(evt.epoch()) * 1000000000 + static_cast<std::uint64_t>(evt.start())};
+        GUID guid{evt.hash(), static_cast<std::uint64_t>(evt.start())};
         entry.fields().push_back(std::make_pair("uuid", guid.to_string()));
 
         entry.fields().push_back(std::make_pair("coinc_level", std::to_string(event.n())));
@@ -55,7 +55,7 @@ void DatabaseEventSink::process(Event event)
          * and storage of the coincidence span (diff btw. first to last ts)
          */
 
-        const std::int64_t evt_coinc_time = (evt.epoch() - event.epoch()) * static_cast<std::int64_t>(1e9) + (evt.start() - event.start());
+        const std::int_fast64_t evt_coinc_time = (evt.start() - event.start());
 
         entry.fields().push_back(std::make_pair("coinc_time", std::to_string(evt_coinc_time)));
         entry.fields().push_back(std::make_pair("cluster_coinc_time", std::to_string(cluster_coinc_time)));

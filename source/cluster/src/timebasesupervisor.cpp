@@ -10,13 +10,11 @@ TimeBaseSupervisor::TimeBaseSupervisor(std::chrono::system_clock::duration sampl
 
 void TimeBaseSupervisor::process_event(const Event &event)
 {
-    std::int_fast64_t offset { (m_epoch - event.epoch()) * static_cast<std::int_fast64_t>(1e9) + (m_start - event.start()) };
 
-
-    if (offset > 0) {
-        m_start -= offset;
-    } else if ((m_start - offset) > m_end) {
-        m_end = m_start - offset;
+    if (event.start() < m_start) {
+        m_start = event.start();
+    } else if (event.start() > m_end) {
+        m_end = event.start();
     }
 }
 
@@ -28,8 +26,7 @@ auto TimeBaseSupervisor::current() -> std::chrono::system_clock::duration
 
     m_current = std::chrono::nanoseconds{m_end - m_start};
 
-    m_epoch = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    m_start = 1000000000;
+    m_start += 10000000000000;
     m_end = -1000000000;
     m_sample_start = std::chrono::system_clock::now();
     if (m_current < s_minimum) {

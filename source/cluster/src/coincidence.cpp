@@ -9,19 +9,19 @@ namespace MuonPi {
 
 Coincidence::~Coincidence() = default;
 
-auto Coincidence::criterion(const Event &first, const Event &second) const -> float
+auto Coincidence::criterion(const Event &first, const Event &second) const -> double
 {
-    std::int_fast64_t d_epoch { (first.epoch() - second.epoch()) * static_cast<std::int_fast64_t>(1e9) };
-    std::int_fast64_t t11 { first.start() };
-    std::int_fast64_t t12 { (first.n() > 1)?first.end():first.start() };
-    std::int_fast64_t t21 { second.start() };
-    std::int_fast64_t t22 { (second.n() > 1)?second.end():second.start() };
+    const std::int_fast64_t t11 = first.start();
+    const std::int_fast64_t t21 = second.start();
 
-    return compare(d_epoch + (t11 - t21)) + compare(d_epoch + (t11 - t22)) + compare(d_epoch + (t12 - t21)) + compare(d_epoch + (t12 - t22));
+    const std::int_fast64_t t12 = (first.n() > 1)?first.end():first.start();
+    const std::int_fast64_t t22 = (second.n() > 1)?second.end():second.start();
+
+    return compare(t11, t21) + compare(t11, t22) + compare(t12, t21) + compare(t12, t22);
 }
 
-auto Coincidence::compare(int_fast64_t difference) const -> float
+auto Coincidence::compare(std::int_fast64_t t1, std::int_fast64_t t2) const -> double
 {
-    return (std::abs(difference) <= m_time)?1.0f:-1.0f;
+    return (std::abs(t1 - t2) <= m_time)?1.0:-1.0;
 }
 }

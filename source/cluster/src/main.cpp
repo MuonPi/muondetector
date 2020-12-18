@@ -90,7 +90,11 @@ auto main() -> int
 
     source_link.start();
 
+#ifdef CLUSTER_RUN_SERVER
     MuonPi::Core core{{event_sink, ascii_event_sink}, {event_source}, detector_tracker, supervisor};
+#else
+    MuonPi::Core core{{ascii_event_sink}, {event_source}, detector_tracker, supervisor};
+#endif
 
     shutdown_handler = [&](int signal) {
         if (signal == SIGINT) {

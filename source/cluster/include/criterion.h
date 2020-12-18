@@ -22,19 +22,19 @@ public:
      * @param second the second event to check
      * @return a value of type T corresponding to the relationship between both events
      */
-    [[nodiscard]] virtual auto criterion(const Event& first, const Event& second) const -> float = 0;
+    [[nodiscard]] virtual auto criterion(const Event& first, const Event& second) const -> double = 0;
 
     /**
      * @brief maximum_false
      * @return The upper limit where the criterion is false.
      */
-    [[nodiscard]] virtual auto maximum_false() const -> float = 0;
+    [[nodiscard]] virtual auto maximum_false() const -> double = 0;
 
     /**
      * @brief minimum_true
      * @return The lower limit where the criterion is true.
      */
-    [[nodiscard]] virtual auto minimum_true() const -> float = 0;
+    [[nodiscard]] virtual auto minimum_true() const -> double = 0;
 };
 
 }

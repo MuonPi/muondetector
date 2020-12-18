@@ -38,8 +38,8 @@ auto MqttEventSource::step() -> int
                     Log::warning()<<"Message '" + msg.topic + " " + msg.content + "' is invalid.";
                     return 0;
                 }
-                data.epoch = std::stoll(start[0]);
-                data.start = std::stoll(start[1]) * static_cast<std::int_fast64_t>(std::pow(10, (9 - start[1].length())));
+                std::int_fast64_t epoch = std::stoll(start[0]) * static_cast<std::int_fast64_t>(1e9);
+                data.start = epoch + std::stoll(start[1]) * static_cast<std::int_fast64_t>(std::pow(10, (9 - start[1].length())));
 
             } catch (...) {
                 Log::warning()<<"Message '" + msg.topic + " " + msg.content + "' is invalid.";
@@ -53,19 +53,14 @@ auto MqttEventSource::step() -> int
                     Log::warning()<<"Message '" + msg.topic + " " + msg.content + "' is invalid.";
                     return 0;
                 }
-                std::int_fast64_t epoch { std::stoll(start[0]) };
-                std::int_fast64_t end { std::stoll(start[1]) * static_cast<std::int_fast64_t>(std::pow(10, (9 - start[1].length()))) };
-
-                std::int_fast64_t d_epoch {epoch - data.epoch};
-                std::int_fast64_t d_offset {end - data.start};
-
-                data.end = d_epoch * static_cast<std::int_fast64_t>(1e9) + d_offset;
+                std::int_fast64_t epoch = std::stoll(start[0]) * static_cast<std::int_fast64_t>(1e9);
+                data.end = epoch + std::stoll(start[1]) * static_cast<std::int_fast64_t>(std::pow(10, (9 - start[1].length())));
             } catch (...) {
                 Log::warning()<<"Message '" + msg.topic + " " + msg.content + "' is invalid.";
                 return 0;
             }
 
-            std::uint64_t id {hash & 0xFFFFFFFF00000000 + 0x00000000FFFFFFFF & static_cast<std::uint64_t>(data.epoch)};
+            std::uint64_t id {hash & 0xFFFFFFFF00000000 + 0x00000000FFFFFFFF & static_cast<std::uint64_t>(data.start)};
 
             try {
                 data.user = topic[2];

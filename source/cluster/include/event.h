@@ -23,9 +23,8 @@ public:
     struct Data {
         std::string user {};
         std::string station_id {};
-        std::int_fast64_t epoch {};
-        std::int_fast32_t start {};
-        std::int_fast32_t end {};
+        std::int_fast64_t start {};
+        std::int_fast64_t end {};
         std::uint32_t time_acc {};
         std::uint16_t ublox_counter {};
         std::uint8_t fix {};
@@ -49,12 +48,6 @@ public:
 
 
     void set_detector(std::shared_ptr<Detector> detector);
-
-    /**
-     * @brief end
-     * @return The end time of the event
-     */
-    [[nodiscard]] auto epoch() const noexcept -> std::int_fast64_t;
 
     /**
      * @brief start
