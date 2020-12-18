@@ -46,8 +46,8 @@ void DatabaseEventSink::process(Event event)
 
         entry.fields().push_back(std::make_pair("uuid", guid.to_string()));
 
-        entry.fields().push_back(std::make_pair("coinc_level", static_cast<long>(event.n())));
-        entry.fields().push_back(std::make_pair("counter", static_cast<short>(evt.data().ublox_counter)));
+        entry.fields().push_back(std::make_pair("coinc_level", static_cast<unsigned short>(event.n())));
+        entry.fields().push_back(std::make_pair("counter", static_cast<unsigned short>(evt.data().ublox_counter)));
         entry.fields().push_back(std::make_pair("length", static_cast<long long>(evt.duration())));
 
         const std::int_fast64_t evt_coinc_time = (evt.start() - event.start());

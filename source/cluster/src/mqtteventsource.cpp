@@ -68,8 +68,8 @@ auto MqttEventSource::step() -> int
                 data.time_acc = static_cast<std::uint32_t>(std::stoul(content[2], nullptr));
                 data.ublox_counter = static_cast<std::uint16_t>(std::stoul(content[3], nullptr));
                 data.fix = static_cast<std::uint8_t>(std::stoul(content[4], nullptr));
-                data.utc = static_cast<std::uint8_t>(std::stoul(content[5], nullptr));
-                data.gnss_time_grid = static_cast<std::uint8_t>(std::stoul(content[6], nullptr));
+                data.utc = static_cast<std::uint8_t>(std::stoul(content[6], nullptr));
+                data.gnss_time_grid = static_cast<std::uint8_t>(std::stoul(content[5], nullptr));
             } catch (std::invalid_argument& e) {
                 Log::warning()<<"Received exception: " + std::string(e.what()) + "\n While converting '" + msg.topic + " " + msg.content + "'";
                 return 0;
