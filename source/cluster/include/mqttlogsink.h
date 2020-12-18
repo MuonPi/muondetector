@@ -3,9 +3,12 @@
 
 #include "abstractsink.h"
 #include "mqttlink.h"
+#include "log.h"
 
 #include <memory>
 #include <string>
+#include <ctime>
+#include <iomanip>
 
 namespace MuonPi {
 
@@ -19,12 +22,12 @@ class MqttLogSink : public AbstractSink<ClusterLog>
 public:
     /**
      * @brief MqttLogSink
-     * @param publishers The topics from which the messages should be published
+     * @param publisher The topic from which the messages should be published
      */
     MqttLogSink(MqttLink::Publisher& publisher);
 
     ~MqttLogSink() override;
-	
+
 protected:
     /**
      * @brief step implementation from ThreadRunner
@@ -34,9 +37,34 @@ protected:
 
 private:
 
-    void process(ClusterLog log);
-	auto construct_message(const std::string& parname, const std::string& value_string) -> std::string;
+    class Constructor
+    {
+    public:
+        Constructor(std::ostringstream stream)
+            : m_stream { std::move(stream) }
+        {}
 
+        template<typename T>
+        auto operator<<(T value) -> Constructor& {
+            m_stream<<value;
+            return *this;
+        }
+
+        auto str() -> std::string
+        {
+            return m_stream.str();
+        }
+
+    private:
+        std::ostringstream m_stream;
+    };
+
+    void process(ClusterLog log);
+
+    void fix_time();
+    [[nodiscard]] auto construct(const std::string& parname) -> Constructor;
+
+    std::chrono::system_clock::time_point m_time {};
     MqttLink::Publisher m_link;
 };
 

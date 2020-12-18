@@ -3,6 +3,7 @@
 #include "log.h"
 #include "utility.h"
 
+
 namespace MuonPi {
 
 MqttLogSink::MqttLogSink(MqttLink::Publisher& publisher)
@@ -25,40 +26,47 @@ auto MqttLogSink::step() -> int
 
 void MqttLogSink::process(ClusterLog log)
 {
-    std::vector<std::string> message_strings;
-	
-	message_strings.push_back(construct_message("timeout",std::to_string(log.data().timeout)));
-	message_strings.push_back(construct_message("frequency_in",std::to_string(log.data().frequency.single_in)));
-	message_strings.push_back(construct_message("frequency_l1_out",std::to_string(log.data().frequency.l1_out)));
-	message_strings.push_back(construct_message("buffer_length",std::to_string(log.data().buffer_length)));
-	message_strings.push_back(construct_message("total_detectors",std::to_string(log.data().total_detectors)));
-	message_strings.push_back(construct_message("reliable_detectors",std::to_string(log.data().reliable_detectors)));
-	message_strings.push_back(construct_message("max_coincidences",std::to_string(log.data().maximum_n)));
-	message_strings.push_back(construct_message("frequency_in",std::to_string(log.data().incoming)));
-	message_strings.push_back(construct_message("frequency_out_n2",std::to_string(log.data().outgoing[2])));
-	message_strings.push_back(construct_message("frequency_out_n3",std::to_string(log.data().outgoing[3])));
-	message_strings.push_back(construct_message("frequency_out_n4",std::to_string(log.data().outgoing[4])));
-	message_strings.push_back(construct_message("frequency_out_n5",std::to_string(log.data().outgoing[5])));
-	
+    fix_time();
+    if (!(
+                m_link.publish((construct("timeout")<<log.data().timeout).str())
+                && m_link.publish((construct("frequency_in")<<log.data().frequency.single_in).str())
+                && m_link.publish((construct("frequency_l1_out")<<log.data().frequency.l1_out).str())
+                && m_link.publish((construct("buffer_length")<<log.data().buffer_length).str())
+                && m_link.publish((construct("buffer_length")<<log.data().buffer_length).str())
+                && m_link.publish((construct("total_detectors")<<log.data().total_detectors).str())
+                && m_link.publish((construct("reliable_detectors")<<log.data().reliable_detectors).str())
+                && m_link.publish((construct("max_coincidences")<<log.data().maximum_n).str())
+                && m_link.publish((construct("frequency_in")<<log.data().incoming).str())
+          )) {
+        Log::warning()<<"Could not publish MQTT message.";
+        return;
+    }
+    for (auto& [level, n]: log.data().outgoing) {
+        if (level == 1) {
+            continue;
+        }
+        if (!m_link.publish((construct("outgoing_" + std::to_string(level))<<n).str())) {
+            Log::warning()<<"Could not publish MQTT message.";
+            return;
+        }
 
-	
-	for (auto& str: message_strings) {
-		if (m_link.publish(str)) {
-			Log::warning()<<"Could not publish MQTT message.";
-		}
-	}
+    }
 }
 
-auto MqttLogSink::construct_message(const std::string& parname, const std::string& value_string) -> std::string
+void MqttLogSink::fix_time()
 {
-	// TODO: Put current date and time in string repreentation
-	const std::string datestr = " ";
-	std::string str { datestr };
-	str += " ";
-	str += parname;
-	str += " ";
-	str += value_string;
-	return str;
+    m_time = std::chrono::system_clock::now();
 }
 
+
+auto MqttLogSink::construct(const std::string& parname) -> Constructor
+{
+    std::ostringstream stream{};
+
+    std::time_t time { std::chrono::system_clock::to_time_t(m_time) };
+
+    stream<<std::put_time(std::gmtime(&time), "%F_%H-%M-%S")<<' '<<parname;
+
+    return Constructor{ std::move(stream) };
+}
 }
