@@ -32,7 +32,7 @@ void DatabaseEventSink::process(Event event)
     }
 
     const std::int64_t cluster_coinc_time = event.end() - event.start();
-    GUID guid{event.hash(), static_cast<std::uint64_t>(event.epoch()) * 1000000000 + static_cast<std::uint64_t>(event.start())};
+    GUID guid{event.hash(), static_cast<std::uint64_t>(event.start())};
     for (auto& evt: event.events()) {
         DbEntry entry { "L1Event" };
         // timestamp
