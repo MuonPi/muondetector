@@ -32,11 +32,10 @@ void MqttLogSink::process(ClusterLog log)
                 && m_link.publish((construct("frequency_in")<<log.data().frequency.single_in).str())
                 && m_link.publish((construct("frequency_l1_out")<<log.data().frequency.l1_out).str())
                 && m_link.publish((construct("buffer_length")<<log.data().buffer_length).str())
-                && m_link.publish((construct("buffer_length")<<log.data().buffer_length).str())
                 && m_link.publish((construct("total_detectors")<<log.data().total_detectors).str())
                 && m_link.publish((construct("reliable_detectors")<<log.data().reliable_detectors).str())
                 && m_link.publish((construct("max_coincidences")<<log.data().maximum_n).str())
-                && m_link.publish((construct("frequency_in")<<log.data().incoming).str())
+                && m_link.publish((construct("incoming")<<log.data().incoming).str())
           )) {
         Log::warning()<<"Could not publish MQTT message.";
         return;
