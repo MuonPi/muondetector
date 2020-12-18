@@ -91,6 +91,10 @@ find_library(MUONDETECTOR_LIB NAMES muondetector HINTS "${CMAKE_CURRENT_BINARY_D
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
+
+
 add_compile_options(
     -Wall
     -O3
@@ -331,18 +335,18 @@ include(GNUInstallDirs)
 add_custom_target(changelog ALL COMMAND gzip -c9 "${PROJECT_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT gui)
+install(FILES "${PROJECT_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT gui)
 
 set(CPACK_GENERATOR "DEB")
 set(CPACK_DEBIAN_PACKAGE_SECTION "net")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
-set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "GUI for monitoring and controlling the muondetector-daemon.
-    It connects to muondetector-daemon via TCP. It is based on Qt and C++.
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "    It connects to muondetector-daemon via TCP. It is based on Qt and C++.
     It lets you change the settings for the muondetector hardware and
     uses qml for displaying the current position on the map if connected
     the muondetector-daemon.
     It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi.org <support@muonpi.org>")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libqt5gui5 (>=5), libqt5widgets5 (>=5), libqt5core5a (>=5), libqt5quickwidgets5 (>=5.3), libqt5network5 (>=5), qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), qml-module-qtquick-layouts (>=5), qml-module-qtquick-controls2 (>=5), qml-module-qtquick-controls (>=5), qml-module-qtquick-templates2 (>=5), libqwt-qt5-6 (>=6.1.2)")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>=2.28), libc++ (>=7), libqt5gui5 (>=5), libqt5widgets5 (>=5), libqt5core5a (>=5), libqt5quickwidgets5 (>=5.3), libqt5network5 (>=5), qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), qml-module-qtquick-layouts (>=5), qml-module-qtquick-controls2 (>=5), qml-module-qtquick-controls (>=5), qml-module-qtquick-templates2 (>=5), libqwt-qt5-6 (>=6.1.2)")
 
 endif()
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
@@ -352,6 +356,6 @@ set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${P
 set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Muondetector gui")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "GUI for monitoring and controlling the muondetector-daemon.")
 
 include(CPack)

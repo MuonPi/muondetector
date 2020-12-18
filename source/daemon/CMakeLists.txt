@@ -175,6 +175,9 @@ target_link_libraries(muondetector-daemon
     )
 
 
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
+
 set(DAEMON_INSTALL_FILES
     "${PROJECT_CONFIG_DIR}/muondetector.conf"
     )
@@ -187,6 +190,7 @@ add_custom_target(changelog ALL COMMAND gzip -c9 "${PROJECT_CONFIG_DIR}/changelo
 
 install(TARGETS muondetector-daemon muondetector-login DESTINATION bin COMPONENT daemon)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT daemon)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT daemon)
 install(FILES ${DAEMON_INSTALL_FILES} DESTINATION "/etc/muondetector/" COMPONENT daemon)
 install(FILES "${PROJECT_CONFIG_DIR}/muondetector-daemon.service" DESTINATION "lib/systemd/system" COMPONENT daemon)
 install(FILES "${PROJECT_CONFIG_DIR}/pigpiod.conf" DESTINATION "/etc/systemd/system/pigpiod.service.d/" COMPONENT daemon)
@@ -204,12 +208,11 @@ set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${P
 set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Muondetector daemon")
-set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Daemon that controls the muon detector board
-    It connects to the ublox gps module on the detector board via serial (rx tx) ubx protocol and to the other chips on the board via i2c. It is based on Qt and C++ and a little bit of C.
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Daemon that controls the muon detector board")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "    It connects to the ublox gps module on the detector board via serial (rx tx) ubx protocol and to the other chips on the board via i2c. It is based on Qt and C++ and a little bit of C.
     It does the measuring in the background and sends the data to the central server.
     It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi.org <support@muonpi.org>")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi <developer@muonpi.org>")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "lftp (>=4.7), libcrypto++6, libqt5serialport5 (>= 5), libpaho-mqttpp (>=1.1.0), libconfig++-dev, pigpiod")
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../packages/")
 
