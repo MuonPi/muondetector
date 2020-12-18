@@ -1,6 +1,8 @@
 #ifndef MUONPI_CONFIG_H
 #define MUONPI_CONFIG_H
 
+#include "version.h"
+
 #include <cstdint>
 #include <string>
 
@@ -14,7 +16,7 @@ constexpr struct Version {
     [[nodiscard]] auto string() const -> std::string;
 }
     hardware { 2, 0, 0 },
-    software { 1, 2, 0 };
+    software { CMake::Version::major, CMake::Version::minor, CMake::Version::patch };
 }
 
 namespace MuonPi::Config {
@@ -44,6 +46,12 @@ namespace ADC {
 constexpr int buffer_size { 50 };
 constexpr int pretrigger { 10 };
 constexpr int deadtime { 8 };
+}
+namespace DAC {
+namespace Voltage {
+constexpr float bias {0.5};
+constexpr float threshold[2] {0.1, 1.0};
+}
 }
 namespace GPIO::Clock::Measurement {
 constexpr int interval { 100 };

@@ -441,6 +441,18 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     dacThresh.push_back(tempThresh[0]);
     dacThresh.push_back(tempThresh[1]);
 
+
+    if (dac->devicePresent()) {
+        MCP4728::DacChannel eeprom_value;
+        eeprom_value.eeprom = true;
+        dac->readChannel(DAC_BIAS, eeprom_value);
+        if (eeprom_value.value == 0) {
+            setBiasVoltage(MuonPi::Config::Hardware::DAC::Voltage::bias);
+            setDacThresh(0, MuonPi::Config::Hardware::DAC::Voltage::threshold[0]);
+            setDacThresh(1, MuonPi::Config::Hardware::DAC::Voltage::threshold[1]);
+        }
+    }
+
     biasVoltage = new_biasVoltage;
     if (biasVoltage<0. && dac->devicePresent()) {
         MCP4728::DacChannel dacChannel;

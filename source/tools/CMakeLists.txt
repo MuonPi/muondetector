@@ -18,7 +18,11 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+if(WIN32)
+list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5")
+else()
 set(Qt5_DIR "/usr/lib/x86_64-linux-gnu/cmake/Qt5/")
+endif()
 
 find_package(Qt5 COMPONENTS Network REQUIRED)
 
@@ -26,14 +30,27 @@ find_package(Qt5 COMPONENTS Network REQUIRED)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+
 add_compile_options(
     -Wall
-    -Wextra
-    -Wshadow
-    -Wpedantic
 #    -Werror
     -O3
     )
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+add_compile_options(
+    -Wextra
+    -Wshadow
+    -Wpedantic
+    )
+endif()
+if(MSVC)
+  # Force to always compile with W4
+  if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+    string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+  endif()
+endif()
 
 set(MAC_ADDRESSES_SOURCE_FILES
     "${PROJECT_SRC_DIR}/getmacaddresses.cpp"
@@ -49,6 +66,12 @@ target_link_libraries(getmacaddresses
     Qt5::Network
     )
 
+if(WIN32)
 
+include("${PROJECT_SOURCE_DIR}/../cmake/Windeployqt.cmake")
+set(windeploy_options "") # additional options for windeployqt.exe
+windeployqt(getmacaddresses "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}" "${windeploy_options}")
+
+endif()
 
 install(TARGETS getmacaddresses DESTINATION bin)
