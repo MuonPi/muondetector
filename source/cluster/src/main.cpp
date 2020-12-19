@@ -97,7 +97,18 @@ auto main() -> int
 #endif
 
     shutdown_handler = [&](int signal) {
-        if (signal == SIGINT) {
+        if (
+                   (signal == SIGINT)
+                || (signal == SIGTERM)
+                || (signal == SIGHUP)
+                ) {
+            MuonPi::Log::notice()<<"Received signal: " + std::to_string(signal) + ". Exiting.";
+            core.stop();
+        }
+        if (
+                   signal == SIGSEGV
+                ) {
+            MuonPi::Log::critical()<<"Received signal: " + std::to_string(signal) + ". Exiting.";
             core.stop();
         }
     };
