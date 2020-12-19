@@ -27,8 +27,10 @@ auto DatabaseLogSink::step() -> int
 void DatabaseLogSink::process(ClusterLog log)
 {
     DbEntry entry { "Log" };
-    // timestamp can be ommited
-    // tags
+    // timestamp must not be ommited!
+	auto nanosecondsUTC = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	entry.timestamp()=std::to_string(nanosecondsUTC);
+	// tags
     entry.tags().push_back(std::make_pair("user", "MuonPi"));
 
 	// fields
