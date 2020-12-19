@@ -44,6 +44,8 @@ public:
          */
         [[nodiscard]] auto publish(const std::string& content) -> bool;
     private:
+        friend class MqttLink;
+
         mqtt::async_client& m_client;
         std::string m_topic {};
         bool m_valid { true };
