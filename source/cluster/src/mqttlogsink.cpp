@@ -28,15 +28,15 @@ void MqttLogSink::process(ClusterLog log)
 {
     fix_time();
     if (!(
-                m_link.publish((construct("timeout")<<log.data().timeout).str())
-                && m_link.publish((construct("frequency_in")<<log.data().frequency.single_in).str())
-                && m_link.publish((construct("frequency_l1_out")<<log.data().frequency.l1_out).str())
-                && m_link.publish((construct("buffer_length")<<log.data().buffer_length).str())
-                && m_link.publish((construct("buffer_length")<<log.data().buffer_length).str())
-                && m_link.publish((construct("total_detectors")<<log.data().total_detectors).str())
-                && m_link.publish((construct("reliable_detectors")<<log.data().reliable_detectors).str())
-                && m_link.publish((construct("max_coincidences")<<log.data().maximum_n).str())
-                && m_link.publish((construct("frequency_in")<<log.data().incoming).str())
+                publish((construct("timeout")<<log.data().timeout))
+                && publish((construct("frequency_in")<<log.data().frequency.single_in))
+                && publish((construct("frequency_l1_out")<<log.data().frequency.l1_out))
+                && publish((construct("buffer_length")<<log.data().buffer_length))
+                && publish((construct("buffer_length")<<log.data().buffer_length))
+                && publish((construct("total_detectors")<<log.data().total_detectors))
+                && publish((construct("reliable_detectors")<<log.data().reliable_detectors))
+                && publish((construct("max_coincidences")<<log.data().maximum_n))
+                && publish((construct("frequency_in")<<log.data().incoming))
           )) {
         Log::warning()<<"Could not publish MQTT message.";
         return;
@@ -45,7 +45,7 @@ void MqttLogSink::process(ClusterLog log)
         if (level == 1) {
             continue;
         }
-        if (!m_link.publish((construct("outgoing_" + std::to_string(level))<<n).str())) {
+        if (!publish((construct("outgoing_" + std::to_string(level))<<n))) {
             Log::warning()<<"Could not publish MQTT message.";
             return;
         }
@@ -68,5 +68,10 @@ auto MqttLogSink::construct(const std::string& parname) -> Constructor
     stream<<std::put_time(std::gmtime(&time), "%F_%H-%M-%S")<<' '<<parname;
 
     return Constructor{ std::move(stream) };
+}
+
+auto MqttLogSink::publish(Constructor& constructor) -> bool
+{
+    return m_link.publish(constructor.str());
 }
 }

@@ -63,6 +63,7 @@ private:
 
     void fix_time();
     [[nodiscard]] auto construct(const std::string& parname) -> Constructor;
+    [[nodiscard]] auto publish(Constructor &constructor) -> bool;
 
     std::chrono::system_clock::time_point m_time {};
     MqttLink::Publisher m_link;
