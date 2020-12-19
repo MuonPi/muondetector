@@ -11,7 +11,7 @@
 
 namespace MuonPi {
 
-class DetectorLog;
+class DetectorInfo;
 class MessageParser;
 
 struct DetectorLogItem {
@@ -56,7 +56,7 @@ struct DetectorLogItem {
 /**
  * @brief The MqttLogSource class
  */
-class MqttLogSource : public AbstractSource<DetectorLog>
+class MqttLogSource : public AbstractSource<DetectorInfo>
 {
 public:
     /**

@@ -4,17 +4,17 @@
 
 namespace MuonPi {
 
-DetectorLog::DetectorLog(std::size_t hash, Location location)
+DetectorInfo::DetectorInfo(std::size_t hash, Location location)
     : m_hash { hash }
     , m_location { location }
 {
 }
 
-DetectorLog::DetectorLog() noexcept
+DetectorInfo::DetectorInfo() noexcept
     : m_valid { false }
 {}
 
-DetectorLog::DetectorLog(const DetectorLog& other)
+DetectorInfo::DetectorInfo(const DetectorInfo& other)
     : m_hash { other.m_hash }
     , m_location { other.m_location }
     , m_time { other.m_time }
@@ -22,7 +22,7 @@ DetectorLog::DetectorLog(const DetectorLog& other)
 {
 }
 
-DetectorLog::DetectorLog(DetectorLog&& other)
+DetectorInfo::DetectorInfo(DetectorInfo&& other)
     : m_hash { std::move(other.m_hash) }
     , m_location { std::move(other.m_location) }
     , m_time { std::move(other.m_time) }
@@ -30,24 +30,24 @@ DetectorLog::DetectorLog(DetectorLog&& other)
 {
 }
 
-auto DetectorLog::hash() const noexcept -> std::size_t
+auto DetectorInfo::hash() const noexcept -> std::size_t
 {
     return m_hash;
 }
 
 
-auto DetectorLog::location() const -> Location
+auto DetectorInfo::location() const -> Location
 {
     return m_location;
 }
 
 
-auto DetectorLog::time() const -> std::chrono::system_clock::time_point
+auto DetectorInfo::time() const -> std::chrono::system_clock::time_point
 {
     return m_time;
 }
 
-auto DetectorLog::valid() const -> bool
+auto DetectorInfo::valid() const -> bool
 {
     return m_valid;
 }

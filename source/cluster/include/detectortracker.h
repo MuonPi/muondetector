@@ -11,11 +11,14 @@
 namespace MuonPi {
 
 class Event;
-class DetectorLog;
+class DetectorInfo;
 template <typename T>
 class AbstractSource;
+template <typename T>
+class AbstractSink;
 class Detector;
 class StateSupervisor;
+
 
 class DetectorTracker : public ThreadRunner
 {
@@ -25,7 +28,7 @@ public:
      * @param log_sources A vector of log sources to use
      * @param supervisor A reference to a supervisor object, which keeps track of program metadata
      */
-    DetectorTracker(std::vector<std::shared_ptr<AbstractSource<DetectorLog>>> log_sources, StateSupervisor& supervisor);
+    DetectorTracker(std::vector<std::shared_ptr<AbstractSource<DetectorInfo>>> log_sources, StateSupervisor& supervisor);
 
     /**
      * @brief accept Check if an event is accepted
@@ -48,7 +51,7 @@ protected:
      * @brief process Process a log message. Hands the message over to a detector, if none exists, creates a new one.
      * @param log The log message to check
      */
-    void process(const DetectorLog& log);
+    void process(const DetectorInfo& log);
 
     /**
      * @brief step reimplemented from ThreadRunner
@@ -59,7 +62,8 @@ protected:
 private:
     StateSupervisor& m_supervisor;
 
-    std::vector<std::shared_ptr<AbstractSource<DetectorLog>>> m_log_sources {};
+    std::vector<std::shared_ptr<AbstractSource<DetectorInfo>>> m_log_sources {};
+//    std::vector<std::shared_ptr<AbstractSink<DetectorLog>>> m_log_sinks {};
 
     std::map<std::size_t, std::shared_ptr<Detector>> m_detectors {};
 

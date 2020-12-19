@@ -17,23 +17,23 @@ struct Location {
 };
 
 /**
- * @brief The DetectorLog class
+ * @brief The DetectorInfo class
  */
-class DetectorLog
+class DetectorInfo
 {
 public:
 
     /**
-     * @brief DetectorLog
+     * @brief DetectorInfo
      * @param hash The hash of the detector identifier
-     * @param location The detector Location information
+     * @param location The detector location information
      */
-    DetectorLog(std::size_t hash, Location location);
+    DetectorInfo(std::size_t hash, Location location);
 
-    DetectorLog() noexcept;
+    DetectorInfo() noexcept;
 
-    DetectorLog(const DetectorLog& other);
-    DetectorLog(DetectorLog&& other);
+    DetectorInfo(const DetectorInfo& other);
+    DetectorInfo(DetectorInfo&& other);
 
     /**
      * @brief hash

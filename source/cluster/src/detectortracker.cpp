@@ -12,7 +12,7 @@ namespace MuonPi {
 
 
 
-DetectorTracker::DetectorTracker(std::vector<std::shared_ptr<AbstractSource<DetectorLog>>> log_sources, StateSupervisor &supervisor)
+DetectorTracker::DetectorTracker(std::vector<std::shared_ptr<AbstractSource<DetectorInfo>>> log_sources, StateSupervisor &supervisor)
     : ThreadRunner{"DetectorTracker"}
     , m_supervisor { supervisor }
     , m_log_sources { std::move(log_sources) }
@@ -35,7 +35,7 @@ auto DetectorTracker::accept(Event& event) const -> bool
     return false;
 }
 
-void DetectorTracker::process(const DetectorLog& log)
+void DetectorTracker::process(const DetectorInfo& log)
 {
     auto detector { m_detectors.find(log.hash()) };
     if (detector == m_detectors.end()) {

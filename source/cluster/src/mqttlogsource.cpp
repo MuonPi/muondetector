@@ -121,6 +121,6 @@ void MqttLogSource::process(std::size_t hash, DetectorLogItem item)
     location.lat = item.geo.lat;
     location.lon = item.geo.lon;
 
-    push_item( DetectorLog{hash, location} );
+    push_item( DetectorInfo{hash, location} );
 }
 }

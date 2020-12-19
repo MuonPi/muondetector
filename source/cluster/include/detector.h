@@ -38,7 +38,7 @@ public:
      * @brief Detector
      * @param initial_log The initial log message from which this detector object originates
      */
-    Detector(const DetectorLog& initial_log, StateSupervisor& supervisor);
+    Detector(const DetectorInfo& initial_log, StateSupervisor& supervisor);
 
 
     /**
@@ -51,7 +51,7 @@ public:
      * @brief process Processes a log message. Checks for regular log messages and warns the event listener if they are delayed or have subpar location accuracy.
      * @param log The logmessage to process
      */
-    void process(const DetectorLog& log);
+    void process(const DetectorInfo& log);
 
     /**
      * @brief is Checks the current detector status against a value
