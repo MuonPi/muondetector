@@ -1,5 +1,5 @@
-#ifndef DATABASEEVENTSINK_H
-#define DATABASEEVENTSINK_H
+#ifndef DATABASELOGSINK_H
+#define DATABASELOGSINK_H
 
 #include "abstractsink.h"
 
@@ -7,35 +7,33 @@
 
 namespace MuonPi {
 
-class Event;
+class ClusterLog;
 class DatabaseLink;
 
 /**
- * @brief The DatabaseEventSink class
+ * @brief The DatabaseLogSink class
  */
-class DatabaseEventSink : public AbstractSink<Event>
+class DatabaseLogSink : public AbstractSink<ClusterLog>
 {
 public:
-    /**
+	/**
      * @brief DatabaseEventSink
 	 * @param link a DatabaseLink instance
      */
-    DatabaseEventSink(DatabaseLink& link);
+    DatabaseLogSink(DatabaseLink& link);
+
 protected:
-
-
-    /**
+	/**
      * @brief step implementation from ThreadRunner
      * @return zero if the step succeeded.
      */
     [[nodiscard]] auto step() -> int override;
 
 private:
-    void process(Event event);
-
-    DatabaseLink& m_link;
+	void process(ClusterLog log);
+	DatabaseLink& m_link;
 };
 
 }
 
-#endif // DATABASEEVENTSINK_H
+#endif // DATABASELOGSINK_H

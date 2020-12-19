@@ -36,7 +36,7 @@ void MqttLogSink::process(ClusterLog log)
                 && publish((construct("total_detectors")<<log.data().total_detectors))
                 && publish((construct("reliable_detectors")<<log.data().reliable_detectors))
                 && publish((construct("max_coincidences")<<log.data().maximum_n))
-                && publish((construct("frequency_in")<<log.data().incoming))
+                && publish((construct("incoming")<<log.data().incoming))
           )) {
         Log::warning()<<"Could not publish MQTT message.";
         return;
