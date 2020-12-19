@@ -30,7 +30,7 @@ void DatabaseLogSink::process(ClusterLog log)
     // timestamp must not be ommited!
 	unsigned long long nanosecondsUTC = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	entry.timestamp()=std::to_string(nanosecondsUTC);
-	Log::debug()<<"DatabaseLogSink::process(ClusterLog log): cluster log timestamp = "<<std::to_string(nanosecondsUTC);
+	Log::debug()<<"DatabaseLogSink::process(ClusterLog log): cluster log timestamp="<<std::to_string(nanosecondsUTC);
 	// tags
     entry.tags().push_back(std::make_pair("user", "MuonPi"));
 
