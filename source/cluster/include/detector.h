@@ -3,6 +3,7 @@
 
 #include "threadrunner.h"
 #include "detectorinfo.h"
+#include "detectorlog.h"
 #include "utility.h"
 
 #include <memory>
@@ -27,8 +28,15 @@ class StateSupervisor;
  */
 class Detector
 {
+private:
+    static constexpr std::size_t s_history_length { 10 };
+	static constexpr std::size_t s_time_interval { 2000 };
 public:
-    enum class Status {
+
+	using CurrentRateType=RateMeasurement<s_history_length, s_time_interval>;
+	using MeanRateType=RateMeasurement<s_history_length * 100, s_time_interval>;
+	
+	enum class Status {
         Created,
         Deleted,
         Unreliable,
@@ -48,10 +56,10 @@ public:
     void process(const Event& event);
 
     /**
-     * @brief process Processes a log message. Checks for regular log messages and warns the event listener if they are delayed or have subpar location accuracy.
-     * @param log The logmessage to process
+     * @brief process Processes a detector info message. Checks for regular log messages and warns the event listener if they are delayed or have subpar location accuracy.
+     * @param info The detector info to process
      */
-    void process(const DetectorInfo& log);
+    void process(const DetectorInfo& info);
 
     /**
      * @brief is Checks the current detector status against a value
@@ -70,7 +78,12 @@ public:
      * @return true
      */
     [[nodiscard]] auto step() -> bool;
-
+	
+//	[[nodiscard]] auto mean_rate() const -> MeanRateType;
+//	[[nodiscard]] auto current_rate() const -> CurrentRateType;
+	
+	[[nodiscard]] auto current_log_data() -> DetectorLog;
+	
 protected:
     /**
      * @brief set_status Sets the status of this detector and sends the status to the listener if it has changed.
@@ -92,10 +105,12 @@ private:
 
     StateSupervisor& m_state_supervisor;
 
-    static constexpr std::size_t s_history_length { 10 };
-
-    RateMeasurement<s_history_length, 2000> m_current {};
-    RateMeasurement<s_history_length * 100, 2000> m_mean {};
+    CurrentRateType m_current_rate {};
+    MeanRateType m_mean_rate {};
+	
+	DetectorLog::Data m_current_data;
+	
+	Ringbuffer<double, 100> m_pulselength {};
 
     double m_factor { 1.0 };
 };

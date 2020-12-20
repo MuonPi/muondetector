@@ -93,6 +93,7 @@ template <std::size_t N, std::size_t T>
 class RateMeasurement
 {
 public:
+//	typedef RateMeasurement<N,T> Current;
     /**
      * @brief increase_counter Increases the counter in the current interval
      */
@@ -117,7 +118,7 @@ public:
     [[nodiscard]] auto mean() const noexcept -> double;
 
     /**
-     * @brief deviation Standar deviation
+     * @brief deviation Standard deviation
      * @return The standard deviation of all entries in the current interval used for the mean
      */
     [[nodiscard]] auto deviation() const noexcept -> double;
@@ -139,6 +140,28 @@ private:
 };
 
 
+template <typename T, std::size_t N>
+class Ringbuffer {
+public:
+	void add(const T& val);
+	[[nodiscard]] auto mean() const -> T;
+	[[nodiscard]] auto stddev() const -> T;
+	[[nodiscard]] auto variance() const -> T;
+	[[nodiscard]] auto entries() const -> std::size_t;
+	
+private:
+	std::array<T,N> m_buffer { T {} };
+	std::size_t m_index;
+	bool m_full { false };
+};
+
+
+// +++++++++++++++++++++++++++++++
+// implementation part starts here
+// +++++++++++++++++++++++++++++++
+
+// +++++++++++++++++++++++++++++++
+// class RateMeasurement
 template <std::size_t N, std::size_t T>
 void RateMeasurement<N, T>::increase_counter()
 {
@@ -195,7 +218,11 @@ auto RateMeasurement<N, T>::deviation() const noexcept -> double
 {
     return m_deviation;
 }
+// -------------------------------
 
+
+// +++++++++++++++++++++++++++++++
+// class GUID
 class GUID
 {
 public:
@@ -210,6 +237,60 @@ private:
     std::uint64_t m_first { 0 };
     std::uint64_t m_second { 0 };
 };
+// -------------------------------
+
+// +++++++++++++++++++++++++++++++
+// class Ringbuffer
+template <typename T, std::size_t N>
+void Ringbuffer<T,N>::add(const T& val) {
+	m_buffer[m_index++]=val;
+	if (m_index>=N) {
+		m_index=0;
+		m_full = true;
+	}
+}
+
+template <typename T, std::size_t N>
+auto Ringbuffer<T,N>::mean() const -> T
+{
+	T mean { };
+	if (!m_full) {
+		mean = std::accumulate(m_buffer.begin(), m_buffer.begin()+m_index, 0.0) / m_index;
+	} else {
+		mean = std::accumulate(m_buffer.begin(), m_buffer.end(), 0.0) / N;
+	}
+	return mean;
+}
+
+template <typename T, std::size_t N>
+auto Ringbuffer<T,N>::stddev() const -> T
+{
+	return std::sqrt( this->variance );
+}
+
+template <typename T, std::size_t N>
+auto Ringbuffer<T,N>::variance() const -> T
+{
+	T mean { this->mean() };
+	T variance { };
+	if (!m_full) {
+		variance = 1.0 / ( m_index - 1 ) * std::inner_product(m_buffer.begin(), m_buffer.begin()+m_index, m_buffer.begin(), 0.0,
+                                               [](double const & x, double const & y) { return x + y; },
+                                               [mean](double const & x, double const & y) { return (x - mean)*(y - mean); });
+	} else {
+		variance = 1.0 / ( N - 1.0 ) * std::inner_product(m_buffer.begin(), m_buffer.end(), m_buffer.begin(), 0.0,
+                                               [](double const & x, double const & y) { return x + y; },
+                                               [mean](double const & x, double const & y) { return (x - mean)*(y - mean); });
+	}
+	return variance;
+}
+
+template <typename T, std::size_t N>
+auto Ringbuffer<T,N>::entries() const -> std::size_t
+{
+	return ( (m_full)?N:m_index );
+}
+// -------------------------------
 
 }
 #endif // UTILITY_H

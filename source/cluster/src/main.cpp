@@ -78,7 +78,7 @@ auto main() -> int
 #endif
     MuonPi::StateSupervisor supervisor{{ascii_log_sink, clusterlog_sink}};
 
-    MuonPi::DetectorTracker detector_tracker{{log_source}, supervisor};
+    MuonPi::DetectorTracker detector_tracker{{log_source}, {}, supervisor};
 
     auto ascii_event_sink { std::make_shared<MuonPi::AsciiEventSink>(std::cout) };
     supervisor.add_thread(&detector_tracker);
