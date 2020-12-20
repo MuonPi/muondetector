@@ -1,7 +1,7 @@
 #include "detectortracker.h"
 
 #include "event.h"
-#include "detectorlog.h"
+#include "detectorinfo.h"
 #include "abstractsource.h"
 #include "detector.h"
 #include "log.h"

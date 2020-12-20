@@ -5,35 +5,25 @@
 
 namespace MuonPi {
 
-struct Location {
-    double lat { 0.0 };
-    double lon { 0.0 };
-    double h { 0.0 };
-    double prec { std::numeric_limits<double>::max() };
-    double dop { std::numeric_limits<double>::min() };
-
-    static constexpr double maximum_prec { 1.0 };
-    static constexpr double maximum_dop { 1.0 };
-};
 
 /**
- * @brief The DetectorInfo class
+ * @brief The DetectorLog class
+ * Holds information about accumulated statistics and gathered info about a detector
  */
-class DetectorInfo
+class DetectorLog
 {
 public:
 
     /**
-     * @brief DetectorInfo
+     * @brief DetectorLog
      * @param hash The hash of the detector identifier
-     * @param location The detector location information
      */
-    DetectorInfo(std::size_t hash, Location location);
+    DetectorLog(std::size_t hash);
 
-    DetectorInfo() noexcept;
+    DetectorLog() noexcept;
 
-    DetectorInfo(const DetectorInfo& other);
-    DetectorInfo(DetectorInfo&& other);
+    DetectorLog(const DetectorLog& other);
+    DetectorLog(DetectorLog&& other);
 
     /**
      * @brief hash
@@ -42,23 +32,49 @@ public:
     [[nodiscard]] auto hash() const noexcept -> std::size_t;
 
     /**
-     * @brief location The location of the detector from this log message
-     * @return The location data
+     * @brief deadtime
+     * @return The dead time of the detector in the interval
      */
-    [[nodiscard]] auto location() const -> Location;
+    [[nodiscard]] auto deadtime() const noexcept -> double { return m_deadtime; }
 
     /**
-     * @brief time The time this log message arrived
-     * @return The arrival time
+     * @brief active
+     * @return the detector was active in the interval
+     */
+    [[nodiscard]] auto active() const noexcept -> bool { return m_active; }
+
+    /**
+     * @brief mean_eventrate
+     * @return The mean event rate of the detector in the interval
+     */
+    [[nodiscard]] auto mean_eventrate() const noexcept -> double { return m_mean_eventrate; }
+
+    /**
+     * @brief mean_pulselength
+     * @return The mean pulse length of the detector in the interval
+     */
+    [[nodiscard]] auto mean_pulselength() const noexcept -> double { return m_mean_pulselength; }
+
+	/**
+     * @brief time The time this log message was created
+     * @return The creation time
      */
     [[nodiscard]] auto time() const -> std::chrono::system_clock::time_point;
 
+	/**
+     * @brief valid Indicates whether this message is valid
+     * @return message is valid
+     */
     [[nodiscard]] auto valid() const -> bool;
 
 private:
     std::size_t m_hash { 0 };
-    Location m_location {};
-    std::chrono::system_clock::time_point m_time { std::chrono::system_clock::now() };
+    double m_deadtime { 0.0 };
+	bool m_active { false };
+	double m_mean_eventrate { 0.0 };
+	double m_mean_pulselength { 0.0 };
+	
+	std::chrono::system_clock::time_point m_time { std::chrono::system_clock::now() };
 
     bool m_valid { true };
 };

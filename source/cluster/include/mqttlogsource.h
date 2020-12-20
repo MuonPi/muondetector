@@ -3,7 +3,7 @@
 
 #include "abstractsource.h"
 #include "mqttlink.h"
-#include "detectorlog.h"
+#include "detectorinfo.h"
 
 #include <map>
 #include <memory>

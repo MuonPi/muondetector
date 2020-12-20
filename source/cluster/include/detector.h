@@ -3,7 +3,7 @@
 
 #include "threadrunner.h"
 #include "ratesupervisor.h"
-#include "detectorlog.h"
+#include "detectorinfo.h"
 
 #include <memory>
 #include <chrono>

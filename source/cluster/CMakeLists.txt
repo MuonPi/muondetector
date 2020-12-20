@@ -66,6 +66,7 @@ set(CLUSTER_SOURCE_FILES
     "${PROJECT_SRC_DIR}/eventconstructor.cpp"
     "${PROJECT_SRC_DIR}/detector.cpp"
     "${PROJECT_SRC_DIR}/threadrunner.cpp"
+    "${PROJECT_SRC_DIR}/detectorinfo.cpp"
     "${PROJECT_SRC_DIR}/detectorlog.cpp"
     "${PROJECT_SRC_DIR}/clusterlog.cpp"
     "${PROJECT_SRC_DIR}/detectortracker.cpp"
@@ -73,7 +74,7 @@ set(CLUSTER_SOURCE_FILES
     "${PROJECT_SRC_DIR}/utility.cpp"
     "${PROJECT_SRC_DIR}/statesupervisor.cpp"
     "${PROJECT_SRC_DIR}/mqttlogsink.cpp"
-    "${PROJECT_SRC_DIR}/configuration.cpp"
+    #"${PROJECT_SRC_DIR}/configuration.cpp"
     )
 
 set(CLUSTER_HEADER_FILES
@@ -97,6 +98,7 @@ set(CLUSTER_HEADER_FILES
     "${PROJECT_HEADER_DIR}/eventconstructor.h"
     "${PROJECT_HEADER_DIR}/detector.h"
     "${PROJECT_HEADER_DIR}/threadrunner.h"
+    "${PROJECT_HEADER_DIR}/detectorinfo.h"
     "${PROJECT_HEADER_DIR}/detectorlog.h"
     "${PROJECT_HEADER_DIR}/clusterlog.h"
     "${PROJECT_HEADER_DIR}/detectortracker.h"
@@ -104,7 +106,7 @@ set(CLUSTER_HEADER_FILES
     "${PROJECT_HEADER_DIR}/utility.h"
     "${PROJECT_HEADER_DIR}/statesupervisor.h"
     "${PROJECT_HEADER_DIR}/mqttlogsink.h"
-    "${PROJECT_HEADER_DIR}/configuration.h"
+    #"${PROJECT_HEADER_DIR}/configuration.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/external/influxdb.hpp"
     )
 
