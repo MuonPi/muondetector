@@ -125,6 +125,7 @@ auto ThreadRunner::state_string() -> std::string
     case State::Finalising:
         return "Finalising";
     }
+    return {};
 }
 
 void ThreadRunner::start()

@@ -52,7 +52,7 @@ void StateSupervisor::detector_status(std::size_t hash, Detector::Status status)
     }
 
     std::size_t reliable { 0 };
-    for (auto& [hash, detector]: m_detectors) {
+    for (auto& [h, detector]: m_detectors) {
         if (detector == Detector::Status::Reliable) {
             reliable++;
         }

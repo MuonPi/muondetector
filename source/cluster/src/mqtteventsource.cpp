@@ -60,7 +60,7 @@ auto MqttEventSource::step() -> int
                 return 0;
             }
 
-            std::uint64_t id {hash & 0xFFFFFFFF00000000 + 0x00000000FFFFFFFF & static_cast<std::uint64_t>(data.start)};
+            std::uint64_t id {(hash & 0xFFFFFFFF00000000) + (0x00000000FFFFFFFF & static_cast<std::uint64_t>(data.start))};
 
             try {
                 data.user = topic[2];
