@@ -18,6 +18,9 @@
 #include "asciieventsink.h"
 #include "asciilogsink.h"
 
+#include "detectorlog.h"
+#include "clusterlog.h"
+
 #include <csignal>
 #include <functional>
 
@@ -64,7 +67,7 @@ auto main() -> int
 #ifdef CLUSTER_RUN_SERVER
     MuonPi::DatabaseLink db_link {"", {"", ""}, ""};
     auto event_sink { std::make_shared<MuonPi::DatabaseEventSink>(db_link) };
-    auto clusterlog_sink { std::make_shared<MuonPi::DatabaseLogSink>(db_link) };
+    auto clusterlog_sink { std::make_shared<MuonPi::DatabaseLogSink<MuonPi::ClusterLog>>(db_link) };
 #else
     /*
     MuonPi::MqttLink sink_link {"", login};
@@ -78,7 +81,9 @@ auto main() -> int
 #endif
     MuonPi::StateSupervisor supervisor{{ascii_log_sink, clusterlog_sink}};
 
-    MuonPi::DetectorTracker detector_tracker{{log_source}, {}, supervisor};
+    auto detectorlog_sink { std::make_shared<MuonPi::DatabaseLogSink<MuonPi::DetectorLog>>(db_link) };
+	
+	MuonPi::DetectorTracker detector_tracker{{log_source}, { detectorlog_sink }, supervisor};
 
     auto ascii_event_sink { std::make_shared<MuonPi::AsciiEventSink>(std::cout) };
     supervisor.add_thread(&detector_tracker);
