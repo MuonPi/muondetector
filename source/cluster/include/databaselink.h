@@ -1,35 +1,26 @@
 #ifndef DATABASELINK_H
 #define DATABASELINK_H
 
-#include "influxdb.hpp"
-
 #include <string>
 #include <vector>
 #include <variant>
 #include <mutex>
+#include <sstream>
 
 namespace MuonPi {
 
 
-class DbEntry {
-public:
-    DbEntry(const std::string& measurement);
+namespace Influx {
 
-    inline auto measurement() -> std::string& { return m_measurement; }
-    inline auto measurement() const -> const std::string& { return m_measurement; }
-    inline auto tags() -> std::vector<std::pair<std::string,std::string>>& { return m_tags; }
-    inline auto tags() const -> const std::vector<std::pair<std::string,std::string>>& { return m_tags; }
-    inline auto fields() -> std::vector<std::pair<std::string,std::variant<std::string,bool,short,int,long,long long,std::pair<double, int>>>>& { return m_fields; }
-    inline auto fields() const -> const std::vector<std::pair<std::string,std::variant<std::string,bool,short,int,long,long long,std::pair<double, int>>>>& { return m_fields; }
-    inline auto timestamp() -> std::string& { return m_time; }
-    inline auto timestamp() const -> const std::string& { return m_time; }
-
-private:
-    std::string m_measurement {};
-    std::vector<std::pair<std::string,std::string>> m_tags {};
-    std::vector<std::pair<std::string,std::variant<std::string,bool,short,int,long,long long,std::pair<double, int>>>> m_fields {};
-    std::string m_time {};
+struct Tag {
+    std::string name;
+    std::string field;
 };
+struct Field {
+    std::string name;
+    std::variant<std::string,bool,std::int_fast64_t,double> value;
+};
+}
 
 /**
  * @brief The DatabaseLink class
@@ -37,6 +28,23 @@ private:
 class DatabaseLink
 {
 public:
+    class Entry {
+    public:
+        Entry() = delete;
+
+        [[nodiscard]] auto operator<<(const Influx::Tag& tag) -> Entry&;
+        [[nodiscard]] auto operator<<(const Influx::Field& tag) -> Entry&;
+        [[nodiscard]] auto operator<<(std::int_fast64_t timestamp) -> bool;
+
+    private:
+        std::ostringstream m_stream {};
+        bool m_has_field { false };
+        DatabaseLink& m_link;
+
+        friend class DatabaseLink;
+
+        Entry(const std::string& measurement, DatabaseLink& link);
+    };
 
     struct LoginData
     {
@@ -47,15 +55,16 @@ public:
     DatabaseLink(const std::string& server, const LoginData& login, const std::string& database);
     ~DatabaseLink();
 
-    [[nodiscard]] auto write_entry(const DbEntry& entry) -> bool;
+    [[nodiscard]] auto measurement(const std::string& measurement) -> Entry;
 
 private:
-    auto add_field(const std::string& name, const std::variant<std::string,bool,short,int,long,long long,std::pair<double, int>>& value, influxdb_cpp::detail::field_caller& caller) -> influxdb_cpp::detail::field_caller&;
-    [[nodiscard]] auto add_field(const std::string& name, const std::variant<std::string,bool,short,int,long,long long,std::pair<double, int>>& value, influxdb_cpp::detail::tag_caller& caller) -> influxdb_cpp::detail::field_caller&;
+    [[nodiscard]] auto send_string(const std::string& query) -> bool;
+
+    static constexpr short s_port { 8086 };
+
     std::string m_server {};
     LoginData m_login_data {};
     std::string m_database {};
-    influxdb_cpp::server_info m_server_info {"muonpi.org", 8086, "db", "", ""};
     std::mutex m_mutex;
 };
 
