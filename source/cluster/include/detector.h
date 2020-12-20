@@ -2,8 +2,8 @@
 #define DETECTOR_H
 
 #include "threadrunner.h"
-#include "ratesupervisor.h"
 #include "detectorinfo.h"
+#include "utility.h"
 
 #include <memory>
 #include <chrono>
@@ -81,18 +81,23 @@ protected:
 private:
 
     std::atomic<Status> m_status { Status::Unreliable };
-    std::atomic<bool> m_tick { false };
 
     Location m_location {};
     std::size_t m_hash { 0 };
 
-    std::unique_ptr<RateSupervisor> m_supervisor { nullptr };
     std::chrono::system_clock::time_point m_last_log { std::chrono::system_clock::now() };
 
     static constexpr std::chrono::system_clock::duration s_log_interval { std::chrono::seconds { 90 } };
     static constexpr std::chrono::system_clock::duration s_quit_interval { s_log_interval * 3 };
 
     StateSupervisor& m_state_supervisor;
+
+    static constexpr std::size_t s_history_length { 10 };
+
+    RateMeasurement<s_history_length, 2000> m_current {};
+    RateMeasurement<s_history_length * 100, 2000> m_mean {};
+
+    double m_factor { 1.0 };
 };
 
 }

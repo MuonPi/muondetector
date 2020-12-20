@@ -8,14 +8,14 @@ namespace MuonPi {
 Detector::Detector(const DetectorInfo &initial_log, StateSupervisor& supervisor)
     : m_location { initial_log.location()}
     , m_hash { initial_log.hash() }
-    , m_supervisor { std::make_unique<RateSupervisor>() }
     , m_state_supervisor { supervisor }
 {
 }
 
 void Detector::process(const Event& /*event*/)
 {
-    m_tick = true;
+    m_current.increase_counter();
+    m_mean.increase_counter();
 }
 
 void Detector::process(const DetectorInfo &log)
@@ -46,7 +46,7 @@ auto Detector::is(Status status) const -> bool
 
 auto Detector::factor() const -> double
 {
-    return m_supervisor->factor();
+    return m_factor;
 }
 
 auto Detector::step() -> bool
@@ -65,9 +65,14 @@ auto Detector::step() -> bool
             set_status(Status::Reliable);
         }
     }
-    m_supervisor->tick(m_tick);
-    if (m_tick) {
-        m_tick = false;
+
+    if (m_current.step()) {
+        m_mean.step();
+        if (m_current.mean() < (m_mean.mean() - m_mean.deviation())) {
+            m_factor = ((m_mean.mean() - m_current.mean())/(m_mean.deviation()) + 1.0 ) * 2.0;
+        } else {
+            m_factor = 1.0;
+        }
     }
 
     return true;

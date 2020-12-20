@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cmath>
 #include <array>
+#include <atomic>
 
 namespace MuonPi {
 
@@ -133,7 +134,7 @@ private:
 
     std::size_t m_index { 0 };
 
-    std::size_t m_current_n { 0 };
+    std::atomic<std::size_t> m_current_n { 0 };
     std::chrono::steady_clock::time_point m_last { std::chrono::steady_clock::now() };
 };
 
@@ -141,7 +142,7 @@ private:
 template <std::size_t N, std::size_t T>
 void RateMeasurement<N, T>::increase_counter()
 {
-    m_current_n++;
+    m_current_n = m_current_n + 1;
 }
 
 template <std::size_t N, std::size_t T>
