@@ -8,6 +8,7 @@ namespace MuonPi {
 Detector::Detector(const DetectorInfo &initial_log, StateSupervisor& supervisor)
     : m_location { initial_log.location()}
     , m_hash { initial_log.hash() }
+    , m_userinfo { initial_log.user_info() }
     , m_state_supervisor { supervisor }
 {
 }
@@ -85,9 +86,14 @@ auto Detector::current_log_data() -> DetectorLog
 {
 	m_current_data.mean_eventrate = m_current_rate.mean();
 	m_current_data.mean_pulselength = m_pulselength.mean();
-	DetectorLog log(m_hash, m_current_data);
+	DetectorLog log(m_hash, m_userinfo, m_current_data);
 	m_current_data.incoming = 0;
 	return log;
+}
+
+auto Detector::user_info() const -> UserInfo
+{
+	return m_userinfo;
 }
 
 }

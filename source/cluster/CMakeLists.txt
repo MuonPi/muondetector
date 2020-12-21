@@ -104,6 +104,7 @@ set(CLUSTER_HEADER_FILES
     "${PROJECT_HEADER_DIR}/statesupervisor.h"
     "${PROJECT_HEADER_DIR}/mqttlogsink.h"
     #"${PROJECT_HEADER_DIR}/configuration.h"
+    "${PROJECT_HEADER_DIR}/userinfo.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/external/influxdb.hpp"
     )
 

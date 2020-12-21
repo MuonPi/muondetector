@@ -1,10 +1,11 @@
 #ifndef DETECTORLOG_H
 #define DETECTORLOG_H
 
+#include "userinfo.h"
+
 #include <chrono>
 
 namespace MuonPi {
-
 
 /**
  * @brief The DetectorLog class
@@ -20,13 +21,13 @@ public:
 		double mean_pulselength { 0.0 };
 		unsigned long incoming { 0UL };
 	};
-	
+		
 	/**
      * @brief DetectorLog
      * @param hash The hash of the detector identifier
 	 * @param data The data struct to be provided
      */
-	DetectorLog(std::size_t hash, Data data);
+	DetectorLog(std::size_t hash, UserInfo user_info, Data data);
 
     DetectorLog() noexcept;
 
@@ -53,16 +54,22 @@ public:
 	
     /**
      * @brief data Accesses the data from the object
-     * @return
+     * @return data struct
      */
     [[nodiscard]] auto data() -> Data;
 	
+    /**
+     * @brief data Accesses the user info from the object
+     * @return the UserInfo struct
+     */
+    [[nodiscard]] auto user_info() const -> UserInfo;
 
 private:
     std::size_t m_hash { 0 };
 	
 	std::chrono::system_clock::time_point m_time { std::chrono::system_clock::now() };
 	Data m_data { };
+	UserInfo m_userinfo { };
     bool m_valid { true };
 };
 }

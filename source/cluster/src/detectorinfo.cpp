@@ -4,9 +4,10 @@
 
 namespace MuonPi {
 
-DetectorInfo::DetectorInfo(std::size_t hash, Location location)
+DetectorInfo::DetectorInfo(std::size_t hash, UserInfo user_info, Location location)
     : m_hash { hash }
     , m_location { location }
+    , m_userinfo { user_info }
 {
 }
 
@@ -17,6 +18,7 @@ DetectorInfo::DetectorInfo() noexcept
 DetectorInfo::DetectorInfo(const DetectorInfo& other)
     : m_hash { other.m_hash }
     , m_location { other.m_location }
+    , m_userinfo { other.m_userinfo }
     , m_time { other.m_time }
     , m_valid { other.m_valid }
 {
@@ -25,6 +27,7 @@ DetectorInfo::DetectorInfo(const DetectorInfo& other)
 DetectorInfo::DetectorInfo(DetectorInfo&& other)
     : m_hash { std::move(other.m_hash) }
     , m_location { std::move(other.m_location) }
+	, m_userinfo { std::move(other.m_userinfo) }
     , m_time { std::move(other.m_time) }
     , m_valid { std::move(other.m_valid) }
 {
@@ -41,6 +44,10 @@ auto DetectorInfo::location() const -> Location
     return m_location;
 }
 
+auto DetectorInfo::user_info() const -> UserInfo
+{
+	return m_userinfo;
+}
 
 auto DetectorInfo::time() const -> std::chrono::system_clock::time_point
 {
