@@ -41,12 +41,7 @@ set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
 
 
-find_library(PAHO_MQTT3C paho-mqtt3c REQUIRED)
-find_library(PAHO_MQTT3A paho-mqtt3a REQUIRED)
-find_library(PAHO_MQTT3CS paho-mqtt3cs REQUIRED)
-find_library(PAHO_MQTT3AS paho-mqtt3as REQUIRED)
-find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
-
+find_library(MOSQUITTO mosquitto REQUIRED)
 find_library(CRYPTOPP crypto++ REQUIRED)
 find_library(CURL curl REQUIRED)
 
@@ -143,8 +138,7 @@ target_include_directories(muondetector-cluster PUBLIC
 target_link_libraries(muondetector-cluster
     crypto++
 #    config++
-    paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
-#    "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
+    mosquitto
     source-files
     pthread
     curl
@@ -158,8 +152,8 @@ target_include_directories(muondetector-cluster PUBLIC
 
 include(GNUInstallDirs)
 
-add_custom_target(changelog ALL COMMAND gzip -cn9 "${PROJECT_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
-add_custom_target(manpage ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-cluster.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-cluster.1.gz")
+add_custom_target(changelog-cluster ALL COMMAND gzip -cn9 "${PROJECT_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
+add_custom_target(manpage-cluster ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-cluster.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-cluster.1.gz")
 
 install(TARGETS muondetector-cluster DESTINATION bin COMPONENT cluster)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT cluster)
