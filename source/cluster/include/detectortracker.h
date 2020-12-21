@@ -72,6 +72,8 @@ private:
     std::queue<std::size_t> m_delete_detectors {};
 
     double m_factor { 1.0 };
+
+    std::chrono::steady_clock::time_point m_last { std::chrono::steady_clock::now() };
 };
 
 }

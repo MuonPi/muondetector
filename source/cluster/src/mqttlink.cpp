@@ -131,9 +131,13 @@ auto MqttLink::subscribe(const std::string& topic, const std::string& regex) -> 
 
 auto MqttLink::connect() -> bool
 {
+    return private_connect();
+}
+
+auto MqttLink::private_connect(std::size_t n) -> bool
+{
     set_status(Status::Connecting);
     static constexpr std::size_t max_tries { 5 };
-    static std::size_t n { 0 };
 
     if (n > max_tries) {
         set_status(Status::Error);
@@ -143,14 +147,12 @@ auto MqttLink::connect() -> bool
     try {
         m_client.connect(m_conn_options)->wait();
         set_status(Status::Connected);
-        n = 0;
         Log::info()<<"Connected to MQTT";
         return true;
     } catch (const mqtt::exception& exc) {
         std::this_thread::sleep_for( std::chrono::seconds{1} );
-        n++;
         Log::warning()<<"Received exception while tryig to connect to MQTT, but retrying: " + std::string{exc.what()};
-        return connect();
+        return private_connect(n + 1);
     }
 }
 
@@ -170,11 +172,10 @@ auto MqttLink::disconnect() -> bool
     }
 }
 
-auto MqttLink::reconnect() -> bool
+auto MqttLink::reconnect(std::size_t n) -> bool
 {
     set_status(Status::Disconnected);
     static constexpr std::size_t max_tries { 5 };
-    static std::size_t n { 0 };
 
     if (n > max_tries) {
         set_status(Status::Error);
@@ -186,17 +187,14 @@ auto MqttLink::reconnect() -> bool
     try {
         if (!m_client.reconnect()->wait_for(std::chrono::seconds{5})) {
             Log::error()<<"Could not reconnect to MQTT.";
-            n++;
-            return reconnect();
+            return reconnect(n + 1);
         }
         set_status(Status::Connected);
         Log::info()<<"Connected to MQTT";
-        n = 0;
         return true;
     } catch (const mqtt::exception& exc) {
         Log::error()<<"Received exception while tryig to reconnect from MQTT: " + std::string{exc.what()};
-        n++;
-        return reconnect();
+        return reconnect(n + 1);
     }
 }
 

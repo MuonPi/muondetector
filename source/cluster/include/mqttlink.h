@@ -176,6 +176,7 @@ private:
      * @return true if the connection was successful
      */
     [[nodiscard]] auto connect() -> bool;
+    [[nodiscard]] auto private_connect(std::size_t n = 0) -> bool;
     /**
      * @brief disconnect Disconnect from the server
      * @return true if the disconnect was successful
@@ -185,7 +186,7 @@ private:
      * @brief reconnect attempt a reconnect after the connection was lost.
      * @return true if the reconnect was successful.
      */
-    [[nodiscard]] auto reconnect() -> bool;
+    [[nodiscard]] auto reconnect(std::size_t n = 0) -> bool;
 
     /**
      * @brief set_status Sets the status for the object
