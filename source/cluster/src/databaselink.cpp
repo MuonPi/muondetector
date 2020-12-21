@@ -172,6 +172,7 @@ auto DatabaseLink::send_string(const std::string& query) -> bool
 {
 
     CURL *curl;
+
     struct data config;
     std::ostringstream url {};
     url
@@ -185,13 +186,22 @@ auto DatabaseLink::send_string(const std::string& query) -> bool
     config.trace_ascii = 1; /* enable ascii tracing */
 
     curl = curl_easy_init();
+    class CurlGuard
+    {
+    public:
+        CurlGuard(CURL* curl) : m_curl { curl } {}
+        ~CurlGuard() { if (m_curl != nullptr) curl_easy_cleanup(m_curl);}
+    private:
+        CURL* m_curl { nullptr };
+    } curl_guard{curl};
     if(curl) {
+        /*
         // +++ only for debugging
         curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, my_trace);
         curl_easy_setopt(curl, CURLOPT_DEBUGDATA, &config);
         curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
         // --- only for debugging
-
+*/
         curl_easy_setopt(curl, CURLOPT_PORT, s_port);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
@@ -204,14 +214,13 @@ auto DatabaseLink::send_string(const std::string& query) -> bool
         long http_code { 0 };
         curl_easy_getinfo (curl, CURLINFO_RESPONSE_CODE, &http_code);
 
-        if((res != CURLE_OK) || ((http_code / 200) != 0)) {
+        if (res != CURLE_OK) {
             Log::warning()<<"Couldn't write to Database: " + std::to_string(http_code) + ": " + std::string{curl_easy_strerror(res)};
-            curl_easy_cleanup(curl);
+            return false;
+        } else if ((http_code / 100) != 2) {
+            Log::warning()<<"Couldn't write to Database: " + std::to_string(http_code);
             return false;
         }
-
-        /* always cleanup */
-        curl_easy_cleanup(curl);
     }
     return true;
 }

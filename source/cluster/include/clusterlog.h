@@ -54,11 +54,11 @@ public:
 
 private:
     Data m_data;
-	std::chrono::system_clock::time_point m_time { std::chrono::system_clock::now() };
-	bool m_valid { true };
+    std::chrono::system_clock::time_point m_time { std::chrono::system_clock::now() };
+    bool m_valid { true };
 };
 
-	
+
 } // namespace MuonPi
 
 #endif // CLUSTERLOG_H
