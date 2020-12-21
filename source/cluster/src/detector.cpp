@@ -17,6 +17,7 @@ void Detector::process(const Event& event)
 {
     m_current_rate.increase_counter();
     m_mean_rate.increase_counter();
+	m_current_data.incoming++;
 
 	double pulselength = event.data().end - event.data().start;
 	if (pulselength > 0. && pulselength < 1e6) m_pulselength.add(pulselength);
