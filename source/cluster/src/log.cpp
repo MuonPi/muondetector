@@ -34,6 +34,7 @@ auto Sink::to_string(Level level) -> std::string
     case Level::Emergency:
         return "Emergency";
     }
+    return {};
 }
 
 StreamSink::StreamSink(std::ostream& ostream, Level level)

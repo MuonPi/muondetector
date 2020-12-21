@@ -44,6 +44,7 @@ find_library(PAHO_MQTT3AS paho-mqtt3as REQUIRED)
 find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
 
 find_library(CRYPTOPP crypto++ REQUIRED)
+find_library(CURL curl REQUIRED)
 
 
 
@@ -105,7 +106,6 @@ set(CLUSTER_HEADER_FILES
     "${PROJECT_HEADER_DIR}/mqttlogsink.h"
     #"${PROJECT_HEADER_DIR}/configuration.h"
     "${PROJECT_HEADER_DIR}/userinfo.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/external/influxdb.hpp"
     )
 
 add_library(source-files OBJECT ${CLUSTER_SOURCE_FILES} ${CLUSTER_HEADER_FILES})
@@ -138,6 +138,7 @@ target_link_libraries(muondetector-cluster
 #    "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
     source-files
     pthread
+    curl
     )
 
 target_include_directories(muondetector-cluster PUBLIC

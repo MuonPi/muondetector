@@ -15,7 +15,7 @@ class ClusterLog
 {
 public:
     struct Data {
-        double timeout { 0 }; //!< The current timeout for event constructors, in ms
+        std::int_fast64_t timeout { 0 }; //!< The current timeout for event constructors, in ms
         struct {
             double single_in { 0 }; //!< The mean rate of incoming events
             double l1_out { 0 }; //!< The mean rate of outgoing l1 events
@@ -54,11 +54,11 @@ public:
 
 private:
     Data m_data;
-	std::chrono::system_clock::time_point m_time { std::chrono::system_clock::now() };
-	bool m_valid { true };
+    std::chrono::system_clock::time_point m_time { std::chrono::system_clock::now() };
+    bool m_valid { true };
 };
 
-	
+
 } // namespace MuonPi
 
 #endif // CLUSTERLOG_H
