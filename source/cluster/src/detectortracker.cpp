@@ -11,7 +11,6 @@
 
 namespace MuonPi {
 
-#define DETECTOR_LOG_INTERVAL 300
 
 DetectorTracker::DetectorTracker(std::vector<std::shared_ptr<AbstractSource<DetectorInfo>>> log_sources, std::vector<std::shared_ptr<AbstractSink<DetectorLog>>> log_sinks, StateSupervisor &supervisor)
     : ThreadRunner{"DetectorTracker"}
@@ -101,7 +100,10 @@ auto DetectorTracker::step() -> int
     // +++ push detector log messages at regular interval
     static steady_clock::time_point last { steady_clock::now() };
     steady_clock::time_point now { steady_clock::now() };
-    if ((now - last) >= seconds{DETECTOR_LOG_INTERVAL}) {
+
+    constexpr std::chrono::seconds detector_log_interval{300};
+
+    if ((now - last) >= detector_log_interval) {
         last = now;
 
 		for (auto& [hash, detector]: m_detectors) {
