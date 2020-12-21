@@ -15,7 +15,7 @@ class ClusterLog
 {
 public:
     struct Data {
-        double timeout { 0 }; //!< The current timeout for event constructors, in ms
+        std::int_fast64_t timeout { 0 }; //!< The current timeout for event constructors, in ms
         struct {
             double single_in { 0 }; //!< The mean rate of incoming events
             double l1_out { 0 }; //!< The mean rate of outgoing l1 events
