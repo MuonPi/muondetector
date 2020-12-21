@@ -4,6 +4,7 @@
 #include "abstractsource.h"
 #include "mqttlink.h"
 #include "detectorinfo.h"
+#include "userinfo.h"
 
 #include <map>
 #include <memory>
@@ -16,7 +17,8 @@ class MessageParser;
 
 struct DetectorLogItem {
     static constexpr std::uint8_t s_default_status { 0xFF };
-    std::string id {};
+    UserInfo user_info {};
+	std::string message_id {};
     std::uint8_t status { s_default_status };
 
     struct {

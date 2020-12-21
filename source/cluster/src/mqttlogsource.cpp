@@ -7,15 +7,15 @@ namespace MuonPi {
 
 void DetectorLogItem::reset()
 {
-    id = "";
+    user_info = UserInfo { };
     status = s_default_status;
 }
 
 auto DetectorLogItem::add(MessageParser& message) -> bool
 {
-    if (id != message[0]) {
+    if (message_id != message[0]) {
         reset();
-        id = message[0];
+        message_id = message[0];
     }
     try {
         if (message[1] == "geoHeightMSL") {
@@ -78,11 +78,15 @@ auto MqttLogSource::step() -> int
         MessageParser topic { msg.topic, '/'};
         MessageParser content { msg.content, ' '};
         if ((topic.size() >= 4) && (content.size() >= 2)) {
-            std::string name { topic[2] + topic[3] };
+            UserInfo userinfo {};
+			userinfo.username =  topic[2];
+			//std::string name { topic[2] + topic[3] };
+			std::string site { topic[3] };
             for (std::size_t i = 4; i < topic.size(); i++) {
-                name += "/" + topic[i];
+                site += "/" + topic[i];
             }
-            std::size_t hash { std::hash<std::string>{}(name) };
+            userinfo.station_id = site;
+            std::size_t hash { std::hash<std::string>{}(userinfo.site_id()) };
 
             if (m_buffer.find(hash) != m_buffer.end()) {
                 auto& item { m_buffer[hash] };
@@ -93,7 +97,8 @@ auto MqttLogSource::step() -> int
                 }
             } else {
                 DetectorLogItem item;
-                item.id = content[0];
+                item.message_id = content[0];
+                item.user_info = userinfo;
                 item.add(content);
                 m_buffer[hash] = item;
             }
@@ -121,6 +126,6 @@ void MqttLogSource::process(std::size_t hash, DetectorLogItem item)
     location.lat = item.geo.lat;
     location.lon = item.geo.lon;
 
-    push_item( DetectorInfo{hash, location} );
+    push_item( DetectorInfo{hash, item.user_info, location} );
 }
 }

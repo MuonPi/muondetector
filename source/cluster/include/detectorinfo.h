@@ -1,6 +1,8 @@
 #ifndef DETECTORINFO_H
 #define DETECTORINFO_H
 
+#include "userinfo.h"
+
 #include <chrono>
 
 namespace MuonPi {
@@ -26,9 +28,10 @@ public:
     /**
      * @brief DetectorInfo
      * @param hash The hash of the detector identifier
+     * @param user_info The user info object
      * @param location The detector location information
      */
-    DetectorInfo(std::size_t hash, Location location);
+    DetectorInfo(std::size_t hash, UserInfo user_info, Location location);
 
     DetectorInfo() noexcept;
 
@@ -54,10 +57,18 @@ public:
     [[nodiscard]] auto time() const -> std::chrono::system_clock::time_point;
 
     [[nodiscard]] auto valid() const -> bool;
+	
+    /**
+     * @brief data Accesses the user info from the object
+     * @return the UserInfo struct
+     */
+    [[nodiscard]] auto user_info() const -> UserInfo;
+
 
 private:
     std::size_t m_hash { 0 };
     Location m_location {};
+	UserInfo m_userinfo {};
     std::chrono::system_clock::time_point m_time { std::chrono::system_clock::now() };
 
     bool m_valid { true };

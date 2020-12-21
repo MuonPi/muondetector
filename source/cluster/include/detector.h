@@ -5,6 +5,7 @@
 #include "detectorinfo.h"
 #include "detectorlog.h"
 #include "utility.h"
+#include "userinfo.h"
 
 #include <memory>
 #include <chrono>
@@ -84,6 +85,13 @@ public:
 	
 	[[nodiscard]] auto current_log_data() -> DetectorLog;
 	
+    /**
+     * @brief data Accesses the user info from the object
+     * @return the UserInfo struct
+     */
+    [[nodiscard]] auto user_info() const -> UserInfo;
+
+	
 protected:
     /**
      * @brief set_status Sets the status of this detector and sends the status to the listener if it has changed.
@@ -97,6 +105,7 @@ private:
 
     Location m_location {};
     std::size_t m_hash { 0 };
+	UserInfo m_userinfo { };
 
     std::chrono::system_clock::time_point m_last_log { std::chrono::system_clock::now() };
 

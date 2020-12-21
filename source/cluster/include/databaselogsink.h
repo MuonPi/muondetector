@@ -91,35 +91,24 @@ void DatabaseLogSink<ClusterLog>::process(ClusterLog log)
 }
 
 template <>
-void DatabaseLogSink<DetectorLog>::process(DetectorLog /*log*/)
+void DatabaseLogSink<DetectorLog>::process(DetectorLog log)
 {
-
     auto nanosecondsUTC { std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count() };
-    auto fields { std::move(m_link.measurement("Log")
-            <<Influx::Tag{"user", "MuonPi"}
-/*            <<Influx::Field{"timeout", log.data().timeout}
-            <<Influx::Field{"frequency_in", log.data().frequency.single_in}
-            <<Influx::Field{"frequency_l1_out", log.data().frequency.l1_out}
-            <<Influx::Field{"buffer_length", log.data().buffer_length}
-            <<Influx::Field{"total_detectors", log.data().total_detectors}
-            <<Influx::Field{"reliable_detectors", log.data().reliable_detectors}
-            <<Influx::Field{"max_multiplicity", log.data().maximum_n}
-            <<Influx::Field{"incoming", log.data().incoming}*/
+    auto result { std::move(m_link.measurement("Log")
+            <<Influx::Tag{"user", log.user_info().username}
+            <<Influx::Tag{"detector", log.user_info().station_id}
+            <<Influx::Tag{"site_id", log.user_info().site_id()}
+            <<Influx::Field{"eventrate", log.data().mean_eventrate}
+            <<Influx::Field{"pulselength", log.data().mean_pulselength}
+            <<Influx::Field{"incoming", log.data().incoming}
+            <<nanosecondsUTC
             )};
-    auto result { fields<<nanosecondsUTC };
 
     if (!result) {
         Log::error()<<"Could not write event to database.";
         return;
     }
 }
-
-
-
-
-
-
-
 
 } // namespace MuonPi
 #endif // DATABASELOGSINK_H
