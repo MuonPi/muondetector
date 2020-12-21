@@ -203,8 +203,10 @@ auto DatabaseLink::send_string(const std::string& query) -> bool
         long http_code { 0 };
         curl_easy_getinfo (curl, CURLINFO_RESPONSE_CODE, &http_code);
 
-        if((res != CURLE_OK)) {
-            Log::warning()<<"Couldn't query Database: " + std::string{curl_easy_strerror(res)};
+        if((res != CURLE_OK) || ((http_code / 200) != 0)) {
+            Log::warning()<<"Couldn't write to Database: " + std::to_string(http_code) + ": " + std::string{curl_easy_strerror(res)};
+            curl_easy_cleanup(curl);
+            return false;
         }
 
         /* always cleanup */
