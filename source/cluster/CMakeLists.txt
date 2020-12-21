@@ -44,7 +44,6 @@ find_library(PAHO_MQTT3AS paho-mqtt3as REQUIRED)
 find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
 
 find_library(CRYPTOPP crypto++ REQUIRED)
-find_library(CURLPP curlpp REQUIRED)
 find_library(CURL curl REQUIRED)
 
 
@@ -140,7 +139,6 @@ target_link_libraries(muondetector-cluster
 #    "${CMAKE_CURRENT_BINARY_DIR}/../lib/libmuondetector.a"
     source-files
     pthread
-    curlpp
     curl
     )
 
