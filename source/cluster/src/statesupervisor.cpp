@@ -73,10 +73,9 @@ auto StateSupervisor::step() -> int
             return -1;
         }
     }
-    static steady_clock::time_point last { steady_clock::now() };
     steady_clock::time_point now { steady_clock::now() };
-    if ((now - last) >= seconds{30}) {
-        last = now;
+    if ((now - m_last) >= seconds{30}) {
+        m_last = now;
 
         for (auto& sink: m_log_sinks) {
             sink->push_item(ClusterLog{m_current_data});
@@ -87,7 +86,7 @@ auto StateSupervisor::step() -> int
 
     if (m_outgoing_rate.step()) {
         m_incoming_rate.step();
-        m_current_data.timeout = static_cast<double>(duration_cast<milliseconds>(m_timeout).count());
+        m_current_data.timeout = duration_cast<milliseconds>(m_timeout).count();
         m_current_data.frequency.single_in = m_incoming_rate.mean();
         m_current_data.frequency.l1_out = m_outgoing_rate.mean();
     }

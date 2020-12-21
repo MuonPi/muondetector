@@ -15,22 +15,27 @@ Detector::Detector(const DetectorInfo &initial_log, StateSupervisor& supervisor)
 
 void Detector::process(const Event& event)
 {
-    static bool _not_first_event { false };
-	
-	m_current_rate.increase_counter();
+    m_current_rate.increase_counter();
     m_mean_rate.increase_counter();
-	m_current_data.incoming++;
-	
-	int current_ublox_counter = event.data().ublox_counter;
-	if (current_ublox_counter <= m_last_ublox_counter) {
-		current_ublox_counter += 0xFFFF;
-	}
-	if (_not_first_event) m_current_data.ublox_counter_progress += current_ublox_counter-static_cast<int>(m_last_ublox_counter);
- 	m_last_ublox_counter = event.data().ublox_counter;
-	_not_first_event = true;
+    m_current_data.incoming++;
 
-	double pulselength = event.data().end - event.data().start;
-	if (pulselength > 0. && pulselength < 1e6) m_pulselength.add(pulselength);
+    const std::uint16_t current_ublox_counter = event.data().ublox_counter;
+    if (!m_initial) {
+        std::uint16_t difference { static_cast<uint16_t>(current_ublox_counter - m_last_ublox_counter) };
+
+        if (current_ublox_counter <= m_last_ublox_counter) {
+            difference = current_ublox_counter + (std::numeric_limits<std::uint16_t>::max() - m_last_ublox_counter);
+        }
+        m_current_data.ublox_counter_progress += difference;
+    } else {
+        m_initial = false;
+    }
+    m_last_ublox_counter = current_ublox_counter;
+
+    double pulselength { static_cast<double>(event.data().end - event.data().start) };
+    if ((pulselength > 0.) && (pulselength < 1e6)) {
+        m_pulselength.add(pulselength);
+    }
 }
 
 void Detector::process(const DetectorInfo &info)
@@ -95,22 +100,22 @@ auto Detector::step() -> bool
 
 auto Detector::current_log_data() -> DetectorLog
 {
-	m_current_data.mean_eventrate = m_current_rate.mean();
-	m_current_data.mean_pulselength = m_pulselength.mean();
-	try {
-		m_current_data.deadtime = 1.-static_cast<double>(m_current_data.incoming)/static_cast<double>(m_current_data.ublox_counter_progress);
-	} catch (...) {
-		m_current_data.deadtime=1.;
-	}
-	DetectorLog log(m_hash, m_userinfo, m_current_data);
-	m_current_data.incoming = 0;
-	m_current_data.ublox_counter_progress = 0;
-	return log;
+    m_current_data.mean_eventrate = m_current_rate.mean();
+    m_current_data.mean_pulselength = m_pulselength.mean();
+    if (m_current_data.ublox_counter_progress == 0) {
+        m_current_data.deadtime=1.;
+    } else {
+        m_current_data.deadtime = 1.-static_cast<double>(m_current_data.incoming)/static_cast<double>(m_current_data.ublox_counter_progress);
+    }
+    DetectorLog log(m_hash, m_userinfo, m_current_data);
+    m_current_data.incoming = 0;
+    m_current_data.ublox_counter_progress = 0;
+    return log;
 }
 
 auto Detector::user_info() const -> UserInfo
 {
-	return m_userinfo;
+    return m_userinfo;
 }
 
 }

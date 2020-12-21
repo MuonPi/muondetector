@@ -101,6 +101,8 @@ void DatabaseLogSink<DetectorLog>::process(DetectorLog log)
             <<Influx::Field{"eventrate", log.data().mean_eventrate}
             <<Influx::Field{"pulselength", log.data().mean_pulselength}
             <<Influx::Field{"incoming", log.data().incoming}
+            <<Influx::Field{"ublox_counter_progress", log.data().ublox_counter_progress}
+            <<Influx::Field{"deadtime_factor", log.data().deadtime}
             <<nanosecondsUTC
             )};
 

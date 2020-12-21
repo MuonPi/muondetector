@@ -12,7 +12,6 @@
 namespace MuonPi {
 
 
-
 DetectorTracker::DetectorTracker(std::vector<std::shared_ptr<AbstractSource<DetectorInfo>>> log_sources, std::vector<std::shared_ptr<AbstractSink<DetectorLog>>> log_sinks, StateSupervisor &supervisor)
     : ThreadRunner{"DetectorTracker"}
     , m_supervisor { supervisor }
@@ -64,8 +63,8 @@ auto DetectorTracker::get(std::size_t hash) const -> std::shared_ptr<Detector>
 auto DetectorTracker::step() -> int
 {
     using namespace std::chrono;
-	
-	double largest { 1.0 };
+
+    double largest { 1.0 };
     std::size_t reliable { 0 };
     for (auto& [hash, detector]: m_detectors) {
 
@@ -97,24 +96,26 @@ auto DetectorTracker::step() -> int
     }
     // --- handle incoming log messages, maximum 10 at a time to prevent blocking
 
-    
-    // +++ push detector log messages at regular interval
-    static steady_clock::time_point last { steady_clock::now() };
-    steady_clock::time_point now { steady_clock::now() };
-    if ((now - last) >= seconds{300}) {
-        last = now;
 
-		for (auto& [hash, detector]: m_detectors) {
-			DetectorLog log(detector->current_log_data());
-			for (auto& sink: m_log_sinks) {
-				sink->push_item(log);
-			}
-		}
+    // +++ push detector log messages at regular interval
+    steady_clock::time_point now { steady_clock::now() };
+
+    static constexpr std::chrono::seconds detector_log_interval{300};
+
+    if ((now - m_last) >= detector_log_interval) {
+        m_last = now;
+
+        for (auto& [hash, detector]: m_detectors) {
+            DetectorLog log(detector->current_log_data());
+            for (auto& sink: m_log_sinks) {
+                sink->push_item(log);
+            }
+        }
     }
     // --- push detector log messages at regular interval
-    
+
     // TODO: implement dead time in the detector log and an immediate logging if a detector becomes active or inactive
-    
+
     std::this_thread::sleep_for( std::chrono::milliseconds{1} );
     return 0;
 }

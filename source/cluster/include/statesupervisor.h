@@ -83,6 +83,7 @@ private:
     std::vector<std::shared_ptr<AbstractSink<ClusterLog>>> m_log_sinks;
 
     ClusterLog::Data m_current_data;
+    std::chrono::steady_clock::time_point m_last { std::chrono::steady_clock::now() };
 
 };
 
