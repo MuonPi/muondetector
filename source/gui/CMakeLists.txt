@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(muondetector-gui LANGUAGES CXX)
 
+string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
+
 set(PROJECT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(PROJECT_UI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(PROJECT_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -192,6 +194,11 @@ configure_file(
     "${PROJECT_RES_DIR}/res/muon.ico"
     "${CMAKE_CURRENT_BINARY_DIR}/muon.ico"
     )
+else()
+configure_file(
+    "${PROJECT_CONFIG_DIR}/muondetector-gui.1"
+    "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1"
+    )
 endif()
 
 find_package(Qt5QuickCompiler)
@@ -333,8 +340,10 @@ else()
 include(GNUInstallDirs)
 
 add_custom_target(changelog ALL COMMAND gzip -cn9 "${PROJECT_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
+add_custom_target(manpage ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1.gz")
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT gui)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1.gz" DESTINATION "share/man/man1/" COMPONENT gui)
 install(FILES "${PROJECT_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT gui)
 
 set(CPACK_GENERATOR "DEB")

@@ -1,0 +1,14 @@
+[Unit]
+Description=muondetector-cluster - calculate coincidences for the MuonPi network
+After=network.target
+
+[Service]
+Type=simple
+User=muonuser
+ExecStart=/usr/bin/muondetector-cluster
+ExecStop=/bin/kill $MAINPID
+Restart=on-abnormal
+TimeoutSec=2
+
+[Install]
+WantedBy=multi-user.target

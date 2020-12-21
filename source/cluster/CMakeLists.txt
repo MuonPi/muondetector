@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(muondetector-cluster LANGUAGES CXX C)
 
-set(MUONDETECTOR_ENABLE_TESTING OFF)
+string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
 
 set(PROJECT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(PROJECT_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -10,6 +10,7 @@ set(PROJECT_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
 set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../library/include/")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../bin")
+include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/version.cmake")
 
 if(${MUONDETECTOR_BUILD_TIDY})
   set(CMAKE_CXX_CLANG_TIDY
@@ -35,6 +36,9 @@ add_compile_options(
     -O3
     -Wno-unused-private-field
     )
+
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
 
 
 find_library(PAHO_MQTT3C paho-mqtt3c REQUIRED)
@@ -108,6 +112,11 @@ set(CLUSTER_HEADER_FILES
     "${PROJECT_HEADER_DIR}/userinfo.h"
     )
 
+configure_file(
+    "${PROJECT_CONFIG_DIR}/muondetector-cluster.1"
+    "${CMAKE_CURRENT_BINARY_DIR}/muondetector-cluster.1"
+    )
+
 add_library(source-files OBJECT ${CLUSTER_SOURCE_FILES} ${CLUSTER_HEADER_FILES})
 target_include_directories(source-files PUBLIC
     ${PROJECT_HEADER_DIR}
@@ -147,184 +156,36 @@ target_include_directories(muondetector-cluster PUBLIC
 
 
 
+include(GNUInstallDirs)
+
+add_custom_target(changelog ALL COMMAND gzip -cn9 "${PROJECT_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
+add_custom_target(manpage ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-cluster.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-cluster.1.gz")
+
 install(TARGETS muondetector-cluster DESTINATION bin COMPONENT cluster)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT cluster)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-cluster.1.gz" DESTINATION "share/man/man1/" COMPONENT cluster)
+install(FILES "${PROJECT_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT cluster)
+install(FILES "${PROJECT_CONFIG_DIR}/muondetector-cluster.service" DESTINATION "/lib/systemd/system" COMPONENT cluster)
 
 
-if (MUONDETECTOR_ENABLE_TESTING)
-enable_testing()
 
-add_executable(test-coincidence "${PROJECT_TEST_DIR}/coincidence.cpp")
-target_include_directories(test-coincidence PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-coincidence
-    cppunit
-    source-files
-    pthread
-    )
-add_test(NAME "Coincidence-Test" COMMAND test-coincidence)
+set(CPACK_GENERATOR "DEB")
+set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
+set(CPACK_PACKAGE_VENDOR "MuonPi.org")
+set(CPACK_DEBIAN_PACKAGE_SECTION "net")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Daemon which calculates coincidences for incoming events")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "It subscribes to a mqtt topic to collect the incoming event messages and keep
+track of individual event sources.
+With these messages it calculates coincidences and depending on the context
+publishes them to another mqtt topic or writes them to a database.
+It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi <developer@muonpi.org>")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>=2.28), libstdc++6 (>=7), lftp (>=4.7), libcrypto++6, libconfig++9v5, libcurl4")
+set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../packages/")
 
-add_executable(test-combinedevent "${PROJECT_TEST_DIR}/combinedevent.cpp")
-target_include_directories(test-combinedevent PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-combinedevent
-    cppunit
-    source-files
-    pthread
-    )
-add_test(NAME "CombinedEvent-Test" COMMAND test-combinedevent)
-
-add_executable(test-abstracteventsink "${PROJECT_TEST_DIR}/abstracteventsink.cpp")
-target_include_directories(test-abstracteventsink PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-abstracteventsink
-    cppunit
-    source-files
-    pthread
-    )
-add_test(NAME "AbstractEventSink-Test" COMMAND test-abstracteventsink)
-
-add_executable(test-abstracteventsource "${PROJECT_TEST_DIR}/abstracteventsource.cpp")
-target_include_directories(test-abstracteventsource PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-abstracteventsource
-    cppunit
-    source-files
-    pthread
-    )
-add_test(NAME "AbstractEventSource-Test" COMMAND test-abstracteventsource)
-
-add_executable(test-core "${PROJECT_TEST_DIR}/core.cpp")
-target_include_directories(test-core PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-core
-    cppunit
-    source-files
-    pthread
-    )
-add_test(NAME "Core-Test" COMMAND test-core)
-
-add_executable(test-databaselink "${PROJECT_TEST_DIR}/databaselink.cpp")
-target_include_directories(test-databaselink PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-databaselink
-    cppunit
-    source-files
-    pthread
-    )
-add_test(NAME "DatabaseLink-Test" COMMAND test-databaselink)
-
-add_executable(test-databasesink "${PROJECT_TEST_DIR}/databasesink.cpp")
-target_include_directories(test-databasesink PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-databasesink
-    cppunit
-    source-files
-    pthread
-    )
-add_test(NAME "DatabaseSink-Test" COMMAND test-databasesink)
-
-add_executable(test-mqttlink "${PROJECT_TEST_DIR}/mqttlink.cpp")
-target_include_directories(test-mqttlink PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-mqttlink
-    cppunit
-    source-files
-    pthread
-    )
-add_test(NAME "MqttLink-Test" COMMAND test-mqttlink)
-
-add_executable(test-mqttsink "${PROJECT_TEST_DIR}/mqttsink.cpp")
-target_include_directories(test-mqttsink PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-mqttsink
-    cppunit
-    source-files
-    pthread
-    )
-add_test(NAME "MqttSink-Test" COMMAND test-mqttsink)
-
-add_executable(test-mqttsource "${PROJECT_TEST_DIR}/mqttsource.cpp")
-target_include_directories(test-mqttsource PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-mqttsource
-    cppunit
-    source-files
-    pthread
-    )
-add_test(NAME "MqqtSource-Test" COMMAND test-mqttsource)
-
-add_executable(test-ratesupervisor "${PROJECT_TEST_DIR}/ratesupervisor.cpp")
-target_include_directories(test-ratesupervisor PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-ratesupervisor
-    cppunit
-    source-files
-    pthread
-    )
-add_test(NAME "RateSupervisor-Test" COMMAND test-ratesupervisor)
-
-add_executable(test-timebasesupervisor "${PROJECT_TEST_DIR}/timebasesupervisor.cpp")
-target_include_directories(test-timebasesupervisor PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-timebasesupervisor
-    cppunit
-    source-files
-    pthread
-    )
-add_test(NAME "TimeBaseSupervisor-Test" COMMAND test-timebasesupervisor)
-
-add_executable(test-detector "${PROJECT_TEST_DIR}/detector.cpp")
-target_include_directories(test-detector PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-detector
-    cppunit
-    source-files
-    pthread
-    )
-add_test(NAME "Detector-Test" COMMAND test-detector)
-
-add_executable(test-eventconstructor "${PROJECT_TEST_DIR}/eventconstructor.cpp")
-target_include_directories(test-eventconstructor PUBLIC
-    ${PROJECT_HEADER_DIR}
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_link_libraries(test-eventconstructor
-    cppunit
-    source-files
-    pthread
-    )
-add_test(NAME "EventConstructor-Test" COMMAND test-eventconstructor)
-
-endif ()
-
-
-#
-#set(CPACK_GENERATOR "DEB")
-#set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
-#set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${PROJECT_CONFIG_DIR}/preinst;${PROJECT_CONFIG_DIR}/postinst;${PROJECT_CONFIG_DIR}/prerm;${PROJECT_CONFIG_DIR}/conffiles")
-#set(CPACK_PACKAGE_VENDOR "MuonPi.org")
-#set(CPACK_DEBIAN_PACKAGE_SECTION "net")
-#set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
-#set(CPACK_PACKAGE_VERSION_MAJOR "1")
-#set(CPACK_PACKAGE_VERSION_MINOR "3")
-#set(CPACK_PACKAGE_VERSION_PATCH "2")
-#set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Muondetector cluster")
-#set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Cluster daemon
-#    It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
-#set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi.org <support@muonpi.org>")
-#set(CPACK_DEBIAN_PACKAGE_DEPENDS "lftp (>=4.7), libcrypto++6, libmuondetector-shared (>=1.2.2), libqt5serialport5 (>= 5), libpaho-mqttpp (>=1.1.0), libconfig++-dev, pigpiod")
-#set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../packages/")
-
-#include(CPack)
+include(CPack)

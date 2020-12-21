@@ -1,0 +1,42 @@
+.\" manpage for muondetector-cluster
+.\" Contact developer@muonpi.org to correct errors or typos
+.TH "muondetector-cluster" "1" "@PROJECT_DATE_STRING@" "v @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@" "muondetector-cluster manpage"
+.SH "NAME"
+muondetector-cluster - calculate coincidences for the MuonPi network
+.SH "SYNOPSIS"
+.B muondetector-cluster
+.br
+Calculates coincidences of single events from the MuonPi network.
+.SH "DESCRIPTION"
+.B muondetector-cluster
+The cluster subscribes to a mqtt topic to collect the incoming event messages and keep
+track of individual event sources.
+With these messages it calculates coincidences and depending on the context
+publishes them to another mqtt topic or writes them to a database.
+.SH "OPTIONS"
+.TP
+There are currently no options.
+.SH "EXIT STATUS"
+Default
+.SH "BUGS"
+No known bugs.
+.SH "AUTHOR"
+MuonPi <developer@muonpi.org>
+.SH "COPYRIGHT"
+License: GPL-3.0+
+.PP
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+.PP
+This package is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+.PP
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+.PP
+On Debian systems, the complete text of the GNU General
+Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".

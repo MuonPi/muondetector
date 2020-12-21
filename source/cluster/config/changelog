@@ -1,0 +1,7 @@
+muondetector-cluster (2.0.0); urgency=low
+
+  * Initial release. The version number is in conjunction with the other parts
+    of the software.
+
+ -- MuonPi <developer@muonpi.org>  Wed, 16. Dec 2020 21:55:00 +0100
+
