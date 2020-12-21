@@ -135,12 +135,12 @@ auto DatabaseLink::Entry::operator<<(const Influx::Field& field) -> Entry&
 {
     std::visit(overloaded {
                    [this, field](const std::string& value){m_stream<<(m_has_field?',':' ')<<field.name<<"=\""<<value<<'"'; m_has_field = true;},
-                   [this, field](std::int_fast64_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value; m_has_field = true;},
-                   [this, field](std::size_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value; m_has_field = true;},
-                   [this, field](std::uint8_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value; m_has_field = true;},
-                   [this, field](std::uint16_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value; m_has_field = true;},
-                   [this, field](std::uint32_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value; m_has_field = true;},
-                   [this, field](bool value){m_stream<<field.name<<(m_has_field?',':' ')<<'='<<value; m_has_field = true;},
+                   [this, field](std::int_fast64_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value<<'i'; m_has_field = true;},
+                   [this, field](std::size_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value<<'i'; m_has_field = true;},
+                   [this, field](std::uint8_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<static_cast<std::uint16_t>(value)<<'i'; m_has_field = true;},
+                   [this, field](std::uint16_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value<<'i'; m_has_field = true;},
+                   [this, field](std::uint32_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value<<'i'; m_has_field = true;},
+                   [this, field](bool value){m_stream<<field.name<<(m_has_field?',':' ')<<'='<<(value?'t':'f'); m_has_field = true;},
                    [this, field](double value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value; m_has_field = true;}
                }, field.value);
     return *this;
