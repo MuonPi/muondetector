@@ -18,7 +18,7 @@ struct Tag {
 };
 struct Field {
     std::string name;
-    std::variant<std::string,bool,std::int_fast64_t,double> value;
+    std::variant<std::string,bool,std::int_fast64_t,double,std::size_t,std::uint8_t,std::uint16_t,std::uint32_t> value;
 };
 }
 
@@ -32,8 +32,8 @@ public:
     public:
         Entry() = delete;
 
-        [[nodiscard]] auto operator<<(const Influx::Tag& tag) -> Entry&;
-        [[nodiscard]] auto operator<<(const Influx::Field& tag) -> Entry&;
+        auto operator<<(const Influx::Tag& tag) -> Entry&;
+        auto operator<<(const Influx::Field& tag) -> Entry&;
         [[nodiscard]] auto operator<<(std::int_fast64_t timestamp) -> bool;
 
     private:

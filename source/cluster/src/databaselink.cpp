@@ -32,6 +32,10 @@ auto DatabaseLink::Entry::operator<<(const Influx::Field& field) -> Entry&
     std::visit(overloaded {
                    [this, field](const std::string& value){m_stream<<(m_has_field?',':' ')<<field.name<<"=\""<<value<<'"';},
                    [this, field](std::int_fast64_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value;},
+                   [this, field](std::size_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value;},
+                   [this, field](std::uint8_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value;},
+                   [this, field](std::uint16_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value;},
+                   [this, field](std::uint32_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value;},
                    [this, field](bool value){m_stream<<field.name<<(m_has_field?',':' ')<<'='<<value;},
                    [this, field](double value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value;}
                }, field.value);
@@ -67,20 +71,25 @@ auto DatabaseLink::send_string(const std::string& query) -> bool
       curlpp::Cleanup cleaner;
       curlpp::Easy request;
 
-      request.setOpt(new curlpp::options::Url(m_server));
+
+      std::ostringstream url {};
+      url
+            <<m_server
+            <<" /write?db="
+            <<m_database
+            <<"&u="<<m_login_data.username
+            <<"&p="<<m_login_data.password
+            <<"&epoch=ms";
+
+      request.setOpt(new curlpp::options::Url(url.str()));
       request.setOpt(new curlpp::options::Port(s_port));
-      request.setOpt(new curlpp::options::Verbose(true));
-
-      std::list<std::string> header;
-      header.push_back("Content-Type: application/octet-stream");
-
-      request.setOpt(new curlpp::options::HttpHeader(header));
 
       request.setOpt(new curlpp::options::PostFields(query));
       request.setOpt(new curlpp::options::PostFieldSize(static_cast<long>(query.length())));
-
-      request.setOpt(new curlpp::options::UserPwd(m_login_data.username + ":" + m_login_data.password));
-
+      // +++ Debugging only
+      request.setOpt(new curlpp::options::Verbose(true));
+      request.setOpt((new curlpp::options::WriteStream(&std::cerr)));
+      // --- Debugging only
       request.perform();
     }
     catch ( curlpp::LogicError & e ) {
