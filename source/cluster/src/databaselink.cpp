@@ -134,14 +134,14 @@ template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 auto DatabaseLink::Entry::operator<<(const Influx::Field& field) -> Entry&
 {
     std::visit(overloaded {
-                   [this, field](const std::string& value){m_stream<<(m_has_field?',':' ')<<field.name<<"=\""<<value<<'"';},
-                   [this, field](std::int_fast64_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value;},
-                   [this, field](std::size_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value;},
-                   [this, field](std::uint8_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value;},
-                   [this, field](std::uint16_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value;},
-                   [this, field](std::uint32_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value;},
-                   [this, field](bool value){m_stream<<field.name<<(m_has_field?',':' ')<<'='<<value;},
-                   [this, field](double value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value;}
+                   [this, field](const std::string& value){m_stream<<(m_has_field?',':' ')<<field.name<<"=\""<<value<<'"'; m_has_field = true;},
+                   [this, field](std::int_fast64_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value; m_has_field = true;},
+                   [this, field](std::size_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value; m_has_field = true;},
+                   [this, field](std::uint8_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value; m_has_field = true;},
+                   [this, field](std::uint16_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value; m_has_field = true;},
+                   [this, field](std::uint32_t value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value; m_has_field = true;},
+                   [this, field](bool value){m_stream<<field.name<<(m_has_field?',':' ')<<'='<<value; m_has_field = true;},
+                   [this, field](double value){m_stream<<(m_has_field?',':' ')<<field.name<<'='<<value; m_has_field = true;}
                }, field.value);
     return *this;
 }
@@ -192,6 +192,7 @@ auto DatabaseLink::send_string(const std::string& query) -> bool
         curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
         // --- only for debugging
 
+        curl_easy_setopt(curl, CURLOPT_PORT, s_port);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
         curl_easy_setopt(curl, CURLOPT_URL, url.str().c_str());
