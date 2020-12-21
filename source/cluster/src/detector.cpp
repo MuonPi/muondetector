@@ -21,11 +21,11 @@ void Detector::process(const Event& event)
     m_mean_rate.increase_counter();
 	m_current_data.incoming++;
 	
-	int current_ublox_counter = event.data().ublox_counter;
+	long int current_ublox_counter = event.data().ublox_counter;
 	if (current_ublox_counter <= m_last_ublox_counter) {
 		current_ublox_counter += 0xFFFF;
 	}
-	if (_not_first_event) m_current_data.ublox_counter_progress += current_ublox_counter-static_cast<int>(m_last_ublox_counter);
+	if (_not_first_event) m_current_data.ublox_counter_progress += current_ublox_counter-static_cast<long int>(m_last_ublox_counter);
  	m_last_ublox_counter = event.data().ublox_counter;
 	_not_first_event = true;
 
