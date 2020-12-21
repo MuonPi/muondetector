@@ -119,7 +119,6 @@ private:
 	
 	DetectorLog::Data m_current_data;
 	std::uint16_t m_last_ublox_counter {};
-	long int m_current_ublox_progress {};
 	
 	Ringbuffer<double, 100> m_pulselength {};
 
