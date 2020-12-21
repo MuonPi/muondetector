@@ -15,22 +15,27 @@ Detector::Detector(const DetectorInfo &initial_log, StateSupervisor& supervisor)
 
 void Detector::process(const Event& event)
 {
-    static bool _not_first_event { false };
-	
-	m_current_rate.increase_counter();
+    m_current_rate.increase_counter();
     m_mean_rate.increase_counter();
-	m_current_data.incoming++;
-	
-	long int current_ublox_counter = event.data().ublox_counter;
-	if (current_ublox_counter <= m_last_ublox_counter) {
-		current_ublox_counter += 0xFFFF;
-	}
-	if (_not_first_event) m_current_data.ublox_counter_progress += current_ublox_counter-static_cast<long int>(m_last_ublox_counter);
- 	m_last_ublox_counter = event.data().ublox_counter;
-	_not_first_event = true;
+    m_current_data.incoming++;
 
-	double pulselength = event.data().end - event.data().start;
-	if (pulselength > 0. && pulselength < 1e6) m_pulselength.add(pulselength);
+    const std::uint16_t current_ublox_counter = event.data().ublox_counter;
+    if (!m_initial) {
+        std::uint16_t difference { static_cast<uint16_t>(current_ublox_counter - m_last_ublox_counter) };
+
+        if (current_ublox_counter <= m_last_ublox_counter) {
+            difference = current_ublox_counter + (std::numeric_limits<std::uint16_t>::max() - m_last_ublox_counter);
+        }
+        m_current_data.ublox_counter_progress += difference;
+    } else {
+        m_initial = false;
+    }
+    m_last_ublox_counter = current_ublox_counter;
+
+    double pulselength { static_cast<double>(event.data().end - event.data().start) };
+    if ((pulselength > 0.) && (pulselength < 1e6)) {
+        m_pulselength.add(pulselength);
+    }
 }
 
 void Detector::process(const DetectorInfo &info)

@@ -103,6 +103,8 @@ private:
 
     std::atomic<Status> m_status { Status::Unreliable };
 
+    bool m_initial { true };
+
     Location m_location {};
     std::size_t m_hash { 0 };
 	UserInfo m_userinfo { };
