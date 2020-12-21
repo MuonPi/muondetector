@@ -13,12 +13,20 @@ namespace MuonPi {
 class DetectorLog
 {
 public:
-
-    /**
+    struct Data {
+	    double deadtime { 0.0 };
+		bool active { false };
+		double mean_eventrate { 0.0 };
+		double mean_pulselength { 0.0 };
+		unsigned long incoming { 0UL };
+	};
+	
+	/**
      * @brief DetectorLog
      * @param hash The hash of the detector identifier
+	 * @param data The data struct to be provided
      */
-    DetectorLog(std::size_t hash);
+	DetectorLog(std::size_t hash, Data data);
 
     DetectorLog() noexcept;
 
@@ -31,30 +39,6 @@ public:
      */
     [[nodiscard]] auto hash() const noexcept -> std::size_t;
 
-    /**
-     * @brief deadtime
-     * @return The dead time of the detector in the interval
-     */
-    [[nodiscard]] auto deadtime() const noexcept -> double { return m_deadtime; }
-
-    /**
-     * @brief active
-     * @return the detector was active in the interval
-     */
-    [[nodiscard]] auto active() const noexcept -> bool { return m_active; }
-
-    /**
-     * @brief mean_eventrate
-     * @return The mean event rate of the detector in the interval
-     */
-    [[nodiscard]] auto mean_eventrate() const noexcept -> double { return m_mean_eventrate; }
-
-    /**
-     * @brief mean_pulselength
-     * @return The mean pulse length of the detector in the interval
-     */
-    [[nodiscard]] auto mean_pulselength() const noexcept -> double { return m_mean_pulselength; }
-
 	/**
      * @brief time The time this log message was created
      * @return The creation time
@@ -66,16 +50,19 @@ public:
      * @return message is valid
      */
     [[nodiscard]] auto valid() const -> bool;
+	
+    /**
+     * @brief data Accesses the data from the object
+     * @return
+     */
+    [[nodiscard]] auto data() -> Data;
+	
 
 private:
     std::size_t m_hash { 0 };
-    double m_deadtime { 0.0 };
-	bool m_active { false };
-	double m_mean_eventrate { 0.0 };
-	double m_mean_pulselength { 0.0 };
 	
 	std::chrono::system_clock::time_point m_time { std::chrono::system_clock::now() };
-
+	Data m_data { };
     bool m_valid { true };
 };
 }

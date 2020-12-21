@@ -12,17 +12,20 @@ Detector::Detector(const DetectorInfo &initial_log, StateSupervisor& supervisor)
 {
 }
 
-void Detector::process(const Event& /*event*/)
+void Detector::process(const Event& event)
 {
-    m_current.increase_counter();
-    m_mean.increase_counter();
+    m_current_rate.increase_counter();
+    m_mean_rate.increase_counter();
+
+	double pulselength = event.data().end - event.data().start;
+	if (pulselength > 0. && pulselength < 1e6) m_pulselength.add(pulselength);
 }
 
-void Detector::process(const DetectorInfo &log)
+void Detector::process(const DetectorInfo &info)
 {
     m_last_log = std::chrono::system_clock::now();
 
-    m_location = log.location();
+    m_location = info.location();
 
     if ((m_location.prec > Location::maximum_prec) || (m_location.dop > Location::maximum_dop)) {
         set_status(Status::Unreliable);
@@ -66,16 +69,25 @@ auto Detector::step() -> bool
         }
     }
 
-    if (m_current.step()) {
-        m_mean.step();
-        if (m_current.mean() < (m_mean.mean() - m_mean.deviation())) {
-            m_factor = ((m_mean.mean() - m_current.mean())/(m_mean.deviation()) + 1.0 ) * 2.0;
+    if (m_current_rate.step()) {
+        m_mean_rate.step();
+        if (m_current_rate.mean() < (m_mean_rate.mean() - m_mean_rate.deviation())) {
+            m_factor = ((m_mean_rate.mean() - m_current_rate.mean())/(m_mean_rate.deviation()) + 1.0 ) * 2.0;
         } else {
             m_factor = 1.0;
         }
     }
 
     return true;
+}
+
+auto Detector::current_log_data() -> DetectorLog
+{
+	m_current_data.mean_eventrate = m_current_rate.mean();
+	m_current_data.mean_pulselength = m_pulselength.mean();
+	DetectorLog log(m_hash, m_current_data);
+	m_current_data.incoming = 0;
+	return log;
 }
 
 }
