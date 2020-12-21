@@ -31,13 +31,13 @@ class Detector
 {
 private:
     static constexpr std::size_t s_history_length { 10 };
-	static constexpr std::size_t s_time_interval { 2000 };
+    static constexpr std::size_t s_time_interval { 2000 };
 public:
 
-	using CurrentRateType=RateMeasurement<s_history_length, s_time_interval>;
-	using MeanRateType=RateMeasurement<s_history_length * 100, s_time_interval>;
-	
-	enum class Status {
+    using CurrentRateType=RateMeasurement<s_history_length, s_time_interval>;
+    using MeanRateType=RateMeasurement<s_history_length * 100, s_time_interval>;
+
+    enum class Status {
         Created,
         Deleted,
         Unreliable,
@@ -79,19 +79,19 @@ public:
      * @return true
      */
     [[nodiscard]] auto step() -> bool;
-	
+
 //	[[nodiscard]] auto mean_rate() const -> MeanRateType;
 //	[[nodiscard]] auto current_rate() const -> CurrentRateType;
-	
-	[[nodiscard]] auto current_log_data() -> DetectorLog;
-	
+
+    [[nodiscard]] auto current_log_data() -> DetectorLog;
+
     /**
      * @brief data Accesses the user info from the object
      * @return the UserInfo struct
      */
     [[nodiscard]] auto user_info() const -> UserInfo;
 
-	
+
 protected:
     /**
      * @brief set_status Sets the status of this detector and sends the status to the listener if it has changed.
@@ -107,7 +107,7 @@ private:
 
     Location m_location {};
     std::size_t m_hash { 0 };
-	UserInfo m_userinfo { };
+    UserInfo m_userinfo { };
 
     std::chrono::system_clock::time_point m_last_log { std::chrono::system_clock::now() };
 
@@ -118,11 +118,11 @@ private:
 
     CurrentRateType m_current_rate {};
     MeanRateType m_mean_rate {};
-	
-	DetectorLog::Data m_current_data;
-	std::uint16_t m_last_ublox_counter {};
-	
-	Ringbuffer<double, 100> m_pulselength {};
+
+    DetectorLog::Data m_current_data;
+    std::uint16_t m_last_ublox_counter {};
+
+    Ringbuffer<double, 100> m_pulselength {};
 
     double m_factor { 1.0 };
 };

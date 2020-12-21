@@ -100,22 +100,22 @@ auto Detector::step() -> bool
 
 auto Detector::current_log_data() -> DetectorLog
 {
-	m_current_data.mean_eventrate = m_current_rate.mean();
-	m_current_data.mean_pulselength = m_pulselength.mean();
-	try {
-		m_current_data.deadtime = 1.-static_cast<double>(m_current_data.incoming)/static_cast<double>(m_current_data.ublox_counter_progress);
-	} catch (...) {
-		m_current_data.deadtime=1.;
-	}
-	DetectorLog log(m_hash, m_userinfo, m_current_data);
-	m_current_data.incoming = 0;
-	m_current_data.ublox_counter_progress = 0;
-	return log;
+    m_current_data.mean_eventrate = m_current_rate.mean();
+    m_current_data.mean_pulselength = m_pulselength.mean();
+    if (m_current_data.ublox_counter_progress == 0) {
+        m_current_data.deadtime=1.;
+    } else {
+        m_current_data.deadtime = 1.-static_cast<double>(m_current_data.incoming)/static_cast<double>(m_current_data.ublox_counter_progress);
+    }
+    DetectorLog log(m_hash, m_userinfo, m_current_data);
+    m_current_data.incoming = 0;
+    m_current_data.ublox_counter_progress = 0;
+    return log;
 }
 
 auto Detector::user_info() const -> UserInfo
 {
-	return m_userinfo;
+    return m_userinfo;
 }
 
 }
