@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(muondetector-daemon LANGUAGES CXX C)
 
+string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
 
 set(PROJECT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(PROJECT_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -130,10 +131,22 @@ set(LOGIN_SOURCE_FILES
     )
 
 set(LOGIN_INSTALL_FILES
-    "${PROJECT_CONFIG_DIR}/muondetector-login.sh"
+    "${PROJECT_CONFIG_DIR}/muondetector-login-helper"
     )
 
 
+configure_file(
+    "${PROJECT_CONFIG_DIR}/muondetector-daemon.1"
+    "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1"
+    )
+configure_file(
+    "${PROJECT_CONFIG_DIR}/muondetector-login.1"
+    "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1"
+    )
+configure_file(
+    "${PROJECT_CONFIG_DIR}/muondetector-login-helper.1"
+    "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login-helper.1"
+    )
 
 
 add_executable(muondetector-login ${LOGIN_SOURCE_FILES})
@@ -187,9 +200,15 @@ set(DAEMON_INSTALL_FILES
 include(GNUInstallDirs)
 
 add_custom_target(changelog ALL COMMAND gzip -cn9 "${PROJECT_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
+add_custom_target(manpage ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1.gz")
+add_custom_target(manpage-login ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1.gz")
+add_custom_target(manpage-login-helper ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login-helper.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login-helper.1.gz")
 
 install(TARGETS muondetector-daemon muondetector-login DESTINATION bin COMPONENT daemon)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT daemon)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1.gz" DESTINATION "share/man/man1/" COMPONENT daemon)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1.gz" DESTINATION "share/man/man1/" COMPONENT daemon)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login-helper.1.gz" DESTINATION "share/man/man1/" COMPONENT daemon)
 install(FILES "${PROJECT_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT daemon)
 install(FILES ${DAEMON_INSTALL_FILES} DESTINATION "/etc/muondetector/" COMPONENT daemon)
 install(FILES "${PROJECT_CONFIG_DIR}/muondetector-daemon.service" DESTINATION "/lib/systemd/system" COMPONENT daemon)
