@@ -19,6 +19,7 @@ public:
 		bool active { false };
 		double mean_eventrate { 0.0 };
 		double mean_pulselength { 0.0 };
+		int ublox_counter_progress { 0 };
 		unsigned long incoming { 0UL };
 	};
 		
