@@ -53,6 +53,11 @@ public:
      */
     class Publisher {
     public:
+
+        Publisher(MqttLink* link, const std::string& topic)
+            : m_link { link }
+            , m_topic { topic }
+        {}
         /**
          * @brief publish Publish a message
          * @param content The content to send
@@ -64,11 +69,6 @@ public:
     private:
         friend class MqttLink;
 
-        Publisher(MqttLink* link, const std::string& topic)
-            : m_link { link }
-            , m_topic { topic }
-        {}
-
         MqttLink* m_link { nullptr };
         std::string m_topic {};
     };
@@ -78,6 +78,12 @@ public:
      */
     class Subscriber {
     public:
+
+        Subscriber(MqttLink* link, const std::string& topic)
+            : m_link { link }
+            , m_topic { topic }
+        {}
+
         ~Subscriber()
         {
             m_link->unsubscribe(m_topic);
@@ -98,11 +104,6 @@ public:
     private:
         friend class MqttLink;
 
-        Subscriber(MqttLink* link, const std::string& topic)
-            : m_link { link }
-            , m_topic { topic }
-        {}
-
         /**
          * @brief push_message Only called from within the MqttLink class
          * @param message The message to push into the queue
@@ -111,6 +112,7 @@ public:
 
         std::queue<Message> m_messages {};
         bool m_has_message { false };
+        std::mutex m_mutex;
         MqttLink* m_link { nullptr };
         std::string m_topic {};
     };
@@ -191,8 +193,8 @@ private:
 
     Status m_status { Status::Invalid };
 
-    std::map<std::string, Publisher> m_publishers {};
-    std::map<std::string, Subscriber> m_subscribers {};
+    std::map<std::string, std::unique_ptr<Publisher>> m_publishers {};
+    std::map<std::string, std::unique_ptr<Subscriber>> m_subscribers {};
 
     std::size_t m_tries { 0 };
 };

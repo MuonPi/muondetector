@@ -80,7 +80,7 @@ auto MqttLink::step() -> int
             return -1;
         }
     }
-    auto status = mosquitto_loop(m_mqtt, 1000, 1);
+    auto status = mosquitto_loop(m_mqtt, 0, 1);
     if (status != MOSQ_ERR_SUCCESS) {
         switch (status) {
         case MOSQ_ERR_INVAL:
@@ -128,7 +128,9 @@ void MqttLink::callback_connected(int result)
     } else if (result > 3) {
         Log::warning()<<"Mqtt connection failed: Other reason";
     } else if (result == 0) {
+        Log::info()<<"Connected to mqtt.";
         set_status(Status::Connected);
+        m_tries = 0;
         return;
     }
 }
@@ -150,7 +152,7 @@ void MqttLink::callback_message(const mosquitto_message* message)
         bool result { };
         mosquitto_topic_matches_sub2(topic.c_str(), topic.length(), message_topic.c_str(), message_topic.length(), &result);
         if (result) {
-            subscriber.push_message({message_topic, std::string{reinterpret_cast<char*>(message->payload)}});
+            subscriber->push_message({message_topic, std::string{reinterpret_cast<char*>(message->payload)}});
         }
     }
 }
@@ -184,6 +186,7 @@ void MqttLink::unsubscribe(const std::string& topic)
     if (m_status != Status::Connected) {
         return;
     }
+    Log::info()<<"Unsubscribing from " + topic;
     mosquitto_unsubscribe(m_mqtt, nullptr, topic.c_str());
 }
 
@@ -196,9 +199,9 @@ auto MqttLink::publish(const std::string& topic) -> Publisher&
     if (m_publishers.find(topic) != m_publishers.end()) {
         throw -1;
     }
-    m_publishers[topic] = Publisher{this, topic};
+    m_publishers[topic] = std::make_unique<Publisher>(this, topic);
     Log::debug()<<"Starting to publish on topic " + topic;
-    return m_publishers[topic];
+    return *m_publishers[topic];
 }
 
 auto MqttLink::subscribe(const std::string& topic) -> Subscriber&
@@ -210,7 +213,7 @@ auto MqttLink::subscribe(const std::string& topic) -> Subscriber&
     std::string check_topic { topic};
     if (m_subscribers.find(topic) != m_subscribers.end()) {
         Log::info()<<"Topic already subscribed.";
-        return m_subscribers[topic];
+        return *m_subscribers[topic];
     }
     auto result { mosquitto_subscribe(m_mqtt, nullptr, topic.c_str(), 1) };
     if (result != MOSQ_ERR_SUCCESS) {
@@ -234,10 +237,9 @@ auto MqttLink::subscribe(const std::string& topic) -> Subscriber&
 
         throw -1;
     }
-    m_subscribers[topic] = Subscriber{this, topic};
-//    m_subscribers.emplace(std::make_pair(topic, Subscriber{*this, topic}));
+    m_subscribers[topic] = std::make_unique<Subscriber>(this, topic);
     Log::debug()<<"Starting to subscribe to topic " + topic;
-    return m_subscribers[topic];
+    return *m_subscribers[topic];
 }
 
 auto MqttLink::connect(std::size_t n) -> bool
@@ -257,8 +259,6 @@ auto MqttLink::connect(std::size_t n) -> bool
     }
     auto result { mosquitto_connect(m_mqtt, m_host.c_str(), m_port, 60) };
     if (result == MOSQ_ERR_SUCCESS) {
-//        Log::info()<<"Connected to mqtt.";
-//        set_status(Status::Connected);
         return true;
     }
     std::this_thread::sleep_for( std::chrono::seconds{1} );
@@ -296,8 +296,6 @@ auto MqttLink::reconnect(std::size_t n) -> bool
     Log::info()<<"Trying to reconnect to MQTT.";
     auto result { mosquitto_reconnect(m_mqtt) };
     if (result == MOSQ_ERR_SUCCESS) {
-        //Log::info()<<"Connected to mqtt.";
-        //set_status(Status::Connected);
         return true;
     }
     std::this_thread::sleep_for( std::chrono::seconds{1} );
@@ -325,6 +323,7 @@ auto MqttLink::Subscriber::get_message() -> Message
     if (!m_has_message) {
         return {};
     }
+    std::scoped_lock<std::mutex> lock { m_mutex };
     auto msg { m_messages.front() };
     m_messages.pop();
     m_has_message = !m_messages.empty();
@@ -333,6 +332,7 @@ auto MqttLink::Subscriber::get_message() -> Message
 
 void MqttLink::Subscriber::push_message(const Message &message)
 {
+    std::scoped_lock<std::mutex> lock { m_mutex };
     m_messages.push(message);
     m_has_message = true;
 }

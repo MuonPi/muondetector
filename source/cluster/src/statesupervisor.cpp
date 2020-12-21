@@ -119,4 +119,11 @@ void StateSupervisor::add_thread(ThreadRunner* thread)
 {
     m_threads.push_back(thread);
 }
+
+void StateSupervisor::stop()
+{
+    for (auto& thread: m_threads) {
+        thread->stop();
+    }
+}
 }

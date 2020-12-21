@@ -50,6 +50,7 @@ auto main() -> int
 //    MuonPi::MqttLink source_link {login, "168.119.243.171", 1883};
 
 
+
     if (!source_link.wait_for(MuonPi::MqttLink::Status::Connected, std::chrono::seconds{5})) {
         return -1;
     }
@@ -107,12 +108,13 @@ auto main() -> int
                 || (signal == SIGHUP)
                 ) {
             MuonPi::Log::notice()<<"Received signal: " + std::to_string(signal) + ". Exiting.";
-            core.stop();
+            supervisor.stop();
         }
         if (
                    signal == SIGSEGV
                 ) {
             MuonPi::Log::critical()<<"Received signal: " + std::to_string(signal) + ". Exiting.";
+            supervisor.stop();
             core.stop();
         }
     };
