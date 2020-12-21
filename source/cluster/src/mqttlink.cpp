@@ -251,6 +251,10 @@ auto MqttLink::connect(std::size_t n) -> bool
         Log::error()<<"Giving up trying to connect to MQTT.";
         return false;
     }
+    if (mosquitto_username_pw_set(m_mqtt, m_login_data.username.c_str(), m_login_data.password.c_str()) != MOSQ_ERR_SUCCESS) {
+        Log::warning()<<"Could not connect to MQTT";
+        return false;
+    }
     auto result { mosquitto_connect(m_mqtt, m_host.c_str(), m_port, 60) };
     if (result == MOSQ_ERR_SUCCESS) {
 //        Log::info()<<"Connected to mqtt.";
