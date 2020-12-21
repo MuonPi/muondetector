@@ -14,6 +14,138 @@
 
 namespace MuonPi {
 
+namespace New {
+extern "C" {
+#include <mosquitto.h>
+}
+class MqttLink
+{
+public:
+    struct Message
+    {
+        std::string topic {};
+        std::string content{};
+    };
+    struct LoginData
+    {
+        std::string username {};
+        std::string station_id {};
+        std::string password {};
+
+        /**
+         * @brief client_id Creates a client_id from the username and the station id.
+         * This hashes the concatenation of the two fields.
+         * @return The client id as string
+         */
+        [[nodiscard]] auto client_id() const -> std::string;
+    };
+    /**
+     * @brief The Publisher class. Only gets instantiated from within the MqttLink class.
+     */
+    class Publisher {
+    public:
+        /**
+         * @brief Publisher
+         * @param client the mqttclient object which represents the server connection
+         * @param topic The topic to connect to.
+         */
+        Publisher(mqtt::async_client& client, const std::string& topic);
+
+        /**
+         * @brief publish Publish a message
+         * @param content The content to send
+         * @return true if the sending was successful
+         */
+        [[nodiscard]] auto publish(const std::string& content) -> bool;
+    private:
+        friend class MqttLink;
+
+        mqtt::async_client& m_client;
+        std::string m_topic {};
+        bool m_valid { true };
+    };
+
+    /**
+     * @brief The Subscriber class. Only gets instantiated from within the MqttLink class.
+     */
+    class Subscriber {
+    public:
+        /**
+         * @brief Subscriber
+         * @param client the mqttclient object which represents the server connection
+         * @param topic The topic to connect to.
+         */
+        Subscriber(mqtt::async_client& client, const std::string& topic);
+
+        Subscriber();
+
+        /**
+         * @brief has_message Check whether there are messages available.
+         * @return true if there is at least one message in the queue.
+         */
+        [[nodiscard]] auto has_message() const -> bool;
+        /**
+         * @brief get_message Gets the next message from the queue.
+         * @return an std::pair containting the message
+         */
+        [[nodiscard]] auto get_message() -> Message;
+
+    private:
+        friend class MqttLink;
+        /**
+         * @brief push_message Only called from within the MqttLink class
+         * @param message The message to push into the queue
+         */
+        void push_message(const Message& message);
+
+
+        void unsubscribe();
+
+
+        std::queue<Message> m_messages {};
+        std::mutex m_mutex {};
+
+        std::string m_topic {};
+
+        bool m_valid { true };
+    };
+
+    MqttLink(const LoginData& login, const std::string& server = "muonpi.org", int port = 1883);
+
+    ~MqttLink();
+
+    void callback_connected(mosqitto* mqtt, void* object, int result);
+    void callback_message(mosqitto* mqtt, void* object, const mosquitto_message* message);
+private:
+    [[nodiscard]] inline auto init(const char* client_id) -> mosquitto*
+    {
+        mosquitto_lib_init();
+        return mosquitto_new(client_id, true, nullptr);
+    }
+
+    std::string m_host {};
+    int m_port { 1883 };
+    LoginData m_login_data {};
+    mosquitto *m_mqtt { nullptr };
+};
+
+MqttLink::MqttLink(const LoginData& login, const std::string& server, int port)
+    : m_host { server }
+    , m_port { port }
+    , m_login_data { login }
+    , m_mqtt { init(login.client_id().c_str()) }
+{
+}
+
+MqttLink::~MqttLink()
+{
+    if (m_mqtt != nullptr) {
+        mosquitto_destroy(m_mqtt);
+    }
+    mosquitto_lib_cleanup();
+}
+}
+
 /**
  * @brief The MqttLink class. Connects to a Mqtt server and offers publish and subscribe methods.
  */
