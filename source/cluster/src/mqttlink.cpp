@@ -230,10 +230,12 @@ auto MqttLink::subscribe(const std::string& topic) -> Subscriber&
         case MOSQ_ERR_MALFORMED_UTF8:
             Log::error()<<"Could not subscribe to topic '" + topic + "': malformed utf8";
             break;
-        case MOSQ_ERR_OVERSIZE_PACKET:
+/*
+		case MOSQ_ERR_OVERSIZE_PACKET:
             Log::error()<<"Could not subscribe to topic '" + topic + "': oversize packet";
             break;
-        }
+*/
+		}
 
         throw -1;
     }

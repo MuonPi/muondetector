@@ -15,7 +15,10 @@ namespace MuonPi {
 class DetectorInfo;
 class MessageParser;
 
-struct DetectorLogItem {
+/**
+ * @brief Helper class for complete collection of several logically connected DetectorLogItems
+ */
+struct DetectorInfoCollector {
     static constexpr std::uint8_t s_default_status { 0xFF };
     UserInfo user_info {};
 	std::string message_id {};
@@ -58,6 +61,7 @@ struct DetectorLogItem {
 /**
  * @brief The MqttLogSource class
  */
+//template <class T>
 class MqttLogSource : public AbstractSource<DetectorInfo>
 {
 public:
@@ -89,11 +93,11 @@ private:
      * @param hash The hash of the detector
      * @param item The item to process
      */
-    void process(std::size_t hash, DetectorLogItem item);
+    void process(std::size_t hash, DetectorInfoCollector item);
 
     MqttLink::Subscriber& m_link;
 
-    std::map<std::size_t, DetectorLogItem> m_buffer {};
+    std::map<std::size_t, DetectorInfoCollector> m_buffer {};
 };
 
 }
