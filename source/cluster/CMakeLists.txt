@@ -70,7 +70,6 @@ set(CLUSTER_SOURCE_FILES
     "${PROJECT_SRC_DIR}/log.cpp"
     "${PROJECT_SRC_DIR}/utility.cpp"
     "${PROJECT_SRC_DIR}/statesupervisor.cpp"
-    "${PROJECT_SRC_DIR}/mqttlogsink.cpp"
     #"${PROJECT_SRC_DIR}/configuration.cpp"
     )
 
