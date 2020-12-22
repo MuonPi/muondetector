@@ -175,6 +175,8 @@ auto MqttLink::publish(const std::string& topic, const std::string& content) -> 
             if (!wait_for(Status::Connected)) {
                 return false;
             }
+        } else {
+            return false;
         }
     }
     auto result { mosquitto_publish(m_mqtt, nullptr, topic.c_str(), static_cast<int>(content.size()), reinterpret_cast<const void*>(content.c_str()), 1, false) };
@@ -192,6 +194,8 @@ void MqttLink::unsubscribe(const std::string& topic)
             if (!wait_for(Status::Connected)) {
                 return;
             }
+        } else {
+            return;
         }
     }
     Log::info()<<"Unsubscribing from " + topic;
@@ -206,6 +210,9 @@ auto MqttLink::publish(const std::string& topic) -> Publisher&
                 Log::warning()<<"MqttLink not connected.";
                 throw -1;
             }
+        } else {
+            Log::warning()<<"MqttLink not connected.";
+            throw -1;
         }
     }
     if (m_publishers.find(topic) != m_publishers.end()) {
@@ -224,6 +231,9 @@ auto MqttLink::subscribe(const std::string& topic) -> Subscriber&
                 Log::warning()<<"MqttLink not connected.";
                 throw -1;
             }
+        } else {
+            Log::warning()<<"MqttLink not connected.";
+            throw -1;
         }
     }
     std::string check_topic { topic};
@@ -274,7 +284,7 @@ auto MqttLink::connect(std::size_t n) -> bool
     }
     auto result { mosquitto_connect(m_mqtt, m_host.c_str(), m_port, 60) };
     if (result == MOSQ_ERR_SUCCESS) {
-        return wait_for(Status::Connected);
+        return true;
     }
     std::this_thread::sleep_for( std::chrono::seconds{1} );
     Log::warning()<<"Could not connect to MQTT: " + std::to_string(result);
@@ -311,7 +321,7 @@ auto MqttLink::reconnect(std::size_t n) -> bool
     Log::info()<<"Trying to reconnect to MQTT.";
     auto result { mosquitto_reconnect(m_mqtt) };
     if (result == MOSQ_ERR_SUCCESS) {
-        return wait_for(Status::Connected);
+        return true;
     }
     std::this_thread::sleep_for( std::chrono::seconds{1} );
     Log::error()<<"Could not reconnect to MQTT: " + std::to_string(result);
