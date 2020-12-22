@@ -67,6 +67,7 @@ public:
     void add_thread(ThreadRunner* thread);
 
 
+    void stop();
 private:
     std::map<std::size_t, Detector::Status> m_detectors;
     std::chrono::milliseconds m_timeout;
