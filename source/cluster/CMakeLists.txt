@@ -54,7 +54,6 @@ set(CLUSTER_SOURCE_FILES
     "${PROJECT_SRC_DIR}/databaseeventsink.cpp"
     "${PROJECT_SRC_DIR}/mqttlink.cpp"
     "${PROJECT_SRC_DIR}/asciieventsink.cpp"
-    "${PROJECT_SRC_DIR}/asciilogsink.cpp"
     "${PROJECT_SRC_DIR}/mqtteventsink.cpp"
     "${PROJECT_SRC_DIR}/mqtteventsource.cpp"
     "${PROJECT_SRC_DIR}/mqttlogsource.cpp"
