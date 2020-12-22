@@ -9,10 +9,12 @@
 #include <map>
 #include <future>
 #include <regex>
+#include <queue>
 
-#include <mqtt/async_client.h>
+#include <mosquitto.h>
 
 namespace MuonPi {
+
 
 /**
  * @brief The MqttLink class. Connects to a Mqtt server and offers publish and subscribe methods.
@@ -20,83 +22,19 @@ namespace MuonPi {
 class MqttLink : public ThreadRunner
 {
 public:
+
+    enum class Status {
+        Invalid,
+        Connected,
+        Disconnected,
+        Connecting,
+        Error
+    };
     struct Message
     {
         std::string topic {};
         std::string content{};
     };
-    /**
-     * @brief The Publisher class. Only gets instantiated from within the MqttLink class.
-     */
-    class Publisher {
-    public:
-        /**
-         * @brief Publisher
-         * @param client the mqttclient object which represents the server connection
-         * @param topic The topic to connect to.
-         */
-        Publisher(mqtt::async_client& client, const std::string& topic);
-
-        /**
-         * @brief publish Publish a message
-         * @param content The content to send
-         * @return true if the sending was successful
-         */
-        [[nodiscard]] auto publish(const std::string& content) -> bool;
-    private:
-        friend class MqttLink;
-
-        mqtt::async_client& m_client;
-        std::string m_topic {};
-        bool m_valid { true };
-    };
-
-    /**
-     * @brief The Subscriber class. Only gets instantiated from within the MqttLink class.
-     */
-    class Subscriber {
-    public:
-        /**
-         * @brief Subscriber
-         * @param client the mqttclient object which represents the server connection
-         * @param topic The topic to connect to.
-         */
-        Subscriber(mqtt::async_client& client, const std::string& topic);
-
-        Subscriber();
-
-        /**
-         * @brief has_message Check whether there are messages available.
-         * @return true if there is at least one message in the queue.
-         */
-        [[nodiscard]] auto has_message() const -> bool;
-        /**
-         * @brief get_message Gets the next message from the queue.
-         * @return an std::pair containting the message
-         */
-        [[nodiscard]] auto get_message() -> Message;
-
-    private:
-        friend class MqttLink;
-        /**
-         * @brief push_message Only called from within the MqttLink class
-         * @param message The message to push into the queue
-         */
-        void push_message(const Message& message);
-
-
-        void unsubscribe();
-
-
-        std::queue<Message> m_messages {};
-        std::mutex m_mutex {};
-
-        mqtt::async_client& m_client;
-        std::string m_topic {};
-
-        bool m_valid { true };
-    };
-
     struct LoginData
     {
         std::string username {};
@@ -111,48 +49,113 @@ public:
         [[nodiscard]] auto client_id() const -> std::string;
     };
 
-    enum class Status {
-        Invalid,
-        Connected,
-        Disconnected,
-        Connecting,
-        Error
+    /**
+     * @brief The Publisher class. Only gets instantiated from within the MqttLink class.
+     */
+    class Publisher {
+    public:
+        Publisher(MqttLink* link, const std::string& topic)
+            : m_link { link }
+            , m_topic { topic }
+        {}
+
+        /**
+         * @brief publish Publish a message
+         * @param content The content to send
+         * @return true if the sending was successful
+         */
+        [[nodiscard]] auto publish(const std::string& content) -> bool;
+
+        /**
+         * @brief publish Publish a message
+         * @param subtopic Subtopic to add to the basetopic specified in the constructor
+         * @param content The content to send
+         * @return true if the sending was successful
+         */
+        [[nodiscard]] auto publish(const std::string& subtopic, const std::string& content) -> bool;
+
+        Publisher() = default;
+    private:
+        friend class MqttLink;
+
+        MqttLink* m_link { nullptr };
+        std::string m_topic {};
     };
 
     /**
-     * @brief MqttLink Create a mqttlink to a server. Creating the object starts the connection immediatly.
-     * The connection happens asynchronously. To check if the connection has been established, check for the object status.
-     * @param server The server to connect to
-     * @param login Login information
+     * @brief The Subscriber class. Only gets instantiated from within the MqttLink class.
      */
-    MqttLink(const std::string& server, const LoginData& login);
+    class Subscriber {
+    public:
+        Subscriber(MqttLink* link, const std::string& topic)
+            : m_link { link }
+            , m_topic { topic }
+        {}
+
+        ~Subscriber()
+        {
+            m_link->unsubscribe(m_topic);
+        }
+
+        Subscriber() = default;
+        /**
+         * @brief has_message Check whether there are messages available.
+         * @return true if there is at least one message in the queue.
+         */
+        [[nodiscard]] auto has_message() const -> bool;
+        /**
+         * @brief get_message Gets the next message from the queue.
+         * @return an std::pair containting the message
+         */
+        [[nodiscard]] auto get_message() -> Message;
+
+    private:
+        friend class MqttLink;
+
+        /**
+         * @brief push_message Only called from within the MqttLink class
+         * @param message The message to push into the queue
+         */
+        void push_message(const Message& message);
+
+        std::queue<Message> m_messages {};
+        bool m_has_message { false };
+        std::mutex m_mutex;
+        MqttLink* m_link { nullptr };
+        std::string m_topic {};
+    };
+
+
+
+    /**
+     * @brief MqttLink
+     * @param login The login information for the mqtt user
+     * @param server The server address to connect to
+     * @param port The port to connect to
+     */
+    MqttLink(const LoginData& login, const std::string& server = "muonpi.org", int port = 1883);
 
     ~MqttLink() override;
 
-    [[nodiscard]] auto startup() -> bool;
 
     /**
-     * @brief publish Create a publisher object
-     * @param topic The topic over which the messages should be published
-     * @return A shared_ptr to a publisher object, or nullptr in the case of failure.
+     * @brief publish Create a Publisher callback object
+     * @param topic The topic under which the Publisher sends messages
      */
     [[nodiscard]] auto publish(const std::string& topic) -> Publisher&;
 
     /**
-     * @brief subscribe Create a Subscriber object
-     * @param topic The topic for which the subscriber should listen
-     * @return A shared_ptr to a subscriber object, or nullptr in the case of failure.
+     * @brief subscribe Create a Subscriber callback object
+     * @param topic The topic to subscribe to. See mqtt for wildcards.
      */
-    [[nodiscard]] auto subscribe(const std::string& topic, const std::string& regex) -> Subscriber&;
+    [[nodiscard]] auto subscribe(const std::string& topic) -> Subscriber&;
 
     /**
-     * @brief wait_for Waits for the status given in the status parameter.
+     * @brief wait_for Wait for a designated time until the status changes to the one set as the parameter
      * @param status The status to wait for
-     * @param duration The maximum duration to wait
-     * @return true if the status was achieved, false if it timed out
+     * @param duration The duration to wait for as a maximum
      */
-    [[nodiscard]] auto wait_for(Status status, std::chrono::seconds duration) -> bool;
-
+    [[nodiscard]] auto wait_for(Status status, std::chrono::milliseconds duration = std::chrono::seconds{5}) -> bool;
 protected:
     /**
      * @brief pre_run Reimplemented from ThreadRunner
@@ -169,45 +172,91 @@ protected:
      * @return The return value of the thread loop
      */
     [[nodiscard]] auto post_run() -> int override;
+
 private:
+
+    /**
+     * @brief set_status Set the status for this MqttLink
+     * @param status The new status
+     */
+    void set_status(Status status);
+
+    [[nodiscard]] auto publish(const std::string& topic, const std::string& content) -> bool;
+
+    /**
+     * @brief unsubscribe Unsubscribe from a specific topic
+     * @param topic The topic string to unsubscribe from
+     */
+    void unsubscribe(const std::string& topic);
 
     /**
      * @brief connects to the Server synchronuously. This method blocks until it is connected.
      * @return true if the connection was successful
      */
-    [[nodiscard]] auto connect() -> bool;
-    [[nodiscard]] auto private_connect(std::size_t n = 0) -> bool;
+    [[nodiscard]] auto connect(std::size_t n = 0) -> bool;
+
     /**
      * @brief disconnect Disconnect from the server
      * @return true if the disconnect was successful
      */
-    [[nodiscard]] auto disconnect() -> bool;
+    auto disconnect() -> bool;
+
     /**
      * @brief reconnect attempt a reconnect after the connection was lost.
      * @return true if the reconnect was successful.
      */
     [[nodiscard]] auto reconnect(std::size_t n = 0) -> bool;
 
+
     /**
-     * @brief set_status Sets the status for the object
-     * @param status The new status of the connection
+     * @brief init Initialise the mosquitto object. This is necessary since the mosquitto_lib_init() needs to be called before mosquitto_new().
+     * @param client_id The client_id to use
      */
-    void set_status(Status status);
+    [[nodiscard]] inline auto init(const char* client_id) -> mosquitto*
+    {
+        mosquitto_lib_init();
+        return mosquitto_new(client_id, true, this);
+    }
 
-
-    std::string m_server {};
+    std::string m_host {};
+    int m_port { 1883 };
     LoginData m_login_data {};
+    mosquitto *m_mqtt { nullptr };
 
     Status m_status { Status::Invalid };
 
     std::map<std::string, std::unique_ptr<Publisher>> m_publishers {};
     std::map<std::string, std::unique_ptr<Subscriber>> m_subscribers {};
 
-    mqtt::async_client m_client;
-    mqtt::connect_options m_conn_options {};
+    std::size_t m_tries { 0 };
 
-    std::future<bool> m_connection_status {};
+    /**
+     * @brief callback_connected Gets called by mosquitto client
+     * @param result The status code from the callback
+     */
+    void callback_connected(int result);
+    /**
+     * @brief callback_disconnected Gets called by mosquitto client
+     * @param result The status code from the callback
+     */
+    void callback_disconnected(int result);
+    /**
+     * @brief callback_message Gets called by mosquitto client in the case of an arriving message
+     * @param message A const pointer to the received message
+     */
+    void callback_message(const mosquitto_message* message);
+
+
+    friend void wrapper_callback_connected(mosquitto* mqtt, void* object, int result);
+    friend void wrapper_callback_disconnected(mosquitto* mqtt, void* object, int result);
+    friend void wrapper_callback_message(mosquitto* mqtt, void* object, const mosquitto_message* message);
 };
+/*
+void wrapper_callback_connected(mosquitto* mqtt, void* object, int result);
+void wrapper_callback_disconnected(mosquitto* mqtt, void* object, int result);
+void wrapper_callback_message(mosquitto* mqtt, void* object, const mosquitto_message* message);
+*/
+
 
 }
 
