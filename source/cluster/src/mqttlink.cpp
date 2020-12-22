@@ -171,7 +171,11 @@ auto MqttLink::post_run() -> int
 auto MqttLink::publish(const std::string& topic, const std::string& content) -> bool
 {
     if (m_status != Status::Connected) {
-        return false;
+        if (m_status == Status::Connecting) {
+            if (!wait_for(Status::Connected)) {
+                return false;
+            }
+        }
     }
     auto result { mosquitto_publish(m_mqtt, nullptr, topic.c_str(), static_cast<int>(content.size()), reinterpret_cast<const void*>(content.c_str()), 1, false) };
     if (result == MOSQ_ERR_SUCCESS) {
@@ -184,36 +188,48 @@ auto MqttLink::publish(const std::string& topic, const std::string& content) -> 
 void MqttLink::unsubscribe(const std::string& topic)
 {
     if (m_status != Status::Connected) {
-        return;
+        if (m_status == Status::Connecting) {
+            if (!wait_for(Status::Connected)) {
+                return;
+            }
+        }
     }
     Log::info()<<"Unsubscribing from " + topic;
     mosquitto_unsubscribe(m_mqtt, nullptr, topic.c_str());
 }
 
-
 auto MqttLink::publish(const std::string& topic) -> Publisher&
 {
     if (m_status != Status::Connected) {
-        throw -1;
+        if (m_status == Status::Connecting) {
+            if (!wait_for(Status::Connected)) {
+                Log::warning()<<"MqttLink not connected.";
+                throw -1;
+            }
+        }
     }
     if (m_publishers.find(topic) != m_publishers.end()) {
-        throw -1;
+        return {*m_publishers[topic]};
     }
     m_publishers[topic] = std::make_unique<Publisher>(this, topic);
     Log::debug()<<"Starting to publish on topic " + topic;
-    return *m_publishers[topic];
+    return {*m_publishers[topic]};
 }
 
 auto MqttLink::subscribe(const std::string& topic) -> Subscriber&
 {
     if (m_status != Status::Connected) {
-        Log::warning()<<"MqttLink not connected.";
-        throw -1;
+        if (m_status == Status::Connecting) {
+            if (!wait_for(Status::Connected)) {
+                Log::warning()<<"MqttLink not connected.";
+                throw -1;
+            }
+        }
     }
     std::string check_topic { topic};
     if (m_subscribers.find(topic) != m_subscribers.end()) {
         Log::info()<<"Topic already subscribed.";
-        return *m_subscribers[topic];
+        return {*m_subscribers[topic]};
     }
     auto result { mosquitto_subscribe(m_mqtt, nullptr, topic.c_str(), 1) };
     if (result != MOSQ_ERR_SUCCESS) {
@@ -234,12 +250,11 @@ auto MqttLink::subscribe(const std::string& topic) -> Subscriber&
             Log::error()<<"Could not subscribe to topic '" + topic + "': oversize packet";
             break;
         }
-
         throw -1;
     }
     m_subscribers[topic] = std::make_unique<Subscriber>(this, topic);
     Log::debug()<<"Starting to subscribe to topic " + topic;
-    return *m_subscribers[topic];
+    return {*m_subscribers[topic]};
 }
 
 auto MqttLink::connect(std::size_t n) -> bool
@@ -259,7 +274,7 @@ auto MqttLink::connect(std::size_t n) -> bool
     }
     auto result { mosquitto_connect(m_mqtt, m_host.c_str(), m_port, 60) };
     if (result == MOSQ_ERR_SUCCESS) {
-        return true;
+        return wait_for(Status::Connected);
     }
     std::this_thread::sleep_for( std::chrono::seconds{1} );
     Log::warning()<<"Could not connect to MQTT: " + std::to_string(result);
@@ -296,7 +311,7 @@ auto MqttLink::reconnect(std::size_t n) -> bool
     Log::info()<<"Trying to reconnect to MQTT.";
     auto result { mosquitto_reconnect(m_mqtt) };
     if (result == MOSQ_ERR_SUCCESS) {
-        return true;
+        return wait_for(Status::Connected);
     }
     std::this_thread::sleep_for( std::chrono::seconds{1} );
     Log::error()<<"Could not reconnect to MQTT: " + std::to_string(result);
@@ -312,6 +327,26 @@ auto MqttLink::Publisher::publish(const std::string& content) -> bool
     return m_link->publish(m_topic, content);
 }
 
+auto MqttLink::Publisher::publish(const std::string& subtopic, const std::string& content) -> bool
+{
+    std::string topic { m_topic };
+
+    const bool sub_slash { subtopic[0] != '/' };
+    const bool topic_slash { (*m_topic.end()) != '/' };
+
+    if ( sub_slash ^ topic_slash ) {
+        topic += subtopic;
+    } else if( sub_slash | topic_slash ) {
+        if (subtopic.length() < 2) {
+            return false;
+        }
+        topic += subtopic.substr(1, subtopic.size() - 1);
+    } else {
+        topic += '/' + subtopic;
+    }
+
+    return m_link->publish(topic , content);
+}
 
 auto MqttLink::Subscriber::has_message() const -> bool
 {

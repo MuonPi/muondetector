@@ -50,10 +50,6 @@ auto main() -> int
 
     MuonPi::MqttLink source_link {login, "116.202.96.181", 1883};
 
-    if (!source_link.wait_for(MuonPi::MqttLink::Status::Connected, std::chrono::seconds{5})) {
-        return -1;
-    }
-
 
     MuonPi::MqttEventSource::Subscribers source_topics{
         source_link.subscribe("muonpi/data/#"),
@@ -76,10 +72,6 @@ auto main() -> int
 
 #else
     MuonPi::MqttLink sink_link {login, "116.202.96.181", 1883};
-
-    if (!sink_link.wait_for(MuonPi::MqttLink::Status::Connected, std::chrono::seconds{5})) {
-        return -1;
-    }
 
     MuonPi::MqttEventSink::Publishers sink_topics {
         sink_link.publish("muonpi/events/MuonPi");
