@@ -13,6 +13,9 @@
 #include "databaseeventsink.h"
 #include "databaselogsink.h"
 #include "databaselink.h"
+#else
+#include "mqtteventsink.h"
+#include "mqttlogsink.h"
 #endif
 
 #include "asciieventsink.h"
