@@ -78,10 +78,14 @@ auto MqttLogSource::step() -> int
         MessageParser topic { msg.topic, '/'};
         MessageParser content { msg.content, ' '};
         if ((topic.size() >= 4) && (content.size() >= 2)) {
+            if (topic[2].empty() || topic[3].empty()) {
+                Log::debug()<<"Received empty username in Logmessage: " + msg.topic + " '" + msg.content + "'";
+                return 0;
+            }
             UserInfo userinfo {};
-			userinfo.username =  topic[2];
-			//std::string name { topic[2] + topic[3] };
-			std::string site { topic[3] };
+            userinfo.username =  topic[2];
+            //std::string name { topic[2] + topic[3] };
+            std::string site { topic[3] };
             for (std::size_t i = 4; i < topic.size(); i++) {
                 site += "/" + topic[i];
             }
