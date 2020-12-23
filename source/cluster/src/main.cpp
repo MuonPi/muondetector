@@ -48,7 +48,7 @@ auto main() -> int
     login.password = "goodpassword";
     login.station_id = "ds9";
 
-    MuonPi::MqttLink source_link {login, "116.202.96.181", 1883};
+	MuonPi::MqttLink source_link {login, "116.202.96.181", 1883};
 
     if (!source_link.wait_for(MuonPi::MqttLink::Status::Connected, std::chrono::seconds{5})) {
         return -1;
@@ -60,7 +60,7 @@ auto main() -> int
         source_link.subscribe("muonpi/l1data/#")
     };
     auto event_source { std::make_shared<MuonPi::MqttEventSource>(std::move(source_topics)) };
-    auto log_source { std::make_shared<MuonPi::MqttLogSource>(source_link.subscribe("muonpi/log/#")) };
+    auto log_source { std::make_shared<MuonPi::MqttLogSource<MuonPi::DetectorInfo>>(source_link.subscribe("muonpi/log/#")) };
 
     auto ascii_clusterlog_sink { std::make_shared<MuonPi::AsciiLogSink<MuonPi::ClusterLog>>(std::cout) };
     auto ascii_detectorlog_sink { std::make_shared<MuonPi::AsciiLogSink<MuonPi::DetectorLog>>(std::cout) };

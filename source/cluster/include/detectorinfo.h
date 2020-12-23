@@ -2,6 +2,7 @@
 #define DETECTORINFO_H
 
 #include "userinfo.h"
+#include "mqttlink.h"
 
 #include <chrono>
 
@@ -21,7 +22,7 @@ struct Location {
 /**
  * @brief The DetectorInfo class
  */
-class DetectorInfo
+class DetectorInfo /*: public MqttLink::BaseMessage*/
 {
 public:
 
@@ -31,7 +32,7 @@ public:
      * @param user_info The user info object
      * @param location The detector location information
      */
-    DetectorInfo(std::size_t hash, UserInfo user_info, Location location);
+    DetectorInfo(std::size_t hash, /* std::string msg_time,*/ UserInfo user_info, Location location);
 
     DetectorInfo() noexcept;
 
@@ -56,7 +57,7 @@ public:
      */
     [[nodiscard]] auto time() const -> std::chrono::system_clock::time_point;
 
-    [[nodiscard]] auto valid() const -> bool;
+//    [[nodiscard]] auto valid() const -> bool;
 	
     /**
      * @brief data Accesses the user info from the object
@@ -64,9 +65,11 @@ public:
      */
     [[nodiscard]] auto user_info() const -> UserInfo;
 
+    [[nodiscard]] auto msg_time() const -> std::string { return m_msg_time; }
 
 private:
     std::size_t m_hash { 0 };
+	std::string m_msg_time {};
     Location m_location {};
 	UserInfo m_userinfo {};
     std::chrono::system_clock::time_point m_time { std::chrono::system_clock::now() };

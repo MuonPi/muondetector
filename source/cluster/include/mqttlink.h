@@ -30,9 +30,20 @@ public:
         Connecting,
         Error
     };
-    struct Message
+    class BaseMessage {
+	public:
+		auto valid() const -> bool { return m_valid; }
+		void setValid(bool valid) { m_valid = valid; }
+	protected:
+		bool m_valid { false };
+	};
+	struct Message : public BaseMessage
     {
-        std::string topic {};
+        Message() = default;
+		Message(const std::string& a_topic, const std::string& a_content) 
+		: topic { a_topic }, content {a_content }
+		{}
+		std::string topic {};
         std::string content{};
     };
     struct LoginData
@@ -101,6 +112,7 @@ public:
          */
         [[nodiscard]] auto get_message() -> Message;
 
+		[[nodiscard]] auto get_subscribe_topic() const -> const std::string&;
     private:
         friend class MqttLink;
 

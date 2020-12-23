@@ -339,6 +339,10 @@ void MqttLink::Subscriber::push_message(const Message &message)
     m_has_message = true;
 }
 
+auto MqttLink::Subscriber::get_subscribe_topic() const -> const std::string& {
+	return m_topic;
+}
+
 auto MqttLink::LoginData::client_id() const -> std::string
 {
     CryptoPP::SHA1 sha1;
