@@ -3,7 +3,7 @@
 
 #include "threadrunner.h"
 #include "detectorinfo.h"
-#include "detectorlog.h"
+#include "detectorsummary.h"
 #include "utility.h"
 #include "userinfo.h"
 
@@ -83,7 +83,7 @@ public:
 //	[[nodiscard]] auto mean_rate() const -> MeanRateType;
 //	[[nodiscard]] auto current_rate() const -> CurrentRateType;
 
-    [[nodiscard]] auto current_log_data() -> DetectorLog;
+    [[nodiscard]] auto current_log_data() -> DetectorSummary;
 
     /**
      * @brief data Accesses the user info from the object
@@ -119,7 +119,7 @@ private:
     CurrentRateType m_current_rate {};
     MeanRateType m_mean_rate {};
 
-    DetectorLog::Data m_current_data;
+    DetectorSummary::Data m_current_data;
     std::uint16_t m_last_ublox_counter {};
 
     Ringbuffer<double, 100> m_pulselength {};

@@ -7,7 +7,7 @@
 #include "utility.h"
 #include "log.h"
 #include "clusterlog.h"
-#include "detectorlog.h"
+#include "detectorsummary.h"
 
 #include <sstream>
 #include <memory>
@@ -91,7 +91,7 @@ void DatabaseLogSink<ClusterLog>::process(ClusterLog log)
 }
 
 template <>
-void DatabaseLogSink<DetectorLog>::process(DetectorLog log)
+void DatabaseLogSink<DetectorSummary>::process(DetectorSummary log)
 {
     auto nanosecondsUTC { std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count() };
     auto result { std::move(m_link.measurement("detector_log")

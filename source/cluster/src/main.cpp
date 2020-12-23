@@ -21,7 +21,7 @@
 #include "asciieventsink.h"
 #include "asciilogsink.h"
 
-#include "detectorlog.h"
+#include "detectorsummary.h"
 #include "clusterlog.h"
 
 #include <csignal>
@@ -63,7 +63,7 @@ auto main() -> int
     auto log_source { std::make_shared<MuonPi::MqttLogSource<MuonPi::DetectorInfo>>(source_link.subscribe("muonpi/log/#")) };
 
     auto ascii_clusterlog_sink { std::make_shared<MuonPi::AsciiLogSink<MuonPi::ClusterLog>>(std::cout) };
-    auto ascii_detectorlog_sink { std::make_shared<MuonPi::AsciiLogSink<MuonPi::DetectorLog>>(std::cout) };
+    auto ascii_detectorlog_sink { std::make_shared<MuonPi::AsciiLogSink<MuonPi::DetectorSummary>>(std::cout) };
     auto ascii_event_sink { std::make_shared<MuonPi::AsciiEventSink>(std::cout) };
 
 
@@ -72,7 +72,7 @@ auto main() -> int
 
     auto event_sink { std::make_shared<MuonPi::DatabaseEventSink>(db_link) };
     auto clusterlog_sink { std::make_shared<MuonPi::DatabaseLogSink<MuonPi::ClusterLog>>(db_link) };
-    auto detectorlog_sink { std::make_shared<MuonPi::DatabaseLogSink<MuonPi::DetectorLog>>(db_link) };
+    auto detectorlog_sink { std::make_shared<MuonPi::DatabaseLogSink<MuonPi::DetectorSummary>>(db_link) };
 
 #else
     MuonPi::MqttLink sink_link {login, "116.202.96.181", 1883};
@@ -88,7 +88,7 @@ auto main() -> int
 
     auto event_sink { std::make_shared<MuonPi::MqttEventSink>(std::move(sink_topics)) };
     auto clusterlog_sink { std::make_shared<MuonPi::MqttLogSink<MuonPi::ClusterLog>>(sink_link.publish("muonpi/log/cluster/MuonPi")) };
-    auto detectorlog_sink { std::make_shared<MuonPi::MqttLogSink<MuonPi::DetectorLog>>(sink_link.publish("muonpi/log/detector/MuonPi")) };
+    auto detectorlog_sink { std::make_shared<MuonPi::MqttLogSink<MuonPi::DetectorSummary>>(sink_link.publish("muonpi/log/detector/MuonPi")) };
 
 #endif
 

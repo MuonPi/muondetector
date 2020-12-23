@@ -1,10 +1,10 @@
-#include "detectorlog.h"
+#include "detectorsummary.h"
 
 #include <utility>
 
 namespace MuonPi {
 	
-DetectorLog::DetectorLog(std::size_t hash, UserInfo user_info, Data data)
+DetectorSummary::DetectorSummary(std::size_t hash, UserInfo user_info, Data data)
     : m_hash { hash }
     , m_data { data }
     , m_userinfo { user_info }
@@ -12,11 +12,11 @@ DetectorLog::DetectorLog(std::size_t hash, UserInfo user_info, Data data)
 {
 }
 
-DetectorLog::DetectorLog() noexcept
+DetectorSummary::DetectorSummary() noexcept
     : m_valid { false }
 {}
 
-DetectorLog::DetectorLog(const DetectorLog& other)
+DetectorSummary::DetectorSummary(const DetectorSummary& other)
     : m_hash { other.m_hash }
     , m_time { other.m_time }
     , m_data { other.m_data }
@@ -25,7 +25,7 @@ DetectorLog::DetectorLog(const DetectorLog& other)
 {
 }
 
-DetectorLog::DetectorLog(DetectorLog&& other)
+DetectorSummary::DetectorSummary(DetectorSummary&& other)
     : m_hash { std::move(other.m_hash) }
     , m_time { std::move(other.m_time) }
     , m_data { std::move(other.m_data) }
@@ -34,28 +34,28 @@ DetectorLog::DetectorLog(DetectorLog&& other)
 {
 }
 
-auto DetectorLog::data() -> Data
+auto DetectorSummary::data() -> Data
 {
     return m_data;
 }
 
-auto DetectorLog::user_info() const -> UserInfo
+auto DetectorSummary::user_info() const -> UserInfo
 {
 	return m_userinfo;
 }
 
-auto DetectorLog::hash() const noexcept -> std::size_t
+auto DetectorSummary::hash() const noexcept -> std::size_t
 {
     return m_hash;
 }
 
 
-auto DetectorLog::time() const -> std::chrono::system_clock::time_point
+auto DetectorSummary::time() const -> std::chrono::system_clock::time_point
 {
     return m_time;
 }
 
-auto DetectorLog::valid() const -> bool
+auto DetectorSummary::valid() const -> bool
 {
     return m_valid;
 }

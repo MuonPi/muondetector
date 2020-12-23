@@ -2,7 +2,7 @@
 
 #include "event.h"
 #include "detectorinfo.h"
-#include "detectorlog.h"
+#include "detectorsummary.h"
 #include "abstractsource.h"
 #include "detector.h"
 #include "log.h"
@@ -12,7 +12,7 @@
 namespace MuonPi {
 
 
-DetectorTracker::DetectorTracker(std::vector<std::shared_ptr<AbstractSource<DetectorInfo>>> log_sources, std::vector<std::shared_ptr<AbstractSink<DetectorLog>>> log_sinks, StateSupervisor &supervisor)
+DetectorTracker::DetectorTracker(std::vector<std::shared_ptr<AbstractSource<DetectorInfo>>> log_sources, std::vector<std::shared_ptr<AbstractSink<DetectorSummary>>> log_sinks, StateSupervisor &supervisor)
     : ThreadRunner{"DetectorTracker"}
     , m_supervisor { supervisor }
     , m_log_sources { std::move(log_sources) }
@@ -106,7 +106,7 @@ auto DetectorTracker::step() -> int
         m_last = now;
 
         for (auto& [hash, detector]: m_detectors) {
-            DetectorLog log(detector->current_log_data());
+            DetectorSummary log(detector->current_log_data());
             for (auto& sink: m_log_sinks) {
                 sink->push_item(log);
             }
@@ -114,7 +114,7 @@ auto DetectorTracker::step() -> int
     }
     // --- push detector log messages at regular interval
 
-    // TODO: implement dead time in the detector log and an immediate logging if a detector becomes active or inactive
+    // TODO: implement immediate logging if a detector becomes active or inactive
 
     std::this_thread::sleep_for( std::chrono::milliseconds{1} );
     return 0;

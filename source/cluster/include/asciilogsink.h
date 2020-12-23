@@ -3,7 +3,7 @@
 
 #include "abstractsink.h"
 #include "clusterlog.h"
-#include "detectorlog.h"
+#include "detectorsummary.h"
 
 #include <ostream>
 #include <sstream>
@@ -87,7 +87,7 @@ auto AsciiLogSink<ClusterLog>::to_string(ClusterLog log) -> std::string
 }
 
 template<>
-auto AsciiLogSink<DetectorLog>::to_string(DetectorLog log) -> std::string
+auto AsciiLogSink<DetectorSummary>::to_string(DetectorSummary log) -> std::string
 {
     auto data { log.data() };
     std::string out_str;

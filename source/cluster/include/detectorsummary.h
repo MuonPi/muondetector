@@ -1,5 +1,5 @@
-#ifndef DETECTORLOG_H
-#define DETECTORLOG_H
+#ifndef DETECTORSUMMARY_H
+#define DETECTORSUMMARY_H
 
 #include "userinfo.h"
 
@@ -8,10 +8,10 @@
 namespace MuonPi {
 
 /**
- * @brief The DetectorLog class
+ * @brief The DetectorSummary class
  * Holds information about accumulated statistics and gathered info about a detector
  */
-class DetectorLog
+class DetectorSummary
 {
 public:
     struct Data {
@@ -28,12 +28,12 @@ public:
      * @param hash The hash of the detector identifier
      * @param data The data struct to be provided
      */
-    DetectorLog(std::size_t hash, UserInfo user_info, Data data);
+    DetectorSummary(std::size_t hash, UserInfo user_info, Data data);
 
-    DetectorLog() noexcept;
+    DetectorSummary() noexcept;
 
-    DetectorLog(const DetectorLog& other);
-    DetectorLog(DetectorLog&& other);
+    DetectorSummary(const DetectorSummary& other);
+    DetectorSummary(DetectorSummary&& other);
 
     /**
      * @brief hash
@@ -75,4 +75,4 @@ private:
 };
 }
 
-#endif // DETECTORLOG_H
+#endif // DETECTORSUMMARY_H

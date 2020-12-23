@@ -12,7 +12,7 @@ namespace MuonPi {
 
 class Event;
 class DetectorInfo;
-class DetectorLog;
+class DetectorSummary;
 template <typename T>
 class AbstractSource;
 template <typename T>
@@ -30,7 +30,7 @@ public:
      * @param log_sinks A vector of log sinks to write log items to
      * @param supervisor A reference to a supervisor object, which keeps track of program metadata
      */
-    DetectorTracker(std::vector<std::shared_ptr<AbstractSource<DetectorInfo>>> log_sources, std::vector<std::shared_ptr<AbstractSink<DetectorLog>>> log_sinks, StateSupervisor& supervisor);
+    DetectorTracker(std::vector<std::shared_ptr<AbstractSource<DetectorInfo>>> log_sources, std::vector<std::shared_ptr<AbstractSink<DetectorSummary>>> log_sinks, StateSupervisor& supervisor);
 
     /**
      * @brief accept Check if an event is accepted
@@ -65,7 +65,7 @@ private:
     StateSupervisor& m_supervisor;
 
     std::vector<std::shared_ptr<AbstractSource<DetectorInfo>>> m_log_sources {};
-    std::vector<std::shared_ptr<AbstractSink<DetectorLog>>> m_log_sinks {};
+    std::vector<std::shared_ptr<AbstractSink<DetectorSummary>>> m_log_sinks {};
 
     std::map<std::size_t, std::shared_ptr<Detector>> m_detectors {};
 

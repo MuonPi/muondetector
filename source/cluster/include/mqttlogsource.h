@@ -243,7 +243,6 @@ void MqttLogSource<DetectorInfo>::process(const MqttLink::Message& msg)
             std::size_t hash { std::hash<std::string>{}(userinfo.site_id()) };
 
             if (m_buffer.find(hash) != m_buffer.end()) {
-//                DetectorInfoCollector& item = dynamic_cast<DetectorInfoCollector&>( static_cast<std::unique_ptr<DetectorInfoCollector>>(m_buffer[hash]) );
                 DetectorInfoCollector* item { dynamic_cast<DetectorInfoCollector*>( m_buffer[hash].get() ) };
                 item->add(content);
 
@@ -265,7 +264,6 @@ void MqttLogSource<DetectorInfo>::process(const MqttLink::Message& msg)
                     location.lon = item->geo.lon;
 
                     this->push_item( DetectorInfo{hash, item->user_info, location} );
-                    //process(hash, item);
                     m_buffer.erase(hash);
                 }
             } else {
