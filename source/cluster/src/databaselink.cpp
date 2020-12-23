@@ -44,10 +44,12 @@ auto DatabaseLink::Entry::operator<<(std::int_fast64_t timestamp) -> bool
     return m_link.send_string(m_stream.str());
 }
 
-DatabaseLink::DatabaseLink(const std::string& server, const LoginData& login, const std::string& database)
-    : m_server { server }
+DatabaseLink::DatabaseLink(const std::string& server, const LoginData& login, const std::string& database, const std::string& a_cluster_id)
+    : cluster_id { a_cluster_id }
+    , m_server { server }
     , m_login_data { login }
     , m_database { database }
+    
 {
 
 }
@@ -62,9 +64,6 @@ auto DatabaseLink::measurement(const std::string& measurement) -> Entry
 
 auto DatabaseLink::send_string(const std::string& query) -> bool
 {
-
-
-
     CURL *curl { curl_easy_init() };
 
     class CurlGuard

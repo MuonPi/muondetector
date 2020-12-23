@@ -64,8 +64,8 @@ template <>
 void DatabaseLogSink<ClusterLog>::process(ClusterLog log)
 {
     auto nanosecondsUTC { std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count() };
-    auto fields { std::move(m_link.measurement("cluster_log")
-            <<Influx::Tag{"user", "muonpi"}
+    auto fields { std::move(m_link.measurement("cluster_summary")
+            <<Influx::Tag{"cluster_id", m_link.cluster_id }
             <<Influx::Field{"timeout", log.data().timeout}
             <<Influx::Field{"frequency_in", log.data().frequency.single_in}
             <<Influx::Field{"frequency_l1_out", log.data().frequency.l1_out}
@@ -94,7 +94,8 @@ template <>
 void DatabaseLogSink<DetectorSummary>::process(DetectorSummary log)
 {
     auto nanosecondsUTC { std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count() };
-    auto result { std::move(m_link.measurement("detector_log")
+    auto result { std::move(m_link.measurement("detector_summary")
+            <<Influx::Tag{"cluster_id", m_link.cluster_id }
             <<Influx::Tag{"user", log.user_info().username}
             <<Influx::Tag{"detector", log.user_info().station_id}
             <<Influx::Tag{"site_id", log.user_info().site_id()}

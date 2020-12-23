@@ -100,7 +100,7 @@ auto DetectorTracker::step() -> int
     // +++ push detector log messages at regular interval
     steady_clock::time_point now { steady_clock::now() };
 
-    static constexpr std::chrono::seconds detector_log_interval{300};
+    static constexpr std::chrono::seconds detector_log_interval{120};
 
     if ((now - m_last) >= detector_log_interval) {
         m_last = now;

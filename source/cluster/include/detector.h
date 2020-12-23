@@ -123,6 +123,7 @@ private:
     std::uint16_t m_last_ublox_counter {};
 
     Ringbuffer<double, 100> m_pulselength {};
+    Ringbuffer<double, 100> m_time_acc {};
 
     double m_factor { 1.0 };
 };

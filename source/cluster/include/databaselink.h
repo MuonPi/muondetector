@@ -52,7 +52,9 @@ public:
         std::string password {};
     };
 
-    DatabaseLink(const std::string& server, const LoginData& login, const std::string& database);
+	std::string cluster_id { "muonpi.org" };
+	
+    DatabaseLink(const std::string& server, const LoginData& login, const std::string& database, const std::string& a_cluster_id = "muonpi.org");
     ~DatabaseLink();
 
     [[nodiscard]] auto measurement(const std::string& measurement) -> Entry;

@@ -23,5 +23,9 @@ auto ClusterLog::time() const -> std::chrono::system_clock::time_point
     return m_time;
 }
 	
+auto ClusterLog::user_info() const -> UserInfo
+{
+	return m_userinfo;
+}
 	
 }

@@ -1,6 +1,8 @@
 #ifndef CLUSTERLOG_H
 #define CLUSTERLOG_H
 
+#include "userinfo.h"
+
 #include <chrono>
 #include <string>
 #include <map>
@@ -51,9 +53,16 @@ public:
      * @return The creation time
      */
     [[nodiscard]] auto time() const -> std::chrono::system_clock::time_point;
+	
+    /**
+     * @brief data Accesses the user info from the object
+     * @return the UserInfo struct
+     */
+    [[nodiscard]] auto user_info() const -> UserInfo;
 
 private:
     Data m_data;
+	UserInfo m_userinfo { };
     std::chrono::system_clock::time_point m_time { std::chrono::system_clock::now() };
     bool m_valid { true };
 };

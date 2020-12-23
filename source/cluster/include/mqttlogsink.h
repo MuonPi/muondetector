@@ -5,7 +5,7 @@
 #include "mqttlink.h"
 #include "log.h"
 #include "clusterlog.h"
-#include "detectorlog.h"
+#include "detectorsummary.h"
 
 #include <memory>
 #include <string>
@@ -74,7 +74,7 @@ private:
 
 template <typename T>
 MqttLogSink<T>::MqttLogSink(MqttLink::Publisher& publisher)
-    : AbstractSink<ClusterLog>{}
+    : AbstractSink<T>{}
     , m_link { std::move(publisher) }
 {
     AbstractSink<T>::start();
@@ -142,13 +142,14 @@ void MqttLogSink<ClusterLog>::process(ClusterLog log)
 }
 
 template <>
-void MqttLogSink<DetectorLog>::process(DetectorLog log)
+void MqttLogSink<DetectorSummary>::process(DetectorSummary log)
 {
     fix_time();
     std::string name { log.user_info().username + " " + log.user_info().station_id};
     if (!(
                 m_link.publish((construct(name + " eventrate")<<log.data().mean_eventrate).str())
-                && m_link.publish((construct(name + " pulselength")<<log.data().mean_pulselength).str())
+				&& m_link.publish((construct(name + " time_acc")<<log.data().mean_time_acc).str())
+				&& m_link.publish((construct(name + " pulselength")<<log.data().mean_pulselength).str())
                 && m_link.publish((construct(name + " incoming")<<log.data().incoming).str())
                 && m_link.publish((construct(name + " ublox_counter_progess")<<log.data().ublox_counter_progress).str())
                 && m_link.publish((construct(name + " deadtime_factor")<<log.data().deadtime).str())

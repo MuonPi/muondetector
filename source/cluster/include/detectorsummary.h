@@ -21,6 +21,7 @@ public:
         double mean_pulselength { 0.0 };
         std::int64_t ublox_counter_progress { 0 };
         std::uint64_t incoming { 0UL };
+		double mean_time_acc { 0.0 };
     };
 
     /**

@@ -36,6 +36,7 @@ void Detector::process(const Event& event)
     if ((pulselength > 0.) && (pulselength < 1e6)) {
         m_pulselength.add(pulselength);
     }
+    m_time_acc.add(event.data().time_acc);
 }
 
 void Detector::process(const DetectorInfo &info)
@@ -102,6 +103,8 @@ auto Detector::current_log_data() -> DetectorSummary
 {
     m_current_data.mean_eventrate = m_current_rate.mean();
     m_current_data.mean_pulselength = m_pulselength.mean();
+	m_current_data.mean_time_acc = m_time_acc.mean();
+	
     if (m_current_data.ublox_counter_progress == 0) {
         m_current_data.deadtime=1.;
     } else {

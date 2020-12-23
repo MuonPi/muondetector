@@ -77,18 +77,18 @@ auto main() -> int
 #else
     MuonPi::MqttLink sink_link {login, "116.202.96.181", 1883};
 
-    if (!sink_link.wait_for(MuonPi::MqttLink::Status::Connected, std::chrono::seconds{5})) {
+    if (!sink_link.wait_for(MuonPi::MqttLink::Status::Connected, std::chrono::seconds{10})) {
         return -1;
     }
 
     MuonPi::MqttEventSink::Publishers sink_topics {
-        sink_link.publish("muonpi/events/MuonPi");
-        sink_link.publish("muonpi/l1data/MuonPi");
+        sink_link.publish("muonpi/events"),
+        sink_link.publish("muonpi/l1data")
     };
 
     auto event_sink { std::make_shared<MuonPi::MqttEventSink>(std::move(sink_topics)) };
-    auto clusterlog_sink { std::make_shared<MuonPi::MqttLogSink<MuonPi::ClusterLog>>(sink_link.publish("muonpi/log/cluster/MuonPi")) };
-    auto detectorlog_sink { std::make_shared<MuonPi::MqttLogSink<MuonPi::DetectorSummary>>(sink_link.publish("muonpi/log/detector/MuonPi")) };
+    auto clusterlog_sink { std::make_shared<MuonPi::MqttLogSink<MuonPi::ClusterLog>>(sink_link.publish("muonpi/cluster")) };
+    auto detectorlog_sink { std::make_shared<MuonPi::MqttLogSink<MuonPi::DetectorSummary>>(sink_link.publish("muonpi/cluster")) };
 
 #endif
 

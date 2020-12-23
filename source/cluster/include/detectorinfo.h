@@ -65,11 +65,8 @@ public:
      */
     [[nodiscard]] auto user_info() const -> UserInfo;
 
-    [[nodiscard]] auto msg_time() const -> std::string { return m_msg_time; }
-
 private:
     std::size_t m_hash { 0 };
-	std::string m_msg_time {};
     Location m_location {};
 	UserInfo m_userinfo {};
     std::chrono::system_clock::time_point m_time { std::chrono::system_clock::now() };
