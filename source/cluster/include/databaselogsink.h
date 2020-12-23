@@ -100,6 +100,7 @@ void DatabaseLogSink<DetectorSummary>::process(DetectorSummary log)
             <<Influx::Tag{"detector", log.user_info().station_id}
             <<Influx::Tag{"site_id", log.user_info().site_id()}
             <<Influx::Field{"eventrate", log.data().mean_eventrate}
+            <<Influx::Field{"time_acc", log.data().mean_time_acc}
             <<Influx::Field{"pulselength", log.data().mean_pulselength}
             <<Influx::Field{"incoming", log.data().incoming}
             <<Influx::Field{"ublox_counter_progress", log.data().ublox_counter_progress}
