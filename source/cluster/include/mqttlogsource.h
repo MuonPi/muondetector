@@ -34,7 +34,7 @@ public:
      * @param message The message to pass
      * @return true if the Message was accepted. False in an error or if the message was not accepted
      */
-    virtual auto add(MessageParser& message) -> bool = 0;
+    virtual auto add(MessageParser& message) -> bool;
 
     /**
      * @brief complete indicates whether the Item has collected all required messages
@@ -124,7 +124,7 @@ private:
     MqttLink::Subscriber& m_link;
 
     //std::map<std::size_t, MqttLink::Message> m_msg_buffer {};
-    std::map<std::size_t, AbstractMqttItemCollector> m_buffer {};
+    std::map<std::size_t, std::unique_ptr<AbstractMqttItemCollector>> m_buffer {};
 };
 
 
@@ -142,6 +142,10 @@ auto AbstractMqttItemCollector::complete() -> bool
     return !m_status;
 }
 
+auto AbstractMqttItemCollector::add(MessageParser& /*message*/) -> bool
+{
+	return false;
+}
 
 auto DetectorInfoCollector::add(MessageParser& message) -> bool
 {
@@ -239,10 +243,11 @@ void MqttLogSource<DetectorInfo>::process(const MqttLink::Message& msg)
             std::size_t hash { std::hash<std::string>{}(userinfo.site_id()) };
 
             if (m_buffer.find(hash) != m_buffer.end()) {
-                DetectorInfoCollector& item = dynamic_cast<DetectorInfoCollector&>( m_buffer[hash] );
-                item.add(content);
+//                DetectorInfoCollector& item = dynamic_cast<DetectorInfoCollector&>( static_cast<std::unique_ptr<DetectorInfoCollector>>(m_buffer[hash]) );
+                DetectorInfoCollector* item { dynamic_cast<DetectorInfoCollector*>( m_buffer[hash].get() ) };
+                item->add(content);
 
-                if (item.complete()) {
+                if (item->complete()) {
                     static constexpr struct {
                         const double pos_dop { 1.0e-1 };
                         const double time_dop { 1.0e-1 };
@@ -252,14 +257,14 @@ void MqttLogSource<DetectorInfo>::process(const MqttLink::Message& msg)
 
                     Location location;
 
-                    location.dop = (factors.pos_dop * item.geo.dop) * (factors.time_dop * item.time.dop);
-                    location.prec = (factors.h_accuracy * item.geo.h_acc) * (factors.v_accuracy * item.geo.v_acc);
+                    location.dop = (factors.pos_dop * item->geo.dop) * (factors.time_dop * item->time.dop);
+                    location.prec = (factors.h_accuracy * item->geo.h_acc) * (factors.v_accuracy * item->geo.v_acc);
 
-                    location.h = item.geo.h;
-                    location.lat = item.geo.lat;
-                    location.lon = item.geo.lon;
+                    location.h = item->geo.h;
+                    location.lat = item->geo.lat;
+                    location.lon = item->geo.lon;
 
-                    this->push_item( DetectorInfo{hash, item.user_info, location} );
+                    this->push_item( DetectorInfo{hash, item->user_info, location} );
                     //process(hash, item);
                     m_buffer.erase(hash);
                 }
@@ -268,7 +273,7 @@ void MqttLogSource<DetectorInfo>::process(const MqttLink::Message& msg)
                 item.message_id = content[0];
                 item.user_info = userinfo;
                 item.add(content);
-                m_buffer[hash] = item;
+				m_buffer.insert( { hash,  std::unique_ptr<AbstractMqttItemCollector>( new DetectorInfoCollector(item) ) } );
             }
         }
 }
