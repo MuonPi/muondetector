@@ -10,19 +10,18 @@
 
 #include <map>
 #include <memory>
-#include <map>
 
 namespace MuonPi {
 
-//class DetectorInfo;
-//class MessageParser;
-
+/**
+ * @brief Adapter base class for the collection of several logically connected, but timely distributed MqttItems
+ */
 class AbstractMqttItemCollector {
 public:
     UserInfo user_info {};
     std::string message_id {};
 
-    virtual ~AbstractMqttItemCollector();
+	virtual ~AbstractMqttItemCollector();
 
     /**
      * @brief reset Resets the ItemCollector to its default state
@@ -43,21 +42,17 @@ public:
     [[nodiscard]] auto complete() -> bool;
 
 protected:
+//private:
     std::uint16_t m_status { 0 };
-    std::uint16_t default_status { 0x00FF };
+	std::uint16_t default_status { 0x0000 };
 };
 
-AbstractMqttItemCollector::~AbstractMqttItemCollector() = default;
 
 /**
- * @brief Helper class for complete collection of several logically connected DetectorLogItems
+ * @brief Helper class for the collection of a DetectorInfo item
  */
 class DetectorInfoCollector : public AbstractMqttItemCollector {
 public:
-    //UserInfo user_info {};
-    //std::string message_id {};
-    //std::uint8_t status { s_default_status };
-
     struct {
         double h;
         double lat;
@@ -72,7 +67,9 @@ public:
         double dop;
     } time;
 
-    virtual ~DetectorInfoCollector() override = default;
+	DetectorInfoCollector()  { default_status = 0x00FF; }
+
+	virtual ~DetectorInfoCollector() override = default;
 
         /**
      * @brief add Tries to add a Message to the Item. The item chooses which messages to keep
@@ -118,12 +115,10 @@ private:
      * @param hash The hash of the detector
      * @param item The item to process
      */
-    //void process(std::size_t hash, DetectorInfoCollector item);
     void process(const MqttLink::Message& msg);
 
     MqttLink::Subscriber& m_link;
 
-    //std::map<std::size_t, MqttLink::Message> m_msg_buffer {};
     std::map<std::size_t, std::unique_ptr<AbstractMqttItemCollector>> m_buffer {};
 };
 
@@ -131,6 +126,8 @@ private:
 // +++++++++++++++++++++++++++++++
 // implementation part starts here
 // +++++++++++++++++++++++++++++++
+
+AbstractMqttItemCollector::~AbstractMqttItemCollector() = default;
 
 void AbstractMqttItemCollector::reset() {
     user_info = UserInfo { };
