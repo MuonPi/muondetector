@@ -59,22 +59,31 @@ public:
          */
         [[nodiscard]] auto client_id() const -> std::string;
     };
+
     /**
      * @brief The Publisher class. Only gets instantiated from within the MqttLink class.
      */
     class Publisher {
     public:
-
         Publisher(MqttLink* link, const std::string& topic)
             : m_link { link }
             , m_topic { topic }
         {}
+
         /**
          * @brief publish Publish a message
          * @param content The content to send
          * @return true if the sending was successful
          */
         [[nodiscard]] auto publish(const std::string& content) -> bool;
+
+        /**
+         * @brief publish Publish a message
+         * @param subtopic Subtopic to add to the basetopic specified in the constructor
+         * @param content The content to send
+         * @return true if the sending was successful
+         */
+        [[nodiscard]] auto publish(const std::string& subtopic, const std::string& content) -> bool;
 
         Publisher() = default;
     private:
@@ -89,7 +98,6 @@ public:
      */
     class Subscriber {
     public:
-
         Subscriber(MqttLink* link, const std::string& topic)
             : m_link { link }
             , m_topic { topic }
@@ -131,19 +139,35 @@ public:
 
 
 
+    /**
+     * @brief MqttLink
+     * @param login The login information for the mqtt user
+     * @param server The server address to connect to
+     * @param port The port to connect to
+     */
     MqttLink(const LoginData& login, const std::string& server = "muonpi.org", int port = 1883);
 
     ~MqttLink() override;
 
-    void callback_connected(int result);
-    void callback_disconnected(int result);
-    void callback_message(const mosquitto_message* message);
 
-
+    /**
+     * @brief publish Create a Publisher callback object
+     * @param topic The topic under which the Publisher sends messages
+     */
     [[nodiscard]] auto publish(const std::string& topic) -> Publisher&;
+
+    /**
+     * @brief subscribe Create a Subscriber callback object
+     * @param topic The topic to subscribe to. See mqtt for wildcards.
+     */
     [[nodiscard]] auto subscribe(const std::string& topic) -> Subscriber&;
 
-    [[nodiscard]] auto wait_for(Status status, std::chrono::milliseconds duration) -> bool;
+    /**
+     * @brief wait_for Wait for a designated time until the status changes to the one set as the parameter
+     * @param status The status to wait for
+     * @param duration The duration to wait for as a maximum
+     */
+    [[nodiscard]] auto wait_for(Status status, std::chrono::milliseconds duration = std::chrono::seconds{5}) -> bool;
 protected:
     /**
      * @brief pre_run Reimplemented from ThreadRunner
@@ -170,21 +194,25 @@ private:
     void set_status(Status status);
 
     [[nodiscard]] auto publish(const std::string& topic, const std::string& content) -> bool;
+
     /**
      * @brief unsubscribe Unsubscribe from a specific topic
      * @param topic The topic string to unsubscribe from
      */
     void unsubscribe(const std::string& topic);
+
     /**
      * @brief connects to the Server synchronuously. This method blocks until it is connected.
      * @return true if the connection was successful
      */
     [[nodiscard]] auto connect(std::size_t n = 0) -> bool;
+
     /**
      * @brief disconnect Disconnect from the server
      * @return true if the disconnect was successful
      */
     auto disconnect() -> bool;
+
     /**
      * @brief reconnect attempt a reconnect after the connection was lost.
      * @return true if the reconnect was successful.
@@ -192,6 +220,10 @@ private:
     [[nodiscard]] auto reconnect(std::size_t n = 0) -> bool;
 
 
+    /**
+     * @brief init Initialise the mosquitto object. This is necessary since the mosquitto_lib_init() needs to be called before mosquitto_new().
+     * @param client_id The client_id to use
+     */
     [[nodiscard]] inline auto init(const char* client_id) -> mosquitto*
     {
         mosquitto_lib_init();
@@ -209,12 +241,33 @@ private:
     std::map<std::string, std::unique_ptr<Subscriber>> m_subscribers {};
 
     std::size_t m_tries { 0 };
-};
 
+    /**
+     * @brief callback_connected Gets called by mosquitto client
+     * @param result The status code from the callback
+     */
+    void callback_connected(int result);
+    /**
+     * @brief callback_disconnected Gets called by mosquitto client
+     * @param result The status code from the callback
+     */
+    void callback_disconnected(int result);
+    /**
+     * @brief callback_message Gets called by mosquitto client in the case of an arriving message
+     * @param message A const pointer to the received message
+     */
+    void callback_message(const mosquitto_message* message);
+
+
+    friend void wrapper_callback_connected(mosquitto* mqtt, void* object, int result);
+    friend void wrapper_callback_disconnected(mosquitto* mqtt, void* object, int result);
+    friend void wrapper_callback_message(mosquitto* mqtt, void* object, const mosquitto_message* message);
+};
+/*
 void wrapper_callback_connected(mosquitto* mqtt, void* object, int result);
 void wrapper_callback_disconnected(mosquitto* mqtt, void* object, int result);
 void wrapper_callback_message(mosquitto* mqtt, void* object, const mosquitto_message* message);
-
+*/
 
 
 }
