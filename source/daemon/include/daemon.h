@@ -215,6 +215,7 @@ signals:
     void setSamplingTriggerSignal(GPIO_PIN signalName);
     void timeMarkIntervalCountUpdate(uint16_t newCounts, double lastInterval);
     void requestMqttConnectionStatus();
+	void eventMessage(const QString& messageString);
 
 private slots:
     void onRateBufferReminder();
