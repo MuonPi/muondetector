@@ -875,8 +875,10 @@ void Daemon::connectToGps() {
 
     // connect fileHandler related stuff
     if (fileHandler != nullptr){
-        connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
-        connect(qtGps, &QtSerialUblox::timTM2, mqttHandler, &MuonPi::MqttHandler::sendData);
+        //connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
+        connect(this, &Daemon::eventMessage, fileHandler, &FileHandler::writeToDataFile);
+		//connect(qtGps, &QtSerialUblox::timTM2, mqttHandler, &MuonPi::MqttHandler::sendData);
+		connect(this, &Daemon::eventMessage, mqttHandler, &MuonPi::MqttHandler::sendData);
     }
     // after thread start there will be a signal emitted which starts the qtGps makeConnection function
     gpsThread->start();
@@ -888,7 +890,8 @@ void Daemon::incomingConnection(qintptr socketDescriptor) {
     }
     tcpThread = new QThread();
     tcpThread->setObjectName("muondetector-daemon-tcp");
-    TcpConnection *tcpConnection = new TcpConnection(socketDescriptor, verbose);
+//    TcpConnection *tcpConnection = new TcpConnection(socketDescriptor, verbose);
+    tcpConnection = new TcpConnection(socketDescriptor, verbose);
     tcpConnection->moveToThread(tcpThread);
     // connect all signals about quitting
     connect(this, &Daemon::aboutToQuit, tcpConnection, &TcpConnection::closeThisConnection);
@@ -2553,8 +2556,10 @@ void Daemon::onUBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t ac
 */
 
 void Daemon::onUBXReceivedTimeTM2(const UbxTimeMarkStruct& tm) {
-    if (!tm.risingValid) return;
-    static UbxTimeMarkStruct lastTimeMark;
+    //if (!tm.valid) return;
+    static UbxTimeMarkStruct lastTimeMark { };
+	//static int64_t lastPulseLength = 0;
+	
     long double dts=(tm.falling.tv_sec-tm.rising.tv_sec)*1.0e9L;
     dts+=(tm.falling.tv_nsec-tm.rising.tv_nsec);
     if ((dts > 0.0L) && tm.fallingValid) {
@@ -2568,6 +2573,12 @@ void Daemon::onUBXReceivedTimeTM2(const UbxTimeMarkStruct& tm) {
     emit timeMarkIntervalCountUpdate(diffCount, static_cast<double>(interval * 1.0e-9L));
     lastTimeMark=tm;
 
+	std::stringstream tempStream;
+	tempStream << tm.rising << tm.falling << " " << tm.accuracy_ns << " " << tm.evtCounter << " " 
+		<< static_cast<short>(tm.valid)	<< " " << static_cast<short>(tm.timeBase) << " "
+		<< static_cast<short>(tm.utcAvailable);
+	emit eventMessage(QString::fromStdString(tempStream.str()));
+	
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_TIMEMARK);
     (*tcpMessage.dStream) << tm;
     emit sendTcpMessage(tcpMessage);

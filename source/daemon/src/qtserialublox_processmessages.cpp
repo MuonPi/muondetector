@@ -629,9 +629,9 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
     //fTimestamps.push(ts);
     //mutex.unlock();
 
-    //emit UBXReceivedTimeTM2(ts.rising_time, ts.falling_time, accEst, ts.valid, (flags & 0x18) >> 3, flags & 0x20);
+	static int64_t lastPulseLength = 0;
 
-    UbxTimeMarkStruct tm;
+	UbxTimeMarkStruct tm;
     tm.rising=ts.rising_time;
     tm.falling=ts.falling_time;
     tm.risingValid=ts.rising;
@@ -643,6 +643,37 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
     tm.flags=flags;
     tm.evtCounter=count;
 
+	// try to recover the timestamp, if one edge is missing
+	if (!tm.risingValid && tm.fallingValid) {
+		tm.rising.tv_sec = tm.falling.tv_sec - lastPulseLength / 1000000000;
+		tm.rising.tv_nsec = tm.falling.tv_nsec - lastPulseLength % 1000000000;
+		if (tm.rising.tv_nsec >= 1000000000) {
+			tm.rising.tv_sec += 1;
+			tm.rising.tv_nsec -= 1000000000;
+		} else if (tm.rising.tv_nsec < 0) {
+			tm.rising.tv_sec -= 1;
+			tm.rising.tv_nsec += 1000000000;
+		}
+		tm.risingValid = true;
+	} else if (!tm.fallingValid && tm.risingValid) {
+		tm.falling.tv_sec = tm.rising.tv_sec + lastPulseLength / 1000000000;
+		tm.falling.tv_nsec = tm.rising.tv_nsec + lastPulseLength % 1000000000;
+		if (tm.rising.tv_nsec >= 1000000000) {
+			tm.rising.tv_sec += 1;
+			tm.rising.tv_nsec -= 1000000000;
+		}
+		tm.fallingValid = true;
+	} else if (!tm.fallingValid && !tm.risingValid) {
+		// nothing to recover here; ignore the event
+		return false;
+	} else {
+		// the normal case, i.e. both edges are valid
+		// calculate the pulse length in this case
+		int64_t dts=(tm.falling.tv_sec-tm.rising.tv_sec)*1.0e9;
+		dts+=(tm.falling.tv_nsec-tm.rising.tv_nsec);
+		if (dts > 0 && dts < 1000000 ) lastPulseLength = dts;
+	}
+	
     emit UBXReceivedTimeTM2(tm);
     return true;
 }
