@@ -2556,7 +2556,10 @@ void Daemon::onUBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t ac
 */
 
 void Daemon::onUBXReceivedTimeTM2(const UbxTimeMarkStruct& tm) {
-    //if (!tm.valid) return;
+    if (!tm.risingValid && !tm.fallingValid) {
+		qDebug()<<"Daemon::onUBXReceivedTimeTM2(const UbxTimeMarkStruct&): detected invalid time mark message; no rising or falling edge data";
+		return;
+	}
     static UbxTimeMarkStruct lastTimeMark { };
 	//static int64_t lastPulseLength = 0;
 	
@@ -2573,11 +2576,17 @@ void Daemon::onUBXReceivedTimeTM2(const UbxTimeMarkStruct& tm) {
     emit timeMarkIntervalCountUpdate(diffCount, static_cast<double>(interval * 1.0e-9L));
     lastTimeMark=tm;
 
+    // output is: rising falling timeAcc valid timeBase utcAvailable
 	std::stringstream tempStream;
-	tempStream << tm.rising << tm.falling << " " << tm.accuracy_ns << " " << tm.evtCounter << " " 
+	tempStream << tm.rising << tm.falling << tm.accuracy_ns << " " << tm.evtCounter << " " 
 		<< static_cast<short>(tm.valid)	<< " " << static_cast<short>(tm.timeBase) << " "
 		<< static_cast<short>(tm.utcAvailable);
 	emit eventMessage(QString::fromStdString(tempStream.str()));
+	
+	if (!tm.risingValid || !tm.fallingValid) {
+		qDebug() << "detected timemark message with reconstructed edge time ("<<QString((tm.risingValid)?"falling":"rising")<<")";
+		qDebug() << "msg:"<<QString::fromStdString(tempStream.str());
+	}
 	
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_TIMEMARK);
     (*tcpMessage.dStream) << tm;

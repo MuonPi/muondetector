@@ -536,7 +536,6 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 
     std::stringstream tempStream;
     if (verbose > 2) {
-        //std::string temp;
         tempStream << "*** UBX-TimTM2 message:" << endl;
         tempStream << " channel         : " << dec << (int)ch << endl;
         tempStream << " rising edge ctr : " << dec << count << endl;
@@ -575,7 +574,7 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
         tempStream << "   time base            : " << timeBase << "\n";
         emit toConsole(QString::fromStdString(tempStream.str()));
     }
-    // output is: rising falling accEst valid timeBase utcAvailable
+
     tempStream.clear();
     if (flags & 0x80) {
         // if new rising edge
@@ -596,9 +595,8 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
         << " " << ((flags & 0x40) >> 6)
         << " " << setfill('0') << setw(1) << ((flags & 0x18) >> 3)
         << " " << ((flags & 0x20) >> 5);
-        //cout << endl;
-    emit timTM2(QString::fromStdString(tempStream.str()));
-    if (verbose > 0 && verbose < 3){
+//    emit timTM2(QString::fromStdString(tempStream.str()));
+    if (verbose > 1){
         emit toConsole(QString::fromStdString(tempStream.str())+"\n");
     }
 
@@ -654,18 +652,18 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 			tm.rising.tv_sec -= 1;
 			tm.rising.tv_nsec += 1000000000;
 		}
-		tm.risingValid = true;
+		//tm.risingValid = true;
 	} else if (!tm.fallingValid && tm.risingValid) {
 		tm.falling.tv_sec = tm.rising.tv_sec + lastPulseLength / 1000000000;
 		tm.falling.tv_nsec = tm.rising.tv_nsec + lastPulseLength % 1000000000;
-		if (tm.rising.tv_nsec >= 1000000000) {
-			tm.rising.tv_sec += 1;
-			tm.rising.tv_nsec -= 1000000000;
+		if (tm.falling.tv_nsec >= 1000000000) {
+			tm.falling.tv_sec += 1;
+			tm.falling.tv_nsec -= 1000000000;
 		}
-		tm.fallingValid = true;
+		//tm.fallingValid = true;
 	} else if (!tm.fallingValid && !tm.risingValid) {
 		// nothing to recover here; ignore the event
-		return false;
+		//return false;
 	} else {
 		// the normal case, i.e. both edges are valid
 		// calculate the pulse length in this case
