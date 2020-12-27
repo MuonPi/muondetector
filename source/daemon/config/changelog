@@ -1,3 +1,14 @@
+muondetector-daemon (2.0.1) ; urgency=low
+
+  * Bugfixes:
+  - formerly invalid TimeTM2 messages from u-Blox due to a missing rising/falling edge timestamp are now replaced with a valid message where the missing ts is reconstructed from the other edge and the last obeserved valid pulse length
+  - fixed shadowed declaration of a pointer to MqttHandler in Daemon
+  
+  * Updates:
+  - added configuration option for input polarity (input1_polarity/input2_polarity) in muondetector.conf file
+  
+ -- MuonPi <developer@muonpi.org>  Wed, 16. Dec 2020 21:55:00 +0100
+
 muondetector-daemon (2.0.0) ; urgency=low
 
   * Updated
