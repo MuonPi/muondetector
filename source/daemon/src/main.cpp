@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
         //if (verbose>2)
         qWarning() << "No 'ublox_device' setting in configuration file. Will guess...";
         QDir directory("/dev","*",QDir::Name, QDir::System);
-        QStringList serialports = directory.entryList(QStringList({"ttyS0","ttyAMA0"}));
+        QStringList serialports = directory.entryList(QStringList({"ttyS0","ttyAMA0","serial0"}));
         if (!serialports.empty()){
             gpsdevname=QString("/dev/"+serialports.last());
             //if (verbose>2)
