@@ -78,11 +78,15 @@ endif()
 
 find_package(Qt5 COMPONENTS Network REQUIRED)
 
+if(NOT WIN32)
+
 find_library(PAHO_MQTT3C paho-mqtt3c REQUIRED)
 find_library(PAHO_MQTT3A paho-mqtt3a REQUIRED)
 find_library(PAHO_MQTT3CS paho-mqtt3cs REQUIRED)
 find_library(PAHO_MQTT3AS paho-mqtt3as REQUIRED)
 find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
+
+endif()
 
 add_compile_options(
     -Wall

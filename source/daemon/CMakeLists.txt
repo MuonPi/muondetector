@@ -34,6 +34,8 @@ set(Qt5_DIR "/usr/lib/x86_64-linux-gnu/cmake/Qt5/")
 
 find_package(Qt5 COMPONENTS Network SerialPort REQUIRED)
 
+if(NOT WIN32) # added to make program editable in qt-creator on windows
+
 find_library(PAHO_MQTT3C paho-mqtt3c REQUIRED)
 find_library(PAHO_MQTT3A paho-mqtt3a REQUIRED)
 find_library(PAHO_MQTT3CS paho-mqtt3cs REQUIRED)
@@ -44,6 +46,9 @@ find_library(CRYPTOPP crypto++ REQUIRED)
 find_library(CONFIGPP config++ REQUIRED)
 find_library(PIGPIOD_IF2 pigpiod_if2 REQUIRED)
 find_library(RT rt REQUIRED)
+
+endif()
+
 find_library(MUONDETECTOR_LIB NAMES muondetector HINTS "${CMAKE_CURRENT_BINARY_DIR}/../lib/" REQUIRED)
 
 add_compile_options(
