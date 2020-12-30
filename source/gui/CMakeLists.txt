@@ -33,6 +33,7 @@ set(QWT_DIR "C:/Qwt-6.1.4")
 set(OPENSSL_DIR "C:/Qt/Tools/OpenSSL/Win_x64")
 set(MQTT_CPP_DIR "C:/paho-mqtt-cpp-1.1.0-win64")
 set(MQTT_C_DIR "C:/eclipse-paho-mqtt-c-win64-1.3.6")
+set(CRYPTOPP_DIR "C:/cryptopp")
 list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5QuickCompiler")
 list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5")
 
@@ -233,7 +234,10 @@ add_definitions(-DQWT_DLL)
 
 target_include_directories(muondetector-gui PUBLIC
     ${OPENSSL_DIR}/include/
+    $<BUILD_INTERFACE:${CRYPTOPP_DIR}/include>
+    $<INSTALL_INTERFACE:${CRYPTOPP_DIR}/include>
     $<BUILD_INTERFACE:${QWT_DIR}/include>
+    $<INSTALL_INTERFACE:${QWT_DIR}/include>
     $<BUILD_INTERFACE:${MQTT_C_DIR}/include>
     $<INSTALL_INTERFACE:${MQTT_C_DIR}/include>
     $<BUILD_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
@@ -250,6 +254,7 @@ target_link_directories(muondetector-gui PUBLIC
     "${MQTT_C_DIR}/lib/"
     "${QWT_DIR}/lib/"
     "${OPENSSL_DIR}/lib/"
+    "${CRYPTOPP_DIR}/lib/"
     )
 
 target_link_libraries(muondetector-gui
