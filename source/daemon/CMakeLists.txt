@@ -185,8 +185,10 @@ target_link_libraries(muondetector-daemon
 
 
 if (CMAKE_BUILD_TYPE STREQUAL Release)
-    add_custom_command(TARGET muondetector-cluster POST_BUILD
-            COMMAND ${CMAKE_STRIP} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/muondetector-cluster")
+    add_custom_command(TARGET muondetector-daemon POST_BUILD
+            COMMAND ${CMAKE_STRIP} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/muondetector-daemon")
+    add_custom_command(TARGET muondetector-login POST_BUILD
+            COMMAND ${CMAKE_STRIP} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/muondetector-login")
 endif ()
 
 
