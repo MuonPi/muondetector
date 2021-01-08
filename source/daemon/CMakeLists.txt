@@ -228,7 +228,7 @@ set(CPACK_DEBIAN_PACKAGE_DESCRIPTION " It opens serial and i2c connections to th
  It runs in the background and sends the data to the central server.
  It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi <developer@muonpi.org>")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>=2.28), libc++ (>=7), lftp (>=4.7), libcrypto++6, libqt5serialport5 (>= 5), libpaho-mqttpp (>=1.1.0), libconfig++9v5, pigpiod")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>=2.28), libc++1 (>=7), lftp (>=4.7), libcrypto++6, libqt5serialport5 (>= 5), libpaho-mqttpp (>=1.1.0), libconfig++9v5, pigpiod")
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../packages/")
 
 include(CPack)
