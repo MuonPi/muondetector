@@ -356,6 +356,8 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1.gz" DESTINATION "s
 install(FILES "${PROJECT_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT gui)
 
 set(CPACK_GENERATOR "DEB")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libpaho-mqttpp | paho-mqtt-cpp, qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), qml-module-qtquick-layouts (>=5), qml-module-qtquick-controls2 (>=5), qml-module-qtquick-controls (>=5), qml-module-qtquick-templates2 (>=5)")
 set(CPACK_DEBIAN_PACKAGE_SECTION "net")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
 set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "It connects to muondetector-daemon via TCP. It is based on Qt and C++.
@@ -364,7 +366,6 @@ uses qml for displaying the current position on the map if connected
 the muondetector-daemon.
 It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi <developer@muonpi.org>")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>=2.28), libc++ (>=7), libqt5gui5 (>=5), libqt5widgets5 (>=5), libqt5core5a (>=5), libqt5quickwidgets5 (>=5.3), libqt5network5 (>=5), qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), qml-module-qtquick-layouts (>=5), qml-module-qtquick-controls2 (>=5), qml-module-qtquick-controls (>=5), qml-module-qtquick-templates2 (>=5), libqwt-qt5-6 (>=6.1.2)")
 
 endif()
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
