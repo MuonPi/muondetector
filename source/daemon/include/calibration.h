@@ -24,7 +24,7 @@ struct CalibStruct;
 // meaning of entries (columns is:
 // <item name> <item type> <default value>
 static const std::vector<std::tuple<std::string, std::string, std::string>> CALIBITEMS = {
-                                                    std::make_tuple("VERSION", "UINT8",  "2") ,
+                                                    std::make_tuple("VERSION", "UINT8",  "3") ,
                                                     std::make_tuple("FEATURE_FLAGS", "UINT8",  "0") ,
                                                     std::make_tuple("CALIB_FLAGS", "UINT8", "0") ,
                                                     std::make_tuple("DATE", "UINT32", "0") ,
@@ -32,12 +32,9 @@ static const std::vector<std::tuple<std::string, std::string, std::string>> CALI
                                                     std::make_tuple("VDIV", "UINT16", "1100") ,
                                                     std::make_tuple("COEFF0", "FLOAT", "0.0") ,
                                                     std::make_tuple("COEFF1", "FLOAT", "1.0") ,
-                                                    std::make_tuple("COEFF2", "FLOAT", "1.0") ,
+                                                    std::make_tuple("COEFF2", "FLOAT", "0.0") ,
                                                     std::make_tuple("COEFF3", "FLOAT", "1.0") ,
                                                     std::make_tuple("WRITE_CYCLES", "UINT32", "1")
-                                                    /* list init formally introduced in C++17
-                                                     * but it works with the current gnu c++ compiler with gnu++11 extensions.
-                                                     * if your compiler is more strict, you should use init via make_tuple*/
                                                     };
 
 

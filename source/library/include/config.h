@@ -15,7 +15,7 @@ constexpr struct Version {
 
     [[nodiscard]] auto string() const -> std::string;
 }
-    hardware { 2, 0, 0 },
+    hardware { 3, 0, 0 },
     software { CMake::Version::major, CMake::Version::minor, CMake::Version::patch };
 }
 
