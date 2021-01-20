@@ -84,7 +84,7 @@ void Status::onGpioRatesReceived(quint8 whichrate, QVector<QPointF> rates){
         for (auto rate : rates){
             xorSamples.append(rate);
         }
-        while (xorSamples.first().x()<rates.last().x()-rateSecondsBuffered){
+        while (!xorSamples.empty() && (xorSamples.first().x()<rates.last().x()-rateSecondsBuffered)){
             xorSamples.pop_front();
         }
         statusUi->ratePlot->plotXorSamples(xorSamples);
@@ -109,7 +109,7 @@ void Status::onGpioRatesReceived(quint8 whichrate, QVector<QPointF> rates){
         for (auto rate : rates){
             andSamples.append(rate);
         }
-        while (andSamples.first().x()<rates.last().x()-rateSecondsBuffered){
+        while (!andSamples.empty() && (andSamples.first().x()<rates.last().x()-rateSecondsBuffered)){
             andSamples.pop_front();
         }
         statusUi->ratePlot->plotAndSamples(andSamples);
