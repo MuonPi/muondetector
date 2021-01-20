@@ -70,7 +70,7 @@ void Status::onGpioRatesReceived(quint8 whichrate, QVector<QPointF> rates){
                 bool foundK = false; // if foundK it has found an index k where the x values of the input points
                 // are smaller or equal to the x values of the already existing points -> overlap
                 for (int i = xorSamples.size()-1; i>=xorSamples.size()-1-rates.size(); i--){
-                    if (rates.at(k).x()<=xorSamples.at(i).x()){
+                    if (rates.at(k).x() <= xorSamples.at(i).x()){
                         foundK = true;
                     }
                 }
@@ -81,10 +81,11 @@ void Status::onGpioRatesReceived(quint8 whichrate, QVector<QPointF> rates){
                 }
             }
         }
+
         for (auto rate : rates){
             xorSamples.append(rate);
         }
-        while (!xorSamples.empty() && (xorSamples.first().x()<rates.last().x()-rateSecondsBuffered)){
+        while (!xorSamples.isEmpty() && !rates.isEmpty() && (xorSamples.first().x() < (rates.last().x()-rateSecondsBuffered))){
             xorSamples.pop_front();
         }
         statusUi->ratePlot->plotXorSamples(xorSamples);
@@ -106,12 +107,15 @@ void Status::onGpioRatesReceived(quint8 whichrate, QVector<QPointF> rates){
                 }
             }
         }
+
         for (auto rate : rates){
             andSamples.append(rate);
         }
-        while (!andSamples.empty() && (andSamples.first().x()<rates.last().x()-rateSecondsBuffered)){
+
+        while ((andSamples.size()>0)  &&  (andSamples.first().x() < (rates.last().x() - rateSecondsBuffered))){
             andSamples.pop_front();
         }
+
         statusUi->ratePlot->plotAndSamples(andSamples);
     }
 }
