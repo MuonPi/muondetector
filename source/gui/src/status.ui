@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>595</width>
-    <height>520</height>
+    <height>438</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -55,6 +55,12 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
        </widget>
       </item>
       <item row="1" column="0">
@@ -101,6 +107,12 @@
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
         </property>
        </widget>
       </item>
@@ -153,7 +165,7 @@
       <bool>true</bool>
      </property>
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+      <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -176,6 +188,12 @@
      <layout class="QGridLayout" name="gridLayout_6">
       <item row="1" column="0" colspan="2">
        <widget class="QLabel" name="temperatureLabel">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="frameShape">
          <enum>QFrame::Box</enum>
         </property>
@@ -189,6 +207,12 @@
       </item>
       <item row="0" column="1">
        <widget class="QGroupBox" name="DACGroupBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -258,6 +282,12 @@
       </item>
       <item row="0" column="0">
        <widget class="QGroupBox" name="ADCGroupBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -352,7 +382,7 @@
          <item row="0" column="0">
           <widget class="QGroupBox" name="InputSelectGroupBox">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
@@ -501,6 +531,12 @@
          </item>
          <item row="0" column="1">
           <widget class="QGroupBox" name="groupBox">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="minimumSize">
             <size>
              <width>0</width>
@@ -575,6 +611,12 @@
           <layout class="QHBoxLayout" name="horizontalLayout">
            <item>
             <widget class="QLabel" name="label">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="font">
               <font>
                <pointsize>9</pointsize>
@@ -601,6 +643,12 @@
       </item>
       <item row="2" column="0" colspan="2">
        <widget class="QLabel" name="timePulseLabel">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="frameShape">
          <enum>QFrame::Box</enum>
         </property>
@@ -612,21 +660,14 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="0">
-       <spacer name="verticalSpacer">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>46</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
       <item row="3" column="0" colspan="2">
        <widget class="QLabel" name="mqttStatusLabel">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="frameShape">
          <enum>QFrame::Box</enum>
         </property>

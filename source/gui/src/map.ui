@@ -20,6 +20,18 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <property name="leftMargin">
+    <number>8</number>
+   </property>
+   <property name="topMargin">
+    <number>8</number>
+   </property>
+   <property name="rightMargin">
+    <number>8</number>
+   </property>
+   <property name="bottomMargin">
+    <number>8</number>
+   </property>
    <item row="0" column="0">
     <widget class="QQuickWidget" name="quickWidget">
      <property name="sizePolicy">
@@ -39,7 +51,7 @@
   <customwidget>
    <class>QQuickWidget</class>
    <extends>QWidget</extends>
-   <header>QQuickWidget</header>
+   <header location="global">QtQuickWidgets/QQuickWidget</header>
   </customwidget>
  </customwidgets>
  <resources/>
