@@ -9,40 +9,8 @@
 
 // define pins on the raspberry pi, UBIAS_EN is the power on/off pin for bias voltage
 // PREAMP_1/2 enables the DC voltage to power the preamp through the signal cable
-// Attention: the GPIO pin definitions are referring to wiringPi standard except the EVT input pins
-// which are in pigpio standard
-
-// HW Ver. 1
-/*
-//#define UBIAS_EN 4  // pigpio
-#define UBIAS_EN 7  // wiringpi
-#define PREAMP_1 28  // pigpio 20
-#define PREAMP_2 29  // pigpio 21
-#define EVT_AND 5
-#define EVT_XOR 6
-#define GAIN_HL 0	// pigpio 17
-#define ADC_READY 23
-#define TIMEPULSE 18
-#define STATUS1 13 // (23)
-#define STATUS2 19 // (24)
-#define STATUS3 26 // (25)
-*/
-// HW Ver 2: pigpio pin numbers (wiring pi numbers)
-//#define UBIAS_EN 26 // (25)
-//#define PREAMP_1 4  // (7)
-//#define PREAMP_2 17 // (0)
-//#define EVT_AND 22 // (3)
-//#define EVT_XOR 27 // (2)
-//#define GAIN_HL 6	 // (22)
-//#define ADC_READY 12 // (26)
-//#define TIMEPULSE 18 // (1)
-//#define TIME_MEAS_OUT 5 // (21)
-//#define STATUS1 13 // (23)
-//#define STATUS2 19 // (24)
-//#define PREAMP_FAULT 23 // (4)
-
 // ATTENTION:
-// TO MAKE IT MORE SIMPLE THERE WILL BE ONLY PIGPIO,
+// TO MAKE IT MORE SIMPLE THERE WILL BE ONLY PIGPIO NAMING STANDARD,
 // NO WIRING PI FROM NOW
 
 static const std::map<GPIO_PIN, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER+1] = {
