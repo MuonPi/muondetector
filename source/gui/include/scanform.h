@@ -32,6 +32,7 @@ signals:
     void gpioInhibitChanged(bool inhibitState);
 public slots:
     void onTimeMarkReceived(const UbxTimeMarkStruct& tm);
+	void onUiEnabledStateChange(bool connected);
 
 private slots:
     void on_scanStartPushButton_clicked();

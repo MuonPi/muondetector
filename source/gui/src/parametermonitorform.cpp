@@ -344,3 +344,7 @@ void ParameterMonitorForm::onPolarityCheckBoxClicked(bool /*checked*/){
     emit polarityChanged(pol1, pol2);
 }
 
+void ParameterMonitorForm::onUiEnabledStateChange(bool connected)
+{
+	this->setEnabled(connected);
+}
