@@ -331,7 +331,7 @@ void CalibForm::onUiEnabledStateChange(bool connected)
 {
     //measureBiasCalibGroupBox
     if (!connected) {
-        ui->calibItemTableWidget->setRowCount(0);
+		ui->calibItemTableWidget->setRowCount(0);
         fCalibList.clear();
         ui->eepromValidLabel->setText("N/A");
         ui->calibValidLabel->setText("N/A");
@@ -340,6 +340,8 @@ void CalibForm::onUiEnabledStateChange(bool connected)
     //ui->measureBiasCalibGroupBox->setEnabled(connected);
     //ui->biasCalibGroupBox->setEnabled(connected);
     ui->calibItemsGroupBox->setEnabled(connected);
+    ui->eepromGroupBox->setEnabled(connected);
+	ui->calibrationScanPushButton->setEnabled(connected);
     //ui->currentCalibGroupBox->setEnabled(connected);
 }
 

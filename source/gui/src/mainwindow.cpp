@@ -221,7 +221,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tabWidget->addTab(histoTab,"Statistics");
 
     ParameterMonitorForm *paramTab = new ParameterMonitorForm(this);
-    //connect(this, &MainWindow::setUiEnabledStates, paramTab, &ParameterMonitorForm::onUiEnabledStateChange);
+    connect(this, &MainWindow::setUiEnabledStates, paramTab, &ParameterMonitorForm::onUiEnabledStateChange);
     connect(this, &MainWindow::adcSampleReceived, paramTab, &ParameterMonitorForm::onAdcSampleReceived);
     connect(this, &MainWindow::adcTraceReceived, paramTab, &ParameterMonitorForm::onAdcTraceReceived);
     connect(this, &MainWindow::dacReadbackReceived, paramTab, &ParameterMonitorForm::onDacReadbackReceived);
@@ -248,7 +248,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tabWidget->addTab(paramTab,"Parameters");
 
     ScanForm *scanTab = new ScanForm(this);
-    //connect(this, &MainWindow::setUiEnabledStates, paramTab, &ParameterMonitorForm::onUiEnabledStateChange);
+    connect(this, &MainWindow::setUiEnabledStates, scanTab, &ScanForm::onUiEnabledStateChange);
     connect(this, &MainWindow::timeMarkReceived, scanTab, &ScanForm::onTimeMarkReceived);
     connect(scanTab, &ScanForm::setDacVoltage, this, &MainWindow::sendSetThresh);
     connect(scanTab, &ScanForm::gpioInhibitChanged, this, &MainWindow::gpioInhibit);

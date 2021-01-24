@@ -121,7 +121,7 @@ void ScanForm::on_scanStartPushButton_clicked()
 	active=true;
 	waitForFirst=true;
 	scanData.clear();
-	ui->scanProgressBar->setRange(0, (maxRange-minRange)/stepSize+0.5);
+	ui->scanProgressBar->setRange(0, abs(maxRange-minRange)/stepSize+0.5);
 	ui->scanProgressBar->reset();
 }
 
@@ -158,4 +158,9 @@ void ScanForm::on_plotDifferentialCheckBox_toggled(bool checked)
 {
     plotDifferential=checked;
 	updateScanPlot();
+}
+
+void ScanForm::onUiEnabledStateChange(bool connected)
+{
+	this->setEnabled(connected);
 }
