@@ -24,6 +24,9 @@ LogPlotsWidget::LogPlotsWidget(QWidget *parent) :
     ui->logPlot->curve("curve1").setSymbol(sym);
     ui->logPlot->setAxisAutoScale(QwtPlot::xBottom, true);
     ui->logPlot->setAxisAutoScale(QwtPlot::yLeft, true);
+
+    ui->logPlot->setMinimumHeight(100);
+
     ui->logPlot->replot();
 
 }
