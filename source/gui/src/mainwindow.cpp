@@ -114,6 +114,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tabWidget->removeTab(0);
     Status *status = new Status(this);
     connect(this, &MainWindow::setUiEnabledStates, status, &Status::onUiEnabledStateChange);
+
     connect(this, &MainWindow::gpioRates, status, &Status::onGpioRatesReceived);
     connect(status, &Status::resetRateClicked, this, [this](){ this->sendRequest(TCP_MSG_KEY::MSG_GPIO_RATE_RESET); } );
     connect(this, &MainWindow::adcSampleReceived, status, &Status::onAdcSampleReceived);
@@ -221,7 +222,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tabWidget->addTab(histoTab,"Statistics");
 
     ParameterMonitorForm *paramTab = new ParameterMonitorForm(this);
-    //connect(this, &MainWindow::setUiEnabledStates, paramTab, &ParameterMonitorForm::onUiEnabledStateChange);
+    connect(this, &MainWindow::setUiEnabledStates, paramTab, &ParameterMonitorForm::onUiEnabledStateChange);
     connect(this, &MainWindow::adcSampleReceived, paramTab, &ParameterMonitorForm::onAdcSampleReceived);
     connect(this, &MainWindow::adcTraceReceived, paramTab, &ParameterMonitorForm::onAdcTraceReceived);
     connect(this, &MainWindow::dacReadbackReceived, paramTab, &ParameterMonitorForm::onDacReadbackReceived);
@@ -248,7 +249,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tabWidget->addTab(paramTab,"Parameters");
 
     ScanForm *scanTab = new ScanForm(this);
-    //connect(this, &MainWindow::setUiEnabledStates, paramTab, &ParameterMonitorForm::onUiEnabledStateChange);
+    connect(this, &MainWindow::setUiEnabledStates, scanTab, &ScanForm::onUiEnabledStateChange);
     connect(this, &MainWindow::timeMarkReceived, scanTab, &ScanForm::onTimeMarkReceived);
     connect(scanTab, &ScanForm::setDacVoltage, this, &MainWindow::sendSetThresh);
     connect(scanTab, &ScanForm::gpioInhibitChanged, this, &MainWindow::gpioInhibit);
@@ -260,7 +261,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::setUiEnabledStates, logTab, &LogPlotsWidget::onUiEnabledStateChange);
     connect(paramTab, &ParameterMonitorForm::biasVoltageCalculated, logTab, &LogPlotsWidget::onBiasVoltageCalculated);
     connect(paramTab, &ParameterMonitorForm::biasCurrentCalculated, logTab, &LogPlotsWidget::onBiasCurrentCalculated);
-    connect(this, &MainWindow::gpioRates, logTab, &LogPlotsWidget::onGpioRatesReceived);
+
+    connect(this, &MainWindow::gpioRates, logTab, &LogPlotsWidget::onGpioRatesReceived, Qt::QueuedConnection);
+
+
     connect(this, &MainWindow::logInfoReceived, logTab, &LogPlotsWidget::onLogInfoReceived);
     ui->tabWidget->addTab(logTab, "Log");
 
@@ -276,6 +280,9 @@ MainWindow::MainWindow(QWidget *parent) :
     item->setEnabled(false);
     // initialise all ui elements that will be inactive at start
     uiSetDisconnectedState();
+
+// printf("WindowSize %d %d\r\n",this->width(),this->height());
+
 }
 
 MainWindow::~MainWindow()

@@ -1,16 +1,16 @@
 .\" Manpage for muondetector-login
 .\" Contact developer@muonpi.org to correct errors or typos.
-.TH "muondetector-login" "1" "@PROJECT_DATE_STRING@" "v @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@" "muondetector manpage"
+.TH "muondetector-login" "1" "@PROJECT_DATE_STRING@" "v @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@" "muondetector login  manpage"
 .SH NAME
-muondetector-login \- Store login information for the muondetector daemon safely 
+muondetector-login \- Wrapper to execute the muondetector-login as the correct user.
 .SH SYNOPSIS
 muondetector-login
 .SH DESCRIPTION
-The muondetector-login program asks for the login information for the muondetector-daemon and stores it safely instead of writing it to the configuration file in plain text. This program should be ran as the user 'muonuser'. There is a helper script available which sets the correct user.
+The muondetector-login script starts the program muondetector-login as the correct user to ensure proper execution.
 .SH OPTIONS
 The muondetector-login program does not take any options. All necessary information is asked for interactively.
 .SH SEE ALSO
-muondetector-login-helper(1), muondetector-daemon(1)
+muondetector-login(1), muondetector-daemon(1)
 .SH BUGS
 No known bugs.
 .SH AUTHOR

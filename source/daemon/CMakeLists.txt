@@ -27,12 +27,11 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-
 set(Qt5_DIR "/usr/lib/x86_64-linux-gnu/cmake/Qt5/")
 
 find_package(Qt5 COMPONENTS Network SerialPort REQUIRED)
+
+if(NOT WIN32) # added to make program editable in qt-creator on windows
 
 find_library(PAHO_MQTT3C paho-mqtt3c REQUIRED)
 find_library(PAHO_MQTT3A paho-mqtt3a REQUIRED)
@@ -44,6 +43,9 @@ find_library(CRYPTOPP crypto++ REQUIRED)
 find_library(CONFIGPP config++ REQUIRED)
 find_library(PIGPIOD_IF2 pigpiod_if2 REQUIRED)
 find_library(RT rt REQUIRED)
+
+endif()
+
 find_library(MUONDETECTOR_LIB NAMES muondetector HINTS "${CMAKE_CURRENT_BINARY_DIR}/../lib/" REQUIRED)
 
 add_compile_options(
@@ -131,9 +133,12 @@ set(LOGIN_SOURCE_FILES
     )
 
 set(LOGIN_INSTALL_FILES
-    "${PROJECT_CONFIG_DIR}/muondetector-login-helper"
+    "${PROJECT_CONFIG_DIR}/muondetector-login"
     )
 
+set(DAEMON_INSTALL_FILES
+    "${PROJECT_CONFIG_DIR}/muondetector.conf"
+    )
 
 configure_file(
     "${PROJECT_CONFIG_DIR}/muondetector-daemon.1"
@@ -142,10 +147,6 @@ configure_file(
 configure_file(
     "${PROJECT_CONFIG_DIR}/muondetector-login.1"
     "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1"
-    )
-configure_file(
-    "${PROJECT_CONFIG_DIR}/muondetector-login-helper.1"
-    "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login-helper.1"
     )
 
 
@@ -188,12 +189,13 @@ target_link_libraries(muondetector-daemon
     )
 
 
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
+if (CMAKE_BUILD_TYPE STREQUAL Release)
+    add_custom_command(TARGET muondetector-daemon POST_BUILD
+            COMMAND ${CMAKE_STRIP} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/muondetector-daemon")
+    add_custom_command(TARGET muondetector-login POST_BUILD
+            COMMAND ${CMAKE_STRIP} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/muondetector-login")
+endif ()
 
-set(DAEMON_INSTALL_FILES
-    "${PROJECT_CONFIG_DIR}/muondetector.conf"
-    )
 
 
 
@@ -202,13 +204,12 @@ include(GNUInstallDirs)
 add_custom_target(changelog ALL COMMAND gzip -cn9 "${PROJECT_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
 add_custom_target(manpage ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1.gz")
 add_custom_target(manpage-login ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1.gz")
-add_custom_target(manpage-login-helper ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login-helper.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login-helper.1.gz")
 
-install(TARGETS muondetector-daemon muondetector-login DESTINATION bin COMPONENT daemon)
+install(TARGETS muondetector-daemon DESTINATION bin COMPONENT daemon)
+install(TARGETS muondetector-login DESTINATION lib/muondetector/bin COMPONENT daemon)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT daemon)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1.gz" DESTINATION "share/man/man1/" COMPONENT daemon)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1.gz" DESTINATION "share/man/man1/" COMPONENT daemon)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login-helper.1.gz" DESTINATION "share/man/man1/" COMPONENT daemon)
 install(FILES "${PROJECT_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT daemon)
 install(FILES ${DAEMON_INSTALL_FILES} DESTINATION "/etc/muondetector/" COMPONENT daemon)
 install(FILES "${PROJECT_CONFIG_DIR}/muondetector-daemon.service" DESTINATION "/lib/systemd/system" COMPONENT daemon)
@@ -218,6 +219,8 @@ install(PROGRAMS ${LOGIN_INSTALL_FILES} DESTINATION bin COMPONENT daemon)
 
 
 set(CPACK_GENERATOR "DEB")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "pigpiod, libpaho-mqttpp")
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${PROJECT_CONFIG_DIR}/preinst;${PROJECT_CONFIG_DIR}/postinst;${PROJECT_CONFIG_DIR}/prerm;${PROJECT_CONFIG_DIR}/conffiles")
 set(CPACK_PACKAGE_VENDOR "MuonPi.org")
@@ -232,7 +235,6 @@ set(CPACK_DEBIAN_PACKAGE_DESCRIPTION " It opens serial and i2c connections to th
  It runs in the background and sends the data to the central server.
  It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi <developer@muonpi.org>")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>=2.28), libc++ (>=7), lftp (>=4.7), libcrypto++6, libqt5serialport5 (>= 5), libpaho-mqttpp (>=1.1.0), libconfig++-dev, pigpiod")
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../packages/")
 
 include(CPack)

@@ -47,6 +47,7 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget *parent) :
     connect(ui->pol1CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked);
     connect(ui->pol2CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked);
 
+    ui->adcTracePlot->setMinimumHeight(30);
 }
 
 void ParameterMonitorForm::on_timingSelectionComboBox_currentIndexChanged(int index)
@@ -343,3 +344,7 @@ void ParameterMonitorForm::onPolarityCheckBoxClicked(bool /*checked*/){
     emit polarityChanged(pol1, pol2);
 }
 
+void ParameterMonitorForm::onUiEnabledStateChange(bool connected)
+{
+	this->setEnabled(connected);
+}

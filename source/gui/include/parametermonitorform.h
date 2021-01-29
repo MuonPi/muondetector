@@ -49,6 +49,7 @@ public slots:
     void onIntCounterReceived(quint32 cnt);
 	void onTimeMarkReceived(const UbxTimeMarkStruct& tm);
 	void onPolarityReceived(bool pol1, bool pol2);
+	void onUiEnabledStateChange(bool connected);
 
 private slots:
     void on_dacSpinBox1_valueChanged(double arg1);

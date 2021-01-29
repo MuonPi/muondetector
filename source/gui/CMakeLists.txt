@@ -33,6 +33,7 @@ set(QWT_DIR "C:/Qwt-6.1.4")
 set(OPENSSL_DIR "C:/Qt/Tools/OpenSSL/Win_x64")
 set(MQTT_CPP_DIR "C:/paho-mqtt-cpp-1.1.0-win64")
 set(MQTT_C_DIR "C:/eclipse-paho-mqtt-c-win64-1.3.6")
+set(CRYPTOPP_DIR "C:/cryptopp")
 list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5QuickCompiler")
 list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5")
 
@@ -80,14 +81,18 @@ endif()
 
 find_package(Qt5 COMPONENTS Network Svg Widgets Gui Quick QuickWidgets Qml REQUIRED)
 
+if(NOT WIN32)
+
 find_library(PAHO_MQTT3C paho-mqtt3c REQUIRED)
 find_library(PAHO_MQTT3A paho-mqtt3a REQUIRED)
 find_library(PAHO_MQTT3CS paho-mqtt3cs REQUIRED)
 find_library(PAHO_MQTT3AS paho-mqtt3as REQUIRED)
 find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
-
 find_library(CRYPTOPP crypto++ REQUIRED)
 find_library(QWT_QT5 qwt-qt5 REQUIRED)
+
+endif()
+
 find_library(MUONDETECTOR_LIB NAMES muondetector HINTS "${CMAKE_CURRENT_BINARY_DIR}/../lib/" REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -229,7 +234,10 @@ add_definitions(-DQWT_DLL)
 
 target_include_directories(muondetector-gui PUBLIC
     ${OPENSSL_DIR}/include/
+    $<BUILD_INTERFACE:${CRYPTOPP_DIR}/include>
+    $<INSTALL_INTERFACE:${CRYPTOPP_DIR}/include>
     $<BUILD_INTERFACE:${QWT_DIR}/include>
+    $<INSTALL_INTERFACE:${QWT_DIR}/include>
     $<BUILD_INTERFACE:${MQTT_C_DIR}/include>
     $<INSTALL_INTERFACE:${MQTT_C_DIR}/include>
     $<BUILD_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
@@ -246,6 +254,7 @@ target_link_directories(muondetector-gui PUBLIC
     "${MQTT_C_DIR}/lib/"
     "${QWT_DIR}/lib/"
     "${OPENSSL_DIR}/lib/"
+    "${CRYPTOPP_DIR}/lib/"
     )
 
 target_link_libraries(muondetector-gui
@@ -347,15 +356,16 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1.gz" DESTINATION "s
 install(FILES "${PROJECT_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT gui)
 
 set(CPACK_GENERATOR "DEB")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libpaho-mqttpp | paho-mqtt-cpp, qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), qml-module-qtquick-layouts (>=5), qml-module-qtquick-controls2 (>=5), qml-module-qtquick-controls (>=5), qml-module-qtquick-templates2 (>=5)")
 set(CPACK_DEBIAN_PACKAGE_SECTION "net")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
-set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "It connects to muondetector-daemon via TCP. It is based on Qt and C++.
-It lets you change the settings for the muondetector hardware and
-uses qml for displaying the current position on the map if connected
-the muondetector-daemon.
-It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION " It connects to muondetector-daemon via TCP. It is based on Qt and C++.
+ It lets you change the settings for the muondetector hardware and
+ uses qml for displaying the current position on the map if connected
+ the muondetector-daemon.
+ It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi <developer@muonpi.org>")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>=2.28), libc++ (>=7), libqt5gui5 (>=5), libqt5widgets5 (>=5), libqt5core5a (>=5), libqt5quickwidgets5 (>=5.3), libqt5network5 (>=5), qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), qml-module-qtquick-layouts (>=5), qml-module-qtquick-controls2 (>=5), qml-module-qtquick-controls (>=5), qml-module-qtquick-templates2 (>=5), libqwt-qt5-6 (>=6.1.2)")
 
 endif()
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
