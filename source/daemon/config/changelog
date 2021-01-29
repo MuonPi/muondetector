@@ -7,7 +7,7 @@ muondetector-daemon (2.0.1) ; urgency=low
   * Updates:
   - added configuration option for input polarity (input1_polarity/input2_polarity) in muondetector.conf file
   
- -- MuonPi <developer@muonpi.org>  Wed, 16. Dec 2020 21:55:00 +0100
+ -- MuonPi <developer@muonpi.org>  Fri, 29. Jan 2021 10:10:00 +0100
 
 muondetector-daemon (2.0.0) ; urgency=low
 
