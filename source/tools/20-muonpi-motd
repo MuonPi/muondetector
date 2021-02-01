@@ -1,0 +1,52 @@
+#!/bin/bash
+#MuonPi message-of-the-day
+
+#SYMBOLS: ⬤🗴🗸
+R="\e[1;38;5;1m"  # Red
+G="\e[1;38;5;2m"  # Green
+B="\e[1;38;5;4m"  # Blue
+Y="\e[1;38;5;3m"  # Yellow
+W="\e[39m" # Clear color
+ca="\e[0m"  # Clear all
+u="\e[4m"   # Undlerline
+cu="\e[24m" # Clear underline
+b="\e[1m"   # Bold
+cb="\e[21m" # Clear Bold
+
+
+DaemonStatus=$(systemctl is-active muondetector-daemon.service)
+if [ $? -gt 0 ];then
+	#inactive
+	DaemonStatus="$R⬤  $DaemonStatus"
+else
+	#active
+	DaemonStatus="$G⬤  $DaemonStatus"
+fi
+
+zgrep -h MQTT /var/log/syslog* | sort -n | tail -n1 | grep 'MQTT (re)connected' > /dev/null  # Are there better ways to ask for MQTT connection?
+if [ $? -gt 0 ];then
+	#fail
+	MqttStatus="$R⬤  not connected"
+else
+	#success
+	MqttStatus="$G⬤  connected"
+fi
+
+
+echo -e ""
+echo -e "$G            Ψψω               "    ""
+echo -e "$G             ΨΌΫΨφωρΚΜΫΨΨΜ    "    ""
+echo -e "$G       ρφΚΜΚΚΚΨ   ΅΅  ήΚ      "    ""
+echo -e "$G    ;ΚΜΨΨψβΚφΓ                "    ""
+echo -e "$R     ;ΦΜ΅΅      μω      ·ωω   "$G  " __  __ _   _  ___  _   _ $R      _  "
+echo -e "$R    χβ΅        ;Κβ      ΦΨΉ   "$G  "|  \/  | | | |/ _ \| \ | |$R""____ (_) "
+echo -e "$R   ·ΚΉ         ΦΨ      ;Κβ    "$G  "| |\/| | | | | | | |  \| $R|  _ \| | "
+echo -e "$R   ΔΦ         χΨΜ     χΦΨ΅    "$G  "| |  | | |_| | |_| | |\  $R| |_) | | "
+echo -e "$R  ·Ψ         ·ΨΨΨωμώφΜΤΚΨωω   "$G  "|_|  |_|\___/ \___/|_| \_$R|  __/|_| "
+echo -e "$R   Φψ        ΦΨΓ ΅΅΅    ΅΅    "$G  "                         $R|_|       "
+echo -e "$R    ΫΦ      ;ΨΒ               "    ""
+echo -e "$R     Ψω     ΅΅                "$W  "Daemon status:    $DaemonStatus"
+echo -e "$R      ΨΨωρ;μφ                 "$W  "MQTT-Connection:  $MqttStatus"
+echo -e "$R        ΅΅΅΅ΨΨω               "    ""
+echo -e "$R              ΅ΫΨΨΜΓ          "    ""
+echo -e "\e[0m"
