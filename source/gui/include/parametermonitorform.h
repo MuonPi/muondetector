@@ -25,6 +25,7 @@ signals:
     void biasCurrentCalculated(float ibias);
     void adcModeChanged(quint8 mode);
     void gpioInhibitChanged(bool inhibitState);
+    void mqttInhibitChanged(bool inhibitState);
     void biasEnableChanged(bool state);
     void preamp1EnableChanged(bool state);
     void preamp2EnableChanged(bool state);
@@ -48,7 +49,7 @@ public slots:
     void onFreqAccReceived(quint32 acc);
     void onIntCounterReceived(quint32 cnt);
 	void onTimeMarkReceived(const UbxTimeMarkStruct& tm);
-	void onPolarityReceived(bool pol1, bool pol2);
+	void onPolaritySwitchReceived(bool pol1, bool pol2);
 	void onUiEnabledStateChange(bool connected);
 
 private slots:

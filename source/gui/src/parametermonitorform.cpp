@@ -262,10 +262,14 @@ void ParameterMonitorForm::onIntCounterReceived(quint32 /*cnt*/)
     //ui->ubloxCounterLabel->setText(QString::number(cnt));
 }
 
-void ParameterMonitorForm::onPolarityReceived(bool /*pol1*/, bool /*pol2*/)
+void ParameterMonitorForm::onPolaritySwitchReceived(bool pol1, bool pol2)
 {
-//
-
+	ui->pol1CheckBox->blockSignals(true);
+	ui->pol2CheckBox->blockSignals(true);
+	ui->pol1CheckBox->setChecked(pol1);
+	ui->pol2CheckBox->setChecked(pol2);
+	ui->pol1CheckBox->blockSignals(false);
+	ui->pol2CheckBox->blockSignals(false);
 }
 
 
