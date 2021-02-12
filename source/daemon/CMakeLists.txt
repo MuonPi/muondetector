@@ -152,6 +152,8 @@ configure_file(
 
 add_executable(muondetector-login ${LOGIN_SOURCE_FILES})
 
+set_property(TARGET muondetector-login PROPERTY POSITION_INDEPENDENT_CODE 1)
+
 target_include_directories(muondetector-login PUBLIC
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 target_include_directories(muondetector-login PUBLIC
@@ -167,6 +169,8 @@ target_link_libraries(muondetector-login
     )
 
 add_executable(muondetector-daemon ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES})
+
+set_property(TARGET muondetector-daemon PROPERTY POSITION_INDEPENDENT_CODE 1)
 
 target_include_directories(muondetector-daemon PUBLIC
     $<BUILD_INTERFACE:${PROJECT_HEADER_DIR}>
