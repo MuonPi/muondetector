@@ -111,7 +111,6 @@ void MqttHandler::start(const QString& username, const QString& password){
 
     initialise(m_clientID);
 
-    mosquitto_loop_start(m_mqtt);
 
     mqttConnect();
 }
@@ -178,6 +177,8 @@ void MqttHandler::initialise(const std::string& client_id)
     mosquitto_connect_callback_set(m_mqtt, wrapper_callback_connected);
     mosquitto_disconnect_callback_set(m_mqtt, wrapper_callback_disconnected);
     mosquitto_message_callback_set(m_mqtt, wrapper_callback_message);
+
+    mosquitto_loop_start(m_mqtt);
 }
 
 void MqttHandler::cleanup() {
@@ -185,6 +186,8 @@ void MqttHandler::cleanup() {
         mqttDisconnect();
     }
     if (m_mqtt != nullptr) {
+        mosquitto_loop_stop(m_mqtt, true);
+
         mosquitto_destroy(m_mqtt);
         m_mqtt = nullptr;
         mosquitto_lib_cleanup();
