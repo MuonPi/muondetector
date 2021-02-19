@@ -33,11 +33,7 @@ find_package(Qt5 COMPONENTS Network SerialPort REQUIRED)
 
 if(NOT WIN32) # added to make program editable in qt-creator on windows
 
-find_library(PAHO_MQTT3C paho-mqtt3c REQUIRED)
-find_library(PAHO_MQTT3A paho-mqtt3a REQUIRED)
-find_library(PAHO_MQTT3CS paho-mqtt3cs REQUIRED)
-find_library(PAHO_MQTT3AS paho-mqtt3as REQUIRED)
-find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
+find_library(MOSQUITTO mosquitto REQUIRED)
 
 find_library(CRYPTOPP crypto++ REQUIRED)
 find_library(CONFIGPP config++ REQUIRED)
@@ -164,7 +160,7 @@ target_link_directories(muondetector-login PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/.
 target_link_libraries(muondetector-login
     Qt5::Network Qt5::SerialPort
     crypto++
-    paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
+    mosquitto
     muondetector
     )
 
