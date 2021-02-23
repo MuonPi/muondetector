@@ -683,8 +683,10 @@ int main(int argc, char *argv[])
     // Open the log file
     openlog ("muondetector-daemon", LOG_PID, LOG_DAEMON);
     */
+    bool preamps[] = {preamp1, preamp2};
+    bool polarities[] = {pol1, pol2};
     Daemon daemon(QString::fromStdString(username), QString::fromStdString(password), gpsdevname, verbose, pcaChannel, dacThresh, biasVoltage, biasPower, dumpRaw,
-        baudrate, showGnssConfig, eventSignal, peerAddress, peerPort, daemonAddress, daemonPort, showout, showin, preamp1, preamp2, gain, stationID, pol1, pol2);
+        baudrate, showGnssConfig, eventSignal, peerAddress, peerPort, daemonAddress, daemonPort, showout, showin, preamps, gain, stationID, polarities);
 
     return a.exec();
 }

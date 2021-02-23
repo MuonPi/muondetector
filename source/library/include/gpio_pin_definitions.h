@@ -16,6 +16,14 @@
 // of the RPi GPIO header. To be independent of the specific hardware implementation,
 // the pin numbers for these signals are defined in gpio_pin_mapping.h on the daemon side
 
+enum class RATE : uint8_t{
+XOR_RATE = 0,
+AND_RATE = 1,
+COMBINED_RATE = 2
+}
+
+enum class gpio_mode{input, output, pullup, pulldown};
+
 enum GPIO_PIN {		UBIAS_EN, 
 					PREAMP_1, PREAMP_2, 
 					EVT_AND, EVT_XOR, 

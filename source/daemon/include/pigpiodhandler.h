@@ -10,10 +10,6 @@
 #include <gpio_mapping.h>
 #include <gpio_pin_definitions.h>
 
-#define XOR_RATE 0
-#define AND_RATE 1
-#define COMBINED_RATE 2
-
 static QVector<unsigned int> DEFAULT_VECTOR;
 
 class PigpiodHandler : public QObject
@@ -32,8 +28,7 @@ public:
 	uint64_t gpioTickOverflowCounter=0;
 	quint64 lastTimeMeasurementTick=0;
 	
-	bool isInhibited() const { return inhibit; }
-	void setInhibited(bool inh=true) { inhibit=inh; }
+    bool isInhibited() const { return inhibit; }
 	
 signals:
     void signal(uint8_t gpio_pin);
@@ -47,13 +42,11 @@ signals:
 public slots:
 	void stop();
     bool initialised();
-    void setInput(unsigned int gpio);
-    void setOutput(unsigned int gpio);
-    void setPullUp(unsigned int gpio);
-    void setPullDown(unsigned int gpio);
+    void setInhibited(bool inh=true) { inhibit=inh; }
+    void setGpioMode(unsigned int gpio, gpio_mode mode);
     void setGpioState(unsigned int gpio, bool state);
     void setSamplingTriggerSignal(GPIO_PIN signalName) { samplingTriggerSignal=signalName; }
-    void registerForCallback(unsigned int gpio, bool edge); // false=falling, true=rising
+    void gpioRegisterForCallback(unsigned int gpio, bool edge); // false=falling, true=rising
 
     // spi related slots
     void writeSpi(uint8_t command, std::string data);

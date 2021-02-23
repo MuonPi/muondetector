@@ -44,9 +44,8 @@ find_library(CONFIGPP config++ REQUIRED)
 find_library(PIGPIOD_IF2 pigpiod_if2 REQUIRED)
 find_library(RT rt REQUIRED)
 
-endif()
-
 find_library(MUONDETECTOR_LIB NAMES muondetector HINTS "${CMAKE_CURRENT_BINARY_DIR}/../lib/" REQUIRED)
+endif()
 
 add_compile_options(
     -Wall
@@ -72,8 +71,11 @@ set(DAEMON_SOURCE_FILES
     "${PROJECT_SRC_DIR}/calibration.cpp"
     "${PROJECT_SRC_DIR}/gpio_mapping.cpp"
     "${PROJECT_SRC_DIR}/logengine.cpp"
+    "${PROJECT_SRC_DIR}/histohandler.cpp"
     "${PROJECT_SRC_DIR}/geohash.cpp"
     "${PROJECT_SRC_DIR}/tdc7200.cpp"
+    "${PROJECT_SRC_DIR}/hateeprom.cpp"
+    "${PROJECT_SRC_DIR}/i2chandler.cpp"
     "${PROJECT_SRC_DIR}/i2c/i2cbusses.c"
     "${PROJECT_SRC_DIR}/i2c/i2cdevices/adafruit_ssd1306/adafruit_ssd1306.cpp"
     "${PROJECT_SRC_DIR}/i2c/i2cdevices/ads1115/ads1115.cpp"
@@ -90,6 +92,7 @@ set(DAEMON_SOURCE_FILES
     "${PROJECT_SRC_DIR}/i2c/i2cdevices/Adafruit_GFX.cpp"
     "${PROJECT_SRC_DIR}/i2c/i2cdevices/i2cdevice.cpp"
     "${PROJECT_SRC_DIR}/i2c/i2cdevices/glcdfont.c"
+    "${PROJECT_SRC_DIR}/helper_classes/property.cpp"
     )
 
 set(DAEMON_HEADER_FILES
@@ -105,7 +108,10 @@ set(DAEMON_HEADER_FILES
     "${PROJECT_HEADER_DIR}/gpio_mapping.h"
     "${PROJECT_HEADER_DIR}/tdc7200.h"
     "${PROJECT_HEADER_DIR}/logengine.h"
+    "${PROJECT_HEADER_DIR}/histohandler.h"
     "${PROJECT_HEADER_DIR}/geohash.h"
+    "${PROJECT_HEADER_DIR}/hateeprom.h"
+    "${PROJECT_HEADER_DIR}/i2chandler.h"
     "${PROJECT_HEADER_DIR}/i2c/addresses.h"
     "${PROJECT_HEADER_DIR}/i2c/custom_i2cdetect.h"
     "${PROJECT_HEADER_DIR}/i2c/i2cbusses.h"
@@ -126,6 +132,7 @@ set(DAEMON_HEADER_FILES
     "${PROJECT_HEADER_DIR}/i2c/i2cdevices/Adafruit_GFX.h"
     "${PROJECT_HEADER_DIR}/i2c/i2cdevices/i2cdevice.h"
     "${PROJECT_HEADER_DIR}/i2c/linux/i2c-dev.h"
+    "${PROJECT_HEADER_DIR}/helper_classes/property.h"
     )
 
 set(LOGIN_SOURCE_FILES
