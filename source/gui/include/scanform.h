@@ -9,7 +9,7 @@
 #include <muondetector_structs.h>
 
 // list of possible scan parameters
-const static QVector<QString> SP_NAMES = { "VOID", "THR1", "THR2" };
+const static QVector<QString> SP_NAMES = { "VOID", "THR1", "THR2", "BIAS" };
 // list of possible observables
 const static QVector<QString> OP_NAMES = { "VOID", "UBXRATE" /*, "GPIORATE"*/ };
 
@@ -18,18 +18,26 @@ namespace Ui {
 class ScanForm;
 }
 
-
 class ScanForm : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit ScanForm(QWidget *parent = 0);
+
+	struct ScanPoint {
+		double value { 0. };
+		double error { 0. };
+		double temp { 0. };
+	};
+	
+	explicit ScanForm(QWidget *parent = 0);
     ~ScanForm();
 
 signals:
-    void setDacVoltage(uint8_t ch, float val);
+    void setThresholdVoltage(uint8_t ch, float val);
+    void setBiasControlVoltage(float val);
     void gpioInhibitChanged(bool inhibitState);
+    void mqttInhibitChanged(bool inhibitState);
 public slots:
     void onTimeMarkReceived(const UbxTimeMarkStruct& tm);
 	void onUiEnabledStateChange(bool connected);
@@ -40,8 +48,8 @@ private slots:
 	void adjustScanPar(QString scanParName, double value);
 	void finishScan();
 	void updateScanPlot();
-
     void on_plotDifferentialCheckBox_toggled(bool checked);
+	void exportData();
 
 private:
     Ui::ScanForm *ui;
@@ -56,9 +64,10 @@ private:
 	uint64_t currentCounts;
 	double currentTimeInterval=0.;
 	double maxMeasurementTimeInterval=1.;
+	unsigned long maxMeasurementStatistics { 0 };
 	bool waitForFirst=false;
 	
-	QMap<double, double> scanData;
+	QMap<double, ScanPoint> scanData;
 	bool plotDifferential = false;
 };
 

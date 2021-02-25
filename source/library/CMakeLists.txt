@@ -138,6 +138,8 @@ set(PROJECT_HEADER_FILES
 add_definitions(-DMUONDETECTOR_LIBRARY_EXPORT)
 
 add_library(muondetector STATIC ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES})
+
+set_property(TARGET muondetector PROPERTY POSITION_INDEPENDENT_CODE 1)
 target_include_directories(muondetector PUBLIC
     ${PROJECT_HEADER_DIR}
     $<BUILD_INTERFACE:/usr/local/include/mqtt>

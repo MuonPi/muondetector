@@ -81,6 +81,9 @@ signals:
     void logInfoReceived(const LogInfoStruct& lis);
     void mqttStatusChanged(bool connected);
 	void timeMarkReceived(const UbxTimeMarkStruct&);
+	void polaritySwitchReceived(bool pol1, bool pol2);
+	void gpioInhibitReceived(bool inhibit);
+	void mqttInhibitReceived(bool inhibit);
 
 public slots:
     void receivedTcpMessage(TcpMessage tcpMessage);
@@ -94,6 +97,7 @@ public slots:
     void onAdcModeChanged(quint8 mode);
 	void onRateScanStart(uint8_t ch);
 	void gpioInhibit(bool inhibit);
+	void mqttInhibit(bool inhibit);
 	void onPolarityChanged(bool pol1, bool pol2);
 
 private slots:

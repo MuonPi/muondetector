@@ -184,12 +184,7 @@ MainWindow::MainWindow(QWidget *parent) :
     calibscandialog = new CalibScanDialog(this);
     calibscandialog->hide();
     connect(this, &MainWindow::calibReceived, calibscandialog, &CalibScanDialog::onCalibReceived);
-//    connect(calib, &CalibForm::calibRequest, this, [this]() { this->sendRequest(calibRequestSig); } );
-//    connect(calib, &CalibForm::writeCalibToEeprom, this, [this]() { this->sendRequest(calibWriteEepromSig); } );
     connect(this, &MainWindow::adcSampleReceived, calibscandialog, &CalibScanDialog::onAdcSampleReceived);
-    connect(calib, &CalibForm::setBiasDacVoltage, this, &MainWindow::sendSetBiasVoltage);
-    connect(calib, &CalibForm::setDacVoltage, this, &MainWindow::sendSetThresh);
-    connect(calib, &CalibForm::updatedCalib, this, &MainWindow::onCalibUpdated);
 
     GpsSatsForm *satsTab = new GpsSatsForm(this);
     connect(this, &MainWindow::setUiEnabledStates, satsTab, &GpsSatsForm::onUiEnabledStateChange);
@@ -204,16 +199,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::geodeticPos, satsTab, &GpsSatsForm::onGeodeticPosReceived);
     connect(this, &MainWindow::ubxUptimeReceived, satsTab, &GpsSatsForm::onUbxUptimeReceived);
 
-
-/*
-//    connect(this, &MainWindow::setUiEnabledStates, settings, &Settings::onUiEnabledStateChange);
-    connect(this, &MainWindow::calibReceived, calibTab, &CalibForm::onCalibReceived);
-    connect(calibTab, &CalibForm::calibRequest, this, [this]() { this->sendRequest(calibRequestSig); } );
-    connect(calibTab, &CalibForm::writeCalibToEeprom, this, [this]() { this->sendRequest(calibWriteEepromSig); } );
-    connect(this, &MainWindow::adcSampleReceived, calibTab, &CalibForm::onAdcSampleReceived);
-*/
     ui->tabWidget->addTab(satsTab,"GNSS Data");
-
 
     histogramDataForm *histoTab = new histogramDataForm(this);
     connect(this, &MainWindow::setUiEnabledStates, histoTab, &histogramDataForm::onUiEnabledStateChange);
@@ -229,6 +215,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::inputSwitchReceived, paramTab, &ParameterMonitorForm::onInputSwitchReceived);
     connect(this, &MainWindow::biasSwitchReceived, paramTab, &ParameterMonitorForm::onBiasSwitchReceived);
     connect(this, &MainWindow::preampSwitchReceived, paramTab, &ParameterMonitorForm::onPreampSwitchReceived);
+    connect(this, &MainWindow::polaritySwitchReceived, paramTab, &ParameterMonitorForm::onPolaritySwitchReceived);
     connect(this, &MainWindow::triggerSelectionReceived, paramTab, &ParameterMonitorForm::onTriggerSelectionReceived);
     connect(this, &MainWindow::temperatureReceived, paramTab, &ParameterMonitorForm::onTemperatureReceived);
     connect(this, &MainWindow::timeAccReceived, paramTab, &ParameterMonitorForm::onTimeAccReceived);
@@ -251,8 +238,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ScanForm *scanTab = new ScanForm(this);
     connect(this, &MainWindow::setUiEnabledStates, scanTab, &ScanForm::onUiEnabledStateChange);
     connect(this, &MainWindow::timeMarkReceived, scanTab, &ScanForm::onTimeMarkReceived);
-    connect(scanTab, &ScanForm::setDacVoltage, this, &MainWindow::sendSetThresh);
+    connect(scanTab, &ScanForm::setThresholdVoltage, this, &MainWindow::sendSetThresh);
+    connect(scanTab, &ScanForm::setBiasControlVoltage, this, &MainWindow::sendSetBiasVoltage);
     connect(scanTab, &ScanForm::gpioInhibitChanged, this, &MainWindow::gpioInhibit);
+    connect(scanTab, &ScanForm::mqttInhibitChanged, this, &MainWindow::mqttInhibit);
     ui->tabWidget->addTab(scanTab,"Scans");
 
     LogPlotsWidget *logTab = new LogPlotsWidget(this);
@@ -747,6 +736,29 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         emit mqttStatusChanged(connected);
         return;
     }
+    if (msgID == TCP_MSG_KEY::MSG_POLARITY_SWITCH){
+        bool pol1;
+        bool pol2;
+        *(tcpMessage.dStream) >> pol1 >> pol2;
+        emit polaritySwitchReceived(pol1, pol2);
+        updateUiProperties();
+        return;
+    }
+    if (msgID == TCP_MSG_KEY::MSG_GPIO_INHIBIT){
+        bool inhibit;
+        *(tcpMessage.dStream) >> inhibit;
+        emit gpioInhibitReceived(inhibit);
+        updateUiProperties();
+        return;
+    }
+    if (msgID == TCP_MSG_KEY::MSG_MQTT_INHIBIT){
+        bool inhibit;
+        *(tcpMessage.dStream) >> inhibit;
+        emit mqttInhibitReceived(inhibit);
+        updateUiProperties();
+        return;
+    }
+    
 }
 
 void MainWindow::sendRequest(quint16 requestSig){
@@ -780,7 +792,8 @@ void MainWindow::sendSetBiasVoltage(float voltage){
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_BIAS_VOLTAGE);
     *(tcpMessage.dStream) << voltage;
     emit sendTcpMessage(tcpMessage);
-    emit sendRequest(TCP_MSG_KEY::MSG_DAC_REQUEST, 2);
+//    emit sendRequest(TCP_MSG_KEY::MSG_DAC_REQUEST, 2);
+	emit sendRequest(TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST);
 //    emit sendRequest(adcSampleRequestSig, 2);
 //    emit sendRequest(adcSampleRequestSig, 3);
 }
@@ -813,7 +826,8 @@ void MainWindow::sendSetThresh(uint8_t channel, float value){
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_THRESHOLD);
     *(tcpMessage.dStream) << channel << value;
     emit sendTcpMessage(tcpMessage);
-    emit sendRequest(TCP_MSG_KEY::MSG_DAC_REQUEST, channel);
+	emit sendRequest(TCP_MSG_KEY::MSG_THRESHOLD_REQUEST, channel);
+    //emit sendRequest(TCP_MSG_KEY::MSG_DAC_REQUEST, channel);
 }
 
 void MainWindow::sendSetUbxMsgRateChanges(QMap<uint16_t, int> changes){
@@ -1002,6 +1016,7 @@ void MainWindow::connected() {
     sendRequestGpioRateBuffer();
     sendRequest(TCP_MSG_KEY::MSG_CALIB_REQUEST);
     sendRequest(TCP_MSG_KEY::MSG_ADC_MODE_REQUEST);
+	sendRequest(TCP_MSG_KEY::MSG_POLARITY_SWITCH_REQUEST);
 }
 
 
@@ -1261,6 +1276,12 @@ void MainWindow::on_biasVoltageDoubleSpinBox_valueChanged(double arg1)
 
 void MainWindow::gpioInhibit(bool inhibit) {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GPIO_INHIBIT);
+    *(tcpMessage.dStream) << inhibit;
+    emit sendTcpMessage(tcpMessage);
+}
+
+void MainWindow::mqttInhibit(bool inhibit) {
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_MQTT_INHIBIT);
     *(tcpMessage.dStream) << inhibit;
     emit sendTcpMessage(tcpMessage);
 }
