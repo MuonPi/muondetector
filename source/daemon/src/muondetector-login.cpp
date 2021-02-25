@@ -1,6 +1,7 @@
 #include <QByteArray>
 #include <QCoreApplication>
 #include <QCryptographicHash>
+#include <QDir>
 #include <QFile>
 #include <QNetworkConfigurationManager>
 #include <QNetworkInterface>
@@ -16,6 +17,7 @@
 #include <string>
 #include <termios.h>
 #include <unistd.h>
+#include <QtGlobal>
 
 #include "mqtthandler.h"
 
@@ -191,9 +193,15 @@ int main()
     std::cin >> username;
     std::string password { getpass("please enter password:", true) };
     QString hashedMacAddress { QString{QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex() } };
-    if (!saveLoginData(
-            QString { "/var/muondetector/" + hashedMacAddress + "/loginData.save" },
-            QString::fromStdString(username), QString::fromStdString(password))) {
+    QDir temp;
+    QString saveDirPath{ "/var/muondetector/" + hashedMacAddress  };
+    if (!temp.exists(saveDirPath)){
+        temp.mkpath(saveDirPath);
+        if (!temp.exists(saveDirPath)){
+            qFatal(QString("Could not create folder " + saveDirPath + ". Make sure the program is started with the correct permissions.").toStdString().c_str());
+        }
+    }
+    if (!saveLoginData(QString{saveDirPath + "/loginData.save"},QString::fromStdString(username), QString::fromStdString(password))){
         return 1;
     }
     MuonPi::MqttHandler mqttHandler {""};

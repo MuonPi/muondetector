@@ -220,6 +220,8 @@ endif()
 
 add_executable(muondetector-gui ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES} ${PROJECT_UI_FILES} ${PROJECT_RESOURCE_FILES} ${qml_QRC})
 
+set_property(TARGET muondetector-gui PROPERTY POSITION_INDEPENDENT_CODE 1)
+
 target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:${PROJECT_HEADER_DIR}>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
