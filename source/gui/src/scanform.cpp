@@ -5,6 +5,8 @@
 #include <QPointF>
 #include <QFileDialog>
 #include <qwt_symbol.h>
+#include <limits>
+#include <QThread>
 
 ScanForm::ScanForm(QWidget *parent) :
     QWidget(parent),
@@ -27,10 +29,12 @@ ScanForm::ScanForm(QWidget *parent) :
     ui->scanPlot->setAxisTitle(QwtPlot::xBottom,"scanpar");
     ui->scanPlot->setAxisTitle(QwtPlot::yLeft,"observable");
 
+/*    
     ui->scanPlot->addCurve("parscan", Qt::blue);
     ui->scanPlot->curve("parscan").setStyle(QwtPlotCurve::NoCurve);
     QwtSymbol *sym=new QwtSymbol(QwtSymbol::Rect, QBrush(Qt::blue, Qt::SolidPattern),QPen(Qt::black),QSize(5,5));
     ui->scanPlot->curve("parscan").setSymbol(sym);
+*/
     ui->scanPlot->setAxisAutoScale(QwtPlot::xBottom, true);
     ui->scanPlot->setAxisAutoScale(QwtPlot::yLeft, true);
     ui->scanPlot->replot();
@@ -59,7 +63,12 @@ void ScanForm::onTimeMarkReceived(const UbxTimeMarkStruct &tm)
 			double interval=(tm.rising.tv_nsec-lastTM.rising.tv_nsec)*1e-9;
 			interval+=tm.rising.tv_sec-lastTM.rising.tv_sec;
 			currentTimeInterval+=interval;
-			if (currentTimeInterval>maxMeasurementTimeInterval) scanParIteration();
+			if (  (currentTimeInterval > maxMeasurementTimeInterval) 
+				|| ( (currentCounts > maxMeasurementStatistics)
+					 && (currentTimeInterval > 1) ) )
+			{
+				scanParIteration();
+			}
 		}
 	}
     lastTM=tm;
@@ -97,6 +106,7 @@ void ScanForm::adjustScanPar(QString scanParName, double value) {
 	} else if (scanParName=="BIAS") {
 		emit setBiasControlVoltage(value);
 	}
+	QThread::msleep(100);
 }
 
 void ScanForm::on_scanStartPushButton_clicked()
@@ -118,6 +128,11 @@ void ScanForm::on_scanStartPushButton_clicked()
 	if (OP_NAMES[obsPar]=="VOID") return;
 	
 	maxMeasurementTimeInterval=ui->timeIntervalSpinBox->value();
+	if (ui->limitStatisticsCheckBox->isChecked()) {
+		int power = ui->maxStatisticsComboBox->currentIndex() + 1;
+		maxMeasurementStatistics=std::pow(10,power);
+	} else maxMeasurementStatistics = std::numeric_limits<unsigned long>::max();
+	
 	
 	if (OP_NAMES[obsPar]=="UBXRATE") {
 		emit gpioInhibitChanged(true);
@@ -128,6 +143,7 @@ void ScanForm::on_scanStartPushButton_clicked()
 	ui->scanStartPushButton->setText(tr("Stop Scan"));
 	currentScanPar=minRange;
 	adjustScanPar(SP_NAMES[scanPar], currentScanPar);
+	
 	active=true;
 	waitForFirst=true;
 	scanData.clear();
@@ -177,7 +193,15 @@ void ScanForm::onUiEnabledStateChange(bool connected)
 {
 	this->setEnabled(connected);
 	ui->scanPlot->setEnabled(connected);
-	if (!connected && active) finishScan();
+	if (connected) {
+		ui->scanPlot->addCurve("parscan", Qt::blue);
+		ui->scanPlot->curve("parscan").setStyle(QwtPlotCurve::NoCurve);
+		QwtSymbol *sym=new QwtSymbol(QwtSymbol::Rect, QBrush(Qt::blue, Qt::SolidPattern),QPen(Qt::black),QSize(5,5));
+		ui->scanPlot->curve("parscan").setSymbol(sym);
+	} else {
+		ui->scanPlot->curve("parscan").detach();
+		if (active) finishScan();
+	}
 }
 
 void ScanForm::exportData() {

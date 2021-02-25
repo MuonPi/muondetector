@@ -64,6 +64,7 @@ private:
 	uint64_t currentCounts;
 	double currentTimeInterval=0.;
 	double maxMeasurementTimeInterval=1.;
+	unsigned long maxMeasurementStatistics { 0 };
 	bool waitForFirst=false;
 	
 	QMap<double, ScanPoint> scanData;

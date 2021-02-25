@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>521</width>
-    <height>300</height>
+    <width>581</width>
+    <height>338</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -137,6 +137,12 @@
            <layout class="QHBoxLayout" name="horizontalLayout_5">
             <item>
              <widget class="QLabel" name="label_6">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
               <property name="text">
                <string>Meas.Time Interval</string>
               </property>
@@ -157,6 +163,102 @@
               <property name="text">
                <string>s</string>
               </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="4" column="0" colspan="2">
+           <layout class="QHBoxLayout" name="horizontalLayout_6">
+            <item>
+             <widget class="QCheckBox" name="limitStatisticsCheckBox">
+              <property name="text">
+               <string>limit statistics</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QLabel" name="label_8">
+              <property name="text">
+               <string>max counts:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="maxStatisticsComboBox">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="currentIndex">
+               <number>2</number>
+              </property>
+              <item>
+               <property name="text">
+                <string>10</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>100</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>1k</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>10k</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>100k</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>1M</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>10M</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>100M</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>1G</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>10G</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>100G</string>
+               </property>
+              </item>
              </widget>
             </item>
            </layout>
@@ -233,5 +335,22 @@
   </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>limitStatisticsCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>maxStatisticsComboBox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>83</x>
+     <y>176</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>295</x>
+     <y>176</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>
