@@ -1,30 +1,10 @@
-cmake_minimum_required(VERSION 3.10)
-project(muondetector-shared LANGUAGES CXX)
-
-set(MUONDETECTOR_LIBRARY_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(MUONDETECTOR_LIBRARY_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(MUONDETECTOR_LIBRARY_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
-
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../lib")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../lib")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../bin")
-
-include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/version.cmake")
-
-if(${MUONDETECTOR_BUILD_TIDY})
-  set(CMAKE_CXX_CLANG_TIDY
-      clang-tidy;
-      -header-filter=^global;
-      -checks=-*,readability-*,bugprone-*,performace-*,clang-analyzer-*,modernize-*,hicpp-*;
-      )
-endif(${MUONDETECTOR_BUILD_TIDY})
+set(MUONDETECTOR_LIBRARY_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/library/src")
+set(MUONDETECTOR_LIBRARY_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/library/include")
+set(MUONDETECTOR_LIBRARY_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/library/config")
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(WIN32)
 
@@ -135,9 +115,9 @@ set(MUONDETECTOR_LIBRARY_HEADER_FILES
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/config.h"
     )
 
-add_library(muondetector-shared STATIC ${MUONDETECTOR_LIBRARY_SOURCE_FILES} ${PROJECT_HEADER_FILES})
+add_library(muondetector-shared STATIC ${MUONDETECTOR_LIBRARY_SOURCE_FILES} ${MUONDETECTOR_LIBRARY_HEADER_FILES})
 
-target_compile_definitions(muondetector-shared PUBLIC -DMUONDETECTOR_LIBRARY_EXPORT)
+target_compile_definitions(muondetector-shared PUBLIC MUONDETECTOR_LIBRARY_EXPORT)
 
 set_property(TARGET muondetector-shared PROPERTY POSITION_INDEPENDENT_CODE 1)
 

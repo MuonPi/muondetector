@@ -93,7 +93,7 @@ find_library(QWT_QT5 qwt-qt5 REQUIRED)
 
 endif()
 
-find_library(MUONDETECTOR_LIB NAMES muondetector HINTS "${CMAKE_CURRENT_BINARY_DIR}/../lib/" REQUIRED)
+find_library(MUONDETECTOR_LIB NAMES muondetector HINTS "${CMAKE_CURRENT_BINARY_DIR}/output/lib/" REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -102,26 +102,6 @@ set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
 
 
-add_compile_options(
-    -Wall
-    -O3
-    )
-if (MSVC)
-  # Force to always compile with W4
-  if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
-    string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-  else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
-  endif()
-else()
-
-add_compile_options(
-    -Wextra
-    -Wshadow
-    -Wpedantic
-    )
-
-endif()
 
 if (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
 add_compile_options(
@@ -232,7 +212,7 @@ target_include_directories(muondetector-gui PUBLIC
 target_link_directories(muondetector-gui PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../lib/")
 
 if(WIN32)
-add_definitions(-DQWT_DLL)
+target_compile_definitions(muondetector-gui PUBLIC QWT_DLL)
 
 target_include_directories(muondetector-gui PUBLIC
     ${OPENSSL_DIR}/include/
