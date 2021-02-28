@@ -1,10 +1,6 @@
-cmake_minimum_required(VERSION 3.10)
-project(muondetector-daemon LANGUAGES CXX C)
-
 set(MUONDETECTOR_DAEMON_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/daemon/src")
 set(MUONDETECTOR_DAEMON_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/daemon/include")
 set(MUONDETECTOR_DAEMON_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/daemon/config")
-set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/library/include/")
 
 
 set(CMAKE_AUTOUIC ON)
@@ -129,7 +125,7 @@ target_include_directories(muondetector-login PUBLIC
     $<BUILD_INTERFACE:/usr/local/include/mqtt>
     $<INSTALL_INTERFACE:include/mqtt>)
 
-target_link_directories(muondetector-login PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../lib/")
+target_link_directories(muondetector-login PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/output/lib/")
 target_link_libraries(muondetector-login
     Qt5::Network Qt5::SerialPort
     crypto++
@@ -150,7 +146,7 @@ target_include_directories(muondetector-daemon PUBLIC
     $<INSTALL_INTERFACE:include/mqtt>
     )
 
-target_link_directories(muondetector-daemon PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../lib/")
+target_link_directories(muondetector-daemon PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/output/lib/")
 target_link_libraries(muondetector-daemon
     Qt5::Network Qt5::SerialPort
     crypto++
