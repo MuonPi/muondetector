@@ -1,27 +1,10 @@
-cmake_minimum_required(VERSION 3.10)
-project(muondetector-gui LANGUAGES CXX)
-
-string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
-
-set(MUONDETECTOR_GUI_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(MUONDETECTOR_GUI_UI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(MUONDETECTOR_GUI_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-set(MUONDETECTOR_GUI_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(MUONDETECTOR_GUI_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
-set(MUONDETECTOR_GUI_QML_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qml")
-set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../library/include/")
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../bin")
-
-include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/version.cmake")
-
-if(${MUONDETECTOR_BUILD_TIDY})
-  set(CMAKE_CXX_CLANG_TIDY
-      clang-tidy;
-      -header-filter=^global;
-      -checks=-*,readability-*,bugprone-*,performace-*,clang-analyzer-*,modernize-*,hicpp-*;
-      )
-endif(${MUONDETECTOR_BUILD_TIDY})
+set(MUONDETECTOR_GUI_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gui/src")
+set(MUONDETECTOR_GUI_UI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gui/src")
+set(MUONDETECTOR_GUI_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}gui/")
+set(MUONDETECTOR_GUI_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gui/include")
+set(MUONDETECTOR_GUI_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gui/config")
+set(MUONDETECTOR_GUI_QML_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gui/qml")
+set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/library/include/")
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -92,24 +75,6 @@ find_library(CRYPTOPP crypto++ REQUIRED)
 find_library(QWT_QT5 qwt-qt5 REQUIRED)
 
 endif()
-
-find_library(MUONDETECTOR_LIB NAMES muondetector HINTS "${CMAKE_CURRENT_BINARY_DIR}/output/lib/" REQUIRED)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
-
-
-
-if (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
-add_compile_options(
-    -mthumb
-    -mthumb-interwork
-    -march=armv7-a
-    )
-endif (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
 
 set(MUONDETECTOR_GUI_SOURCE_FILES
     "${MUONDETECTOR_GUI_SOURCE_DIR}/calibform.cpp"
@@ -275,7 +240,7 @@ install(TARGETS muondetector-gui DESTINATION bin COMPONENT gui)
 
 if(WIN32)
 
-include("${MUONDETECTOR_GUI_SOURCE_DIR}/../cmake/Windeployqt.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Windeployqt.cmake")
 set(windeploy_options
     --qmldir "${MUONDETECTOR_GUI_QML_DIR}"
     -opengl
@@ -283,7 +248,7 @@ set(windeploy_options
 ) # additional options for windeployqt.exe
 
 
-windeployqt(muondetector-gui "${MUONDETECTOR_GUI_BINARY_DIR}/bin" "${windeploy_options}")
+windeployqt(muondetector-gui "${PROJECT_BINARY_DIR}/bin" "${windeploy_options}")
 # create a list of files to copy
 set( THIRD_PARTY_DLLS
    "${OPENSSL_DIR}/bin/libcrypto-1_1-x64.dll"
@@ -302,7 +267,7 @@ foreach( file_i ${THIRD_PARTY_DLLS})
             TARGET muondetector-gui POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy
                     "${file_i}"
-                    "${MUONDETECTOR_GUI_BINARY_DIR}/../bin/"
+                    "${PROJECT_BINARY_DIR}/bin/"
     )
     install(FILES "${file_i}" DESTINATION "bin" COMPONENT gui)
 endforeach( file_i )
@@ -359,4 +324,3 @@ set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "GUI for monitoring and controlling the muondetector-daemon.")
 
-include(CPack)

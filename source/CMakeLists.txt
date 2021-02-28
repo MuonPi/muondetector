@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 3.10)
 project (muondetector)
 
+string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
+
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.cmake")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/output/lib")
@@ -35,13 +37,22 @@ add_compile_options(
 
 endif()
 
+if (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
+add_compile_options(
+    -mthumb
+    -mthumb-interwork
+    -march=armv7-a
+    )
+endif (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
+
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/library.cmake")
-include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/gui.cmake")
 
 if (MUONDETECTOR_BUILD_GUI)
-add_subdirectory(gui)
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/gui.cmake")
 endif (MUONDETECTOR_BUILD_GUI)
 if (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
 add_subdirectory(daemon)
 endif (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
+
+include(CPack)
