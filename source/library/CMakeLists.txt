@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 project(muondetector-shared LANGUAGES CXX)
 
-set(PROJECT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(PROJECT_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(PROJECT_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
+set(MUONDETECTOR_LIBRARY_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(MUONDETECTOR_LIBRARY_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(MUONDETECTOR_LIBRARY_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../lib")
@@ -109,52 +109,53 @@ endif()
 
 
 configure_file(
-    "${PROJECT_CONFIG_DIR}/version.h"
-    "${PROJECT_HEADER_DIR}/version.h"
+    "${MUONDETECTOR_LIBRARY_CONFIG_DIR}/version.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/version.h"
     )
 
-set(PROJECT_SOURCE_FILES
-    "${PROJECT_SRC_DIR}/config.cpp"
-    "${PROJECT_SRC_DIR}/tcpconnection.cpp"
-    "${PROJECT_SRC_DIR}/tcpmessage.cpp"
-    "${PROJECT_SRC_DIR}/mqtthandler.cpp"
+set(MUONDETECTOR_LIBRARY_SOURCE_FILES
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/config.cpp"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/tcpconnection.cpp"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/tcpmessage.cpp"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/mqtthandler.cpp"
     )
 
-set(PROJECT_HEADER_FILES
-    "${PROJECT_HEADER_DIR}/muondetector_shared_global.h"
-    "${PROJECT_HEADER_DIR}/gpio_pin_definitions.h"
-    "${PROJECT_HEADER_DIR}/histogram.h"
-    "${PROJECT_HEADER_DIR}/tcpconnection.h"
-    "${PROJECT_HEADER_DIR}/tcpmessage.h"
-    "${PROJECT_HEADER_DIR}/mqtthandler.h"
-    "${PROJECT_HEADER_DIR}/tcpmessage_keys.h"
-    "${PROJECT_HEADER_DIR}/ublox_messages.h"
-    "${PROJECT_HEADER_DIR}/ubx_msg_key_name_map.h"
-    "${PROJECT_HEADER_DIR}/ublox_structs.h"
-    "${PROJECT_HEADER_DIR}/muondetector_structs.h"
-    "${PROJECT_HEADER_DIR}/config.h"
+set(MUONDETECTOR_LIBRARY_HEADER_FILES
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/muondetector_shared_global.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/gpio_pin_definitions.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/histogram.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/tcpconnection.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/tcpmessage.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/mqtthandler.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/tcpmessage_keys.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/ublox_messages.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/ubx_msg_key_name_map.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/ublox_structs.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/muondetector_structs.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/config.h"
     )
 
-add_definitions(-DMUONDETECTOR_LIBRARY_EXPORT)
+add_library(muondetector-shared STATIC ${MUONDETECTOR_LIBRARY_SOURCE_FILES} ${PROJECT_HEADER_FILES})
 
-add_library(muondetector STATIC ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES})
+target_compile_definitions(muondetector-shared PUBLIC -DMUONDETECTOR_LIBRARY_EXPORT)
 
-set_property(TARGET muondetector PROPERTY POSITION_INDEPENDENT_CODE 1)
-target_include_directories(muondetector PUBLIC
-    ${PROJECT_HEADER_DIR}
+set_property(TARGET muondetector-shared PROPERTY POSITION_INDEPENDENT_CODE 1)
+
+target_include_directories(muondetector-shared PUBLIC
+    ${MUONDETECTOR_LIBRARY_HEADER_DIR}
     $<BUILD_INTERFACE:/usr/local/include/mqtt>
     $<INSTALL_INTERFACE:include/mqtt>
     )
 
 if(WIN32)
-target_link_directories(muondetector PUBLIC
+target_link_directories(muondetector-shared PUBLIC
     "${MQTT_C_DIR}/lib"
     "${MQTT_CPP_DIR}/lib"
     "${QWT_DIR}/lib"
     "${CRYPTOPP_DIR}/lib"
     )
-target_link_libraries(muondetector qwt.lib Qt5::Network paho-mqtt3c.lib paho-mqtt3a.lib paho-mqtt3cs.lib paho-mqtt3as.lib paho-mqttpp3.lib cryptlib.lib)
-target_include_directories(muondetector PUBLIC
+target_link_libraries(muondetector-shared qwt.lib Qt5::Network paho-mqtt3c.lib paho-mqtt3a.lib paho-mqtt3cs.lib paho-mqtt3as.lib paho-mqttpp3.lib cryptlib.lib)
+target_include_directories(muondetector-shared PUBLIC
     ${CRYPTOPP_DIR}/include/
     $<BUILD_INTERFACE:${QWT_DIR}/include>
     $<BUILD_INTERFACE:${MQTT_C_DIR}/include>
@@ -164,8 +165,5 @@ target_include_directories(muondetector PUBLIC
     ${Qt5Network_INCLUDE_DIRS}
     )
 else()
-target_link_libraries(muondetector Qt5::Network paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3)
+target_link_libraries(muondetector-shared Qt5::Network paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3)
 endif()
-
-install(TARGETS muondetector DESTINATION lib COMPONENT library)
-install(FILES ${PROJECT_HEADER_FILES} DESTINATION include COMPONENT library)
