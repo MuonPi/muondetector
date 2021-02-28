@@ -10,6 +10,11 @@
 #include <gpio_mapping.h>
 #include <gpio_pin_definitions.h>
 
+extern "C" {
+//#include <pigpiod_if2.h>
+#include <gpiod.h>
+}
+
 #define XOR_RATE 0
 #define AND_RATE 1
 #define COMBINED_RATE 2
@@ -20,8 +25,15 @@ class PigpiodHandler : public QObject
 {
 	Q_OBJECT
 public:
-    explicit PigpiodHandler(QVector<unsigned int> gpioPins = DEFAULT_VECTOR, unsigned int spi_freq = 61035,
-                            uint32_t spi_flags = 0, QObject *parent = nullptr);
+    enum class PinBias : std::uint8_t {
+		OpenDrain = 0x01,
+		OpenSource = 0x02,
+		ActiveLow = 0x04,
+		PullDown = 0x10,
+		PullUp = 0x20
+	};
+	
+	explicit PigpiodHandler(std::vector<unsigned int> gpioPins = {}, QObject *parent = nullptr);
     // can't make it private because of access of PigpiodHandler with global pointer
     QDateTime startOfProgram, lastSamplingTime; // the exact time when the program starts (Utc)
     QElapsedTimer elapsedEventTimer;
@@ -47,8 +59,10 @@ signals:
 public slots:
 	void stop();
     bool initialised();
-    void setInput(unsigned int gpio);
-    void setOutput(unsigned int gpio);
+    bool setInput(unsigned int gpio);
+    bool setOutput(unsigned int gpio, bool initState = false);
+	void setPinBias(unsigned int gpio, );
+
     void setPullUp(unsigned int gpio);
     void setPullDown(unsigned int gpio);
     void setGpioState(unsigned int gpio, bool state);
@@ -81,6 +95,10 @@ private:
 	void measureGpioClockTime();
 	bool inhibit=false;
 	int verbose=0;
+	std::shared_ptr<gpiod_chip> fChip { nullptr };
+	std::shared_ptr<gpiod_line_bulk> fInterruptInputLines { nullptr };
+	std::map<unsigned int, std::shared_ptr<gpiod_line>> fLineMap;
+	
 //	QVector<unsigned int> gpioPins;
 };
 

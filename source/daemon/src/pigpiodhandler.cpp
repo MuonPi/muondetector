@@ -8,15 +8,21 @@
 #include <sys/time.h>
 #include <cmath>
 #include <config.h>
+#include <stdexcept>
+	
 
+/*
 extern "C" {
-#include <pigpiod_if2.h>
+//#include <pigpiod_if2.h>
+#include <gpiod.h>
 }
+*/
 
 static int pi = -1;
 static int spiHandle = -1;
 static QPointer<PigpiodHandler> pigHandlerAddress; // QPointer automatically clears itself if pigHandler object is destroyed
 
+constexpr char CONSUMER[] = "muonpi-daemon";
 
 template <typename T>
 inline static T sqr(T x) { return x*x; }
@@ -196,59 +202,175 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
     }
 }
 
-PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpioPins, unsigned int spi_freq, uint32_t spi_flags, QObject *parent)
+PigpiodHandler::PigpiodHandler(std::vector<unsigned int> gpioPins,QObject *parent)
     : QObject(parent)
 {
     startOfProgram = QDateTime::currentDateTimeUtc();
     lastSamplingTime = startOfProgram;
     elapsedEventTimer.start();
     pigHandlerAddress = this;
-    spiClkFreq = spi_freq;
+    
+	spiClkFreq = spi_freq;
     spiFlags = spi_flags;
-    pi = pigpio_start((char*)"127.0.0.1", (char*)"8888");
-    if (pi < 0) {
-        //qDebug() << "could not start pigpio. Is pigpiod running?";
-        //qDebug() << "you can start pigpiod with: sudo pigpiod -s 1";
-        qFatal("Could not connect to pigpio daemon. Is pigpiod running? Start with sudo pigpiod -s 1");
-        return;
-    }
-
+    
+	char *chipname = "gpiochip0";
+	struct gpiod_line *line;
+	
+	//chip = gpiod_chip_open_by_name(chipname);
+	fChip.reset( gpiod_chip_open_by_name(chipname) );
+	if (fChip == nullptr) {
+		qFatal("Open chip failed");
+		throw std::exception();
+	}
+	
     isInitialised = true;
 
-//    gpioPins=gpio_pins;
-    for (auto& gpioPin : gpioPins) {
-        //if (GPIO_SIGNAL_MAP[gpioPin].direction!=DIR_IN) continue;
-        set_mode(pi, gpioPin, PI_INPUT);
-//        if (gpioPin==ADC_READY) set_pull_up_down(pi, GPIO_PINMAP[gpioPin], PI_PUD_UP);
-
-            //qDebug() << "set callback for pin " << gpio_pin;
-            int result=callback(pi, gpioPin, RISING_EDGE, cbFunction);
-            if (result<0) {
-                qCritical()<<"error registering gpio callback for BCM pin"<<gpioPin;
-            }
-//        callback(pi, gpio_pin, FALLING_EDGE, cbFunction);
-        //        if (value==pigif_bad_malloc||
-        //            value==pigif_dublicate_callback||
-        //            value==pigif_bad_callback){
-        //            continue;
-        //        }
+	constexpr unsigned int _interrupt_pins[gpioPins.size()] = { 0U };
+	std::copy( gpioPins.const_begin(), gpioPins.const_end(), std::begin(_interrupt_pins) );
+	fInterruptInputLines.reset( gpiod_chip_get_lines( fChip, _interrupt_pins, gpioPins.size() ) );
+	if ( fInterruptInputLines == nullptr ) {
+		qCritical()<<"error allocating gpio lines";
+		continue;
+	}
+	// request bulk object for interrupt inputs, set lines to input
+	int ret = gpiod_line_request_bulk_input( fInterruptInputLines, CONSUMER );
+	if ( ret < 0 ) {
+		qCritical()<<"Request gpio lines as input failed";
+	}
+	// register interrupt line bulk for rising edge events
+	ret = gpiod_line_request_bulk_rising_edge_events( fInterruptInputLines, CONSUMER);
+	if ( ret < 0 ) {
+		qCritical()<<"Request for registering gpio lines for event notification failed";
+	}
+	
+	
+	/*
+	for (auto& gpioPin : gpioPins) {
+        std::shared_ptr<gpiod_line> line ( gpiod_chip_get_line(fChip, gpioPin) );
+		if ( line == nullptr ) {
+			qCritical()<<"error allocating gpio line"<<gpioPin;
+			continue;
+		}
+		int ret = gpiod_line_request_input( line, CONSUMER );
+		if ( ret < 0 ) {
+			qCritical()<<"Request gpio line" << gpioPin << "as input failed";
+			continue;
+		}
+		
+		
+		int result=callback(pi, gpioPin, RISING_EDGE, cbFunction);
+		if (result<0) {
+			qCritical()<<"error registering gpio callback for BCM pin"<<gpioPin;
+		}
     }
+    */
     gpioClockTimeMeasurementTimer.setInterval(MuonPi::Config::Hardware::GPIO::Clock::Measurement::interval/*GPIO_CLOCK_MEASUREMENT_INTERVAL_MS*/);
     gpioClockTimeMeasurementTimer.setSingleShot(false);
     connect(&gpioClockTimeMeasurementTimer, &QTimer::timeout, this, &PigpiodHandler::measureGpioClockTime);
     gpioClockTimeMeasurementTimer.start();
 }
 
-void PigpiodHandler::setInput(unsigned int gpio) {
-    if (isInitialised) set_mode(pi, gpio, PI_INPUT);
+bool PigpiodHandler::setInput(unsigned int gpio) {
+	if (!isInitialised) return;
+	auto it = fLineMap.find(gpio);
+	if (it != fLineMap.end()) {
+		// line object exists, request for input
+		int ret = gpiod_line_request_input( it->second, CONSUMER );
+		if ( ret < 0 ) {
+			qCritical()<<"Request gpio line" << gpio << "as input failed";
+			return false;
+		}
+		return true;
+	}
+	// line was not allocated yet, so do it now
+	std::shared_ptr<gpiod_line> line ( gpiod_chip_get_line(fChip, gpio) );
+	if ( line == nullptr ) {
+		qCritical()<<"error allocating gpio line"<<gpio;
+		return false;
+	}
+	int ret = gpiod_line_request_input( line, CONSUMER );
+	if ( ret < 0 ) {
+		qCritical()<<"Request gpio line" << gpio << "as input failed";
+		return false;
+	}
+	fLineMap.emplace( { gpio, line } );
+	return true;
+	//set_mode(pi, gpio, PI_INPUT);
 }
 
-void PigpiodHandler::setOutput(unsigned int gpio) {
-    if (isInitialised) set_mode(pi, gpio, PI_OUTPUT);
+bool PigpiodHandler::setOutput(unsigned int gpio, bool initState) {
+//    if (isInitialised) set_mode(pi, gpio, PI_OUTPUT);
+	if (!isInitialised) return;
+	auto it = fLineMap.find(gpio);
+	if (it != fLineMap.end()) {
+		// line object exists, request for output
+		int ret = gpiod_line_request_output( it->second, CONSUMER, static_cast<int>(initState) );
+		if ( ret < 0 ) {
+			qCritical()<<"Request gpio line" << gpio << "as output failed";
+			return false;
+		}
+		return true;
+	}
+	// line was not allocated yet, so do it now
+	std::shared_ptr<gpiod_line> line ( gpiod_chip_get_line(fChip, gpio) );
+	if ( line == nullptr ) {
+		qCritical()<<"error allocating gpio line"<<gpio;
+		return false;
+	}
+	int ret = gpiod_line_request_output( line, CONSUMER, static_cast<int>(initState) );
+	if ( ret < 0 ) {
+		qCritical()<<"Request gpio line" << gpio << "as output failed";
+		return false;
+	}
+	fLineMap.emplace( { gpio, line } );
+	return true;
 }
 
-void PigpiodHandler::setPullUp(unsigned int gpio) {
-    if (isInitialised) set_pull_up_down(pi, gpio, PI_PUD_UP);
+void PigpiodHandler::setPinBias(unsigned int gpio, std::uint8_t pin_bias) {
+//    if (isInitialised) set_pull_up_down(pi, gpio, PI_PUD_UP);
+	if (!isInitialised) return;
+	int flags = 0;
+	if ( pin_bias & PinBias::OpenDrain ) {
+		flags |= GPIOD_LINE_REQUEST_FLAG_OPEN_DRAIN;
+	} else if ( pin_bias & PinBias::OpenSource ) {
+		flags |= GPIOD_LINE_REQUEST_FLAG_OPEN_SOURCE;
+	} else if ( pin_bias & PinBias::ActiveLow ) {
+		flags |= GPIOD_LINE_REQUEST_FLAG_ACTIVE_LOW;
+	} else if ( pin_bias & PinBias::PullDown ) {
+		flags |= GPIOD_LINE_REQUEST_FLAG_BIAS_PULL_DOWN;
+	} else if ( pin_bias & PinBias::PullUp ) {
+		flags |= GPIOD_LINE_REQUEST_FLAG_BIAS_PULL_UP;
+	} else if ( !(pin_bias & PinBias::PullDown) && !(pin_bias & PinBias::PullUp) ) {
+		flags |= GPIOD_LINE_REQUEST_FLAG_BIAS_DISABLED;
+	}
+		
+	auto it = fLineMap.find(gpio);
+	if (it != fLineMap.end()) {
+		// line object exists, set config
+		int ret = gpiod_line_set_config( 
+			it->second, GPIOD_LINE_REQUEST_DIRECTION_AS_IS,
+			flags, 0 );
+		if ( ret < 0 ) {
+			qCritical()<<"Set bias config for gpio line" << gpio << "failed";
+			return false;
+		}
+		return true;
+	}
+	// line was not allocated yet, so do it now
+	std::shared_ptr<gpiod_line> line ( gpiod_chip_get_line(fChip, gpio) );
+	if ( line == nullptr ) {
+		qCritical()<<"error allocating gpio line"<<gpio;
+		return false;
+	}
+	gpiod_line_request_config config { CONSUMER, GPIOD_LINE_REQUEST_DIRECTION_AS_IS , flags };
+	int ret = gpiod_line_request( line, &config, 0 );
+	if ( ret < 0 ) {
+		qCritical()<<"Request gpio line" << gpio << "for bias config failed";
+		return false;
+	}
+	fLineMap.emplace( { gpio, line } );
+	return true;
+
 }
 
 void PigpiodHandler::setPullDown(unsigned int gpio) {

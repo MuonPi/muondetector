@@ -42,6 +42,7 @@ find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
 find_library(CRYPTOPP crypto++ REQUIRED)
 find_library(CONFIGPP config++ REQUIRED)
 find_library(PIGPIOD_IF2 pigpiod_if2 REQUIRED)
+find_library(LIBGPIOD gpiod REQUIRED)
 find_library(RT rt REQUIRED)
 
 endif()
