@@ -48,7 +48,7 @@ Versions after this commit use CMake as build system. The steps to building the 
 1. enter the build directory
 2. run `cmake ../source -DMUONDETECTOR_BUID_GUI=OFF`
 3. run `make package`
-4. go to `../packages`
+4. `cd packages`
 5. install the debian archive found there with `sudo apt install ./<filename>.deb`
 
 ## TROUBLESHOOTING AND DEPENDENCIES:  
