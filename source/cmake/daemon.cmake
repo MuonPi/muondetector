@@ -1,31 +1,15 @@
 cmake_minimum_required(VERSION 3.10)
 project(muondetector-daemon LANGUAGES CXX C)
 
-string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
+set(MUONDETECTOR_DAEMON_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/daemon/src")
+set(MUONDETECTOR_DAEMON_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/daemon/include")
+set(MUONDETECTOR_DAEMON_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/daemon/config")
+set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/library/include/")
 
-set(MUONDETECTOR_DAEMON_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(MUONDETECTOR_DAEMON_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(MUONDETECTOR_DAEMON_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
-set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../library/include/")
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../bin")
-
-include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/version.cmake")
-
-if(${MUONDETECTOR_BUILD_TIDY})
-  set(CMAKE_CXX_CLANG_TIDY
-      clang-tidy;
-      -header-filter=^global;
-      -checks=-*,readability-*,bugprone-*,performace-*,clang-analyzer-*,modernize-*,hicpp-*;
-      )
-endif(${MUONDETECTOR_BUILD_TIDY})
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(Qt5_DIR "/usr/lib/x86_64-linux-gnu/cmake/Qt5/")
 
@@ -45,21 +29,6 @@ find_library(PIGPIOD_IF2 pigpiod_if2 REQUIRED)
 find_library(RT rt REQUIRED)
 
 endif()
-
-find_library(MUONDETECTOR_LIB NAMES muondetector HINTS "${CMAKE_CURRENT_BINARY_DIR}/../lib/" REQUIRED)
-
-add_compile_options(
-    -Wall
-    -Wextra
-    -Wshadow
-    -Wpedantic
-#    -Werror
-    -O3
-    )
-
-
-
-
 
 set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/main.cpp"
@@ -128,15 +97,15 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/linux/i2c-dev.h"
     )
 
-set(LOGIN_SOURCE_FILES
+set(MUONDETECTOR_LOGIN_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/muondetector-login.cpp"
     )
 
-set(LOGIN_INSTALL_FILES
+set(MUONDETECTOR_LOGIN_INSTALL_FILES
     "${MUONDETECTOR_DAEMON_CONFIG_DIR}/muondetector-login"
     )
 
-set(DAEMON_INSTALL_FILES
+set(MUONDETECTOR_DAEMON_INSTALL_FILES
     "${MUONDETECTOR_DAEMON_CONFIG_DIR}/muondetector.conf"
     )
 
@@ -150,7 +119,7 @@ configure_file(
     )
 
 
-add_executable(muondetector-login ${LOGIN_SOURCE_FILES})
+add_executable(muondetector-login ${MUONDETECTOR_LOGIN_SOURCE_FILES})
 
 set_property(TARGET muondetector-login PROPERTY POSITION_INDEPENDENT_CODE 1)
 
@@ -215,30 +184,17 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz" DESTINATION "${CMAKE_IN
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1.gz" DESTINATION "share/man/man1/" COMPONENT daemon)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1.gz" DESTINATION "share/man/man1/" COMPONENT daemon)
 install(FILES "${MUONDETECTOR_DAEMON_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT daemon)
-install(FILES ${DAEMON_INSTALL_FILES} DESTINATION "/etc/muondetector/" COMPONENT daemon)
+install(FILES ${MUONDETECTOR_DAEMON_INSTALL_FILES} DESTINATION "/etc/muondetector/" COMPONENT daemon)
 install(FILES "${MUONDETECTOR_DAEMON_CONFIG_DIR}/muondetector-daemon.service" DESTINATION "/lib/systemd/system" COMPONENT daemon)
 install(FILES "${MUONDETECTOR_DAEMON_CONFIG_DIR}/pigpiod.conf" DESTINATION "/etc/systemd/system/pigpiod.service.d/" COMPONENT daemon)
-install(PROGRAMS ${LOGIN_INSTALL_FILES} DESTINATION bin COMPONENT daemon)
+install(PROGRAMS ${MUONDETECTOR_LOGIN_INSTALL_FILES} DESTINATION bin COMPONENT daemon)
 
 
 
-set(CPACK_GENERATOR "DEB")
-set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "pigpiod, libpaho-mqttpp")
-set(CPACK_RESOURCE_FILE_LICENSE "${MUONDETECTOR_DAEMON_CONFIG_DIR}/license")
-set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${MUONDETECTOR_DAEMON_CONFIG_DIR}/preinst;${PROJECT_CONFIG_DIR}/postinst;${PROJECT_CONFIG_DIR}/prerm;${PROJECT_CONFIG_DIR}/conffiles")
-set(CPACK_PACKAGE_VENDOR "MuonPi.org")
-set(CPACK_DEBIAN_PACKAGE_SECTION "net")
-set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
-set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
-set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
-set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Daemon that controls the muon detector board")
-set(CPACK_DEBIAN_PACKAGE_DESCRIPTION " It opens serial and i2c connections to the muondetector board.
+set(CPACK_DEBIAN_DAEMON_PACKAGE_DEPENDS "pigpiod, libpaho-mqttpp")
+set(CPACK_DEBIAN_DAEMON_PACKAGE_CONTROL_EXTRA "${MUONDETECTOR_DAEMON_CONFIG_DIR}/preinst;${PROJECT_CONFIG_DIR}/postinst;${PROJECT_CONFIG_DIR}/prerm;${PROJECT_CONFIG_DIR}/conffiles")
+set(CPACK_DEBIAN_DAEMON_PACKAGE_SECTION "net")
+set(CPACK_DEBIAN_DAEMON_DESCRIPTION " GUI for monitoring and controlling the muondetector-daemon.
+ It opens serial and i2c connections to the muondetector board.
  It runs in the background and sends the data to the central server.
  It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi <developer@muonpi.org>")
-set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../packages/")
-
-include(CPack)
