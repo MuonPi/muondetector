@@ -166,3 +166,6 @@ target_include_directories(muondetector PUBLIC
 else()
 target_link_libraries(muondetector Qt5::Network paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3)
 endif()
+
+install(TARGETS muondetector DESTINATION lib COMPONENT library)
+install(FILES ${PROJECT_HEADER_FILES} DESTINATION include COMPONENT library)
