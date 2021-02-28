@@ -32,14 +32,24 @@ Depending on the device of you choice, install the GUI for controlling the softw
    - "muondetector-gui_1.1.2-ubuntu_bionic-x64.deb" on a Ubuntu 18.xx machine 
    - "muondetector-gui_1.1.2-windows-x64.zip" on a 64-bit Windows machine 
 
-### Installation from source (master branch)
-under development
+### Installation from source
+When compiling directly from the git repository, due to a change in build system with version [2.0.0](https://github.com/MuonPi/muondetector/tree/v2.0.0) the steps diverge before and after this update. Also note that you need to manually build and install the [paho-mqttpp](https://github.com/eclipse/paho.mqtt.cpp) library.
 
-When compiling the master branch, pre-installation of all dependencies is needed (see some dependencies in the section below). Clone the repository and follow the steps below:
+#### version < 2.0.0
+Versions before this commit use qmake as build system.
+Follow the steps below to build the daemon:
 1. In folder `./muondetector-shared` excecute `qmake` and `make`. Depending on error messages check for missing dependencies.
 2. Copy the compiled libraries to your library folder: `sudo cp ./muondetector-shared/bin/* /usr/lib/`
 3. In folder `./muondetector-daemon` excecute `qmake` and `make`. Depending on error messages check for missing dependencies.
 4. The daemon can be found in folder `./muondetector-daemon/bin/`
+
+#### version >= 2.0.0
+Versions after this commit use CMake as build system. The steps to building the daemon are as follows:
+1. enter the build directory
+2. run `cmake ../source -DMUONDETECTOR_BUID_GUI=OFF`
+3. run `make package`
+4. go to `../packages`
+5. install the debian archive found there with `sudo apt install ./<filename>.deb`
 
 ## TROUBLESHOOTING AND DEPENDENCIES:  
 
@@ -57,14 +67,13 @@ When trying to create a Makefile with qmake (qt version 5.7.1 on raspbian) there
 
 Cheat-Sheet Copy&Paste:
 
-`sudo apt-get install qt5-default pyqt5-dev qt5-qmake libqt5serialport5-dev libqt5svg5-dev libqwt-qt5-dev libqwt-dev libcrypto++-dev libcrypto++-doc libcrypto++-utils libcrypto++-dev libcrypto++-doc libcrypto++-utils lftp libpaho-mqttpp qtdeclarative5-dev`
+`sudo apt install qt5-default pyqt5-dev qt5-qmake libqt5serialport5-dev libqt5svg5-dev libqwt-qt5-dev libqwt-dev libcrypto++-dev libcrypto++-doc libcrypto++-utils libcrypto++-dev libcrypto++-doc libcrypto++-utils lftp libpaho-mqttpp qtdeclarative5-dev libconfig++-dev`
 
 ### Troubleshooting
 
 #### Version > 1.1.2
 
 It may be when starting for the first time that, if the daemon is not started as a service, the data folder structure cannot be written due to insufficient rights. Starting the daemon with sudo-er rights should be avoided. Here, the folder structure can be created by hand to solve the issue: copy paste the hashed folder name from the error output of the daemon when started without folder structure and create the folder with `sudo mkdir /var/muondetector/[Hashed Name]` with `notUploadedData` and `uploadedData` as sub-folders. Then, change the user rights with `sudo chown -R pi:pi /var/muondetector`. When restarted, the daemon should be able to write the data. 
-
 
 ## RUNNING THE SOFTWARE
 
