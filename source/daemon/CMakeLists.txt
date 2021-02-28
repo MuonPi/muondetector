@@ -3,9 +3,9 @@ project(muondetector-daemon LANGUAGES CXX C)
 
 string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
 
-set(PROJECT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(PROJECT_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(PROJECT_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
+set(MUONDETECTOR_DAEMON_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(MUONDETECTOR_DAEMON_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(MUONDETECTOR_DAEMON_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
 set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../library/include/")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../bin")
@@ -61,91 +61,91 @@ add_compile_options(
 
 
 
-set(DAEMON_SOURCE_FILES
-    "${PROJECT_SRC_DIR}/main.cpp"
-    "${PROJECT_SRC_DIR}/qtserialublox.cpp"
-    "${PROJECT_SRC_DIR}/qtserialublox_processmessages.cpp"
-    "${PROJECT_SRC_DIR}/pigpiodhandler.cpp"
-    "${PROJECT_SRC_DIR}/daemon.cpp"
-    "${PROJECT_SRC_DIR}/custom_io_operators.cpp"
-    "${PROJECT_SRC_DIR}/filehandler.cpp"
-    "${PROJECT_SRC_DIR}/calibration.cpp"
-    "${PROJECT_SRC_DIR}/gpio_mapping.cpp"
-    "${PROJECT_SRC_DIR}/logengine.cpp"
-    "${PROJECT_SRC_DIR}/geohash.cpp"
-    "${PROJECT_SRC_DIR}/tdc7200.cpp"
-    "${PROJECT_SRC_DIR}/i2c/i2cbusses.c"
-    "${PROJECT_SRC_DIR}/i2c/i2cdevices/adafruit_ssd1306/adafruit_ssd1306.cpp"
-    "${PROJECT_SRC_DIR}/i2c/i2cdevices/ads1115/ads1115.cpp"
-    "${PROJECT_SRC_DIR}/i2c/i2cdevices/bme280/bme280.cpp"
-    "${PROJECT_SRC_DIR}/i2c/i2cdevices/bmp180/bmp180.cpp"
-    "${PROJECT_SRC_DIR}/i2c/i2cdevices/eeprom24aa02/eeprom24aa02.cpp"
-    "${PROJECT_SRC_DIR}/i2c/i2cdevices/hmc5883/hmc5883.cpp"
-    "${PROJECT_SRC_DIR}/i2c/i2cdevices/lm75/lm75.cpp"
-    "${PROJECT_SRC_DIR}/i2c/i2cdevices/mcp4728/mcp4728.cpp"
-    "${PROJECT_SRC_DIR}/i2c/i2cdevices/pca9536/pca9536.cpp"
-    "${PROJECT_SRC_DIR}/i2c/i2cdevices/sht21/sht21.cpp"
-    "${PROJECT_SRC_DIR}/i2c/i2cdevices/ubloxi2c/ubloxi2c.cpp"
-    "${PROJECT_SRC_DIR}/i2c/i2cdevices/x9119/x9119.cpp"
-    "${PROJECT_SRC_DIR}/i2c/i2cdevices/Adafruit_GFX.cpp"
-    "${PROJECT_SRC_DIR}/i2c/i2cdevices/i2cdevice.cpp"
-    "${PROJECT_SRC_DIR}/i2c/i2cdevices/glcdfont.c"
+set(MUONDETECTOR_DAEMON_SOURCE_FILES
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/main.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/qtserialublox.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/qtserialublox_processmessages.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/pigpiodhandler.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/daemon.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/custom_io_operators.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/filehandler.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/calibration.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/gpio_mapping.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/logengine.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/geohash.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/tdc7200.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cbusses.c"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/adafruit_ssd1306/adafruit_ssd1306.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/ads1115/ads1115.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/bme280/bme280.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/bmp180/bmp180.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/eeprom24aa02/eeprom24aa02.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/hmc5883/hmc5883.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/lm75/lm75.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/mcp4728/mcp4728.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/pca9536/pca9536.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/sht21/sht21.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/ubloxi2c/ubloxi2c.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/x9119/x9119.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/Adafruit_GFX.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/i2cdevice.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/glcdfont.c"
     )
 
-set(DAEMON_HEADER_FILES
-    "${PROJECT_HEADER_DIR}/unixtime_from_gps.h"
-    "${PROJECT_HEADER_DIR}/time_from_rtc.h"
-    "${PROJECT_HEADER_DIR}/qtserialublox.h"
-    "${PROJECT_HEADER_DIR}/daemon.h"
-    "${PROJECT_HEADER_DIR}/pigpiodhandler.h"
-    "${PROJECT_HEADER_DIR}/custom_io_operators.h"
-    "${PROJECT_HEADER_DIR}/filehandler.h"
-    "${PROJECT_HEADER_DIR}/calibration.h"
-    "${PROJECT_HEADER_DIR}/logparameter.h"
-    "${PROJECT_HEADER_DIR}/gpio_mapping.h"
-    "${PROJECT_HEADER_DIR}/tdc7200.h"
-    "${PROJECT_HEADER_DIR}/logengine.h"
-    "${PROJECT_HEADER_DIR}/geohash.h"
-    "${PROJECT_HEADER_DIR}/i2c/addresses.h"
-    "${PROJECT_HEADER_DIR}/i2c/custom_i2cdetect.h"
-    "${PROJECT_HEADER_DIR}/i2c/i2cbusses.h"
-    "${PROJECT_HEADER_DIR}/i2c/i2cdevices.h"
-    "${PROJECT_HEADER_DIR}/i2c/i2cdevices/adafruit_ssd1306/adafruit_ssd1306.h"
-    "${PROJECT_HEADER_DIR}/i2c/i2cdevices/ads1015/ads1015.h"
-    "${PROJECT_HEADER_DIR}/i2c/i2cdevices/ads1115/ads1115.h"
-    "${PROJECT_HEADER_DIR}/i2c/i2cdevices/bme280/bme280.h"
-    "${PROJECT_HEADER_DIR}/i2c/i2cdevices/bmp180/bmp180.h"
-    "${PROJECT_HEADER_DIR}/i2c/i2cdevices/eeprom24aa02/eeprom24aa02.h"
-    "${PROJECT_HEADER_DIR}/i2c/i2cdevices/hmc5883/hmc5883.h"
-    "${PROJECT_HEADER_DIR}/i2c/i2cdevices/lm75/lm75.h"
-    "${PROJECT_HEADER_DIR}/i2c/i2cdevices/mcp4728/mcp4728.h"
-    "${PROJECT_HEADER_DIR}/i2c/i2cdevices/pca9536/pca9536.h"
-    "${PROJECT_HEADER_DIR}/i2c/i2cdevices/sht21/sht21.h"
-    "${PROJECT_HEADER_DIR}/i2c/i2cdevices/ubloxi2c/ubloxi2c.h"
-    "${PROJECT_HEADER_DIR}/i2c/i2cdevices/x9119/x9119.h"
-    "${PROJECT_HEADER_DIR}/i2c/i2cdevices/Adafruit_GFX.h"
-    "${PROJECT_HEADER_DIR}/i2c/i2cdevices/i2cdevice.h"
-    "${PROJECT_HEADER_DIR}/i2c/linux/i2c-dev.h"
+set(MUONDETECTOR_DAEMON_HEADER_FILES
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/unixtime_from_gps.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/time_from_rtc.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/qtserialublox.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/daemon.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/pigpiodhandler.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/custom_io_operators.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/filehandler.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/calibration.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/logparameter.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/gpio_mapping.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/tdc7200.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/logengine.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/geohash.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/addresses.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/custom_i2cdetect.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cbusses.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/adafruit_ssd1306/adafruit_ssd1306.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/ads1015/ads1015.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/ads1115/ads1115.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/bme280/bme280.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/bmp180/bmp180.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/eeprom24aa02/eeprom24aa02.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/hmc5883/hmc5883.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/lm75/lm75.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/mcp4728/mcp4728.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/pca9536/pca9536.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/sht21/sht21.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/ubloxi2c/ubloxi2c.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/x9119/x9119.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/Adafruit_GFX.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/i2cdevice.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/linux/i2c-dev.h"
     )
 
 set(LOGIN_SOURCE_FILES
-    "${PROJECT_SRC_DIR}/muondetector-login.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/muondetector-login.cpp"
     )
 
 set(LOGIN_INSTALL_FILES
-    "${PROJECT_CONFIG_DIR}/muondetector-login"
+    "${MUONDETECTOR_DAEMON_CONFIG_DIR}/muondetector-login"
     )
 
 set(DAEMON_INSTALL_FILES
-    "${PROJECT_CONFIG_DIR}/muondetector.conf"
+    "${MUONDETECTOR_DAEMON_CONFIG_DIR}/muondetector.conf"
     )
 
 configure_file(
-    "${PROJECT_CONFIG_DIR}/muondetector-daemon.1"
+    "${MUONDETECTOR_DAEMON_CONFIG_DIR}/muondetector-daemon.1"
     "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1"
     )
 configure_file(
-    "${PROJECT_CONFIG_DIR}/muondetector-login.1"
+    "${MUONDETECTOR_DAEMON_CONFIG_DIR}/muondetector-login.1"
     "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1"
     )
 
@@ -168,12 +168,12 @@ target_link_libraries(muondetector-login
     muondetector
     )
 
-add_executable(muondetector-daemon ${DAEMON_SOURCE_FILES} ${DAEMON_HEADER_FILES})
+add_executable(muondetector-daemon ${MUONDETECTOR_DAEMON_SOURCE_FILES} ${MUONDETECTOR_DAEMON_HEADER_FILES})
 
 set_property(TARGET muondetector-daemon PROPERTY POSITION_INDEPENDENT_CODE 1)
 
 target_include_directories(muondetector-daemon PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_HEADER_DIR}>
+    $<BUILD_INTERFACE:${MUONDETECTOR_DAEMON_HEADER_DIR}>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 
 target_include_directories(muondetector-daemon PUBLIC
@@ -205,7 +205,7 @@ endif ()
 
 include(GNUInstallDirs)
 
-add_custom_target(changelog-daemon ALL COMMAND gzip -cn9 "${PROJECT_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
+add_custom_target(changelog-daemon ALL COMMAND gzip -cn9 "${MUONDETECTOR_DAEMON_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
 add_custom_target(manpage-daemon ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1.gz")
 add_custom_target(manpage-login ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1.gz")
 
@@ -214,10 +214,10 @@ install(TARGETS muondetector-login DESTINATION lib/muondetector/bin COMPONENT da
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT daemon)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1.gz" DESTINATION "share/man/man1/" COMPONENT daemon)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1.gz" DESTINATION "share/man/man1/" COMPONENT daemon)
-install(FILES "${PROJECT_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT daemon)
+install(FILES "${MUONDETECTOR_DAEMON_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT daemon)
 install(FILES ${DAEMON_INSTALL_FILES} DESTINATION "/etc/muondetector/" COMPONENT daemon)
-install(FILES "${PROJECT_CONFIG_DIR}/muondetector-daemon.service" DESTINATION "/lib/systemd/system" COMPONENT daemon)
-install(FILES "${PROJECT_CONFIG_DIR}/pigpiod.conf" DESTINATION "/etc/systemd/system/pigpiod.service.d/" COMPONENT daemon)
+install(FILES "${MUONDETECTOR_DAEMON_CONFIG_DIR}/muondetector-daemon.service" DESTINATION "/lib/systemd/system" COMPONENT daemon)
+install(FILES "${MUONDETECTOR_DAEMON_CONFIG_DIR}/pigpiod.conf" DESTINATION "/etc/systemd/system/pigpiod.service.d/" COMPONENT daemon)
 install(PROGRAMS ${LOGIN_INSTALL_FILES} DESTINATION bin COMPONENT daemon)
 
 
@@ -225,8 +225,8 @@ install(PROGRAMS ${LOGIN_INSTALL_FILES} DESTINATION bin COMPONENT daemon)
 set(CPACK_GENERATOR "DEB")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "pigpiod, libpaho-mqttpp")
-set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
-set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${PROJECT_CONFIG_DIR}/preinst;${PROJECT_CONFIG_DIR}/postinst;${PROJECT_CONFIG_DIR}/prerm;${PROJECT_CONFIG_DIR}/conffiles")
+set(CPACK_RESOURCE_FILE_LICENSE "${MUONDETECTOR_DAEMON_CONFIG_DIR}/license")
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${MUONDETECTOR_DAEMON_CONFIG_DIR}/preinst;${PROJECT_CONFIG_DIR}/postinst;${PROJECT_CONFIG_DIR}/prerm;${PROJECT_CONFIG_DIR}/conffiles")
 set(CPACK_PACKAGE_VENDOR "MuonPi.org")
 set(CPACK_DEBIAN_PACKAGE_SECTION "net")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")

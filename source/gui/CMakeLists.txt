@@ -3,12 +3,12 @@ project(muondetector-gui LANGUAGES CXX)
 
 string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
 
-set(PROJECT_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(PROJECT_UI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(PROJECT_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-set(PROJECT_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(PROJECT_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
-set(PROJECT_QML_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qml")
+set(MUONDETECTOR_GUI_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(MUONDETECTOR_GUI_UI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(MUONDETECTOR_GUI_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(MUONDETECTOR_GUI_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(MUONDETECTOR_GUI_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
+set(MUONDETECTOR_GUI_QML_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qml")
 set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../library/include/")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../bin")
@@ -131,77 +131,77 @@ add_compile_options(
     )
 endif (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
 
-set(PROJECT_SOURCE_FILES
-    "${PROJECT_SRC_DIR}/calibform.cpp"
-    "${PROJECT_SRC_DIR}/calibscandialog.cpp"
-    "${PROJECT_SRC_DIR}/custom_histogram_widget.cpp"
-    "${PROJECT_SRC_DIR}/custom_plot_widget.cpp"
-    "${PROJECT_SRC_DIR}/gnssposwidget.cpp"
-    "${PROJECT_SRC_DIR}/gpssatsform.cpp"
-    "${PROJECT_SRC_DIR}/histogramdataform.cpp"
-    "${PROJECT_SRC_DIR}/i2cform.cpp"
-    "${PROJECT_SRC_DIR}/logplotswidget.cpp"
-    "${PROJECT_SRC_DIR}/main.cpp"
-    "${PROJECT_SRC_DIR}/mainwindow.cpp"
-    "${PROJECT_SRC_DIR}/map.cpp"
-    "${PROJECT_SRC_DIR}/parametermonitorform.cpp"
-    "${PROJECT_SRC_DIR}/plotcustom.cpp"
-    "${PROJECT_SRC_DIR}/scanform.cpp"
-    "${PROJECT_SRC_DIR}/settings.cpp"
-    "${PROJECT_SRC_DIR}/spiform.cpp"
-    "${PROJECT_SRC_DIR}/status.cpp"
+set(MUONDETECTOR_GUI_SOURCE_FILES
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/calibform.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/calibscandialog.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/custom_histogram_widget.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/custom_plot_widget.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/gnssposwidget.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/gpssatsform.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/histogramdataform.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/i2cform.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/logplotswidget.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/main.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/mainwindow.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/map.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/parametermonitorform.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/plotcustom.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/scanform.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/settings.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/spiform.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/status.cpp"
     )
 
-set(PROJECT_HEADER_FILES
-    "${PROJECT_HEADER_DIR}/calibform.h"
-    "${PROJECT_HEADER_DIR}/calibscandialog.h"
-    "${PROJECT_HEADER_DIR}/custom_histogram_widget.h"
-    "${PROJECT_HEADER_DIR}/custom_plot_widget.h"
-    "${PROJECT_HEADER_DIR}/gnssposwidget.h"
-    "${PROJECT_HEADER_DIR}/gpssatsform.h"
-    "${PROJECT_HEADER_DIR}/histogramdataform.h"
-    "${PROJECT_HEADER_DIR}/i2cform.h"
-    "${PROJECT_HEADER_DIR}/logplotswidget.h"
-    "${PROJECT_HEADER_DIR}/mainwindow.h"
-    "${PROJECT_HEADER_DIR}/map.h"
-    "${PROJECT_HEADER_DIR}/parametermonitorform.h"
-    "${PROJECT_HEADER_DIR}/plotcustom.h"
-    "${PROJECT_HEADER_DIR}/scanform.h"
-    "${PROJECT_HEADER_DIR}/settings.h"
-    "${PROJECT_HEADER_DIR}/spiform.h"
-    "${PROJECT_HEADER_DIR}/status.h"
+set(MUONDETECTOR_GUI_HEADER_FILES
+    "${MUONDETECTOR_GUI_HEADER_DIR}/calibform.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/calibscandialog.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/custom_histogram_widget.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/custom_plot_widget.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/gnssposwidget.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/gpssatsform.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/histogramdataform.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/i2cform.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/logplotswidget.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/mainwindow.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/map.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/parametermonitorform.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/plotcustom.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/scanform.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/settings.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/spiform.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/status.h"
     )
-set(PROJECT_UI_FILES
-    "${PROJECT_UI_DIR}/calibform.ui"
-    "${PROJECT_UI_DIR}/calibscandialog.ui"
-    "${PROJECT_UI_DIR}/gnssposwidget.ui"
-    "${PROJECT_UI_DIR}/gpssatsform.ui"
-    "${PROJECT_UI_DIR}/histogramdataform.ui"
-    "${PROJECT_UI_DIR}/i2cform.ui"
-    "${PROJECT_UI_DIR}/logplotswidget.ui"
-    "${PROJECT_UI_DIR}/mainwindow.ui"
-    "${PROJECT_UI_DIR}/map.ui"
-    "${PROJECT_UI_DIR}/parametermonitorform.ui"
-    "${PROJECT_UI_DIR}/scanform.ui"
-    "${PROJECT_UI_DIR}/settings.ui"
-    "${PROJECT_UI_DIR}/spiform.ui"
-    "${PROJECT_UI_DIR}/status.ui"
+set(MUONDETECTOR_GUI_UI_FILES
+    "${MUONDETECTOR_GUI_UI_DIR}/calibform.ui"
+    "${MUONDETECTOR_GUI_UI_DIR}/calibscandialog.ui"
+    "${MUONDETECTOR_GUI_UI_DIR}/gnssposwidget.ui"
+    "${MUONDETECTOR_GUI_UI_DIR}/gpssatsform.ui"
+    "${MUONDETECTOR_GUI_UI_DIR}/histogramdataform.ui"
+    "${MUONDETECTOR_GUI_UI_DIR}/i2cform.ui"
+    "${MUONDETECTOR_GUI_UI_DIR}/logplotswidget.ui"
+    "${MUONDETECTOR_GUI_UI_DIR}/mainwindow.ui"
+    "${MUONDETECTOR_GUI_UI_DIR}/map.ui"
+    "${MUONDETECTOR_GUI_UI_DIR}/parametermonitorform.ui"
+    "${MUONDETECTOR_GUI_UI_DIR}/scanform.ui"
+    "${MUONDETECTOR_GUI_UI_DIR}/settings.ui"
+    "${MUONDETECTOR_GUI_UI_DIR}/spiform.ui"
+    "${MUONDETECTOR_GUI_UI_DIR}/status.ui"
     )
 
-set(PROJECT_RESOURCE_FILES "")
+set(MUONDETECTOR_GUI_RESOURCE_FILES "")
 
 if (WIN32)
-set(PROJECT_RESOURCE_FILES
-    "${PROJECT_RESOURCE_FILES}"
-    "${PROJECT_RES_DIR}/windows.rc"
+set(MUONDETECTOR_GUI_RESOURCE_FILES
+    "${MUONDETECTOR_GUI_RESOURCE_FILES}"
+    "${MUONDETECTOR_GUI_RES_DIR}/windows.rc"
     )
 configure_file(
-    "${PROJECT_RES_DIR}/res/muon.ico"
+    "${MUONDETECTOR_GUI_RES_DIR}/res/muon.ico"
     "${CMAKE_CURRENT_BINARY_DIR}/muon.ico"
     )
 else()
 configure_file(
-    "${PROJECT_CONFIG_DIR}/muondetector-gui.1"
+    "${MUONDETECTOR_GUI_CONFIG_DIR}/muondetector-gui.1"
     "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1"
     )
 endif()
@@ -210,20 +210,20 @@ find_package(Qt5QuickCompiler)
 
 if(Qt5QuickCompiler_FOUND)
 
-qtquick_compiler_add_resources(qml_QRC "${PROJECT_RES_DIR}/resources.qrc")
+qtquick_compiler_add_resources(qml_QRC "${MUONDETECTOR_GUI_RES_DIR}/resources.qrc")
 
 else()
 
-qt5_add_resources(qml_QRC "${PROJECT_RES_DIR}/resources.qrc")
+qt5_add_resources(qml_QRC "${MUONDETECTOR_GUI_RES_DIR}/resources.qrc")
 
 endif()
 
-add_executable(muondetector-gui ${PROJECT_SOURCE_FILES} ${PROJECT_HEADER_FILES} ${PROJECT_UI_FILES} ${PROJECT_RESOURCE_FILES} ${qml_QRC})
+add_executable(muondetector-gui ${MUONDETECTOR_GUI_SOURCE_FILES} ${PROJECT_HEADER_FILES} ${PROJECT_UI_FILES} ${PROJECT_RESOURCE_FILES} ${qml_QRC})
 
 set_property(TARGET muondetector-gui PROPERTY POSITION_INDEPENDENT_CODE 1)
 
 target_include_directories(muondetector-gui PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_HEADER_DIR}>
+    $<BUILD_INTERFACE:${MUONDETECTOR_GUI_HEADER_DIR}>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
     $<BUILD_INTERFACE:/usr/local/include/mqtt>
     $<BUILD_INTERFACE:/usr/include/qwt>
@@ -289,21 +289,21 @@ target_link_libraries(muondetector-gui
 endif()
 
 
-install(FILES "${PROJECT_CONFIG_DIR}/muon.ico" DESTINATION "share/pixmaps/" COMPONENT gui)
-install(FILES "${PROJECT_CONFIG_DIR}/muondetector-gui.desktop" DESTINATION "share/applications/" COMPONENT gui)
+install(FILES "${MUONDETECTOR_GUI_CONFIG_DIR}/muon.ico" DESTINATION "share/pixmaps/" COMPONENT gui)
+install(FILES "${MUONDETECTOR_GUI_CONFIG_DIR}/muondetector-gui.desktop" DESTINATION "share/applications/" COMPONENT gui)
 install(TARGETS muondetector-gui DESTINATION bin COMPONENT gui)
 
 if(WIN32)
 
-include("${PROJECT_SOURCE_DIR}/../cmake/Windeployqt.cmake")
+include("${MUONDETECTOR_GUI_SOURCE_DIR}/../cmake/Windeployqt.cmake")
 set(windeploy_options
-    --qmldir "${PROJECT_QML_DIR}"
+    --qmldir "${MUONDETECTOR_GUI_QML_DIR}"
     -opengl
     -printsupport
 ) # additional options for windeployqt.exe
 
 
-windeployqt(muondetector-gui "${PROJECT_BINARY_DIR}/bin" "${windeploy_options}")
+windeployqt(muondetector-gui "${MUONDETECTOR_GUI_BINARY_DIR}/bin" "${windeploy_options}")
 # create a list of files to copy
 set( THIRD_PARTY_DLLS
    "${OPENSSL_DIR}/bin/libcrypto-1_1-x64.dll"
@@ -322,14 +322,14 @@ foreach( file_i ${THIRD_PARTY_DLLS})
             TARGET muondetector-gui POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy
                     "${file_i}"
-                    "${PROJECT_BINARY_DIR}/../bin/"
+                    "${MUONDETECTOR_GUI_BINARY_DIR}/../bin/"
     )
     install(FILES "${file_i}" DESTINATION "bin" COMPONENT gui)
 endforeach( file_i )
 
 
 set(CPACK_GENERATOR "NSIS")
-set(CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_CONFIG_DIR}/description.txt")
+set(CPACK_PACKAGE_DESCRIPTION_FILE "${MUONDETECTOR_GUI_CONFIG_DIR}/description.txt")
 set(CPACK_NSIS_MODIFY_PATH ON)
 include(InstallRequiredSystemLibraries)
 
@@ -342,20 +342,20 @@ set(CPACK_NSIS_DISPLAY_NAME "Muondetector gui")
 set(CPACK_NSIS_HELP_LINK "https://muonpi.org")
 set(CPACK_NSIS_URL_INFO_ABOUT "https://muonpi.org")
 set(CPACK_NSIS_CONTACT "support@muonpi.org")
-set(CPACK_NSIS_MUI_ICON "${PROJECT_RES_DIR}/res/muon.ico")
-set(CPACK_NSIS_MUI_UNIICON "${PROJECT_RES_DIR}/res/muon.ico")
+set(CPACK_NSIS_MUI_ICON "${MUONDETECTOR_GUI_RES_DIR}/res/muon.ico")
+set(CPACK_NSIS_MUI_UNIICON "${MUONDETECTOR_GUI_RES_DIR}/res/muon.ico")
 set(CPACK_PACKAGE_EXECUTABLES "muondetector-gui" "muondetector-gui")
 
 else()
 
 include(GNUInstallDirs)
 
-add_custom_target(changelog-gui ALL COMMAND gzip -cn9 "${PROJECT_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
+add_custom_target(changelog-gui ALL COMMAND gzip -cn9 "${MUONDETECTOR_GUI_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz")
 add_custom_target(manpage-gui ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1.gz")
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/changelog.gz" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT gui)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1.gz" DESTINATION "share/man/man1/" COMPONENT gui)
-install(FILES "${PROJECT_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT gui)
+install(FILES "${MUONDETECTOR_GUI_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}" COMPONENT gui)
 
 set(CPACK_GENERATOR "DEB")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
@@ -370,7 +370,7 @@ set(CPACK_DEBIAN_PACKAGE_DESCRIPTION " It connects to muondetector-daemon via TC
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi <developer@muonpi.org>")
 
 endif()
-set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
+set(CPACK_RESOURCE_FILE_LICENSE "${MUONDETECTOR_GUI_CONFIG_DIR}/license")
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../packages/")
 set(CPACK_PACKAGE_VENDOR "MuonPi.org")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
