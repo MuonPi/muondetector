@@ -46,10 +46,11 @@ Follow the steps below to build the daemon:
 #### version >= 2.0.0
 Versions after this commit use CMake as build system. The steps to building the daemon are as follows:
 1. enter the build directory
-2. run `cmake ../source -DMUONDETECTOR_BUID_GUI=OFF`
-3. run `make package`
-4. `cd packages`
-5. install the debian archive found there with `sudo apt install ./<filename>.deb`
+2. run `mkdir library && mkdir daemon`
+3. run `cd library && cmake ../../source/library && make`
+4. run `cd ../daemon && cmake ../../source/daemon && make package`
+5. `cd ../packages`
+6. install the debian archive found there with `sudo apt install ./<filename>.deb`
 
 ## TROUBLESHOOTING AND DEPENDENCIES:  
 
