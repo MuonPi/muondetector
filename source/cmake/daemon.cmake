@@ -173,7 +173,7 @@ if (MUONDETECTOR_BUILD_GUI)
 set(CPACK_DEBIAN_DAEMON_PACKAGE_DEPENDS "pigpiod")
 set(CPACK_DEBIAN_DAEMON_PACKAGE_CONTROL_EXTRA "${MUONDETECTOR_DAEMON_CONFIG_DIR}/preinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/postinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/prerm;${MUONDETECTOR_DAEMON_CONFIG_DIR}/conffiles")
 set(CPACK_DEBIAN_DAEMON_PACKAGE_SECTION "net")
-set(CPACK_DEBIAN_DAEMON_DESCRIPTION " GUI for monitoring and controlling the muondetector-daemon.
+set(CPACK_DEBIAN_DAEMON_DESCRIPTION " Daemon that controls the muon detector board.
  It opens serial and i2c connections to the muondetector board.
  It runs in the background and sends the data to the central server.
  It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
@@ -183,7 +183,7 @@ else ()
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "pigpiod")
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${MUONDETECTOR_DAEMON_CONFIG_DIR}/preinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/postinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/prerm;${MUONDETECTOR_DAEMON_CONFIG_DIR}/conffiles")
 set(CPACK_DEBIAN_PACKAGE_SECTION "net")
-set(CPACK_DEBIAN_PACKAGE_DESCRIPTION " GUI for monitoring and controlling the muondetector-daemon.
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION " Daemon that controls the muon detector board.
  It opens serial and i2c connections to the muondetector board.
  It runs in the background and sends the data to the central server.
  It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
