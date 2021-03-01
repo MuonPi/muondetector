@@ -1,5 +1,4 @@
 #include "mqtthandler.h"
-#include "config.h"
 
 
 #include <QDebug>

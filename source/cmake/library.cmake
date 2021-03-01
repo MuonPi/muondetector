@@ -77,22 +77,25 @@ set(MUONDETECTOR_LIBRARY_HEADER_FILES
     )
 
 if (MUONDETECTOR_BUILD_DAEMON)
-set(MUONDETECTOR_LIBRARY_SOURCE_FILES
-    "${MUONDETECTOR_LIBRARY_SOURCE_FILES}"
+set(MUONDETECTOR_LIBRARY_MQTT_SOURCE_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/mqtthandler.cpp"
     )
-set(MUONDETECTOR_LIBRARY_HEADER_FILES
-    "${MUONDETECTOR_LIBRARY_HEADER_FILES}"
+set(MUONDETECTOR_LIBRARY_MQTT_HEADER_FILES
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/mqtthandler.h"
     )
+
+add_library(muondetector-shared-mqtt OBJECT ${MUONDETECTOR_LIBRARY_MQTT_SOURCE_FILES} ${MUONDETECTOR_LIBRARY_MQTT_HEADER_FILES})
+target_compile_definitions(muondetector-shared-mqtt PUBLIC MUONDETECTOR_LIBRARY_EXPORT)
+set_target_properties(muondetector-shared-mqtt PROPERTIES POSITION_INDEPENDENT_CODE 1)
+target_include_directories(muondetector-shared-mqtt PUBLIC
+    ${MUONDETECTOR_LIBRARY_HEADER_DIR}
+    )
+target_link_libraries(muondetector-shared-mqtt Qt5::Network)
 endif ()
 
 add_library(muondetector-shared OBJECT ${MUONDETECTOR_LIBRARY_SOURCE_FILES} ${MUONDETECTOR_LIBRARY_HEADER_FILES})
-
 target_compile_definitions(muondetector-shared PUBLIC MUONDETECTOR_LIBRARY_EXPORT)
-
 set_target_properties(muondetector-shared PROPERTIES POSITION_INDEPENDENT_CODE 1)
-
 target_include_directories(muondetector-shared PUBLIC
     ${MUONDETECTOR_LIBRARY_HEADER_DIR}
     )
