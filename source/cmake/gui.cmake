@@ -174,7 +174,6 @@ target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:/usr/include/qwt>
     $<INSTALL_INTERFACE:include/mqtt>
     )
-target_link_directories(muondetector-gui PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../lib/")
 
 if(WIN32)
 target_compile_definitions(muondetector-gui PUBLIC QWT_DLL)
@@ -206,7 +205,7 @@ target_link_directories(muondetector-gui PUBLIC
 
 target_link_libraries(muondetector-gui
     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
-    muondetector
+    muondetector-shared
     paho-mqtt3c.lib
     paho-mqtt3a.lib
     paho-mqtt3cs.lib
@@ -220,7 +219,7 @@ else()
 
 target_link_libraries(muondetector-gui
     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
-    muondetector
+    muondetector-shared
     pthread
     paho-mqtt3c
     paho-mqtt3a

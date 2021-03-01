@@ -126,12 +126,11 @@ target_include_directories(muondetector-login PUBLIC
     $<BUILD_INTERFACE:/usr/local/include/mqtt>
     $<INSTALL_INTERFACE:include/mqtt>)
 
-target_link_directories(muondetector-login PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/output/lib/")
 target_link_libraries(muondetector-login
     Qt5::Network Qt5::SerialPort
     crypto++
     paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
-    muondetector
+    muondetector-shared
     )
 
 add_executable(muondetector-daemon ${MUONDETECTOR_DAEMON_SOURCE_FILES} ${MUONDETECTOR_DAEMON_HEADER_FILES})
@@ -148,7 +147,6 @@ target_include_directories(muondetector-daemon PUBLIC
     $<INSTALL_INTERFACE:include/mqtt>
     )
 
-target_link_directories(muondetector-daemon PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/output/lib/")
 target_link_libraries(muondetector-daemon
     Qt5::Network Qt5::SerialPort
     crypto++
@@ -156,7 +154,7 @@ target_link_libraries(muondetector-daemon
     rt
     config++
     paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
-    muondetector
+    muondetector-shared
     )
 
 
