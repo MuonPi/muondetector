@@ -189,6 +189,7 @@ install(PROGRAMS ${MUONDETECTOR_LOGIN_INSTALL_FILES} DESTINATION bin COMPONENT d
 
 
 
+if (MUONDETECTOR_BUILD_GUI)
 set(CPACK_DEBIAN_DAEMON_PACKAGE_DEPENDS "pigpiod, libpaho-mqttpp")
 set(CPACK_DEBIAN_DAEMON_PACKAGE_CONTROL_EXTRA "${MUONDETECTOR_DAEMON_CONFIG_DIR}/preinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/postinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/prerm;${MUONDETECTOR_DAEMON_CONFIG_DIR}/conffiles")
 set(CPACK_DEBIAN_DAEMON_PACKAGE_SECTION "net")
@@ -198,3 +199,13 @@ set(CPACK_DEBIAN_DAEMON_DESCRIPTION " GUI for monitoring and controlling the muo
  It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
 set(CPACK_COMPONENT_DAEMON_DESCRIPTION "${CPACK_DEBIAN_DAEMON_DESCRIPTION}")
 set(CPACK_DEBIAN_DAEMON_PACKAGE_NAME "muondetector-daemon")
+else ()
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "pigpiod, libpaho-mqttpp")
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${MUONDETECTOR_DAEMON_CONFIG_DIR}/preinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/postinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/prerm;${MUONDETECTOR_DAEMON_CONFIG_DIR}/conffiles")
+set(CPACK_DEBIAN_PACKAGE_SECTION "net")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION " GUI for monitoring and controlling the muondetector-daemon.
+ It opens serial and i2c connections to the muondetector board.
+ It runs in the background and sends the data to the central server.
+ It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
+set(CPACK_DEBIAN_PACKAGE_NAME "muondetector-daemon")
+endif ()
