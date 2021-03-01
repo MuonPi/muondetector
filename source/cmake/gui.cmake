@@ -301,7 +301,7 @@ else()
 
 include(GNUInstallDirs)
 
-add_custom_target(prep-gui ALL COMMAND mkdir "${CMAKE_CURRENT_BINARY_DIR}/gui")
+add_custom_target(prep-gui ALL COMMAND mkdir -p "${CMAKE_CURRENT_BINARY_DIR}/gui")
 add_custom_target(changelog-gui ALL COMMAND gzip -cn9 "${MUONDETECTOR_GUI_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/gui/changelog.gz")
 add_dependencies(changelog-gui prep-gui)
 add_custom_target(manpage-gui ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1.gz")

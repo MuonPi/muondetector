@@ -170,7 +170,7 @@ endif ()
 
 include(GNUInstallDirs)
 
-add_custom_target(prep-daemon ALL COMMAND mkdir "${CMAKE_CURRENT_BINARY_DIR}/daemon")
+add_custom_target(prep-daemon ALL COMMAND mkdir -p "${CMAKE_CURRENT_BINARY_DIR}/daemon")
 add_custom_target(changelog-daemon ALL COMMAND gzip -cn9 "${MUONDETECTOR_DAEMON_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/daemon/changelog.gz")
 add_dependencies(changelog-daemon prep-daemon)
 add_custom_target(manpage-daemon ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1.gz")
