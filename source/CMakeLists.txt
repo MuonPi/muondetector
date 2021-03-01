@@ -1,21 +1,99 @@
 cmake_minimum_required (VERSION 3.10)
-project (muondetector)
+project (muondetector LANGUAGES CXX C)
 
-option(MUONDETECTOR_BUILD_TIDY "Execute clang-tidy when building the project" OFF)
-option(MUONDETECTOR_BUILD_GUI "Build the gui subproject" ON)
-option(MUONDETECTOR_BUILD_TOOLS "Build additional tools" OFF)
+string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.cmake")
+
+option(MUONDETECTOR_BUILD_GUI "Build the gui for the muondetector" ON)
+
+set(MUONDETECTOR_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/output/lib")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/output/lib")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/output/bin")
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 
 set(CMAKE_BUILD_TYPE Release)
-message("${CMAKE_HOST_SYSTEM_PROCESSOR}")
-add_subdirectory(library)
+
+add_compile_options(
+    -Wall
+    -O3
+    )
+if (MSVC)
+  # Force to always compile with W4
+  if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+    string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+  endif()
+else()
+
+add_compile_options(
+    -Wextra
+    -Wshadow
+    -Wpedantic
+    )
+
+endif()
+
+if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
+add_compile_options(
+    -mthumb
+    -mthumb-interwork
+    -march=armv7-a
+    )
+endif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
+
+
+if (NOT WIN32)
+set(CPACK_GENERATOR "DEB")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi <developer@muonpi.org>")
+set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+endif ()
+set(CPACK_RESOURCE_FILE_LICENSE "${MUONDETECTOR_CONFIG_DIR}/license")
+set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/output/packages")
+set(CPACK_PACKAGE_VENDOR "MuonPi.org")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
+
+
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
+
+if(NOT WIN32) # added to make program editable in qt-creator on windows
+
+set(Qt5_DIR "/usr/lib/x86_64-linux-gnu/cmake/Qt5/")
+
+find_library(PAHO_MQTT3C paho-mqtt3c REQUIRED)
+find_library(PAHO_MQTT3A paho-mqtt3a REQUIRED)
+find_library(PAHO_MQTT3CS paho-mqtt3cs REQUIRED)
+find_library(PAHO_MQTT3AS paho-mqtt3as REQUIRED)
+find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
+
+endif ()
+
+
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/library.cmake")
+
 if (MUONDETECTOR_BUILD_GUI)
-add_subdirectory(gui)
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/gui.cmake")
 endif (MUONDETECTOR_BUILD_GUI)
-if (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
-add_subdirectory(daemon)
-else (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
-option(MUONDETECTOR_BUILD_TOOLS "Build the tools subproject" ON)
-if (MUONDETECTOR_BUILD_TOOLS)
-add_subdirectory(tools)
-endif (MUONDETECTOR_BUILD_TOOLS)
-endif (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "armv7l")
+if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/daemon.cmake")
+endif ()
+
+
+set(CPACK_DEB_COMPONENT_INSTALL ON)
+
+include(CPack)
