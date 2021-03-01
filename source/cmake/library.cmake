@@ -84,7 +84,7 @@ add_library(muondetector-shared OBJECT ${MUONDETECTOR_LIBRARY_SOURCE_FILES} ${MU
 
 target_compile_definitions(muondetector-shared PUBLIC MUONDETECTOR_LIBRARY_EXPORT)
 
-set_property(TARGET muondetector-shared PROPERTY POSITION_INDEPENDENT_CODE 1)
+set_target_properties(muondetector-shared PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
 target_include_directories(muondetector-shared PUBLIC
     ${MUONDETECTOR_LIBRARY_HEADER_DIR}

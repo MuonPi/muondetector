@@ -150,7 +150,7 @@ endif()
 add_executable(muondetector-gui ${MUONDETECTOR_GUI_SOURCE_FILES} ${MUONDETECTOR_GUI_HEADER_FILES} ${MUONDETECTOR_GUI_UI_FILES} ${MUONDETECTOR_GUI_RESOURCE_FILES} ${qml_QRC})
 add_dependencies(muondetector-gui muondetector-shared)
 
-set_property(TARGET muondetector-gui PROPERTY POSITION_INDEPENDENT_CODE 1)
+set_target_properties(muondetector-gui PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
 target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:${MUONDETECTOR_GUI_HEADER_DIR}>
@@ -221,11 +221,11 @@ if (CMAKE_BUILD_TYPE STREQUAL Release)
             COMMAND ${CMAKE_STRIP} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/muondetector-gui")
 endif ()
 
+install(FILES "${MUONDETECTOR_GUI_CONFIG_DIR}/muon.ico" DESTINATION "share/pixmaps/" COMPONENT gui)
+install(FILES "${MUONDETECTOR_GUI_CONFIG_DIR}/muondetector-gui.desktop" DESTINATION "share/applications/" COMPONENT gui)
 endif()
 
 
-install(FILES "${MUONDETECTOR_GUI_CONFIG_DIR}/muon.ico" DESTINATION "share/pixmaps/" COMPONENT gui)
-install(FILES "${MUONDETECTOR_GUI_CONFIG_DIR}/muondetector-gui.desktop" DESTINATION "share/applications/" COMPONENT gui)
 install(TARGETS muondetector-gui DESTINATION bin COMPONENT gui)
 
 if(WIN32)
