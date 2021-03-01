@@ -3,90 +3,54 @@ set(MUONDETECTOR_LIBRARY_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/library/include
 set(MUONDETECTOR_LIBRARY_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/library/config")
 set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/library/include/")
 
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-
 if(WIN32)
+    set(QWT_DIR "C:/Qwt-6.1.4")
+    set(OPENSSL_DIR "C:/Qt/Tools/OpenSSL/Win_x64")
+    set(MQTT_CPP_DIR "C:/paho-mqtt-cpp-1.1.0-win64")
+    set(MQTT_C_DIR "C:/eclipse-paho-mqtt-c-win64-1.3.6")
+    set(CRYPTOPP_DIR "C:/cryptopp")
+    list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5QuickCompiler")
+    list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5")
 
-set(QWT_DIR "C:/Qwt-6.1.4/")
-set(CRYPTOPP_DIR "C:/cryptopp/")
-set(MQTT_CPP_DIR "C:/paho-mqtt-cpp-1.1.0-win64")
-set(MQTT_C_DIR "C:/eclipse-paho-mqtt-c-win64-1.3.6")
-list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5")
-
-else()
-
-set(Qt5_DIR "/usr/lib/x86_64-linux-gnu/cmake/Qt5/")
-
-endif()
-
-if (MSVC)
-    if("${MSVC_RUNTIME}" STREQUAL "")
-        set(MSVC_RUNTIME "static")
-    endif()
-        # Set compiler options.
-    set(variables
-      CMAKE_C_FLAGS_DEBUG
-      CMAKE_C_FLAGS_MINSIZEREL
-      CMAKE_C_FLAGS_RELEASE
-      CMAKE_C_FLAGS_RELWITHDEBINFO
-      CMAKE_CXX_FLAGS_DEBUG
-      CMAKE_CXX_FLAGS_MINSIZEREL
-      CMAKE_CXX_FLAGS_RELEASE
-      CMAKE_CXX_FLAGS_RELWITHDEBINFO
-    )
-    if(${MSVC_RUNTIME} STREQUAL "static")
-      message(STATUS
-        "MSVC -> forcing use of statically-linked runtime."
-      )
-      foreach(variable ${variables})
-        if(${variable} MATCHES "/MD")
-          string(REGEX REPLACE "/MD" "/MT" ${variable} "${${variable}}")
+    if (MSVC)
+        if("${MSVC_RUNTIME}" STREQUAL "")
+            set(MSVC_RUNTIME "static")
         endif()
-      endforeach()
-    else()
-      message(STATUS
-        "MSVC -> forcing use of dynamically-linked runtime."
-      )
-      foreach(variable ${variables})
-        if(${variable} MATCHES "/MT")
-          string(REGEX REPLACE "/MT" "/MD" ${variable} "${${variable}}")
+            # Set compiler options.
+        set(variables
+          CMAKE_C_FLAGS_DEBUG
+          CMAKE_C_FLAGS_MINSIZEREL
+          CMAKE_C_FLAGS_RELEASE
+          CMAKE_C_FLAGS_RELWITHDEBINFO
+          CMAKE_CXX_FLAGS_DEBUG
+          CMAKE_CXX_FLAGS_MINSIZEREL
+          CMAKE_CXX_FLAGS_RELEASE
+          CMAKE_CXX_FLAGS_RELWITHDEBINFO
+        )
+        if(${MSVC_RUNTIME} STREQUAL "static")
+          message(STATUS
+            "MSVC -> forcing use of statically-linked runtime."
+          )
+          foreach(variable ${variables})
+            if(${variable} MATCHES "/MD")
+              string(REGEX REPLACE "/MD" "/MT" ${variable} "${${variable}}")
+            endif()
+          endforeach()
+        else()
+          message(STATUS
+            "MSVC -> forcing use of dynamically-linked runtime."
+          )
+          foreach(variable ${variables})
+            if(${variable} MATCHES "/MT")
+              string(REGEX REPLACE "/MT" "/MD" ${variable} "${${variable}}")
+            endif()
+          endforeach()
         endif()
-      endforeach()
     endif()
+
 endif()
 
 find_package(Qt5 COMPONENTS Network REQUIRED)
-
-if(NOT WIN32)
-
-find_library(PAHO_MQTT3C paho-mqtt3c REQUIRED)
-find_library(PAHO_MQTT3A paho-mqtt3a REQUIRED)
-find_library(PAHO_MQTT3CS paho-mqtt3cs REQUIRED)
-find_library(PAHO_MQTT3AS paho-mqtt3as REQUIRED)
-find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
-
-endif()
-
-add_compile_options(
-    -Wall
-    -O3
-    )
-if(MSVC)
-  # Force to always compile with W4
-  if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
-    string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-  else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
-  endif()
-else()
-add_compile_options(
-    -Wextra
-    -Wshadow
-    -Wpedantic
-    )
-endif()
 
 
 configure_file(

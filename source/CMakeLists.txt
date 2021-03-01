@@ -64,6 +64,26 @@ set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
 
+
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
+
+if(NOT WIN32) # added to make program editable in qt-creator on windows
+
+set(Qt5_DIR "/usr/lib/x86_64-linux-gnu/cmake/Qt5/")
+
+find_library(PAHO_MQTT3C paho-mqtt3c REQUIRED)
+find_library(PAHO_MQTT3A paho-mqtt3a REQUIRED)
+find_library(PAHO_MQTT3CS paho-mqtt3cs REQUIRED)
+find_library(PAHO_MQTT3AS paho-mqtt3as REQUIRED)
+find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
+
+endif ()
+
+
+
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/library.cmake")
 
 if (MUONDETECTOR_BUILD_GUI)
