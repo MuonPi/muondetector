@@ -95,5 +95,5 @@ target_include_directories(muondetector-shared PUBLIC
     ${Qt5Network_INCLUDE_DIRS}
     )
 else()
-target_link_libraries(muondetector-shared Qt5::Network paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3)
+target_link_libraries(muondetector-shared Qt5::Network mosquitto)
 endif()
