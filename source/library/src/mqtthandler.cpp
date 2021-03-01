@@ -104,8 +104,8 @@ void MqttHandler::start(const QString& username, const QString& password){
     m_username = username.toStdString();
     m_password = password.toStdString();
 
-    m_data_topic += Config::MQTT::data_topic + m_username + "/" + m_station_id;
-    m_log_topic +=  Config::MQTT::log_topic + m_username + "/" + m_station_id;
+    m_data_topic = Config::MQTT::data_topic + m_username + "/" + m_station_id;
+    m_log_topic =  Config::MQTT::log_topic + m_username + "/" + m_station_id;
 
     CryptoPP::SHA1 sha1;
     std::string source = username.toStdString()+m_station_id;  //This will be randomly generated somehow
