@@ -24,10 +24,13 @@ constexpr const char* file { "/etc/muondetector/muondetector.conf" };
 constexpr int event_count_deadtime_ticks { 50000 };
 
 namespace MQTT {
-constexpr const char* server { "116.202.96.181:1883" };
-constexpr int timeout { 30000 };
+constexpr const char* host { "116.202.96.181" };
+constexpr int port { 1883 };
+constexpr int timeout { 2000 };
 constexpr int qos { 1 };
 constexpr int keepalive_interval { 45 };
+constexpr const char* data_topic { "muonpi/data/" };
+constexpr const char* log_topic { "muonpi/log/" };
 }
 namespace Log {
 constexpr int interval { 1 };

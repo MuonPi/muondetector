@@ -80,11 +80,7 @@ find_package(Qt5 COMPONENTS Network REQUIRED)
 
 if(NOT WIN32)
 
-find_library(PAHO_MQTT3C paho-mqtt3c REQUIRED)
-find_library(PAHO_MQTT3A paho-mqtt3a REQUIRED)
-find_library(PAHO_MQTT3CS paho-mqtt3cs REQUIRED)
-find_library(PAHO_MQTT3AS paho-mqtt3as REQUIRED)
-find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
+find_library(MOSQUITTO mosquitto REQUIRED)
 
 endif()
 
@@ -164,7 +160,7 @@ target_include_directories(muondetector PUBLIC
     ${Qt5Network_INCLUDE_DIRS}
     )
 else()
-target_link_libraries(muondetector Qt5::Network paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3)
+target_link_libraries(muondetector Qt5::Network mosquitto)
 endif()
 
 install(TARGETS muondetector DESTINATION lib COMPONENT library)
