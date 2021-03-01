@@ -152,9 +152,6 @@ set_property(TARGET muondetector-login PROPERTY POSITION_INDEPENDENT_CODE 1)
 
 target_include_directories(muondetector-login PUBLIC
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_include_directories(muondetector-login PUBLIC
-    $<BUILD_INTERFACE:/usr/local/include/mqtt>
-    $<INSTALL_INTERFACE:include/mqtt>)
 
 target_link_directories(muondetector-login PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../lib/")
 target_link_libraries(muondetector-login
@@ -172,10 +169,6 @@ target_include_directories(muondetector-daemon PUBLIC
     $<BUILD_INTERFACE:${PROJECT_HEADER_DIR}>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 
-target_include_directories(muondetector-daemon PUBLIC
-    $<BUILD_INTERFACE:/usr/local/include/mqtt>
-    $<INSTALL_INTERFACE:include/mqtt>
-    )
 
 target_link_directories(muondetector-daemon PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/../lib/")
 target_link_libraries(muondetector-daemon
@@ -184,7 +177,7 @@ target_link_libraries(muondetector-daemon
     pigpiod_if2
     rt
     config++
-    paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
+    mosquitto
     muondetector
     )
 
@@ -220,7 +213,7 @@ install(PROGRAMS ${LOGIN_INSTALL_FILES} DESTINATION bin COMPONENT daemon)
 
 set(CPACK_GENERATOR "DEB")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "pigpiod, libpaho-mqttpp")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "pigpiod")
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_CONFIG_DIR}/license")
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${PROJECT_CONFIG_DIR}/preinst;${PROJECT_CONFIG_DIR}/postinst;${PROJECT_CONFIG_DIR}/prerm;${PROJECT_CONFIG_DIR}/conffiles")
 set(CPACK_PACKAGE_VENDOR "MuonPi.org")
