@@ -197,4 +197,4 @@ set(CPACK_DEBIAN_DAEMON_DESCRIPTION " GUI for monitoring and controlling the muo
  It runs in the background and sends the data to the central server.
  It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
 set(CPACK_COMPONENT_DAEMON_DESCRIPTION "${CPACK_DEBIAN_DAEMON_DESCRIPTION}")
-set(CPACK_DEBIAN_DAEMON_FILE_NAME "muondetector-daemon-${CPACK_PACKAGE_VERSION}-Linux")
+set(CPACK_DEBIAN_DAEMON_FILE_NAME "muondetector-daemon-${CPACK_PACKAGE_VERSION}-${MUONDETECTOR_BUILD_FOR}_${CMAKE_SYSTEM_PROCESSOR}.deb")

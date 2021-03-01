@@ -319,7 +319,7 @@ set(CPACK_DEBIAN_GUI_DESCRIPTION " GUI for monitoring and controlling the muonde
  the muondetector-daemon.
  It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
 set(CPACK_COMPONENT_GUI_DESCRIPTION "${CPACK_DEBIAN_GUI_DESCRIPTION}")
-set(CPACK_DEBIAN_GUI_FILE_NAME "muondetector-gui-${CPACK_PACKAGE_VERSION}-Linux")
+set(CPACK_DEBIAN_GUI_FILE_NAME "muondetector-gui-${CPACK_PACKAGE_VERSION}-${MUONDETECTOR_BUILD_FOR}_${CMAKE_SYSTEM_PROCESSOR}.deb")
 
 endif()
 
