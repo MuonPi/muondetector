@@ -6,6 +6,11 @@ string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.cmake")
 
 option(MUONDETECTOR_BUILD_GUI "Build the gui for the muondetector" ON)
+option(MUONDETECTOR_BUILD_DAEMON "Build the daemon for the muondetector" ON)
+
+if (NOT (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l"))
+    set(MUONDETECTOR_BUILD_DAEMON OFF)
+endif ()
 
 set(MUONDETECTOR_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
 
@@ -74,12 +79,6 @@ if(NOT WIN32) # added to make program editable in qt-creator on windows
 
 set(Qt5_DIR "/usr/lib/x86_64-linux-gnu/cmake/Qt5/")
 
-find_library(PAHO_MQTT3C paho-mqtt3c REQUIRED)
-find_library(PAHO_MQTT3A paho-mqtt3a REQUIRED)
-find_library(PAHO_MQTT3CS paho-mqtt3cs REQUIRED)
-find_library(PAHO_MQTT3AS paho-mqtt3as REQUIRED)
-find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
-
 endif ()
 
 
@@ -89,9 +88,9 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/library.cmake")
 if (MUONDETECTOR_BUILD_GUI)
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/gui.cmake")
 endif (MUONDETECTOR_BUILD_GUI)
-if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
+if (MUONDETECTOR_BUILD_DAEMON)
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/daemon.cmake")
-endif ()
+endif (MUONDETECTOR_BUILD_DAEMON)
 
 
 set(CPACK_DEB_COMPONENT_INSTALL ON)

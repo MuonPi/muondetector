@@ -129,7 +129,6 @@ configure_file(
 
 find_library(CRYPTOPP crypto++ REQUIRED)
 find_library(QWT_QT5 qwt-qt5 REQUIRED)
-find_library(MOSQUITTO mosquitto REQUIRED)
 endif()
 
 find_package(Qt5 COMPONENTS Network Svg Widgets Gui Quick QuickWidgets Qml REQUIRED)
@@ -183,7 +182,6 @@ target_link_libraries(muondetector-gui
     muondetector-shared
     qwt.lib
     cryptlib.lib
-    mosquitto
     )
 
 else()
@@ -194,7 +192,6 @@ target_link_libraries(muondetector-gui
     pthread
     crypto++
     qwt-qt5
-    mosquitto
     )
 
 
@@ -272,7 +269,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/gui/changelog.gz" DESTINATION "${CMAK
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1.gz" DESTINATION "share/man/man1/" COMPONENT gui)
 install(FILES "${MUONDETECTOR_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}-gui" COMPONENT gui)
 
-if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
+if (MUONDETECTOR_BUILD_DAEMON)
 set(CPACK_DEBIAN_GUI_PACKAGE_DEPENDS "qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), qml-module-qtquick-layouts (>=5), qml-module-qtquick-controls2 (>=5), qml-module-qtquick-controls (>=5), qml-module-qtquick-templates2 (>=5)")
 set(CPACK_DEBIAN_GUI_PACKAGE_SECTION "net")
 set(CPACK_DEBIAN_GUI_DESCRIPTION " GUI for monitoring and controlling the muondetector-daemon.

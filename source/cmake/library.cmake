@@ -60,7 +60,6 @@ set(MUONDETECTOR_LIBRARY_SOURCE_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/config.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/tcpconnection.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/tcpmessage.cpp"
-    "${MUONDETECTOR_LIBRARY_SRC_DIR}/mqtthandler.cpp"
     )
 
 set(MUONDETECTOR_LIBRARY_HEADER_FILES
@@ -69,7 +68,6 @@ set(MUONDETECTOR_LIBRARY_HEADER_FILES
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/histogram.h"
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/tcpconnection.h"
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/tcpmessage.h"
-    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/mqtthandler.h"
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/tcpmessage_keys.h"
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/ublox_messages.h"
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/ubx_msg_key_name_map.h"
@@ -77,6 +75,17 @@ set(MUONDETECTOR_LIBRARY_HEADER_FILES
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/muondetector_structs.h"
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/config.h"
     )
+
+if (MUONDETECTOR_BUILD_DAEMON)
+set(MUONDETECTOR_LIBRARY_SOURCE_FILES
+    "${MUONDETECTOR_LIBRARY_SOURCE_FILES}"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/mqtthandler.cpp"
+    )
+set(MUONDETECTOR_LIBRARY_HEADER_FILES
+    "${MUONDETECTOR_LIBRARY_HEADER_FILES}"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/mqtthandler.h"
+    )
+endif ()
 
 add_library(muondetector-shared OBJECT ${MUONDETECTOR_LIBRARY_SOURCE_FILES} ${MUONDETECTOR_LIBRARY_HEADER_FILES})
 
@@ -95,5 +104,5 @@ target_include_directories(muondetector-shared PUBLIC
     ${Qt5Network_INCLUDE_DIRS}
     )
 else()
-target_link_libraries(muondetector-shared Qt5::Network mosquitto)
+target_link_libraries(muondetector-shared Qt5::Network)
 endif()
