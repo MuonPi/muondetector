@@ -316,6 +316,7 @@ set(CPACK_DEBIAN_GUI_DESCRIPTION " GUI for monitoring and controlling the muonde
  uses qml for displaying the current position on the map if connected
  the muondetector-daemon.
  It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
+set(CPACK_COMPONENT_GUI_DESCRIPTION "${CPACK_DEBIAN_GUI_DESCRIPTION}")
 
 endif()
 
