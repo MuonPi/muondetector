@@ -6,8 +6,6 @@ set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/library/include/")
 if(WIN32)
     set(QWT_DIR "C:/Qwt-6.1.4")
     set(OPENSSL_DIR "C:/Qt/Tools/OpenSSL/Win_x64")
-    set(MQTT_CPP_DIR "C:/paho-mqtt-cpp-1.1.0-win64")
-    set(MQTT_C_DIR "C:/eclipse-paho-mqtt-c-win64-1.3.6")
     set(CRYPTOPP_DIR "C:/cryptopp")
     list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5QuickCompiler")
     list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5")
@@ -88,25 +86,12 @@ set_target_properties(muondetector-shared PROPERTIES POSITION_INDEPENDENT_CODE 1
 
 target_include_directories(muondetector-shared PUBLIC
     ${MUONDETECTOR_LIBRARY_HEADER_DIR}
-    $<BUILD_INTERFACE:/usr/local/include/mqtt>
-    $<INSTALL_INTERFACE:include/mqtt>
     )
 
 if(WIN32)
-target_link_directories(muondetector-shared PUBLIC
-    "${MQTT_C_DIR}/lib"
-    "${MQTT_CPP_DIR}/lib"
-    "${QWT_DIR}/lib"
-    "${CRYPTOPP_DIR}/lib"
-    )
-target_link_libraries(muondetector-shared qwt.lib Qt5::Network paho-mqtt3c.lib paho-mqtt3a.lib paho-mqtt3cs.lib paho-mqtt3as.lib paho-mqttpp3.lib cryptlib.lib)
 target_include_directories(muondetector-shared PUBLIC
     ${CRYPTOPP_DIR}/include/
     $<BUILD_INTERFACE:${QWT_DIR}/include>
-    $<BUILD_INTERFACE:${MQTT_C_DIR}/include>
-    $<INSTALL_INTERFACE:${MQTT_C_DIR}/include>
-    $<BUILD_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
-    $<INSTALL_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
     ${Qt5Network_INCLUDE_DIRS}
     )
 else()

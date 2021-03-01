@@ -2,14 +2,13 @@ set(MUONDETECTOR_DAEMON_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/daemon/src")
 set(MUONDETECTOR_DAEMON_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/daemon/include")
 set(MUONDETECTOR_DAEMON_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/daemon/config")
 
-
-
 if(NOT WIN32) # added to make program editable in qt-creator on windows
 
 find_library(CRYPTOPP crypto++ REQUIRED)
 find_library(CONFIGPP config++ REQUIRED)
 find_library(PIGPIOD_IF2 pigpiod_if2 REQUIRED)
 find_library(RT rt REQUIRED)
+find_library(MOSQUITTO mosquitto REQUIRED)
 
 endif()
 
@@ -111,14 +110,11 @@ set_target_properties(muondetector-login PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
 target_include_directories(muondetector-login PUBLIC
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
-target_include_directories(muondetector-login PUBLIC
-    $<BUILD_INTERFACE:/usr/local/include/mqtt>
-    $<INSTALL_INTERFACE:include/mqtt>)
 
 target_link_libraries(muondetector-login
     Qt5::Network Qt5::SerialPort
     crypto++
-    paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
+    mosquitto
     muondetector-shared
     )
 
@@ -131,18 +127,13 @@ target_include_directories(muondetector-daemon PUBLIC
     $<BUILD_INTERFACE:${MUONDETECTOR_DAEMON_HEADER_DIR}>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
 
-target_include_directories(muondetector-daemon PUBLIC
-    $<BUILD_INTERFACE:/usr/local/include/mqtt>
-    $<INSTALL_INTERFACE:include/mqtt>
-    )
-
 target_link_libraries(muondetector-daemon
     Qt5::Network Qt5::SerialPort
     crypto++
     pigpiod_if2
     rt
     config++
-    paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
+    mosquitto
     muondetector-shared
     )
 
@@ -179,7 +170,7 @@ install(PROGRAMS ${MUONDETECTOR_LOGIN_INSTALL_FILES} DESTINATION bin COMPONENT d
 
 
 if (MUONDETECTOR_BUILD_GUI)
-set(CPACK_DEBIAN_DAEMON_PACKAGE_DEPENDS "pigpiod, libpaho-mqttpp")
+set(CPACK_DEBIAN_DAEMON_PACKAGE_DEPENDS "pigpiod")
 set(CPACK_DEBIAN_DAEMON_PACKAGE_CONTROL_EXTRA "${MUONDETECTOR_DAEMON_CONFIG_DIR}/preinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/postinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/prerm;${MUONDETECTOR_DAEMON_CONFIG_DIR}/conffiles")
 set(CPACK_DEBIAN_DAEMON_PACKAGE_SECTION "net")
 set(CPACK_DEBIAN_DAEMON_DESCRIPTION " GUI for monitoring and controlling the muondetector-daemon.
@@ -189,7 +180,7 @@ set(CPACK_DEBIAN_DAEMON_DESCRIPTION " GUI for monitoring and controlling the muo
 set(CPACK_COMPONENT_DAEMON_DESCRIPTION "${CPACK_DEBIAN_DAEMON_DESCRIPTION}")
 set(CPACK_DEBIAN_DAEMON_PACKAGE_NAME "muondetector-daemon")
 else ()
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "pigpiod, libpaho-mqttpp")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "pigpiod")
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${MUONDETECTOR_DAEMON_CONFIG_DIR}/preinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/postinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/prerm;${MUONDETECTOR_DAEMON_CONFIG_DIR}/conffiles")
 set(CPACK_DEBIAN_PACKAGE_SECTION "net")
 set(CPACK_DEBIAN_PACKAGE_DESCRIPTION " GUI for monitoring and controlling the muondetector-daemon.

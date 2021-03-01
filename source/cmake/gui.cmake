@@ -9,8 +9,6 @@ set(MUONDETECTOR_GUI_QML_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gui/qml")
 if(WIN32)
     set(QWT_DIR "C:/Qwt-6.1.4")
     set(OPENSSL_DIR "C:/Qt/Tools/OpenSSL/Win_x64")
-    set(MQTT_CPP_DIR "C:/paho-mqtt-cpp-1.1.0-win64")
-    set(MQTT_C_DIR "C:/eclipse-paho-mqtt-c-win64-1.3.6")
     set(CRYPTOPP_DIR "C:/cryptopp")
     list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5QuickCompiler")
     list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5")
@@ -51,14 +49,9 @@ if(WIN32)
         endif()
     endif()
 
-else ()
-
-find_library(CRYPTOPP crypto++ REQUIRED)
-find_library(QWT_QT5 qwt-qt5 REQUIRED)
 
 endif()
 
-find_package(Qt5 COMPONENTS Network Svg Widgets Gui Quick QuickWidgets Qml REQUIRED)
 
 set(MUONDETECTOR_GUI_SOURCE_FILES
     "${MUONDETECTOR_GUI_SOURCE_DIR}/calibform.cpp"
@@ -133,8 +126,13 @@ configure_file(
     "${MUONDETECTOR_GUI_CONFIG_DIR}/muondetector-gui.1"
     "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1"
     )
+
+find_library(CRYPTOPP crypto++ REQUIRED)
+find_library(QWT_QT5 qwt-qt5 REQUIRED)
+find_library(MOSQUITTO mosquitto REQUIRED)
 endif()
 
+find_package(Qt5 COMPONENTS Network Svg Widgets Gui Quick QuickWidgets Qml REQUIRED)
 find_package(Qt5QuickCompiler)
 
 if(Qt5QuickCompiler_FOUND)
@@ -155,9 +153,7 @@ set_target_properties(muondetector-gui PROPERTIES POSITION_INDEPENDENT_CODE 1)
 target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:${MUONDETECTOR_GUI_HEADER_DIR}>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
-    $<BUILD_INTERFACE:/usr/local/include/mqtt>
     $<BUILD_INTERFACE:/usr/include/qwt>
-    $<INSTALL_INTERFACE:include/mqtt>
     )
 
 if(WIN32)
@@ -169,10 +165,6 @@ target_include_directories(muondetector-gui PUBLIC
     $<INSTALL_INTERFACE:${CRYPTOPP_DIR}/include>
     $<BUILD_INTERFACE:${QWT_DIR}/include>
     $<INSTALL_INTERFACE:${QWT_DIR}/include>
-    $<BUILD_INTERFACE:${MQTT_C_DIR}/include>
-    $<INSTALL_INTERFACE:${MQTT_C_DIR}/include>
-    $<BUILD_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
-    $<INSTALL_INTERFACE:${MQTT_CPP_DIR}/include/mqtt>
     ${Qt5Widgets_INCLUDE_DIRS}
     ${Qt5Svg_INCLUDE_DIRS}
     ${Qt5Network_INCLUDE_DIRS}
@@ -181,8 +173,6 @@ target_include_directories(muondetector-gui PUBLIC
     ${Qt5Qml_INCLUDE_DIRS}
     )
 target_link_directories(muondetector-gui PUBLIC
-    "${MQTT_CPP_DIR}/lib/"
-    "${MQTT_C_DIR}/lib/"
     "${QWT_DIR}/lib/"
     "${OPENSSL_DIR}/lib/"
     "${CRYPTOPP_DIR}/lib/"
@@ -191,13 +181,9 @@ target_link_directories(muondetector-gui PUBLIC
 target_link_libraries(muondetector-gui
     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
     muondetector-shared
-    paho-mqtt3c.lib
-    paho-mqtt3a.lib
-    paho-mqtt3cs.lib
-    paho-mqtt3as.lib
     qwt.lib
     cryptlib.lib
-    paho-mqttpp3.lib
+    mosquitto
     )
 
 else()
@@ -206,13 +192,9 @@ target_link_libraries(muondetector-gui
     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
     muondetector-shared
     pthread
-    paho-mqtt3c
-    paho-mqtt3a
-    paho-mqtt3cs
-    paho-mqtt3as
     crypto++
     qwt-qt5
-    paho-mqttpp3
+    mosquitto
     )
 
 
@@ -244,11 +226,6 @@ set( THIRD_PARTY_DLLS
    "${OPENSSL_DIR}/bin/libcrypto-1_1-x64.dll"
    "${OPENSSL_DIR}/bin/libssl-1_1-x64.dll"
    "${QWT_DIR}/lib/qwt.dll"
-   "${MQTT_CPP_DIR}/lib/paho-mqttpp3.dll"
-   "${MQTT_C_DIR}/lib/paho-mqtt3a.dll"
-   "${MQTT_C_DIR}/lib/paho-mqtt3as.dll"
-   "${MQTT_C_DIR}/lib/paho-mqtt3c.dll"
-   "${MQTT_C_DIR}/lib/paho-mqtt3cs.dll"
 )
 
 # do the copying
@@ -296,7 +273,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1.gz" DESTINATION "s
 install(FILES "${MUONDETECTOR_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}-gui" COMPONENT gui)
 
 if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
-set(CPACK_DEBIAN_GUI_PACKAGE_DEPENDS "libpaho-mqttpp | paho-mqtt-cpp, qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), qml-module-qtquick-layouts (>=5), qml-module-qtquick-controls2 (>=5), qml-module-qtquick-controls (>=5), qml-module-qtquick-templates2 (>=5)")
+set(CPACK_DEBIAN_GUI_PACKAGE_DEPENDS "qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), qml-module-qtquick-layouts (>=5), qml-module-qtquick-controls2 (>=5), qml-module-qtquick-controls (>=5), qml-module-qtquick-templates2 (>=5)")
 set(CPACK_DEBIAN_GUI_PACKAGE_SECTION "net")
 set(CPACK_DEBIAN_GUI_DESCRIPTION " GUI for monitoring and controlling the muondetector-daemon.
  It connects to muondetector-daemon via TCP. It is based on Qt and C++.
@@ -307,7 +284,7 @@ set(CPACK_DEBIAN_GUI_DESCRIPTION " GUI for monitoring and controlling the muonde
 set(CPACK_COMPONENT_GUI_DESCRIPTION "${CPACK_DEBIAN_GUI_DESCRIPTION}")
 set(CPACK_DEBIAN_GUI_PACKAGE_NAME "muondetector-gui")
 else()
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libpaho-mqttpp | paho-mqtt-cpp, qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), qml-module-qtquick-layouts (>=5), qml-module-qtquick-controls2 (>=5), qml-module-qtquick-controls (>=5), qml-module-qtquick-templates2 (>=5)")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), qml-module-qtquick-layouts (>=5), qml-module-qtquick-controls2 (>=5), qml-module-qtquick-controls (>=5), qml-module-qtquick-templates2 (>=5)")
 set(CPACK_DEBIAN_PACKAGE_SECTION "net")
 set(CPACK_DEBIAN_PACKAGE_DESCRIPTION " GUI for monitoring and controlling the muondetector-daemon.
  It connects to muondetector-daemon via TCP. It is based on Qt and C++.
