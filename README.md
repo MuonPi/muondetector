@@ -37,7 +37,7 @@ When compiling directly from the git repository you need to manually build and i
 
 The steps to building the daemon are as follows:
 1. enter the build directory
-2. run `mkdir library && mkdir daemon`
+2. run `mkdir library && mkdir daemon && mkdir gui`
 3. run `cd library && cmake ../../source/library && make`
 4. run `cd ../daemon && cmake ../../source/daemon && make package`
 5. (Optional) `cd ../gui && cmake ../../source/gui && make package`
