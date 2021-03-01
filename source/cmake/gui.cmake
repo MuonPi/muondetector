@@ -127,7 +127,6 @@ configure_file(
     "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1"
     )
 
-find_library(CRYPTOPP crypto++ REQUIRED)
 find_library(QWT_QT5 qwt-qt5 REQUIRED)
 endif()
 
@@ -159,7 +158,6 @@ if(WIN32)
 target_compile_definitions(muondetector-gui PUBLIC QWT_DLL)
 
 target_include_directories(muondetector-gui PUBLIC
-    ${OPENSSL_DIR}/include/
     $<BUILD_INTERFACE:${CRYPTOPP_DIR}/include>
     $<INSTALL_INTERFACE:${CRYPTOPP_DIR}/include>
     $<BUILD_INTERFACE:${QWT_DIR}/include>
@@ -173,15 +171,12 @@ target_include_directories(muondetector-gui PUBLIC
     )
 target_link_directories(muondetector-gui PUBLIC
     "${QWT_DIR}/lib/"
-    "${OPENSSL_DIR}/lib/"
-    "${CRYPTOPP_DIR}/lib/"
     )
 
 target_link_libraries(muondetector-gui
     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
     muondetector-shared
     qwt.lib
-    cryptlib.lib
     )
 
 else()
@@ -190,7 +185,6 @@ target_link_libraries(muondetector-gui
     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
     muondetector-shared
     pthread
-    crypto++
     qwt-qt5
     )
 
@@ -220,8 +214,6 @@ set(windeploy_options
 windeployqt(muondetector-gui "${PROJECT_BINARY_DIR}/bin" "${windeploy_options}")
 # create a list of files to copy
 set( THIRD_PARTY_DLLS
-   "${OPENSSL_DIR}/bin/libcrypto-1_1-x64.dll"
-   "${OPENSSL_DIR}/bin/libssl-1_1-x64.dll"
    "${QWT_DIR}/lib/qwt.dll"
 )
 
