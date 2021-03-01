@@ -33,24 +33,16 @@ Depending on the device of you choice, install the GUI for controlling the softw
    - "muondetector-gui_1.1.2-windows-x64.zip" on a 64-bit Windows machine 
 
 ### Installation from source
-When compiling directly from the git repository, due to a change in build system with version [2.0.0](https://github.com/MuonPi/muondetector/tree/v2.0.0) the steps diverge before and after this update. Also note that you need to manually build and install the [paho-mqttpp](https://github.com/eclipse/paho.mqtt.cpp) library.
+When compiling directly from the git repository you need to manually build and install the [paho-mqttpp](https://github.com/eclipse/paho.mqtt.cpp) library.
 
-#### version < 2.0.0
-Versions before this commit use qmake as build system.
-Follow the steps below to build the daemon:
-1. In folder `./muondetector-shared` excecute `qmake` and `make`. Depending on error messages check for missing dependencies.
-2. Copy the compiled libraries to your library folder: `sudo cp ./muondetector-shared/bin/* /usr/lib/`
-3. In folder `./muondetector-daemon` excecute `qmake` and `make`. Depending on error messages check for missing dependencies.
-4. The daemon can be found in folder `./muondetector-daemon/bin/`
-
-#### version >= 2.0.0
-Versions after this commit use CMake as build system. The steps to building the daemon are as follows:
+The steps to building the daemon are as follows:
 1. enter the build directory
 2. run `mkdir library && mkdir daemon`
 3. run `cd library && cmake ../../source/library && make`
 4. run `cd ../daemon && cmake ../../source/daemon && make package`
-5. `cd ../packages`
-6. install the debian archive found there with `sudo apt install ./<filename>.deb`
+5. (Optional) `cd ../gui && cmake ../../source/gui && make package`
+6. `cd ../packages`
+7. install the debian packages found there with `sudo apt install ./<filename>.deb`
 
 ## TROUBLESHOOTING AND DEPENDENCIES:  
 
