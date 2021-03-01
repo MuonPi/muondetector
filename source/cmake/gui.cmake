@@ -310,6 +310,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/gui/changelog.gz" DESTINATION "${CMAK
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1.gz" DESTINATION "share/man/man1/" COMPONENT gui)
 install(FILES "${MUONDETECTOR_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}-gui" COMPONENT gui)
 
+if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
 set(CPACK_DEBIAN_GUI_PACKAGE_DEPENDS "libpaho-mqttpp | paho-mqtt-cpp, qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), qml-module-qtquick-layouts (>=5), qml-module-qtquick-controls2 (>=5), qml-module-qtquick-controls (>=5), qml-module-qtquick-templates2 (>=5)")
 set(CPACK_DEBIAN_GUI_PACKAGE_SECTION "net")
 set(CPACK_DEBIAN_GUI_DESCRIPTION " GUI for monitoring and controlling the muondetector-daemon.
@@ -320,6 +321,17 @@ set(CPACK_DEBIAN_GUI_DESCRIPTION " GUI for monitoring and controlling the muonde
  It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
 set(CPACK_COMPONENT_GUI_DESCRIPTION "${CPACK_DEBIAN_GUI_DESCRIPTION}")
 set(CPACK_DEBIAN_GUI_PACKAGE_NAME "muondetector-gui")
+else()
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libpaho-mqttpp | paho-mqtt-cpp, qml-module-qtpositioning (>=5), qml-module-qtlocation (>=5), qml-module-qtquick2 (>=5), qml-module-qtquick-layouts (>=5), qml-module-qtquick-controls2 (>=5), qml-module-qtquick-controls (>=5), qml-module-qtquick-templates2 (>=5)")
+set(CPACK_DEBIAN_PACKAGE_SECTION "net")
+set(CPACK_DEBIAN_PACKAGE_DESCRIPTION " GUI for monitoring and controlling the muondetector-daemon.
+ It connects to muondetector-daemon via TCP. It is based on Qt and C++.
+ It lets you change the settings for the muondetector hardware and
+ uses qml for displaying the current position on the map if connected
+ the muondetector-daemon.
+ It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
+set(CPACK_DEBIAN_PACKAGE_NAME "muondetector-gui")
+endif ()
 
 endif()
 

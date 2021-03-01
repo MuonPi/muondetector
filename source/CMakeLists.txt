@@ -71,7 +71,7 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/gui.cmake")
 endif (MUONDETECTOR_BUILD_GUI)
 if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/daemon.cmake")
-endif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
+endif ()
 
 
 set(CPACK_DEB_COMPONENT_INSTALL ON)
