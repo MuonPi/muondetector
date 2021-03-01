@@ -116,6 +116,7 @@ configure_file(
 
 
 add_executable(muondetector-login ${MUONDETECTOR_LOGIN_SOURCE_FILES})
+add_dependencies(muondetector-login muondetector-shared)
 
 set_property(TARGET muondetector-login PROPERTY POSITION_INDEPENDENT_CODE 1)
 
@@ -134,6 +135,7 @@ target_link_libraries(muondetector-login
     )
 
 add_executable(muondetector-daemon ${MUONDETECTOR_DAEMON_SOURCE_FILES} ${MUONDETECTOR_DAEMON_HEADER_FILES})
+add_dependencies(muondetector-daemon muondetector-shared)
 
 set_property(TARGET muondetector-daemon PROPERTY POSITION_INDEPENDENT_CODE 1)
 
