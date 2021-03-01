@@ -85,8 +85,8 @@ void MqttHandler::set_status(Status status)
     m_status = status;
 }
 
-MqttHandler::MqttHandler(const QString& station_ID, const int verbosity)
-    : m_stationID { station_ID.toStdString() }
+MqttHandler::MqttHandler(const QString& station_id, const int verbosity)
+    : m_station_id { station_id.toStdString() }
     , m_verbose { verbosity }
 {
     m_reconnect_timer.setInterval(Config::MQTT::timeout);
@@ -101,15 +101,18 @@ MqttHandler::~MqttHandler()
 }
 
 void MqttHandler::start(const QString& username, const QString& password){
-    //qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
     m_username = username.toStdString();
     m_password = password.toStdString();
-    CryptoPP::SHA1 sha1;
-    std::string source = username.toStdString()+m_stationID;  //This will be randomly generated somehow
-    m_clientID = "";
-    CryptoPP::StringSource{source, true, new CryptoPP::HashFilter(sha1, new CryptoPP::HexEncoder(new CryptoPP::StringSink(m_clientID)))};
 
-    initialise(m_clientID);
+    m_data_topic += Config::MQTT::data_topic + m_username + "/" + m_station_id;
+    m_log_topic +=  Config::MQTT::log_topic + m_username + "/" + m_station_id;
+
+    CryptoPP::SHA1 sha1;
+    std::string source = username.toStdString()+m_station_id;  //This will be randomly generated somehow
+    m_client_id = "";
+    CryptoPP::StringSource{source, true, new CryptoPP::HashFilter(sha1, new CryptoPP::HexEncoder(new CryptoPP::StringSink(m_client_id)))};
+
+    initialise(m_client_id);
 
 
     mqttConnect();
@@ -123,7 +126,7 @@ void MqttHandler::mqttConnect(){
     qDebug() << "Trying to connect to MQTT.";
 
     if (m_mqtt == nullptr) {
-        initialise(m_clientID);
+        initialise(m_client_id);
     }
 
     m_tries++;

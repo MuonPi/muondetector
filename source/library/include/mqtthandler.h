@@ -25,7 +25,7 @@ public:
         Error
     };
 
-    MqttHandler(const QString& station_ID, const int verbosity=0);
+    MqttHandler(const QString& station_id, const int verbosity=0);
     ~MqttHandler() override;
 
     //using QObject::QObject;
@@ -89,10 +89,10 @@ private:
     std::vector<std::string> m_topics {};
 
     bool m_mqttConnectionStatus { false };
-    std::string m_stationID { "0" };
+    std::string m_station_id { "0" };
     std::string m_username {};
     std::string m_password {};
-    std::string m_clientID {};
+    std::string m_client_id {};
 
     std::string m_data_topic { Config::MQTT::data_topic };
     std::string m_log_topic { Config::MQTT::log_topic };
