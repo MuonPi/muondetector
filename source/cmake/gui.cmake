@@ -162,7 +162,7 @@ qt5_add_resources(qml_QRC "${MUONDETECTOR_GUI_RES_DIR}/resources.qrc")
 
 endif()
 
-add_executable(muondetector-gui ${MUONDETECTOR_GUI_SOURCE_FILES} ${PROJECT_HEADER_FILES} ${PROJECT_UI_FILES} ${PROJECT_RESOURCE_FILES} ${qml_QRC})
+add_executable(muondetector-gui ${MUONDETECTOR_GUI_SOURCE_FILES} ${MUONDETECTOR_GUI_HEADER_FILES} ${MUONDETECTOR_GUI_UI_FILES} ${MUONDETECTOR_GUI_RESOURCE_FILES} ${qml_QRC})
 add_dependencies(muondetector-gui muondetector-shared)
 
 set_property(TARGET muondetector-gui PROPERTY POSITION_INDEPENDENT_CODE 1)
