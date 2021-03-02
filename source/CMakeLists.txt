@@ -6,10 +6,10 @@ string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.cmake")
 
 option(MUONDETECTOR_BUILD_GUI "Build the gui for the muondetector" ON)
-option(MUONDETECTOR_BUILD_DAEMON "Build the daemon for the muondetector" ON)
+option(MUONDETECTOR_BUILD_DAEMON "Build the daemon for the muondetector" OFF)
 
-if (NOT (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l"))
-    set(MUONDETECTOR_BUILD_DAEMON OFF)
+if ((${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l"))
+    set(MUONDETECTOR_BUILD_DAEMON ON)
 endif ()
 
 set(MUONDETECTOR_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
