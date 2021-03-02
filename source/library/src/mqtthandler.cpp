@@ -50,10 +50,10 @@ void MqttHandler::callback_connected(int result)
         qInfo() << "Connected to mqtt.";
         set_status(Status::Connected);
         m_tries = 0;
-        m_reconnect_timer.stop();
+        emit request_timer_stop();
         return;
     }
-    m_reconnect_timer.start(Config::MQTT::timeout * m_tries);
+    emit request_timer_start(Config::MQTT::timeout * m_tries);
 }
 
 void MqttHandler::callback_disconnected(int result)
@@ -61,10 +61,12 @@ void MqttHandler::callback_disconnected(int result)
     if (result != 0) {
         qWarning() << "Mqtt disconnected unexpectedly: " + QString::number(result);
         set_status(Status::Error);
-        m_reconnect_timer.start();
+        m_tries = 1;
+        emit request_timer_start(Config::MQTT::timeout * m_tries);
     } else {
         set_status(Status::Disconnected);
     }
+
 }
 
 void MqttHandler::callback_message(const mosquitto_message* message)
@@ -91,12 +93,26 @@ MqttHandler::MqttHandler(const QString& station_id, const int verbosity)
     m_reconnect_timer.setInterval(Config::MQTT::timeout);
     m_reconnect_timer.setSingleShot(true);
     connect(&m_reconnect_timer, &QTimer::timeout, this, [this](){mqttConnect();});
+    connect(this, &MqttHandler::request_timer_stop, &m_reconnect_timer, &QTimer::stop);
+    connect(this, &MqttHandler::request_timer_restart, this, &MqttHandler::timer_restart);
+    connect(this, &MqttHandler::request_timer_start, this, &MqttHandler::timer_start);
 }
 
 MqttHandler::~MqttHandler()
 {
     mqttDisconnect();
     cleanup();
+}
+
+void MqttHandler::timer_restart(int timeout)
+{
+    m_reconnect_timer.stop();
+    m_reconnect_timer.start(timeout);
+}
+
+void MqttHandler::timer_start(int timeout)
+{
+    m_reconnect_timer.start(timeout);
 }
 
 void MqttHandler::start(const QString& username, const QString& password){
@@ -147,7 +163,7 @@ void MqttHandler::mqttConnect(){
         return;
     }
     qWarning() << "Could not connect to MQTT: " + QString { strerror(result) } + ". Trying again in " + QString::number(Config::MQTT::timeout * m_tries) + "ms";
-    m_reconnect_timer.start(Config::MQTT::timeout * m_tries);
+    emit request_timer_start(Config::MQTT::timeout * m_tries);
 }
 
 void MqttHandler::mqttDisconnect(){

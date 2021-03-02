@@ -37,6 +37,12 @@ signals:
 
     void receivedMessage(const QString& topic, const QString& content);
 
+    void request_timer_stop();
+
+    void request_timer_start(int);
+    void request_timer_restart(int);
+
+
 public slots:
     void start(const QString& username, const QString& password);
     void subscribe(const QString& topic);
@@ -44,6 +50,9 @@ public slots:
     void sendData(const QString &message);
     void sendLog(const QString &message);
     void onRequestConnectionStatus();
+
+    void timer_restart(int timeout);
+    void timer_start(int timeout);
 
 
 private:
