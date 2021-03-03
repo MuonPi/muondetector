@@ -6,52 +6,6 @@ set(MUONDETECTOR_GUI_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gui/config")
 set(MUONDETECTOR_GUI_QML_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gui/qml")
 
 
-if(WIN32)
-    set(QWT_DIR "C:/Qwt-6.1.4")
-    set(OPENSSL_DIR "C:/Qt/Tools/OpenSSL/Win_x64")
-    set(CRYPTOPP_DIR "C:/cryptopp")
-    list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5QuickCompiler")
-    list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5")
-
-    if (MSVC)
-        if("${MSVC_RUNTIME}" STREQUAL "")
-            set(MSVC_RUNTIME "static")
-        endif()
-            # Set compiler options.
-        set(variables
-          CMAKE_C_FLAGS_DEBUG
-          CMAKE_C_FLAGS_MINSIZEREL
-          CMAKE_C_FLAGS_RELEASE
-          CMAKE_C_FLAGS_RELWITHDEBINFO
-          CMAKE_CXX_FLAGS_DEBUG
-          CMAKE_CXX_FLAGS_MINSIZEREL
-          CMAKE_CXX_FLAGS_RELEASE
-          CMAKE_CXX_FLAGS_RELWITHDEBINFO
-        )
-        if(${MSVC_RUNTIME} STREQUAL "static")
-          message(STATUS
-            "MSVC -> forcing use of statically-linked runtime."
-          )
-          foreach(variable ${variables})
-            if(${variable} MATCHES "/MD")
-              string(REGEX REPLACE "/MD" "/MT" ${variable} "${${variable}}")
-            endif()
-          endforeach()
-        else()
-          message(STATUS
-            "MSVC -> forcing use of dynamically-linked runtime."
-          )
-          foreach(variable ${variables})
-            if(${variable} MATCHES "/MT")
-              string(REGEX REPLACE "/MT" "/MD" ${variable} "${${variable}}")
-            endif()
-          endforeach()
-        endif()
-    endif()
-
-
-endif()
-
 
 set(MUONDETECTOR_GUI_SOURCE_FILES
     "${MUONDETECTOR_GUI_SOURCE_DIR}/calibform.cpp"
