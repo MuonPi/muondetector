@@ -212,9 +212,7 @@ target_link_libraries(muondetector-gui
     qwt.lib
     )
 
-else()
-
-if(APPLE)
+elseif(APPLE)
 
 target_link_libraries(muondetector-gui
     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
@@ -239,9 +237,6 @@ if (CMAKE_BUILD_TYPE STREQUAL Release)
     add_custom_command(TARGET muondetector-gui POST_BUILD
             COMMAND ${CMAKE_STRIP} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/muondetector-gui")
 endif ()
-
-endif()
-
 
 
 install(FILES "${MUONDETECTOR_GUI_CONFIG_DIR}/muon.ico" DESTINATION "share/pixmaps/" COMPONENT gui)
