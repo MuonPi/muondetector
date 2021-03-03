@@ -28,7 +28,6 @@ private:
     void initialize();
     QString xAxisPreset = "seconds";
     void plotSamples(QVector<QPointF>& samples, QwtPlotCurve& curve);
-    int plotPreset = 0;
     QwtPlotGrid grid;
     QwtPlotCurve xorCurve;
     QwtPlotCurve andCurve;

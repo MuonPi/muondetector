@@ -134,7 +134,6 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm) {
 
     QVector<GnssSatellite> newlist;
     QString str;
-    QColor color;
 
     const int satPosPixmapSize = pm.width();
     const QPointF originOffset(satPosPixmapSize/2., satPosPixmapSize/2.);
@@ -259,7 +258,6 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm) {
 
     QVector<GnssSatellite> newlist;
     QString str;
-    QColor color;
 
     const QPointF originOffset(0., pm.height()*0.9);
 
