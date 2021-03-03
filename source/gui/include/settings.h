@@ -7,7 +7,7 @@
 //#include <gnsssatellite.h>
 #include <ublox_structs.h>
 
-struct GnssSatellite;
+class GnssSatellite;
 
 class UbxMsgRateTableItem : public QTableWidgetItem
 {
