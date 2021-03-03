@@ -54,7 +54,7 @@ add_compile_options(
 endif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
 
 
-if (NOT WIN32)
+if (NOT (WIN32 OR APPLE))
 set(CPACK_GENERATOR "DEB")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
