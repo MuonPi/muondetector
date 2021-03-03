@@ -34,6 +34,7 @@ constexpr const char* log_topic { "muonpi/log/" };
 }
 namespace Log {
 constexpr int interval { 1 };
+constexpr int max_geohash_length { 6 };
 }
 namespace Upload {
 constexpr int reminder { 5 };
@@ -69,5 +70,19 @@ constexpr int interval { 400 };
 }
 
 } // namespace MuonPi::Config
+
+namespace MuonPi::Settings {
+struct {
+    int max_geohash_length { Config::Log::max_geohash_length };
+} log;
+
+struct {
+    bool store_local { false };
+} events;
+
+struct {
+    int port { 51508 };
+} gui;
+}
 
 #endif // MUONPI_CONFIG_H

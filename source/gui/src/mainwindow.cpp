@@ -1054,14 +1054,11 @@ void MainWindow::onIpButtonClicked()
     if (ipAddress == "local" || ipAddress == "localhost") {
         ipAddress = "127.0.0.1";
     }
-    QString portString;
+    int port { MuonPi::Settings::gui.port };
     if (ipAndPort.size() == 2) {
-        portString = ipAndPort.at(1);
+        port = ipAndPort.at(1).toInt();
     }
-    else {
-        portString = "51508";
-    }
-    makeConnection(ipAddress, portString.toUInt());
+    makeConnection(ipAddress, port);
     if (!ui->ipBox->currentText().isEmpty() && ui->ipBox->findText(ui->ipBox->currentText()) == -1) {
         // if text not already in there, put it in there
         ui->ipBox->addItem(ui->ipBox->currentText());

@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
     // Read the file. If there is an error, report it and exit.
     try
     {
-        cfg.readFile(CONFIG_FILE);
+        cfg.readFile(MuonPi::Config::file);
     }
     catch(const libconfig::FileIOException &fioex)
     {
@@ -301,6 +301,30 @@ int main(int argc, char *argv[])
             verbose = 0;
             qWarning() << "wrong verbosity level selection...setting to 0";
         }
+    }
+
+    try
+    {
+        MuonPi::Settings::log.max_geohash_length = cfg.lookup("max_geohash_length");
+    }
+    catch (const libconfig::SettingNotFoundException&)
+    {
+    }
+
+    try
+    {
+        MuonPi::Settings::gui.port = cfg.lookup("tcp_port");
+    }
+    catch (const libconfig::SettingNotFoundException&)
+    {
+    }
+
+    try
+    {
+        MuonPi::Settings::events.store_local = cfg.lookup("store_local");
+    }
+    catch (const libconfig::SettingNotFoundException&)
+    {
     }
 
     // setup all variables for ublox module manager, then make the object run

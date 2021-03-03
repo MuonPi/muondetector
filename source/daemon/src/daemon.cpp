@@ -610,7 +610,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     daemonPort = new_daemonPort;
     if (daemonPort == 0) {
         // maybe think about other fall back solution
-        daemonPort = 51508;
+        daemonPort = MuonPi::Settings::gui.port;
     }
     if (!this->listen(daemonAddress, daemonPort)) {
         qCritical() << tr("Unable to start the server: %1.\n").arg(this->errorString());
@@ -876,7 +876,9 @@ void Daemon::connectToGps() {
     // connect fileHandler related stuff
     if (fileHandler != nullptr){
         //connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
-        connect(this, &Daemon::eventMessage, fileHandler, &FileHandler::writeToDataFile);
+        if (MuonPi::Settings::events.store_local) {
+            connect(this, &Daemon::eventMessage, fileHandler, &FileHandler::writeToDataFile);
+        }
 		//connect(qtGps, &QtSerialUblox::timTM2, mqttHandler, &MuonPi::MqttHandler::sendData);
 		connect(this, &Daemon::eventMessage, mqttHandler, &MuonPi::MqttHandler::sendData);
     }
