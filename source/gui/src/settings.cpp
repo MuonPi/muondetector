@@ -17,7 +17,7 @@ ui(new Ui::Settings)
     connect(ui->settingsButtonBox, &QDialogButtonBox::clicked, this, &Settings::onSettingsButtonBoxClicked);
     connect(ui->ubloxSignalStates, &QTableWidget::itemChanged, this, &Settings::onItemChanged);
     ui->ubloxSignalStates->blockSignals(true);
-    connect(ui->gnssConfigButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this, [this](int)
+    connect(ui->gnssConfigButtonGroup, &QButtonGroup::idClicked, this, [this](int)
     {
         this->fGnssConfigChanged=true;
         this->onConfigChanged();
@@ -26,7 +26,7 @@ ui(new Ui::Settings)
         this->ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setEnabled(true);
 */
     } );
-    connect(ui->tpConfigButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this, [this](int)
+    connect(ui->tpConfigButtonGroup, &QButtonGroup::idClicked, this, [this](int)
     {
         this->fTpConfigChanged=true;
         this->onConfigChanged();
