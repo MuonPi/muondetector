@@ -3,6 +3,7 @@
 #include "ui_parametermonitorform.h"
 #include <muondetector_structs.h>
 
+
 ParameterMonitorForm::ParameterMonitorForm(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::ParameterMonitorForm)
