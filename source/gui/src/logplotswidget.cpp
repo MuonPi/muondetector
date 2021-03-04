@@ -12,11 +12,9 @@ LogPlotsWidget::LogPlotsWidget(QWidget *parent) :
     ui(new Ui::LogPlotsWidget)
 {
     ui->setupUi(this);
-    //ui->logPlot->setTitle("temp");
     ui->logPlot->setAxisScaleDraw(QwtPlot::xBottom, new QwtDateScaleDraw());
     ui->logPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtDateScaleEngine());
     ui->logPlot->setAxisTitle(QwtPlot::xBottom,"time");
-    //ui->logPlot->setAxisTitle(QwtPlot::yLeft,"temp / °C");
     connect(ui->logPlot, &CustomPlot::scalingChanged,this, &LogPlotsWidget::onScalingChanged);
     ui->logPlot->addCurve("curve1", Qt::blue);
     ui->logPlot->curve("curve1").setStyle(QwtPlotCurve::NoCurve);
@@ -124,11 +122,9 @@ void LogPlotsWidget::updateLogTable()
 void LogPlotsWidget::on_tableWidget_cellClicked(int row, int /*column*/)
 {
     QString name = ui->tableWidget->item(row,0)->text();
-//    ui->nrHistosLabel->setText(name);
     auto it = fLogMap.find(name);
     if (it!=fLogMap.end()) {
         ui->logPlot->setTitle(name);
-        //ui->histoWidget->setData(*it);
         ui->logPlot->curve("curve1").setSamples(it->data());
         ui->logPlot->setAxisTitle(QwtPlot::xBottom, "time");
         ui->logPlot->setAxisTitle(QwtPlot::yLeft, it->getUnit());

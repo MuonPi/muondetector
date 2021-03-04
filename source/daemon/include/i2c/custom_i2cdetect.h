@@ -21,19 +21,7 @@ Now it can be called by the main program and it's the only purpose of custom_i2c
 #define MODE_AUTO 0
 #define I2C_BUS 1
 
-int scan_i2c_bus(int file, /*int mode,*/ int first, int last,
+int scan_i2c_bus(int file, int first, int last,
 	bool outputAllAddresses, int expectedAddresses[]);
-/*
-struct func
-{
-	long value;
-	const char* name;
-};
-static const struct func all_func[];
-*/
-//static void print_functionality(unsigned long funcs);
-// int i2cdetect();
-// int i2cdetect(int expectedAddresses[]);
-// c does not like overloading those functions
 int i2cdetect(bool outputAllAddresses, int expectedAddresses[]);
 #endif

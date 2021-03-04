@@ -2,7 +2,6 @@
 #define MAP_H
 
 #include <QWidget>
-//#include <geodeticpos.h>
 
 struct GeodeticPos;
 

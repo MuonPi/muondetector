@@ -18,7 +18,6 @@ public:
 	// gain range 0..7
 	void setGain(uint8_t gain);
 	uint8_t readGain();
-	//	uint8_t readGain2();
 	bool getXYZRawValues(int &x, int &y, int &z);
 	bool getXYZMagneticFields(double &x, double &y, double &z);
 	bool readRDYBit();

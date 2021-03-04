@@ -5,9 +5,6 @@
 #include <qwt_plot_curve.h>
 #include <qwt_series_data.h>
 #include <QPointer>
-//#include <qwt_scale_engine.h>
-//#include <qwt_date_scale_draw.h>
-//#include <qwt_date_scale_engine.h>
 
 class PlotCustom : public QwtPlot
 {

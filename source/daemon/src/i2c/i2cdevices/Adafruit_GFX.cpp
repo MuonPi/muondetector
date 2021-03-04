@@ -422,10 +422,6 @@ void Adafruit_GFX::fillTriangle ( int16_t x0, int16_t y0, int16_t x1, int16_t y1
     b   = x0 + sb / dy02;
     sa += dx01;
     sb += dx02;
-    /* longhand:
-    a = x0 + (x1 - x0) * (y - y0) / (y1 - y0);
-    b = x0 + (x2 - x0) * (y - y0) / (y2 - y0);
-    */
     if(a > b) 
 			swap(a,b);
 			
@@ -442,10 +438,6 @@ void Adafruit_GFX::fillTriangle ( int16_t x0, int16_t y0, int16_t x1, int16_t y1
     b   = x0 + sb / dy02;
     sa += dx12;
     sb += dx02;
-    /* longhand:
-    a = x1 + (x2 - x1) * (y - y1) / (y2 - y1);
-    b = x0 + (x2 - x0) * (y - y0) / (y2 - y0);
-    */
     if(a > b) 
 			swap(a,b);
 			
@@ -512,7 +504,6 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c, uint16_t colo
     if (i == 5) 
       line = 0x0;
     else 
-      //line = pgm_read_byte(font+(c*5)+i);
       line = font[(c*5)+i];
     for (int8_t j = 0; j<8; j++) 
 		{

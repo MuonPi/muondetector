@@ -4,9 +4,6 @@
 #include <qwt_plot_grid.h>
 #include <qwt_plot_curve.h>
 #include <qwt_series_data.h>
-//#include <qwt_scale_engine.h>
-//#include <qwt_date_scale_draw.h>
-//#include <qwt_date_scale_engine.h>
 
 class CustomPlot : public QwtPlot
 {
@@ -26,7 +23,6 @@ public:
     // for other plots: subclass "CustomPlot" and put all specific functions (like below) to the new class
 
 
-    //const QString title = "Plot";
     static QwtPlotCurve INVALID_CURVE;
 
 signals:

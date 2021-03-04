@@ -25,7 +25,6 @@
 
 #include <iostream>
 
-//#include <gnsssatellite.h>
 
 using namespace std;
 
@@ -53,7 +52,6 @@ MainWindow::MainWindow(QWidget *parent) :
     qRegisterMetaType<std::vector<GnssConfigStruct>>("std::vector<GnssConfigStruct>");
     qRegisterMetaType<std::chrono::duration<double>>("std::chrono::duration<double>");
     qRegisterMetaType<std::string>("std::string");
-//	qRegisterMetaType<LogParameter>("LogParameter");
     qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
     qRegisterMetaType<timespec>("timespec");
 
@@ -72,12 +70,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->ipBox->setModel(addresses);
     ui->ipBox->setCompleter(new QCompleter{});
     ui->ipBox->setEditable(true);
-    //ui->ipBox->installEventFilter(this);
 
     // setup colors
-    ui->ipStatusLabel->setStyleSheet("QLabel {color : darkGray;}");/*
-    ui->discr1Hit->setStyleSheet("QLabel {background-color : darkRed;}");
-    ui->discr2Hit->setStyleSheet("QLabel {background-color : darkRed;}");*/
+    ui->ipStatusLabel->setStyleSheet("QLabel {color : darkGray;}");
 
     // setup event filter
     ui->ipBox->installEventFilter(this);
@@ -107,8 +102,6 @@ MainWindow::MainWindow(QWidget *parent) :
         ratePollTimer.start();
     }
 
-    // set mainwindow
-    //connect(ui->saveDacButton, &QPushButton, this, &MainWindow::on_saveThresholdsButton_clicked);
 
     // set all tabs
     ui->tabWidget->removeTab(0);
@@ -220,7 +213,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::temperatureReceived, paramTab, &ParameterMonitorForm::onTemperatureReceived);
     connect(this, &MainWindow::timeAccReceived, paramTab, &ParameterMonitorForm::onTimeAccReceived);
     connect(this, &MainWindow::freqAccReceived, paramTab, &ParameterMonitorForm::onFreqAccReceived);
-//    connect(this, &MainWindow::intCounterReceived, paramTab, &ParameterMonitorForm::onIntCounterReceived);
     connect(this, &MainWindow::gainSwitchReceived, paramTab, &ParameterMonitorForm::onGainSwitchReceived);
     connect(this, &MainWindow::calibReceived, paramTab, &ParameterMonitorForm::onCalibReceived);
     connect(this, &MainWindow::timeMarkReceived, paramTab, &ParameterMonitorForm::onTimeMarkReceived);
@@ -258,11 +250,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->tabWidget->addTab(logTab, "Log");
 
 
-    //sendRequest(calibRequestSig);
-
-    //settings->show();
-    // set menu bar actions
-    //connect(ui->actionsettings, &QAction::triggered, this, &MainWindow::settings_clicked);
 
     const QStandardItemModel *model = dynamic_cast<QStandardItemModel*>(ui->biasControlTypeComboBox->model());
     QStandardItem *item = model->item(1);
@@ -270,7 +257,6 @@ MainWindow::MainWindow(QWidget *parent) :
     // initialise all ui elements that will be inactive at start
     uiSetDisconnectedState();
 
-// printf("WindowSize %d %d\r\n",this->width(),this->height());
 
 }
 
@@ -358,19 +344,6 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
             QCoreApplication::quit();
             return true;
         }
-        /*
-        if (ke->key() == Qt::Key_Escape) {
-            if (connectedToDemon){
-                onIpButtonClicked();
-            }else{
-                QCoreApplication::quit();
-            }
-            return true;
-        }
-        if (ke->key() == Qt::Key_Enter && !connectedToDemon){
-            onIpButtonClicked();
-            return true;
-        }*/ // crashes when alternating escape and enter ...why?
         auto combobox = dynamic_cast<QComboBox *>(object);
         if (combobox == ui->ipBox) {
             if (ke->key() == Qt::Key_Delete) {
@@ -391,10 +364,8 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
 }
 
 void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
-//    quint16 msgID = tcpMessage.getMsgID();
     TCP_MSG_KEY msgID = static_cast<TCP_MSG_KEY>(tcpMessage.getMsgID());
     if (msgID == TCP_MSG_KEY::MSG_GPIO_EVENT) {
-//	if (msgID == gpioPinSig) {
         unsigned int gpioPin;
         *(tcpMessage.dStream) >> gpioPin;
         receivedGpioRisingEdge((GPIO_PIN)gpioPin);
@@ -446,7 +417,6 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
     }
     if (msgID == TCP_MSG_KEY::MSG_PCA_SWITCH){
         *(tcpMessage.dStream) >> pcaPortMask;
-        //status->setInputSwitchButtonGroup(pcaPortMask);
         emit inputSwitchReceived(pcaPortMask);
         updateUiProperties();
         return;
@@ -455,7 +425,6 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         unsigned int signal;
         *(tcpMessage.dStream) >> signal;
         emit triggerSelectionReceived((GPIO_PIN)signal);
-        //updateUiProperties();
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_GPIO_RATE){
@@ -506,7 +475,6 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
             sampleBuffer.push_back(value);
         }
         emit adcTraceReceived(sampleBuffer);
-        //qDebug()<<"trace received. length="<<sampleBuffer.size();
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_DAC_READBACK){
@@ -544,7 +512,6 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         deviceList.push_back(entry);
     }
         emit i2cStatsReceived(bytesRead, bytesWritten, deviceList);
-        //updateUiProperties();
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_SPI_STATS){
@@ -657,28 +624,14 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_MONHW){
-/*        quint16 noise=0;
-        quint16 agc=0;
-        quint8 antStatus=0;
-        quint8 antPower=0;
-        quint8 jamInd=0;
-        quint8 flags=0;*/
         GnssMonHwStruct hw;
-    //*(tcpMessage.dStream) >> noise >> agc >> antStatus >> antPower >> jamInd >> flags;
     *(tcpMessage.dStream) >> hw;
-        //emit gpsMonHWReceived(noise,agc,antStatus,antPower,jamInd,flags);
         emit gpsMonHWReceived(hw);
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_MONHW2){
-/*        qint8 ofsI=0, ofsQ=0;
-        quint8 magI=0, magQ=0;
-        quint8 cfgSrc=0;*/
     GnssMonHw2Struct hw2;
-//        *(tcpMessage.dStream) >> hw2.ofsI >> hw2.magI >> hw2.ofsQ >> hw2.magQ >> hw2.cfgSrc;
         *(tcpMessage.dStream) >> hw2;
-        //qDebug()<<"ofsI="<<ofsI<<" magI="<<magI<<"ofsQ="<<ofsQ<<" magQ="<<magQ<<" cfgSrc="<<cfgSrc;
-//        emit gpsMonHW2Received(ofsI, magI, ofsQ, magQ, cfgSrc);
         emit gpsMonHW2Received(hw2);
         return;
     }
@@ -788,10 +741,7 @@ void MainWindow::sendSetBiasVoltage(float voltage){
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_BIAS_VOLTAGE);
     *(tcpMessage.dStream) << voltage;
     emit sendTcpMessage(tcpMessage);
-//    emit sendRequest(TCP_MSG_KEY::MSG_DAC_REQUEST, 2);
 	emit sendRequest(TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST);
-//    emit sendRequest(adcSampleRequestSig, 2);
-//    emit sendRequest(adcSampleRequestSig, 3);
 }
 
 void MainWindow::sendSetBiasStatus(bool status){
@@ -823,7 +773,6 @@ void MainWindow::sendSetThresh(uint8_t channel, float value){
     *(tcpMessage.dStream) << channel << value;
     emit sendTcpMessage(tcpMessage);
 	emit sendRequest(TCP_MSG_KEY::MSG_THRESHOLD_REQUEST, channel);
-    //emit sendRequest(TCP_MSG_KEY::MSG_DAC_REQUEST, channel);
 }
 
 void MainWindow::sendSetUbxMsgRateChanges(QMap<uint16_t, int> changes){
@@ -842,7 +791,6 @@ void MainWindow::onHistogramCleared(QString histogramName){
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_HISTOGRAM_CLEAR);
     *(tcpMessage.dStream) << histogramName;
     emit sendTcpMessage(tcpMessage);
-//	qDebug()<<"received signal in slot MainWindow::onHistogramCleared("<<histogramName<<")";
 }
 
 void MainWindow::onAdcModeChanged(quint8 mode){
@@ -978,9 +926,7 @@ void MainWindow::updateUiProperties() {
     // (UBias - c0)/c1 = UDac
 
     ui->ANDHit->setEnabled(true);
-    //ui->ANDHit->setStyleSheet("QLabel {background-color: darkRed; color: white;}");
     ui->XORHit->setEnabled(true);
-    //ui->XORHit->setStyleSheet("QLabel {background-color: darkRed; color: white;}");
     ui->rate1->setEnabled(true);
     ui->rate2->setEnabled(true);
     ui->biasPowerButton->setEnabled(true);
@@ -1019,17 +965,10 @@ void MainWindow::connected() {
 void MainWindow::sendValueUpdateRequests() {
     sendRequest(TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST);
     sendRequest(TCP_MSG_KEY::MSG_BIAS_SWITCH_REQUEST);
-//    sendRequest(preampRequestSig,0);
-//    sendRequest(preampRequestSig,1);
-//    sendRequest(threshRequestSig);
     for (int i=0; i<4; i++) sendRequest(TCP_MSG_KEY::MSG_DAC_REQUEST,i);
     for (int i=1; i<4; i++) sendRequest(TCP_MSG_KEY::MSG_ADC_SAMPLE_REQUEST,i);
-//    sendRequest(pcaChannelRequestSig);
-//    sendRequestUbxMsgRates();
-//    sendRequestGpioRateBuffer();
     sendRequest(TCP_MSG_KEY::MSG_TEMPERATURE_REQUEST);
     sendRequest(TCP_MSG_KEY::MSG_I2C_STATS_REQUEST);
-//    sendRequest(calibRequestSig);
 }
 
 void MainWindow::onIpButtonClicked()
@@ -1222,16 +1161,7 @@ void MainWindow::onCalibUpdated(const QVector<CalibStruct>& items)
     QStandardItem *item = model->item(1);
 
     item->setEnabled(calibedBias);
-/*
-    item->setFlags(disable ? item->flags() & ~(Qt::ItemIsSelectable|Qt::ItemIsEnabled)
-                           : Qt::ItemIsSelectable|Qt::ItemIsEnabled));
-    // visually disable by greying out - works only if combobox has been painted already and palette returns the wanted color
-    item->setData(disable ? ui->comboBox->palette().color(QPalette::Disabled, QPalette::Text)
-                          : QVariant(), // clear item data in order to use default color
-                  Qt::TextColorRole);
-*/
     ui->biasControlTypeComboBox->setCurrentIndex((calibedBias)?1:0);
-//    sendRequest(biasVoltageRequestSig);
 }
 
 void MainWindow::on_biasControlTypeComboBox_currentIndexChanged(int index)

@@ -29,12 +29,6 @@ ScanForm::ScanForm(QWidget *parent) :
     ui->scanPlot->setAxisTitle(QwtPlot::xBottom,"scanpar");
     ui->scanPlot->setAxisTitle(QwtPlot::yLeft,"observable");
 
-/*    
-    ui->scanPlot->addCurve("parscan", Qt::blue);
-    ui->scanPlot->curve("parscan").setStyle(QwtPlotCurve::NoCurve);
-    QwtSymbol *sym=new QwtSymbol(QwtSymbol::Rect, QBrush(Qt::blue, Qt::SolidPattern),QPen(Qt::black),QSize(5,5));
-    ui->scanPlot->curve("parscan").setSymbol(sym);
-*/
     ui->scanPlot->setAxisAutoScale(QwtPlot::xBottom, true);
     ui->scanPlot->setAxisAutoScale(QwtPlot::yLeft, true);
     ui->scanPlot->replot();
@@ -88,11 +82,6 @@ void ScanForm::scanParIteration() {
 	if (currentScanPar>maxRange) {
 		// measurement finished
 		finishScan();
-/*
-		for (auto it=scanData.constBegin(); it!=scanData.constEnd(); ++it) {
-			qDebug()<<it.key()<<"  "<<it.value().value;
-		}
-*/
 		return;
 	}
 	waitForFirst=true;
@@ -223,7 +212,6 @@ void ScanForm::exportData() {
             QFile file(fn);
             if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return;
             QTextStream out(&file);
-            //out.setFieldWidth(20);
 
             out << "# Parameter Scan\n";
             out << "# scanparValue measValue measError diffMeasValue diffMeasError temp\n";

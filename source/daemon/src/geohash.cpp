@@ -48,7 +48,6 @@ QString GeoHash::hashFromCoordinates(double lon, double lat, int precision)
 			if (++bit == 5) {
 				// 5 bits gives us a character: append it and start over
 				geohash += base32.at(idx);
-				//qDebug()<<"hashstr="<<geohash;
 				bit = 0;
 				idx = 0;
 			}

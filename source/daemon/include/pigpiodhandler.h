@@ -81,7 +81,6 @@ private:
 	void measureGpioClockTime();
 	bool inhibit=false;
 	int verbose=0;
-//	QVector<unsigned int> gpioPins;
 };
 
 

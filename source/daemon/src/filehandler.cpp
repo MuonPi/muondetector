@@ -17,16 +17,15 @@
 #include <crypto++/filters.h>
 #include <crypto++/osrng.h>
 #include <crypto++/hex.h>
-//#include <crypto++/sha3.h>
 #include <crypto++/sha.h>
 #include <config.h>
 #include <QtGlobal>
 
 using namespace CryptoPP;
 
-const unsigned long int lftpUploadTimeout = MuonPi::Config::Upload::timeout/*MUONPI_UPLOAD_TIMEOUT_MS*/; // in msecs
-const int uploadReminderInterval = MuonPi::Config::Upload::reminder/*MUONPI_UPLOAD_REMINDER_MINUTES*/; // in minutes
-const int logReminderInterval = MuonPi::Config::Log::interval/*MUONPI_LOG_INTERVAL_MINUTES*/; // in minutes
+const unsigned long int lftpUploadTimeout = MuonPi::Config::Upload::timeout; // in msecs
+const int uploadReminderInterval = MuonPi::Config::Upload::reminder; // in minutes
+const int logReminderInterval = MuonPi::Config::Log::interval; // in minutes
 
 static std::string SHA256HashString(std::string aString){
     std::string digest;
@@ -79,15 +78,10 @@ static QString getMacAddress(){
 }
 
 static QByteArray getMacAddressByteArray(){
-    //QString::fromLocal8Bit(temp.data()).toStdString();
-    //return QByteArray(getMacAddress().toStdString().c_str());
-//    return QByteArray::fromStdString(getMacAddress().toStdString());
     QString mac=getMacAddress();
-    //qDebug()<<"MAC address: "<<mac;
     QByteArray byteArray;
     byteArray.append(mac);
     return byteArray;
-    //return QByteArray::fromRawData(mac.toStdString().c_str(),mac.size());
 }
 
 static QString dateStringNow(){
@@ -103,7 +97,6 @@ FileHandler::FileHandler(const QString& userName, const QString& passWord, quint
     QDir temp;
     QString fullPath = +"/var/muondetector/";
     hashedMacAddress = QString(QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex());
-    //qDebug()<<"hashed MAC: "<<hashedMacAddress;
     fullPath += hashedMacAddress;
     configPath = fullPath+"/";
     configFilePath = fullPath + "/currentWorkingFileInformation.conf";
@@ -169,9 +162,7 @@ qint64 FileHandler::currentLogAge() {
     if (configFilePath=="") return -1;
     QDateTime now = QDateTime::currentDateTime();
     QFileInfo fi(configFilePath);
-//    qDebug()<<"QT version is "<<QString::number(QT_VERSION,16);
 #if QT_VERSION >= 0x050a00
-//    qint64 difftime=-now.secsTo(dataFile->fileTime(QFileDevice::FileMetadataChangeTime));
     qint64 difftime=-now.secsTo(dataFile->fileTime(QFileDevice::FileBirthTime));
 #else
     qint64 difftime=-now.secsTo(fi.created());
@@ -182,7 +173,6 @@ qint64 FileHandler::currentLogAge() {
 
 void FileHandler::start(){
     // set upload reminder
-    //qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
     QTimer *uploadReminder = new QTimer(this);
     uploadReminder->setInterval(60*1000*uploadReminderInterval); // every 5 minutes or so
     uploadReminder->setSingleShot(false);
@@ -206,7 +196,6 @@ void FileHandler::onUploadRemind(){
     if (lastUploadDateTime<todaysRegularUploadTime&&QDateTime::currentDateTimeUtc()>todaysRegularUploadTime){
         switchFiles();
         if (password.size() != 0 || username.size() != 0){
-            //uploadRecentDataFiles(); // commented out because the upload server is not online
         }
         lastUploadDateTime = QDateTime::currentDateTimeUtc();
     }
@@ -239,13 +228,11 @@ bool FileHandler::openFiles(bool writeHeader){
         // the following return statement induced wrong behavior:
     // in case the data file couldn't be opened, the log file QFile object would never be instantiated
     // this would prevent local logging
-    //return false;
     }
     logFile = new QFile(currentWorkingLogPath);
     logFile->setPermissions(defaultPermissions);
     if (!logFile->open(QIODevice::ReadWrite | QIODevice::Append)) {
         qDebug() << "file open failed in 'ReadWrite' mode at location " << currentWorkingLogPath;
-        //return false;
     }
     if (!dataFile->isOpen() || !logFile->isOpen()) return false;
     // write header
@@ -254,7 +241,6 @@ bool FileHandler::openFiles(bool writeHeader){
         dataOut << "#unix_timestamp_rising(s)  unix_timestamp_trailing(s)  time_accuracy(ns)  valid  timebase(0=gps,2=utc)  utc_available\n";
         QTextStream logOut(logFile);
         logOut << "#log parameters: time<YYYY-MM-DD_hh-mm-ss>  parname   value  unit\n";
-        //onceLogFlag=true;
     }
     emit logRotateSignal();
     return true;
@@ -365,14 +351,12 @@ bool FileHandler::uploadDataFile(QString fileName){
     lftpProcess.setProgram("lftp");
     QStringList arguments;
     arguments << "--env-password";
-    arguments << "-p" << QString::number(MuonPi::Config::Upload::port/*MUONPI_UPLOAD_PORT*/);
+    arguments << "-p" << QString::number(MuonPi::Config::Upload::port);
     arguments << "-u" << QString(username);
-    arguments << MuonPi::Config::Upload::url/*MUONPI_UPLOAD_URL*/;
+    arguments << MuonPi::Config::Upload::url;
     arguments << "-e" << QString("mkdir "+hashedMacAddress+" ; cd "+hashedMacAddress+" && put "+fileName+" ; exit");
     lftpProcess.setArguments(arguments);
-    //qDebug() << lftpProcess.arguments();
     lftpProcess.start();
-    //qDebug() << "started upload of " << fileName << "user:" << username << ";pw:" << password <<";";
     if (!lftpProcess.waitForFinished(lftpUploadTimeout)){
         qDebug() << lftpProcess.readAllStandardOutput();
         qDebug() << lftpProcess.readAllStandardError();
@@ -380,9 +364,6 @@ bool FileHandler::uploadDataFile(QString fileName){
         system("unset LFTP_PASSWORD");
         return false;
     }
-    //qDebug() << "standard output" << lftpProcess.readAllStandardOutput();
-    //qDebug() << "standard error:" << lftpProcess.readAllStandardError();
-    //qDebug() << "exit status:" << lftpProcess.exitStatus();
     if (lftpProcess.exitStatus()!=0){
         qDebug() << "lftp returned exit status other than 0";
         unsetenv(envName);
@@ -410,14 +391,11 @@ bool FileHandler::uploadRecentDataFiles(){
     }
     for (auto &fileName : notUploadedFilesNames){
         QString filePath = dataFolderPath+fileName;
-        //qDebug() << "checking for upload: " << filePath;
         if (filePath!=currentWorkingFilePath&&filePath!=currentWorkingLogPath){
-            //qDebug() << "attempt to upload " << filePath;
             if (!uploadDataFile(filePath)){
                 qDebug() << "failed to upload recent files";
                 return false;
             }
-            //qDebug() << "success uploading recent files";
             QFile::rename(filePath,QString(configPath+"uploadedFiles/"+fileName));
         }
     }
@@ -447,22 +425,15 @@ bool FileHandler::saveLoginData(QString username, QString password){
     SecByteBlock iv(AES::BLOCKSIZE);
     rnd.GenerateBlock(iv, iv.size());
 
-    //qDebug() << "key length = " << keyText.size();
-    //qDebug() << "macAddressHashed = " << QByteArray::fromStdString(keyText).toHex();
-    //qDebug() << "plainText = " << QString::fromStdString(plainText);
 
-    //////////////////////////////////////////////////////////////////////////
     // Encrypt
 
     CFB_Mode<AES>::Encryption cfbEncryption;
     cfbEncryption.SetKeyWithIV(key, key.size(), iv, iv.size());
-    //cfbEncryption.ProcessData(cypheredText, plainText, messageLen);
 
     StringSource encryptor(plainText, true,
                            new StreamTransformationFilter(cfbEncryption,
                                                           new StringSink(encrypted)));
-    //qDebug() << "encrypted = " << QByteArray::fromStdString(encrypted).toHex();
-    // write encrypted message and IV to file
     loginDataFile.write((const char*)iv.data(),iv.size());
     loginDataFile.write(encrypted.c_str());
     return true;
@@ -492,13 +463,10 @@ bool FileHandler::readLoginData(){
     iv.Assign((byte*)ivData, AES::BLOCKSIZE);
       QByteArray data = loginDataFile.readAll();
       encrypted = std::string(data.constData(), data.length()); // <-- right :)
-    //QString::fromLocal8Bit(temp.data()).toStdString() <-- wrong!!
 
-    //////////////////////////////////////////////////////////////////////////
     // Decrypt
     CFB_Mode<AES>::Decryption cfbDecryption;
     cfbDecryption.SetKeyWithIV(key, key.size(), iv, iv.size());
-    //cfbDecryption.ProcessData(plainText, cypheredText, messageLen);
 
     StringSource decryptor(encrypted, true,
                            new StreamTransformationFilter(cfbDecryption,

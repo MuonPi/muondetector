@@ -89,18 +89,10 @@ public:
 	double getOverflow() const { return fOverflow; }
 	double getEntries() {
 		double sum = fUnderflow+fOverflow;
-		//	foreach (double value, fHistogramMap) sum+=value;
-		// this should also work, but it doesn't compile. reason unclear
 		for (const auto &entry : fHistogramMap) {
 			sum+=entry.second;
 		}
-/*
-		// this should also work, but it doesn't compile. reason unclear
-		sum += std::accumulate(fHistogramMap.begin(), fHistogramMap.end(), 0.,
-                                          [](double previous, const QPair<const int, double>& p)
-                                          { return previous + p.second; });
-*/
-		return sum;
+        return sum;
 	}
 	
 	friend QDataStream& operator << (QDataStream& out, const Histogram& h);

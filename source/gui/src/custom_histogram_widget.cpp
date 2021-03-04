@@ -1,7 +1,6 @@
 #include <qwt_legend.h>
 #include <qwt.h>
 #include <qwt_scale_engine.h>
-//#include <qwt_samples.h>
 #include <qwt_plot_renderer.h>
 #include <QMenu>
 #include <QFileDialog>
@@ -25,18 +24,12 @@ void CustomHistogram::initialize(){
     enableAxis(QwtPlot::yLeft,true);
     enableAxis(QwtPlot::yRight,false);
     setAxisAutoScale(QwtPlot::xBottom,true);
-//       setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine());
     setAxisAutoScale(QwtPlot::yLeft,true);
-       //setAxisAutoScale(QwtPlot::yRight,true);
     grid = new QwtPlotGrid();
     const QPen grayPen(Qt::gray);
     grid->setPen(grayPen);
     grid->attach(this);
     fBarChart = new QwtPlotHistogram( title );
-        //fBarChart = new QwtPlotBarChart( title );
-        //fBarChart->setLayoutPolicy( QwtPlotBarChart::AutoAdjustSamples );
-        //fBarChart->setSpacing( 0 );
-        //fBarChart->setMargin( 3 );
 
     fBarChart->setBrush(QBrush(Qt::darkBlue, Qt::SolidPattern));
     fBarChart->attach( this );
@@ -73,7 +66,6 @@ void CustomHistogram::popUpMenu(const QPoint & pos)
     contextMenu.addAction(&action1);
     contextMenu.addSeparator();
     QAction action2("&Clear", this);
-//    connect(&action2, &QAction::triggered, this, &CustomHistogram::clear );
     connect(&action2, &QAction::triggered, this,  [this](bool /*checked*/){ this->clear(); this->update(); });
     contextMenu.addAction(&action2);
 
@@ -82,7 +74,6 @@ void CustomHistogram::popUpMenu(const QPoint & pos)
     contextMenu.addAction(&action3);
 
     contextMenu.exec(mapToGlobal(pos));
-//    contextMenu.popup(mapToGlobal(pos));
 }
 
 void CustomHistogram::exportToFile() {
@@ -158,8 +149,6 @@ void CustomHistogram::exportToFile() {
 
 void CustomHistogram::update()
 {
-    //QwtPlot::replot();
-    //return;
     if (!isEnabled()) return;
     if (fHistogramMap.empty() || fNrBins<=1) { fBarChart->detach(); QwtPlot::replot(); return; }
     fBarChart->attach(this);
@@ -182,8 +171,6 @@ void CustomHistogram::update()
 
 void CustomHistogram::clear()
 {
-//	fHistogramMap.clear();
-//	fOverflow=fUnderflow=0;
     Histogram::clear();
     emit histogramCleared(QString::fromStdString(fName));
     fName="defaultHisto";

@@ -39,7 +39,6 @@ const int MAX_SAT_TRACK_ENTRIES = 1000;
 static const QList<QColor> GNSS_COLORS = { Qt::darkGreen, Qt::darkYellow, Qt::blue, Qt::magenta, Qt::gray, Qt::cyan, Qt::red, Qt::black };
 
 int GnssPosWidget::alphaFromCnr(int cnr) {
-//    int alpha=cnr*255/cnrColorRange;
     int alpha=cnr*255/ui->cnrRangeSpinBox->value();
     if (alpha>255) alpha=255;
     return alpha;
@@ -81,7 +80,6 @@ void GnssPosWidget::resizeEvent(QResizeEvent* /*event*/)
     ui->satLabel->resize(w,h);
 
     replot();
-    //ui->satLabel->setText(QString::number(ui->satLabel->width())+"x"+QString::number(ui->satLabel->height()));
 }
 
 
@@ -115,9 +113,7 @@ QPolygonF GnssPosWidget::getCartPolygonUnity(const QPointF& polarPos) {
     QPolygonF cartPolygon;
     for (QPointF p : polarRect) {
         cartPolygon.append(polar2cartUnity(p));
-        //qDebug()<<"appended transformed point: "<<polar2cartUnity(p);
     }
-    //qDebug()<<"transformed polygon has "<<cartPolygon.size()<<" points";
     return cartPolygon;
 }
 
@@ -138,7 +134,6 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm) {
     const int satPosPixmapSize = pm.width();
     const QPointF originOffset(satPosPixmapSize/2., satPosPixmapSize/2.);
 
-    //    pixmap.fill(QColor("transparent"));
     pm.fill(Qt::white);
     QPainter satPosPainter(&pm);
     satPosPainter.setPen(QPen(Qt::black));
@@ -161,10 +156,8 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm) {
 
     // set up coordinate transformation
     QTransform trafo;
-//	trafo.translate(0.5,0.5);
     trafo.translate(originOffset.x(),originOffset.y());
     trafo.scale(satPosPixmapSize,satPosPixmapSize);
-//	trafo.translate(originOffset.x(),originOffset.y());
     satPosPainter.setTransform(trafo);
 
     // draw the sat tracks first
@@ -182,19 +175,12 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm) {
                 cnr/=(double)pointVector.size();
                 QColor satColor=GNSS_COLORS[satPoint.gnssId];
                 satColor.setAlpha(alphaFromCnr(cnr));
-                //satPosPainter.setPen(satColor);
-                //p*=satPosPixmapSize;
-                //p+=originOffset;
                 satPosPainter.setPen(QColor("transparent"));
                 satPosPainter.setBrush(satColor);
                 QPainterPath path;
                 path.addPolygon(getCartPolygonUnity(satPoint.posPolar));
-                //path.translate(0.5,0.5);
                 satPosPainter.drawPolygon(path.toFillPolygon(QTransform()));
 
-                //satPosPainter.drawPath(path);
-                //satPosPainter.drawPoint(polar2cartUnity(satPoint.posPolar));
-                //qDebug()<<satPoint.posPolar<<" cnr="<<cnr<<" "<<pointVector.size()<<" entries";
             }
         }
     }
@@ -218,8 +204,6 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm) {
             int alpha = alphaFromCnr(fCurrentSatlist[i].fCnr);
             fillColor.setAlpha(alpha);
             int satId = fCurrentSatlist[i].fGnssId*1000 + fCurrentSatlist[i].fSatId;
-/*            QPointF lastPoint(-2,-2);
-            int lastCnr = 255;*/
             if (fCurrentSatlist[i].fCnr>0)
             {
                 SatHistoryPoint p;
@@ -244,9 +228,7 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm) {
             currPoint+=originOffset;
 
             float satsize=ui->satSizeSpinBox->value();
-//            qreal satsize=(qreal)ui->satSizeSpinBox->value()/1000.;
             satPosPainter.drawEllipse(currPoint,satsize/2.,satsize/2.);
-//            if (fCurrentSatlist[i].fUsed) satPosPainter.drawEllipse(currPoint,satsize/2.+0.5,satsize/2.+0.5);
             if (fCurrentSatlist[i].fUsed) satPosPainter.drawEllipse(currPoint,1.05*satsize/2.,1.05*satsize/2.);
             currPoint.rx()+=satsize/2+4;
             if (ui->satLabelsCheckBox->isChecked()) satPosPainter.drawText(currPoint, QString::number(fCurrentSatlist[i].fSatId));
@@ -261,7 +243,6 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm) {
 
     const QPointF originOffset(0., pm.height()*0.9);
 
-    //    pixmap.fill(QColor("transparent"));
     pm.fill(Qt::white);
     QPainter satPosPainter(&pm);
     satPosPainter.setPen(QPen(Qt::black));
@@ -303,22 +284,13 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm) {
 
                 QPainterPath path;
                 path.addPolygon(getPolarUnitPolygon(satPoint.posPolar));
-                //path.translate(0.0, 10.);
 
                 QTransform trafo;
                 trafo.translate(0., 9*pm.height()/10.);
                 trafo.scale(pm.width()/360., -9.*pm.height()/900.);
                 satPosPainter.drawPolygon(path.toFillPolygon(trafo));
 
-//				satPosPainter.drawPolygon(path.toFillPolygon(QTransform::fromScale(pm.width()/360., -9.*pm.height()/900.)));
 
-                /*
-                QPointF p(satPoint.posPolar);
-                p=QPointF(p.x()/360.*pm.width(), -p.y()/90.*pm.height()*0.9+pm.height()*0.9);
-                float w=pm.width()/360.+0.99;
-                float h=pm.height()*0.9/90.+0.99;
-                satPosPainter.drawRect(p.x()-w/2.-0.5,p.y()-h/2.-0.5,w,h);
-                */
 
             }
         }
@@ -403,7 +375,6 @@ void GnssPosWidget::onUiEnabledStateChange(bool connected)
 {
     if (!connected) {
         QVector<GnssSatellite> emptylist;
-//        onSatsReceived(emptylist);
         fCurrentSatlist.clear();
     }
     this->setEnabled(connected);
@@ -478,7 +449,6 @@ void GnssPosWidget::exportToFile() {
             QFile file(fn);
             if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return;
             QTextStream out(&file);
-            //out.setFieldWidth(20);
             out<<"# GNSS sat history from  xxx to yyy\n";
             out<<"# datetime marks the entrance time into space point (az,el)\n";
             out<<"# <ISO8601-datetime> <gnss-id> <gnss-id-string> <sat-id> <azimuth> <elevation> <cnr>\n";

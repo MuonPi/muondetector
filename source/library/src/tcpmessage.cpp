@@ -15,15 +15,7 @@ TcpMessage::TcpMessage(quint16 tcpMsgID)
 TcpMessage::TcpMessage(QByteArray& rawdata)
     : m_data {rawdata}
 {
-    //    quint64 pos = dStream->device()->pos();
     dStream = new QDataStream(&m_data, QIODevice::ReadWrite);
-    //    if (!dStream->device()->seek(0)){
-    //        qDebug() << "failed to seek position " << 0 << " in dStream";
-    //    }
-    //    *dStream >> msgID;
-    //    if(!dStream->device()->seek(pos)){
-    //        qDebug() << "failed to seek position " << pos << " in dStream";
-    //    }
     *dStream >> m_byteCount;
     *dStream >> m_msgID;
 }

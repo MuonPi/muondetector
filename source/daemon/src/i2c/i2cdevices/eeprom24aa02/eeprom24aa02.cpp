@@ -10,8 +10,7 @@ uint8_t EEPROM24AA02::readByte(uint8_t addr)
 {
 	uint8_t val = 0;
 	startTimer();
-	/*int n=*/readReg(addr, &val, 1);	// Read the data at address location
-										//  printf( "%d bytes read\n",n);
+    readReg(addr, &val, 1);	// Read the data at address location
 	stopTimer();
 	return val;
 }
@@ -20,18 +19,9 @@ bool EEPROM24AA02::readByte(uint8_t addr, uint8_t* value)
 {
 	startTimer();
 	int n = readReg(addr, value, 1);	// Read the data at address location
-										//  printf( "%d bytes read\n",n);
 	stopTimer();
 	return (n == 1);
 }
-
-/*
-bool EEPROM24AA02::devicePresent()
-{
-uint8_t dummy;
-return readByte(0,&dummy);
-}
-*/
 
 void EEPROM24AA02::writeByte(uint8_t addr, uint8_t data)
 {

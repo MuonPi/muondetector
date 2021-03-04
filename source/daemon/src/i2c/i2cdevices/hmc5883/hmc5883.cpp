@@ -16,17 +16,11 @@ bool HMC5883::init()
 							// init value 0 for gain
 	fGain = 0;
 
-	//   writeBuf[0] = 0x0a;		// chip id reg A
-	//   write(writeBuf, 1);
-
 	readBuf[0] = 0;
 	readBuf[1] = 0;
 	readBuf[2] = 0;
 
-	//  int n=read(readBuf, 3);	// Read the id registers into readBuf
-	// chip id reg A: 0x0a
 	int n = readReg(0x0a, readBuf, 3);	// Read the id registers into readBuf
-										//  printf( "%d bytes read\n",n);
 
 	if (fDebugLevel > 1)
 	{
@@ -38,9 +32,6 @@ bool HMC5883::init()
 
 	if (readBuf[0] != 0x48) return false;
 
-	// set CRA
-	//   writeBuf[0] = 0x00;		// addr config reg A (CRA)
-	//   writeBuf[1] = 0x70;		// 8 average, 15 Hz, single measurement
 
 	// addr config reg A (CRA)
 	// 8 average, 15 Hz, single measurement: 0x70
@@ -62,28 +53,6 @@ void HMC5883::setGain(uint8_t gain)
 	fGain = gain & 0x07;
 }
 
-// uint8_t HMC5883::readGain()
-// {
-//   uint8_t writeBuf[3];		// Buffer to store the 3 bytes that we write to the I2C device
-//   uint8_t readBuf[3];		// 2 byte buffer to store the data read from the I2C device  
-// 
-//   // set CRB
-//   writeBuf[0] = 0x01;		// addr config reg B (CRB)
-//   write(writeBuf, 1);
-// 
-//   int n=read(readBuf, 1);	// Read the config register into readBuf
-//   
-//   if (n!=1) return 0;
-//   uint8_t gain = readBuf[0]>>5;
-//   if (fDebugLevel>1)
-//   {
-//     printf( "%d bytes read\n",n);
-//     printf( "gain (read from device): 0x%x\n",gain);
-//   }
-//   //fGain = gain & 0x07;
-//   return gain;
-// }
-
 uint8_t HMC5883::readGain()
 {
 	uint8_t readBuf[3];		// 2 byte buffer to store the data read from the I2C device  
@@ -97,7 +66,6 @@ uint8_t HMC5883::readGain()
 		printf("%d bytes read\n", n);
 		printf("gain (read from device): 0x%x\n", gain);
 	}
-	//fGain = gain & 0x07;
 	return gain;
 }
 
@@ -154,7 +122,6 @@ bool HMC5883::getXYZRawValues(int &x, int &y, int &z)
 	if (fDebugLevel > 1)
 	{
 		printf("%d bytes read\n", n);
-		//    printf( "xreg: %2x  %2x  %d\n",readBuf[0], readBuf[1], xreg);
 		printf("xreg: %d\n", xreg);
 		printf("yreg: %d\n", yreg);
 		printf("zreg: %d\n", zreg);

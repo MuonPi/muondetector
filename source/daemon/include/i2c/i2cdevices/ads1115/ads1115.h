@@ -13,7 +13,6 @@ class ADS1115 : public i2cDevice {
 public:
 	enum CFG_CHANNEL { CH0 = 0, CH1, CH2, CH3 };
 	enum CFG_DIFF_CHANNEL { CH0_1 = 0, CH0_3, CH1_3, CH2_3 };
-	//	enum CFG_RATE { RATE8 = 0, RATE16, RATE32, RATE64, RATE128, RATE250, RATE475, RATE860 };
 	enum CFG_PGA { PGA6V = 0, PGA4V = 1, PGA2V = 2, PGA1V = 3, PGA512MV = 4, PGA256MV = 5 };
 	static const double PGAGAINS[6];
 

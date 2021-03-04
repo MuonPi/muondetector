@@ -18,7 +18,6 @@ const uint16_t CALIB_HEADER = 0x2019;
 struct CalibStruct;
 
 
-//static const CalibStruct InvalidCalibStruct = CalibStruct( "", "", 0, "" );
 
 // initialization of calib items
 // meaning of entries (columns is:
@@ -66,7 +65,6 @@ public:
 
     template <typename T>
     static void getValueFromString(const std::string& valstr, T& value) {
-        //value = std::stoi(valstr, nullptr);
         std::istringstream istr(valstr);
         istr >> value;
     }
@@ -75,7 +73,6 @@ private:
     void init();
     void buildCalibList();
 
-//	void updateBuffer();
 
     std::vector<CalibStruct> fCalibList;
     EEPROM24AA02 *fEeprom = nullptr;
@@ -90,8 +87,6 @@ template <typename T>
 void ShowerDetectorCalib::setCalibItem(const std::string& name, T value)
 {
     CalibStruct item { getCalibItem(name) };
-    //std::cout<<"*** ShowerDetectorCalib::setCalibItem(const std::string&, T) ***"<<std::endl;
-    //std::cout<<"("<<item.name<<", "<<item.type<<", "<<(int)item.address<<", "<<item.value<<")"<<std::endl;
 
     if (item.name == name) {
         item.value = std::to_string(value);
@@ -102,7 +97,6 @@ void ShowerDetectorCalib::setCalibItem(const std::string& name, T value)
 
 template void ShowerDetectorCalib::setCalibItem<unsigned int>(const std::string&, unsigned int);
 template void ShowerDetectorCalib::setCalibItem<int>(const std::string&, int);
-//template void ShowerDetectorCalib::setCalibItem<float>(const std::string&, float);
 
 
 

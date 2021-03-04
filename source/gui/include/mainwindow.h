@@ -6,7 +6,6 @@
 #include <QErrorMessage>
 #include <QTime>
 #include <QVector>
-//#include <geodeticpos.h>
 #include <gpio_pin_definitions.h>
 
 // for sig handling:

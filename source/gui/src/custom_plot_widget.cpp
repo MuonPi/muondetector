@@ -24,7 +24,6 @@ void CustomPlot::initialize(){
        setStyleSheet("background-color: white; border: 0px;");
        setAutoReplot(false);
        enableAxis(QwtPlot::yLeft,true);
-       //enableAxis(QwtPlot::yRight,true);
        setAxisAutoScale(QwtPlot::xBottom,true);
        setAxisAutoScale(QwtPlot::yRight,true);
 
@@ -52,12 +51,8 @@ void CustomPlot::addCurve(const QString& name, const QColor& curveColor)
     QwtPlotCurve *curve = new QwtPlotCurve();
     curve->setYAxis(QwtPlot::yLeft);
     curve->setRenderHint(QwtPlotCurve::RenderAntialiased, true);
-    //curve->setStyle(QwtPlotCurve::Steps);
-    //QColor curveColor = Qt::darkGreen;
-    //curveColor.setAlphaF(0.3);
     const QPen pen(curveColor);
     curve->setPen(pen);
-    //curve->setBrush(curveColor);
     fCurveMap[name]=curve;
     fCurveMap[name]->attach(this);
 }
@@ -72,22 +67,14 @@ void CustomPlot::popUpMenu(const QPoint & pos)
     connect(&action1, &QAction::toggled, this, [this](bool checked){ this->setLogY(checked); this->replot(); } );
     contextMenu.addAction(&action1);
     contextMenu.addSeparator();
-/*
-    QAction action2("&Clear", this);
-//    connect(&action2, &QAction::triggered, this, &CustomHistogram::clear );
-    connect(&action2, &QAction::triggered, this,  [this](bool checked){ this->clear(); this->replot(); });
-    contextMenu.addAction(&action2);
-*/
     QAction action3("&Export", this);
     connect(&action3, &QAction::triggered, this, &CustomPlot::exportToFile );
     contextMenu.addAction(&action3);
 
     contextMenu.exec(mapToGlobal(pos));
-//    contextMenu.popup(mapToGlobal(pos));
 }
 
 void CustomPlot::rescale() {
-//    bool succ=false;
     double ymin=1e30;
     double ymax=-1e30;
     double xmin=1e30;
@@ -99,7 +86,6 @@ void CustomPlot::rescale() {
             if (xmax<(*it)->maxXValue()) xmax=(*it)->maxXValue();
             if (ymin>(*it)->minYValue()) ymin=(*it)->minYValue();
             if (ymax<(*it)->maxYValue()) ymax=(*it)->maxYValue();
-//            succ=true;
         }
     }
 
@@ -127,12 +113,10 @@ void CustomPlot::setLogY(bool logscale){
         setAxisScaleEngine(QwtPlot::yLeft, new QwtLog10ScaleEngine());
 #endif
         setAxisAutoScale(QwtPlot::yLeft,true);
-        //fBarChart->setBaseline(1e-12);
         fLogY=true;
     } else {
         setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine());
         setAxisAutoScale(QwtPlot::yLeft,true);
-        //fBarChart->setBaseline(0);
         fLogY=false;
     }
     emit scalingChanged();
@@ -141,12 +125,8 @@ void CustomPlot::setLogY(bool logscale){
 
 void CustomPlot::setStatusEnabled(bool status){
     if (status==true){
-//        curve->attach(this);
-        //setTitle(title);
         replot();
     }else{
-//        curve->detach();
-        //setTitle("");
         replot();
     }
 }
@@ -214,7 +194,6 @@ void CustomPlot::exportToFile() {
             QFile file(fn);
             if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return;
             QTextStream out(&file);
-            //out.setFieldWidth(20);
 
             foreach (QwtPlotCurve *curve , fCurveMap) {
                 out << "# " << this->title().text() << "\n";

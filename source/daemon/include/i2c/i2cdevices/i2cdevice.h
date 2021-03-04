@@ -29,7 +29,6 @@ public:
 
 	enum MODE { MODE_NONE=0, MODE_NORMAL=0x01, MODE_FORCE=0x02, MODE_UNREACHABLE=0x04, MODE_FAILED=0x08, MODE_LOCKED=0x10 };
 
-	//using I2C_DEVICE_MODE;
 
 	i2cDevice();
 	i2cDevice(const char* busAddress);

@@ -64,7 +64,6 @@ i2cDevice::i2cDevice(const char* busAddress, uint8_t slaveAddress) : fAddress(sl
 	//"/dev/i2c-0" or "../i2c-1" for linux system. In our case 
 	fHandle = open(busAddress, O_RDWR);
 	if (fHandle > 0) {
-		//ioctl(fHandle, I2C_SLAVE, fAddress);
 		setAddress(slaveAddress);
 		fNrDevices++;
 		fGlobalDeviceList.push_back(this);
@@ -111,11 +110,6 @@ void i2cDevice::setAddress(uint8_t address) {		        //pointer to our device o
 	else {
 		fMode = MODE_NORMAL;
 	}
-	//     if (ioctl(fd, I2C_SLAVE, devAddr) < 0) {
-	//         fprintf(stderr, "Failed to select device: %s\n", strerror(errno));
-	//         close(fd);
-	//         return(-1);
-	//     }
 
 }
 
@@ -163,44 +157,10 @@ int i2cDevice::writeReg(uint8_t reg, uint8_t* buf, int nBytes)
 	int n = write(writeBuf, nBytes + 1);
 	return n - 1;
 
-	//     if (length > 127) {
-	//         fprintf(stderr, "Byte write count (%d) > 127\n", length);
-	//         return(FALSE);
-	//     }
-	// 
-	//     fd = open("/dev/i2c-1", O_RDWR);
-	//     if (fd < 0) {
-	//         fprintf(stderr, "Failed to open device: %s\n", strerror(errno));
-	//         return(FALSE);
-	//     }
-	//     if (ioctl(fd, I2C_SLAVE, devAddr) < 0) {
-	//         fprintf(stderr, "Failed to select device: %s\n", strerror(errno));
-	//         close(fd);
-	//         return(FALSE);
-	//     }
-	//     buf[0] = regAddr;
-	//     memcpy(buf+1,data,length);
-	//     count = write(fd, buf, length+1);
-	//     if (count < 0) {
-	//         fprintf(stderr, "Failed to write device(%d): %s\n", count, ::strerror(errno));
-	//         close(fd);
-	//         return(FALSE);
-	//     } else if (count != length+1) {
-	//         fprintf(stderr, "Short write to device, expected %d, got %d\n", length+1, count);
-	//         close(fd);
-	//         return(FALSE);
-	//     }
-	//     close(fd);
-
 }
 
 int i2cDevice::readReg(uint8_t reg, uint8_t* buf, int nBytes)
 {
-	// the i2c_smbus_*_i2c_block_data functions are better but allow
-	// block sizes of up to 32 bytes only
-	//i2c_smbus_write_i2c_block_data(int file, reg, nBytes, buf);
-	//int _n = i2c_smbus_read_i2c_block_data(fHandle, reg, (uint8_t)nBytes, buf);
-	//return _n;
 
 	int n = write(&reg, 1);
 	if (n != 1) return -1;
@@ -260,8 +220,6 @@ bool i2cDevice::readByte(uint8_t regAddr, uint8_t *data) {
 * @return Number of bytes read (-1 indicates failure)
 */
 int16_t i2cDevice::readBytes(uint8_t regAddr, uint16_t length, uint8_t *data) {
-	// not used?! int8_t count = 0;
-	//    int fd = open("/dev/i2c-1", O_RDWR);
 	return readReg(regAddr, data, length);
 }
 
@@ -325,9 +283,6 @@ bool i2cDevice::writeByte(uint8_t regAddr, uint8_t data) {
 * @return Status of operation (true = success)
 */
 bool i2cDevice::writeBytes(uint8_t regAddr, uint16_t length, uint8_t* data) {
-	//     int8_t count = 0;
-	//     uint8_t buf[128];
-	//     int fd;
 
 	int n = writeReg(regAddr, data, length);
 	return (n == length);
@@ -352,18 +307,14 @@ bool i2cDevice::writeWords(uint8_t regAddr, uint16_t length, uint16_t* data) {
 	}
 
 	count = writeReg(regAddr, buf, length * 2);
-	//    count = write(fd, buf, length*2+1);
 	if (count < 0) {
 		fprintf(stderr, "Failed to write device(%d): %s\n", count, ::strerror(errno));
-		//        close(fd);
 		return(false);
 	}
 	else if (count != length * 2) {
 		fprintf(stderr, "Short write to device, expected %d, got %d\n", length + 1, count);
-		//        close(fd);
 		return(false);
 	}
-	//    close(fd);
 	return true;
 }
 

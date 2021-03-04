@@ -31,12 +31,10 @@ enum GPIO_PIN {		UBIAS_EN,
 				};
 
 enum SIGNAL_DIRECTION { DIR_UNDEFINED, DIR_IN, DIR_OUT, DIR_IO };
-//enum SIGNAL_POLARITY { POL_UNDEFINED, POL_POSITIVE, POL_NEGATIVE, POL_ANY };
 
 struct GpioSignalDescriptor {
 	QString name;
 	SIGNAL_DIRECTION direction;
-//	SIGNAL_POLARITY polarity;
 };
 
 static const QMap<GPIO_PIN, GpioSignalDescriptor> GPIO_SIGNAL_MAP =

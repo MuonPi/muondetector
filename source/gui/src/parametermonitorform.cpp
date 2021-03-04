@@ -82,32 +82,6 @@ void ParameterMonitorForm::onCalibReceived(bool /*valid*/, bool /*eepromValid*/,
 
     int ver = getCalibParameter("VERSION").toInt();
     ui->hwVersionLabel->setText(QString::number(ver));
-/*
-    double rsense = 0.1*getCalibParameter("RSENSE").toInt();
-    ui->rsenseDoubleSpinBox->setValue(rsense);
-    double vdiv = 0.01*getCalibParameter("VDIV").toInt();
-    ui->vdivDoubleSpinBox->setValue(vdiv);
-    int eepCycles = getCalibParameter("WRITE_CYCLES").toInt();
-    ui->eepromWriteCyclesLabel->setText(QString::number(eepCycles));
-    int featureFlags = getCalibParameter("FEATURE_FLAGS").toInt();
-    ui->featureGnssCheckBox->setChecked(featureFlags & CalibStruct::FEATUREFLAGS_GNSS);
-    ui->featureEnergyCheckBox->setChecked(featureFlags & CalibStruct::FEATUREFLAGS_ENERGY);
-    ui->featureDetBiasCheckBox->setChecked(featureFlags & CalibStruct::FEATUREFLAGS_DETBIAS);
-    ui->featurePreampBiasCheckBox->setChecked(featureFlags & CalibStruct::FEATUREFLAGS_PREAMP_BIAS);
-*/
-/*
-    if (voltageCalibValid()) {
-        fSlope1 = getCalibParameter("COEFF1").toDouble();
-        fOffs1 = getCalibParameter("COEFF0").toDouble();
-    }
-    if (currentCalibValid()) {
-        fSlope2 = getCalibParameter("COEFF3").toDouble();
-        fOffs2 = getCalibParameter("COEFF2").toDouble();
-    }
-    updateCalibTable();
-    QVector<CalibStruct> emptyList;
-    emit updatedCalib(emptyList);
-*/
 }
 
 
@@ -200,7 +174,6 @@ void ParameterMonitorForm::onPreampSwitchReceived(uint8_t channel, bool state)
 
 void ParameterMonitorForm::onTriggerSelectionReceived(GPIO_PIN signal)
 {
-    //if (GPIO_PIN_NAMES.find(signal)==GPIO_PIN_NAMES.end()) return;
     int i=0;
     while (i<ui->adcTriggerSelectionComboBox->count()) {
         if (ui->adcTriggerSelectionComboBox->itemText(i).compare(GPIO_SIGNAL_MAP[signal].name)==0) break;
@@ -225,7 +198,6 @@ void ParameterMonitorForm::onTemperatureReceived(float temp)
 
 void ParameterMonitorForm::onTimepulseReceived()
 {
-    //
 }
 
 void ParameterMonitorForm::onTimeMarkReceived(const UbxTimeMarkStruct& tm)
@@ -254,13 +226,12 @@ void ParameterMonitorForm::onTimeAccReceived(quint32 acc)
 }
 
 void ParameterMonitorForm::onFreqAccReceived(quint32 /*acc*/)
-{//
+{
 
 }
 
 void ParameterMonitorForm::onIntCounterReceived(quint32 /*cnt*/)
 {
-    //ui->ubloxCounterLabel->setText(QString::number(cnt));
 }
 
 void ParameterMonitorForm::onPolaritySwitchReceived(bool pol1, bool pol2)
@@ -339,11 +310,9 @@ bool ParameterMonitorForm::currentCalibValid()
 void ParameterMonitorForm::on_gpioInhibitCheckBox_clicked(bool checked)
 {
     emit gpioInhibitChanged(checked);
-//	qDebug()<<"set inhibit to "<<QString((checked)?"true":"false");
 }
 
 void ParameterMonitorForm::onPolarityCheckBoxClicked(bool /*checked*/){
-//
     bool pol1=ui->pol1CheckBox->isChecked();
     bool pol2=ui->pol2CheckBox->isChecked();
     emit polarityChanged(pol1, pol2);

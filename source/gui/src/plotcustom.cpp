@@ -33,7 +33,6 @@ void PlotCustom::initialize(){
        setAutoReplot(false);
        enableAxis(QwtPlot::yLeft,false);
        enableAxis(QwtPlot::yRight,true);
-       //setAxisAutoScale(QwtPlot::xBottom,false);
        setAxisAutoScale(QwtPlot::yRight,true);
 
        QwtLegend *legend = new QwtLegend(this);
@@ -46,7 +45,6 @@ void PlotCustom::initialize(){
 
        xorCurve.setAxes(QwtPlot::xBottom,QwtPlot::yRight);
        xorCurve.setRenderHint(QwtPlotCurve::RenderAntialiased, true);
-       //xorCurve.setStyle(QwtPlotCurve::Steps);
        QColor xorCurveColor = Qt::darkGreen;
        xorCurveColor.setAlphaF(0.3);
        const QPen greenPen(xorCurveColor);
@@ -58,7 +56,6 @@ void PlotCustom::initialize(){
        andCurve.setTitle(QwtText("and-curve"));
        andCurve.setAxes(QwtPlot::xBottom,QwtPlot::yRight);
        andCurve.setRenderHint(QwtPlotCurve::RenderAntialiased, true);
-       //xorCurve.setStyle(QwtPlotCurve::Steps);
        QColor andCurveColor = Qt::darkBlue;
        andCurveColor.setAlphaF(0.3);
        const QPen bluePen(andCurveColor);

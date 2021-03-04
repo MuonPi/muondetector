@@ -11,7 +11,7 @@
 // list of possible scan parameters
 const static QVector<QString> SP_NAMES = { "VOID", "THR1", "THR2", "BIAS" };
 // list of possible observables
-const static QVector<QString> OP_NAMES = { "VOID", "UBXRATE" /*, "GPIORATE"*/ };
+const static QVector<QString> OP_NAMES = { "VOID", "UBXRATE" };
 
 
 namespace Ui {

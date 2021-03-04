@@ -65,8 +65,6 @@ private:
     quint32 fileSize; // in MB
     QDateTime lastUploadDateTime;
     QTime dailyUploadTime;
-//    float temperature = 0.0;
-//    quint8 pcaChannel = 0;
 };
 
 #endif // FILEHANDLER_H

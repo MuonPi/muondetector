@@ -24,7 +24,6 @@ int16_t ADS1115::readADC(unsigned int channel)
 	writeBuf[1] |= ((uint8_t)fPga[channel]) << 1; // PGA gain select
 
 	// This sets the 8 LSBs of the config register (bits 7-0)
-//	writeBuf[2] = 0x03;  // disable ALERT/RDY pin
 	writeBuf[2] = 0x00;  // enable ALERT/RDY pin
 	writeBuf[2] |= ((uint8_t)fDataRate) << 5;
 
@@ -58,10 +57,6 @@ int16_t ADS1115::readADC(unsigned int channel)
 			printf(" read wait delay: %6.2f ms\n", fReadWaitDelay / 1000.);
 		}
 	}
-	//   else if (nloops==2) {
-	//     fReadWaitDelay*=2.1;
-	//   }
-	//else fReadWaitDelay--;
 
 	// Set pointer register to 0 to read from the conversion register
 	readReg(0x00, readBuf, 2);		// Read the contents of the conversion register into readBuf

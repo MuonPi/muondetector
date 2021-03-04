@@ -1,5 +1,4 @@
 #include "i2c/i2cdevices/adafruit_ssd1306/adafruit_ssd1306.h"
-//#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -34,9 +33,6 @@ Added support of Seeed OLED 64x64 Display
 
 *********************************************************************/
 
-//#include "./ArduiPi_SSD1306.h" 
-//#include "./Adafruit_GFX.h"
-//#include "./Adafruit_SSD1306.h"
 
 /*=========================================================================
 SSDxxxx Common Displays
@@ -44,7 +40,6 @@ SSDxxxx Common Displays
 Common values to all displays
 =========================================================================*/
 
-//#define SSD_Command_Mode			0x80 	/* DC bit is 0 */ Seeed set C0 to 1 why ?
 #define SSD_Command_Mode			0x00 	/* C0 and DC bit are 0 				 */
 #define SSD_Data_Mode					0x40	/* C0 bit is 0 and DC bit is 1 */
 
@@ -126,17 +121,13 @@ The driver is used in Seeed 96x96 display
 #define SSD1327_Normal_Display	0xA4
 
 
-//#define BLACK 0
-//#define WHITE 1
 
 
 // Low level I2C  Write function
 inline void Adafruit_SSD1306::fastI2Cwrite(uint8_t d) {
-	//bcm2835_i2c_transfer(d);
 	i2cDevice::write(&d, 1);
 }
 inline void Adafruit_SSD1306::fastI2Cwrite(char* tbuf, uint32_t len) {
-	//bcm2835_i2c_write(tbuf, len);
 	i2cDevice::write((uint8_t*)tbuf, len);
 }
 
@@ -178,24 +169,6 @@ void Adafruit_SSD1306::drawPixel(int16_t x, int16_t y, uint16_t color)
 		*p &= ~_BV((y % 8));
 }
 
-/*
-// Display instantiation
-Adafruit_SSD1306::Adafruit_SSD1306()
-: i2cDevice(0x3c)
-{
-// Init all var, and clean
-// Command I/O
-rst = 0 ;
-fTitle = "SSD1306 OLED";
-
-// Lcd size
-ssd1306_lcdwidth  = 0;
-ssd1306_lcdheight = 0;
-
-// Empty pointer to OLED buffer
-poledbuff = NULL;
-}
-*/
 
 // initializer for OLED Type
 void Adafruit_SSD1306::select_oled(uint8_t OLED_TYPE)
@@ -242,8 +215,6 @@ bool Adafruit_SSD1306::init(uint8_t OLED_TYPE, int8_t RST)
 	// Select OLED parameters
 	select_oled(OLED_TYPE);
 
-	// Setup reset pin direction as output
-	//bcm2835_gpio_fsel(rst, BCM2835_GPIO_FSEL_OUTP);
 
 	// De-Allocate memory for OLED buffer if any
 	if (poledbuff)
@@ -278,23 +249,6 @@ void Adafruit_SSD1306::begin(void)
 
 	// Reset handling, todo
 
-	/*
-	// Setup reset pin direction (used by both SPI and I2C)
-	bcm2835_gpio_fsel(rst, BCM2835_GPIO_FSEL_OUTP);
-	bcm2835_gpio_write(rst, HIGH);
-
-	// VDD (3.3V) goes high at start, lets just chill for a ms
-	usleep(1000);
-
-	// bring reset low
-	bcm2835_gpio_write(rst, LOW);
-
-	// wait 10ms
-	usleep(10000);
-
-	// bring out of reset
-	bcm2835_gpio_write(rst, HIGH);
-	*/
 
 	// depends on OLED type configuration
 	if (ssd1306_lcdheight == 32)

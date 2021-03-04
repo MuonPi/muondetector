@@ -56,7 +56,6 @@ bool MCP4728::setValue(uint8_t channel, uint16_t value, uint8_t gain, bool toEEP
 bool MCP4728::writeChannel(uint8_t channel, const DacChannel& channelData)
 {
 	if (channelData.value > 0xfff) {
-		//channelData.value = 0xfff;
 		// error number of bits exceeding 12
 		return false;
 	}

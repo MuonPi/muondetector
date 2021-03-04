@@ -54,11 +54,8 @@ signals:
         std::chrono::duration<double> updateAge);
     void gpsPropertyUpdatedGeodeticPos(GeodeticPos pos);
     void timTM2(QString timTM2String);
-    //void UBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t accEst, bool valid, uint8_t timeBase, bool utcAvailable);
     void UBXReceivedTimeTM2(const UbxTimeMarkStruct& tm);
     void gpsVersion(const QString& swVersion, const QString& hwVersion, const QString& protVersion);
-    //void gpsMonHW(uint16_t noise, uint16_t agc, uint8_t antStatus, uint8_t antPower, uint8_t jamInd, uint8_t flags);
-    //void gpsMonHW2(int8_t ofsI, uint8_t magI, int8_t ofsQ, uint8_t magQ, uint8_t cfgSrc);
     void gpsMonHW(const GnssMonHwStruct& hw);
     void gpsMonHW2(const GnssMonHw2Struct& hw2);
     void UBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssConfigStruct>& gnssConfigs);
@@ -93,11 +90,6 @@ public slots:
     void setDynamicModel(uint8_t model);
     static const std::string& getProtVersionString() { return fProtVersionString; }
     static double getProtVersion();
-    /*
-    float getProtVersion();
-    int getProtVersionMajor();
-    int getProtVersionMinor();
-    */
 private:
     // all functions for sending and receiving raw data used by other functions in "public slots" section
     // and scanning raw data up to the point where "UbxMessage" object is generated
@@ -108,19 +100,15 @@ private:
     bool sendUBX(UbxMessage &msg);
     void sendQueuedMsg(bool afterTimeout = false);
     void delay(int millisecondsWait);
-//	void enqueueMsg(const UbxMessage& msg);
 
     // all functions only used for processing and showing "UbxMessage"
     void processMessage(const UbxMessage& msg);
     bool UBXNavClock(uint32_t& itow, int32_t& bias, int32_t& drift,
         uint32_t& tAccuracy, uint32_t& fAccuracy);
     bool UBXTimTP(uint32_t& itow, int32_t& quantErr, uint16_t& weekNr);
-    //bool UBXTimTP();
     bool UBXTimTP(const std::string& msg);
     bool UBXTimTM2(const std::string& msg);
-    //std::vector<GnssSatellite> UBXNavSat(bool allSats);
     std::vector<GnssSatellite> UBXNavSat(const std::string& msg, bool allSats);
-    //std::vector<GnssSatellite> UBXNavSVinfo(bool allSats);
     std::vector<GnssSatellite> UBXNavSVinfo(const std::string& msg, bool allSats);
     GeodeticPos UBXNavPosLLH(const std::string& msg);
     void UBXCfgGNSS(const std::string &msg);
@@ -178,7 +166,6 @@ private:
     gpsProperty<GeodeticPos> geodeticPos;
     const int	MSGTIMEOUT = 1500;
     std::queue<gpsTimestamp> fTimestamps;
-    //std::list<UbxMessage> fMessageBuffer;
     static std::string fProtVersionString;
 };
 

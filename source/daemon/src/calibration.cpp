@@ -2,7 +2,6 @@
 #include <cmath>
 #include <algorithm>
 #include <cctype>
-//#include <stdint.h>
 #include "calibration.h"
 
 #define AS_U32(f) (*(uint32_t*)&(f))
@@ -51,7 +50,6 @@ uint8_t ShowerDetectorCalib::getTypeSize(const std::string& a_type)
 	std::transform(a_type.begin(), a_type.end(), str.begin(), 
                    [](unsigned char c){ return std::toupper(c); }
                   );
-	//cout<<"type str = "<<a_type<<" ; upper = "<<str<<endl;
 	uint8_t size=0;
 	if (str=="UINT8") size=1;
 	else if (str=="UINT16") size=2;
@@ -66,7 +64,6 @@ uint8_t ShowerDetectorCalib::getTypeSize(const std::string& a_type)
 
 const CalibStruct& ShowerDetectorCalib::getCalibItem(unsigned int i) const
 { 
-	//static const CalibStruct dummyCalibStruct = CalibStruct( "", "", 0, "" );
 	if (i<fCalibList.size()) return fCalibList[i]; else return InvalidCalibStruct; 
 }
 
@@ -77,8 +74,6 @@ const CalibStruct& ShowerDetectorCalib::getCalibItem(const std::string& name)
                    [](unsigned char c){ return std::toupper(c); }
                   );
 	auto result = std::find_if(fCalibList.begin(), fCalibList.end(), [&str](const CalibStruct& item){ return item.name==str; } );
-	//cout<<"*** ShowerDetectorCalib::getCalibItem(const std::string&) ***"<<endl;
-	//cout<<"("<<result->name<<", "<<result->type<<", "<<(int)result->address<<", "<<result->value<<")"<<endl;
 	if (result != std::end(fCalibList))	return *result; 
 	else return InvalidCalibStruct;
 }
@@ -91,20 +86,15 @@ void ShowerDetectorCalib::setCalibItem(const std::string& name, const CalibStruc
                   );
 	auto result = std::find_if(fCalibList.begin(), fCalibList.end(), [&str](const CalibStruct& s){ return s.name==str; } );
 	
-	//std::cout<<"*** ShowerDetectorCalib::setCalibItem(const std::string&, const CalibStruct&) ***"<<std::endl;
-	//cout<<"name="<<name<<" str="<<str<<endl;
 	if (result != std::end(fCalibList)) {
 		*result=item;
-		//cout<<"("<<result->name<<", "<<result->type<<", "<<(int)result->address<<", "<<result->value<<")"<<endl;
 	}
-	//else cout<<"no match"<<endl;
 	
 }
 
 bool ShowerDetectorCalib::readFromEeprom()
 {
 	if (fEeprom == nullptr) return false;
-	//if (!fEeprom->devicePresent()) return false;
 	const uint16_t n=256;
 	for (int i=0; i<n; i++) fEepBuffer[i]=0;
 	bool success=(fEeprom->readBytes(0,n,fEepBuffer)==n);
@@ -117,7 +107,6 @@ bool ShowerDetectorCalib::readFromEeprom()
 		uint8_t addr = it->address;
 		string str = it->type;
 		std::ostringstream ostr;
-		//cout<<"calibList entry: "<<it->name<<" = ";
 		if (str=="UINT8") {
 			uint8_t val = fEepBuffer[it->address];
 			it->value = std::to_string(val);
@@ -132,11 +121,6 @@ bool ShowerDetectorCalib::readFromEeprom()
 			if (fVerbose>5) cout<<"as U32="<<_x<<" ";
 			float val = AS_FLOAT_C(_x);
 			if (fVerbose>5) cout<<"as FLOAT="<<val<<" ";
-			//setCalibItem(it->name, AS_FLOAT((fEepBuffer[addr])));
-			//float* val = reinterpret_cast<float*>(&fEepBuffer[it->address]);
-			//float val = 0.;
-			// use of std::to_string() is not recommended, since it messes with the locale's setting, e.g. the decimal separator
-			//it->value = std::to_string(val);
 			ostr << std::setprecision(7) << std::scientific << val;
 			it->value = ostr.str();
 		} else if (str=="INT8") {
@@ -151,7 +135,6 @@ bool ShowerDetectorCalib::readFromEeprom()
 		}
 		else {
 		}
-		//cout<<it->value<<endl;
 	}
 	return true;
 }
@@ -167,7 +150,6 @@ bool ShowerDetectorCalib::writeToEeprom()
 	setCalibItem("WRITE_CYCLES", cycleCounter);
 	// write content of all calib parameters to buffer before actually writing to the eep		
 	updateBuffer();
-//	if (!isUpdated()) return true;
 	bool success = fEeprom->writeBytes(0, 256, fEepBuffer);
 	if (!success) { cerr<<"error: write to eeprom failed!"<<endl; return false; }
 	if (fVerbose>1) cout<<"eep write took "<<fEeprom->getLastTimeInterval()<<" ms"<<endl;
@@ -220,7 +202,6 @@ void ShowerDetectorCalib::updateBuffer()
 
 void ShowerDetectorCalib::printBuffer()
 {
-//	bool retval=(eep->readBytes(0,n,buf)==n);
 	cout<<"*** Calibration buffer content ***"<<endl;
 	for (int j=0; j<16; j++) {
 		cout<<hex<<std::setfill ('0') << std::setw (2)<<j*16<<": ";
@@ -253,10 +234,6 @@ void ShowerDetectorCalib::setCalibItem<float>(const std::string& name, float val
 {
 	CalibStruct item;
 	item = getCalibItem(name);
-//	std::cout<<"*** ShowerDetectorCalib::setCalibItem(const std::string&, T) ***"<<std::endl;
-//	std::cout<<"("<<item.name<<", "<<item.type<<", "<<(int)item.address<<", "<<item.value<<")"<<std::endl;
-
-//	if (const_cast<const CalibStruct&>(item) != InvalidCalibStruct) { 
 	if (item.name == name) { 
 		std::ostringstream ostr;
 		ostr<<std::setprecision(7);

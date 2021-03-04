@@ -3,8 +3,6 @@
 
 #include <string>
 #include <chrono>
-//#include <gnsssatellite.h>
-//#include <geodeticpos.h>
 #include <sstream>
 #include <string>
 
@@ -21,8 +19,6 @@ public:
 };
 
 struct gpsTimestamp {
-	//   std::chrono::time_point<std::chrono::system_clock> rising_time;
-	//   std::chrono::time_point<std::chrono::system_clock> falling_time;
 	struct timespec rising_time;
 	struct timespec falling_time;
 	double accuracy_ns;

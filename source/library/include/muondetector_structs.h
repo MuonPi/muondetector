@@ -34,8 +34,6 @@ public:
     CalibStruct(const CalibStruct& s)
     : name(s.name), type(s.type), address(s.address), value(s.value)
     { }
-    //friend QDataStream& operator << (QDataStream& out, const CalibStruct& calib);
-    //friend QDataStream& operator >> (QDataStream& in, CalibStruct& calib);
     std::string name="";
     std::string type="";
     uint16_t address=0;
@@ -82,7 +80,6 @@ public:
 	  fQuality(quality), fHealth(health), fOrbitSource(orbitSource), fUsed(used), fDiffCorr(diffCorr), fSmoothed(smoothed)
 	{ }
 
-	//GnssSatellite(const std::string& ubxNavSatSubMessage);
 
 	~GnssSatellite() {}
 
@@ -184,10 +181,6 @@ struct OledItem {
 };
 
 
-//inline const std::string GnssSatellite::GNSS_ID_STRING[] = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
-//const MUONDETECTORSHARED std::string GNSS_ID_STRING[] = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
-//const MUONDETECTORSHARED std::string GnssSatellite::GNSS_ID_STRING[];
-//inline const std::string GNSS_ID_STRING()
 static const QList<QString> GNSS_ID_STRING = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
 static const QList<QString> FIX_TYPE_STRINGS = { "No Fix", "Dead Reck." , "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix"  };
 static const QList<QString> GNSS_ORBIT_SRC_STRING = { "N/A","Ephem","Alm","AOP","AOP+","Alt","Alt","Alt" };
@@ -223,8 +216,6 @@ inline void GnssSatellite::Print(bool wHeader) const
 		std::cout << "   ------------------------------------------------------------------------------" << std::endl;
 	}
 	std::cout << "   " << std::dec << "  " << GNSS_ID_STRING[(int)fGnssId].toStdString() << "   " << std::setw(3) << (int)fSatId << "    ";
-//	cout << "   " << dec << "  " << (int)fGnssId << "   " << setw(3) << (int)fSatId << "    ";
-	//    cout<<setfill(' ');
 	std::cout << std::setw(3) << (int)fCnr << "      " << std::setw(3) << (int)fElev << "       " << std::setw(3) << (int)fAzim;
 	std::cout << "   " << std::setw(6) << fPrRes << "    " << fQuality << "   " << std::string((fUsed) ? "Y" : "N");
 	std::cout << "    " << fHealth << "   " << fOrbitSource << "   " << (int)fSmoothed << "    " << (int)fDiffCorr;
@@ -239,8 +230,6 @@ inline void GnssSatellite::Print(int index, bool wHeader) const
 		std::cout << "   ----------------------------------------------------------------------------------" << std::endl;
 	}
 	std::cout << "   " << std::dec << std::setw(2) << index + 1 << "  " << GNSS_ID_STRING[(int)fGnssId].toStdString() << "   " << std::setw(3) << (int)fSatId << "    ";
-//	cout << "   " << dec << setw(2) << index + 1 << "  " << (int)fGnssId << "   " << setw(3) << (int)fSatId << "    ";
-	//    cout<<setfill(' ');
 	std::cout << std::setw(3) << (int)fCnr << "      " << std::setw(3) << (int)fElev << "       " << std::setw(3) << (int)fAzim;
 	std::cout << "   " << std::setw(6) << fPrRes << "    " << fQuality << "   " << std::string((fUsed) ? "Y" : "N");
 	std::cout << "    " << fHealth << "   " << fOrbitSource << "   " << (int)fSmoothed << "    " << (int)fDiffCorr;;
@@ -252,8 +241,6 @@ inline void GnssSatellite::Print(int index, bool wHeader) const
 
 
 
-//extern inline QDataStream& operator << (QDataStream& out, const CalibStruct& calib);
-//extern inline QDataStream& operator >> (QDataStream& in, CalibStruct& calib);
 inline QDataStream& operator << (QDataStream& out, const CalibStruct& calib)
 {
     out << QString::fromStdString(calib.name) << QString::fromStdString(calib.type)
@@ -278,13 +265,6 @@ inline QDataStream& operator >> (QDataStream& in, CalibStruct& calib)
 
 inline QDataStream& operator >> (QDataStream& in, GnssSatellite& sat)
 {
-/*
-	int fGnssId=0, fSatId=0, fCnr=0, fElev=0, fAzim=0;
-	float fPrRes=0.;
-	int fQuality=0, fHealth=0;
-	int fOrbitSource=0;
-	bool fUsed=false, fDiffCorr=false, fSmoothed=false;
-*/
 	in >> sat.fGnssId >> sat.fSatId >> sat.fCnr >> sat.fElev >> sat.fAzim
 		>> sat.fPrRes >> sat.fQuality >> sat.fHealth >> sat.fOrbitSource
 		>> sat.fUsed >> sat.fDiffCorr >> sat.fSmoothed;

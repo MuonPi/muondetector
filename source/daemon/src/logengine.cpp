@@ -5,33 +5,9 @@
 #include <logengine.h>
 #include <config.h>
 
-/* g_fmt(buf,x) stores the closest decimal approximation to x in buf;
- * it suffices to declare buf
- *	char buf[32];
- */
-/*
-#ifdef __cplusplus
-extern "C" {
-#endif
- extern char *g_fmt(char *, double);
-#ifdef __cplusplus
-    }
-#endif
-*/
-
 
 static QString dateStringNow(){
     return QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd_hh-mm-ss");
-// uncomment the code below (and comment out the line above) to format the log date in unix timestamp format
-// this would be more consistent to the data timestamp format
-// but would involve several changes to the existing analysis tools
-/*
-#if QT_VERSION >= 0x050800
-    return QString::number(QDateTime::currentSecsSinceEpoch());
-#else
-    return QString::number(QDateTime::currentMSecsSinceEpoch()/1000);
-#endif
-*/
 }
 
 
@@ -49,17 +25,12 @@ LogEngine::~LogEngine()
 }
 
 void LogEngine::onLogParameterReceived(const LogParameter& logpar) {
-//    writeToLogFile(dateStringNow()+" "+QString(log.name()+" "+log.value()+"\n"));
-//    LogParameter localLog(log);
-//    localLog.setUpdatedRecently(true);
     if (logpar.logType()==LogParameter::LOG_NEVER) {
-        // do nothing, just return
         return;
     }
     if (logpar.logType()==LogParameter::LOG_EVERY) {
         // directly log to file since LOG_EVERY attribute is set
         // no need to store in buffer, just return after logging
-//		writeToLogFile(dateStringNow()+" "+QString(log.name()+" "+log.value()+"\n"));
         emit sendLogString(dateStringNow()+" "+QString(logpar.name()+" "+logpar.value()));
         // reset already existing entries but preserve logType attribute
         if (logData.find(logpar.name())!=logData.end()) {
@@ -75,7 +46,6 @@ void LogEngine::onLogParameterReceived(const LogParameter& logpar) {
         // save to buffer
         if (logpar.logType()==LogParameter::LOG_ONCE) {
             // don't save if a LOG_ONCE param with this name is already in buffer
-            //if (logData.find(log.name())!=logData.end()) return;
         }
         logData[logpar.name()].push_back(logpar);
         logData[logpar.name()].back().setUpdatedRecently(true);
@@ -98,7 +68,6 @@ void LogEngine::onLogInterval() {
 
         if (parVector.back().logType()==LogParameter::LOG_LATEST) {
             // easy to write only the last value to file
-            //writeToLogFile(dateStringNow()+" "+name+" "+parVector.back().value()+"\n");
             emit sendLogString(dateStringNow()+" "+name+" "+parVector.back().value());
             it=logData.erase(it);
         } else if (parVector.back().logType()==LogParameter::LOG_AVERAGE) {
@@ -124,20 +93,13 @@ void LogEngine::onLogInterval() {
             }
             if (ok) {
                 sum/=parVector.size();
-                //writeToLogFile(dateStringNow()+" "+QString(name+" "+QString::number(sum)+" "+unitString+"\n"));
                 emit sendLogString(dateStringNow()+" "+QString(name+" "+QString::number(sum,'f',7)+" "+unitString));
-                /*
-                char buf[32];
-                g_fmt(buf, sum);
-                emit sendLogString(dateStringNow()+" "+QString(name+" "+QString(buf)+" "+unitString));
-                */
 
             }
             it=logData.erase(it);
         } else if (parVector.back().logType()==LogParameter::LOG_ONCE) {
             // we want to log only one time per daemon lifetime || file change
             if (onceLogFlag || parVector.front().updatedRecently()) {
-                //writeToLogFile(dateStringNow()+" "+name+" "+parVector.back().value()+"\n");
                 emit sendLogString(dateStringNow()+" "+name+" "+parVector.back().value());
             }
             while (parVector.size()>2) {
@@ -151,14 +113,12 @@ void LogEngine::onLogInterval() {
             // first entry is reference value
             if (onceLogFlag || parVector.front().updatedRecently()) {
                 // log the first time anyway
-                //writeToLogFile(dateStringNow()+" "+name+" "+parVector.back().value()+"\n");
                 emit sendLogString(dateStringNow()+" "+name+" "+parVector.back().value());
             } else {
                 for (int i=1; i<parVector.size(); i++) {
                     if (parVector[i].value().compare(parVector.front().value())!=0) {
                         // found difference -> log it
                         emit sendLogString(dateStringNow()+" "+name+" "+parVector[i].value());
-                        //writeToLogFile(dateStringNow()+" "+name+" "+parVector[i].value()+"\n");
                         parVector.replace(0,parVector[i]);
                     }
                 }

@@ -20,7 +20,6 @@ static QPointer<PigpiodHandler> pigHandlerAddress; // QPointer automatically cle
 
 template <typename T>
 inline static T sqr(T x) { return x*x; }
-//inline static long double sqr(long double x) { return x*x; }
 
 /*
  linear regression algorithm
@@ -49,7 +48,6 @@ void calcLinearCoefficients(int n, quint64 *xarray, qint64 *yarray,
 
    quint64 offsx=xarray[ix];
    qint64 offsy=yarray[ix];
-//    long long int offsy=0;
 
    int i;
    for (i=0; i<n; i++) {
@@ -66,7 +64,6 @@ void calcLinearCoefficients(int n, quint64 *xarray, qint64 *yarray,
        // singular matrix. can't solve the problem.
        *slope = 0.;
        *offs = 0.;
-//       if (r) *r = 0;
        return;
    }
 
@@ -75,8 +72,6 @@ void calcLinearCoefficients(int n, quint64 *xarray, qint64 *yarray,
 
    *slope=(double)m;
    *offs=(double)(b+offsy);
-//    *offs=b;
-//   printf("offsI=%lld  offsF=%f\n", offsy, b);
 
 }
 
@@ -89,7 +84,6 @@ void calcLinearCoefficients(int n, quint64 *xarray, qint64 *yarray,
  */
 static void cbFunction(int user_pi, unsigned int user_gpio,
     unsigned int level, uint32_t tick) {
-    //qDebug() << "callback user_pi: " << user_pi << " user_gpio: " << user_gpio << " level: "<< level << " pigHandlerAddressNull: " << pigHandlerAddress.isNull() ;
     if (pigHandlerAddress.isNull()) {
         pigpio_stop(pi);
         return;
@@ -127,30 +121,20 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
         });
         if (it==GPIO_PINMAP.end()) return;
 
-/*
-        if (user_gpio == GPIO_PINMAP[ADC_READY]) {
-//			std::cout<<"ADC conv ready"<<std::endl;
-            return;
-        }
-*/
         QDateTime now = QDateTime::currentDateTimeUtc();
-        //qDebug()<<"gpio evt: gpio="<<user_gpio<<"  GPIO_PINMAP[EVT_XOR]="<<GPIO_PINMAP[EVT_XOR];
-//        if (user_gpio == GPIO_PINMAP[EVT_AND] || user_gpio == GPIO_PINMAP[EVT_XOR]){
 
         if (user_gpio == GPIO_PINMAP[pigpioHandler->samplingTriggerSignal]){
-            if (pigpioHandler->lastSamplingTime.msecsTo(now) >= MuonPi::Config::Hardware::ADC::deadtime/*ADC_SAMPLE_DEADTIME_MS*/) {
+            if (pigpioHandler->lastSamplingTime.msecsTo(now) >= MuonPi::Config::Hardware::ADC::deadtime) {
                 emit pigpioHandler->samplingTrigger();
                 pigpioHandler->lastSamplingTime = now;
             }
             quint64 nsecsElapsed=pigpioHandler->elapsedEventTimer.nsecsElapsed();
             pigpioHandler->elapsedEventTimer.start();
-            //emit pigpioHandler->eventInterval(nsecsElapsed);
             emit pigpioHandler->eventInterval((tick-lastTriggerTick)*1000);
             lastTriggerTick=tick;
         }
 
         if (user_gpio == GPIO_PINMAP[TIMEPULSE]) {
-//			std::cout<<"Timepulse"<<std::endl;
             struct timespec ts;
             clock_gettime(CLOCK_REALTIME, &ts);
             quint64 timestamp = pigpioHandler->gpioTickOverflowCounter + tick;
@@ -170,17 +154,12 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
             ts_nsec+=(long int)(1000.*meanDiffFrac);
 
             long double ppsOffs = (ts_sec-ts.tv_sec)+ts_nsec*1e-9;
-//			qDebug() << "PPS Offset: " << (double)(ppsOffs)*1e6 << " us";
             if (std::fabs(ppsOffs) < 3600.) {
                 qint32 t_diff_us = (double)(ppsOffs)*1e6;
                 emit pigpioHandler->timePulseDiff(t_diff_us);
             }
-            /*
-            qint32 t_diff_us=ts.tv_nsec/1000;
-            if (t_diff_us>500000L) t_diff_us=t_diff_us-1000000L;
-            */
         }
-        if (tick-lastXorAndTick > MuonPi::Config::event_count_deadtime_ticks/*EVENT_COUNT_DEADTIME_TICKS*/) {
+        if (tick-lastXorAndTick > MuonPi::Config::event_count_deadtime_ticks) {
             lastXorAndTick = tick;
             emit pigpioHandler->signal(user_gpio);
         }
@@ -207,33 +186,21 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpioPins, unsigned int spi_
     spiFlags = spi_flags;
     pi = pigpio_start((char*)"127.0.0.1", (char*)"8888");
     if (pi < 0) {
-        //qDebug() << "could not start pigpio. Is pigpiod running?";
-        //qDebug() << "you can start pigpiod with: sudo pigpiod -s 1";
         qFatal("Could not connect to pigpio daemon. Is pigpiod running? Start with sudo pigpiod -s 1");
         return;
     }
 
     isInitialised = true;
 
-//    gpioPins=gpio_pins;
     for (auto& gpioPin : gpioPins) {
-        //if (GPIO_SIGNAL_MAP[gpioPin].direction!=DIR_IN) continue;
         set_mode(pi, gpioPin, PI_INPUT);
-//        if (gpioPin==ADC_READY) set_pull_up_down(pi, GPIO_PINMAP[gpioPin], PI_PUD_UP);
 
-            //qDebug() << "set callback for pin " << gpio_pin;
             int result=callback(pi, gpioPin, RISING_EDGE, cbFunction);
             if (result<0) {
                 qCritical()<<"error registering gpio callback for BCM pin"<<gpioPin;
             }
-//        callback(pi, gpio_pin, FALLING_EDGE, cbFunction);
-        //        if (value==pigif_bad_malloc||
-        //            value==pigif_dublicate_callback||
-        //            value==pigif_bad_callback){
-        //            continue;
-        //        }
     }
-    gpioClockTimeMeasurementTimer.setInterval(MuonPi::Config::Hardware::GPIO::Clock::Measurement::interval/*GPIO_CLOCK_MEASUREMENT_INTERVAL_MS*/);
+    gpioClockTimeMeasurementTimer.setInterval(MuonPi::Config::Hardware::GPIO::Clock::Measurement::interval);
     gpioClockTimeMeasurementTimer.setSingleShot(false);
     connect(&gpioClockTimeMeasurementTimer, &QTimer::timeout, this, &PigpiodHandler::measureGpioClockTime);
     gpioClockTimeMeasurementTimer.start();
@@ -280,10 +247,6 @@ void PigpiodHandler::writeSpi(uint8_t command, std::string data){
     for (unsigned int i = 1; i < data.size() +1; i++){
         txBuf[i] = data[i-1];
     }
-    /*qDebug() << "trying to write: ";
-    for (int i = 0; i < data.size()+1; i++){
-        qDebug() << hex << (uint8_t)txBuf[i];
-    }*/
     char rxBuf[data.size()+1];
     if (spi_xfer(pi, spiHandle, txBuf, rxBuf, data.size()+1)!=1+data.size()){
         qWarning() << "writeSpi(uint8_t, std::string): wrong number of bytes transfered";
@@ -297,10 +260,6 @@ void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead){
             return;
         }
     }
-    //char buf[bytesToRead];
-    //char charCommand = command;
-    //spi_write(pi, spiHandle, &charCommand, 1);
-    //spi_read(pi, spiHandle, buf, bytesToRead);
 
     char rxBuf[bytesToRead+1];
     char txBuf[bytesToRead+1];
@@ -317,15 +276,6 @@ void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead){
     for (unsigned int i = 1; i < bytesToRead+1; i++){
         data += rxBuf[i];
     }
-//    qDebug() << "read back from reg "<<hex<<command<<":";
-
-    /*qDebug() << "read back: ";
->>>>>>> 27beb3a0febeba98e0b037468fa27301bb8faae5
-    for (int i = 0; i < data.size(); i++){
-        qDebug() << hex << (uint8_t)data[i];
-    }
-    qDebug() << ".";
-    */
     emit spiData(command, data);
 }
 
@@ -386,8 +336,7 @@ void PigpiodHandler::stop() {
 void PigpiodHandler::measureGpioClockTime() {
     if (!isInitialised) return;
     static uint32_t oldTick = 0;
-//    static uint64_t llTick = 0;
-    const int N = MuonPi::Config::Hardware::GPIO::Clock::Measurement::buffer_size/*GPIO_CLOCK_MEASUREMENT_BUFFER_SIZE*/;
+    const int N = MuonPi::Config::Hardware::GPIO::Clock::Measurement::buffer_size;
     static int nrSamples=0;
     static int arrayIndex=0;
     static qint64 diff_array[N];
@@ -399,7 +348,6 @@ void PigpiodHandler::measureGpioClockTime() {
     clock_gettime(CLOCK_REALTIME, &tp1);
     uint32_t tick = get_current_tick(pi);
     clock_gettime(CLOCK_REALTIME, &tp2);
-//        clock_gettime(CLOCK_MONOTONIC, &tp);
 
     qint64 dt = tp2.tv_sec-tp1.tv_sec;
     dt *= 1000000000LL;
@@ -429,5 +377,4 @@ void PigpiodHandler::measureGpioClockTime() {
     clockMeasurementSlope = slope;
     clockMeasurementOffset = offs;
 
-//	qDebug() << "gpio clock measurement: N=" << nrSamples << " offs=" << offs << " slope=" << slope;
 }

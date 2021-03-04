@@ -21,31 +21,12 @@ ui(new Ui::Settings)
     {
         this->fGnssConfigChanged=true;
         this->onConfigChanged();
-/*
-        this->ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setEnabled(true);
-        this->ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setEnabled(true);
-*/
     } );
     connect(ui->tpConfigButtonGroup, &QButtonGroup::idClicked, this, [this](int)
     {
         this->fTpConfigChanged=true;
         this->onConfigChanged();
-/*
-        this->fTpConfigChanged=true;
-        this->ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setEnabled(true);
-        this->ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setEnabled(true);
-*/
     } );
-/*
-    connect(ui->syncedPulseGroupBox, &QGroupBox::toggled, this, [this](bool) {
-        this->fTpConfigChanged=true;
-        this->onConfigChanged();
-    });
-    connect(ui->unsyncedPulseGroupBox, &QGroupBox::toggled, this, [this](bool) {
-        this->fTpConfigChanged=true;
-        this->onConfigChanged();
-    });
-*/
     this->setDisabled(true);
     emit sendRequestUbxMsgRates();
 }
@@ -96,7 +77,6 @@ void Settings::addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates) {
         value->key = it.key();
         value->rate = it.value();
         value->setText(QString::number(value->rate).rightJustified(3, '0'));
-        //item->setText(QString(item->name));
         ui->ubloxSignalStates->insertRow(ui->ubloxSignalStates->rowCount());
         ui->ubloxSignalStates->setItem(ui->ubloxSignalStates->rowCount()-1,0,item);
         ui->ubloxSignalStates->setItem(ui->ubloxSignalStates->rowCount()-1,1,value);
@@ -148,7 +128,6 @@ void Settings::onSettingsButtonBoxClicked(QAbstractButton *button){
         ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(true);
     }
     if (button == ui->settingsButtonBox->button(QDialogButtonBox::RestoreDefaults)){
-        //settingsUi->ubloxSignalStates->blockSignals(true);
         emit sendUbxConfigDefault();
 
     }
@@ -209,7 +188,6 @@ void Settings::onRxBufPeakReceived(quint8 val)
     ui->rxPeakLabel->setText("max: "+QString::number(val)+"%");
 }
 
-//const QString GNSS_ID_STRING[] = { " GPS","SBAS"," GAL","BEID","IMES","QZSS","GLNS"," N/A" };
 void Settings::onGnssConfigsReceived(quint8 numTrkCh, const QVector<GnssConfigStruct> &configList)
 {
     ui->gnssConfigButtonGroup->blockSignals(true);
@@ -260,10 +238,8 @@ void Settings::onTP5Received(const UbxTimePulseStruct &tp)
     ui->tpActiveCheckBox->setChecked(tp.flags & UbxTimePulseStruct::ACTIVE);
 
     ui->lockGpsCheckBox->setChecked(tp.flags & UbxTimePulseStruct::LOCK_GPS);
-    //ui->syncedPulseGroupBox->setChecked(tp.flags & UbxTimePulseStruct::LOCK_GPS);
 
     ui->lockOtherCheckBox->setChecked(tp.flags & UbxTimePulseStruct::LOCK_OTHER);
-    //ui->unsyncedPulseGroupBox->setChecked(tp.flags & UbxTimePulseStruct::LOCK_OTHER);
 
     ui->timeGridComboBox->setCurrentIndex((tp.flags & UbxTimePulseStruct::GRID_UTC_GPS)>>7);
     ui->tpPolarityCheckBox->setChecked((tp.flags & UbxTimePulseStruct::POLARITY));
@@ -353,10 +329,8 @@ void Settings::writeTpConfig()
     if (ui->tpPolarityCheckBox->isChecked()) tp.flags |= UbxTimePulseStruct::POLARITY;
 
     if (ui->lockGpsCheckBox->isChecked()) tp.flags |= UbxTimePulseStruct::LOCK_GPS;
-//    if (ui->syncedPulseGroupBox->isChecked()) tp.flags |= UbxTimePulseStruct::LOCK_GPS;
 
     if (ui->lockOtherCheckBox->isChecked()) tp.flags |= UbxTimePulseStruct::LOCK_OTHER;
-//    if (ui->unsyncedPulseGroupBox->isChecked()) tp.flags |= UbxTimePulseStruct::LOCK_OTHER;
 
     if (ui->tpAlignTowCheckBox->isChecked()) tp.flags |= UbxTimePulseStruct::ALIGN_TO_TOW;
     tp.flags |= ((ui->timeGridComboBox->currentIndex()<<7) & UbxTimePulseStruct::GRID_UTC_GPS);
@@ -379,10 +353,6 @@ void Settings::on_freqPeriodLineEdit_editingFinished()
     else {
         fTpConfigChanged = true;
         this->onConfigChanged();
-/*
-        ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(false);
-        ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(false);
-*/
     }
 }
 
@@ -394,10 +364,6 @@ void Settings::on_freqPeriodLockLineEdit_editingFinished()
     else {
         fTpConfigChanged = true;
         this->onConfigChanged();
-/*
-        ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(false);
-        ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(false);
-*/
     }
 }
 
@@ -409,10 +375,6 @@ void Settings::on_pulseLenLineEdit_editingFinished()
     else {
         fTpConfigChanged = true;
         this->onConfigChanged();
-/*
-        ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(false);
-        ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(false);
-*/
     }
 }
 
@@ -424,10 +386,6 @@ void Settings::on_pulseLenLockLineEdit_editingFinished()
     else {
         fTpConfigChanged = true;
         this->onConfigChanged();
-/*
-        ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(false);
-        ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(false);
-*/
     }
 }
 
@@ -439,10 +397,6 @@ void Settings::on_antDelayLineEdit_editingFinished()
     else {
         fTpConfigChanged = true;
         this->onConfigChanged();
-/*
-        ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(false);
-        ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(false);
-*/
     }
 }
 
@@ -454,10 +408,6 @@ void Settings::on_groupDelayLineEdit_editingFinished()
     else {
         fTpConfigChanged = true;
         this->onConfigChanged();
-/*
-        ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(false);
-        ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(false);
-*/
     }
 }
 
@@ -469,10 +419,6 @@ void Settings::on_userDelayLineEdit_editingFinished()
     else {
         fTpConfigChanged = true;
         this->onConfigChanged();
-/*
-        ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(false);
-        ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(false);
-*/
     }
 }
 

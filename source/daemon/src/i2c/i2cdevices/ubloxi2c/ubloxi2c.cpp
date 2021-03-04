@@ -10,7 +10,6 @@ bool UbloxI2c::devicePresent()
 {
 	uint8_t dummy;
 	return (1 == readReg(0xff, &dummy, 1));
-	//	return getTxBufCount(dummy);
 }
 
 std::string UbloxI2c::getData()
@@ -28,7 +27,6 @@ std::string UbloxI2c::getData()
 	std::string str(nrBytes, ' ');
 	std::transform(&buf[0], &buf[nrBytes], str.begin(), [](uint8_t c) { return (unsigned char)c; });
 	return str;
-	//	std::copy(buf[0], buf[nrBytes-1], std::back_inserter(str));
 }
 
 bool UbloxI2c::getTxBufCount(uint16_t& nrBytes)

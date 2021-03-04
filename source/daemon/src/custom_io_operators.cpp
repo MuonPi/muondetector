@@ -8,7 +8,6 @@ std::ostream& operator<<(std::ostream& os, const QString& someQString)
 
 std::ostream& operator<<(std::ostream& os, const std::chrono::time_point<std::chrono::system_clock>& timestamp)
 {
-	//  std::chrono::time_point<std::chrono::system_clock> timestamp = std::chrono::system_clock::now();
 	std::chrono::microseconds mus = std::chrono::duration_cast<std::chrono::microseconds>(timestamp.time_since_epoch());
 	std::chrono::seconds secs = std::chrono::duration_cast<std::chrono::seconds>(mus);
 	std::chrono::microseconds subs = mus - secs;
@@ -19,7 +18,6 @@ std::ostream& operator<<(std::ostream& os, const std::chrono::time_point<std::ch
 
 std::ostream& operator<<(std::ostream& os, const timespec& ts)
 {
-	//  std::chrono::time_point<std::chrono::system_clock> timestamp = std::chrono::system_clock::now();
 	os << ts.tv_sec << "." << std::setw(9) << std::setfill('0') << ts.tv_nsec << " " << std::setfill(' ');
 	return os;
 }

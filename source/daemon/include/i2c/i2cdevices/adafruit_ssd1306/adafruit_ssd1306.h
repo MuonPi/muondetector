@@ -3,7 +3,6 @@
 
 #include "i2c/i2cdevices/i2cdevice.h"
 
-//class Adafruit_GFX;
 
 #include "i2c/i2cdevices/Adafruit_GFX.h"
 // OLED defines

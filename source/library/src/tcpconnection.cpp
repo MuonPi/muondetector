@@ -9,11 +9,6 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 #endif
-/*
-std::vector<TcpConnection*> TcpConnection::globalConnectionList;
-uint32_t TcpConnection::globalNrBytesRead;
-uint32_t TcpConnection::globalNrBytesWritten;
-*/
 
 TcpConnection::TcpConnection(QString newHostName, quint16 newPort, int newVerbose, int newTimeout,
     int newPingInterval, QObject *parent)
@@ -24,17 +19,15 @@ TcpConnection::TcpConnection(QString newHostName, quint16 newPort, int newVerbos
     port = newPort;
     timeout = newTimeout;
     pingInterval = newPingInterval;
-    //qRegisterMetaType<QVector<QVariant> >("QVector<QVariant>");
 }
 
 TcpConnection::TcpConnection(int socketDescriptor, int newVerbose, int newTimeout, int newPingInterval, QObject *parent)
     : QObject(parent)
-    , m_socketDescriptor(socketDescriptor)//, text(data)
+    , m_socketDescriptor(socketDescriptor)
 {
     pingInterval = newPingInterval;
     timeout = newTimeout;
     verbose = newVerbose;
-    //qRegisterMetaType<QVector<float> >("QVector<float>");
 }
 
 TcpConnection::~TcpConnection()
@@ -43,10 +36,6 @@ TcpConnection::~TcpConnection()
     if (!t.isNull()){
         t.clear();
     }
-/*
-    auto it = std::find(globalConnectionList.begin(), globalConnectionList.end(), this);
-    if (it != globalConnectionList.end()) globalConnectionList.erase(it);
-*/
 }
 
 void TcpConnection::makeConnection()
@@ -63,7 +52,6 @@ void TcpConnection::makeConnection()
     in->setVersion(QDataStream::Qt_4_0);
     in->setDevice(tcpSocket);
     connect(tcpSocket, &QTcpSocket::readyRead, this, &TcpConnection::onReadyRead);
-    //connect(tcpSocket, &QTcpSocket::disconnected, this, &TcpConnection::disconnected);
     tcpSocket->connectToHost(hostName, port);
     firstConnection = time(NULL);
     lastConnection = firstConnection;
@@ -72,7 +60,6 @@ void TcpConnection::makeConnection()
         this->thread()->quit();
         return;
     }
-    //globalConnectionList.push_back(this);
     emit connected();
     peerAddress = tcpSocket->peerAddress().toString();
     emit toConsole(QString("makeConnection: peer1 ")+peerAddress);
@@ -87,7 +74,6 @@ void TcpConnection::makeConnection()
     peerPort = tcpSocket->peerPort();
     localPort = tcpSocket->localPort();
     bytesRead=bytesWritten=0;
-    //startTimePulser();
 }
 
 void TcpConnection::receiveConnection()
@@ -105,11 +91,9 @@ void TcpConnection::receiveConnection()
         return;
     }
     peerAddress = tcpSocket->peerAddress().toString();
-    //emit toConsole(QString("receiveConnection: peer1 ")+peerAddress);
     if(peerAddress!=""){
         peerAddress = peerAddress.split(':').last();
     }
-    //emit toConsole(QString("receiveConnection: peer2 ")+peerAddress);
 
     localAddress = tcpSocket->localAddress().toString();
     if(localAddress!=""){
@@ -118,7 +102,6 @@ void TcpConnection::receiveConnection()
     peerPort = tcpSocket->peerPort();
     localPort = tcpSocket->localPort();
     lastConnection = time(NULL);
-    //connect(tcpSocket, &QTcpSocket::disconnected, this, &TcpConnection::onSocketDisconnected);
     in = new QDataStream();
     in->setVersion(QDataStream::Qt_4_0);
     in->setDevice(tcpSocket);
@@ -127,7 +110,6 @@ void TcpConnection::receiveConnection()
     lastConnection = firstConnection;
     emit madeConnection(peerAddress, peerPort, localAddress, localPort);
     bytesRead=bytesWritten=0;
-    //startTimePulser();
 }
 
 void TcpConnection::closeConnection(QString closedAddress) {
@@ -162,11 +144,6 @@ void TcpConnection::onReadyRead() {
         if (tcpSocket->bytesAvailable() < blockSize) {
             return;
         }
-//        if (tcpSocket->bytesAvailable() > blockSize) {
-//            emit toConsole(QString(QString::number(tcpSocket->bytesAvailable() - blockSize)
-//                + " more Bytes available than expected by blockSize"));
-//        }
-        //qDebug() << "blockSize: " << blockSize;
         QByteArray block;
         char* data;
         data = (char *) malloc (blockSize);
@@ -179,19 +156,13 @@ void TcpConnection::onReadyRead() {
         str << blockSize;
         str.writeRawData(data,blockSize);
         bytesRead+=blockSize;
-        //globalNrBytesRead+=blockSize;
-        //block.setRawData(data,blockSize); // not sure if it works correctly
         blockSize = 0;
-        //*in >> block;
-        //qDebug() << block.size()-2 << "Bytes read: "; // -2 because "str << blockSize" makes
-                                                      // uint16_t blockSize itself part of block
         if (verbose > 4){
             qDebug() << block;
         }
 
         TcpMessage tcpMessage(block);
         emit receivedTcpMessage(tcpMessage);
-        // emit toConsole("something went wrong with the transmission code");
     }
 }
 
@@ -214,11 +185,9 @@ bool TcpConnection::writeBlock(const QByteArray &block) {
     }
     tcpSocket->write(block);
     bytesWritten+=block.size();
-    //globalNrBytesWritten+=block.size();
     for (int i = 0; i < 3; i++) {
         if (tcpSocket->state() != QTcpSocket::UnconnectedState) {
             if (!tcpSocket->waitForBytesWritten(timeout)) {
-                //emit toConsole("wait for bytes written timeout");
                 quint32 connectionDuration = (quint32)(time(NULL)-firstConnection);
                 quint32 timeoutTime = (quint32)time(NULL);
                 emit connectionTimeout(peerAddress,peerPort,localAddress,localPort,timeoutTime,connectionDuration);
@@ -228,7 +197,6 @@ bool TcpConnection::writeBlock(const QByteArray &block) {
             return true;
         }
         else {
-            //emit toConsole("client unconnected");
             delay(100);
         }
     }
@@ -239,40 +207,10 @@ bool TcpConnection::writeBlock(const QByteArray &block) {
     return false;
 }
 
-/*
-void TcpConnection::onTimePulse(){
-    if (fabs(time(NULL)-lastConnection)>timeout/1000){
-        // hier einfügen, was passiert, wenn host nicht auf ping antwortet
-        quint32 connectionDuration = (quint32)(time(NULL)-firstConnection);
-        quint32 timeoutTime = (quint32)time(NULL);
-        sendCode(timeoutSig);
-        emit connectionTimeout(peerAddress->toString(),peerPort,localAddress->toString(),localPort,timeoutTime,connectionDuration);
-        this->deleteLater();
-        return;
-    }
-    if (tcpSocket){
-        if (verbose>3){
-            emit toConsole("sending ping");
-        }
-        sendCode(ping);
-    }
-}
-
-void TcpConnection::startTimePulser()
-{
-    t = new QTimer(this);
-    t->setInterval(pingInterval);
-    connect(this, &TcpConnection::stopTimePulser, t, &QTimer::stop);
-    connect(t, &QTimer::timeout, this, &TcpConnection::onTimePulse);
-    t->start();
-}
-*/
 void TcpConnection::delay(int millisecondsWait)
 {
     QEventLoop loop;
     QTimer delay;
-    //connect(this, &TcpConnection::posixTerminate, &loop, &QEventLoop::quit);
-    //connect(tcpSocket, &QTcpSocket::disconnected, &loop, &QEventLoop::quit);
     delay.connect(&delay, &QTimer::timeout, &loop, &QEventLoop::quit);
     delay.start(millisecondsWait);
     loop.exec();

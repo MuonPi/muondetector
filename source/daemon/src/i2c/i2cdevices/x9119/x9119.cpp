@@ -26,8 +26,7 @@ unsigned int X9119::readWiperReg()
 	readBuf[0] = 0;
 	readBuf[1] = 0;
 
-	/*int n=*/read(readBuf, 2);	// Read the config register into readBuf
-								//  printf( "%d bytes read\n",n);
+    read(readBuf, 2);	// Read the config register into readBuf
 
 	val = (readBuf[0] & 0x03) << 8 | readBuf[1];
 
@@ -50,8 +49,7 @@ unsigned int X9119::readDataReg(uint8_t reg)
 	readBuf[0] = 0;
 	readBuf[1] = 0;
 
-	/*int n=*/read(readBuf, 2);	// Read the config register into readBuf
-								//  printf( "%d bytes read\n",n);
+    read(readBuf, 2);	// Read the config register into readBuf
 
 	val = (readBuf[0] & 0x03) << 8 | readBuf[1];
 
@@ -81,35 +79,12 @@ unsigned int X9119::readWiperReg2()
 	rdwr_msgs[1].len = 2;
 	rdwr_msgs[1].buf = (char*)readBuf;
 
-	/*
-	= {
-	{
-	.addr = fAddress,
-	.flags = 0, // write
-	.len = 1,
-	.buf = writeBuf
-	},
-	{ // Read buffer
-	.addr = fAddress,
-	.flags = I2C_M_RD, // read
-	.len = 2,
-	.buf = readBuf
-	}
-	};*/
 
 	struct i2c_rdwr_ioctl_data rdwr_data;
 
 	rdwr_data.msgs = rdwr_msgs;
 	rdwr_data.nmsgs = 2;
 
-	//   = {
-	//     .msgs = rdwr_msgs,
-	//     .nmsgs = 2
-	//   };
-
-
-	//::close(fHandle);
-	//fHandle = ::open( "/dev/i2c-1", O_RDWR );
 
 	int result = ioctl(fHandle, I2C_RDWR, &rdwr_data);
 
@@ -119,10 +94,6 @@ unsigned int X9119::readWiperReg2()
 	}
 	else {
 		printf("rdwr ioctl OK\n");
-		//    for ( i = 0; i < 16; ++i ) {
-		//      printf( "%c", buffer[i] );
-		//    }
-		//    printf( "\n" );
 	}
 
 
@@ -166,10 +137,6 @@ unsigned int X9119::readWiperReg3()
 	}
 	else {
 		printf("rdwr ioctl OK\n");
-		//    for ( i = 0; i < 16; ++i ) {
-		//      printf( "%c", buffer[i] );
-		//    }
-		//    printf( "\n" );
 	}
 	return 0x0FFFF & data.word;
 }
@@ -187,7 +154,6 @@ void X9119::writeWiperReg(unsigned int value)
 										// Write writeBuf to the X9119
 										// this sets the write address for WCR register and writes WCR
 	int n = write(writeBuf, 3);
-	//printf( "%d bytes written\n",n);
 	if (n == 3) fWiperReg = value;
 
 }
@@ -202,7 +168,6 @@ void X9119::writeDataReg(uint8_t reg, unsigned int value)
 
 										// Write writeBuf to the X9119
 										// this sets the write address for data register and writes dr with value
-	/*int n=*/write(writeBuf, 3);
-	//  printf( "%d bytes written\n",n);
+    write(writeBuf, 3);
 
 }

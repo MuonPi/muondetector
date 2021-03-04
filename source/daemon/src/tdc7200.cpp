@@ -15,7 +15,6 @@ void TDC7200::initialise(){
 void TDC7200::onDataAvailable(uint8_t pin){
     // this means if the INTB is high and there are new measurement results
     // should read all relevant TOF data and after that
-    //qDebug() << "received signal on pin " << pin;
     if (pin != INTB){
         return;
     }
@@ -51,17 +50,14 @@ void TDC7200::startMeas(){
         initialise();
         return;
     }
-    //qDebug() << "start measurement";
     writeReg(0, config[0]|0x01); // the least significant bit starts the measurement
 }
 
 void TDC7200::onDataReceived(uint8_t reg, std::string data){
-    //qDebug() << "onDataReceived";
     if (devicePresent == false){
         if(reg == 0x03 && data.size()==1 and data[0] == (char)0x07){
             devicePresent = true; // device is present, do configuration
             emit statusUpdated(true);
-            //qDebug() << "TDC7200 is now present";
             configRegisters();
             return;
         }else{
@@ -136,21 +132,6 @@ void TDC7200::processData(){
     double calCount = ((double)CALIBRATION2-(double)CALIBRATION1)/((double)CALIBRATION2_PERIODS-1);
     double normLSB = (double)CLOCKperiod/calCount;
     double TIME1 = (double)regContent2[0];
-    //double TIME2 = regContent2[2];
-    //uint32_t CLOCK_COUNT1 = regContent2[1];
-    /*
-    qDebug() << "processData:";
-    qDebug() << "num_stop: " <<hex<< num_stop;
-    qDebug() << "meas_mode: " <<hex<< meas_mode;
-    qDebug() << "CALIBRATION1: " <<dec<< CALIBRATION1;
-    qDebug() << "CALIBRATION2: " <<dec<< CALIBRATION2;
-    qDebug() << "CALIBRATION2_PERIODS: "<<dec<< CALIBRATION2_PERIODS;
-    qDebug() << "calCount: " << calCount;
-    qDebug() << "TIME1" << TIME1;
-    qDebug() << "TIME2" << TIME2;
-    qDebug() << "CLOCK_COUNT1" << CLOCK_COUNT1;
-    qDebug() << "normLSB: " << normLSB;
-    */
     for (int i = 0; i < num_stop; i++){
         if (meas_mode == 0){ // mode 1
             double TIMEx = (double)regContent2[i*2];
@@ -160,12 +141,10 @@ void TDC7200::processData(){
         if (meas_mode == 1){ // mode 2
             double TIMEn1 = (double)regContent2[i*2+2];
             double TOF = normLSB*(TIME1-TIMEn1)+((double)regContent2[i+1])*CLOCKperiod;
-            // double TOF = normLSB*(TIME1-TIME2)+CLOCKperiod*CLOCK_COUNT1;
             timings.push_back(TOF);
         }
     }
     emit timeMeas(timings);
-    //qDebug() << "Timings: " << timings;
     emit tdcEvent(timings.at(0)*1e6);
     startMeas();
 }

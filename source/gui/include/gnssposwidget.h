@@ -48,10 +48,8 @@ private slots:
 
 private:
     Ui::GnssPosWidget *ui;
-//    QMap<int, QVector<SatHistoryPoint>> satTracks;
     QMap<int, QHash<QPoint, QVector<SatHistoryPoint>>> satTracks;
     QVector<GnssSatellite> fCurrentSatlist;
-//    int cnrColorRange=40;
 
     QPointF polar2cartUnity(const QPointF &pol);
     QPolygonF getPolarUnitPolygon(const QPointF& pos, int controlPoints=DEFAULT_CONTROL_POINTS);

@@ -12,8 +12,6 @@ class MCP4728 : public i2cDevice {
 	// reset is "0x00 0x06"
 	// wake-up is "0x00 0x09"
 public:
-	//enum CFG_CHANNEL {CH_A=0, CH_B, CH_C, CH_D};
-	//enum POWER_DOWN {NORM=0, LOAD1, LOAD2, LOAD3};  // at Power Down mode the output is loaded with 1k, 100k, 500k
 	// to ground to power down the circuit
 	const static float VDD;	// change, if device powered with different voltage
 	enum CFG_GAIN { GAIN1 = 0, GAIN2 = 1 };

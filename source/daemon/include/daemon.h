@@ -81,7 +81,6 @@ public:
     }
 
     bool isUpdated() const { return updated; }
-//    QMetaType::Type type() const { return static_cast<QMetaType::Type>(value.type()); }
     int type() const { return typeId; }
 
     QString name="";
@@ -108,7 +107,6 @@ struct RateScanInfo {
 };
 
 struct RateScan {
-//	void addScanPoint(double scanpar, double a_rate) { scanMap[scanpar].append(a_rate); }
     uint8_t origPcaMask=0;
     GPIO_PIN origEventTrigger=GPIO_PIN::UNDEFINED_PIN;
     float origScanPar=3.3;
@@ -179,7 +177,6 @@ public slots:
     void sampleAdcEvent(uint8_t channel);
     void getTemperature();
     void scanI2cBus();
-    //void onUBXReceivedTimeTM2(timespec rising, timespec falling, uint32_t accEst, bool valid, uint8_t timeBase, bool utcAvailable);
     void onUBXReceivedTimeTM2(const UbxTimeMarkStruct& tm);
     void onLogParameterPolled();
     void sendMqttStatus(bool connected);
@@ -318,13 +315,6 @@ private:
     ShowerDetectorCalib* calib = nullptr;
 
     // histograms
-/*
-     Histogram geoHeightHisto, geoLonHisto, geoLatHisto,
-     weightedGeoHeightHisto,
-     pulseHeightHisto, adcSampleTimeHisto, tdc7200Histo,
-     ubxTimeLengthHisto, eventIntervalHisto, eventIntervalShortHisto,
-     ubxTimeIntervalHisto, tpTimeDiffHisto;
-*/
     QMap<QString, Histogram> histoMap;
 
     // others
@@ -337,7 +327,6 @@ private:
     QTimer oledUpdateTimer;
     QList<quint64> andCounts,xorCounts;
     UbxDopStruct currentDOP;
-    //timespec lastTimestamp = { 0, 0 };
     Property nrSats, nrVisibleSats, fixStatus;
     QVector<QTcpSocket*> peerList;
     QList<float> adcSamplesBuffer;

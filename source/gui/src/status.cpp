@@ -50,12 +50,10 @@ Status::Status(QWidget *parent) :
     fInputSwitchButtonGroup->addButton(statusUi->InputSelectRadioButton6,6);
     fInputSwitchButtonGroup->addButton(statusUi->InputSelectRadioButton7,7);
     connect(fInputSwitchButtonGroup, &QButtonGroup::idClicked, [=](int id){ emit inputSwitchChanged(id); });
-//    connect(fInputSwitchButtonGroup, QOverload<int>::of(&QButtonGroup::buttonClicked), [=](int id){ emit inputSwitchChanged(id); });
 
     foreach (GpioSignalDescriptor item, GPIO_SIGNAL_MAP) {
         if (item.direction==DIR_IN) statusUi->triggerSelectionComboBox->addItem(item.name);
     }
-    //timepulseTimer = new QTimer(this);
     timepulseTimer.setSingleShot(true);
     timepulseTimer.setInterval(3000);
     connect(&timepulseTimer, &QTimer::timeout, this, [this]() {
@@ -164,7 +162,6 @@ void Status::clearRatePlot()
 
 void Status::onTriggerSelectionReceived(GPIO_PIN signal)
 {
-//    if (GPIO_PIN_NAMES.find(signal)==GPIO_PIN_NAMES.end()) return;
     int i=0;
     while (i<statusUi->triggerSelectionComboBox->count()) {
         if (statusUi->triggerSelectionComboBox->itemText(i).compare(GPIO_SIGNAL_MAP[signal].name)==0) break;
@@ -186,7 +183,6 @@ void Status::onTimepulseReceived()
 void Status::clearPulseHeightHisto()
 {
 	statusUi->pulseHeightHistogram->clear();
-	//fPulseHeightHistogramMap.clear();
 	updatePulseHeightHistogram();
 }
 
@@ -194,7 +190,6 @@ void Status::onAdcSampleReceived(uint8_t channel, float value)
 {
 	if (channel==0) {
 		statusUi->ADCLabel1->setText("Ch1: "+QString::number(value,'f',3)+" V");
-//        int binNr = (MAX_BINS-1)*value/MAX_ADC_VOLTAGE;
 		statusUi->pulseHeightHistogram->fill(value);
 		updatePulseHeightHistogram();
 
@@ -209,7 +204,6 @@ void Status::onAdcSampleReceived(uint8_t channel, float value)
 
 void Status::updatePulseHeightHistogram()
 {
-//	statusUi->pulseHeightHistogram->replot();
 	statusUi->pulseHeightHistogram->update();
 	long int entries = statusUi->pulseHeightHistogram->getEntries();
 	statusUi->PulseHeightHistogramEntriesLabel->setText(QString::number(entries)+" entries");
@@ -228,7 +222,6 @@ void Status::onUiEnabledStateChange(bool connected){
     }else{
         andSamples.clear();
         xorSamples.clear();
-//		updatePulseHeightHistogram();        
         statusUi->ratePlot->setStatusEnabled(false);
         statusUi->pulseHeightHistogram->clear();
 		statusUi->pulseHeightHistogram->setStatusEnabled(false);

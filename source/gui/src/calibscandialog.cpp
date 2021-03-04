@@ -24,9 +24,7 @@ inline static double sqr(double x) {
   *offs = output intercept
   *slope  = output slope
  */
-bool calcLinearCoefficients( const QVector<QPointF>& points,
-        /*int n, double *xarray, double *yarray,
-                */double *offs, double* slope)
+bool calcLinearCoefficients( const QVector<QPointF>& points, double *offs, double* slope)
 {
    int n=points.size();
    if (n<3) return false;
@@ -37,12 +35,8 @@ bool calcLinearCoefficients( const QVector<QPointF>& points,
    double   sumy = 0.0;                        /* sum of y                      */
    double   sumy2 = 0.0;                       /* sum of y**2                   */
 
-//   int ix=0;
-//   double offsx=xarray[ix];
-//   double offsy=yarray[ix];
    double offsx=0;
    double offsy=0;
-//    long long int offsy=0;
 
    for (int i=0; i<n; i++) {
           sumx  += points[i].x()-offsx;
@@ -58,7 +52,6 @@ bool calcLinearCoefficients( const QVector<QPointF>& points,
        // singular matrix. can't solve the problem.
        *slope = 0;
        *offs = 0;
-//       if (r) *r = 0;
        return false;
    }
 
@@ -68,8 +61,6 @@ bool calcLinearCoefficients( const QVector<QPointF>& points,
    *slope=m;
    *offs=b+offsy;
    return true;
-//    *offs=b;
-//   printf("offsI=%lld  offsF=%f\n", offsy, b);
 
 }
 
@@ -100,12 +91,6 @@ void CalibScanDialog::onCalibReceived(bool /*valid*/, bool eepromValid, quint64 
     {
         fCalibList.push_back(calibList[i]);
     }
-/*
-    int ver = getCalibParameter("VERSION").toInt();
-    double rsense = 0.1*getCalibParameter("RSENSE").toInt();
-    double vdiv = 0.01*getCalibParameter("VDIV").toInt();
-    int featureFlags = getCalibParameter("FEATURE_FLAGS").toInt();
-*/
         fSlope1 = getCalibParameter("COEFF1").toDouble();
         fOffs1 = getCalibParameter("COEFF0").toDouble();
         fSlope2 = getCalibParameter("COEFF3").toDouble();
@@ -127,37 +112,8 @@ void CalibScanDialog::onAdcSampleReceived(uint8_t channel, double value)
         double rsense = getCalibParameter("RSENSE").toDouble()*0.1*0.001; // RSense in MOhm
         double ibias=vdiv*(fLastRSenseHiVoltage-value)/rsense;
         if (fCurrentCalibRunning) manualCurrentCalibProgress(ubias, ibias);
-/*
-        if (fAutoCalibRunning) {
-            if (fCurrBias>calVoltMax) { on_doBiasCalibPushButton_clicked(); return; }
-            QPointF p(fCurrBias, ubias);
-            fCurrBias+=BIAS_SCAN_INCREMENT;
-            emit setBiasDacVoltage(fCurrBias);
-            QThread::msleep(100);
-            fPoints2.push_back(p);
-            ui->biasVoltageCalibPlot->curve("curve2").setSamples(fPoints2);
-
-            double vdiv=getCalibParameter("VDIV").toDouble()*0.01;
-            double rsense = getCalibParameter("RSENSE").toDouble()*0.1/1000.; // RSense in MOhm
-            QPointF p2(ubias,vdiv*(fLastRSenseHiVoltage-value)/rsense);
-            fPoints3.push_back(p2);
-            ui->biasCurrentCalibPlot->curve("curve3").setSamples(fPoints3);
-
-            ui->biasVoltageCalibPlot->replot();
-            ui->biasCurrentCalibPlot->replot();
-        }
-*/
         fLastRSenseLoVoltage = value;
     } else if (channel == 2) {
-/*
-        if (fAutoCalibRunning) {
-            QPointF p(fCurrBias, ubias);
-            fPoints1.push_back(p);
-            ui->biasVoltageCalibPlot->curve("curve1").setSamples(fPoints1);
-            ui->biasVoltageCalibPlot->replot();
-            doFit();
-        }
-*/
         fLastRSenseHiVoltage = value;
     }
 }
@@ -185,13 +141,10 @@ void CalibScanDialog::startManualCurrentCalib() {
 }
 
 void CalibScanDialog::manualCurrentCalibProgress(double vbias, double ibias) {
-/*    const int N=5;
-    static int measurementCount=0;*/
     static double currentMeasurements[3] = { 0., 0., 0. };
 
     ui->currentCalibProgressBar->setValue(fCurrentCalibRunning);
     if (fCurrentCalibRunning==2) {
-        //emit dynamic_cast<CalibForm*>(parent())->setBiasSwitch(true);
         currentMeasurements[0]=ibias;
         emit dynamic_cast<CalibForm*>(parent())->setBiasSwitch(true);
         QThread::msleep(500);
@@ -212,7 +165,6 @@ void CalibScanDialog::manualCurrentCalibProgress(double vbias, double ibias) {
             ui->currentCalibProgressBar->setEnabled(false);
             return;
         }
-        //emit dynamic_cast<CalibForm*>(parent())->setBiasSwitch(true);
         QThread::msleep(500);
         fCurrentCalibRunning++;
     } else if (fCurrentCalibRunning==5) {

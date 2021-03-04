@@ -14,7 +14,6 @@ bool BMP180::init()
 
 	// chip id reg
 	int n = readReg(0xd0, &val, 1);	// Read the id register into readBuf
-									//  printf( "%d bytes read\n",n);
 
 	if (fDebugLevel > 1)
 	{
@@ -64,8 +63,6 @@ unsigned int BMP180::readUP(uint8_t oss)
 	int n = writeReg(0xf4, &cr_val, 1);
 	usleep(delay[oss & 0x03]);
 
-	//   writeBuf[0] = 0xf6;		// adc reg
-	//   write(writeBuf, 1);
 
 	readBuf[0] = 0;
 	readBuf[1] = 0;
@@ -106,7 +103,6 @@ void BMP180::readCalibParameters()
 			fCalibParameters[i] = (int16_t)(readBuf[2 * i] << 8 | readBuf[2 * i + 1]);
 		if (fCalibParameters[i] == 0 || fCalibParameters[i] == 0xffff) ok = false;
 		if (fDebugLevel > 1)
-			//      printf( "calib%d: 0x%4x \n",i,fCalibParameters[i]);
 			printf("calib%d: %d \n", i, fCalibParameters[i]);
 	}
 	if (fDebugLevel > 1) {

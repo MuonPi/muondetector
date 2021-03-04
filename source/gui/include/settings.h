@@ -4,7 +4,6 @@
 #include <QDialog>
 #include <QTableWidget>
 #include <QtWidgets>
-//#include <gnsssatellite.h>
 #include <ublox_structs.h>
 
 class GnssSatellite;
