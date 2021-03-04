@@ -335,7 +335,7 @@ bool MainWindow::saveSettings(QStandardItemModel *model) {
 
 bool MainWindow::loadSettings(QStandardItemModel* model) {
     QFile file{QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/muondetector-gui.save"};
-    if (file.exists() || !file.open(QIODevice::ReadOnly)) {
+    if (!file.exists() || !file.open(QIODevice::ReadOnly)) {
         qDebug() << "file open failed in 'ReadOnly' mode at location " << file.fileName();
         return false;
     }
