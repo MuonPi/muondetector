@@ -54,7 +54,7 @@ void LogEngine::onLogParameterReceived(const LogParameter& logpar) {
 
 void LogEngine::onLogInterval() {
     emit logIntervalSignal();
-    emit sendLogString(dateStringNow() + " maxGeohashLength" + QString::number(MuonPi::Settings::log.max_geohash_length));
+    emit sendLogString(dateStringNow() + " maxGeohashLength " + QString::number(MuonPi::Settings::log.max_geohash_length));
     // loop over the map with all accumulated parameters since last log reminder
     // no increment here since we erase and invalidate iterators within the loop
     for (auto it=logData.begin(); it != logData.end();) {
