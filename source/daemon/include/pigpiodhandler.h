@@ -13,12 +13,8 @@
 #include <gpio_mapping.h>
 #include <gpio_pin_definitions.h>
 
-//extern "C" {
-//#include <pigpiod_if2.h>
 #include <gpiod.h>
-//}
 
-//#include <gpiod.hpp>
 
 #define XOR_RATE 0
 #define AND_RATE 1
@@ -42,12 +38,13 @@ public:
 		RisingEdge, FallingEdge, BothEdges
 	};
 	
+//	PigpiodHandler( QObject *parent );
 	explicit PigpiodHandler(std::vector<unsigned int> gpioPins, QObject *parent = nullptr);
-    ~PigpiodHandler();
+	~PigpiodHandler();
 	
 	// can't make it private because of access of PigpiodHandler with global pointer
-    QDateTime startOfProgram, lastSamplingTime; // the exact time when the program starts (Utc)
-    QElapsedTimer elapsedEventTimer;
+	QDateTime startOfProgram, lastSamplingTime; // the exact time when the program starts (Utc)
+	QElapsedTimer elapsedEventTimer;
 	GPIO_PIN samplingTriggerSignal=EVT_XOR;
 
 	double clockMeasurementSlope=0.;
@@ -65,6 +62,7 @@ signals:
 	void timePulseDiff(qint32 usecs);
 
 public slots:
+	void start();
 	void stop();
     bool initialised();
     bool setPinInput(unsigned int gpio);

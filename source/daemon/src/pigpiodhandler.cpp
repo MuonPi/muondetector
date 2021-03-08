@@ -9,14 +9,7 @@
 #include <cmath>
 #include <config.h>
 #include <stdexcept>
-	
 
-/*
-extern "C" {
-//#include <pigpiod_if2.h>
-#include <gpiod.h>
-}
-*/
 
 static int pi = -1;
 static int spiHandle = -1;
@@ -202,13 +195,22 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
     }
 }
 
+
+/*
+PigpiodHandler::PigpiodHandler(QObject *parent)
+	: QObject(parent)
+{
+
+}
+*/
+
 PigpiodHandler::PigpiodHandler(std::vector<unsigned int> gpioPins, QObject *parent)
     : QObject(parent)
 {
- 	startOfProgram = QDateTime::currentDateTimeUtc();
- 	lastSamplingTime = startOfProgram;
- 	elapsedEventTimer.start();
- 	pigHandlerAddress = this;
+	startOfProgram = QDateTime::currentDateTimeUtc();
+	lastSamplingTime = startOfProgram;
+	elapsedEventTimer.start();
+	pigHandlerAddress = this;
 
 	std::string chipname { "/dev/gpiochip0" };
 
@@ -218,7 +220,7 @@ PigpiodHandler::PigpiodHandler(std::vector<unsigned int> gpioPins, QObject *pare
 		throw std::exception();
 		return;
 	}
- 	isInitialised = true;
+	isInitialised = true;
 
 	for (unsigned int gpioPin : gpioPins) { 
 		gpiod_line* line = gpiod_chip_get_line(fChip, gpioPin);
@@ -237,17 +239,16 @@ PigpiodHandler::PigpiodHandler(std::vector<unsigned int> gpioPins, QObject *pare
 		fInterruptLineMap.emplace( std::make_pair( gpioPin, line) );
 	}
 
- 	gpioClockTimeMeasurementTimer.setInterval(MuonPi::Config::Hardware::GPIO::Clock::Measurement::interval/*GPIO_CLOCK_MEASUREMENT_INTERVAL_MS*/);
- 	gpioClockTimeMeasurementTimer.setSingleShot(false);
- 	connect(&gpioClockTimeMeasurementTimer, &QTimer::timeout, this, &PigpiodHandler::measureGpioClockTime);
+	gpioClockTimeMeasurementTimer.setInterval(MuonPi::Config::Hardware::GPIO::Clock::Measurement::interval/*GPIO_CLOCK_MEASUREMENT_INTERVAL_MS*/);
+	gpioClockTimeMeasurementTimer.setSingleShot(false);
+	connect(&gpioClockTimeMeasurementTimer, &QTimer::timeout, this, &PigpiodHandler::measureGpioClockTime);
 	gpioClockTimeMeasurementTimer.start();
 
 	reloadInterruptSettings();
 }
 
 PigpiodHandler::~PigpiodHandler() {
-	if (fThreadRunning) fThreadRunning = false;
-	if (fThread != nullptr) fThread->join();
+	this->stop();
 	for ( auto [gpio,line] : fInterruptLineMap ) {
 		gpiod_line_release(line);
 	}
@@ -279,7 +280,11 @@ void PigpiodHandler::threadLoop() {
 				line_index++;
 			}
 		} else if ( ret == 0 ) {
-			
+			// a timeout occurred, no event was detected
+			// simply go over into the wait loop again
+		} else {
+			// an error occured
+			// what should we do here?
 		}
 		//std::this_thread::sleep_for(loop_delay);
 	}
@@ -403,17 +408,13 @@ bool PigpiodHandler::setPinState(unsigned int gpio, bool state) {
 
 void PigpiodHandler::reloadInterruptSettings()
 {
-	if (fThread != nullptr) {
-		fThreadRunning = false;
-		fThread->join();
-	}
+	this->stop();
 	gpiod_line_bulk_init( &fInterruptLineBulk );
 	// rerequest bulk events
 	for (auto [gpio,line] : fInterruptLineMap) {
 		gpiod_line_bulk_add( &fInterruptLineBulk, line );
 	}
-	fThreadRunning = true;
-	fThread.reset(new std::thread( [this](){ this->threadLoop(); } ) );
+	this->start();
 }
 
 bool PigpiodHandler::registerInterrupt(unsigned int gpio, EventEdge edge) {
@@ -486,10 +487,16 @@ bool PigpiodHandler::initialised(){
 }
 
 void PigpiodHandler::stop() {
-    fThreadRunning = false;
+	fThreadRunning = false;
 	if ( fThread != nullptr ) {
 		fThread->join();
 	}
+}
+
+void PigpiodHandler::start() {
+	if (fThreadRunning) return;
+	fThreadRunning = true;
+	fThread.reset(new std::thread( [this](){ this->threadLoop(); } ) );
 }
 
 void PigpiodHandler::measureGpioClockTime() {
