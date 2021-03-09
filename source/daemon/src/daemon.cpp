@@ -679,19 +679,24 @@ Daemon::~Daemon() {
 }
 
 void Daemon::connectToPigpiod(){
-    const QVector<unsigned int> gpio_pins({ GPIO_PINMAP[EVT_AND], GPIO_PINMAP[EVT_XOR],
+/*
+	const QVector<unsigned int> gpio_pins({ GPIO_PINMAP[EVT_AND], GPIO_PINMAP[EVT_XOR],
+                                            GPIO_PINMAP[TIMEPULSE], GPIO_PINMAP[EXT_TRIGGER] });
+*/
+	const std::vector<unsigned int> gpio_pins({ GPIO_PINMAP[EVT_AND], GPIO_PINMAP[EVT_XOR],
                                             GPIO_PINMAP[TIMEPULSE], GPIO_PINMAP[EXT_TRIGGER] });
     pigHandler = new PigpiodHandler(gpio_pins);
-    tdc7200 = new TDC7200(GPIO_PINMAP[TDC_INTB]);
+    //tdc7200 = new TDC7200(GPIO_PINMAP[TDC_INTB]);
     pigThread = new QThread();
     pigThread->setObjectName("muondetector-daemon-pigpio");
     pigHandler->moveToThread(pigThread);
-    tdc7200->moveToThread(pigThread);
+    //tdc7200->moveToThread(pigThread);
     connect(this, &Daemon::aboutToQuit, pigThread, &QThread::quit);
     connect(pigThread, &QThread::finished, pigThread, &QThread::deleteLater);
 
     //pighandler <-> tdc
-    connect(pigHandler, &PigpiodHandler::spiData, tdc7200, &TDC7200::onDataReceived);
+/*
+	connect(pigHandler, &PigpiodHandler::spiData, tdc7200, &TDC7200::onDataReceived);
     connect(pigHandler, &PigpiodHandler::signal, tdc7200, &TDC7200::onDataAvailable);
     connect(tdc7200, &TDC7200::readData, pigHandler, &PigpiodHandler::readSpi);
     connect(tdc7200, &TDC7200::writeData, pigHandler, &PigpiodHandler::writeSpi);
@@ -709,16 +714,16 @@ void Daemon::connectToPigpiod(){
     });
     connect(pigThread, &QThread::started, tdc7200, &TDC7200::initialise);
     connect(pigThread, &QThread::finished, tdc7200, &TDC7200::deleteLater);
-
+*/
     //pigHandler <-> thread & daemon
     connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
     connect(pigThread, &QThread::finished, pigHandler, &PigpiodHandler::deleteLater);
-    connect(this, &Daemon::GpioSetOutput, pigHandler, &PigpiodHandler::setOutput);
-    connect(this, &Daemon::GpioSetInput, pigHandler, &PigpiodHandler::setInput);
-    connect(this, &Daemon::GpioSetPullUp, pigHandler, &PigpiodHandler::setPullUp);
-    connect(this, &Daemon::GpioSetPullDown, pigHandler, &PigpiodHandler::setPullDown);
-    connect(this, &Daemon::GpioSetState, pigHandler, &PigpiodHandler::setGpioState);
-    connect(this, &Daemon::GpioRegisterForCallback, pigHandler, &PigpiodHandler::registerForCallback);
+    connect(this, &Daemon::GpioSetOutput, pigHandler, &PigpiodHandler::setPinOutput);
+    connect(this, &Daemon::GpioSetInput, pigHandler, &PigpiodHandler::setPinInput);
+///    connect(this, &Daemon::GpioSetPullUp, pigHandler, &PigpiodHandler::setPullUp);
+///    connect(this, &Daemon::GpioSetPullDown, pigHandler, &PigpiodHandler::setPullDown);
+    connect(this, &Daemon::GpioSetState, pigHandler, &PigpiodHandler::setPinState);
+    connect(this, &Daemon::GpioRegisterForCallback, pigHandler, &PigpiodHandler::registerInterrupt);
     connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
     connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
     connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs)
@@ -790,16 +795,16 @@ void Daemon::connectToPigpiod(){
     emit GpioSetState(GPIO_PINMAP[STATUS1], 0);
     emit GpioSetState(GPIO_PINMAP[STATUS2], 0);
     emit GpioSetPullUp(GPIO_PINMAP[ADC_READY]);
-    emit GpioRegisterForCallback(GPIO_PINMAP[ADC_READY], 1);
+    emit GpioRegisterForCallback(GPIO_PINMAP[ADC_READY], PigpiodHandler::EventEdge::RisingEdge);
 
     if (HW_VERSION>1) {
-        emit GpioSetInput(GPIO_PINMAP[PREAMP_FAULT]);
-        emit GpioRegisterForCallback(GPIO_PINMAP[PREAMP_FAULT], 0);
+        //emit GpioSetInput(GPIO_PINMAP[PREAMP_FAULT]);
+        emit GpioRegisterForCallback(GPIO_PINMAP[PREAMP_FAULT], PigpiodHandler::EventEdge::FallingEdge);
         emit GpioSetPullUp(GPIO_PINMAP[PREAMP_FAULT]);
-        emit GpioSetInput(GPIO_PINMAP[TDC_INTB]);
-        emit GpioRegisterForCallback(GPIO_PINMAP[TDC_INTB], 0);
-        emit GpioSetInput(GPIO_PINMAP[TIME_MEAS_OUT]);
-        emit GpioRegisterForCallback(GPIO_PINMAP[TIME_MEAS_OUT], 0);
+        //emit GpioSetInput(GPIO_PINMAP[TDC_INTB]);
+        emit GpioRegisterForCallback(GPIO_PINMAP[TDC_INTB], PigpiodHandler::EventEdge::FallingEdge);
+        //emit GpioSetInput(GPIO_PINMAP[TIME_MEAS_OUT]);
+        emit GpioRegisterForCallback(GPIO_PINMAP[TIME_MEAS_OUT], PigpiodHandler::EventEdge::FallingEdge);
     }
     if (HW_VERSION>=3) {
         emit GpioSetOutput(GPIO_PINMAP[IN_POL1]);

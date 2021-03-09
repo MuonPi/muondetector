@@ -204,11 +204,11 @@ signals:
     void UBXSetMinMaxSVs(uint8_t minSVs, uint8_t maxSVs);
     void UBXSetMinCNO(uint8_t minCNO);
     void GpioSetInput(unsigned int gpio);
-    void GpioSetOutput(unsigned int gpio);
+    void GpioSetOutput(unsigned int gpio, bool initState = false);
     void GpioSetPullUp(unsigned int gpio);
     void GpioSetPullDown(unsigned int gpio);
     void GpioSetState(unsigned int gpio, bool state);
-    void GpioRegisterForCallback(unsigned int gpio, bool edge); // false=falling, true=rising
+    void GpioRegisterForCallback(unsigned int gpio, PigpiodHandler::EventEdge edge); // false=falling, true=rising
     void UBXSetCfgTP5(const UbxTimePulseStruct& tp);
     void UBXSetAopCfg(bool enable=true, uint16_t maxOrbErr=0);
     void UBXSaveCfg(uint8_t devMask=QtSerialUblox::DEV_BBR | QtSerialUblox::DEV_FLASH);

@@ -7,13 +7,18 @@
 #include <QElapsedTimer>
 #include <QTimer>
 
+#include <memory>
+#include <thread>
+#include <mutex>
 #include <gpio_mapping.h>
 #include <gpio_pin_definitions.h>
 
-extern "C" {
+//extern "C" {
 //#include <pigpiod_if2.h>
 #include <gpiod.h>
-}
+//}
+
+//#include <gpiod.hpp>
 
 #define XOR_RATE 0
 #define AND_RATE 1
@@ -25,16 +30,22 @@ class PigpiodHandler : public QObject
 {
 	Q_OBJECT
 public:
-    enum class PinBias : std::uint8_t {
-		OpenDrain = 0x01,
-		OpenSource = 0x02,
+	enum PinBias : std::uint8_t {
+		BiasDisabled = 0x00,
+		PullDown = 0x01,
+		PullUp = 0x02,
 		ActiveLow = 0x04,
-		PullDown = 0x10,
-		PullUp = 0x20
+		OpenDrain = 0x08,
+		OpenSource = 0x10
+	};
+	enum class EventEdge {
+		RisingEdge, FallingEdge, BothEdges
 	};
 	
-	explicit PigpiodHandler(std::vector<unsigned int> gpioPins = {}, QObject *parent = nullptr);
-    // can't make it private because of access of PigpiodHandler with global pointer
+	explicit PigpiodHandler(std::vector<unsigned int> gpioPins, QObject *parent = nullptr);
+    ~PigpiodHandler();
+	
+	// can't make it private because of access of PigpiodHandler with global pointer
     QDateTime startOfProgram, lastSamplingTime; // the exact time when the program starts (Utc)
     QElapsedTimer elapsedEventTimer;
 	GPIO_PIN samplingTriggerSignal=EVT_XOR;
@@ -53,25 +64,17 @@ signals:
 	void eventInterval(quint64 nsecs);
 	void timePulseDiff(qint32 usecs);
 
-    // spi related signals
-    void spiData(uint8_t reg, std::string data);
-
 public slots:
 	void stop();
     bool initialised();
-    bool setInput(unsigned int gpio);
-    bool setOutput(unsigned int gpio, bool initState = false);
-	void setPinBias(unsigned int gpio, );
-
-    void setPullUp(unsigned int gpio);
-    void setPullDown(unsigned int gpio);
-    void setGpioState(unsigned int gpio, bool state);
+    bool setPinInput(unsigned int gpio);
+    bool setPinOutput(unsigned int gpio, bool initState);
+	
+	bool setPinBias(unsigned int gpio, std::uint8_t pin_bias);
+    bool setPinState(unsigned int gpio, bool state);
     void setSamplingTriggerSignal(GPIO_PIN signalName) { samplingTriggerSignal=signalName; }
-    void registerForCallback(unsigned int gpio, bool edge); // false=falling, true=rising
-
-    // spi related slots
-    void writeSpi(uint8_t command, std::string data);
-    void readSpi(uint8_t command, unsigned int bytesToRead);
+    bool registerInterrupt(unsigned int gpio, EventEdge edge);
+    bool unRegisterInterrupt(unsigned int gpio);
 
 private:
     bool isInitialised = false;
@@ -93,12 +96,26 @@ private:
     QTimer gpioClockTimeMeasurementTimer;
 
 	void measureGpioClockTime();
+	void reloadInterruptSettings();
+	void threadLoop();
+	
 	bool inhibit=false;
 	int verbose=0;
-	std::shared_ptr<gpiod_chip> fChip { nullptr };
-	std::shared_ptr<gpiod_line_bulk> fInterruptInputLines { nullptr };
-	std::map<unsigned int, std::shared_ptr<gpiod_line>> fLineMap;
-	
+	gpiod_chip* fChip { nullptr };
+//	std::shared_ptr<struct gpiod_chip> fChip { nullptr };
+	std::map<unsigned int, gpiod_line*> fInterruptLineMap { };
+//	std::map<unsigned int, std::shared_ptr<gpiod_line>> fInterruptLineMap { };
+	gpiod_line_bulk fInterruptLineBulk;
+	std::map<unsigned int, gpiod_line*> fLineMap { };
+//	std::map<unsigned int, std::shared_ptr<gpiod_line>> fLineMap { };
+	bool fThreadRunning { false };
+	std::unique_ptr<std::thread> fThread { nullptr };
+	std::mutex fMutex;
+/*	
+	gpiod::chip fChip;
+	gpiod::line_bulk fInterruptLineBulk;
+	std::map<unsigned int, gpiod::line> fLineMap;
+*/
 //	QVector<unsigned int> gpioPins;
 };
 

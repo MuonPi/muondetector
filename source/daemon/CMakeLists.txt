@@ -41,8 +41,8 @@ find_library(PAHO_MQTTPP3 paho-mqttpp3 REQUIRED)
 
 find_library(CRYPTOPP crypto++ REQUIRED)
 find_library(CONFIGPP config++ REQUIRED)
-find_library(PIGPIOD_IF2 pigpiod_if2 REQUIRED)
 find_library(LIBGPIOD gpiod REQUIRED)
+#find_library(PIGPIOD_IF2 pigpiod_if2 REQUIRED)
 find_library(RT rt REQUIRED)
 
 endif()
@@ -186,11 +186,12 @@ target_link_directories(muondetector-daemon PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/
 target_link_libraries(muondetector-daemon
     Qt5::Network Qt5::SerialPort
     crypto++
-    pigpiod_if2
+    gpiod
+#    pigpiod_if2
     rt
     config++
     paho-mqtt3c paho-mqtt3a paho-mqtt3cs paho-mqtt3as paho-mqttpp3
-    muondetector
+    muondetector pthread
     )
 
 
