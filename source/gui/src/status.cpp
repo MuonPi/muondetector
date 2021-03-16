@@ -49,7 +49,7 @@ Status::Status(QWidget *parent) :
     fInputSwitchButtonGroup->addButton(statusUi->InputSelectRadioButton5,5);
     fInputSwitchButtonGroup->addButton(statusUi->InputSelectRadioButton6,6);
     fInputSwitchButtonGroup->addButton(statusUi->InputSelectRadioButton7,7);
-    connect(fInputSwitchButtonGroup, &QButtonGroup::idClicked, [=](int id){ emit inputSwitchChanged(id); });
+    connect(fInputSwitchButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), [=](int id){ emit inputSwitchChanged(id); });
 
     foreach (GpioSignalDescriptor item, GPIO_SIGNAL_MAP) {
         if (item.direction==DIR_IN) statusUi->triggerSelectionComboBox->addItem(item.name);
