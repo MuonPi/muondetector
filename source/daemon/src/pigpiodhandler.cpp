@@ -273,9 +273,11 @@ void PigpiodHandler::threadLoop() {
 					unsigned int gpio = gpiod_line_offset( event_bulk.lines[line_index] );
 					std::uint64_t ns = event.ts.tv_sec*1e9 + event.ts.tv_nsec;
 					emit signal(gpio);
-					qDebug()<<"line event: gpio"<<gpio<<" edge: "
-					<<QString((event.event_type==GPIOD_LINE_EVENT_RISING_EDGE)?"rising":"falling")
-					<<" ts="<<ns;
+					if ( verbose > 2 ) {
+						qDebug()<<"line event: gpio"<<gpio<<" edge: "
+						<<QString((event.event_type==GPIOD_LINE_EVENT_RISING_EDGE)?"rising":"falling")
+						<<" ts="<<ns;
+					}
 				}
 				line_index++;
 			}
