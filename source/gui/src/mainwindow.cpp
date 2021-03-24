@@ -230,6 +230,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ScanForm *scanTab = new ScanForm(this);
     connect(this, &MainWindow::setUiEnabledStates, scanTab, &ScanForm::onUiEnabledStateChange);
     connect(this, &MainWindow::timeMarkReceived, scanTab, &ScanForm::onTimeMarkReceived);
+    connect(this, &MainWindow::dacReadbackReceived, scanTab, &ScanForm::onDacReadbackReceived);
     connect(scanTab, &ScanForm::setThresholdVoltage, this, &MainWindow::sendSetThresh);
     connect(scanTab, &ScanForm::setBiasControlVoltage, this, &MainWindow::sendSetBiasVoltage);
     connect(scanTab, &ScanForm::gpioInhibitChanged, this, &MainWindow::gpioInhibit);
@@ -377,18 +378,18 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
     emit addUbxMsgRates(msgRateCfgs);
     return;
     }
-    if (msgID == TCP_MSG_KEY::MSG_THRESHOLD){
-    quint8 channel;
-    float threshold;
-    *(tcpMessage.dStream) >> channel >> threshold;
-    if (threshold > maxThreshVoltage){
-        sendSetThresh(channel,maxThreshVoltage);
-        return;
-    }
-        sliderValues[channel] = (int)(2000 * threshold);
-        updateUiProperties();
-        return;
-    }
+	if (msgID == TCP_MSG_KEY::MSG_THRESHOLD){
+		quint8 channel;
+		float threshold;
+		*(tcpMessage.dStream) >> channel >> threshold;
+		if (threshold > maxThreshVoltage){
+			sendSetThresh(channel,maxThreshVoltage);
+			return;
+		}
+		sliderValues[channel] = (int)(2000 * threshold);
+		updateUiProperties();
+		return;
+	}
     if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE){
         *(tcpMessage.dStream) >> biasDacVoltage;
         updateUiProperties();

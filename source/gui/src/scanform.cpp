@@ -41,6 +41,11 @@ ScanForm::~ScanForm()
     delete ui;
 }
 
+void ScanForm::onDacReadbackReceived(uint8_t channel, float value) {
+	if ( channel > 3 || active ) return;
+	fLastDacs[channel] = value;
+}
+
 void ScanForm::onTimeMarkReceived(const UbxTimeMarkStruct &tm)
 {
 	if (!tm.risingValid) {
@@ -142,6 +147,7 @@ void ScanForm::on_scanStartPushButton_clicked()
 
 void ScanForm::finishScan() {
 	ui->scanStartPushButton->setText(tr("Start Scan"));
+	if ( scanPar > 0 ) adjustScanPar( SP_NAMES[scanPar], fLastDacs[scanPar-1] );
 	active=false;
 	ui->scanProgressBar->reset();
 	emit gpioInhibitChanged(false);
