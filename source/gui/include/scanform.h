@@ -9,7 +9,7 @@
 #include <muondetector_structs.h>
 
 // list of possible scan parameters
-const static QVector<QString> SP_NAMES = { "VOID", "THR1", "THR2", "BIAS" };
+const static QVector<QString> SP_NAMES = { "VOID", "THR1", "THR2", "BIAS", "DAC4" };
 // list of possible observables
 const static QVector<QString> OP_NAMES = { "VOID", "UBXRATE" };
 
@@ -41,6 +41,7 @@ signals:
 public slots:
     void onTimeMarkReceived(const UbxTimeMarkStruct& tm);
 	void onUiEnabledStateChange(bool connected);
+	void onDacReadbackReceived(uint8_t channel, float value);
 
 private slots:
     void on_scanStartPushButton_clicked();
@@ -69,6 +70,7 @@ private:
 	
 	QMap<double, ScanPoint> scanData;
 	bool plotDifferential = false;
+	double fLastDacs[4] = { 0., 0., 0., 0. };
 };
 
 #endif // SCANFORM_H
