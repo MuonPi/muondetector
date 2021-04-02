@@ -765,6 +765,7 @@ void Daemon::connectToGps() {
     qtGps->moveToThread(gpsThread);
     // connect all signals about quitting
     connect(this, &Daemon::aboutToQuit, gpsThread, &QThread::quit);
+    connect(this, &Daemon::aboutToQuit, qtGps, &QtSerialUblox::closeAll);
     connect(gpsThread, &QThread::finished, gpsThread, &QThread::deleteLater);
     connect(gpsThread, &QThread::finished, qtGps, &QtSerialUblox::deleteLater);
     // connect all signals not coming from Daemon to gps

@@ -84,6 +84,9 @@ public slots:
     void UBXSetAopCfg(bool enable=true, uint16_t maxOrbErr=0);
     void UBXSaveCfg(uint8_t devMask=DEV_BBR | DEV_FLASH);
 
+    void closeAll();
+
+
     void ackTimeout();
     // outPortMask is something like 1 for only UBX protocol or 0b11 for UBX and NMEA
 
