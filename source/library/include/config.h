@@ -12,11 +12,12 @@ constexpr struct Version {
     int major;
     int minor;
     int patch;
+    const char* additional {""};
 
     [[nodiscard]] auto string() const -> std::string;
 }
-    hardware { 3, 0, 0 },
-    software { CMake::Version::major, CMake::Version::minor, CMake::Version::patch };
+    hardware { 3, 0, 0},
+    software { CMake::Version::major, CMake::Version::minor, CMake::Version::patch , CMake::Version::additional };
 }
 
 namespace MuonPi::Config {
