@@ -44,6 +44,10 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget *parent) :
         {
             emit biasEnableChanged(checked);
         } );
+    connect(ui->hiGainCheckBox, &QCheckBox::clicked, this, [this](bool checked)
+        {
+            emit gainSwitchChanged(checked);
+        } );
     connect(ui->pol1CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked);
     connect(ui->pol2CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked);
 

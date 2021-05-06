@@ -32,6 +32,7 @@ signals:
     void polarityChanged(bool pol1, bool pol2);
 	void timingSelectionChanged(uint8_t sel);
 	void triggerSelectionChanged(GPIO_PIN signal);
+	void gainSwitchChanged(bool state);
 
 public slots:
     void onCalibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct> &calibList);
