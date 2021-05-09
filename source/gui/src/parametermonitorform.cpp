@@ -32,24 +32,12 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget *parent) :
         {
             emit adcModeChanged((checked)?ADC_MODE_TRACE:ADC_MODE_PEAK);
         } );
-    connect(ui->preamp1EnCheckBox, &QCheckBox::clicked, this, [this](bool checked)
-        {
-            emit preamp1EnableChanged(checked);
-        } );
-    connect(ui->preamp2EnCheckBox, &QCheckBox::clicked, this, [this](bool checked)
-        {
-            emit preamp2EnableChanged(checked);
-        } );
-    connect(ui->biasEnCheckBox, &QCheckBox::clicked, this, [this](bool checked)
-        {
-            emit biasEnableChanged(checked);
-        } );
-    connect(ui->hiGainCheckBox, &QCheckBox::clicked, this, [this](bool checked)
-        {
-            emit gainSwitchChanged(checked);
-        } );
-    connect(ui->pol1CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked);
-    connect(ui->pol2CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked);
+    connect( ui->preamp1EnCheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::preamp1EnableChanged );
+    connect( ui->preamp2EnCheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::preamp2EnableChanged );
+    connect( ui->biasEnCheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::biasEnableChanged );
+    connect( ui->hiGainCheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::gainSwitchChanged );
+	connect( ui->pol1CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked );
+    connect( ui->pol2CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked );
 
     ui->adcTracePlot->setMinimumHeight(30);
 }
