@@ -6,7 +6,7 @@ if(NOT WIN32) # added to make program editable in qt-creator on windows
 
 find_library(CRYPTOPP crypto++ REQUIRED)
 find_library(CONFIGPP config++ REQUIRED)
-if ((${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l"))
+if (${MUONDETECTOR_ON_RASPBERRY})
 find_library(PIGPIOD_IF2 pigpiod_if2 REQUIRED)
 endif ()
 find_library(RT rt REQUIRED)

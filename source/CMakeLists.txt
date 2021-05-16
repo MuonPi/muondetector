@@ -6,10 +6,12 @@ string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.cmake")
 
 option(MUONDETECTOR_BUILD_GUI "Build the gui for the muondetector" ON)
-option(MUONDETECTOR_BUILD_DAEMON "Build the daemon for the muondetector" OFF)
+option(MUONDETECTOR_BUILD_DAEMON "Build the daemon for the muondetector. Defaults to ON on armv7l architecture" OFF)
+set(MUONDETECTOR_ON_RASPBERRYPI OFF)
 
 if ((${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l"))
     set(MUONDETECTOR_BUILD_DAEMON ON)
+    set(MUONDETECTOR_ON_RASPBERRYPI ON)
 endif ()
 
 set(MUONDETECTOR_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
