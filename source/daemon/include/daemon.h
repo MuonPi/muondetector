@@ -171,7 +171,8 @@ public slots:
     void onGpsMonHW2Updated(const GnssMonHw2Struct& hw2);
     void receivedTcpMessage(TcpMessage tcpMessage);
     void pollAllUbxMsgRate();
-    void sendGpioPinEvent(uint8_t gpio_pin);
+    void onGpioPinEvent(uint8_t gpio);
+    void sendGpioPinEvent(GPIO_PIN gpio_pin);
     void onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos);
     void UBXReceivedVersion(const QString& swString, const QString& hwString, const QString& protString);
     void sampleAdc0Event();
@@ -212,7 +213,7 @@ signals:
     void UBXSetCfgTP5(const UbxTimePulseStruct& tp);
     void UBXSetAopCfg(bool enable=true, uint16_t maxOrbErr=0);
     void UBXSaveCfg(uint8_t devMask=QtSerialUblox::DEV_BBR | QtSerialUblox::DEV_FLASH);
-    void setSamplingTriggerSignal(GPIO_PIN signalName);
+    void setSamplingTriggerSignal(unsigned int gpio);
     void timeMarkIntervalCountUpdate(uint16_t newCounts, double lastInterval);
     void requestMqttConnectionStatus();
 	void eventMessage(const QString& messageString);

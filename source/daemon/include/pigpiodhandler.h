@@ -38,14 +38,16 @@ public:
 		RisingEdge, FallingEdge, BothEdges
 	};
 	
-//	PigpiodHandler( QObject *parent );
+	static constexpr unsigned int UNDEFINED_GPIO { 256 };
+	
 	explicit PigpiodHandler(std::vector<unsigned int> gpioPins, QObject *parent = nullptr);
 	~PigpiodHandler();
 	
 	// can't make it private because of access of PigpiodHandler with global pointer
 	QDateTime startOfProgram, lastSamplingTime; // the exact time when the program starts (Utc)
 	QElapsedTimer elapsedEventTimer;
-	GPIO_PIN samplingTriggerSignal=EVT_XOR;
+//	GPIO_PIN samplingTriggerSignal=EVT_XOR;
+	unsigned int samplingTriggerSignal { UNDEFINED_GPIO };
 
 	double clockMeasurementSlope=0.;
 	double clockMeasurementOffset=0.;
@@ -53,7 +55,6 @@ public:
 	quint64 lastTimeMeasurementTick=0;
 	
 	bool isInhibited() const { return inhibit; }
-	void setInhibited(bool inh=true) { inhibit=inh; }
 	
 signals:
     void signal(uint8_t gpio_pin);
@@ -70,9 +71,11 @@ public slots:
 	
 	bool setPinBias(unsigned int gpio, std::uint8_t pin_bias);
     bool setPinState(unsigned int gpio, bool state);
-    void setSamplingTriggerSignal(GPIO_PIN signalName) { samplingTriggerSignal=signalName; }
+    void setSamplingTriggerSignal(unsigned int gpio);
+//    void setSamplingTriggerSignal(GPIO_PIN signalName) { samplingTriggerSignal=signalName; }
     bool registerInterrupt(unsigned int gpio, EventEdge edge);
     bool unRegisterInterrupt(unsigned int gpio);
+	void setInhibited(bool inh=true) { inhibit=inh; }
 
 private:
     bool isInitialised = false;

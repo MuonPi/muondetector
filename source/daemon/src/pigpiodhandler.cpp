@@ -16,6 +16,7 @@ static int spiHandle = -1;
 static QPointer<PigpiodHandler> pigHandlerAddress; // QPointer automatically clears itself if pigHandler object is destroyed
 
 constexpr char CONSUMER[] = "muonpi";
+const std::string chipname { "/dev/gpiochip0" };
 
 template <typename T>
 inline static T sqr(T x) { return x*x; }
@@ -80,12 +81,10 @@ void calcLinearCoefficients(int n, quint64 *xarray, qint64 *yarray,
 }
 
 
-
-
-
 /* This is the central interrupt routine for all registered GPIO pins
  *
  */
+/*
 static void cbFunction(int user_pi, unsigned int user_gpio,
     unsigned int level, uint32_t tick) {
     //qDebug() << "callback user_pi: " << user_pi << " user_gpio: " << user_gpio << " level: "<< level << " pigHandlerAddressNull: " << pigHandlerAddress.isNull() ;
@@ -126,18 +125,17 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
         });
         if (it==GPIO_PINMAP.end()) return;
 
-/*
-        if (user_gpio == GPIO_PINMAP[ADC_READY]) {
-//			std::cout<<"ADC conv ready"<<std::endl;
-            return;
-        }
-*/
-        QDateTime now = QDateTime::currentDateTimeUtc();
-        //qDebug()<<"gpio evt: gpio="<<user_gpio<<"  GPIO_PINMAP[EVT_XOR]="<<GPIO_PINMAP[EVT_XOR];
-//        if (user_gpio == GPIO_PINMAP[EVT_AND] || user_gpio == GPIO_PINMAP[EVT_XOR]){
+// 		if (user_gpio == GPIO_PINMAP[ADC_READY]) {
+// 			//std::cout<<"ADC conv ready"<<std::endl;
+// 			return;
+//         }
+
+		QDateTime now = QDateTime::currentDateTimeUtc();
+//		qDebug()<<"gpio evt: gpio="<<user_gpio<<"  GPIO_PINMAP[EVT_XOR]="<<GPIO_PINMAP[EVT_XOR];
+//		if (user_gpio == GPIO_PINMAP[EVT_AND] || user_gpio == GPIO_PINMAP[EVT_XOR]){
 
         if (user_gpio == GPIO_PINMAP[pigpioHandler->samplingTriggerSignal]){
-            if (pigpioHandler->lastSamplingTime.msecsTo(now) >= MuonPi::Config::Hardware::ADC::deadtime/*ADC_SAMPLE_DEADTIME_MS*/) {
+            if (pigpioHandler->lastSamplingTime.msecsTo(now) >= MuonPi::Config::Hardware::ADC::deadtime) {
                 emit pigpioHandler->samplingTrigger();
                 pigpioHandler->lastSamplingTime = now;
             }
@@ -174,12 +172,10 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
                 qint32 t_diff_us = (double)(ppsOffs)*1e6;
                 emit pigpioHandler->timePulseDiff(t_diff_us);
             }
-            /*
-            qint32 t_diff_us=ts.tv_nsec/1000;
-            if (t_diff_us>500000L) t_diff_us=t_diff_us-1000000L;
-            */
+//             qint32 t_diff_us=ts.tv_nsec/1000;
+//             if (t_diff_us>500000L) t_diff_us=t_diff_us-1000000L;
         }
-        if (tick-lastXorAndTick > MuonPi::Config::event_count_deadtime_ticks/*EVENT_COUNT_DEADTIME_TICKS*/) {
+        if (tick-lastXorAndTick > MuonPi::Config::event_count_deadtime_ticks) {
             lastXorAndTick = tick;
             emit pigpioHandler->signal(user_gpio);
         }
@@ -194,14 +190,6 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
         qCritical() << "with user_pi="<<user_pi<<"user_gpio="<<user_gpio<<"level="<<level<<"tick="<<tick;
     }
 }
-
-
-/*
-PigpiodHandler::PigpiodHandler(QObject *parent)
-	: QObject(parent)
-{
-
-}
 */
 
 PigpiodHandler::PigpiodHandler(std::vector<unsigned int> gpioPins, QObject *parent)
@@ -212,7 +200,7 @@ PigpiodHandler::PigpiodHandler(std::vector<unsigned int> gpioPins, QObject *pare
 	elapsedEventTimer.start();
 	pigHandlerAddress = this;
 
-	std::string chipname { "/dev/gpiochip0" };
+//	std::string chipname { "/dev/gpiochip0" };
 
 	fChip = gpiod_chip_open(chipname.c_str());
 	if ( fChip == nullptr ) {
@@ -233,8 +221,9 @@ PigpiodHandler::PigpiodHandler(std::vector<unsigned int> gpioPins, QObject *pare
 		int ret = gpiod_line_request_rising_edge_events_flags( line, CONSUMER, flags);
 		if ( ret < 0 ) {
 			qCritical()<<"Request for registering gpio line"<<gpioPin<<"for event notification failed";
-			throw std::exception();
-			return;
+			//throw std::exception();
+			continue;
+			//return;
 		}
 		fInterruptLineMap.emplace( std::make_pair( gpioPin, line) );
 	}
@@ -261,6 +250,10 @@ PigpiodHandler::~PigpiodHandler() {
 
 void PigpiodHandler::threadLoop() {
 	while (fThreadRunning) {
+		if ( inhibit ) { 
+			std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+			continue;
+		}
 		const struct timespec timeout { 0, 100000000UL };
 		gpiod_line_bulk event_bulk { };
 		int ret = gpiod_line_event_wait_bulk(&fInterruptLineBulk, &timeout, &event_bulk);
@@ -288,10 +281,8 @@ void PigpiodHandler::threadLoop() {
 			// an error occured
 			// what should we do here?
 		}
-		//std::this_thread::sleep_for(loop_delay);
 	}
 }
-
 
 bool PigpiodHandler::setPinInput(unsigned int gpio) {
 	if (!isInitialised) return false;
@@ -406,6 +397,27 @@ bool PigpiodHandler::setPinState(unsigned int gpio, bool state) {
 	}
 	// line was not allocated yet, so do it now
 	return setPinOutput( gpio, state );
+}
+
+void PigpiodHandler::setSamplingTriggerSignal(unsigned int gpio)
+{ 
+	// The following code is intentionally commented out
+	// since we don't want to unregister a gpio interrupt after changing the samplingTrigger to another line.
+	// The reason is, that several interrupt functions can occupy one gpio line. When unregistering the samplingTrigger,
+	// the pin would cease to funtion as interrupt source for the alternative function. Example: XOR is an interrupt input
+	// and can also be selected as sampling Trigger by the user for a time.
+	
+	if ( gpio == UNDEFINED_GPIO ) {
+		unRegisterInterrupt( samplingTriggerSignal );
+	}
+	
+	samplingTriggerSignal=gpio;
+	// search through the interrupt lines whether the line is already selected as interrupt source
+	auto it = fInterruptLineMap.find(gpio);
+	// if not, register it
+	if (it == fInterruptLineMap.end()) {
+		registerInterrupt( gpio, EventEdge::RisingEdge );
+	}
 }
 
 void PigpiodHandler::reloadInterruptSettings()

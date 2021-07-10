@@ -205,7 +205,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
     qRegisterMetaType<UbxTimeMarkStruct>("UbxTimeMarkStruct");
     qRegisterMetaType<I2cDeviceEntry>("I2cDeviceEntry");
-
+	qRegisterMetaType<PigpiodHandler::EventEdge>("PigpiodHandler::EventEdge");
     // signal handling
     setup_unix_signal_handlers();
     if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)) {
@@ -560,7 +560,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     preampStatus[1]=preamp2;
     gainSwitch=gain;
     biasON = bias_ON;
-    eventTrigger = (GPIO_PIN)new_eventTrigger;
+//    eventTrigger = (GPIO_PIN)new_eventTrigger;
+    eventTrigger = UNDEFINED_PIN;
     polarity1=new_polarity1;
     polarity2=new_polarity2;
 
@@ -724,7 +725,7 @@ void Daemon::connectToPigpiod(){
 ///    connect(this, &Daemon::GpioSetPullDown, pigHandler, &PigpiodHandler::setPullDown);
     connect(this, &Daemon::GpioSetState, pigHandler, &PigpiodHandler::setPinState);
     connect(this, &Daemon::GpioRegisterForCallback, pigHandler, &PigpiodHandler::registerInterrupt);
-    connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
+    connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::onGpioPinEvent);
     connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
     connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs)
     { 	if (histoMap.find("gpioEventInterval")!=histoMap.end()) {
@@ -745,7 +746,11 @@ void Daemon::connectToPigpiod(){
         }
         /*cout<<"TP time diff: "<<usecs<<" us"<<endl;*/
     } );
-    pigHandler->setSamplingTriggerSignal(eventTrigger);
+
+	auto it=GPIO_PINMAP.find(eventTrigger);
+    if (it != GPIO_PINMAP.end()) {
+		pigHandler->setSamplingTriggerSignal( GPIO_PINMAP[eventTrigger] );
+	}
     connect(this, &Daemon::setSamplingTriggerSignal, pigHandler, &PigpiodHandler::setSamplingTriggerSignal);
 
     struct timespec ts_res;
@@ -1455,17 +1460,21 @@ void Daemon::sendDacReadbackValue(uint8_t channel, float voltage) {
     emit sendTcpMessage(tcpMessage);
 }
 
-void Daemon::sendGpioPinEvent(uint8_t gpio_pin) {
-    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GPIO_EVENT);
-    //unsigned int gpio_function=0;
+void Daemon::onGpioPinEvent(uint8_t gpio) {
     // reverse lookup of gpio function from given pin (first occurence)
-    auto result=std::find_if(GPIO_PINMAP.begin(), GPIO_PINMAP.end(), [&gpio_pin](const std::pair<GPIO_PIN,unsigned int>& item)
-                    { return item.second==gpio_pin; }
+    auto result=std::find_if(GPIO_PINMAP.begin(), GPIO_PINMAP.end(), [&gpio](const std::pair<GPIO_PIN,unsigned int>& item)
+                    { return item.second==gpio; }
                     );
     if (result!=GPIO_PINMAP.end()) {
-        *(tcpMessage.dStream) << (GPIO_PIN)result->first;
-        emit sendTcpMessage(tcpMessage);
+        if ( gpio == pigHandler->samplingTriggerSignal ) emit sampleAdc0Event();
+		emit sendGpioPinEvent((GPIO_PIN)result->first);
     }
+}
+
+void Daemon::sendGpioPinEvent(GPIO_PIN gpio_pin) {
+	TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GPIO_EVENT);
+	*(tcpMessage.dStream) << gpio_pin;
+	emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::sendBiasVoltage(){
@@ -1507,8 +1516,8 @@ void Daemon::sendPcaChannel(){
 
 void Daemon::sendEventTriggerSelection(){
     if (pigHandler==nullptr) return;
-    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_EVENTTRIGGER);
-    *(tcpMessage.dStream) << (GPIO_PIN)pigHandler->samplingTriggerSignal;
+	TcpMessage tcpMessage(TCP_MSG_KEY::MSG_EVENTTRIGGER);
+	*(tcpMessage.dStream) << bcmToGpioSignal(pigHandler->samplingTriggerSignal);
     emit sendTcpMessage(tcpMessage);
 }
 
@@ -1697,13 +1706,17 @@ void Daemon::getTemperature(){
 void Daemon::setEventTriggerSelection(GPIO_PIN signal) {
     if (pigHandler==nullptr) return;
     auto it=GPIO_PINMAP.find(signal);
-    if (it==GPIO_PINMAP.end()) return;
+    if (it==GPIO_PINMAP.end()) {
+		emit setSamplingTriggerSignal( PigpiodHandler::UNDEFINED_GPIO );
+		return;
+	}
 
     if (verbose > 0){
         qInfo() << "changed event selection to signal " << (unsigned int)signal;
     }
-    emit setSamplingTriggerSignal(signal);
-    emit logParameter(LogParameter("gpioTriggerSelection", "0x"+QString::number((int)pigHandler->samplingTriggerSignal,16), LogParameter::LOG_EVERY));
+    //emit setSamplingTriggerSignal(signal);
+	emit setSamplingTriggerSignal( it->second );
+    emit logParameter(LogParameter("gpioTriggerSelection", "0x"+QString::number((int)signal,16), LogParameter::LOG_EVERY));
     //sendEventTriggerSelection();
 }
 
@@ -2468,7 +2481,7 @@ void Daemon::onLogParameterPolled(){
     }
 
     if (pca && pca->devicePresent()) emit logParameter(LogParameter("ubxInputSwitch", "0x"+QString::number(pcaPortMask,16), LogParameter::LOG_ON_CHANGE));
-    if (pigHandler!=nullptr) emit logParameter(LogParameter("gpioTriggerSelection", "0x"+QString::number((int)pigHandler->samplingTriggerSignal,16), LogParameter::LOG_ON_CHANGE));
+    if (pigHandler!=nullptr) emit logParameter(LogParameter("gpioTriggerSelection", "0x"+QString::number((int)bcmToGpioSignal(pigHandler->samplingTriggerSignal),16), LogParameter::LOG_ON_CHANGE));
     //logBiasValues();
     if (adc && !(adc->getStatus() & i2cDevice::MODE_UNREACHABLE)) {
 /*
