@@ -401,15 +401,10 @@ bool PigpiodHandler::setPinState(unsigned int gpio, bool state) {
 
 void PigpiodHandler::setSamplingTriggerSignal(unsigned int gpio)
 { 
-	// The following code is intentionally commented out
-	// since we don't want to unregister a gpio interrupt after changing the samplingTrigger to another line.
-	// The reason is, that several interrupt functions can occupy one gpio line. When unregistering the samplingTrigger,
-	// the pin would cease to funtion as interrupt source for the alternative function. Example: XOR is an interrupt input
-	// and can also be selected as sampling Trigger by the user for a time.
-	
-	if ( gpio == UNDEFINED_GPIO ) {
-		unRegisterInterrupt( samplingTriggerSignal );
-	}
+	// The following code registers the given gpio pin for interrupt, if not already done before. The previously setInterval
+	// samplingTrigger is NOT unregistered, since several interrupt functions can occupy one gpio line. 
+	// When unregistering the samplingTrigger, the pin would cease to funtion as interrupt source for the alternative function. 
+	// Example: XOR is an interrupt input and can also be selected as sampling trigger by the user for a time.
 	
 	samplingTriggerSignal=gpio;
 	// search through the interrupt lines whether the line is already selected as interrupt source

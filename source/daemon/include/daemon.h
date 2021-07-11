@@ -10,18 +10,19 @@
 #include <QVariant>
 #include <time.h>
 
-#include "tcpconnection.h"
-#include "custom_io_operators.h"
-#include "qtserialublox.h"
-#include "pigpiodhandler.h"
-#include "tdc7200.h"
-#include "filehandler.h"
-#include "mqtthandler.h"
-#include "i2c/i2cdevices.h"
-#include "calibration.h"
-#include "logparameter.h"
-#include "histogram.h"
-#include "logengine.h"
+#include <tcpconnection.h>
+#include <custom_io_operators.h>
+#include <qtserialublox.h>
+#include <pigpiodhandler.h>
+#include <tdc7200.h>
+#include <filehandler.h>
+#include <mqtthandler.h>
+#include <i2c/i2cdevices.h>
+#include <calibration.h>
+#include <logparameter.h>
+#include <histogram.h>
+#include <logengine.h>
+#include <ratebuffer.h>
 
 // for sig handling:
 #include <sys/types.h>
@@ -30,6 +31,7 @@
 
 struct CalibStruct;
 struct UbxTimeMarkStruct;
+
 enum GPIO_PIN;
 
 class Property {
@@ -306,7 +308,10 @@ private:
     // mqtt
     QPointer<MuonPi::MqttHandler> mqttHandler;
 
-    // signal handling
+	// rate buffer
+	RateBuffer rateBuffer;
+	
+	// signal handling
     static int sighupFd[2];
     static int sigtermFd[2];
     static int sigintFd[2];

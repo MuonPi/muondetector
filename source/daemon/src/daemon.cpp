@@ -14,8 +14,9 @@
 #include <iostream>
 #include <muondetector_structs.h>
 #include <config.h>
-#include <logengine.h>
+//#include <logengine.h>
 #include <geohash.h>
+//#include <ratebuffer.h>
 #include <sys/sysinfo.h>
 #include <unistd.h>
 #include <sys/syscall.h>
@@ -308,7 +309,6 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
             cout<<endl;
         }
     }
-
 
     mqttHandlerThread = new QThread();
     mqttHandlerThread->setObjectName("muondetector-daemon-mqtt");
@@ -627,7 +627,11 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     // connect to the pigpio daemon interface for gpio control
     connectToPigpiod();
 
-    // set up histograms
+	// set up the rate buffer for all GPIO signals
+	rateBuffer.clear();
+	connect(pigHandler, &PigpiodHandler::signal, &rateBuffer, &RateBuffer::onSignal);
+
+	// set up histograms
     setupHistos();
 
     // establish ublox gnss module connection
@@ -2554,6 +2558,20 @@ void Daemon::onLogParameterPolled(){
         emit logParameter(LogParameter("systemFreeSwap", QString::number(1e-6*info.freeswap/info.mem_unit)+" Mb", LogParameter::LOG_AVERAGE));
         emit logParameter(LogParameter("systemLoadAvg", QString::number(info.loads[0]*f_load)+" ", LogParameter::LOG_AVERAGE));
     }
+    
+    // rate buffer debug output
+    if ( verbose > 2 ) {
+        qDebug() << "GPIO Rate Summary:";
+		for (auto signalIt=GPIO_PINMAP.begin(); signalIt!=GPIO_PINMAP.end(); signalIt++) {
+            const GPIO_PIN signalId=signalIt->first;
+            if (GPIO_SIGNAL_MAP[signalId].direction == DIR_IN )  {
+				qDebug()<<GPIO_SIGNAL_MAP[signalId].name
+						<<signalIt->second
+						<<rateBuffer.avgRate( signalIt->second )<<"Hz";
+			}
+        }
+	}
+    
 //		updateOledDisplay();
 }
 
