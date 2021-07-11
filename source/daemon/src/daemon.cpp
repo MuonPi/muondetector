@@ -630,6 +630,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	// set up the rate buffer for all GPIO signals
 	rateBuffer.clear();
 	connect(pigHandler, &PigpiodHandler::signal, &rateBuffer, &RateBuffer::onSignal);
+	connect(&rateBuffer, &RateBuffer::throttledSignal, this, &Daemon::sendGpioPinEvent);
+	connect(&rateBuffer, &RateBuffer::throttledSignal, this, &Daemon::onGpioPinEvent);
 
 	// set up histograms
     setupHistos();
@@ -729,8 +731,8 @@ void Daemon::connectToPigpiod(){
 ///    connect(this, &Daemon::GpioSetPullDown, pigHandler, &PigpiodHandler::setPullDown);
     connect(this, &Daemon::GpioSetState, pigHandler, &PigpiodHandler::setPinState);
     connect(this, &Daemon::GpioRegisterForCallback, pigHandler, &PigpiodHandler::registerInterrupt);
-    connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::onGpioPinEvent);
-    connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
+//    connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::onGpioPinEvent);
+//    connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
     connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs)
     { 	if (histoMap.find("gpioEventInterval")!=histoMap.end()) {
             checkRescaleHisto(histoMap["gpioEventInterval"], 1e-6*nsecs);
@@ -771,6 +773,7 @@ void Daemon::connectToPigpiod(){
     timespec_get(&lastRateInterval, TIME_UTC);
     startOfProgram = lastRateInterval;
     connect(pigHandler, &PigpiodHandler::signal, this, [this](uint8_t gpio_pin){
+//    connect(&rateBuffer, &RateBuffer::throttledSignal, this, [this](uint8_t gpio_pin){
         rateCounterIntervalActualisation();
         if (gpio_pin==GPIO_PINMAP[EVT_XOR]){
             xorCounts.back()++;
@@ -1471,14 +1474,20 @@ void Daemon::onGpioPinEvent(uint8_t gpio) {
                     );
     if (result!=GPIO_PINMAP.end()) {
         if ( gpio == pigHandler->samplingTriggerSignal ) emit sampleAdc0Event();
-		emit sendGpioPinEvent((GPIO_PIN)result->first);
+		//emit sendGpioPinEvent((GPIO_PIN)result->first);
     }
 }
 
-void Daemon::sendGpioPinEvent(GPIO_PIN gpio_pin) {
-	TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GPIO_EVENT);
-	*(tcpMessage.dStream) << gpio_pin;
-	emit sendTcpMessage(tcpMessage);
+void Daemon::sendGpioPinEvent(uint8_t gpio) {
+    // reverse lookup of gpio function from given pin (first occurence)
+    auto result=std::find_if(GPIO_PINMAP.begin(), GPIO_PINMAP.end(), [&gpio](const std::pair<GPIO_PIN,unsigned int>& item)
+                    { return item.second==gpio; }
+                    );
+    if (result!=GPIO_PINMAP.end()) {
+		TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GPIO_EVENT);
+		*(tcpMessage.dStream) << (GPIO_PIN)result->first;
+		emit sendTcpMessage(tcpMessage);
+	}
 }
 
 void Daemon::sendBiasVoltage(){
@@ -2566,8 +2575,9 @@ void Daemon::onLogParameterPolled(){
             const GPIO_PIN signalId=signalIt->first;
             if (GPIO_SIGNAL_MAP[signalId].direction == DIR_IN )  {
 				qDebug()<<GPIO_SIGNAL_MAP[signalId].name
-						<<signalIt->second
-						<<rateBuffer.avgRate( signalIt->second )<<"Hz";
+						<<"pin:"<<signalIt->second
+						<<"rate:"<<rateBuffer.avgRate( signalIt->second )<<"Hz"
+						<<"deadtime"<<rateBuffer.currentDeadtime( signalIt->second ).count()<<"us";
 			}
         }
 	}

@@ -10,10 +10,11 @@
 #include <queue>
 #include <list>
 
-constexpr double MAX_AVG_RATE { 1000. };
+constexpr double MAX_AVG_RATE { 100. };
 constexpr unsigned long MAX_BURST_MULTIPLICITY { 10 };
 using namespace std::literals;
-constexpr std::chrono::microseconds MAX_BUFFER_TIME { 60 * 1s };
+constexpr std::chrono::microseconds MAX_BUFFER_TIME { 60s };
+constexpr std::chrono::microseconds MAX_DEADTIME { static_cast<unsigned long>(1e+6/MAX_AVG_RATE) };
 
 class RateBuffer : public QObject
 {
@@ -35,6 +36,8 @@ public:
 	void clear() { buffermap.clear(); }
 	
 	[[nodiscard]] auto avgRate(unsigned int gpio) const -> double;
+	[[nodiscard]] auto currentDeadtime(unsigned int gpio) const -> std::chrono::microseconds;
+	
 signals:
 	void throttledSignal(unsigned int gpio);
 	

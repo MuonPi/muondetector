@@ -174,7 +174,7 @@ public slots:
     void receivedTcpMessage(TcpMessage tcpMessage);
     void pollAllUbxMsgRate();
     void onGpioPinEvent(uint8_t gpio);
-    void sendGpioPinEvent(GPIO_PIN gpio_pin);
+    void sendGpioPinEvent(uint8_t gpio);
     void onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos);
     void UBXReceivedVersion(const QString& swString, const QString& hwString, const QString& protString);
     void sampleAdc0Event();
