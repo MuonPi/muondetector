@@ -219,6 +219,7 @@ signals:
     void timeMarkIntervalCountUpdate(uint16_t newCounts, double lastInterval);
     void requestMqttConnectionStatus();
 	void eventMessage(const QString& messageString);
+	void eventInterval(quint64 nsecs);
 
 private slots:
     void onRateBufferReminder();

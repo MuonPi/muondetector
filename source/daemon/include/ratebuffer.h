@@ -27,6 +27,7 @@ public:
 			eventbuffer { };
 		unsigned long multiplicity_countdown { MAX_BURST_MULTIPLICITY };
 		std::chrono::microseconds current_deadtime { 0 };
+		std::chrono::nanoseconds last_interval { 0 };
 	};
 
 	RateBuffer(QObject *parent = nullptr);
@@ -37,6 +38,7 @@ public:
 	
 	[[nodiscard]] auto avgRate(unsigned int gpio) const -> double;
 	[[nodiscard]] auto currentDeadtime(unsigned int gpio) const -> std::chrono::microseconds;
+	[[nodiscard]] auto lastInterval(unsigned int gpio) const -> std::chrono::nanoseconds;
 	
 signals:
 	void throttledSignal(unsigned int gpio);

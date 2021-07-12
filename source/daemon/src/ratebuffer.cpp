@@ -22,6 +22,7 @@ void RateBuffer::onSignal(unsigned int gpio) {
 	
 	if ( !buffermap[gpio].eventbuffer.empty() ) {
 		auto last_event_time = buffermap[gpio].eventbuffer.back();
+		buffermap[gpio].last_interval = std::chrono::duration_cast<std::chrono::nanoseconds>( now - last_event_time );
 		if ( now - last_event_time < MAX_DEADTIME ) {
 //			std::cout << "now-last:"<<(now-last_event_time)/1us<<" dt="<<buffermap[gpio].current_deadtime.count()<<std::endl;
 			if ( buffermap[gpio].current_deadtime < MAX_DEADTIME ) buffermap[gpio].current_deadtime++;
@@ -59,3 +60,11 @@ auto RateBuffer::currentDeadtime(unsigned int gpio) const -> std::chrono::micros
 	if (  it == buffermap.end() ) return std::chrono::microseconds(0);
 	return it->second.current_deadtime;
 }
+
+auto RateBuffer::lastInterval(unsigned int gpio) const -> std::chrono::nanoseconds
+{
+	auto it = buffermap.find(gpio);
+	if ( it == buffermap.end() || it->second.eventbuffer.size() < 2 ) return std::chrono::nanoseconds(0);
+	return it->second.last_interval;
+}
+
