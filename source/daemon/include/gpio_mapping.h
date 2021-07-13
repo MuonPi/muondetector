@@ -13,7 +13,7 @@
 // TO MAKE IT MORE SIMPLE THERE WILL BE ONLY PIGPIO NAMING STANDARD,
 // NO WIRING PI FROM NOW
 
-static const std::map<GPIO_PIN, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER+1] = {
+static const std::map<GPIO_SIGNAL, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER+1] = {
 		{
 			/* Pin mapping, HW Version 0, proxy to be never used nor initializing something */
 		} ,
@@ -30,9 +30,9 @@ static const std::map<GPIO_PIN, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER+1]
             { STATUS1 , 13 },
             { STATUS2 , 19 },
             { STATUS3 , 26 },
-            { TDC_INTB, 20 },
-            { TDC_STATUS, 21 },
-			{ EXT_TRIGGER, 21 }
+            { TDC_INTB, 24 },
+            { TDC_STATUS, 25 },
+			{ EXT_TRIGGER, 16 }
 		} ,
 		{
 			/* Pin mapping, HW Version 2 */
@@ -75,10 +75,10 @@ static const std::map<GPIO_PIN, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER+1]
 	};
 
 
-extern std::map<GPIO_PIN, unsigned int> GPIO_PINMAP;
+extern std::map<GPIO_SIGNAL, unsigned int> GPIO_PINMAP;
 
-inline GPIO_PIN bcmToGpioSignal(unsigned int bcmGpioNumber) {
-	std::map<GPIO_PIN, unsigned int>::const_iterator i = GPIO_PINMAP.cbegin();
+inline GPIO_SIGNAL bcmToGpioSignal(unsigned int bcmGpioNumber) {
+	std::map<GPIO_SIGNAL, unsigned int>::const_iterator i = GPIO_PINMAP.cbegin();
 	while (i != GPIO_PINMAP.cend() && i->second!=bcmGpioNumber)	++i;
 	if (i==GPIO_PINMAP.cend()) return UNDEFINED_PIN;
 	return i->first;

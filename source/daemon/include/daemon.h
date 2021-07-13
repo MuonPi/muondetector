@@ -32,7 +32,7 @@
 struct CalibStruct;
 struct UbxTimeMarkStruct;
 
-enum GPIO_PIN;
+enum GPIO_SIGNAL;
 
 class Property {
 public:
@@ -97,7 +97,7 @@ private:
 
 struct RateScanInfo {
     uint8_t origPcaMask=0;
-    GPIO_PIN origEventTrigger=GPIO_PIN::UNDEFINED_PIN;
+    GPIO_SIGNAL origEventTrigger=GPIO_SIGNAL::UNDEFINED_PIN;
     uint16_t lastEvtCounter=0;
     uint8_t thrChannel=0;
     float origThr=3.3;
@@ -112,7 +112,7 @@ struct RateScanInfo {
 struct RateScan {
 //	void addScanPoint(double scanpar, double a_rate) { scanMap[scanpar].append(a_rate); }
     uint8_t origPcaMask=0;
-    GPIO_PIN origEventTrigger=GPIO_PIN::UNDEFINED_PIN;
+    GPIO_SIGNAL origEventTrigger=GPIO_SIGNAL::UNDEFINED_PIN;
     float origScanPar=3.3;
     double minScanPar=0.;
     double maxScanPar=1.;
@@ -232,7 +232,7 @@ private:
     void incomingConnection(qintptr socketDescriptor) override;
     void setPcaChannel(uint8_t channel); // channel 0 to 3
                                              // 0: coincidence ; 1: xor ; 2: discr 1 ; 3: discr 2
-    void setEventTriggerSelection(GPIO_PIN signal);
+    void setEventTriggerSelection(GPIO_SIGNAL signal);
     void sendPcaChannel();
     void sendEventTriggerSelection();
     void setDacThresh(uint8_t channel, float threshold); // channel 0 or 1 ; threshold in volts
@@ -279,7 +279,7 @@ private:
     Adafruit_SSD1306* oled = nullptr;
     float biasVoltage = 0.;
     bool biasON = false;
-    GPIO_PIN eventTrigger;
+    GPIO_SIGNAL eventTrigger;
     bool gainSwitch = false;
     bool preampStatus[2];
     uint8_t pcaPortMask = 0;

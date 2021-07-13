@@ -1,5 +1,5 @@
-#ifndef GPIO_PIN_DEFINITIONS_H
-#define GPIO_PIN_DEFINITIONS_H
+#ifndef GPIO_SIGNAL_DEFINITIONS_H
+#define GPIO_SIGNAL_DEFINITIONS_H
 
 #include "muondetector_shared_global.h"
 
@@ -16,7 +16,7 @@
 // of the RPi GPIO header. To be independent of the specific hardware implementation,
 // the pin numbers for these signals are defined in gpio_pin_mapping.h on the daemon side
 
-enum GPIO_PIN {		UBIAS_EN, 
+enum GPIO_SIGNAL {		UBIAS_EN, 
 					PREAMP_1, PREAMP_2, 
 					EVT_AND, EVT_XOR, 
 					GAIN_HL, ADC_READY, 
@@ -39,7 +39,7 @@ struct GpioSignalDescriptor {
 //	SIGNAL_POLARITY polarity;
 };
 
-static const QMap<GPIO_PIN, GpioSignalDescriptor> GPIO_SIGNAL_MAP =
+static const QMap<GPIO_SIGNAL, GpioSignalDescriptor> GPIO_SIGNAL_MAP =
 	{	{ UBIAS_EN,			{ "UBIAS_EN", DIR_OUT } },
 		{ PREAMP_1,			{ "PREAMP_1", DIR_OUT } },
 		{ PREAMP_2,			{ "PREAMP_2", DIR_OUT } },
@@ -77,4 +77,4 @@ enum class TIMING_MUX_SELECTION : uint8_t {
 	UNDEFINED = 255
 };
 	
-#endif // GPIO_PIN_DEFINITIONS_H
+#endif // GPIO_SIGNAL_DEFINITIONS_H

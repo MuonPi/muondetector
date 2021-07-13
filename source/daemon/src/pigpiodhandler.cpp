@@ -117,9 +117,9 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
 
     try{
         // allow only registered signals to be processed here
-        // if gpio pin fired which is not in GPIO_PIN list, return immediately
+        // if gpio pin fired which is not in GPIO_SIGNAL list, return immediately
         auto it=std::find_if(GPIO_PINMAP.cbegin(), GPIO_PINMAP.cend(),
-        [&user_gpio](const std::pair<GPIO_PIN, unsigned int>& val) {
+        [&user_gpio](const std::pair<GPIO_SIGNAL, unsigned int>& val) {
             if (val.second==user_gpio) return true;
             return false;
         });

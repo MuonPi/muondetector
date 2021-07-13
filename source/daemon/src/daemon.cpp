@@ -201,7 +201,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
     qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
     qRegisterMetaType<timespec>("timespec");
-    qRegisterMetaType<GPIO_PIN>("GPIO_PIN");
+    qRegisterMetaType<GPIO_SIGNAL>("GPIO_SIGNAL");
     qRegisterMetaType<GnssMonHwStruct>("GnssMonHwStruct");
     qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
     qRegisterMetaType<UbxTimeMarkStruct>("UbxTimeMarkStruct");
@@ -295,7 +295,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
         cout<<"GPIO pin mapping:"<<endl;
 
         for (auto signalIt=GPIO_PINMAP.begin(); signalIt!=GPIO_PINMAP.end(); signalIt++) {
-            const GPIO_PIN signalId=signalIt->first;
+            const GPIO_SIGNAL signalId=signalIt->first;
             cout<<GPIO_SIGNAL_MAP[signalId].name<<"   \t: "<<signalIt->second;
             switch (GPIO_SIGNAL_MAP[signalId].direction) {
                 case DIR_IN: cout<<" (in)";
@@ -560,7 +560,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     preampStatus[1]=preamp2;
     gainSwitch=gain;
     biasON = bias_ON;
-//    eventTrigger = (GPIO_PIN)new_eventTrigger;
+//    eventTrigger = (GPIO_SIGNAL)new_eventTrigger;
     eventTrigger = UNDEFINED_PIN;
     polarity1=new_polarity1;
     polarity2=new_polarity2;
@@ -1197,7 +1197,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage) {
     if (msgID == TCP_MSG_KEY::MSG_EVENTTRIGGER){
         unsigned int signal;
         *(tcpMessage.dStream) >> signal;
-        setEventTriggerSelection((GPIO_PIN)signal);
+        setEventTriggerSelection((GPIO_SIGNAL)signal);
         usleep(1000);
         sendEventTriggerSelection();
         return;
@@ -1485,7 +1485,7 @@ void Daemon::sendDacReadbackValue(uint8_t channel, float voltage) {
 
 void Daemon::onGpioPinEvent(uint8_t gpio) {
     // reverse lookup of gpio function from given pin (first occurence)
-    auto result=std::find_if(GPIO_PINMAP.begin(), GPIO_PINMAP.end(), [&gpio](const std::pair<GPIO_PIN,unsigned int>& item)
+    auto result=std::find_if(GPIO_PINMAP.begin(), GPIO_PINMAP.end(), [&gpio](const std::pair<GPIO_SIGNAL,unsigned int>& item)
                     { return item.second==gpio; }
                     );
     if (result!=GPIO_PINMAP.end()) {
@@ -1510,18 +1510,18 @@ void Daemon::onGpioPinEvent(uint8_t gpio) {
 			
 			emit sampleAdc0Event();
 		}
-		//emit sendGpioPinEvent((GPIO_PIN)result->first);
+		//emit sendGpioPinEvent((GPIO_SIGNAL)result->first);
     }
 }
 
 void Daemon::sendGpioPinEvent(uint8_t gpio) {
     // reverse lookup of gpio function from given pin (first occurence)
-    auto result=std::find_if(GPIO_PINMAP.begin(), GPIO_PINMAP.end(), [&gpio](const std::pair<GPIO_PIN,unsigned int>& item)
+    auto result=std::find_if(GPIO_PINMAP.begin(), GPIO_PINMAP.end(), [&gpio](const std::pair<GPIO_SIGNAL,unsigned int>& item)
                     { return item.second==gpio; }
                     );
     if (result!=GPIO_PINMAP.end()) {
 		TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GPIO_EVENT);
-		*(tcpMessage.dStream) << (GPIO_PIN)result->first;
+		*(tcpMessage.dStream) << (GPIO_SIGNAL)result->first;
 		emit sendTcpMessage(tcpMessage);
 	}
 }
@@ -1752,7 +1752,7 @@ void Daemon::getTemperature(){
     emit sendTcpMessage(tcpMessage);
 }
 
-void Daemon::setEventTriggerSelection(GPIO_PIN signal) {
+void Daemon::setEventTriggerSelection(GPIO_SIGNAL signal) {
     if (pigHandler==nullptr) return;
     auto it=GPIO_PINMAP.find(signal);
     if (it==GPIO_PINMAP.end()) {
@@ -2608,7 +2608,7 @@ void Daemon::onLogParameterPolled(){
     if ( verbose > 2 ) {
         qDebug() << "GPIO Rate Summary:";
 		for (auto signalIt=GPIO_PINMAP.begin(); signalIt!=GPIO_PINMAP.end(); signalIt++) {
-            const GPIO_PIN signalId=signalIt->first;
+            const GPIO_SIGNAL signalId=signalIt->first;
             if (GPIO_SIGNAL_MAP[signalId].direction == DIR_IN )  {
 				qDebug()<<GPIO_SIGNAL_MAP[signalId].name
 						<<"pin:"<<signalIt->second
