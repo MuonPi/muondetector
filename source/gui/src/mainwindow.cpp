@@ -229,6 +229,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(paramTab, &ParameterMonitorForm::preamp1EnableChanged, this, &MainWindow::sendPreamp1Switch);
     connect(paramTab, &ParameterMonitorForm::preamp2EnableChanged, this, &MainWindow::sendPreamp2Switch);
     connect(paramTab, &ParameterMonitorForm::biasEnableChanged, this, &MainWindow::sendSetBiasStatus);
+    connect(paramTab, &ParameterMonitorForm::gainSwitchChanged, this, &MainWindow::sendGainSwitch);
     connect(paramTab, &ParameterMonitorForm::polarityChanged, this, &MainWindow::onPolarityChanged);
     connect(paramTab, &ParameterMonitorForm::timingSelectionChanged, this, &MainWindow::sendInputSwitch);
     connect(paramTab, &ParameterMonitorForm::triggerSelectionChanged, this, &MainWindow::onTriggerSelectionChanged);
@@ -310,19 +311,21 @@ void MainWindow::onTriggerSelectionChanged(GPIO_SIGNAL signal)
 }
 
 bool MainWindow::saveSettings(QStandardItemModel *model) {
-#if defined(Q_OS_UNIX)
-    QFile file(QString(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)+"/.muondetector-gui.save"));
-#elif defined(Q_OS_WIN)
-    QFile file(QString("ipAddresses.save"));
-#else
-    QFile file(QString("ipAddresses.save"));
-#endif
-    if (!file.open(QIODevice::ReadWrite)) {
-        qDebug() << "file open failed in 'ReadWrite' mode at location " << file.fileName();
+    QString file_location {QStandardPaths::writableLocation(QStandardPaths::CacheLocation)};
+    if (!QDir(file_location).exists()) {
+        if (!QDir().mkpath(file_location)) {
+            qWarning() << "Could not create cache path";
+            return false;
+        }
+    }
+    QFile file{file_location + "/muondetector-gui.save"};
+    if (!file.open(QIODevice::WriteOnly)) {
+        qWarning() << "file open failed in 'WriteOnly' mode at location " << file.fileName();
         return false;
     }
-    QDataStream stream(&file);
-    qint32 n(model->rowCount());
+
+    QDataStream stream{&file};
+    qint32 n{model->rowCount()};
     stream << n;
     for (int i = 0; i < n; i++) {
         model->item(i)->write(stream);
@@ -332,14 +335,8 @@ bool MainWindow::saveSettings(QStandardItemModel *model) {
 }
 
 bool MainWindow::loadSettings(QStandardItemModel* model) {
-#if defined(Q_OS_UNIX)
-    QFile file(QString(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)+"/.muondetector-gui.save"));
-#elif defined(Q_OS_WIN)
-    QFile file(QString("ipAddresses.save"));
-#else
-    QFile file(QString("ipAddresses.save"));
-#endif
-    if (!file.open(QIODevice::ReadOnly)) {
+    QFile file{QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/muondetector-gui.save"};
+    if (file.exists() || !file.open(QIODevice::ReadOnly)) {
         qDebug() << "file open failed in 'ReadOnly' mode at location " << file.fileName();
         return false;
     }
