@@ -137,6 +137,7 @@ target_link_libraries(muondetector-daemon
     mosquitto
     muondetector-shared
     muondetector-shared-mqtt
+    pthread
     )
 
 
