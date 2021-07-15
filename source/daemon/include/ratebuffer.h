@@ -39,9 +39,12 @@ public:
 	[[nodiscard]] auto avgRate(unsigned int gpio) const -> double;
 	[[nodiscard]] auto currentDeadtime(unsigned int gpio) const -> std::chrono::microseconds;
 	[[nodiscard]] auto lastInterval(unsigned int gpio) const -> std::chrono::nanoseconds;
+	[[nodiscard]] auto lastInterval(unsigned int gpio1, unsigned int gpio2) const -> std::chrono::nanoseconds;
+	[[nodiscard]] auto lastEventTime(unsigned int gpio) const -> std::chrono::time_point<std::chrono::steady_clock>;
 	
 signals:
-	void throttledSignal(unsigned int gpio);
+	void throttledSignal( unsigned int gpio );
+	void eventIntervalSignal( unsigned int gpio, std::chrono::nanoseconds ); 
 	
 public slots:
 	void onSignal(unsigned int gpio);

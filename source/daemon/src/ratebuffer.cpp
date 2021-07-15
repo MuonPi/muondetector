@@ -1,6 +1,8 @@
 #include <ratebuffer.h>
 #include <iostream>
 
+constexpr auto invalid_time = std::chrono::steady_clock::time_point::min();
+
 RateBuffer::RateBuffer(QObject *parent) : QObject(parent)
 {
 	
@@ -40,6 +42,9 @@ void RateBuffer::onSignal(unsigned int gpio) {
 	}
 	buffermap[gpio].eventbuffer.push(now);
 	emit throttledSignal(gpio);
+	if ( buffermap[gpio].last_interval != std::chrono::nanoseconds(0) ) {
+		emit eventIntervalSignal(gpio, buffermap[gpio].last_interval);
+	}
 }
 
 auto RateBuffer::avgRate(unsigned int gpio) const -> double
@@ -66,5 +71,21 @@ auto RateBuffer::lastInterval(unsigned int gpio) const -> std::chrono::nanosecon
 	auto it = buffermap.find(gpio);
 	if ( it == buffermap.end() || it->second.eventbuffer.size() < 2 ) return std::chrono::nanoseconds(0);
 	return it->second.last_interval;
+}
+
+auto RateBuffer::lastInterval(unsigned int gpio1, unsigned int gpio2) const -> std::chrono::nanoseconds
+{
+	auto it1 = buffermap.find(gpio1);
+	if ( it1 == buffermap.end() || it1->second.eventbuffer.empty() ) return std::chrono::nanoseconds(0);
+	auto it2 = buffermap.find(gpio2);
+	if ( it2 == buffermap.end() || it2->second.eventbuffer.empty() ) return std::chrono::nanoseconds(0);
+	return std::chrono::duration_cast<std::chrono::nanoseconds>( it2->second.eventbuffer.back() - it1->second.eventbuffer.back() );
+}
+
+auto RateBuffer::lastEventTime(unsigned int gpio) const -> std::chrono::time_point<std::chrono::steady_clock>
+{
+	auto it = buffermap.find(gpio);
+	if ( it == buffermap.end() || it->second.eventbuffer.empty() ) return invalid_time;
+	return it->second.eventbuffer.back();
 }
 

@@ -560,8 +560,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     preampStatus[1]=preamp2;
     gainSwitch=gain;
     biasON = bias_ON;
-//    eventTrigger = (GPIO_SIGNAL)new_eventTrigger;
-    eventTrigger = UNDEFINED_PIN;
+    eventTrigger = (GPIO_SIGNAL)new_eventTrigger;
+//    eventTrigger = UNDEFINED_PIN;
     polarity1=new_polarity1;
     polarity2=new_polarity2;
 
@@ -746,30 +746,22 @@ void Daemon::connectToPigpiod(){
     connect(this, &Daemon::GpioSetState, pigHandler, &PigpiodHandler::setPinState);
     connect(this, &Daemon::GpioRegisterForCallback, pigHandler, &PigpiodHandler::registerInterrupt);
 //    connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::onGpioPinEvent);
-//    connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
-/*
-	connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs)
-    { 	if (histoMap.find("gpioEventInterval")!=histoMap.end()) {
-            checkRescaleHisto(histoMap["gpioEventInterval"], 1e-6*nsecs);
-            histoMap["gpioEventInterval"].fill(1e-6*nsecs);
-        }
-    } );
+//    connect(pigHandler, &PigpiodHandler::timePulseDiff, this, [this](qint32 usecs)
 
-    connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs)
-    { 	if (histoMap.find("gpioEventIntervalShort")!=histoMap.end()) {
-            if (nsecs/1000<=histoMap["gpioEventIntervalShort"].getMax())
-                histoMap["gpioEventIntervalShort"].fill((double)nsecs/1000.);
+	// TODO: handling of TP to sys time difference
+	connect(&rateBuffer, &RateBuffer::throttledSignal, this, [this](unsigned int gpio)
+    { 	
+		if ( gpio != GPIO_PINMAP[TIMEPULSE] ) return;
+		auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(rateBuffer.lastEventTime(gpio).time_since_epoch()).count();
+		usecs = usecs % 1000000LL;
+		if (histoMap.find("TPTimeDiff") != histoMap.end()) {
+			checkRescaleHisto(histoMap["TPTimeDiff"], usecs);
+			histoMap["TPTimeDiff"].fill((double)usecs);
         }
+        qDebug()<<"TP time diff:"<<usecs<<"us";
     } );
-*/
-    connect(pigHandler, &PigpiodHandler::timePulseDiff, this, [this](qint32 usecs)
-    { 	if (histoMap.find("TPTimeDiff")!=histoMap.end()) {
-            checkRescaleHisto(histoMap["TPTimeDiff"], usecs);
-            histoMap["TPTimeDiff"].fill((double)usecs);
-        }
-        /*cout<<"TP time diff: "<<usecs<<" us"<<endl;*/
-    } );
-
+	
+	
 	auto it=GPIO_PINMAP.find(eventTrigger);
     if (it != GPIO_PINMAP.end()) {
 		pigHandler->setSamplingTriggerSignal( GPIO_PINMAP[eventTrigger] );
@@ -1486,10 +1478,10 @@ void Daemon::sendDacReadbackValue(uint8_t channel, float voltage) {
 void Daemon::onGpioPinEvent(uint8_t gpio) {
     // reverse lookup of gpio function from given pin (first occurence)
     auto result=std::find_if(GPIO_PINMAP.begin(), GPIO_PINMAP.end(), [&gpio](const std::pair<GPIO_SIGNAL,unsigned int>& item)
-                    { return item.second==gpio; }
+                    { return item.second == gpio; }
                     );
-    if (result!=GPIO_PINMAP.end()) {
-        if ( gpio == pigHandler->samplingTriggerSignal ) {
+    if (result != GPIO_PINMAP.end()) {
+        if ( result->first == eventTrigger ) {
 			emit eventInterval( rateBuffer.lastInterval(gpio).count() );
 /*
          if (user_gpio == GPIO_PINMAP[pigpioHandler->samplingTriggerSignal]){
@@ -1566,7 +1558,7 @@ void Daemon::sendPcaChannel(){
 void Daemon::sendEventTriggerSelection(){
     if (pigHandler==nullptr) return;
 	TcpMessage tcpMessage(TCP_MSG_KEY::MSG_EVENTTRIGGER);
-	*(tcpMessage.dStream) << bcmToGpioSignal(pigHandler->samplingTriggerSignal);
+	*(tcpMessage.dStream) << eventTrigger;
     emit sendTcpMessage(tcpMessage);
 }
 
@@ -1765,6 +1757,7 @@ void Daemon::setEventTriggerSelection(GPIO_SIGNAL signal) {
     }
     //emit setSamplingTriggerSignal(signal);
 	emit setSamplingTriggerSignal( it->second );
+	eventTrigger = signal;
     emit logParameter(LogParameter("gpioTriggerSelection", "0x"+QString::number((int)signal,16), LogParameter::LOG_EVERY));
     //sendEventTriggerSelection();
 }

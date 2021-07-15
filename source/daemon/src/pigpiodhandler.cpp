@@ -257,12 +257,12 @@ void PigpiodHandler::threadLoop() {
 		const struct timespec timeout { 0, 100000000UL };
 		gpiod_line_bulk event_bulk { };
 		int ret = gpiod_line_event_wait_bulk(&fInterruptLineBulk, &timeout, &event_bulk);
-		if ( ret>0 ) {
+		if ( ret > 0 ) {
 			unsigned int line_index = 0;
 			while ( line_index < event_bulk.num_lines ) {
 				gpiod_line_event event { };
-				int ret = gpiod_line_event_read( event_bulk.lines[line_index], &event);
-				if ( ret == 0 ) {
+				int result = gpiod_line_event_read( event_bulk.lines[line_index], &event);
+				if ( result == 0 ) {
 					unsigned int gpio = gpiod_line_offset( event_bulk.lines[line_index] );
 					std::uint64_t ns = event.ts.tv_sec*1e9 + event.ts.tv_nsec;
 					emit signal(gpio);
@@ -401,7 +401,7 @@ bool PigpiodHandler::setPinState(unsigned int gpio, bool state) {
 
 void PigpiodHandler::setSamplingTriggerSignal(unsigned int gpio)
 { 
-	// The following code registers the given gpio pin for interrupt, if not already done before. The previously setInterval
+	// The following code registers the given gpio pin for interrupt, if not already done before. The previously set
 	// samplingTrigger is NOT unregistered, since several interrupt functions can occupy one gpio line. 
 	// When unregistering the samplingTrigger, the pin would cease to funtion as interrupt source for the alternative function. 
 	// Example: XOR is an interrupt input and can also be selected as sampling trigger by the user for a time.

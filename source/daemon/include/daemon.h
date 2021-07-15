@@ -279,7 +279,7 @@ private:
     Adafruit_SSD1306* oled = nullptr;
     float biasVoltage = 0.;
     bool biasON = false;
-    GPIO_SIGNAL eventTrigger;
+    GPIO_SIGNAL eventTrigger { UNDEFINED_PIN };
     bool gainSwitch = false;
     bool preampStatus[2];
     uint8_t pcaPortMask = 0;
