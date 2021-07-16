@@ -98,7 +98,6 @@ private:
 	bool inhibit=false;
 	int verbose=0;
 	gpiod_chip* fChip { nullptr };
-//	std::shared_ptr<struct gpiod_chip> fChip { nullptr };
 	std::map<unsigned int, gpiod_line*> fInterruptLineMap { };
 //	std::map<unsigned int, std::shared_ptr<gpiod_line>> fInterruptLineMap { };
 	gpiod_line_bulk fInterruptLineBulk;
