@@ -57,9 +57,6 @@ public:
 	
 signals:
     void signal(uint8_t gpio_pin);
-    //void samplingTrigger();
-	//void eventInterval(quint64 nsecs);
-	//void timePulseDiff(qint32 usecs);
 
 public slots:
 	void start();
