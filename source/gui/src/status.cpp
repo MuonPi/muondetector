@@ -164,7 +164,6 @@ void Status::clearRatePlot()
 
 void Status::onTriggerSelectionReceived(GPIO_SIGNAL signal)
 {
-//    if (GPIO_PIN_NAMES.find(signal)==GPIO_PIN_NAMES.end()) return;
     int i=0;
     while (i<statusUi->triggerSelectionComboBox->count()) {
         if (statusUi->triggerSelectionComboBox->itemText(i).compare(GPIO_SIGNAL_MAP[signal].name)==0) break;
