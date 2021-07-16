@@ -110,7 +110,6 @@ struct RateScanInfo {
 };
 
 struct RateScan {
-//	void addScanPoint(double scanpar, double a_rate) { scanMap[scanpar].append(a_rate); }
     uint8_t origPcaMask=0;
     GPIO_SIGNAL origEventTrigger=GPIO_SIGNAL::UNDEFINED_PIN;
     float origScanPar=3.3;
