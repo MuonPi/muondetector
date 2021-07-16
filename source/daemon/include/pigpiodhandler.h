@@ -99,7 +99,6 @@ private:
 	int verbose=0;
 	gpiod_chip* fChip { nullptr };
 	std::map<unsigned int, gpiod_line*> fInterruptLineMap { };
-//	std::map<unsigned int, std::shared_ptr<gpiod_line>> fInterruptLineMap { };
 	gpiod_line_bulk fInterruptLineBulk;
 	std::map<unsigned int, gpiod_line*> fLineMap { };
 //	std::map<unsigned int, std::shared_ptr<gpiod_line>> fLineMap { };
