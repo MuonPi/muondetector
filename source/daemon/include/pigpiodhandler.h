@@ -46,7 +46,6 @@ public:
 	// can't make it private because of access of PigpiodHandler with global pointer
 	QDateTime startOfProgram, lastSamplingTime; // the exact time when the program starts (Utc)
 	QElapsedTimer elapsedEventTimer;
-//	GPIO_SIGNAL samplingTriggerSignal=EVT_XOR;
 	unsigned int samplingTriggerSignal { UNDEFINED_GPIO };
 
 	double clockMeasurementSlope=0.;
