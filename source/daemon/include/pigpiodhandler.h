@@ -68,7 +68,6 @@ public slots:
 	bool setPinBias(unsigned int gpio, std::uint8_t pin_bias);
     bool setPinState(unsigned int gpio, bool state);
     void setSamplingTriggerSignal(unsigned int gpio);
-//    void setSamplingTriggerSignal(GPIO_SIGNAL signalName) { samplingTriggerSignal=signalName; }
     bool registerInterrupt(unsigned int gpio, EventEdge edge);
     bool unRegisterInterrupt(unsigned int gpio);
 	void setInhibited(bool inh=true) { inhibit=inh; }
