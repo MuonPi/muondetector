@@ -104,12 +104,6 @@ private:
 	bool fThreadRunning { false };
 	std::unique_ptr<std::thread> fThread { nullptr };
 	std::mutex fMutex;
-/*	
-	gpiod::chip fChip;
-	gpiod::line_bulk fInterruptLineBulk;
-	std::map<unsigned int, gpiod::line> fLineMap;
-*/
-//	QVector<unsigned int> gpioPins;
 };
 
 
