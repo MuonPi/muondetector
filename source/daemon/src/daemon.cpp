@@ -650,7 +650,21 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
         }
     } );
 
-    // establish ublox gnss module connection
+/*
+	// TODO: handling of TP to sys time difference
+	connect(&rateBuffer, &RateBuffer::throttledSignal, this, [this](unsigned int gpio)
+    { 	
+		if ( gpio != GPIO_PINMAP[TIMEPULSE] ) return;
+		auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(rateBuffer.lastEventTime(gpio).time_since_epoch()).count();
+		usecs = usecs % 1000000LL;
+		if (histoMap.find("TPTimeDiff") != histoMap.end()) {
+			checkRescaleHisto(histoMap["TPTimeDiff"], usecs);
+			histoMap["TPTimeDiff"].fill((double)usecs);
+        }
+        qDebug()<<"TP time diff:"<<usecs<<"us";
+    } );
+*/
+	// establish ublox gnss module connection
     connectToGps();
     //delay(1000);
 
@@ -748,20 +762,6 @@ void Daemon::connectToPigpiod(){
 //    connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::onGpioPinEvent);
 //    connect(pigHandler, &PigpiodHandler::timePulseDiff, this, [this](qint32 usecs)
 
-	// TODO: handling of TP to sys time difference
-	connect(&rateBuffer, &RateBuffer::throttledSignal, this, [this](unsigned int gpio)
-    { 	
-		if ( gpio != GPIO_PINMAP[TIMEPULSE] ) return;
-		auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(rateBuffer.lastEventTime(gpio).time_since_epoch()).count();
-		usecs = usecs % 1000000LL;
-		if (histoMap.find("TPTimeDiff") != histoMap.end()) {
-			checkRescaleHisto(histoMap["TPTimeDiff"], usecs);
-			histoMap["TPTimeDiff"].fill((double)usecs);
-        }
-        qDebug()<<"TP time diff:"<<usecs<<"us";
-    } );
-	
-	
 	auto it=GPIO_PINMAP.find(eventTrigger);
     if (it != GPIO_PINMAP.end()) {
 		pigHandler->setSamplingTriggerSignal( GPIO_PINMAP[eventTrigger] );
@@ -1482,25 +1482,22 @@ void Daemon::onGpioPinEvent(uint8_t gpio) {
                     );
     if (result != GPIO_PINMAP.end()) {
         if ( result->first == eventTrigger ) {
-			emit eventInterval( rateBuffer.lastInterval(gpio).count() );
-/*
-         if (user_gpio == GPIO_PINMAP[pigpioHandler->samplingTriggerSignal]){
-            if (pigpioHandler->lastSamplingTime.msecsTo(now) >= MuonPi::Config::Hardware::ADC::deadtime) {
-                emit pigpioHandler->samplingTrigger();
-                pigpioHandler->lastSamplingTime = now;
-            }
-            quint64 nsecsElapsed=pigpioHandler->elapsedEventTimer.nsecsElapsed();
-            pigpioHandler->elapsedEventTimer.start();
-            //emit pigpioHandler->eventInterval(nsecsElapsed);
-            emit pigpioHandler->eventInterval((tick-lastTriggerTick)*1000);
-            lastTriggerTick=tick;
-        }
-*/
-			
-			
-			
-			
+			auto nsecs = rateBuffer.lastInterval(gpio).count();
+			if ( nsecs > 0 ) { 
+				emit eventInterval( rateBuffer.lastInterval(gpio).count() );
+			}
 			emit sampleAdc0Event();
+		} else if ( result->first == TIMEPULSE) {
+			auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(rateBuffer.lastEventTime(gpio).time_since_epoch()).count();
+			usecs = usecs % 1000000LL;
+			if ( usecs > 500000L ) {
+				usecs -= 1000000LL;
+			}
+			if (histoMap.find("TPTimeDiff") != histoMap.end()) {
+				checkRescaleHisto(histoMap["TPTimeDiff"], usecs);
+				histoMap["TPTimeDiff"].fill((double)usecs);
+			}
+			qDebug()<<"TP time diff:"<<usecs<<"us";
 		}
 		//emit sendGpioPinEvent((GPIO_SIGNAL)result->first);
     }
