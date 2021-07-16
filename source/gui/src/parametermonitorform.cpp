@@ -191,7 +191,6 @@ void ParameterMonitorForm::onPreampSwitchReceived(uint8_t channel, bool state)
 
 void ParameterMonitorForm::onTriggerSelectionReceived(GPIO_SIGNAL signal)
 {
-    //if (GPIO_PIN_NAMES.find(signal)==GPIO_PIN_NAMES.end()) return;
     int i=0;
     while (i<ui->adcTriggerSelectionComboBox->count()) {
         if (ui->adcTriggerSelectionComboBox->itemText(i).compare(GPIO_SIGNAL_MAP[signal].name)==0) break;
