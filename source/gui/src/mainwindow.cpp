@@ -395,7 +395,6 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
 //    quint16 msgID = tcpMessage.getMsgID();
     TCP_MSG_KEY msgID = static_cast<TCP_MSG_KEY>(tcpMessage.getMsgID());
     if (msgID == TCP_MSG_KEY::MSG_GPIO_EVENT) {
-//	if (msgID == gpioPinSig) {
         unsigned int gpioPin;
         *(tcpMessage.dStream) >> gpioPin;
         receivedGpioRisingEdge((GPIO_SIGNAL)gpioPin);
@@ -1288,5 +1287,4 @@ void MainWindow::onPolarityChanged(bool pol1, bool pol2){
     *(tcpMessage.dStream) << pol1 << pol2;
     emit sendTcpMessage(tcpMessage);
 }
-
 
