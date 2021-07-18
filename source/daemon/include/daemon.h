@@ -32,7 +32,7 @@
 struct CalibStruct;
 struct UbxTimeMarkStruct;
 
-enum GPIO_SIGNAL;
+//enum GPIO_SIGNAL;
 
 class Property {
 public:
@@ -97,7 +97,7 @@ private:
 
 struct RateScanInfo {
     uint8_t origPcaMask=0;
-    GPIO_SIGNAL origEventTrigger=GPIO_SIGNAL::UNDEFINED_PIN;
+    GPIO_SIGNAL origEventTrigger=GPIO_SIGNAL::UNDEFINED_SIGNAL;
     uint16_t lastEvtCounter=0;
     uint8_t thrChannel=0;
     float origThr=3.3;
@@ -110,8 +110,9 @@ struct RateScanInfo {
 };
 
 struct RateScan {
+//	void addScanPoint(double scanpar, double a_rate) { scanMap[scanpar].append(a_rate); }
     uint8_t origPcaMask=0;
-    GPIO_SIGNAL origEventTrigger=GPIO_SIGNAL::UNDEFINED_PIN;
+    GPIO_SIGNAL origEventTrigger=GPIO_SIGNAL::UNDEFINED_SIGNAL;
     float origScanPar=3.3;
     double minScanPar=0.;
     double maxScanPar=1.;
@@ -278,7 +279,7 @@ private:
     Adafruit_SSD1306* oled = nullptr;
     float biasVoltage = 0.;
     bool biasON = false;
-    GPIO_SIGNAL eventTrigger { UNDEFINED_PIN };
+    GPIO_SIGNAL eventTrigger { UNDEFINED_SIGNAL };
     bool gainSwitch = false;
     bool preampStatus[2];
     uint8_t pcaPortMask = 0;

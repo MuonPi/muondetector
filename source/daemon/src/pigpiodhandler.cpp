@@ -11,9 +11,9 @@
 #include <stdexcept>
 
 
-static int pi = -1;
+//static int pi = -1;
 static int spiHandle = -1;
-static QPointer<PigpiodHandler> pigHandlerAddress; // QPointer automatically clears itself if pigHandler object is destroyed
+//static QPointer<PigpiodHandler> pigHandlerAddress; // QPointer automatically clears itself if pigHandler object is destroyed
 
 constexpr char CONSUMER[] = "muonpi";
 const std::string chipname { "/dev/gpiochip0" };
@@ -198,9 +198,6 @@ PigpiodHandler::PigpiodHandler(std::vector<unsigned int> gpioPins, QObject *pare
 	startOfProgram = QDateTime::currentDateTimeUtc();
 	lastSamplingTime = startOfProgram;
 	elapsedEventTimer.start();
-	pigHandlerAddress = this;
-
-//	std::string chipname { "/dev/gpiochip0" };
 
 	fChip = gpiod_chip_open(chipname.c_str());
 	if ( fChip == nullptr ) {
@@ -265,6 +262,7 @@ void PigpiodHandler::threadLoop() {
 				if ( result == 0 ) {
 					unsigned int gpio = gpiod_line_offset( event_bulk.lines[line_index] );
 					std::uint64_t ns = event.ts.tv_sec*1e9 + event.ts.tv_nsec;
+					std::chrono::time_point<std::chrono::system_clock> timestamp(std::chrono::nanoseconds(ns));
 					emit signal(gpio);
 					if ( verbose > 2 ) {
 						qDebug()<<"line event: gpio"<<gpio<<" edge: "
@@ -399,22 +397,6 @@ bool PigpiodHandler::setPinState(unsigned int gpio, bool state) {
 	return setPinOutput( gpio, state );
 }
 
-void PigpiodHandler::setSamplingTriggerSignal(unsigned int gpio)
-{ 
-	// The following code registers the given gpio pin for interrupt, if not already done before. The previously set
-	// samplingTrigger is NOT unregistered, since several interrupt functions can occupy one gpio line. 
-	// When unregistering the samplingTrigger, the pin would cease to funtion as interrupt source for the alternative function. 
-	// Example: XOR is an interrupt input and can also be selected as sampling trigger by the user for a time.
-	
-	samplingTriggerSignal=gpio;
-	// search through the interrupt lines whether the line is already selected as interrupt source
-	auto it = fInterruptLineMap.find(gpio);
-	// if not, register it
-	if (it == fInterruptLineMap.end()) {
-		registerInterrupt( gpio, EventEdge::RisingEdge );
-	}
-}
-
 void PigpiodHandler::reloadInterruptSettings()
 {
 	this->stop();
@@ -430,24 +412,39 @@ bool PigpiodHandler::registerInterrupt(unsigned int gpio, EventEdge edge) {
 	if (!isInitialised) return false;
 	auto it = fInterruptLineMap.find(gpio);
 	if (it != fInterruptLineMap.end()) {
-		// line object exists, release previous line request
+		// line object exists
+		// The following code block shall release the previous line request
+		// and re-request this line for events.
+		// It is bypassed, since it does not work as intended.
+		// The function simply does nothing in this case.
+		return false;
 		gpiod_line_release(it->second);
+		if ( gpiod_line_update(it->second) < 0 ) {
+			qCritical()<<"update of gpio line" << gpio << "after release failed";
+			//return false;
+		}
 		// request for events
 		int ret=-1;
-		switch (edge) {
-			case EventEdge::RisingEdge:
-				ret = gpiod_line_request_rising_edge_events( it->second, CONSUMER );
-				break;
-			case EventEdge::FallingEdge:
-				ret = gpiod_line_request_falling_edge_events( it->second, CONSUMER );
-				break;
-			case EventEdge::BothEdges:
-				ret = gpiod_line_request_both_edges_events( it->second, CONSUMER );
-			default:
-				break;
-		}
+		int errcnt = 10;
+		while ( errcnt && ret < 0 ) {
+			switch (edge) {
+				case EventEdge::RisingEdge:
+					ret = gpiod_line_request_rising_edge_events( it->second, CONSUMER );
+					break;
+				case EventEdge::FallingEdge:
+					ret = gpiod_line_request_falling_edge_events( it->second, CONSUMER );
+					break;
+				case EventEdge::BothEdges:
+					ret = gpiod_line_request_both_edges_events( it->second, CONSUMER );
+				default:
+					break;
+			}
+			errcnt--;
+			if ( ret < 0 ) std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+
+		}	
 		if ( ret < 0 ) {
-			qCritical()<<"Request gpio line" << gpio << "for events failed";
+			qCritical()<<"Re-request gpio line" << gpio << "for events failed";
 			return false;
 		}
 		return true;
@@ -485,6 +482,7 @@ bool PigpiodHandler::unRegisterInterrupt(unsigned int gpio) {
 	auto it = fInterruptLineMap.find(gpio);
 	if (it != fInterruptLineMap.end()) {
 		gpiod_line_release(it->second);
+		fInterruptLineMap.erase( it );
 		reloadInterruptSettings();
 		return true;
 	}
