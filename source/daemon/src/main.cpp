@@ -543,7 +543,7 @@ int main(int argc, char *argv[])
     {
         //if (verbose>2)
 //		qWarning() << "No 'trigger_input' setting in configuration file. Assuming gpio" << (int)eventSignal << endl;
-        qWarning() << "No 'trigger_input' setting in configuration file. Assuming signal" << GPIO_SIGNAL_MAP[(GPIO_PIN)eventSignal].name;
+        qWarning() << "No 'trigger_input' setting in configuration file. Assuming signal" << GPIO_SIGNAL_MAP[(GPIO_SIGNAL)eventSignal].name;
     }
 
 

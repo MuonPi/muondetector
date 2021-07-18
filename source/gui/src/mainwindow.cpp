@@ -41,7 +41,7 @@ MainWindow::MainWindow(QWidget *parent) :
     qRegisterMetaType<CalibStruct>("CalibStruct");
     qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
     qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
-    qRegisterMetaType<GPIO_PIN>("GPIO_PIN");
+    qRegisterMetaType<GPIO_SIGNAL>("GPIO_SIGNAL");
     qRegisterMetaType<GnssMonHwStruct>("GnssMonHwStruct");
     qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
     qRegisterMetaType<UbxTimeMarkStruct>("UbxTimeMarkStruct");
@@ -302,7 +302,7 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
     tcpThread->start();
 }
 
-void MainWindow::onTriggerSelectionChanged(GPIO_PIN signal)
+void MainWindow::onTriggerSelectionChanged(GPIO_SIGNAL signal)
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_EVENTTRIGGER);
     *(tcpMessage.dStream) << signal;
@@ -395,10 +395,9 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
 //    quint16 msgID = tcpMessage.getMsgID();
     TCP_MSG_KEY msgID = static_cast<TCP_MSG_KEY>(tcpMessage.getMsgID());
     if (msgID == TCP_MSG_KEY::MSG_GPIO_EVENT) {
-//	if (msgID == gpioPinSig) {
         unsigned int gpioPin;
         *(tcpMessage.dStream) >> gpioPin;
-        receivedGpioRisingEdge((GPIO_PIN)gpioPin);
+        receivedGpioRisingEdge((GPIO_SIGNAL)gpioPin);
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_MSG_RATE) {
@@ -455,7 +454,7 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
     if (msgID == TCP_MSG_KEY::MSG_EVENTTRIGGER){
         unsigned int signal;
         *(tcpMessage.dStream) >> signal;
-        emit triggerSelectionReceived((GPIO_PIN)signal);
+        emit triggerSelectionReceived((GPIO_SIGNAL)signal);
         //updateUiProperties();
         return;
     }
@@ -894,7 +893,7 @@ void MainWindow::sendRequestGpioRateBuffer(){
     emit sendTcpMessage(andRateRequest);
 }
 
-void MainWindow::receivedGpioRisingEdge(GPIO_PIN pin) {
+void MainWindow::receivedGpioRisingEdge(GPIO_SIGNAL pin) {
     if (pin == EVT_AND) {
         ui->ANDHit->setStyleSheet("QLabel {background-color: darkGreen;}");
         andTimer.start();
@@ -1288,5 +1287,4 @@ void MainWindow::onPolarityChanged(bool pol1, bool pol2){
     *(tcpMessage.dStream) << pol1 << pol2;
     emit sendTcpMessage(tcpMessage);
 }
-
 
