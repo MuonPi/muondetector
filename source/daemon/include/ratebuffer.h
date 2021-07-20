@@ -9,6 +9,9 @@
 #include <map>
 #include <queue>
 #include <list>
+#include <muondetector_structs.h>
+
+class PigpiodHandler;
 
 constexpr double MAX_AVG_RATE { 100. };
 constexpr unsigned long MAX_BURST_MULTIPLICITY { 10 };
@@ -22,10 +25,7 @@ class RateBuffer : public QObject
 
 public:
 	struct BufferItem {
-		std::queue<	std::chrono::time_point<std::chrono::steady_clock>, 
-					std::list<std::chrono::time_point<std::chrono::steady_clock>> >
-			eventbuffer { };
-		unsigned long multiplicity_countdown { MAX_BURST_MULTIPLICITY };
+		std::queue< EventTime, std::list<EventTime> > eventbuffer { };
 		std::chrono::microseconds current_deadtime { 0 };
 		std::chrono::nanoseconds last_interval { 0 };
 	};
@@ -40,14 +40,14 @@ public:
 	[[nodiscard]] auto currentDeadtime(unsigned int gpio) const -> std::chrono::microseconds;
 	[[nodiscard]] auto lastInterval(unsigned int gpio) const -> std::chrono::nanoseconds;
 	[[nodiscard]] auto lastInterval(unsigned int gpio1, unsigned int gpio2) const -> std::chrono::nanoseconds;
-	[[nodiscard]] auto lastEventTime(unsigned int gpio) const -> std::chrono::time_point<std::chrono::steady_clock>;
+	[[nodiscard]] auto lastEventTime(unsigned int gpio) const -> EventTime;
 	
 signals:
-	void throttledSignal( unsigned int gpio );
-	void eventIntervalSignal( unsigned int gpio, std::chrono::nanoseconds ); 
+	void filteredEvent( unsigned int gpio, EventTime event_time );
+	void eventIntervalSignal( unsigned int gpio, std::chrono::nanoseconds ns); 
 	
 public slots:
-	void onSignal(unsigned int gpio);
+	void onEvent(unsigned int gpio, EventTime event_time );
 
 private:
 	double fRateLimit { MAX_AVG_RATE };

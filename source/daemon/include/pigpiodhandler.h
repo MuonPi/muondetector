@@ -12,6 +12,7 @@
 #include <mutex>
 #include <gpio_mapping.h>
 #include <gpio_pin_definitions.h>
+#include <muondetector_structs.h>
 
 #include <gpiod.h>
 
@@ -43,10 +44,8 @@ public:
 	explicit PigpiodHandler(std::vector<unsigned int> gpioPins, QObject *parent = nullptr);
 	~PigpiodHandler();
 	
-	// can't make it private because of access of PigpiodHandler with global pointer
 	QDateTime startOfProgram, lastSamplingTime; // the exact time when the program starts (Utc)
 	QElapsedTimer elapsedEventTimer;
-//	unsigned int samplingTriggerSignal { UNDEFINED_GPIO };
 
 	double clockMeasurementSlope=0.;
 	double clockMeasurementOffset=0.;
@@ -56,7 +55,7 @@ public:
 	bool isInhibited() const { return inhibit; }
 	
 signals:
-    void signal(uint8_t gpio_pin);
+	void event(unsigned int gpio_pin, EventTime timestamp);
 
 public slots:
 	void start();
@@ -67,7 +66,6 @@ public slots:
 	
 	bool setPinBias(unsigned int gpio, std::uint8_t pin_bias);
     bool setPinState(unsigned int gpio, bool state);
-//    void setSamplingTriggerSignal(unsigned int gpio);
     bool registerInterrupt(unsigned int gpio, EventEdge edge);
     bool unRegisterInterrupt(unsigned int gpio);
 	void setInhibited(bool inh=true) { inhibit=inh; }

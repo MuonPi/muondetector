@@ -173,8 +173,8 @@ public slots:
     void onGpsMonHW2Updated(const GnssMonHw2Struct& hw2);
     void receivedTcpMessage(TcpMessage tcpMessage);
     void pollAllUbxMsgRate();
-    void onGpioPinEvent(uint8_t gpio);
-    void sendGpioPinEvent(uint8_t gpio);
+    void onGpioPinEvent(unsigned int gpio, EventTime event_time);
+    void sendGpioPinEvent(unsigned int gpio, EventTime event_time);
     void onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos);
     void UBXReceivedVersion(const QString& swString, const QString& hwString, const QString& protString);
     void sampleAdc0Event();

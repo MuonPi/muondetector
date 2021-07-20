@@ -257,17 +257,21 @@ void PigpiodHandler::threadLoop() {
 		if ( ret > 0 ) {
 			unsigned int line_index = 0;
 			while ( line_index < event_bulk.num_lines ) {
-				gpiod_line_event event { };
-				int result = gpiod_line_event_read( event_bulk.lines[line_index], &event);
+				gpiod_line_event line_event { };
+				int result = gpiod_line_event_read( event_bulk.lines[line_index], &line_event);
 				if ( result == 0 ) {
 					unsigned int gpio = gpiod_line_offset( event_bulk.lines[line_index] );
-					std::uint64_t ns = event.ts.tv_sec*1e9 + event.ts.tv_nsec;
-					std::chrono::time_point<std::chrono::system_clock> timestamp(std::chrono::nanoseconds(ns));
-					emit signal(gpio);
+					//std::uint64_t ns = line_event.ts.tv_sec*1e9 + line_event.ts.tv_nsec;
+					//const std::chrono::nanoseconds since_epoch_ns(ns);
+					std::chrono::nanoseconds since_epoch_ns(line_event.ts.tv_nsec);
+					since_epoch_ns += std::chrono::seconds(line_event.ts.tv_sec);
+					//auto since_epoch = std::chrono::duration_cast<std::chrono::system_clock::duration>(since_epoch_ns);
+					EventTime timestamp(since_epoch_ns);
+					emit event(gpio, timestamp);
 					if ( verbose > 2 ) {
 						qDebug()<<"line event: gpio"<<gpio<<" edge: "
-						<<QString((event.event_type==GPIOD_LINE_EVENT_RISING_EDGE)?"rising":"falling")
-						<<" ts="<<ns;
+						<<QString((line_event.event_type==GPIOD_LINE_EVENT_RISING_EDGE)?"rising":"falling")
+						<<" ts="<<since_epoch_ns.count();
 					}
 				}
 				line_index++;
@@ -278,6 +282,7 @@ void PigpiodHandler::threadLoop() {
 		} else {
 			// an error occured
 			// what should we do here?
+			qCritical()<<"Wait for gpio line events failed";
 		}
 	}
 }

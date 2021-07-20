@@ -632,9 +632,9 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 
 	// set up the rate buffer for all GPIO signals
 	rateBuffer.clear();
-	connect(pigHandler, &PigpiodHandler::signal, &rateBuffer, &RateBuffer::onSignal);
-	connect(&rateBuffer, &RateBuffer::throttledSignal, this, &Daemon::sendGpioPinEvent);
-	connect(&rateBuffer, &RateBuffer::throttledSignal, this, &Daemon::onGpioPinEvent);
+	connect(pigHandler, &PigpiodHandler::event, &rateBuffer, &RateBuffer::onEvent);
+	connect(&rateBuffer, &RateBuffer::filteredEvent, this, &Daemon::sendGpioPinEvent);
+	connect(&rateBuffer, &RateBuffer::filteredEvent, this, &Daemon::onGpioPinEvent);
 
 	connect(this, &Daemon::eventInterval, this, [this](quint64 nsecs)
     { 	if (histoMap.find("gpioEventInterval")!=histoMap.end()) {
@@ -1465,14 +1465,14 @@ void Daemon::sendDacReadbackValue(uint8_t channel, float voltage) {
     emit sendTcpMessage(tcpMessage);
 }
 
-void Daemon::onGpioPinEvent(uint8_t gpio) {
+void Daemon::onGpioPinEvent(unsigned int gpio, EventTime event_time) {
     // reverse lookup of gpio function from given pin (first occurence)
     auto result=std::find_if(GPIO_PINMAP.begin(), GPIO_PINMAP.end(), [&gpio](const std::pair<GPIO_SIGNAL,unsigned int>& item)
                     { return item.second == gpio; }
                     );
     if (result != GPIO_PINMAP.end()) {
 		if ( result->first == TIMEPULSE) {
-			auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(rateBuffer.lastEventTime(gpio).time_since_epoch()).count();
+			auto usecs = std::chrono::duration_cast<std::chrono::microseconds>(event_time.time_since_epoch()).count();
 			usecs = usecs % 1000000LL;
 			if ( usecs > 500000L ) {
 				usecs -= 1000000LL;
@@ -1500,7 +1500,7 @@ void Daemon::onGpioPinEvent(uint8_t gpio) {
     }
 }
 
-void Daemon::sendGpioPinEvent(uint8_t gpio) {
+void Daemon::sendGpioPinEvent(unsigned int gpio, EventTime event_time) {
     // reverse lookup of gpio function from given pin (first occurence)
     auto result=std::find_if(GPIO_PINMAP.begin(), GPIO_PINMAP.end(), [&gpio](const std::pair<GPIO_SIGNAL,unsigned int>& item)
                     { return item.second==gpio; }
