@@ -190,20 +190,20 @@ void CustomHistogram::clear()
     update();
 }
 
-void CustomHistogram::setStatusEnabled(bool status){
+void CustomHistogram::setEnabled(bool status){
     if (status==true){
         const QPen blackPen(Qt::black);
         grid->setPen(blackPen);
         fBarChart->attach(this);
         setTitle(title);
-        update();
     }else{
         const QPen grayPen(Qt::gray);
         grid->setPen(grayPen);
         fBarChart->detach();
         setTitle("");
-        update();
     }
+    fEnabled = status;
+	update();
 }
 
 void CustomHistogram::setLogY(bool logscale){

@@ -22,14 +22,14 @@ public:
     CustomHistogram(const QwtText &title_l, QWidget *parent = 0) : QwtPlot(title_l, parent){ initialize();}
     ~CustomHistogram();
     void initialize();
+	bool enabled() const { return fEnabled; }
     QwtPlotGrid *grid = nullptr;
     QString title = "Histogram";
-    //virtual void replot();
 
 public slots:
     void update();
     void clear();
-    void setStatusEnabled(bool status);
+    void setEnabled(bool status);
     void setXMin(double val);
     void setXMax(double val);
     bool getLogX() const { return fLogX; }
@@ -49,6 +49,7 @@ private:
     QwtPlotHistogram* fBarChart = nullptr;
     bool fLogY=false;
     bool fLogX=false;
+	bool fEnabled { false };
 };
 
 #endif // CUSTOMHISTOGRAM_H

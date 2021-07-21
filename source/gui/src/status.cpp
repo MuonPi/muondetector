@@ -14,13 +14,16 @@ Status::Status(QWidget *parent) :
     statusUi(new Ui::Status)
 {
     statusUi->setupUi(this);
-    statusUi->pulseHeightHistogram->title="Pulse Height";
+    
+	statusUi->pulseHeightHistogram->title="Pulse Height";
 	
 	statusUi->pulseHeightHistogram->setXMin(0.0);
 	statusUi->pulseHeightHistogram->setXMax(MAX_ADC_VOLTAGE);
 	statusUi->pulseHeightHistogram->setNrBins(MAX_BINS);
 	statusUi->pulseHeightHistogram->setLogY(false);
-
+	statusUi->pulseHeightHistogram->setEnabled(false);
+	statusUi->pulseHeightHistogramGroupBox->setChecked(false);
+	
     statusUi->ratePlotPresetComboBox->addItems(QStringList() << "seconds" << "hh:mm:ss" << "time");
     statusUi->ratePlotBufferEdit->setText(QString("%1:%2:%3:%4")
                                           .arg(rateSecondsBuffered/(3600*24),2,10,QChar('0'))
@@ -34,7 +37,7 @@ Status::Status(QWidget *parent) :
     connect(statusUi->resetRatePushButton, &QPushButton::clicked, this, &Status::clearRatePlot);
     connect(statusUi->resetRatePushButton, &QPushButton::clicked, this, [this](){ this->resetRateClicked(); } );
     connect(statusUi->ratePlotGroupBox, &QGroupBox::toggled, statusUi->ratePlot, &PlotCustom::setStatusEnabled);
-    connect(statusUi->pulseHeightHistogramGroupBox, &QGroupBox::toggled, statusUi->pulseHeightHistogram, &CustomHistogram::setStatusEnabled);
+    connect(statusUi->pulseHeightHistogramGroupBox, &QGroupBox::toggled, statusUi->pulseHeightHistogram, &CustomHistogram::setEnabled);
     connect(statusUi->biasEnableCheckBox, &QCheckBox::clicked, this, &Status::biasSwitchChanged);
     connect(statusUi->highGainCheckBox, &QCheckBox::clicked, this, &Status::gainSwitchChanged);
     connect(statusUi->preamp1CheckBox, &QCheckBox::clicked, this, &Status::preamp1SwitchChanged);
@@ -164,7 +167,6 @@ void Status::clearRatePlot()
 
 void Status::onTriggerSelectionReceived(GPIO_PIN signal)
 {
-//    if (GPIO_PIN_NAMES.find(signal)==GPIO_PIN_NAMES.end()) return;
     int i=0;
     while (i<statusUi->triggerSelectionComboBox->count()) {
         if (statusUi->triggerSelectionComboBox->itemText(i).compare(GPIO_SIGNAL_MAP[signal].name)==0) break;
@@ -195,8 +197,10 @@ void Status::onAdcSampleReceived(uint8_t channel, float value)
 	if (channel==0) {
 		statusUi->ADCLabel1->setText("Ch1: "+QString::number(value,'f',3)+" V");
 //        int binNr = (MAX_BINS-1)*value/MAX_ADC_VOLTAGE;
-		statusUi->pulseHeightHistogram->fill(value);
-		updatePulseHeightHistogram();
+		if ( statusUi->pulseHeightHistogram->enabled() ) {
+			statusUi->pulseHeightHistogram->fill(value);
+			updatePulseHeightHistogram();
+		}
 
 	} else if (channel==1)
 		statusUi->ADCLabel2->setText("Ch2: "+QString::number(value,'f',3)+" V");
@@ -221,7 +225,7 @@ void Status::onUiEnabledStateChange(bool connected){
             statusUi->ratePlot->setStatusEnabled(true);
         }
         if (statusUi->pulseHeightHistogramGroupBox->isChecked()){
-            statusUi->pulseHeightHistogram->setStatusEnabled(true);
+            statusUi->pulseHeightHistogram->setEnabled(true);
         }
         this->setEnabled(true);
         timepulseTimer.start();
@@ -231,7 +235,7 @@ void Status::onUiEnabledStateChange(bool connected){
 //		updatePulseHeightHistogram();        
         statusUi->ratePlot->setStatusEnabled(false);
         statusUi->pulseHeightHistogram->clear();
-		statusUi->pulseHeightHistogram->setStatusEnabled(false);
+		statusUi->pulseHeightHistogram->setEnabled(false);
         statusUi->triggerSelectionComboBox->setEnabled(false);
         timepulseTimer.stop();
         statusUi->timePulseLabel->setStyleSheet("QLabel {background-color: Window;}");

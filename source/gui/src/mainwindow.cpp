@@ -25,8 +25,6 @@
 
 #include <iostream>
 
-//#include <gnsssatellite.h>
-
 using namespace std;
 
 
@@ -392,10 +390,8 @@ bool MainWindow::eventFilter(QObject *object, QEvent *event)
 }
 
 void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
-//    quint16 msgID = tcpMessage.getMsgID();
     TCP_MSG_KEY msgID = static_cast<TCP_MSG_KEY>(tcpMessage.getMsgID());
     if (msgID == TCP_MSG_KEY::MSG_GPIO_EVENT) {
-//	if (msgID == gpioPinSig) {
         unsigned int gpioPin;
         *(tcpMessage.dStream) >> gpioPin;
         receivedGpioRisingEdge((GPIO_PIN)gpioPin);
@@ -658,28 +654,14 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_MONHW){
-/*        quint16 noise=0;
-        quint16 agc=0;
-        quint8 antStatus=0;
-        quint8 antPower=0;
-        quint8 jamInd=0;
-        quint8 flags=0;*/
         GnssMonHwStruct hw;
-    //*(tcpMessage.dStream) >> noise >> agc >> antStatus >> antPower >> jamInd >> flags;
-    *(tcpMessage.dStream) >> hw;
-        //emit gpsMonHWReceived(noise,agc,antStatus,antPower,jamInd,flags);
+        *(tcpMessage.dStream) >> hw;
         emit gpsMonHWReceived(hw);
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_MONHW2){
-/*        qint8 ofsI=0, ofsQ=0;
-        quint8 magI=0, magQ=0;
-        quint8 cfgSrc=0;*/
-    GnssMonHw2Struct hw2;
-//        *(tcpMessage.dStream) >> hw2.ofsI >> hw2.magI >> hw2.ofsQ >> hw2.magQ >> hw2.cfgSrc;
+        GnssMonHw2Struct hw2;
         *(tcpMessage.dStream) >> hw2;
-        //qDebug()<<"ofsI="<<ofsI<<" magI="<<magI<<"ofsQ="<<ofsQ<<" magQ="<<magQ<<" cfgSrc="<<cfgSrc;
-//        emit gpsMonHW2Received(ofsI, magI, ofsQ, magQ, cfgSrc);
         emit gpsMonHW2Received(hw2);
         return;
     }
@@ -789,10 +771,7 @@ void MainWindow::sendSetBiasVoltage(float voltage){
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_BIAS_VOLTAGE);
     *(tcpMessage.dStream) << voltage;
     emit sendTcpMessage(tcpMessage);
-//    emit sendRequest(TCP_MSG_KEY::MSG_DAC_REQUEST, 2);
 	emit sendRequest(TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST);
-//    emit sendRequest(adcSampleRequestSig, 2);
-//    emit sendRequest(adcSampleRequestSig, 3);
 }
 
 void MainWindow::sendSetBiasStatus(bool status){
@@ -824,7 +803,6 @@ void MainWindow::sendSetThresh(uint8_t channel, float value){
     *(tcpMessage.dStream) << channel << value;
     emit sendTcpMessage(tcpMessage);
 	emit sendRequest(TCP_MSG_KEY::MSG_THRESHOLD_REQUEST, channel);
-    //emit sendRequest(TCP_MSG_KEY::MSG_DAC_REQUEST, channel);
 }
 
 void MainWindow::sendSetUbxMsgRateChanges(QMap<uint16_t, int> changes){
@@ -843,7 +821,6 @@ void MainWindow::onHistogramCleared(QString histogramName){
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_HISTOGRAM_CLEAR);
     *(tcpMessage.dStream) << histogramName;
     emit sendTcpMessage(tcpMessage);
-//	qDebug()<<"received signal in slot MainWindow::onHistogramCleared("<<histogramName<<")";
 }
 
 void MainWindow::onAdcModeChanged(quint8 mode){
@@ -1288,5 +1265,4 @@ void MainWindow::onPolarityChanged(bool pol1, bool pol2){
     *(tcpMessage.dStream) << pol1 << pol2;
     emit sendTcpMessage(tcpMessage);
 }
-
 
