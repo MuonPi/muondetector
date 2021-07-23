@@ -139,18 +139,20 @@ void CustomPlot::setLogY(bool logscale){
 }
 
 
-void CustomPlot::setStatusEnabled(bool status){
-    if (status==true){
+void CustomPlot::setEnabled(bool enabled){
+
+	if (enabled == true){
 		for (auto it=fCurveMap.begin(); it!=fCurveMap.end(); ++it) {
 			(*it)->attach(this);
 		}
-        replot();
     } else {
 		for (auto it=fCurveMap.begin(); it!=fCurveMap.end(); ++it) {
 			(*it)->detach();
 		}
-        replot();
     }
+    
+    replot();
+	QwtPlot::setEnabled(enabled);
 }
 
 

@@ -21,7 +21,7 @@ public:
     QwtPlotCurve& curve(const QString& curveName);
     void addCurve(const QString& name, const QColor& curveColor=Qt::blue);
 
-    void setStatusEnabled(bool status);
+    void setEnabled(bool enabled);
 
     // for other plots: subclass "CustomPlot" and put all specific functions (like below) to the new class
 

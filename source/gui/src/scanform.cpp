@@ -30,15 +30,16 @@ ScanForm::ScanForm(QWidget *parent) :
     ui->scanPlot->setAxisTitle(QwtPlot::xBottom,"scanpar");
     ui->scanPlot->setAxisTitle(QwtPlot::yLeft,"observable");
 
-/*    
-    ui->scanPlot->addCurve("parscan", Qt::blue);
-    ui->scanPlot->curve("parscan").setStyle(QwtPlotCurve::NoCurve);
-    QwtSymbol *sym=new QwtSymbol(QwtSymbol::Rect, QBrush(Qt::blue, Qt::SolidPattern),QPen(Qt::black),QSize(5,5));
-    ui->scanPlot->curve("parscan").setSymbol(sym);
-*/
+	ui->scanPlot->addCurve("parscan", Qt::blue);
+	ui->scanPlot->curve("parscan").setStyle(QwtPlotCurve::NoCurve);
+	QwtSymbol *sym=new QwtSymbol(QwtSymbol::Rect, QBrush(Qt::blue, Qt::SolidPattern),QPen(Qt::black),QSize(5,5));
+	ui->scanPlot->curve("parscan").setSymbol(sym);
+
     ui->scanPlot->setAxisAutoScale(QwtPlot::xBottom, true);
     ui->scanPlot->setAxisAutoScale(QwtPlot::yLeft, true);
-    ui->scanPlot->replot();
+    //ui->scanPlot->replot();
+	ui->scanPlot->setEnabled(false);
+	
 	connect(ui->exportDataPushButton, &QPushButton::clicked, this, &ScanForm::exportData);
 	ui->exportDataPushButton->setEnabled(false);
     ui->currentScanGroupBox->setEnabled(false);
@@ -202,17 +203,12 @@ void ScanForm::on_plotDifferentialCheckBox_toggled(bool checked)
 
 void ScanForm::onUiEnabledStateChange(bool connected)
 {
-	this->setEnabled(connected);
-	ui->scanPlot->setEnabled(connected);
 	if (connected) {
-		ui->scanPlot->addCurve("parscan", Qt::blue);
-		ui->scanPlot->curve("parscan").setStyle(QwtPlotCurve::NoCurve);
-		QwtSymbol *sym=new QwtSymbol(QwtSymbol::Rect, QBrush(Qt::blue, Qt::SolidPattern),QPen(Qt::black),QSize(5,5));
-		ui->scanPlot->curve("parscan").setSymbol(sym);
 	} else {
-		ui->scanPlot->curve("parscan").detach();
 		if (active) finishScan();
 	}
+	this->setEnabled(connected);
+	ui->scanPlot->setEnabled(connected);
 }
 
 void ScanForm::exportData() {

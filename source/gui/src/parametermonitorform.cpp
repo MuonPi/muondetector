@@ -8,6 +8,7 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget *parent) :
     ui(new Ui::ParameterMonitorForm)
 {
     ui->setupUi(this);
+    ui->adcTracePlot->setMinimumHeight(30);
     ui->adcTracePlot->setTitle("ADC trace");
     ui->adcTracePlot->setAxisTitle(QwtPlot::xBottom,"sample nr. since trigger");
     ui->adcTracePlot->setAxisTitle(QwtPlot::yLeft,"U / V");
@@ -21,7 +22,9 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget *parent) :
     ui->adcTracePlot->setAxisScale(QwtPlot::xBottom, -10., 40. );
     ui->adcTracePlot->setAxisScale(QwtPlot::yLeft, 0., 3.5 );
     ui->adcTracePlot->replot();
-    foreach (GpioSignalDescriptor item, GPIO_SIGNAL_MAP) {
+	ui->adcTracePlot->setEnabled(false);
+    
+	foreach (GpioSignalDescriptor item, GPIO_SIGNAL_MAP) {
         if (item.direction==DIR_IN) ui->adcTriggerSelectionComboBox->addItem(item.name);
     }
     ui->timingSelectionComboBox->clear();
@@ -31,6 +34,7 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget *parent) :
     connect(ui->adcTraceGroupBox, &QGroupBox::clicked, this, [this](bool checked)
         {
             emit adcModeChanged((checked)?ADC_MODE_TRACE:ADC_MODE_PEAK);
+			ui->adcTracePlot->setEnabled(checked);
         } );
     connect( ui->preamp1EnCheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::preamp1EnableChanged );
     connect( ui->preamp2EnCheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::preamp2EnableChanged );
@@ -38,8 +42,6 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget *parent) :
     connect( ui->hiGainCheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::gainSwitchChanged );
 	connect( ui->pol1CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked );
     connect( ui->pol2CheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::onPolarityCheckBoxClicked );
-
-    ui->adcTracePlot->setMinimumHeight(30);
 }
 
 void ParameterMonitorForm::on_timingSelectionComboBox_currentIndexChanged(int index)
@@ -342,5 +344,11 @@ void ParameterMonitorForm::onPolarityCheckBoxClicked(bool /*checked*/){
 
 void ParameterMonitorForm::onUiEnabledStateChange(bool connected)
 {
+	if ( connected ) {
+		ui->adcTracePlot->setEnabled( ui->adcTraceGroupBox->isChecked() );
+	} else { 
+		ui->adcTracePlot->setEnabled(false);
+	}
 	this->setEnabled(connected);
+
 }
