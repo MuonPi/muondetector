@@ -121,7 +121,6 @@ QPolygonF GnssPosWidget::getCartPolygonUnity(const QPointF& polarPos) {
     return cartPolygon;
 }
 
-
 QPointF GnssPosWidget::polar2cartUnity(const QPointF& pol) {
     if (pol.y()>=90.) return QPointF(0.,0.);
     double magn=(90.-pol.y())/180.;
@@ -139,7 +138,6 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm) {
     const int satPosPixmapSize = pm.width();
     const QPointF originOffset(satPosPixmapSize/2., satPosPixmapSize/2.);
 
-    //    pixmap.fill(QColor("transparent"));
     pm.fill(Qt::white);
     QPainter satPosPainter(&pm);
     satPosPainter.setPen(QPen(Qt::black));
@@ -162,10 +160,8 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm) {
 
     // set up coordinate transformation
     QTransform trafo;
-//	trafo.translate(0.5,0.5);
     trafo.translate(originOffset.x(),originOffset.y());
     trafo.scale(satPosPixmapSize,satPosPixmapSize);
-//	trafo.translate(originOffset.x(),originOffset.y());
     satPosPainter.setTransform(trafo);
 
     // draw the sat tracks first
@@ -190,11 +186,7 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm) {
                 satPosPainter.setBrush(satColor);
                 QPainterPath path;
                 path.addPolygon(getCartPolygonUnity(satPoint.posPolar));
-                //path.translate(0.5,0.5);
                 satPosPainter.drawPolygon(path.toFillPolygon(QTransform()));
-
-                //satPosPainter.drawPath(path);
-                //satPosPainter.drawPoint(polar2cartUnity(satPoint.posPolar));
                 //qDebug()<<satPoint.posPolar<<" cnr="<<cnr<<" "<<pointVector.size()<<" entries";
             }
         }
@@ -219,8 +211,6 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm) {
             int alpha = alphaFromCnr(fCurrentSatlist[i].fCnr);
             fillColor.setAlpha(alpha);
             int satId = fCurrentSatlist[i].fGnssId*1000 + fCurrentSatlist[i].fSatId;
-/*            QPointF lastPoint(-2,-2);
-            int lastCnr = 255;*/
             if (fCurrentSatlist[i].fCnr>0)
             {
                 SatHistoryPoint p;
@@ -245,9 +235,7 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm) {
             currPoint+=originOffset;
 
             float satsize=ui->satSizeSpinBox->value();
-//            qreal satsize=(qreal)ui->satSizeSpinBox->value()/1000.;
             satPosPainter.drawEllipse(currPoint,satsize/2.,satsize/2.);
-//            if (fCurrentSatlist[i].fUsed) satPosPainter.drawEllipse(currPoint,satsize/2.+0.5,satsize/2.+0.5);
             if (fCurrentSatlist[i].fUsed) satPosPainter.drawEllipse(currPoint,1.05*satsize/2.,1.05*satsize/2.);
             currPoint.rx()+=satsize/2+4;
             if (ui->satLabelsCheckBox->isChecked()) satPosPainter.drawText(currPoint, QString::number(fCurrentSatlist[i].fSatId));
@@ -311,17 +299,6 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm) {
                 trafo.translate(0., 9*pm.height()/10.);
                 trafo.scale(pm.width()/360., -9.*pm.height()/900.);
                 satPosPainter.drawPolygon(path.toFillPolygon(trafo));
-
-//				satPosPainter.drawPolygon(path.toFillPolygon(QTransform::fromScale(pm.width()/360., -9.*pm.height()/900.)));
-
-                /*
-                QPointF p(satPoint.posPolar);
-                p=QPointF(p.x()/360.*pm.width(), -p.y()/90.*pm.height()*0.9+pm.height()*0.9);
-                float w=pm.width()/360.+0.99;
-                float h=pm.height()*0.9/90.+0.99;
-                satPosPainter.drawRect(p.x()-w/2.-0.5,p.y()-h/2.-0.5,w,h);
-                */
-
             }
         }
     }

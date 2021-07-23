@@ -40,6 +40,7 @@ ScanForm::ScanForm(QWidget *parent) :
     ui->scanPlot->replot();
 	connect(ui->exportDataPushButton, &QPushButton::clicked, this, &ScanForm::exportData);
 	ui->exportDataPushButton->setEnabled(false);
+    ui->currentScanGroupBox->setEnabled(false);
 }
 
 ScanForm::~ScanForm()
@@ -80,6 +81,8 @@ void ScanForm::scanParIteration() {
 		double rate=currentCounts/currentTimeInterval;
 		scanData[currentScanPar].value=rate;
 		scanData[currentScanPar].error=std::sqrt(currentCounts)/currentTimeInterval;
+        ui->currentScanparLabel->setText(QString::number(currentScanPar));
+        ui->currentObservableLabel->setText(QString::number(rate)+" +- "+QString::number(scanData[currentScanPar].error));
 		updateScanPlot();
 	}
 	currentScanPar+=stepSize;
@@ -149,6 +152,9 @@ void ScanForm::on_scanStartPushButton_clicked()
 	scanData.clear();
 	ui->scanProgressBar->setRange(0, abs(maxRange-minRange)/stepSize+0.5);
 	ui->scanProgressBar->reset();
+    ui->currentScanGroupBox->setEnabled(true);
+    ui->scanparNameLabel->setText(SP_NAMES[scanPar]);
+    ui->observableNameLabel->setText(OP_NAMES[obsPar]);
 }
 
 void ScanForm::finishScan() {
@@ -159,6 +165,7 @@ void ScanForm::finishScan() {
 	emit mqttInhibitChanged(false);
 	updateScanPlot();
 	ui->exportDataPushButton->setEnabled(true);
+    ui->currentScanGroupBox->setEnabled(false);
 }
 
 void ScanForm::updateScanPlot() {

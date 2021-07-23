@@ -165,40 +165,6 @@ void GpsSatsForm::onIntCounterReceived(quint32 cnt)
     ui->intCounterLabel->setText(QString::number(cnt));
 }
 
-/*
-void GpsSatsForm::onGpsMonHWReceived(quint16 noise, quint16 agc, quint8 antStatus, quint8 antPower, quint8 jamInd, quint8 flags)
-{
-    ui->lnaNoiseLabel->setText(QString::number(-noise)+" dBHz");
-    ui->lnaAgcLabel->setText(QString::number(agc));
-    QString str=GNSS_ANT_STATUS_STRINGS[antStatus];
-    switch (antStatus) {
-        case 0: ui->antStatusLabel->setStyleSheet("QLabel { background-color : yellow }");
-                break;
-        case 2: ui->antStatusLabel->setStyleSheet("QLabel { background-color : Window }");
-                break;
-        case 3: ui->antStatusLabel->setStyleSheet("QLabel { background-color : red }");
-                break;
-        case 4: ui->antStatusLabel->setStyleSheet("QLabel { background-color : red }");
-                break;
-        case 1:
-        default:
-                ui->antStatusLabel->setStyleSheet("QLabel { background-color : yellow }");
-    }
-    ui->antStatusLabel->setText(str);
-    switch (antPower) {
-        case 0: str="off";
-                break;
-        case 1: str="on";
-                break;
-        case 2:
-        default:
-                str="unknown";
-    }
-    ui->antPowerLabel->setText(str);
-    ui->jammingProgressBar->setValue(jamInd/2.55);
-}
-*/
-
 void GpsSatsForm::onGpsMonHWReceived(const GnssMonHwStruct& hwstruct)
 {
     ui->lnaNoiseLabel->setText(QString::number(-hwstruct.noise)+" dBHz");
@@ -231,34 +197,6 @@ void GpsSatsForm::onGpsMonHWReceived(const GnssMonHwStruct& hwstruct)
     ui->antPowerLabel->setText(str);
     ui->jammingProgressBar->setValue(hwstruct.jamInd/2.55);
 }
-
-/*
-void GpsSatsForm::onGpsMonHW2Received(qint8 ofsI, quint8 magI, qint8 ofsQ, quint8 magQ, quint8 cfgSrc)
-{
-    const int iqPixmapSize=65;
-    QPixmap iqPixmap(iqPixmapSize,iqPixmapSize);
-    //    pixmap.fill(QColor("transparent"));
-    iqPixmap.fill(Qt::white);
-    QPainter iqPainter(&iqPixmap);
-    iqPainter.setPen(QPen(Qt::black));
-    iqPainter.drawLine(QPoint(iqPixmapSize/2,0),QPoint(iqPixmapSize/2,iqPixmapSize));
-    iqPainter.drawLine(QPoint(0,iqPixmapSize/2),QPoint(iqPixmapSize,iqPixmapSize/2));
-    QColor col(Qt::blue);
-    iqPainter.setPen(col);
-    double x=0., y=0.;
-    for (int i=0; i<iqTrack.size();i++) {
-        iqPainter.drawPoint(iqTrack[i]);
-    }
-    x=ofsI*iqPixmapSize/(2*127)+iqPixmapSize/2.;
-    y=-ofsQ*iqPixmapSize/(2*127)+iqPixmapSize/2.;
-    col.setAlpha(100);
-    iqPainter.setBrush(col);
-    iqPainter.drawEllipse(QPointF(x,y),magI*iqPixmapSize/512.,magQ*iqPixmapSize/512.);
-    ui->iqAlignmentLabel->setPixmap(iqPixmap);
-    iqTrack.push_back(QPointF(x,y));
-    if (iqTrack.size()>MAX_IQTRACK_BUFFER) iqTrack.pop_front();
-}
-*/
 
 void GpsSatsForm::onGpsMonHW2Received(const GnssMonHw2Struct& hw2struct)
 {
