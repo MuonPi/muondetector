@@ -5,6 +5,7 @@
 #include <QPointF>
 #include <QFileDialog>
 #include <qwt_symbol.h>
+#include <cmath>
 #include <limits>
 #include <QThread>
 
@@ -41,6 +42,7 @@ ScanForm::ScanForm(QWidget *parent) :
 	connect(ui->exportDataPushButton, &QPushButton::clicked, this, &ScanForm::exportData);
 	ui->exportDataPushButton->setEnabled(false);
     ui->currentScanGroupBox->setEnabled(false);
+	ui->scanProgressBar->reset();
 }
 
 ScanForm::~ScanForm()
@@ -86,8 +88,6 @@ void ScanForm::scanParIteration() {
 		updateScanPlot();
 	}
 	currentScanPar+=stepSize;
-	adjustScanPar(SP_NAMES[scanPar], currentScanPar);
-	ui->scanProgressBar->setValue((currentScanPar-minRange)/stepSize);
 	if (currentScanPar>maxRange) {
 		// measurement finished
 		finishScan();
@@ -98,6 +98,8 @@ void ScanForm::scanParIteration() {
 */
 		return;
 	}
+	adjustScanPar(SP_NAMES[scanPar], currentScanPar);
+	ui->scanProgressBar->setValue( std::lround( ( currentScanPar - minRange ) / stepSize ) );
 	waitForFirst=true;
 }
 
@@ -150,22 +152,24 @@ void ScanForm::on_scanStartPushButton_clicked()
 	active=true;
 	waitForFirst=true;
 	scanData.clear();
-	ui->scanProgressBar->setRange(0, abs(maxRange-minRange)/stepSize+0.5);
-	ui->scanProgressBar->reset();
+	ui->scanProgressBar->setRange(0, 1 + std::lround( std::abs( maxRange - minRange )/stepSize ) );
+	ui->scanProgressBar->setValue(0);
     ui->currentScanGroupBox->setEnabled(true);
     ui->scanparNameLabel->setText(SP_NAMES[scanPar]);
     ui->observableNameLabel->setText(OP_NAMES[obsPar]);
+    ui->currentScanparLabel->setText(QString::number(minRange));
+    ui->currentObservableLabel->setText("---");
 }
 
 void ScanForm::finishScan() {
 	ui->scanStartPushButton->setText(tr("Start Scan"));
 	active=false;
-	ui->scanProgressBar->reset();
 	emit gpioInhibitChanged(false);
 	emit mqttInhibitChanged(false);
 	updateScanPlot();
 	ui->exportDataPushButton->setEnabled(true);
     ui->currentScanGroupBox->setEnabled(false);
+	ui->scanProgressBar->reset();
 }
 
 void ScanForm::updateScanPlot() {

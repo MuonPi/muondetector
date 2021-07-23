@@ -141,12 +141,14 @@ void CustomPlot::setLogY(bool logscale){
 
 void CustomPlot::setStatusEnabled(bool status){
     if (status==true){
-//        curve->attach(this);
-        //setTitle(title);
+		for (auto it=fCurveMap.begin(); it!=fCurveMap.end(); ++it) {
+			(*it)->attach(this);
+		}
         replot();
-    }else{
-//        curve->detach();
-        //setTitle("");
+    } else {
+		for (auto it=fCurveMap.begin(); it!=fCurveMap.end(); ++it) {
+			(*it)->detach();
+		}
         replot();
     }
 }
