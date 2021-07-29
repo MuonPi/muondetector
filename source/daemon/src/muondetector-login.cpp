@@ -193,9 +193,7 @@ int main()
     QObject::connect(&mqttHandler, &MuonPi::MqttHandler::mqttConnectionStatus,
         [context = std::move(context)](bool connected) mutable {
             if (connected) {
-                std::cout << "login data is correct!" << std::endl;
-            }
-            {
+                std::cout << "login data is correct!\n";
             }
             context.release();
         });
