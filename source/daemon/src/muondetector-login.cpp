@@ -54,7 +54,7 @@ auto getpass(const char* prompt, const bool show_asterisk) -> std::string
 
     std::string password {};
     char ch { getch() };
-    std::cout << prompt << std::endl;
+    std::cout << prompt;
     while ((ch = getch()) != RETURN) {
         if (ch == BACKSPACE) {
             if (password.length() != 0) {
@@ -172,11 +172,10 @@ auto saveLoginData(const QString& loginFilePath,
 
 int main()
 {
-    std::cout << "To set the login for the mqtt-server, please enter user name:"
-              << std::endl;
+    std::cout << "To set the login for the mqtt-server, please enter your credentials.\nusername: ";
     std::string username {};
     std::cin >> username;
-    std::string password { getpass("please enter password:", true) };
+    std::string password { getpass("password: ", true) };
     QString hashedMacAddress { QString{QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex() } };
     QDir temp;
     QString saveDirPath{ "/var/muondetector/" + hashedMacAddress  };
