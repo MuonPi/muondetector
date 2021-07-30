@@ -891,12 +891,16 @@ void MainWindow::uiSetDisconnectedState() {
     ui->biasPowerLabel->setDisabled(true);
     ui->biasPowerLabel->setStyleSheet("QLabel {color: darkGray;}");
     ui->biasPowerButton->setDisabled(true);
+    ui->tabWidget->setEnabled(false);
+    ui->controlWidget->setEnabled(false);
     // disable other widgets
     emit setUiEnabledStates(false);
 }
 
 void MainWindow::uiSetConnectedState() {
     // change color and text of labels and buttons
+    ui->tabWidget->setEnabled(true);
+    ui->controlWidget->setEnabled(true);
     ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGreen;}");
     ui->ipStatusLabel->setText("connected");
     ui->ipButton->setText("disconnect");
