@@ -141,7 +141,7 @@ void CustomPlot::setLogY(bool logscale){
 
 void CustomPlot::setEnabled(bool enabled){
 
-	if (enabled == true){
+    if (enabled){
 		for (auto it=fCurveMap.begin(); it!=fCurveMap.end(); ++it) {
 			(*it)->attach(this);
 		}
