@@ -275,8 +275,11 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
     if (!tcpConnection) {
         delete(tcpConnection);
     }
+    ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGray;}");
+    ui->ipStatusLabel->setText("Please wait...");
     ui->ipButton->setText("connecting");
     ui->ipButton->setEnabled(false);
+    ui->ipBox->setEnabled(false);
     tcpConnection = new TcpConnection(ipAddress, port, verbose);
     tcpConnection->moveToThread(tcpThread);
     connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::makeConnection);
@@ -974,6 +977,7 @@ void MainWindow::connected() {
 void MainWindow::connection_error(int error_code, const QString message)
 {
     uiSetDisconnectedState();
+    ui->ipStatusLabel->setStyleSheet("QLabel {color: red;}");
     ui->ipStatusLabel->setText("Connection error: (" + QString::number(error_code) + ") '" + message + "'");
 }
 
