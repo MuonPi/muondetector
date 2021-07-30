@@ -111,6 +111,7 @@ private slots:
 
     void onIpButtonClicked();
     void connected();
+    void connection_error(int error_code, const QString message);
     void sendInputSwitch(uint8_t id);
     void on_discr1Edit_editingFinished();
     void on_discr1Slider_sliderReleased();

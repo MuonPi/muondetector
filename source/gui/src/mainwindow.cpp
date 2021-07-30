@@ -275,12 +275,15 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
     if (!tcpConnection) {
         delete(tcpConnection);
     }
+    ui->ipButton->setText("connecting");
+    ui->ipButton->setEnabled(false);
     tcpConnection = new TcpConnection(ipAddress, port, verbose);
     tcpConnection->moveToThread(tcpThread);
     connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::makeConnection);
     connect(tcpThread, &QThread::finished, tcpThread, &QThread::deleteLater);
     connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
     connect(tcpConnection, &TcpConnection::connected, this, &MainWindow::connected);
+    connect(tcpConnection, &TcpConnection::error, this, &MainWindow::connection_error);
     connect(this, &MainWindow::closeConnection, tcpConnection, &TcpConnection::closeThisConnection);
     connect(tcpConnection, &TcpConnection::finished, tcpThread, &QThread::quit);
     connect(this, &MainWindow::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
@@ -866,6 +869,7 @@ void MainWindow::uiSetDisconnectedState() {
     ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGray;}");
     ui->ipStatusLabel->setText("not connected");
     ui->ipButton->setText("connect");
+    ui->ipButton->setEnabled(true);
     ui->ipBox->setEnabled(true);
     // disable all relevant objects of mainwindow
     ui->discr1Label->setStyleSheet("QLabel {color: darkGray;}");
@@ -896,6 +900,7 @@ void MainWindow::uiSetConnectedState() {
     ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGreen;}");
     ui->ipStatusLabel->setText("connected");
     ui->ipButton->setText("disconnect");
+    ui->ipButton->setEnabled(true);
     ui->ipBox->setDisabled(true);
     ui->discr1Label->setStyleSheet("QLabel {color: black;}");
     ui->discr2Label->setStyleSheet("QLabel {color: black;}");
@@ -962,6 +967,11 @@ void MainWindow::connected() {
 	sendRequest(TCP_MSG_KEY::MSG_POLARITY_SWITCH_REQUEST);
 }
 
+void MainWindow::connection_error(int error_code, const QString message)
+{
+    uiSetDisconnectedState();
+    ui->ipStatusLabel->setText("Connection error: (" + QString::number(error_code) + ") '" + message + "'");
+}
 
 void MainWindow::sendValueUpdateRequests() {
     sendRequest(TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST);
