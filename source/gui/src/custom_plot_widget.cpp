@@ -142,13 +142,13 @@ void CustomPlot::setLogY(bool logscale){
 void CustomPlot::setEnabled(bool enabled){
 
     if (enabled){
-		for (auto it=fCurveMap.begin(); it!=fCurveMap.end(); ++it) {
-			(*it)->attach(this);
-		}
+        for (auto& curve: fCurveMap) {
+            curve->attach(this);
+        }
     } else {
-		for (auto it=fCurveMap.begin(); it!=fCurveMap.end(); ++it) {
-			(*it)->detach();
-		}
+        for (auto& curve: fCurveMap) {
+            curve->detach();
+        }
     }
     
     replot();
