@@ -24,6 +24,11 @@ LogEngine::~LogEngine()
 {
 }
 
+void LogEngine::setHashLength(int hash_length)
+{
+    hashLength = hash_length;
+}
+
 void LogEngine::onLogParameterReceived(const LogParameter& logpar) {
     if (logpar.logType()==LogParameter::LOG_NEVER) {
         return;
@@ -55,7 +60,7 @@ void LogEngine::onLogParameterReceived(const LogParameter& logpar) {
 void LogEngine::onLogInterval() {
     emit logIntervalSignal();
     // send log items which should always be sent
-    emit sendLogString(dateStringNow() + " maxGeohashLength " + QString::number(MuonPi::Settings::log.max_geohash_length));
+    emit sendLogString(dateStringNow() + " maxGeohashLength " + QString::number(hashLength));
     emit sendLogString(dateStringNow() + " softwareVersionString " + QString::fromStdString(MuonPi::Version::software.string()));
     emit sendLogString(dateStringNow() + " hardwareVersionString " + QString::fromStdString(MuonPi::Version::hardware.string()));
 

@@ -127,11 +127,35 @@ class Daemon : public QTcpServer
     Q_OBJECT
 
 public:
-    Daemon(QString username, QString password, QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
-        float *new_dacThresh, float new_biasVoltage, bool bias_ON, bool new_dumpRaw, int new_baudrate,
-        bool new_configGnss, unsigned int new_eventTrigger, QString new_PeerAddress, quint16 new_PpeerPort,
-        QString new_serverAddress, quint16 new_serverPort, bool new_showout, bool new_showin, bool preamp1, bool preamp2, bool gain, QString station_ID,
-        bool new_polarity1, bool new_polarity2, QObject *parent = 0);
+    struct configuration {
+        QString username;
+        QString password;
+        QString gpsdevname {""};
+        int verbose { 0 };
+        quint8 pcaPortMask { 0 };
+        std::array<float,2> dacThresh { -1.0F, -1.0F };
+        float biasVoltage { -1.0F };
+        bool bias_ON { false };
+        bool dumpRaw;
+        int baudrate {9600};
+        bool configGnss { false };
+        unsigned int eventTrigger { EVT_XOR };
+        QString peerAddress { "" };
+        quint16 peerPort { 0 };
+        QString serverAddress { "" };
+        quint16 serverPort { 0 };
+        bool showout { false };
+        bool showin { false };
+        std::array<bool, 2> preamp { false, false };
+        bool gain { false };
+        QString station_ID { "0" };
+        std::array<bool, 2> polarity { true, true };
+        int maxGeohashLength {MuonPi::Settings::log.max_geohash_length};
+        bool storeLocal { false };
+    };
+
+    Daemon(configuration cfg, QObject* parent = nullptr);
+
     ~Daemon() override;
     void configGps();
     void configGpsForVersion();
@@ -344,6 +368,8 @@ private:
     QPointer<QThread> pigThread;
     QPointer<QThread> gpsThread;
     QPointer<QThread> tcpThread;
+
+    configuration config;
 };
 
 #endif // DAEMON_H

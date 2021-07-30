@@ -161,13 +161,9 @@ void Daemon::handleSigInt()
 }
 
 
-// begin of the Daemon class
-Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int new_verbose, quint8 new_pcaPortMask,
-    float *new_dacThresh, float new_biasVoltage, bool bias_ON, bool new_dumpRaw, int new_baudrate,
-    bool new_configGnss, unsigned int new_eventTrigger, QString new_peerAddress, quint16 new_peerPort,
-    QString new_daemonAddress, quint16 new_daemonPort, bool new_showout, bool new_showin, bool preamp1, bool preamp2, bool gain, QString station_ID,
-    bool new_polarity1, bool new_polarity2, QObject *parent)
-    : QTcpServer(parent)
+Daemon::Daemon(configuration cfg, QObject *parent)
+    : QTcpServer { parent }
+    , config { cfg }
 {
     // first, we must set the locale to be independent of the number format of the system's locale.
     // We rely on parsing floating point numbers with a decimal point (not a komma) which might fail if not setting the classic locale
@@ -217,7 +213,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     connect(snInt, SIGNAL(activated(int)), this, SLOT(handleSigInt()));
 
     // general
-    verbose = new_verbose;
+    verbose = cfg.verbose;
     if (verbose > 4) {
         qDebug() << "daemon running in thread " << this->thread()->objectName();
     }
@@ -298,7 +294,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     connect(this, &Daemon::aboutToQuit, mqttHandlerThread, &QThread::quit);
     connect(mqttHandlerThread, &QThread::finished, mqttHandlerThread, &QThread::deleteLater);
 
-    mqttHandler = new MuonPi::MqttHandler(station_ID, verbose-1);
+    mqttHandler = new MuonPi::MqttHandler(cfg.station_ID, verbose-1);
     mqttHandler->moveToThread(mqttHandlerThread);
     connect(mqttHandler, &MuonPi::MqttHandler::mqttConnectionStatus, this, &Daemon::sendMqttStatus);
     connect(fileHandlerThread, &QThread::finished, mqttHandler, &MuonPi::MqttHandler::deleteLater);
@@ -312,7 +308,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     connect(this, &Daemon::aboutToQuit, fileHandlerThread, &QThread::quit);
     connect(fileHandlerThread, &QThread::finished, fileHandlerThread, &QThread::deleteLater);
 
-    fileHandler = new FileHandler(username, password);
+    fileHandler = new FileHandler(cfg.username, cfg.password);
     fileHandler->moveToThread(fileHandlerThread);
     connect(this, &Daemon::aboutToQuit, fileHandler, &FileHandler::deleteLater);
     connect(fileHandlerThread, &QThread::started, fileHandler, &FileHandler::start);
@@ -404,19 +400,19 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
         // the function of the threshold discriminator
         // we should quit here returning an error code (?)
     }
-    float *tempThresh = new_dacThresh;
+
     for (int i=std::min(DAC_TH1, DAC_TH2); i<=std::max(DAC_TH1, DAC_TH2); i++) {
-        if (tempThresh[i]<0. && dac->devicePresent()) {
+        if (cfg.dacThresh[i]<0. && dac->devicePresent()) {
             MCP4728::DacChannel dacChannel;
             MCP4728::DacChannel eepromChannel;
             eepromChannel.eeprom=true;
             dac->readChannel(i, dacChannel);
             dac->readChannel(i, eepromChannel);
-            tempThresh[i]=MCP4728::code2voltage(dacChannel);
+            cfg.dacThresh[i]=MCP4728::code2voltage(dacChannel);
         }
     }
-    dacThresh.push_back(tempThresh[0]);
-    dacThresh.push_back(tempThresh[1]);
+    dacThresh.push_back(cfg.dacThresh[0]);
+    dacThresh.push_back(cfg.dacThresh[1]);
 
 
     if (dac->devicePresent()) {
@@ -430,7 +426,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
         }
     }
 
-    biasVoltage = new_biasVoltage;
+    biasVoltage = cfg.biasVoltage;
     if (biasVoltage<0. && dac->devicePresent()) {
         MCP4728::DacChannel dacChannel;
         MCP4728::DacChannel eepromChannel;
@@ -449,7 +445,7 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
             qDebug()<<"readout took "<<dec<<pca->getLastTimeInterval()<<" ms";
         }
         pca->setOutputPorts(0b00000111);
-        setPcaChannel(new_pcaPortMask);
+        setPcaChannel(cfg.pcaPortMask);
     } else {
         qCritical()<<"PCA9536 device NOT present!";
     }
@@ -505,13 +501,13 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     }
 
     // for pigpio signals:
-    preampStatus[0]=preamp1;
-    preampStatus[1]=preamp2;
-    gainSwitch=gain;
-    biasON = bias_ON;
-    eventTrigger = (GPIO_PIN)new_eventTrigger;
-    polarity1=new_polarity1;
-    polarity2=new_polarity2;
+    preampStatus[0]=cfg.preamp[0];
+    preampStatus[1]=cfg.preamp[1];
+    gainSwitch=cfg.gain;
+    biasON = cfg.bias_ON;
+    eventTrigger = (GPIO_PIN)cfg.eventTrigger;
+    polarity1=cfg.polarity[0];
+    polarity2=cfg.polarity[1];
 
 
     // for diagnostics:
@@ -532,31 +528,31 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     }
 
     // for ublox gnss module
-    gpsdevname = new_gpsdevname;
-    dumpRaw = new_dumpRaw;
-    baudrate = new_baudrate;
-    configGnss = new_configGnss;
-    showout = new_showout;
-    showin = new_showin;
+    gpsdevname = cfg.gpsdevname;
+    dumpRaw = cfg.dumpRaw;
+    baudrate = cfg.baudrate;
+    configGnss = cfg.configGnss;
+    showout = cfg.showout;
+    showin = cfg.showin;
 
     // for tcp connection with fileServer
-    peerPort = new_peerPort;
+    peerPort = cfg.peerPort;
     if (peerPort == 0) {
         peerPort = 51508;
     }
-    peerAddress = new_peerAddress;
+    peerAddress = cfg.peerAddress;
     if (peerAddress.isEmpty() || peerAddress == "local" || peerAddress == "localhost") {
         peerAddress = QHostAddress(QHostAddress::LocalHost).toString();
     }
 
-    if (new_daemonAddress.isEmpty()) {
+    if (cfg.serverAddress.isEmpty()) {
         // if not otherwise specified: listen on all available addresses
         daemonAddress = QHostAddress(QHostAddress::Any);
         if (verbose > 3) {
             qDebug() << "daemon address: "<<daemonAddress.toString();
         }
     }
-    daemonPort = new_daemonPort;
+    daemonPort = cfg.serverPort;
     if (daemonPort == 0) {
         // maybe think about other fall back solution
         daemonPort = MuonPi::Settings::gui.port;
@@ -594,6 +590,8 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
     parameterMonitorTimer.setSingleShot(false);
     connect(&parameterMonitorTimer, &QTimer::timeout, this, &Daemon::aquireMonitoringParameters);
     parameterMonitorTimer.start();
+
+    logEngine.setHashLength(cfg.maxGeohashLength);
 }
 
 
@@ -813,7 +811,7 @@ void Daemon::connectToGps() {
     // connect fileHandler related stuff
     if (fileHandler != nullptr){
         //connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
-        if (MuonPi::Settings::events.store_local) {
+        if (config.storeLocal) {
             connect(this, &Daemon::eventMessage, fileHandler, &FileHandler::writeToDataFile);
         }
 		//connect(qtGps, &QtSerialUblox::timTM2, mqttHandler, &MuonPi::MqttHandler::sendData);

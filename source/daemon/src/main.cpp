@@ -224,8 +224,8 @@ int main(int argc, char *argv[])
         QCoreApplication::translate("main", "threshold2"));
     parser.addOption(discr2Option);
 
-    // pcaChannel to select signal to ublox
-    QCommandLineOption pcaChannelOption(QStringList() << "pca" << "signal",
+    // pcaPortMask to select signal to ublox
+    QCommandLineOption pcaPortMaskOption(QStringList() << "pca" << "signal",
         QCoreApplication::translate("main", "set input signal for ublox interrupt pin:"
             "\n0 - coincidence (AND)"
             "\n1 - anti-coincidence (XOR)"
@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
             "\n7 - ext signal"
         ),
         QCoreApplication::translate("main", "channel"));
-    parser.addOption(pcaChannelOption);
+    parser.addOption(pcaPortMaskOption);
 
     // biasVoltage for SiPM
     QCommandLineOption biasVoltageOption(QStringList() << "bias" << "vout",
@@ -284,6 +284,8 @@ int main(int argc, char *argv[])
     const QStringList args = parser.positionalArguments();
     if (args.size() > 1) { qWarning() << "you set additional positional arguments but the program does not use them"; }
 
+    Daemon::configuration daemonConfig;
+
     bool ok;
     if (parser.isSet(verbosityOption)) {
         verbose = parser.value(verbosityOption).toInt(&ok);
@@ -292,10 +294,11 @@ int main(int argc, char *argv[])
             qWarning() << "wrong verbosity level selection...setting to 0";
         }
     }
+    daemonConfig.verbose = verbose;
 
     try
     {
-        MuonPi::Settings::log.max_geohash_length = cfg.lookup("max_geohash_length");
+        daemonConfig.maxGeohashLength = cfg.lookup("max_geohash_length");
     }
     catch (const libconfig::SettingNotFoundException&)
     {
@@ -303,30 +306,21 @@ int main(int argc, char *argv[])
 
     try
     {
-        MuonPi::Settings::gui.port = cfg.lookup("tcp_port");
-    }
-    catch (const libconfig::SettingNotFoundException&)
-    {
-    }
-
-    try
-    {
-        MuonPi::Settings::events.store_local = cfg.lookup("store_local");
+        daemonConfig.storeLocal = cfg.lookup("store_local");
     }
     catch (const libconfig::SettingNotFoundException&)
     {
     }
 
     // setup all variables for ublox module manager, then make the object run
-    QString gpsdevname="";
     if (!args.empty() && args.at(0) != "") {
-        gpsdevname = args.at(0);
+        daemonConfig.gpsdevname = args.at(0);
     } else
     try
     {
         std::string gpsdevnameCfg = cfg.lookup("ublox_device");
         if (verbose>2) std::cout << "ublox device: " << gpsdevnameCfg << std::endl;
-        gpsdevname = QString::fromStdString(gpsdevnameCfg);
+        daemonConfig.gpsdevname = QString::fromStdString(gpsdevnameCfg);
     }
     catch(const libconfig::SettingNotFoundException &nfex)
     {
@@ -334,8 +328,8 @@ int main(int argc, char *argv[])
         QDir directory("/dev","*",QDir::Name, QDir::System);
         QStringList serialports = directory.entryList(QStringList({"ttyS0","ttyAMA0","serial0"}));
         if (!serialports.empty()){
-            gpsdevname=QString("/dev/"+serialports.last());
-            qInfo() << "detected" << gpsdevname << "as most probable candidate";
+            daemonConfig.gpsdevname = QString("/dev/"+serialports.last());
+            qInfo() << "detected" << daemonConfig.gpsdevname << "as most probable candidate";
         }else{
             qCritical() << "no device selected, will not connect to GNSS module" << endl;
         }
@@ -345,257 +339,247 @@ int main(int argc, char *argv[])
         qDebug() << "int main running in thread"
             << QString("0x%1").arg(reinterpret_cast<std::uint64_t>(QCoreApplication::instance()->thread()));
     }
-    bool dumpRaw = parser.isSet(dumpRawOption);
-    int baudrate = 9600;
+    daemonConfig.dumpRaw = parser.isSet(dumpRawOption);
     if (parser.isSet(baudrateOption)) {
-        baudrate = parser.value(baudrateOption).toInt(&ok);
-        if (!ok || baudrate < 0) {
-            baudrate = 9600;
-            qWarning() << "wrong input for baudrate...using default:" << baudrate;
+        daemonConfig.baudrate = parser.value(baudrateOption).toInt(&ok);
+        if (!ok || daemonConfig.baudrate < 0) {
+            daemonConfig.baudrate = 9600;
+            qWarning() << "wrong input for baudrate...using default:" << daemonConfig.baudrate;
         }
     } else
     try
     {
         int baudrateCfg = cfg.lookup("ublox_baud");
         if (verbose>2) qInfo() << "ublox baudrate:" << baudrateCfg;
-        baudrate = baudrateCfg;
+        daemonConfig.baudrate = baudrateCfg;
     }
     catch(const libconfig::SettingNotFoundException &nfex)
     {
         if (verbose>1)
-            qWarning() << "No 'ublox_baud' setting in configuration file. Assuming" << baudrate;
+            qWarning() << "No 'ublox_baud' setting in configuration file. Assuming" << daemonConfig.baudrate;
     }
 
-    bool showGnssConfig = false;
-    showGnssConfig = parser.isSet(showGnssConfigOption);
-    quint16 peerPort = 0;
+    daemonConfig.configGnss = parser.isSet(showGnssConfigOption);
     if (parser.isSet(peerPortOption)) {
-        peerPort = parser.value(peerPortOption).toUInt(&ok);
+        daemonConfig.peerPort = parser.value(peerPortOption).toUInt(&ok);
         if (!ok) {
-            peerPort = 0;
+            daemonConfig.peerPort = 0;
             qCritical() << "wrong input peerPort (maybe not an integer)";
         }
     }
-    QString peerAddress = "";
     if (parser.isSet(peerIpOption)) {
-        peerAddress = parser.value(peerIpOption);
-        if (!QHostAddress(peerAddress).toIPv4Address()) {
-            if (peerAddress != "localhost" && peerAddress != "local") {
-                peerAddress = "";
+        daemonConfig.peerAddress = parser.value(peerIpOption);
+        if (!QHostAddress(daemonConfig.peerAddress).toIPv4Address()) {
+            if (daemonConfig.peerAddress != "localhost" && daemonConfig.peerAddress != "local") {
+                daemonConfig.peerAddress = "";
                 qCritical() << "wrong input ipAddress, not an ipv4address";
             }
         }
     }
-    quint16 daemonPort = 0;
+    try
+    {
+        int port = cfg.lookup("tcp_port");
+        daemonConfig.serverPort = static_cast<quint16>(port);
+    }
+    catch (const libconfig::SettingNotFoundException&)
+    {
+    }
     if (parser.isSet(daemonPortOption)) {
-        daemonPort = parser.value(daemonPortOption).toUInt(&ok);
+        daemonConfig.serverPort = parser.value(daemonPortOption).toUInt(&ok);
         if (!ok) {
-            peerPort = 0;
+            daemonConfig.peerPort = 0;
             qCritical() << "wrong input peerPort (maybe not an integer)";
         }
     }
-    QString daemonAddress = "";
     if (parser.isSet(daemonIpOption)) {
-        daemonAddress = parser.value(daemonIpOption);
-        if (!QHostAddress(daemonAddress).toIPv4Address()) {
-            if (daemonAddress != "localhost" && daemonAddress != "local") {
-                daemonAddress = "";
+        daemonConfig.serverAddress = parser.value(daemonIpOption);
+        if (!QHostAddress(daemonConfig.serverAddress).toIPv4Address()) {
+            if (daemonConfig.serverAddress != "localhost" && daemonConfig.serverAddress != "local") {
+                daemonConfig.serverAddress = "";
                 qCritical() << "wrong daemon ipAddress, not an ipv4address";
             }
         }
     }
 
-    quint8 pcaChannel = 0;
-    if (parser.isSet(pcaChannelOption)) {
-        pcaChannel = parser.value(pcaChannelOption).toUInt(&ok);
+    if (parser.isSet(pcaPortMaskOption)) {
+        daemonConfig.pcaPortMask = parser.value(pcaPortMaskOption).toUInt(&ok);
         if (!ok) {
-            pcaChannel = 0;
-            qCritical() << "wrong input pcaChannel (maybe not an unsigned integer)";
+            daemonConfig.pcaPortMask = 0;
+            qCritical() << "wrong input pcaPortMask (maybe not an unsigned integer)";
         }
     } else
     try
     {
-        int pcaChannelCfg = cfg.lookup("timing_input");
-        if (verbose>2) qDebug() << "timing input: " << pcaChannelCfg << endl;
-        pcaChannel = pcaChannelCfg;
+        int pcaPortMaskCfg = cfg.lookup("timing_input");
+        if (verbose>2) qDebug() << "timing input: " << pcaPortMaskCfg << endl;
+        daemonConfig.pcaPortMask = pcaPortMaskCfg;
     }
     catch(const libconfig::SettingNotFoundException &nfex)
     {
-        qWarning() << "No 'timing_input' setting in configuration file. Assuming" << (int)pcaChannel;
+        qWarning() << "No 'timing_input' setting in configuration file. Assuming" << (int)daemonConfig.pcaPortMask;
     }
 
-    bool showout = false;
-    showout = parser.isSet(showoutOption);
-    bool showin = false;
-    showin = parser.isSet(showinOption);
+    daemonConfig.showout = parser.isSet(showoutOption);
+    daemonConfig.showin = parser.isSet(showinOption);
 
-    float dacThresh[2];
-    dacThresh[0] = -1.;
+
     if (parser.isSet(discr1Option)) {
-        dacThresh[0] = parser.value(discr1Option).toFloat(&ok);
+        daemonConfig.dacThresh[0] = parser.value(discr1Option).toFloat(&ok);
         if (!ok) {
-            dacThresh[0] = -1.;
+            daemonConfig.dacThresh[0] = -1.;
             qCritical() << "error in value for discr1 (maybe not a float)";
         }
     }
-    dacThresh[1] = -1.;
     if (parser.isSet(discr2Option)) {
-        dacThresh[1] = parser.value(discr2Option).toFloat(&ok);
+        daemonConfig.dacThresh[1] = parser.value(discr2Option).toFloat(&ok);
         if (!ok) {
-            dacThresh[1] = -1.;
+            daemonConfig.dacThresh[1] = -1.;
             qCritical() << "error in value for discr2 (maybe not a float)";
         }
     }
-    float biasVoltage = -1.;
     if (parser.isSet(biasVoltageOption)) {
-        biasVoltage = parser.value(biasVoltageOption).toFloat(&ok);
+        daemonConfig.biasVoltage = parser.value(biasVoltageOption).toFloat(&ok);
         if (!ok) {
-            biasVoltage = -1.;
+            daemonConfig.biasVoltage = -1.;
             qCritical() << "error in value for biasVoltage (maybe not a float)";
         }
     }
-    bool biasPower = false;
+
     if (parser.isSet(biasPowerOnOff)) {
-        biasPower = true;
+        daemonConfig.bias_ON = true;
     } else
     try
     {
         int biasPowerCfg = cfg.lookup("bias_switch");
         if (verbose>2) qDebug() << "bias switch:" << biasPowerCfg;
-        biasPower = biasPowerCfg;
+        daemonConfig.bias_ON = biasPowerCfg;
     }
     catch(const libconfig::SettingNotFoundException &nfex)
     {
-        qWarning() << "No 'bias_switch' setting in configuration file. Assuming" << (int)biasPower;
+        qWarning() << "No 'bias_switch' setting in configuration file. Assuming" << (int)daemonConfig.bias_ON;
     }
 
-    bool preamp1 = false;
     if (parser.isSet(preamp1Option)) {
-        preamp1 = true;
+        daemonConfig.preamp[0] = true;
     } else
     try
     {
         int preamp1Cfg = cfg.lookup("preamp1_switch");
         if (verbose>2) qDebug() << "preamp1 switch:" << preamp1Cfg;
-        preamp1 = preamp1Cfg;
+        daemonConfig.preamp[0] = preamp1Cfg;
     }
     catch(const libconfig::SettingNotFoundException &nfex)
     {
-        qWarning() << "No 'preamp1_switch' setting in configuration file. Assuming" << (int)preamp1;
+        qWarning() << "No 'preamp1_switch' setting in configuration file. Assuming" << (int)daemonConfig.preamp[0];
     }
 
-    bool preamp2 = false;
     if (parser.isSet(preamp2Option)) {
-        preamp2 = true;
+        daemonConfig.preamp[1] = true;
     } else
     try
     {
         int preamp2Cfg = cfg.lookup("preamp2_switch");
         if (verbose>2) qDebug() << "preamp2 switch:" << preamp2Cfg;
-        preamp2 = preamp2Cfg;
+        daemonConfig.preamp[1] = preamp2Cfg;
     }
     catch(const libconfig::SettingNotFoundException &nfex)
     {
-        qWarning() << "No 'preamp2_switch' setting in configuration file. Assuming " << (int)preamp2;
+        qWarning() << "No 'preamp2_switch' setting in configuration file. Assuming " << (int)daemonConfig.preamp[1];
     }
 
 
-    bool gain = false;
     if (parser.isSet(gainOption)) {
-        gain = true;
+        daemonConfig.gain = true;
     } else {
         try
         {
             int gainCfg = cfg.lookup("gain_switch");
             if (verbose>2) qDebug() << "gain switch:" << gainCfg;
-            gain = gainCfg;
+            daemonConfig.gain = gainCfg;
         }
         catch(const libconfig::SettingNotFoundException &nfex)
         {
             if (verbose>0)
-                qWarning() << "No 'gain_switch' setting in configuration file. Assuming" << (int)gain;
+                qWarning() << "No 'gain_switch' setting in configuration file. Assuming" << (int)daemonConfig.gain;
         }
     }
 
-    unsigned int eventSignal = EVT_XOR;
     if (parser.isSet(eventInputOption)) {
-        eventSignal = parser.value(eventInputOption).toUInt(&ok);
-        if (!ok || eventSignal>1) {
+        daemonConfig.eventTrigger = parser.value(eventInputOption).toUInt(&ok);
+        if (!ok || daemonConfig.eventTrigger>1) {
             qCritical() << "wrong trigger input signal (valid: 0,1)";
             return -1;
         } else {
-            switch (eventSignal) {
-                case 1:	eventSignal=EVT_AND;
+            switch (daemonConfig.eventTrigger) {
+                case 1:	daemonConfig.eventTrigger=EVT_AND;
                     break;
                 case 0:
                 default:
-                    eventSignal=EVT_XOR;
+                    daemonConfig.eventTrigger=EVT_XOR;
                     break;
             }
         }
     } else
     try
     {
-        int eventSignalCfg = cfg.lookup("trigger_input");
-        if (verbose>2) qDebug() << "event trigger : " << eventSignalCfg;
-        switch (eventSignalCfg) {
-            case 1:	eventSignal=EVT_AND;
+        int eventTriggerCfg = cfg.lookup("trigger_input");
+        if (verbose>2) qDebug() << "event trigger : " << eventTriggerCfg;
+        switch (eventTriggerCfg) {
+            case 1:	daemonConfig.eventTrigger=EVT_AND;
                 break;
             case 0:
             default:
-                eventSignal=EVT_XOR;
+                daemonConfig.eventTrigger=EVT_XOR;
                 break;
         }
     }
     catch(const libconfig::SettingNotFoundException &nfex)
     {
-        qWarning() << "No 'trigger_input' setting in configuration file. Assuming signal" << GPIO_SIGNAL_MAP[(GPIO_PIN)eventSignal].name;
+        qWarning() << "No 'trigger_input' setting in configuration file. Assuming signal" << GPIO_SIGNAL_MAP[(GPIO_PIN)daemonConfig.eventTrigger].name;
     }
 
 
-    bool pol1 = true;
     if (parser.isSet(pol1Option)) {
         unsigned int pol1int = parser.value(pol1Option).toUInt(&ok);
         if (!ok || pol1int>1) {
             qCritical() << "wrong input polarity setting ch1 (valid: 0,1)";
             return -1;
         } else {
-            pol1=(bool)pol1int;
+            daemonConfig.polarity[0]=(bool)pol1int;
         }
     } else {
         try
         {
             int pol1Cfg = cfg.lookup("input1_polarity");
             if (verbose>2) qDebug() << "input polarity ch1:" << pol1Cfg;
-            pol1 = (bool)pol1Cfg;
+            daemonConfig.polarity[0] = (bool)pol1Cfg;
         }
         catch(const libconfig::SettingNotFoundException &nfex)
         {
             if (verbose>0)
-                qWarning() << "No 'input1_polarity' setting in configuration file. Assuming" << (int)pol1;
+                qWarning() << "No 'input1_polarity' setting in configuration file. Assuming" << (int)daemonConfig.polarity[0];
         }
     }
 
-    bool pol2 = true;
     if (parser.isSet(pol2Option)) {
         unsigned int pol2int = parser.value(pol2Option).toUInt(&ok);
         if (!ok || pol2int>1) {
             qCritical() << "wrong input polarity setting ch2 (valid: 0,1)";
             return -1;
         } else {
-            pol2=(bool)pol2int;
+            daemonConfig.polarity[1]=(bool)pol2int;
         }
     } else {
         try
         {
             int pol2Cfg = cfg.lookup("input2_polarity");
             if (verbose>2) qDebug() << "input polarity ch2:" << pol2Cfg;
-            pol2 = (bool)pol2Cfg;
+            daemonConfig.polarity[1] = (bool)pol2Cfg;
         }
         catch(const libconfig::SettingNotFoundException &nfex)
         {
             if (verbose>0)
-                qWarning() << "No 'input2_polarity' setting in configuration file. Assuming" << (int)pol2;
+                qWarning() << "No 'input2_polarity' setting in configuration file. Assuming" << (int)daemonConfig.polarity[1];
         }
     }
 
@@ -621,24 +605,23 @@ int main(int argc, char *argv[])
             qDebug() << "No 'mqtt_user' or 'mqtt_password' setting in configuration file. Will continue with previously stored credentials";
     }
 
-    QString stationID = "0";
     if (parser.isSet(stationIdOption)){
-        stationID = parser.value(stationIdOption);
+        daemonConfig.station_ID = parser.value(stationIdOption);
     } else {
     // Get the station id from config, if it exists
     try
     {
         std::string stationIdString = cfg.lookup("stationID");
         if (verbose) qInfo() << "station id: " << QString::fromStdString(stationIdString);
-        stationID = QString::fromStdString(stationIdString);
+        daemonConfig.station_ID = QString::fromStdString(stationIdString);
     }
     catch(const libconfig::SettingNotFoundException &nfex)
     {
         qWarning() << "No 'stationID' setting in configuration file. Assuming stationID='0'";
     }
     }
-    Daemon daemon(QString::fromStdString(username), QString::fromStdString(password), gpsdevname, verbose, pcaChannel, dacThresh, biasVoltage, biasPower, dumpRaw,
-        baudrate, showGnssConfig, eventSignal, peerAddress, peerPort, daemonAddress, daemonPort, showout, showin, preamp1, preamp2, gain, stationID, pol1, pol2);
+
+    Daemon daemon { daemonConfig };
 
     return a.exec();
 }
