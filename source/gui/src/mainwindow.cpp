@@ -25,7 +25,6 @@
 
 #include <iostream>
 
-
 using namespace std;
 
 
@@ -627,12 +626,12 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_MONHW){
         GnssMonHwStruct hw;
-    *(tcpMessage.dStream) >> hw;
+        *(tcpMessage.dStream) >> hw;
         emit gpsMonHWReceived(hw);
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_MONHW2){
-    GnssMonHw2Struct hw2;
+        GnssMonHw2Struct hw2;
         *(tcpMessage.dStream) >> hw2;
         emit gpsMonHW2Received(hw2);
         return;
@@ -1216,5 +1215,4 @@ void MainWindow::onPolarityChanged(bool pol1, bool pol2){
     *(tcpMessage.dStream) << pol1 << pol2;
     emit sendTcpMessage(tcpMessage);
 }
-
 

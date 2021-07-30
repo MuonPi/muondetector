@@ -5,6 +5,7 @@
 #include <QPointF>
 #include <QFileDialog>
 #include <qwt_symbol.h>
+#include <cmath>
 #include <limits>
 #include <QThread>
 
@@ -29,11 +30,20 @@ ScanForm::ScanForm(QWidget *parent) :
     ui->scanPlot->setAxisTitle(QwtPlot::xBottom,"scanpar");
     ui->scanPlot->setAxisTitle(QwtPlot::yLeft,"observable");
 
+	ui->scanPlot->addCurve("parscan", Qt::blue);
+	ui->scanPlot->curve("parscan").setStyle(QwtPlotCurve::NoCurve);
+	QwtSymbol *sym=new QwtSymbol(QwtSymbol::Rect, QBrush(Qt::blue, Qt::SolidPattern),QPen(Qt::black),QSize(5,5));
+	ui->scanPlot->curve("parscan").setSymbol(sym);
+
     ui->scanPlot->setAxisAutoScale(QwtPlot::xBottom, true);
     ui->scanPlot->setAxisAutoScale(QwtPlot::yLeft, true);
-    ui->scanPlot->replot();
+    //ui->scanPlot->replot();
+	ui->scanPlot->setEnabled(false);
+	
 	connect(ui->exportDataPushButton, &QPushButton::clicked, this, &ScanForm::exportData);
 	ui->exportDataPushButton->setEnabled(false);
+    ui->currentScanGroupBox->setEnabled(false);
+	ui->scanProgressBar->reset();
 }
 
 ScanForm::~ScanForm()
@@ -79,16 +89,18 @@ void ScanForm::scanParIteration() {
 		double rate=currentCounts/currentTimeInterval;
 		scanData[currentScanPar].value=rate;
 		scanData[currentScanPar].error=std::sqrt(currentCounts)/currentTimeInterval;
+        ui->currentScanparLabel->setText(QString::number(currentScanPar));
+        ui->currentObservableLabel->setText(QString::number(rate)+" +- "+QString::number(scanData[currentScanPar].error));
 		updateScanPlot();
 	}
 	currentScanPar+=stepSize;
-	adjustScanPar(SP_NAMES[scanPar], currentScanPar);
-	ui->scanProgressBar->setValue((currentScanPar-minRange)/stepSize);
 	if (currentScanPar>maxRange) {
 		// measurement finished
 		finishScan();
 		return;
 	}
+	adjustScanPar(SP_NAMES[scanPar], currentScanPar);
+	ui->scanProgressBar->setValue( std::lround( ( currentScanPar - minRange ) / stepSize ) );
 	waitForFirst=true;
 }
 
@@ -141,19 +153,25 @@ void ScanForm::on_scanStartPushButton_clicked()
 	active=true;
 	waitForFirst=true;
 	scanData.clear();
-	ui->scanProgressBar->setRange(0, abs(maxRange-minRange)/stepSize+0.5);
-	ui->scanProgressBar->reset();
+	ui->scanProgressBar->setRange(0, 1 + std::lround( std::abs( maxRange - minRange )/stepSize ) );
+	ui->scanProgressBar->setValue(0);
+    ui->currentScanGroupBox->setEnabled(true);
+    ui->scanparNameLabel->setText(SP_NAMES[scanPar]);
+    ui->observableNameLabel->setText(OP_NAMES[obsPar]);
+    ui->currentScanparLabel->setText(QString::number(minRange));
+    ui->currentObservableLabel->setText("---");
 }
 
 void ScanForm::finishScan() {
 	ui->scanStartPushButton->setText(tr("Start Scan"));
 	if ( scanPar > 0 ) adjustScanPar( SP_NAMES[scanPar], fLastDacs[scanPar-1] );
 	active=false;
-	ui->scanProgressBar->reset();
 	emit gpioInhibitChanged(false);
 	emit mqttInhibitChanged(false);
 	updateScanPlot();
 	ui->exportDataPushButton->setEnabled(true);
+    ui->currentScanGroupBox->setEnabled(false);
+	ui->scanProgressBar->reset();
 }
 
 void ScanForm::updateScanPlot() {
@@ -186,17 +204,12 @@ void ScanForm::on_plotDifferentialCheckBox_toggled(bool checked)
 
 void ScanForm::onUiEnabledStateChange(bool connected)
 {
-	this->setEnabled(connected);
-	ui->scanPlot->setEnabled(connected);
 	if (connected) {
-		ui->scanPlot->addCurve("parscan", Qt::blue);
-		ui->scanPlot->curve("parscan").setStyle(QwtPlotCurve::NoCurve);
-		QwtSymbol *sym=new QwtSymbol(QwtSymbol::Rect, QBrush(Qt::blue, Qt::SolidPattern),QPen(Qt::black),QSize(5,5));
-		ui->scanPlot->curve("parscan").setSymbol(sym);
 	} else {
-		ui->scanPlot->curve("parscan").detach();
 		if (active) finishScan();
 	}
+	this->setEnabled(connected);
+	ui->scanPlot->setEnabled(connected);
 }
 
 void ScanForm::exportData() {

@@ -123,12 +123,20 @@ void CustomPlot::setLogY(bool logscale){
 }
 
 
-void CustomPlot::setStatusEnabled(bool status){
-    if (status==true){
-        replot();
-    }else{
-        replot();
+void CustomPlot::setEnabled(bool enabled){
+
+    if (enabled){
+        for (auto& curve: fCurveMap) {
+            curve->attach(this);
+        }
+    } else {
+        for (auto& curve: fCurveMap) {
+            curve->detach();
+        }
     }
+    
+    replot();
+	QwtPlot::setEnabled(enabled);
 }
 
 

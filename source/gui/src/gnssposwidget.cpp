@@ -117,7 +117,6 @@ QPolygonF GnssPosWidget::getCartPolygonUnity(const QPointF& polarPos) {
     return cartPolygon;
 }
 
-
 QPointF GnssPosWidget::polar2cartUnity(const QPointF& pol) {
     if (pol.y()>=90.) return QPointF(0.,0.);
     double magn=(90.-pol.y())/180.;
@@ -180,7 +179,6 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm) {
                 QPainterPath path;
                 path.addPolygon(getCartPolygonUnity(satPoint.posPolar));
                 satPosPainter.drawPolygon(path.toFillPolygon(QTransform()));
-
             }
         }
     }
@@ -289,9 +287,6 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm) {
                 trafo.translate(0., 9*pm.height()/10.);
                 trafo.scale(pm.width()/360., -9.*pm.height()/900.);
                 satPosPainter.drawPolygon(path.toFillPolygon(trafo));
-
-
-
             }
         }
     }

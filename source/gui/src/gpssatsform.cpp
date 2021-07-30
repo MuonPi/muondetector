@@ -147,7 +147,6 @@ void GpsSatsForm::onIntCounterReceived(quint32 cnt)
     ui->intCounterLabel->setText(QString::number(cnt));
 }
 
-
 void GpsSatsForm::onGpsMonHWReceived(const GnssMonHwStruct& hwstruct)
 {
     ui->lnaNoiseLabel->setText(QString::number(-hwstruct.noise)+" dBHz");
@@ -180,7 +179,6 @@ void GpsSatsForm::onGpsMonHWReceived(const GnssMonHwStruct& hwstruct)
     ui->antPowerLabel->setText(str);
     ui->jammingProgressBar->setValue(hwstruct.jamInd/2.55);
 }
-
 
 void GpsSatsForm::onGpsMonHW2Received(const GnssMonHw2Struct& hw2struct)
 {
