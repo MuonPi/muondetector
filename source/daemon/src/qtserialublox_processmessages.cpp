@@ -8,7 +8,39 @@
 #include <ublox_messages.h>
 #include <muondetector_structs.h>
 
-using namespace std;
+
+template <class T, class = void>
+struct is_iterator : std::false_type { };
+
+template <class T>
+struct is_iterator<T, std::void_t<typename std::iterator_traits<T>::iterator_category>> : std::true_type { };
+
+
+enum class endian : bool {
+    big,
+    little
+};
+
+template <typename T, typename It, endian Endian = endian::little
+          ,std::enable_if_t<std::is_integral<T>::value, bool> = true
+          ,std::enable_if_t<is_iterator<It>::value, bool> = true
+          >
+[[nodiscard]] auto get(const It& start) -> T
+{
+    const auto& end { start + sizeof(T) };
+    T value { 0 };
+    std::size_t shift { (Endian == endian::little)?0:sizeof(T)*8 };
+    for (auto it = start; it != end; it++) {
+        value += static_cast<T>(*start) << shift;
+        if (Endian == endian::little) {
+            shift += 8;
+        } else {
+            shift -= 8;
+        }
+    }
+    return value;
+}
+
 
 const uint8_t usedPort = 1; // this is the uart port. (0 = i2c; 1 = uart; 2 = usb; 3 = isp;)
                             // see u-blox8-M8_Receiver... pdf documentation site 170
@@ -147,33 +179,24 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
 }
 
 
-bool QtSerialUblox::UBXTimTP(const std::string& msg)
+void QtSerialUblox::UBXTimTP(const std::string& msg)
 {
     // parse all fields
     // TP time of week, ms
-    uint32_t towMS = (int)msg[0];
-    towMS += ((int)msg[1]) << 8;
-    towMS += ((int)msg[2]) << 16;
-    towMS += ((int)msg[3]) << 24;
+    auto towMS { get<uint32_t>(msg.begin())};
     // TP time of week, sub ms
-    uint32_t towSubMS = (int)msg[4];
-    towSubMS += ((int)msg[5]) << 8;
-    towSubMS += ((int)msg[6]) << 16;
-    towSubMS += ((int)msg[7]) << 24;
+    auto towSubMS { get<uint32_t>(msg.begin() + 4)};
     // quantization error
-    int32_t qErr = (int)msg[8];
-    qErr += ((int)msg[9]) << 8;
-    qErr += ((int)msg[10]) << 16;
-    qErr += ((int)msg[11]) << 24;
+    auto qErr { get<int32_t>(msg.begin() + 8)};
+
     emit gpsPropertyUpdatedInt32(qErr, TPQuantErr.updateAge(), 'e');
     TPQuantErr = qErr;
     // week number
-    uint16_t week = (int)msg[12];
-    week += ((int)msg[13]) << 8;
+    auto week { get<uint16_t>(msg.begin() + 12) };
     // flags
-    uint8_t flags = msg[14];
+    auto flags { get<uint8_t>(msg.begin() + 14)};
     // ref info
-    uint8_t refInfo = msg[15];
+    auto refInfo { get<uint8_t>(msg.begin() + 14)};
 
     double sr = towMS / 1000.;
     sr = sr - towMS / 1000;
@@ -239,51 +262,31 @@ bool QtSerialUblox::UBXTimTP(const std::string& msg)
         tempStream << "  UTC standard  : " << utcStd << "\n";
         emit toConsole(QString::fromStdString(tempStream.str()));
     }
-    return true;
 }
 
-bool QtSerialUblox::UBXTimTM2(const std::string& msg)
+void QtSerialUblox::UBXTimTM2(const std::string& msg)
 {
     // parse all fields
     // channel
-    uint8_t ch = msg[0];
+    auto ch { get<uint8_t>(msg.begin()) };
     // flags
-    uint8_t flags = msg[1];
+    auto flags { get<uint8_t>(msg.begin() + 1) };
     // rising edge counter
-    uint16_t count = (int)msg[2]; // 16 bit counter
-    count += ((int)msg[3]) << 8;
+    auto count { get<uint16_t>(msg.begin() + 2) };
     // week number of last rising edge
-    uint16_t wnR = (int)msg[4];
-    wnR += ((int)msg[5]) << 8;
+    auto wnR { get<uint16_t>(msg.begin() + 4) };
     // week number of last falling edge
-    uint16_t wnF = (int)msg[6];
-    wnF += ((int)msg[7]) << 8;
+    auto wnF { get<uint16_t>(msg.begin() + 6) };
     // time of week of rising edge, ms
-    uint32_t towMsR = (int)msg[8];
-    towMsR += ((int)msg[9]) << 8;
-    towMsR += ((int)msg[10]) << 16;
-    towMsR += ((int)msg[11]) << 24;
+    auto towMsR { get<uint32_t>(msg.begin() + 8) };
     // time of week of rising edge, sub ms
-    uint32_t towSubMsR = (int)msg[12];
-    towSubMsR += ((int)msg[13]) << 8;
-    towSubMsR += ((int)msg[14]) << 16;
-    towSubMsR += ((int)msg[15]) << 24;
+    auto towSubMsR { get<uint32_t>(msg.begin() + 12) };
     // time of week of falling edge, ms
-    uint32_t towMsF = (int)msg[16];
-    towMsF += ((int)msg[17]) << 8;
-    towMsF += ((int)msg[18]) << 16;
-    towMsF += ((int)msg[19]) << 24;
+    auto towMsF { get<uint32_t>(msg.begin() + 16) };
     // time of week of falling edge, sub ms
-    uint32_t towSubMsF = (int)msg[20];
-    towSubMsF += ((int)msg[21]) << 8;
-    towSubMsF += ((int)msg[22]) << 16;
-    towSubMsF += ((int)msg[23]) << 24;
+    auto towSubMsF { get<uint32_t>(msg.begin() + 20) };
     // accuracy estimate
-    uint32_t accEst = (int)msg[24];
-    accEst += ((int)msg[25]) << 8;
-    accEst += ((int)msg[26]) << 16;
-    accEst += ((int)msg[27]) << 24;
-
+    auto accEst { get<uint32_t>(msg.begin() + 24) };
 
     double sr = towMsR / 1000.;
     sr = sr - towMsR / 1000;
@@ -427,23 +430,19 @@ bool QtSerialUblox::UBXTimTM2(const std::string& msg)
 	}
 	
     emit UBXReceivedTimeTM2(tm);
-    return true;
 }
 
 
-std::vector<GnssSatellite> QtSerialUblox::UBXNavSat(const std::string& msg, bool allSats)
+void QtSerialUblox::UBXNavSat(const std::string& msg, bool allSats)
 {
     std::vector<GnssSatellite> satList;
     // UBX-NAV-SAT: satellite information
     // parse all fields
     // GPS time of week
-    uint32_t iTOW = (int)msg[0];
-    iTOW += ((int)msg[1]) << 8;
-    iTOW += ((int)msg[2]) << 16;
-    iTOW += ((int)msg[3]) << 24;
+    auto iTOW { get<uint32_t>(msg.begin())};
     // version
-    uint8_t version = msg[4];
-    uint8_t numSvs = msg[5];
+    auto version { get<uint8_t>(msg.begin() + 4)};
+    auto numSvs { get<uint8_t>(msg.begin() + 5)};
 
     int N = (msg.size() - 8) / 12;
 
@@ -501,10 +500,12 @@ std::vector<GnssSatellite> QtSerialUblox::UBXNavSat(const std::string& msg, bool
         tempStream << " Nr of avail sats : " << (int)goodSats << "\n";
         emit toConsole(QString::fromStdString(tempStream.str()));
     }
-    return satList;
+
+    emit gpsPropertyUpdatedGnss(satList, m_satList.updateAge());
+    m_satList = satList;
 }
 
-std::vector<GnssSatellite> QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
+void QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
 {
     std::vector<GnssSatellite> satList;
     // UBX-NAV-SVINFO: satellite information
@@ -592,11 +593,20 @@ std::vector<GnssSatellite> QtSerialUblox::UBXNavSVinfo(const std::string& msg, b
         tempStream << " Nr of avail sats : " << goodSats << "\n";
         emit toConsole(QString::fromStdString(tempStream.str()));
     }
-    return satList;
+
+    emit gpsPropertyUpdatedGnss(satList, m_satList.updateAge());
+    m_satList = satList;
 }
 
+void QtSerialUblox::UBXCfgMSG(const std::string &msg)
+{
+    auto msgID { (((uint16_t)msg[0]) << 8U) | ((uint16_t)msg[1]) };
+    auto rate { (uint8_t)(msg[2 + usedPort]) };
 
-void QtSerialUblox::UBXCfgGNSS(const string &msg)
+    emit UBXreceivedMsgRateCfg(msgID, rate);
+}
+
+void QtSerialUblox::UBXCfgGNSS(const std::string &msg)
 {
     // UBX-CFG-GNSS: GNSS configuration
     // parse all fields
@@ -679,7 +689,7 @@ void QtSerialUblox::onSetGnssConfig(const std::vector<GnssConfigStruct>& gnssCon
 }
 
 
-void QtSerialUblox::UBXCfgNav5(const string &msg)
+void QtSerialUblox::UBXCfgNav5(const std::string &msg)
 {
     // UBX CFG-NAV5: satellite information
     // parse all fields
@@ -809,7 +819,8 @@ GeodeticPos QtSerialUblox::UBXNavPosLLH(const string &msg){
     vAcc += ((unsigned int)msg[26]) << 16;
     vAcc += ((unsigned int)msg[27]) << 24;
     pos.vAcc = vAcc;
-    return pos;
+    geodeticPos = pos;
+    emit gpsPropertyUpdatedGeodeticPos(geodeticPos());
 }
 
 void QtSerialUblox::UBXNavClock(const std::string& msg)
