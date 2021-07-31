@@ -459,31 +459,27 @@ void QtSerialUblox::UBXNavSat(const std::string& msg, bool allSats)
     uint8_t goodSats = 0;
     for (int i = 0; i < N; i++) {
         int n=8+i*12;
-        uint32_t flags;
 
-        uint8_t gnssId = msg[n+0];
-        uint8_t satId = msg[n+1];
-        uint8_t cnr = msg[n+2];
-        int8_t elev = msg[n+3];
-        int16_t azim = msg[n+4];
-        azim += msg[n+5] << 8;
-        int16_t _prRes = msg[n+6];
-        _prRes += msg[n+7] << 8;
-        float prRes = _prRes / 10.;
+        auto gnssId { std::min(static_cast<uint8_t>(7), get<uint8_t>(msg.begin() + n)) };
+        auto satId { get<uint8_t>(msg.begin() + n + 1)};
+        auto cnr { get<uint8_t>(msg.begin() + n + 2)};
+        auto elev { get<uint8_t>(msg.begin() + n + 3)};
+        auto azim { get<uint16_t>(msg.begin() + n + 4)};
+        auto prRes { static_cast<float>(get<uint16_t>(msg.begin() + n + 6)) / 10.0F};
+        auto flags { get<uint32_t>(msg.begin() + n + 8)};
 
-        flags = (int)msg[n+8];
-        flags += ((int)msg[n+9]) << 8;
-        flags += ((int)msg[n+10]) << 16;
-        flags += ((int)msg[n+11]) << 24;
-        if (gnssId>7) gnssId=7;
         GnssSatellite sat(gnssId, satId, cnr, elev, azim, prRes, flags);
 
-        if (sat.getCnr() > 0) goodSats++;
+        if (sat.getCnr() > 0) {
+            goodSats++;
+        }
         satList.push_back(sat);
     }
     if (!allSats) {
         sort(satList.begin(), satList.end(), GnssSatellite::sortByCnr);
-        while (satList.back().getCnr() == 0 && satList.size() > 0) satList.pop_back();
+        while (!satList.empty() && (satList.back().getCnr() == 0)) {
+            satList.pop_back();
+        }
     }
 
     emit gpsPropertyUpdatedUint8(goodSats, nrSats.updateAge(), 's');
@@ -511,13 +507,10 @@ void QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
     // UBX-NAV-SVINFO: satellite information
     // parse all fields
     // GPS time of week
-    uint32_t iTOW = (int)msg[0];
-    iTOW += ((int)msg[1]) << 8;
-    iTOW += ((int)msg[2]) << 16;
-    iTOW += ((int)msg[3]) << 24;
+    auto iTOW { get<uint32_t>(msg.begin())};
     // version
-    uint8_t numSvs = msg[4];
-    uint8_t globFlags = msg[5];
+    auto numSvs { get<uint8_t>(msg.begin() + 4)};
+    auto globFlags { get<uint8_t>(msg.begin() + 5)};
 
     int N = (msg.size() - 8) / 12;
 
@@ -533,19 +526,18 @@ void QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
     }
     uint8_t goodSats = 0;
     for (int i = 0; i < N; i++) {
-
         int n=8+i*12;
-        uint8_t satId = msg[n+1];
-        uint8_t flags = msg[n+2];
-        uint8_t quality = msg[n+3];
-        uint8_t cnr = msg[n+4];
-        int8_t elev = msg[n+5];
-        int16_t azim = msg[n+6];
-        azim += msg[n+7] << 8;
-        int32_t prRes = msg[n+8];
-        prRes += msg[n+9] << 8;
-        prRes += msg[n+10] << 16;
-        prRes += msg[n+11] << 24;
+
+
+
+        auto satId { get<uint8_t>(msg.begin() + n + 1)};
+        auto flags { get<uint8_t>(msg.begin() + n + 2)};
+        auto quality { get<uint8_t>(msg.begin() + n + 3)};
+        auto cnr { get<uint8_t>(msg.begin() + n + 4)};
+        auto elev { get<int8_t>(msg.begin() + n + 5)};
+        auto azim { get<int16_t>(msg.begin() + n + 6)};
+        auto prRes { get<int32_t>(msg.begin() + n + 8) };
+
 
         bool used = false;
         if (flags & 0x01) used = true;
@@ -559,24 +551,40 @@ void QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
         }
         bool smoothed = (flags & 0x80);
         bool diffCorr = (flags & 0x02);
-        int gnssId=7;
-        if (satId<33) gnssId=0;
-        else if (satId<65) gnssId=3;
-        else if (satId<97 || satId==255) gnssId=6;
-        else if (satId<159) gnssId=1;
-        else if (satId<164) gnssId=3;
-        else if (satId<183) gnssId=4;
-        else if (satId<198) gnssId=5;
-        else if (satId<247) gnssId=2;
+
+        int gnssId {[&satId] {
+                if (satId < 33) {
+                    return 0;
+                } else if (satId < 65) {
+                    return 3;
+                } else if (satId < 97 || satId == 255) {
+                    return 6;
+                } else if (satId < 159) {
+                    return 1;
+                } else if (satId < 164) {
+                    return 3;
+                } else if (satId < 183) {
+                    return 4;
+                } else if (satId < 198) {
+                    return 5;
+                } else if (satId < 247) {
+                    return 2;
+                }
+                return 7;
+            }()};
 
         GnssSatellite sat(	gnssId, satId, cnr, elev, azim, 0.01*prRes,
                             quality, health, orbitSource, used, diffCorr, smoothed);
-        if (sat.getCnr() > 0) goodSats++;
+        if (sat.getCnr() > 0) {
+            goodSats++;
+        }
         satList.push_back(sat);
     }
     if (!allSats) {
         sort(satList.begin(), satList.end(), GnssSatellite::sortByCnr);
-        while (satList.back().getCnr() == 0 && satList.size() > 0) satList.pop_back();
+        while (!satList.empty() && (satList.back().getCnr() == 0)) {
+            satList.pop_back();
+        }
     }
 
     emit gpsPropertyUpdatedUint8(goodSats, nrSats.updateAge(), 's');
@@ -600,8 +608,9 @@ void QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
 
 void QtSerialUblox::UBXCfgMSG(const std::string &msg)
 {
-    auto msgID { (((uint16_t)msg[0]) << 8U) | ((uint16_t)msg[1]) };
-    auto rate { (uint8_t)(msg[2 + usedPort]) };
+
+    auto msgID { get<uint16_t>(msg.begin()) };
+    auto rate { get<uint8_t>(msg.begin() + 2 + usedPort) };
 
     emit UBXreceivedMsgRateCfg(msgID, rate);
 }
@@ -613,10 +622,10 @@ void QtSerialUblox::UBXCfgGNSS(const std::string &msg)
     // version
 // send:
 // "0,0,ff,1,6,5,ff,0,1,0,0,0"
-    uint8_t version = msg[0];
-    uint8_t numTrkChHw = msg[1];
-    uint8_t numTrkChUse = msg[2];
-    uint8_t numConfigBlocks = msg[3];
+    auto version { get<uint8_t>(msg.begin())};
+    auto numTrkChHw { get<uint8_t>(msg.begin() + 1)};
+    auto numTrkChUse { get<uint8_t>(msg.begin() + 2)};
+    auto numConfigBlocks { get<uint8_t>(msg.begin() + 3)};
 
     int N = (msg.size() - 4) / 8;
 
@@ -636,13 +645,11 @@ void QtSerialUblox::UBXCfgGNSS(const std::string &msg)
 
     for (int i = 0; i < N; i++) {
         GnssConfigStruct config;
-        config.gnssId = msg[4 + 8 * i];
-        config.resTrkCh = msg[5 + 8 * i];
-        config.maxTrkCh = msg[6 + 8 * i];
-        config.flags = msg[8 + 8 * i];
-        config.flags |= (int)msg[9 + 8 * i] << 8;
-        config.flags |= (int)msg[10 + 8 * i] << 16;
-        config.flags |= (int)msg[11 + 8 * i] << 24;
+        const auto n { 8 * i};
+        config.gnssId = get<decltype (config.gnssId)>(msg.begin() + n + 4);
+        config.resTrkCh = get<decltype (config.resTrkCh)>(msg.begin() + n + 5);
+        config.maxTrkCh = get<decltype (config.maxTrkCh)>(msg.begin() + n + 6);
+        config.flags = get<decltype (config.flags)>(msg.begin() + n + 8);
         if (verbose>2)
         {
             std::stringstream tempStream;
@@ -693,21 +700,14 @@ void QtSerialUblox::UBXCfgNav5(const std::string &msg)
 {
     // UBX CFG-NAV5: satellite information
     // parse all fields
-    uint16_t mask = msg[0];
-    mask |= (int)msg[1] << 8;
-    uint8_t dynModel = msg[2];
-    uint8_t fixMode = msg[3];
-    int32_t fixedAlt = msg[4];
-    fixedAlt |= (int)msg[5] << 8;
-    fixedAlt |= (int)msg[6] << 16;
-    fixedAlt |= (int)msg[7] << 24;
-    uint32_t fixedAltVar = msg[8];
-    fixedAltVar |= (int)msg[9] << 8;
-    fixedAltVar |= (int)msg[10] << 16;
-    fixedAltVar |= (int)msg[11] << 24;
-    int8_t minElev = msg[12];
-    uint8_t cnoThreshNumSVs = msg[24];
-    uint8_t cnoThresh = msg[25];
+    auto mask { get<uint16_t>(msg.begin()) };
+    auto dynModel { get<uint8_t>(msg.begin() + 2) };
+    auto fixMode { get<uint8_t>(msg.begin() + 3) };
+    auto fixedAlt { get<int32_t>(msg.begin() + 4) };
+    auto fixedAltVar { get<uint32_t>(msg.begin() + 8) };
+    auto minElev { get<int8_t>(msg.begin() + 12) };
+    auto cnoThreshNumSVs { get<uint8_t>(msg.begin() + 24) };
+    auto cnoThresh { get<uint8_t>(msg.begin() + 25) };
 
 
     if (verbose>2)
@@ -739,22 +739,12 @@ void QtSerialUblox::UBXNavStatus(const std::string &msg)
 {
     // UBX-NAV_STATUS: RX status information
     // parse all fields
-    uint32_t iTOW = (int)msg[0];
-    iTOW += ((int)msg[1]) << 8;
-    iTOW += ((int)msg[2]) << 16;
-    iTOW += ((int)msg[3]) << 24;
-
-    uint8_t gpsFix = msg[4];
-    uint8_t flags = msg[5];
-    uint8_t flags2 = msg[7];
-    uint32_t ttff = msg[8];
-    ttff |= (int)msg[9] << 8;
-    ttff |= (int)msg[10] << 16;
-    ttff |= (int)msg[11] << 24;
-    uint32_t msss = msg[12];
-    msss |= (int)msg[13] << 8;
-    msss |= (int)msg[14] << 16;
-    msss |= (int)msg[15] << 24;
+    auto iTOW { get<uint32_t>(msg.begin()) };
+    auto gpsFix { get<uint8_t>(msg.begin() + 4) };
+    auto flags { get<uint8_t>(msg.begin() + 5) };
+    auto flags2 { get<uint8_t>(msg.begin() + 7) };
+    auto ttff { get<uint32_t>(msg.begin() + 8) };
+    auto msss { get<uint32_t>(msg.begin() + 12) };
 
     emit gpsPropertyUpdatedUint8(gpsFix, fix.updateAge(), 'f');
     fix = gpsFix;
@@ -776,49 +766,21 @@ void QtSerialUblox::UBXNavStatus(const std::string &msg)
 }
 
 void QtSerialUblox::UBXNavPosLLH(const std::string &msg){
-    GeodeticPos pos;
+    GeodeticPos pos {};
     // GPS time of week
-    uint32_t iTOW = (unsigned int)msg[0];
-    iTOW += ((unsigned int)msg[1]) << 8;
-    iTOW += ((unsigned int)msg[2]) << 16;
-    iTOW += ((unsigned int)msg[3]) << 24;
-    pos.iTOW = iTOW;
+    pos.iTOW = get<decltype (pos.iTOW)>(msg.begin());
     // longitude in 1e-7 precision
-    int32_t lon = (int)msg[4];
-    lon += ((int)msg[5]) << 8;
-    lon += ((int)msg[6]) << 16;
-    lon += ((int)msg[7]) << 24;
-    pos.lon = lon;
+    pos.lon = get<decltype (pos.lon)>(msg.begin() + 4);
     // latitude in 1e-7 precision
-    int32_t lat = (int)msg[8];
-    lat += ((int)msg[9]) << 8;
-    lat += ((int)msg[10]) << 16;
-    lat += ((int)msg[11]) << 24;
-    pos.lat = lat;
+    pos.lat = get<decltype (pos.lat)>(msg.begin() + 8);
     // height above ellipsoid
-    int32_t height = (int)msg[12];
-    height += ((int)msg[13]) << 8;
-    height += ((int)msg[14]) << 16;
-    height += ((int)msg[15]) << 24;
-    pos.height = height;
+    pos.height = get<decltype (pos.height)>(msg.begin() + 12);
     // height above main sea-level
-    int32_t hMSL = (int)msg[16];
-    hMSL += ((int)msg[17]) << 8;
-    hMSL += ((int)msg[18]) << 16;
-    hMSL += ((int)msg[19]) << 24;
-    pos.hMSL = hMSL;
+    pos.hMSL = get<decltype (pos.hMSL)>(msg.begin() + 16);
     // horizontal accuracy estimate
-    uint32_t hAcc = (unsigned int)msg[20];
-    hAcc += ((unsigned int)msg[21]) << 8;
-    hAcc += ((unsigned int)msg[22]) << 16;
-    hAcc += ((unsigned int)msg[23]) << 24;
-    pos.hAcc = hAcc;
+    pos.hAcc = get<decltype (pos.hAcc)>(msg.begin() + 20);
     // vertical accuracy estimate
-    uint32_t vAcc = (unsigned int)msg[24];
-    vAcc += ((unsigned int)msg[25]) << 8;
-    vAcc += ((unsigned int)msg[26]) << 16;
-    vAcc += ((unsigned int)msg[27]) << 24;
-    pos.vAcc = vAcc;
+    pos.vAcc = get<decltype (pos.vAcc)>(msg.begin() + 24);
     geodeticPos = pos;
     emit gpsPropertyUpdatedGeodeticPos(geodeticPos());
 }
@@ -827,10 +789,7 @@ void QtSerialUblox::UBXNavClock(const std::string& msg)
 {
     // parse all fields
     // GPS time of week
-    uint32_t iTOW = (int)msg[0];
-    iTOW += ((int)msg[1]) << 8;
-    iTOW += ((int)msg[2]) << 16;
-    iTOW += ((int)msg[3]) << 24;
+    auto iTOW { get<uint32_t>(msg.begin()) };
     // clock bias
     if (verbose > 3) {
         std::stringstream tempStream;
@@ -840,30 +799,18 @@ void QtSerialUblox::UBXNavClock(const std::string& msg)
         tempStream << "clkB[3]=" << std::setfill('0') << std::setw(2) << std::hex << (int)msg[7];
         emit toConsole(QString::fromStdString(tempStream.str()));
     }
-    int32_t clkB = (int)msg[4];
-    clkB += ((int)msg[5]) << 8;
-    clkB += ((int)msg[6]) << 16;
-    clkB += ((int)msg[7]) << 24;
+    auto clkB { get<int32_t>(msg.begin() + 4) };
     // clock drift
-    int32_t clkD = (int)msg[8];
-    clkD += ((int)msg[9]) << 8;
-    clkD += ((int)msg[10]) << 16;
-    clkD += ((int)msg[11]) << 24;
+    auto clkD { get<int32_t>(msg.begin() + 8) };
     //mutex.lock();
     emit gpsPropertyUpdatedInt32(clkD, clkDrift.updateAge(), 'd');
     emit gpsPropertyUpdatedInt32(clkB, clkBias.updateAge(), 'b');
     clkDrift = clkD;
     clkBias = clkB;
     // time accuracy estimate
-    uint32_t tAcc = (int)msg[12];
-    tAcc += ((int)msg[13]) << 8;
-    tAcc += ((int)msg[14]) << 16;
-    tAcc += ((int)msg[15]) << 24;
+    auto tAcc { get<uint32_t>(msg.begin() + 12) };
     // freq accuracy estimate
-    uint32_t fAcc = (int)msg[16];
-    fAcc += ((int)msg[17]) << 8;
-    fAcc += ((int)msg[18]) << 16;
-    fAcc += ((int)msg[19]) << 24;
+    auto fAcc { get<uint32_t>(msg.begin() + 16) };
 
     emit gpsPropertyUpdatedUint32(tAcc, timeAccuracy.updateAge(), 'a');
     timeAccuracy = tAcc;
@@ -894,28 +841,18 @@ void QtSerialUblox::UBXNavTimeGPS(const std::string& msg)
 {
     // parse all fields
     // GPS time of week
-    uint32_t iTOW = (int)msg[0];
-    iTOW += ((int)msg[1]) << 8;
-    iTOW += ((int)msg[2]) << 16;
-    iTOW += ((int)msg[3]) << 24;
+    auto iTOW { get<uint32_t>(msg.begin()) };
 
-    int32_t fTOW = (int)msg[4];
-    fTOW += ((int)msg[5]) << 8;
-    fTOW += ((int)msg[6]) << 16;
-    fTOW += ((int)msg[7]) << 24;
+    auto fTOW { get<int32_t>(msg.begin() + 4) };
 
 
-    uint16_t wnR = (int)msg[8];
-    wnR += ((int)msg[9]) << 8;
+    auto wnR { get<uint16_t>(msg.begin() + 8) };
+    auto leapS { get<int8_t>(msg.begin() + 10) };
+    auto flags { get<uint8_t>(msg.begin() + 11) };
 
-    int8_t leapS = (int)msg[10];
-    uint8_t flags = (int)msg[11];
 
     // time accuracy estimate
-    uint32_t tAcc = (int)msg[12];
-    tAcc += ((int)msg[13]) << 8;
-    tAcc += ((int)msg[14]) << 16;
-    tAcc += ((int)msg[15]) << 24;
+    auto tAcc { get<uint32_t>(msg.begin() + 12) };
 
 
     double sr = iTOW / 1000.;
@@ -959,27 +896,18 @@ void QtSerialUblox::UBXNavTimeUTC(const std::string& msg)
 {
     // parse all fields
     // GPS time of week
-    uint32_t iTOW = (int)msg[0];
-    iTOW += ((int)msg[1]) << 8;
-    iTOW += ((int)msg[2]) << 16;
-    iTOW += ((int)msg[3]) << 24;
+    auto iTOW { get<uint32_t>(msg.begin()) };
 
     // time accuracy estimate
-    uint32_t tAcc = (int)msg[4];
-    tAcc += ((int)msg[5]) << 8;
-    tAcc += ((int)msg[6]) << 16;
-    tAcc += ((int)msg[7]) << 24;
+    auto tAcc { get<uint32_t>(msg.begin() + 4) };
+
     emit gpsPropertyUpdatedUint32(tAcc, timeAccuracy.updateAge(), 'a');
     timeAccuracy = tAcc;
     timeAccuracy.lastUpdate = std::chrono::system_clock::now();
 
-    int32_t nano = (int)msg[8];
-    nano += ((int)msg[9]) << 8;
-    nano += ((int)msg[10]) << 16;
-    nano += ((int)msg[11]) << 24;
+    auto nano { get<int32_t>(msg.begin() + 8) };
 
-    uint16_t year = (int)msg[12];
-    year += ((int)msg[13]) << 8;
+    auto year { get<uint16_t>(msg.begin() + 12) };
 
     uint16_t month = (int)msg[14];
     uint16_t day = (int)msg[15];
@@ -1049,13 +977,11 @@ void QtSerialUblox::UBXMonHW(const std::string& msg)
 {
     // parse all fields
     // noise
-    uint16_t noisePerMS = (int)msg[16];
-    noisePerMS += ((int)msg[17]) << 8;
+    auto noisePerMS { get<uint16_t>(msg.begin() + 16) };
     noise = noisePerMS;
 
     // agc
-    uint16_t agcCnt = (int)msg[18];
-    agcCnt += ((int)msg[19]) << 8;
+    auto agcCnt { get<uint16_t>(msg.begin() + 18) };
     agc = agcCnt;
 
     uint8_t antStatus = msg[20];
