@@ -57,8 +57,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     this->setWindowTitle(QString("muondetector-gui  "+QString::fromStdString(MuonPi::Version::software.string())));
 
-    ui->discr1Layout->setAlignment(ui->discr1Slider, Qt::AlignHCenter);
-    ui->discr2Layout->setAlignment(ui->discr2Slider, Qt::AlignHCenter); // aligns the slider in their vertical layout centered
     QIcon icon(":/res/muon.ico");
     this->setWindowIcon(icon);
     setMaxThreshVoltage(1.0);
@@ -391,8 +389,11 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
 		if (threshold > maxThreshVoltage){
 			sendSetThresh(channel,maxThreshVoltage);
 			return;
-		}
-		sliderValues[channel] = (int)(2000 * threshold);
+        }
+        if (std::abs(sliderValues.at(channel) - (1e3 * threshold)) > std::numeric_limits<float>::epsilon()) {
+            sliderValuesDirty = true;
+        }
+        sliderValues.at(channel) = 1e3 * threshold;
 		updateUiProperties();
 		return;
 	}
@@ -590,6 +591,7 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage) {
         quint32 cnt=0;
         *(tcpMessage.dStream) >> cnt;
         emit intCounterReceived(cnt);
+        ui->eventCounter->setText(QString::number(cnt));
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_UPTIME){
@@ -868,6 +870,7 @@ void MainWindow::resetXorHit() {
 }
 
 void MainWindow::uiSetDisconnectedState() {
+   sliderValuesDirty = true;
     // set button and color of label
     ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGray;}");
     ui->ipStatusLabel->setText("not connected");
@@ -875,25 +878,11 @@ void MainWindow::uiSetDisconnectedState() {
     ui->ipButton->setEnabled(true);
     ui->ipBox->setEnabled(true);
     // disable all relevant objects of mainwindow
-    ui->discr1Label->setStyleSheet("QLabel {color: darkGray;}");
-    ui->discr2Label->setStyleSheet("QLabel {color: darkGray;}");
     ui->discr1Slider->setValue(0);
-    ui->discr1Slider->setDisabled(true);
     ui->discr1Edit->clear();
-    ui->discr1Edit->setDisabled(true);
     ui->discr2Slider->setValue(0);
-    ui->discr2Slider->setDisabled(true);
     ui->discr2Edit->clear();
-    ui->discr2Edit->setDisabled(true);
-    ui->ANDHit->setDisabled(true);
-    ui->ANDHit->setStyleSheet("QLabel {background-color: Window;}");
-    ui->XORHit->setDisabled(true);
-    ui->XORHit->setStyleSheet("QLabel {background-color: Window;}");
-    ui->rate1->setDisabled(true);
-    ui->rate2->setDisabled(true);
-    ui->biasPowerLabel->setDisabled(true);
     ui->biasPowerLabel->setStyleSheet("QLabel {color: darkGray;}");
-    ui->biasPowerButton->setDisabled(true);
     ui->tabWidget->setEnabled(false);
     ui->controlWidget->setEnabled(false);
     // disable other widgets
@@ -901,6 +890,7 @@ void MainWindow::uiSetDisconnectedState() {
 }
 
 void MainWindow::uiSetConnectedState() {
+   sliderValuesDirty = true;
     // change color and text of labels and buttons
     ui->tabWidget->setEnabled(true);
     ui->controlWidget->setEnabled(true);
@@ -909,8 +899,6 @@ void MainWindow::uiSetConnectedState() {
     ui->ipButton->setText("disconnect");
     ui->ipButton->setEnabled(true);
     ui->ipBox->setDisabled(true);
-    ui->discr1Label->setStyleSheet("QLabel {color: black;}");
-    ui->discr2Label->setStyleSheet("QLabel {color: black;}");
     // enable other widgets
     emit setUiEnabledStates(true);
 }
@@ -918,15 +906,17 @@ void MainWindow::uiSetConnectedState() {
 void MainWindow::updateUiProperties() {
     mouseHold = true;
 
-    ui->discr1Slider->setEnabled(true);
-    ui->discr1Slider->setValue(sliderValues.at(0));
-    ui->discr1Edit->setEnabled(true);
-    ui->discr1Edit->setText(QString::number(sliderValues.at(0) / 2.0) + "mV");
+    if (sliderValuesDirty) {
+        ui->discr1Slider->setEnabled(true);
+        ui->discr1Slider->setValue(sliderValues.at(0));
+        ui->discr1Edit->setEnabled(true);
 
-    ui->discr2Slider->setEnabled(true);
-    ui->discr2Slider->setValue(sliderValues.at(1));
-    ui->discr2Edit->setEnabled(true);
-    ui->discr2Edit->setText(QString::number(sliderValues.at(1) / 2.0) + "mV");
+        ui->discr2Slider->setEnabled(true);
+        ui->discr2Slider->setValue(sliderValues.at(1));
+        ui->discr2Edit->setEnabled(true);
+
+        sliderValuesDirty = false;
+    }
     double biasVoltage = biasCalibOffset + biasDacVoltage*biasCalibSlope;
     ui->biasVoltageSlider->blockSignals(true);
     ui->biasVoltageDoubleSpinBox->blockSignals(true);
@@ -945,12 +935,12 @@ void MainWindow::updateUiProperties() {
     ui->biasPowerButton->setEnabled(true);
     ui->biasPowerLabel->setEnabled(true);
     if (biasON) {
-        ui->biasPowerButton->setText("Disable Bias");
+        ui->biasPowerButton->setText("Disable");
         ui->biasPowerLabel->setText("Bias ON");
         ui->biasPowerLabel->setStyleSheet("QLabel {background-color: darkGreen; color: white;}");
     }
     else {
-        ui->biasPowerButton->setText("Enable Bias");
+        ui->biasPowerButton->setText("Enable");
         ui->biasPowerLabel->setText("Bias OFF");
         ui->biasPowerLabel->setStyleSheet("QLabel {background-color: red; color: white;}");
     }
@@ -1023,78 +1013,36 @@ void MainWindow::onIpButtonClicked()
     }
 }
 
-void MainWindow::on_discr1Slider_sliderPressed()
+void MainWindow::on_discr1Save_clicked()
 {
-    mouseHold = true;
+    sendSetThresh(0, 1e-3 * ui->discr1Edit->value());
+    sliderValuesDirty = true;
 }
 
-void MainWindow::on_discr1Slider_sliderReleased()
+void MainWindow::on_discr2Save_clicked()
 {
-    mouseHold = false;
-    on_discr1Slider_valueChanged(ui->discr1Slider->value());
+    sendSetThresh(1, 1e-3 * ui->discr2Edit->value());
+    sliderValuesDirty = true;
 }
 
-void MainWindow::on_discr1Edit_editingFinished()
-{
-    float value = parseValue(ui->discr1Edit->text());
-    if (value < 0) {
-        return;
-    }
-    ui->discr1Slider->setValue((int)(value * 2 + 0.5));
-}
-
-void MainWindow::on_discr1Slider_valueChanged(int value)
-{
-    float thresh0 = (float)(value / 2000.0);
-    ui->discr1Edit->setText(QString::number((float)value / 2.0) + "mV");
-    if (!mouseHold) {
-        sendSetThresh(0, thresh0);
-    }
-}
-
-void MainWindow::on_discr2Slider_sliderPressed()
-{
-    mouseHold = true;
-}
-
-void MainWindow::on_discr2Slider_sliderReleased()
-{
-    mouseHold = false;
-    on_discr2Slider_valueChanged(ui->discr2Slider->value());
-}
-
-void MainWindow::on_discr2Edit_editingFinished()
-{
-    float value = parseValue(ui->discr2Edit->text());
-    if (value < 0) {
-        return;
-    }
-    ui->discr2Slider->setValue((int)(value * 2 + 0.5));
-}
-
-void MainWindow::on_discr2Slider_valueChanged(int value)
-{
-    float thresh1 =  (float)(value / 2000.0);
-    ui->discr2Edit->setText(QString::number((float)(value / 2.0)) + "mV");
-    if (!mouseHold) {
-        sendSetThresh(1, thresh1);
-    }
-}
 void MainWindow::setMaxThreshVoltage(float voltage){
     // we have 0.5 mV resolution so we have (int)(mVolts)*2 steps on the slider
     // the '+0.5' is to round up or down like in mathematics
     maxThreshVoltage = voltage;
-    int maximum = (int)(voltage*2000+0.5);
-    ui->discr1Slider->setMaximum(maximum);
-    ui->discr2Slider->setMaximum(maximum);
-    int bigger = (sliderValues.at(0)>sliderValues.at(1))?0:1;
-    if( sliderValues.at(bigger) > maximum){
-        sendSetThresh(bigger,voltage);
-        if (sliderValues.at(!bigger) > maximum){
-            sendSetThresh(!bigger,voltage);
-        }
+
+    ui->discr1Slider->setUpperBound(1e3 * voltage);
+    ui->discr2Slider->setUpperBound(1e3 * voltage);
+    ui->discr1Edit->setMaximum(1e3 * voltage);
+    ui->discr2Edit->setMaximum(1e3 * voltage);
+
+    if( sliderValues.at(0) > voltage){
+        sendSetThresh(0,voltage);
+    }
+    if (sliderValues.at(1) > voltage){
+        sendSetThresh(1,voltage);
     }
 }
+
 float MainWindow::parseValue(QString text) {
     // ignores everything that is not a number or at least most of it
     QRegExp alphabetical = QRegExp("[a-z]+[A-Z]+");

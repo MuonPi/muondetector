@@ -113,15 +113,11 @@ private slots:
     void connected();
     void connection_error(int error_code, const QString message);
     void sendInputSwitch(uint8_t id);
-    void on_discr1Edit_editingFinished();
-    void on_discr1Slider_sliderReleased();
-    void on_discr1Slider_valueChanged(int value);
-    void on_discr1Slider_sliderPressed();
-    void on_discr2Slider_sliderReleased();
-    void on_discr2Slider_valueChanged(int value);
-    void on_discr2Slider_sliderPressed();
+
+    void on_discr1Save_clicked();
+    void on_discr2Save_clicked();
+
     void on_biasPowerButton_clicked();
-    void on_discr2Edit_editingFinished();
     void on_biasVoltageSlider_sliderReleased();
     void on_biasVoltageSlider_valueChanged(int value);
     void on_biasVoltageSlider_sliderPressed();
@@ -152,7 +148,8 @@ private:
     float biasDacVoltage = 0.;
     bool biasON, uiValuesUpToDate = false;
     quint8 pcaPortMask = 0;
-    QVector<int> sliderValues = QVector<int>({0,0});
+    std::array<double, 2> sliderValues {0,0};
+    bool sliderValuesDirty { true };
     float maxThreshVoltage;
 	QErrorMessage errorM;
 	TcpConnection *tcpConnection = nullptr;
