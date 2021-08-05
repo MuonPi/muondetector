@@ -41,9 +41,7 @@ public slots:
 private slots:
     void on_readCalibPushButton_clicked();
     void on_writeEepromPushButton_clicked();
-    void on_doBiasCalibPushButton_clicked();
     void doFit();
-    void on_transferBiasCoeffsPushButton_clicked();
     void on_calibItemTableWidget_cellChanged(int row, int column);
 
 private:

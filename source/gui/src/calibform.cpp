@@ -131,15 +131,7 @@ void CalibForm::on_writeEepromPushButton_clicked()
 }
 
 
-void CalibForm::on_doBiasCalibPushButton_clicked()
-{
-}
-
 void CalibForm::doFit()
-{
-}
-
-void CalibForm::on_transferBiasCoeffsPushButton_clicked()
 {
 }
 
