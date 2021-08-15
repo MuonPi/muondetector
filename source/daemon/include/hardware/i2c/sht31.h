@@ -1,7 +1,7 @@
 #ifndef _SHT31_H_
 #define _SHT31_H_
 
-#include "../i2cdevice.h"
+#include "hardware/i2c/i2cdevice.h"
 
 /* SHT21  */
 
@@ -13,7 +13,7 @@ public:
 
 	bool readRaw(uint16_t &UT, uint16_t &UH);  //read temperature; nothing gets passed
 	bool breakCommand();
-	bool softReset();                 //reset, datasheet, page 9, Rückgabetyp in void geändert
+	bool softReset();                 //reset, datasheet, page 9, RÃ¼ckgabetyp in void geÃ¤ndert
 	bool heater(bool on);
 	bool getValues(float &ftemp, float &fhum);
 	//float getTemperature();   // calculates the temperature with the formula in the datasheet. Gets the solution of read_temp()

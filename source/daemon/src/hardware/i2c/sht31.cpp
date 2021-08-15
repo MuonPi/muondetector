@@ -1,4 +1,4 @@
-#include "sht31.h"
+#include "hardware/i2c/sht31.h"
 #include <stdint.h>
 #include <stdio.h>
 
@@ -55,7 +55,7 @@ bool SHT31::getValues(float &ftemp, float &fhum) {
 	return true;
 }
 
-bool SHT31::readRaw(uint16_t &UT, uint16_t &UH)  // von unsigned int auf float geändert
+bool SHT31::readRaw(uint16_t &UT, uint16_t &UH)  // von unsigned int auf float geÃ¤ndert
 {
 	uint8_t writeBuf[2];
 	uint8_t readBuf[6];
@@ -140,5 +140,5 @@ bool SHT31::softReset()
 		printf("soft_reset succesfull %i\n", n);
 	}
 
-	return(n == 0);  //Wenn n == 0, gibt die Funktion True zurück. Wenn nicht gibt sie False zurück.
+	return(n == 0);  //Wenn n == 0, gibt die Funktion True zurÃ¼ck. Wenn nicht gibt sie False zurÃ¼ck.
 }

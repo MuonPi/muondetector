@@ -1,7 +1,7 @@
 #ifndef _TCA9546A_H_
 #define _TCA9546A_H_
 
-#include "../i2cdevice.h"
+#include "hardware/i2c/i2cdevice.h"
 
 /* TCA9546A  */
 
