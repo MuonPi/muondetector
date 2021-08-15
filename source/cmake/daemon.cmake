@@ -44,7 +44,6 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/x9119/x9119.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/Adafruit_GFX.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/i2cdevice.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/glcdfont.c"
     )
 
 set(MUONDETECTOR_DAEMON_HEADER_FILES
@@ -80,6 +79,7 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/x9119/x9119.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/Adafruit_GFX.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/i2cdevice.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/glcdfont.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/linux/i2c-dev.h"
     )
 
