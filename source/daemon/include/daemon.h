@@ -10,16 +10,19 @@
 #include <QVariant>
 #include <time.h>
 
-#include "calibration.h"
-#include "custom_io_operators.h"
+// clang-format off
+#include "qtserialublox.h"
 #include "filehandler.h"
+#include "calibration.h"
+// clang-format on
+
+#include "custom_io_operators.h"
 #include "histogram.h"
 #include "i2c/i2cdevices.h"
 #include "logengine.h"
 #include "logparameter.h"
 #include "mqtthandler.h"
 #include "pigpiodhandler.h"
-#include "qtserialublox.h"
 #include "tcpconnection.h"
 #include "tdc7200.h"
 

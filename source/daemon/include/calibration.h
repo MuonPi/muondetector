@@ -1,12 +1,15 @@
 #ifndef CALIBRATION_H
 #define CALIBRATION_H
 
-// for sig handling:
-#include "i2c/i2cdevices.h"
-#include <QObject>
-#include <custom_io_operators.h>
-#include <iomanip>
+// clang-format off
+#include "custom_io_operators.h"
 #include <muondetector_structs.h>
+#include "i2c/i2cdevices.h"
+// clang-format on
+
+// for sig handling:
+#include <QObject>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <sys/types.h>
