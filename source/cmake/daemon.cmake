@@ -118,6 +118,7 @@ target_link_libraries(muondetector-login
     mosquitto
     muondetector-shared
     muondetector-shared-mqtt
+    pthread
     )
 
 add_executable(muondetector-daemon ${MUONDETECTOR_DAEMON_SOURCE_FILES} ${MUONDETECTOR_DAEMON_HEADER_FILES})
@@ -137,6 +138,7 @@ target_link_libraries(muondetector-daemon
     mosquitto
     muondetector-shared
     muondetector-shared-mqtt
+    pthread
     )
 
 
