@@ -29,7 +29,6 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/logengine.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/geohash.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/tdc7200.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cbusses.c"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/adafruit_ssd1306/adafruit_ssd1306.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/ads1115/ads1115.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/bme280/bme280.cpp"
@@ -47,8 +46,6 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     )
 
 set(MUONDETECTOR_DAEMON_HEADER_FILES
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/unixtime_from_gps.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/time_from_rtc.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/qtserialublox.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/daemon.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/pigpiodhandler.h"
@@ -61,8 +58,6 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/logengine.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/geohash.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/addresses.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/custom_i2cdetect.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cbusses.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/adafruit_ssd1306/adafruit_ssd1306.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/ads1015/ads1015.h"
@@ -80,7 +75,6 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/Adafruit_GFX.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/i2cdevice.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/glcdfont.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/linux/i2c-dev.h"
     )
 
 set(MUONDETECTOR_LOGIN_SOURCE_FILES

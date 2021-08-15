@@ -19,11 +19,6 @@
 #include <ublox_messages.h>
 #include <unistd.h>
 
-// for i2cdetect:
-extern "C" {
-#include "i2c/custom_i2cdetect.h"
-}
-
 #define DAC_BIAS 2 // channel of the dac where bias voltage is set
 #define DAC_TH1 0 // channel of the dac where threshold 1 is set
 #define DAC_TH2 1 // channel of the dac where threshold 2 is set
