@@ -1,16 +1,23 @@
 #ifndef PLOTCUSTOM_H
 #define PLOTCUSTOM_H
-#include <qwt_plot.h>
-#include <qwt_plot_grid.h>
-#include <qwt_plot_curve.h>
-#include <qwt_series_data.h>
 #include <QPointer>
+#include <qwt_plot.h>
+#include <qwt_plot_curve.h>
+#include <qwt_plot_grid.h>
+#include <qwt_series_data.h>
 
-class PlotCustom : public QwtPlot
-{
+class PlotCustom : public QwtPlot {
 public:
-    PlotCustom(QWidget *parent = 0) : QwtPlot(parent){ initialize();}
-    PlotCustom(const QwtText &title_l, QWidget *parent = 0) : QwtPlot(title_l, parent){ initialize();}
+    PlotCustom(QWidget* parent = 0)
+        : QwtPlot(parent)
+    {
+        initialize();
+    }
+    PlotCustom(const QwtText& title_l, QWidget* parent = 0)
+        : QwtPlot(title_l, parent)
+    {
+        initialize();
+    }
 
     // for other plots: subclass "PlotCustom" and put all specific functions (like below) to the new class
     void plotXorSamples(QVector<QPointF>& xorSamples);

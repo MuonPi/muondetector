@@ -12,7 +12,7 @@
 #include "i2c/i2cdevices/pca9536/pca9536.h"
 #include "i2c/i2cdevices/sht21/sht21.h"
 #include "i2c/i2cdevices/sht31/sht31.h"
+#include "i2c/i2cdevices/tca9546a/tca9546a.h"
 #include "i2c/i2cdevices/ubloxi2c/ubloxi2c.h"
 #include "i2c/i2cdevices/x9119/x9119.h"
-#include "i2c/i2cdevices/tca9546a/tca9546a.h"
 #endif // !_I2CDEVICES_H_

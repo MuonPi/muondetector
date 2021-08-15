@@ -1,17 +1,17 @@
 #include "tcpconnection.h"
 #include "tcpmessage_keys.h"
 
-#include <QtNetwork>
-#include <iostream>
 #include <QDataStream>
 #include <QThread>
+#include <QtNetwork>
+#include <iostream>
 #if defined(Q_OS_UNIX)
-#include <unistd.h>
 #include <sys/syscall.h>
+#include <unistd.h>
 #endif
 
 TcpConnection::TcpConnection(QString newHostName, quint16 newPort, int newVerbose, int newTimeout,
-    int newPingInterval, QObject *parent)
+    int newPingInterval, QObject* parent)
     : QObject(parent)
 {
     verbose = newVerbose;
@@ -21,7 +21,7 @@ TcpConnection::TcpConnection(QString newHostName, quint16 newPort, int newVerbos
     pingInterval = newPingInterval;
 }
 
-TcpConnection::TcpConnection(int socketDescriptor, int newVerbose, int newTimeout, int newPingInterval, QObject *parent)
+TcpConnection::TcpConnection(int socketDescriptor, int newVerbose, int newTimeout, int newPingInterval, QObject* parent)
     : QObject(parent)
     , m_socketDescriptor(socketDescriptor)
 {
@@ -32,8 +32,11 @@ TcpConnection::TcpConnection(int socketDescriptor, int newVerbose, int newTimeou
 
 TcpConnection::~TcpConnection()
 {
-    if (in!=nullptr){ delete in; in = nullptr; }
-    if (!t.isNull()){
+    if (in != nullptr) {
+        delete in;
+        in = nullptr;
+    }
+    if (!t.isNull()) {
         t.clear();
     }
 }
@@ -62,22 +65,22 @@ void TcpConnection::makeConnection()
     }
     emit connected();
     peerAddress = tcpSocket->peerAddress().toString();
-    emit toConsole(QString("makeConnection: peer1 ")+peerAddress);
-    if(peerAddress!=""){
+    emit toConsole(QString("makeConnection: peer1 ") + peerAddress);
+    if (peerAddress != "") {
         peerAddress = peerAddress.split(':').last();
     }
-    emit toConsole(QString("makeConnection: peer2 ")+peerAddress);
+    emit toConsole(QString("makeConnection: peer2 ") + peerAddress);
     localAddress = tcpSocket->localAddress().toString();
-    if(localAddress!=""){
+    if (localAddress != "") {
         localAddress = localAddress.split(':').last();
     }
     peerPort = tcpSocket->peerPort();
     localPort = tcpSocket->localPort();
-    bytesRead=bytesWritten=0;
+    bytesRead = bytesWritten = 0;
 }
 
 void TcpConnection::receiveConnection()
-{   // setting up tcpSocket.
+{ // setting up tcpSocket.
     // only done once
 #if defined(Q_OS_UNIX)
     if (verbose > 4) {
@@ -91,12 +94,12 @@ void TcpConnection::receiveConnection()
         return;
     }
     peerAddress = tcpSocket->peerAddress().toString();
-    if(peerAddress!=""){
+    if (peerAddress != "") {
         peerAddress = peerAddress.split(':').last();
     }
 
     localAddress = tcpSocket->localAddress().toString();
-    if(localAddress!=""){
+    if (localAddress != "") {
         localAddress = localAddress.split(':').last();
     }
     peerPort = tcpSocket->peerPort();
@@ -109,18 +112,20 @@ void TcpConnection::receiveConnection()
     firstConnection = time(NULL);
     lastConnection = firstConnection;
     emit madeConnection(peerAddress, peerPort, localAddress, localPort);
-    bytesRead=bytesWritten=0;
+    bytesRead = bytesWritten = 0;
 }
 
-void TcpConnection::closeConnection(QString closedAddress) {
-    if (peerAddress!=""){
-        if (peerAddress==closedAddress){
+void TcpConnection::closeConnection(QString closedAddress)
+{
+    if (peerAddress != "") {
+        if (peerAddress == closedAddress) {
             closeThisConnection();
         }
     }
 }
 
-void TcpConnection::closeThisConnection(){
+void TcpConnection::closeThisConnection()
+{
     TcpMessage quitMessage(TCP_MSG_KEY::MSG_QUIT_CONNECTION);
     *(quitMessage.dStream) << localAddress;
     sendTcpMessage(quitMessage);
@@ -128,13 +133,14 @@ void TcpConnection::closeThisConnection(){
     return;
 }
 
-void TcpConnection::onReadyRead() {
+void TcpConnection::onReadyRead()
+{
     // this function gets called when tcpSocket emits readyRead signal
     if (!in) {
         emit toConsole("input stream not yet initialized");
         return;
     }
-    while(tcpSocket->bytesAvailable()!=0){
+    while (tcpSocket->bytesAvailable() != 0) {
         if (blockSize == 0) {
             if (tcpSocket->bytesAvailable() < (int)(sizeof(quint16))) {
                 return;
@@ -146,18 +152,18 @@ void TcpConnection::onReadyRead() {
         }
         QByteArray block;
         char* data;
-        data = (char *) malloc (blockSize);
-        if (data==NULL){
+        data = (char*)malloc(blockSize);
+        if (data == NULL) {
             qDebug() << "critical error: memory allocation of " << blockSize << " bytes failed. Memory full?";
             exit(1);
         }
-        in->readRawData(data,blockSize);
-        QDataStream str(&block,QIODevice::ReadWrite);
+        in->readRawData(data, blockSize);
+        QDataStream str(&block, QIODevice::ReadWrite);
         str << blockSize;
-        str.writeRawData(data,blockSize);
-        bytesRead+=blockSize;
+        str.writeRawData(data, blockSize);
+        bytesRead += blockSize;
         blockSize = 0;
-        if (verbose > 4){
+        if (verbose > 4) {
             qDebug() << block;
         }
 
@@ -166,41 +172,42 @@ void TcpConnection::onReadyRead() {
     }
 }
 
-bool TcpConnection::sendTcpMessage(TcpMessage tcpMessage) {
+bool TcpConnection::sendTcpMessage(TcpMessage tcpMessage)
+{
     QByteArray block;
     block = tcpMessage.getData();
     QDataStream stream(&block, QIODevice::ReadWrite);
     stream.device()->seek(0);
     stream << (quint16)(block.size() - (int)sizeof(quint16)); // size of payload
-    if (verbose > 4){
+    if (verbose > 4) {
         qDebug() << block;
     }
     return writeBlock(block);
 }
 
-bool TcpConnection::writeBlock(const QByteArray &block) {
+bool TcpConnection::writeBlock(const QByteArray& block)
+{
     if (!tcpSocket) {
         emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
         return false;
     }
     tcpSocket->write(block);
-    bytesWritten+=block.size();
+    bytesWritten += block.size();
     for (int i = 0; i < 3; i++) {
         if (tcpSocket->state() != QTcpSocket::UnconnectedState) {
             if (!tcpSocket->waitForBytesWritten(timeout)) {
-                quint32 connectionDuration = (quint32)(time(NULL)-firstConnection);
+                quint32 connectionDuration = (quint32)(time(NULL) - firstConnection);
                 quint32 timeoutTime = (quint32)time(NULL);
-                emit connectionTimeout(peerAddress,peerPort,localAddress,localPort,timeoutTime,connectionDuration);
+                emit connectionTimeout(peerAddress, peerPort, localAddress, localPort, timeoutTime, connectionDuration);
                 this->deleteLater();
                 return false;
             }
             return true;
-        }
-        else {
+        } else {
             delay(100);
         }
     }
-    if (verbose > 1){
+    if (verbose > 1) {
         emit toConsole("tcp unconnected state before wait for bytes written, closing connection");
     }
     this->thread()->quit();

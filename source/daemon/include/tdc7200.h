@@ -6,11 +6,10 @@
 
 Q_DECLARE_METATYPE(std::string)
 
-class TDC7200 : public QObject
-{
+class TDC7200 : public QObject {
     Q_OBJECT
 public:
-    explicit TDC7200(unsigned int _INTB = 20, QObject *parent = nullptr);
+    explicit TDC7200(unsigned int _INTB = 20, QObject* parent = nullptr);
 
 signals:
     void readData(uint8_t reg, unsigned int bytesRead);
@@ -36,7 +35,7 @@ private:
     void processData();
     bool devicePresent = false;
     uint8_t INTB;
-    uint8_t config[2]= {0x02, 0b00000000}; // sets meas MODE 2, number of calibration cycles: 20
+    uint8_t config[2] = { 0x02, 0b00000000 }; // sets meas MODE 2, number of calibration cycles: 20
     // multi-cycle averaging mode: 16 cycles and num_stop: single
     // and then the different masks for start and stop (now all 0 so not written at all)
     double CLOCKperiod = 62.5e-9; // 62.5 ns corresponds to 16 MHz oscillator

@@ -4,13 +4,11 @@
 #include <QObject>
 #include <QString>
 
-
-class GeoHash : public QObject
-{
+class GeoHash : public QObject {
     Q_OBJECT
 public:
-    GeoHash()=delete;
-	static QString hashFromCoordinates(double lon, double lat, int precision=6);
+    GeoHash() = delete;
+    static QString hashFromCoordinates(double lon, double lat, int precision = 6);
 };
 
 #endif // GEOHASH_H

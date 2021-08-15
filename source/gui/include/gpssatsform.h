@@ -1,9 +1,9 @@
 #ifndef GPSSATSFORM_H
 #define GPSSATSFORM_H
 
-#include <QWidget>
 #include <QMap>
 #include <QVector>
+#include <QWidget>
 
 struct GeodeticPos;
 class GnssSatellite;
@@ -14,12 +14,11 @@ namespace Ui {
 class GpsSatsForm;
 }
 
-class GpsSatsForm : public QWidget
-{
+class GpsSatsForm : public QWidget {
     Q_OBJECT
 
 public:
-    explicit GpsSatsForm(QWidget *parent = 0);
+    explicit GpsSatsForm(QWidget* parent = 0);
     ~GpsSatsForm();
 
 public slots:
@@ -36,9 +35,8 @@ public slots:
     void onUbxUptimeReceived(quint32 val);
 
 private:
-    Ui::GpsSatsForm *ui;
+    Ui::GpsSatsForm* ui;
     QVector<QPointF> iqTrack;
-
 };
 
 #endif // GPSSATSFORM_H

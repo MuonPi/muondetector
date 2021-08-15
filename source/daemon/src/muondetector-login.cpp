@@ -6,6 +6,7 @@
 #include <QNetworkConfigurationManager>
 #include <QNetworkInterface>
 #include <QNetworkSession>
+#include <QtGlobal>
 #include <crypto++/aes.h>
 #include <crypto++/filters.h>
 #include <crypto++/hex.h>
@@ -16,10 +17,8 @@
 #include <string>
 #include <termios.h>
 #include <unistd.h>
-#include <QtGlobal>
 
 #include "mqtthandler.h"
-
 
 [[nodiscard]] auto getch() -> char;
 [[nodiscard]] auto getpass(const char* prompt, const bool show_asterisk)
@@ -154,7 +153,6 @@ auto saveLoginData(const QString& loginFilePath,
     SecByteBlock iv { AES::BLOCKSIZE };
     rnd.GenerateBlock(iv, iv.size());
 
-
     //////////////////////////////////////////////////////////////////////////
     // Encrypt
 
@@ -163,7 +161,8 @@ auto saveLoginData(const QString& loginFilePath,
 
     StringSource encryptor {
         plainText, true,
-        new StreamTransformationFilter(cfbEncryption, new StringSink(encrypted)) };
+        new StreamTransformationFilter(cfbEncryption, new StringSink(encrypted))
+    };
     loginDataFile.write(reinterpret_cast<const char*>(iv.data()),
         static_cast<qint64>(iv.size()));
     loginDataFile.write(encrypted.c_str());
@@ -176,19 +175,19 @@ int main()
     std::string username {};
     std::cin >> username;
     std::string password { getpass("password: ", true) };
-    QString hashedMacAddress { QString{QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex() } };
+    QString hashedMacAddress { QString { QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex() } };
     QDir temp;
-    QString saveDirPath{ "/var/muondetector/" + hashedMacAddress  };
-    if (!temp.exists(saveDirPath)){
+    QString saveDirPath { "/var/muondetector/" + hashedMacAddress };
+    if (!temp.exists(saveDirPath)) {
         temp.mkpath(saveDirPath);
-        if (!temp.exists(saveDirPath)){
+        if (!temp.exists(saveDirPath)) {
             qFatal(QString("Could not create folder " + saveDirPath + ". Make sure the program is started with the correct permissions.").toStdString().c_str());
         }
     }
-    if (!saveLoginData(QString{saveDirPath + "/loginData.save"},QString::fromStdString(username), QString::fromStdString(password))){
+    if (!saveLoginData(QString { saveDirPath + "/loginData.save" }, QString::fromStdString(username), QString::fromStdString(password))) {
         return 1;
     }
-    MuonPi::MqttHandler mqttHandler {""};
+    MuonPi::MqttHandler mqttHandler { "" };
     std::unique_ptr<QObject> context { new QObject };
     QObject::connect(&mqttHandler, &MuonPi::MqttHandler::mqttConnectionStatus,
         [context = std::move(context)](bool connected) mutable {

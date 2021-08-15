@@ -27,37 +27,36 @@
 /* For strdup and snprintf */
 #define _BSD_SOURCE 1
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/param.h>	/* for NAME_MAX */
-#include <sys/ioctl.h>
-#include <string.h>
-#include <strings.h>	/* for strcasecmp() */
+#include "i2c/linux/i2c-dev.h"
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <strings.h> /* for strcasecmp() */
+#include <sys/ioctl.h>
+#include <sys/param.h> /* for NAME_MAX */
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
-#include <limits.h>
-#include <dirent.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <unistd.h>
-#include "i2c/linux/i2c-dev.h"
 
 struct i2c_adap {
-	int nr;
-	char *name;
-	const char *funcs;
-	const char *algo;
+    int nr;
+    char* name;
+    const char* funcs;
+    const char* algo;
 };
 
-struct i2c_adap *gather_i2c_busses(void);
-void free_adapters(struct i2c_adap *adapters);
+struct i2c_adap* gather_i2c_busses(void);
+void free_adapters(struct i2c_adap* adapters);
 
-int lookup_i2c_bus(const char *i2cbus_arg);
-int parse_i2c_address(const char *address_arg);
-int open_i2c_dev(int i2cbus, char *filename, size_t size, int quiet);
+int lookup_i2c_bus(const char* i2cbus_arg);
+int parse_i2c_address(const char* address_arg);
+int open_i2c_dev(int i2cbus, char* filename, size_t size, int quiet);
 int set_slave_addr(int file, int address, int force);
 
-#define MISSING_FUNC_FMT	"Error: Adapter does not have %s capability\n"
+#define MISSING_FUNC_FMT "Error: Adapter does not have %s capability\n"
 
 #endif

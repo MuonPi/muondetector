@@ -6,22 +6,22 @@ Now it can be called by the main program and it's the only purpose of custom_i2c
 #ifndef _CUSTOM_I2CDETECT_H
 #define _CUSTOM_I2CDETECT_H
 
-#include "i2c/i2cbusses.h"
 #include "i2c/addresses.h"
+#include "i2c/i2cbusses.h"
 
-#include <sys/ioctl.h>
 #include <errno.h>
-#include <string.h>
+#include <linux/i2c-dev.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
+#include <string.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
-#include <linux/i2c-dev.h>
 
 #define MODE_AUTO 0
 #define I2C_BUS 1
 
 int scan_i2c_bus(int file, int first, int last,
-	bool outputAllAddresses, int expectedAddresses[]);
+    bool outputAllAddresses, int expectedAddresses[]);
 int i2cdetect(bool outputAllAddresses, int expectedAddresses[]);
 #endif

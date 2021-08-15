@@ -6,13 +6,14 @@
 
 class ADS1015 : public ADS1115 {
 public:
-	using ADS1115::ADS1115;
+    using ADS1115::ADS1115;
 
 protected:
-	inline void init() {
-		ADS1115::init();
-		fTitle = "ADS1015";
-	}
+    inline void init()
+    {
+        ADS1115::init();
+        fTitle = "ADS1015";
+    }
 };
 
 #endif // !_ADS1015_H_

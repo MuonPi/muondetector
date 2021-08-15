@@ -13,7 +13,7 @@ TcpMessage::TcpMessage(quint16 tcpMsgID)
 }
 
 TcpMessage::TcpMessage(QByteArray& rawdata)
-    : m_data {rawdata}
+    : m_data { rawdata }
 {
     dStream = new QDataStream(&m_data, QIODevice::ReadWrite);
     *dStream >> m_byteCount;
@@ -42,22 +42,27 @@ TcpMessage::TcpMessage(const TcpMessage& tcpMessage)
     m_byteCount = tcpMessage.getByteCount();
 }
 
-void TcpMessage::setData(QByteArray& rawData) {
+void TcpMessage::setData(QByteArray& rawData)
+{
     m_data = rawData;
 }
 
-void TcpMessage::setMsgID(quint16 tcpMsgID) {
+void TcpMessage::setMsgID(quint16 tcpMsgID)
+{
     m_msgID = tcpMsgID;
 }
 
-const QByteArray& TcpMessage::getData() const{
+const QByteArray& TcpMessage::getData() const
+{
     return m_data;
 }
 
-quint16 TcpMessage::getMsgID() const{
+quint16 TcpMessage::getMsgID() const
+{
     return m_msgID;
 }
 
-quint16 TcpMessage::getByteCount() const{
+quint16 TcpMessage::getByteCount() const
+{
     return m_byteCount;
 }

@@ -2,40 +2,37 @@
 #define CALIBRATION_H
 
 // for sig handling:
-#include <sys/types.h>
+#include "i2c/i2cdevices.h"
 #include <QObject>
-#include <vector>
-#include <tuple>
+#include <custom_io_operators.h>
+#include <iomanip>
+#include <muondetector_structs.h>
 #include <sstream>
 #include <string>
-#include <iomanip>
-#include <custom_io_operators.h>
-#include <muondetector_structs.h>
-#include "i2c/i2cdevices.h"
+#include <sys/types.h>
+#include <tuple>
+#include <vector>
 
 const uint16_t CALIB_HEADER = 0x2019;
 
 struct CalibStruct;
 
-
-
 // initialization of calib items
 // meaning of entries (columns is:
 // <item name> <item type> <default value>
 static const std::vector<std::tuple<std::string, std::string, std::string>> CALIBITEMS = {
-                                                    std::make_tuple("VERSION", "UINT8",  "3") ,
-                                                    std::make_tuple("FEATURE_FLAGS", "UINT8",  "0") ,
-                                                    std::make_tuple("CALIB_FLAGS", "UINT8", "0") ,
-                                                    std::make_tuple("DATE", "UINT32", "0") ,
-                                                    std::make_tuple("RSENSE", "UINT16", "100") ,
-                                                    std::make_tuple("VDIV", "UINT16", "1100") ,
-                                                    std::make_tuple("COEFF0", "FLOAT", "0.0") ,
-                                                    std::make_tuple("COEFF1", "FLOAT", "1.0") ,
-                                                    std::make_tuple("COEFF2", "FLOAT", "0.0") ,
-                                                    std::make_tuple("COEFF3", "FLOAT", "1.0") ,
-                                                    std::make_tuple("WRITE_CYCLES", "UINT32", "1")
-                                                    };
-
+    std::make_tuple("VERSION", "UINT8", "3"),
+    std::make_tuple("FEATURE_FLAGS", "UINT8", "0"),
+    std::make_tuple("CALIB_FLAGS", "UINT8", "0"),
+    std::make_tuple("DATE", "UINT32", "0"),
+    std::make_tuple("RSENSE", "UINT16", "100"),
+    std::make_tuple("VDIV", "UINT16", "1100"),
+    std::make_tuple("COEFF0", "FLOAT", "0.0"),
+    std::make_tuple("COEFF1", "FLOAT", "1.0"),
+    std::make_tuple("COEFF2", "FLOAT", "0.0"),
+    std::make_tuple("COEFF3", "FLOAT", "1.0"),
+    std::make_tuple("WRITE_CYCLES", "UINT32", "1")
+};
 
 class ShowerDetectorCalib {
 
@@ -43,7 +40,11 @@ public:
     static const CalibStruct InvalidCalibStruct;
 
     ShowerDetectorCalib() { init(); }
-    ShowerDetectorCalib(EEPROM24AA02 *eep) : fEeprom(eep) { init(); }
+    ShowerDetectorCalib(EEPROM24AA02* eep)
+        : fEeprom(eep)
+    {
+        init();
+    }
 
     bool readFromEeprom();
     bool writeToEeprom();
@@ -64,7 +65,8 @@ public:
     uint64_t getSerialID();
 
     template <typename T>
-    static void getValueFromString(const std::string& valstr, T& value) {
+    static void getValueFromString(const std::string& valstr, T& value)
+    {
         std::istringstream istr(valstr);
         istr >> value;
     }
@@ -73,9 +75,8 @@ private:
     void init();
     void buildCalibList();
 
-
     std::vector<CalibStruct> fCalibList;
-    EEPROM24AA02 *fEeprom = nullptr;
+    EEPROM24AA02* fEeprom = nullptr;
     uint8_t fEepBuffer[256];
     bool fEepromValid = false;
     bool fValid = false;
@@ -94,10 +95,7 @@ void ShowerDetectorCalib::setCalibItem(const std::string& name, T value)
     }
 }
 
-
 template void ShowerDetectorCalib::setCalibItem<unsigned int>(const std::string&, unsigned int);
 template void ShowerDetectorCalib::setCalibItem<int>(const std::string&, int);
-
-
 
 #endif // CALIBRATION_H
