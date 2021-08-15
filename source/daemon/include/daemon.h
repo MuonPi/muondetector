@@ -18,13 +18,13 @@
 
 #include "custom_io_operators.h"
 #include "histogram.h"
-#include "i2c/i2cdevices.h"
+#include "hardware/i2cdevices.h"
 #include "logengine.h"
 #include "logparameter.h"
 #include "mqtthandler.h"
 #include "pigpiodhandler.h"
 #include "tcpconnection.h"
-#include "tdc7200.h"
+#include "hardware/spidevices.h"
 
 // for sig handling:
 #include <signal.h>

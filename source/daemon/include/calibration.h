@@ -4,7 +4,7 @@
 // clang-format off
 #include "custom_io_operators.h"
 #include <muondetector_structs.h>
-#include "i2c/i2cdevices.h"
+#include "hardware/i2cdevices.h"
 // clang-format on
 
 // for sig handling:
