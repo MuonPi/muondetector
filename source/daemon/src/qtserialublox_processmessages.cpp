@@ -1,12 +1,14 @@
+#include "utility/custom_io_operators.h"
+#include "utility/unixtime_from_gps.h"
+#include "qtserialublox.h"
+
+#include <muondetector_structs.h>
+#include <ublox_messages.h>
+
 #include <QThread>
 #include <cctype>
-#include <custom_io_operators.h>
 #include <iomanip>
-#include <muondetector_structs.h>
-#include <qtserialublox.h>
 #include <sstream>
-#include <ublox_messages.h>
-#include <unixtime_from_gps.h>
 
 using namespace std;
 

@@ -1,5 +1,5 @@
 #include <QDebug>
-#include <geohash.h>
+#include "utility/geohash.h"
 
 static const QString base32 = "0123456789bcdefghjkmnpqrstuvwxyz"; // (geohash-specific) Base32 map
 

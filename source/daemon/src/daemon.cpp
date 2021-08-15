@@ -4,8 +4,8 @@
 #include <chrono>
 #include <config.h>
 #include <daemon.h>
-#include <geohash.h>
-#include <gpio_mapping.h>
+#include "utility/geohash.h"
+#include "utility/gpio_mapping.h"
 #include <gpio_pin_definitions.h>
 #include <iomanip>
 #include <iostream>

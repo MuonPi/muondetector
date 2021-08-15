@@ -12,11 +12,11 @@
 
 // clang-format off
 #include "qtserialublox.h"
-#include "filehandler.h"
+#include "utility/filehandler.h"
 #include "calibration.h"
 // clang-format on
 
-#include "custom_io_operators.h"
+#include "utility/custom_io_operators.h"
 #include "histogram.h"
 #include "hardware/i2cdevices.h"
 #include "logengine.h"

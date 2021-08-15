@@ -1,4 +1,4 @@
-#include "gpio_mapping.h"
+#include "utility/gpio_mapping.h"
 #include "config.h"
 #include <map>
 

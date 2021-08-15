@@ -7,7 +7,7 @@
 #include <QTimer>
 #include <QVector>
 
-#include <gpio_mapping.h>
+#include "utility/gpio_mapping.h"
 #include <gpio_pin_definitions.h>
 
 #define XOR_RATE 0

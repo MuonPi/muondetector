@@ -8,7 +8,7 @@
 #include <QQueue>
 #include <QStandardPaths>
 #include <QVector>
-#include <logparameter.h>
+#include "logparameter.h"
 
 class FileHandler : public QObject {
     Q_OBJECT

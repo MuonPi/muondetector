@@ -1,6 +1,6 @@
 #ifndef GPIO_MAPPING_H
 #define GPIO_MAPPING_H
-#include "gpio_pin_definitions.h"
+#include <gpio_pin_definitions.h>
 #include <map>
 
 #define MAX_HW_VER 3
