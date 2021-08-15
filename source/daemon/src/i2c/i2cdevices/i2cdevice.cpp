@@ -3,6 +3,7 @@
 #include <cstring>
 #include <fcntl.h> // open
 #include <iostream>
+#include <linux/i2c-dev.h> // I2C bus definitions for linux like systems
 
 using namespace std;
 

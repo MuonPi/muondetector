@@ -1,6 +1,8 @@
 #include "i2c/i2cdevices/x9119/x9119.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <linux/i2c.h> // I2C bus definitions for linux like systems
+#include <linux/i2c-dev.h> // I2C bus definitions for linux like systems
 
 /*
 * X9119
@@ -69,12 +71,12 @@ unsigned int X9119::readWiperReg2()
     rdwr_msgs[0].addr = fAddress;
     rdwr_msgs[0].flags = 0;
     rdwr_msgs[0].len = 1;
-    rdwr_msgs[0].buf = (char*)writeBuf;
+    rdwr_msgs[0].buf = writeBuf;
 
     rdwr_msgs[1].addr = fAddress;
     rdwr_msgs[1].flags = I2C_M_RD;
     rdwr_msgs[1].len = 2;
-    rdwr_msgs[1].buf = (char*)readBuf;
+    rdwr_msgs[1].buf = readBuf;
 
     struct i2c_rdwr_ioctl_data rdwr_data;
 

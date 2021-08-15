@@ -1,4 +1,3 @@
-#include "i2c/linux/i2c-dev.h" // I2C bus definitions for linux like systems
 #include <fcntl.h> // open
 #include <inttypes.h> // uint8_t, etc
 #include <iostream>
