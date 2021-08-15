@@ -35,8 +35,8 @@ public:
     double getUnderflow() const;
     double getOverflow() const;
     double getEntries();
-	void rescale(double center, double width);
-	void rescale(double center);
+    void rescale(double center, double width);
+    void rescale(double center);
 
     friend QDataStream& operator<<(QDataStream& out, const Histogram& h);
     friend QDataStream& operator>>(QDataStream& in, Histogram& h);
@@ -47,7 +47,7 @@ public:
 protected:
     int value2Bin(double value) const;
     double bin2Value(int bin) const;
-	
+
     std::string fName = "defaultHisto";
     std::string fUnit = "A.U.";
     int fNrBins = 100;
