@@ -16,71 +16,95 @@ endif()
 
 find_package(Qt5 COMPONENTS Network SerialPort REQUIRED)
 
+
+set(MUONDETECTOR_SPI_SOURCE_FILES
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/spi/tdc7200.cpp"
+    )
+
+set(MUONDETECTOR_I2C_SOURCE_FILES
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/Adafruit_GFX.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/adafruit_ssd1306.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/ads1115.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/bme280.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/bmp180.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/eeprom24aa02.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/hmc5883.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/lm75.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/mcp4728.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/pca9536.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/sht21.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/sht31.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/tca9546a.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/ubloxi2c.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/x9119.cpp"
+
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/i2cdevice.cpp"
+    )
+
 set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/main.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/qtserialublox.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/qtserialublox_processmessages.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/pigpiodhandler.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/daemon.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/custom_io_operators.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/filehandler.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/custom_io_operators.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/filehandler.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/calibration.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/gpio_mapping.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/gpio_mapping.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/logengine.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/geohash.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/tdc7200.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cbusses.c"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/adafruit_ssd1306/adafruit_ssd1306.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/ads1115/ads1115.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/bme280/bme280.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/bmp180/bmp180.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/eeprom24aa02/eeprom24aa02.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/hmc5883/hmc5883.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/lm75/lm75.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/mcp4728/mcp4728.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/pca9536/pca9536.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/sht21/sht21.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/ubloxi2c/ubloxi2c.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/x9119/x9119.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/Adafruit_GFX.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/i2c/i2cdevices/i2cdevice.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/geohash.cpp"
+
+    "${MUONDETECTOR_I2C_SOURCE_FILES}"
+    "${MUONDETECTOR_SPI_SOURCE_FILES}"
+    )
+
+
+set(MUONDETECTOR_I2C_HEADER_FILES
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/Adafruit_GFX.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/adafruit_ssd1306.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/ads1015.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/ads1115.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/bme280.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/bmp180.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/eeprom24aa02.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/glcdfont.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/hmc5883.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/lm75.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/mcp4728.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/pca9536.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/sht21.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/sht31.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/tca9546a.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/ubloxi2c.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/x9119.h"
+
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/i2cdevice.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/addresses.h"
+
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2cdevices.h"
+    )
+
+set(MUONDETECTOR_SPI_HEADER_FILES
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/spi/tdc7200.h"
+
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/spidevices.h"
     )
 
 set(MUONDETECTOR_DAEMON_HEADER_FILES
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/unixtime_from_gps.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/time_from_rtc.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/qtserialublox.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/daemon.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/pigpiodhandler.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/custom_io_operators.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/filehandler.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/custom_io_operators.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/unixtime_from_gps.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/filehandler.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/calibration.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/logparameter.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/gpio_mapping.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/tdc7200.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/gpio_mapping.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/logengine.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/geohash.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/addresses.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/custom_i2cdetect.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cbusses.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/adafruit_ssd1306/adafruit_ssd1306.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/ads1015/ads1015.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/ads1115/ads1115.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/bme280/bme280.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/bmp180/bmp180.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/eeprom24aa02/eeprom24aa02.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/hmc5883/hmc5883.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/lm75/lm75.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/mcp4728/mcp4728.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/pca9536/pca9536.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/sht21/sht21.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/ubloxi2c/ubloxi2c.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/x9119/x9119.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/Adafruit_GFX.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/i2cdevice.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/i2cdevices/glcdfont.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/i2c/linux/i2c-dev.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/geohash.h"
+
+    "${MUONDETECTOR_I2C_HEADER_FILES}"
+    "${MUONDETECTOR_SPI_HEADER_FILES}"
     )
 
 set(MUONDETECTOR_LOGIN_SOURCE_FILES

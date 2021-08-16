@@ -4,8 +4,8 @@
 #include <chrono>
 #include <config.h>
 #include <daemon.h>
-#include <geohash.h>
-#include <gpio_mapping.h>
+#include "utility/geohash.h"
+#include "utility/gpio_mapping.h"
 #include <gpio_pin_definitions.h>
 #include <iomanip>
 #include <iostream>
@@ -18,11 +18,6 @@
 #include <time.h>
 #include <ublox_messages.h>
 #include <unistd.h>
-
-// for i2cdetect:
-extern "C" {
-#include "i2c/custom_i2cdetect.h"
-}
 
 #define DAC_BIAS 2 // channel of the dac where bias voltage is set
 #define DAC_TH1 0 // channel of the dac where threshold 1 is set
@@ -940,7 +935,7 @@ void Daemon::checkRescaleHisto(Histogram& hist, double newValue)
     // do nothing if histo is empty
     if (entries < 3.) {
         return;
-		hist.rescale(newValue);                
+        hist.rescale(newValue);
     }
     double ufl = hist.getUnderflow();
     double ofl = hist.getOverflow();
@@ -948,19 +943,19 @@ void Daemon::checkRescaleHisto(Histogram& hist, double newValue)
     double range = hist.getMax() - hist.getMin();
     if (ufl > 0. && ofl > 0. && (ufl + ofl) > 0.05 * entries) {
         // range is too small, underflow and overflow have more than 5% of all entries
-		hist.rescale(hist.getMean(), 1.2 * range);                
+        hist.rescale(hist.getMean(), 1.2 * range);
     } else if (ufl > 0.05 * entries) {
         if (entries < 1.) {
-			hist.rescale(newValue);                
-		} else {
-			hist.rescale(hist.getMean(), 1.2 * range);                
-		}
+            hist.rescale(newValue);
+        } else {
+            hist.rescale(hist.getMean(), 1.2 * range);
+        }
     } else if (ofl > 0.05 * entries) {
         if (entries < 1.) {
-			hist.rescale(newValue);                
-		} else {
-			hist.rescale(hist.getMean(), 1.1 * range);                
-		}
+            hist.rescale(newValue);
+        } else {
+            hist.rescale(hist.getMean(), 1.1 * range);
+        }
     } else if (ufl < 1e-3 && ofl < 1e-3) {
         // check if range is too wide
         if (entries > 100) {
@@ -968,10 +963,9 @@ void Daemon::checkRescaleHisto(Histogram& hist, double newValue)
             int highest = hist.getHighestOccupiedBin();
             if ((float)lowest / hist.getNrBins() > 0.45) {
                 hist.rescale(hist.getMean(), 0.6 * range);
-			}
-            else if ((float)(hist.getNrBins() - highest) / hist.getNrBins() > 0.45) {
-                hist.rescale(hist.getMean(), 0.6 * range);                
-			}
+            } else if ((float)(hist.getNrBins() - highest) / hist.getNrBins() > 0.45) {
+                hist.rescale(hist.getMean(), 0.6 * range);
+            }
         }
     }
 }

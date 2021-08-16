@@ -3,7 +3,7 @@
 #include <cmath>
 #include <config.h>
 #include <exception>
-#include <gpio_mapping.h>
+#include "utility/gpio_mapping.h"
 #include <iostream>
 #include <pigpiodhandler.h>
 #include <sys/time.h>

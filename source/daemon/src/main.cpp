@@ -11,10 +11,10 @@
 #include <termios.h>
 #include <unistd.h>
 
-#include "config.h"
-#include "custom_io_operators.h"
+#include <config.h>
+#include "utility/custom_io_operators.h"
 #include "daemon.h"
-#include "gpio_pin_definitions.h"
+#include <gpio_pin_definitions.h>
 
 static const char* CONFIG_FILE = MuonPi::Config::file;
 static int verbose = 0;

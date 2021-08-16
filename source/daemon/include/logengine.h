@@ -5,7 +5,7 @@
 #include <QString>
 #include <QVector>
 #include <config.h>
-#include <logparameter.h>
+#include "logparameter.h"
 
 class LogEngine : public QObject {
     Q_OBJECT
