@@ -3,11 +3,17 @@ project (muondetector LANGUAGES CXX C)
 
 string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
 
-include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.cmake")
-
 option(MUONDETECTOR_BUILD_GUI "Build the gui for the muondetector" ON)
 option(MUONDETECTOR_BUILD_DAEMON "Build the daemon for the muondetector. Defaults to ON on armv7l architecture" OFF)
 set(MUONDETECTOR_ON_RASPBERRYPI OFF)
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.cmake")
+
+execute_process(COMMAND bash "-c" "git rev-parse --short HEAD | tr -d '\n'"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    OUTPUT_VARIABLE PROJECT_VERSION_HASH)
+
+
 
 if ((${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l"))
     set(MUONDETECTOR_BUILD_DAEMON ON)
