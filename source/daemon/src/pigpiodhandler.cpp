@@ -96,21 +96,28 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
         return;
 
     static uint32_t lastTriggerTick = 0;
-    static uint32_t lastXorAndTick = 0;
     static uint32_t lastTick = 0;
     static uint16_t pileupCounter = 0;
 
-    // look, if the last event occured just recently (less than 100us ago)
+    // look, if the last event occured just recently
     // if so, count the pileup counter up
     // count down if not
-    if (tick - lastTick < 100)
+    if (tick - lastTick < MuonPi::Config::event_count_deadtime_ticks) 
+    {
         pileupCounter++;
-    else if (pileupCounter > 0)
+        // if more than a certain number of pileups happened in a short period of time, leave immediately
+        if (pileupCounter > MuonPi::Config::event_count_max_pileups) 
+        {
+            pileupCounter = MuonPi::Config::event_count_max_pileups;
+			lastTick = tick;
+            return;
+        }
+    } else if (pileupCounter > 0)
+    {
         pileupCounter--;
+    }
 
-    // if more than 50 pileups happened in a short period of time, leave immediately
-    if (pileupCounter > 50)
-        return;
+    lastTick = tick;
 
     try {
         // allow only registered signals to be processed here
@@ -162,10 +169,9 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
                 emit pigpioHandler->timePulseDiff(t_diff_us);
             }
         }
-        if (tick - lastXorAndTick > MuonPi::Config::event_count_deadtime_ticks) {
-            lastXorAndTick = tick;
-            emit pigpioHandler->signal(user_gpio);
-        }
+        
+        emit pigpioHandler->signal(user_gpio);
+         
         // level gives the information if it is up or down (only important if trigger is
         // at both: rising and falling edge)
     } catch (std::exception& e) {

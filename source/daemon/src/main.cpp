@@ -6,6 +6,7 @@
 #include <QDir>
 #include <QHostAddress>
 #include <QObject>
+#include <QDateTime>
 #include <iostream>
 #include <libconfig.h++>
 #include <termios.h>
@@ -110,6 +111,10 @@ int main(int argc, char* argv[])
     // config file handling
     libconfig::Config cfg;
 
+	qInfo()	<< "MuonPi Muondetector Daemon "
+			<< "V"+QString::fromStdString(MuonPi::Version::software.string())
+			<< "(build "+ QDateTime::currentDateTime().toString("ddd MMMM dd yyyy, hh:mm:ss") +")";
+			
     // Read the file. If there is an error, report it and exit.
     try {
         cfg.readFile(MuonPi::Config::file);

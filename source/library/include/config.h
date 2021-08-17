@@ -21,7 +21,8 @@ constexpr struct Version {
 
 namespace MuonPi::Config {
 constexpr const char* file { "/etc/muondetector/muondetector.conf" };
-constexpr int event_count_deadtime_ticks { 50000 };
+constexpr int event_count_deadtime_ticks { 1000 };
+constexpr int event_count_max_pileups { 50 };
 
 namespace MQTT {
     constexpr const char* host { "116.202.96.181" };

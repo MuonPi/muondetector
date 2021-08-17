@@ -28,7 +28,7 @@ i2cDevice::i2cDevice()
         fMode = MODE_FAILED;
 }
 
-i2cDevice::i2cDevice(const char* busAddress = "/dev/i2c-1")
+i2cDevice::i2cDevice(const char* busAddress)
 {
     fNrBytesRead = 0;
     fNrBytesWritten = 0;
