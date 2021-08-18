@@ -4,53 +4,8 @@ set(MUONDETECTOR_GUI_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gui/")
 set(MUONDETECTOR_GUI_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gui/include")
 set(MUONDETECTOR_GUI_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gui/config")
 set(MUONDETECTOR_GUI_QML_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gui/qml")
+set(MUONDETECTOR_GUI_APPLE_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gui/res")
 
-
-if(WIN32)
-    set(QWT_DIR "C:/Qwt-6.1.4")
-    set(OPENSSL_DIR "C:/Qt/Tools/OpenSSL/Win_x64")
-    set(CRYPTOPP_DIR "C:/cryptopp")
-    list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5QuickCompiler")
-    list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5")
-
-    if (MSVC)
-        if("${MSVC_RUNTIME}" STREQUAL "")
-            set(MSVC_RUNTIME "static")
-        endif()
-            # Set compiler options.
-        set(variables
-          CMAKE_C_FLAGS_DEBUG
-          CMAKE_C_FLAGS_MINSIZEREL
-          CMAKE_C_FLAGS_RELEASE
-          CMAKE_C_FLAGS_RELWITHDEBINFO
-          CMAKE_CXX_FLAGS_DEBUG
-          CMAKE_CXX_FLAGS_MINSIZEREL
-          CMAKE_CXX_FLAGS_RELEASE
-          CMAKE_CXX_FLAGS_RELWITHDEBINFO
-        )
-        if(${MSVC_RUNTIME} STREQUAL "static")
-          message(STATUS
-            "MSVC -> forcing use of statically-linked runtime."
-          )
-          foreach(variable ${variables})
-            if(${variable} MATCHES "/MD")
-              string(REGEX REPLACE "/MD" "/MT" ${variable} "${${variable}}")
-            endif()
-          endforeach()
-        else()
-          message(STATUS
-            "MSVC -> forcing use of dynamically-linked runtime."
-          )
-          foreach(variable ${variables})
-            if(${variable} MATCHES "/MT")
-              string(REGEX REPLACE "/MT" "/MD" ${variable} "${${variable}}")
-            endif()
-          endforeach()
-        endif()
-    endif()
-
-
-endif()
 
 
 set(MUONDETECTOR_GUI_SOURCE_FILES
@@ -122,12 +77,30 @@ configure_file(
     "${CMAKE_CURRENT_BINARY_DIR}/muon.ico"
     )
 else()
+
 configure_file(
     "${MUONDETECTOR_GUI_CONFIG_DIR}/muondetector-gui.1"
     "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1"
     )
 
-find_library(QWT_QT5 qwt-qt5 REQUIRED)
+endif()
+
+if(APPLE)
+    #QWT-Framwork suchen
+    find_library(QWT
+        NAMES qwt
+        HINTS /opt/local/libexec/qt5/lib
+        REQUIRED)
+    if(QWT)
+        include_directories(${QWT}/Headers)
+        link_libraries(${QWT})
+        message("QWT found: ${QWT}")
+    endif()
+
+else()
+    
+    find_library(QWT_QT5 qwt-qt5 REQUIRED)
+
 endif()
 
 find_package(Qt5 COMPONENTS Network Svg Widgets Gui Quick QuickWidgets Qml REQUIRED)
@@ -143,7 +116,24 @@ qt5_add_resources(qml_QRC "${MUONDETECTOR_GUI_RES_DIR}/resources.qrc")
 
 endif()
 
-add_executable(muondetector-gui ${MUONDETECTOR_GUI_SOURCE_FILES} ${MUONDETECTOR_GUI_HEADER_FILES} ${MUONDETECTOR_GUI_UI_FILES} ${MUONDETECTOR_GUI_RESOURCE_FILES} ${qml_QRC})
+if(APPLE)
+  
+
+  set(MACOSX_BUNDLE_ICON_FILE muon.icns)
+  set(myApp_ICON ${MUONDETECTOR_GUI_APPLE_RES_DIR}/muon.icns)
+  set_source_files_properties(${myApp_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+
+  add_executable(muondetector-gui MACOSX_BUNDLE ${myApp_ICON} ${MUONDETECTOR_GUI_SOURCE_FILES} ${MUONDETECTOR_GUI_HEADER_FILES} ${MUONDETECTOR_GUI_UI_FILES} ${MUONDETECTOR_GUI_RESOURCE_FILES} ${qml_QRC} )  
+
+  set_target_properties(muondetector-gui PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${MUONDETECTOR_GUI_APPLE_RES_DIR}/Info.plist.in)
+
+else()
+
+add_executable(muondetector-gui  ${MUONDETECTOR_GUI_SOURCE_FILES} ${MUONDETECTOR_GUI_HEADER_FILES} ${MUONDETECTOR_GUI_UI_FILES} ${MUONDETECTOR_GUI_RESOURCE_FILES} ${qml_QRC})
+
+endif()
+
+
 add_dependencies(muondetector-gui muondetector-shared)
 
 set_target_properties(muondetector-gui PROPERTIES POSITION_INDEPENDENT_CODE 1)
@@ -179,6 +169,19 @@ target_link_libraries(muondetector-gui
     qwt.lib
     )
 
+elseif(APPLE)
+
+target_link_libraries(muondetector-gui
+    Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
+    muondetector-shared
+    pthread
+    )
+#strip muss im Bundle erfolgen
+if (CMAKE_BUILD_TYPE STREQUAL Release)
+    add_custom_command(TARGET muondetector-gui POST_BUILD
+            COMMAND ${CMAKE_STRIP} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/muondetector-gui.app/Contents/MacOS/muondetector-gui")
+endif ()
+
 else()
 
 target_link_libraries(muondetector-gui
@@ -187,12 +190,11 @@ target_link_libraries(muondetector-gui
     pthread
     qwt-qt5
     )
-
-
 if (CMAKE_BUILD_TYPE STREQUAL Release)
     add_custom_command(TARGET muondetector-gui POST_BUILD
             COMMAND ${CMAKE_STRIP} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/muondetector-gui")
 endif ()
+
 
 install(FILES "${MUONDETECTOR_GUI_CONFIG_DIR}/muon.ico" DESTINATION "share/pixmaps/" COMPONENT gui)
 install(FILES "${MUONDETECTOR_GUI_CONFIG_DIR}/muondetector-gui.desktop" DESTINATION "share/applications/" COMPONENT gui)
@@ -201,7 +203,15 @@ endif()
 
 install(TARGETS muondetector-gui DESTINATION bin COMPONENT gui)
 
-if(WIN32)
+if(APPLE)
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Macdeployqt.cmake")
+set(macdeploy_options
+    -qmldir="${MUONDETECTOR_GUI_QML_DIR}"    
+) # additional options for macdeployqt
+
+macdeployqt(muondetector-gui "${PROJECT_BINARY_DIR}/bin" "${macdeploy_options}")
+
+elseif(WIN32)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Windeployqt.cmake")
 set(windeploy_options

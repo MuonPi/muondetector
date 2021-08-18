@@ -3,50 +3,6 @@ set(MUONDETECTOR_LIBRARY_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/library/include
 set(MUONDETECTOR_LIBRARY_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/library/config")
 set(LIBRARY_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/library/include/")
 
-if(WIN32)
-    set(QWT_DIR "C:/Qwt-6.1.4")
-    set(OPENSSL_DIR "C:/Qt/Tools/OpenSSL/Win_x64")
-    set(CRYPTOPP_DIR "C:/cryptopp")
-    list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5QuickCompiler")
-    list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.1/msvc2019_64/lib/cmake/Qt5")
-
-    if (MSVC)
-        if("${MSVC_RUNTIME}" STREQUAL "")
-            set(MSVC_RUNTIME "static")
-        endif()
-            # Set compiler options.
-        set(variables
-          CMAKE_C_FLAGS_DEBUG
-          CMAKE_C_FLAGS_MINSIZEREL
-          CMAKE_C_FLAGS_RELEASE
-          CMAKE_C_FLAGS_RELWITHDEBINFO
-          CMAKE_CXX_FLAGS_DEBUG
-          CMAKE_CXX_FLAGS_MINSIZEREL
-          CMAKE_CXX_FLAGS_RELEASE
-          CMAKE_CXX_FLAGS_RELWITHDEBINFO
-        )
-        if(${MSVC_RUNTIME} STREQUAL "static")
-          message(STATUS
-            "MSVC -> forcing use of statically-linked runtime."
-          )
-          foreach(variable ${variables})
-            if(${variable} MATCHES "/MD")
-              string(REGEX REPLACE "/MD" "/MT" ${variable} "${${variable}}")
-            endif()
-          endforeach()
-        else()
-          message(STATUS
-            "MSVC -> forcing use of dynamically-linked runtime."
-          )
-          foreach(variable ${variables})
-            if(${variable} MATCHES "/MT")
-              string(REGEX REPLACE "/MT" "/MD" ${variable} "${${variable}}")
-            endif()
-          endforeach()
-        endif()
-    endif()
-
-endif()
 
 find_package(Qt5 COMPONENTS Network REQUIRED)
 
@@ -60,6 +16,7 @@ set(MUONDETECTOR_LIBRARY_SOURCE_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/config.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/tcpconnection.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/tcpmessage.cpp"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/histogram.cpp"
     )
 
 set(MUONDETECTOR_LIBRARY_HEADER_FILES

@@ -211,6 +211,7 @@ void MqttHandler::cleanup() {
         mosquitto_lib_cleanup();
     }
 }
+
 void MqttHandler::subscribe(const QString& topic)
 {
     if (!connected()) {
