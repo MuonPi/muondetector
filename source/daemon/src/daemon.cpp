@@ -2145,9 +2145,9 @@ void Daemon::UBXReceivedVersion(const QString& swString, const QString& hwString
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_VERSION);
     (*tcpMessage.dStream) << swString << hwString << protString;
     emit sendTcpMessage(tcpMessage);
-    logParameter(LogParameter("UBX_SW_Version", swString, LogParameter::LOG_ONCE));
-    logParameter(LogParameter("UBX_HW_Version", hwString, LogParameter::LOG_ONCE));
-    logParameter(LogParameter("UBX_Prot_Version", protString, LogParameter::LOG_ONCE));
+    emit logParameter(LogParameter("UBX_SW_Version", swString, LogParameter::LOG_ONCE));
+    emit logParameter(LogParameter("UBX_HW_Version", hwString, LogParameter::LOG_ONCE));
+    emit logParameter(LogParameter("UBX_Prot_Version", protString, LogParameter::LOG_ONCE));
     if (initialVersionInfo) {
         configGpsForVersion();
         qInfo() << "Ublox version: " << hwString << " (fw:" << swString << "prot:" << protString << ")";
