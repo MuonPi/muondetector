@@ -217,6 +217,10 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
     }
 
+    // connect logParameter signal to log engine before anything else is done
+    // since we want to log some initial one-time log parameters on start-up
+    connect(this, &Daemon::logParameter, &logEngine, &LogEngine::onLogParameterReceived);
+
     // try to find out on which hardware version we are running
     // for this to work, we have to initialize and read the eeprom first
     // EEPROM 24AA02 type
@@ -243,9 +247,10 @@ Daemon::Daemon(configuration cfg, QObject* parent)
             }
         }
         uint64_t id = calib->getSerialID();
-        QString hwIdStr = "0x" + QString::number(id, 16);
+        QString hwIdStr = QString::number(id, 16);
+        logParameter(LogParameter("uniqueId", hwIdStr, LogParameter::LOG_ONCE));
+		hwIdStr = "0x"+hwIdStr;
         qInfo() << "EEP unique ID:" << hwIdStr;
-
     } else {
         qCritical() << "eeprom device NOT present!";
     }
@@ -312,7 +317,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     fileHandlerThread->start();
 
     // connect log signals to and from log engine and filehandler
-    connect(this, &Daemon::logParameter, &logEngine, &LogEngine::onLogParameterReceived);
     connect(&logEngine, &LogEngine::sendLogString, mqttHandler, &MuonPi::MqttHandler::sendLog);
     connect(&logEngine, &LogEngine::sendLogString, fileHandler, &FileHandler::writeToLogFile);
     // connect to the regular log timer signal to log several non-regularly polled parameters
