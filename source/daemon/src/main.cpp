@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
 
 	qInfo()	<< "MuonPi Muondetector Daemon "
 			<< "V"+QString::fromStdString(MuonPi::Version::software.string())
-			<< "(build "+ QDateTime::currentDateTime().toString("ddd MMMM dd yyyy, hh:mm:ss") +")";
+			<< "(build "+ QString(__TIMESTAMP__) +")";
 			
     // Read the file. If there is an error, report it and exit.
     try {
