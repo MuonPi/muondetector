@@ -217,10 +217,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
     }
 
-    // connect logParameter signal to log engine before anything else is done
-    // since we want to log some initial one-time log parameters on start-up
-    connect(this, &Daemon::logParameter, &logEngine, &LogEngine::onLogParameterReceived);
-
     // try to find out on which hardware version we are running
     // for this to work, we have to initialize and read the eeprom first
     // EEPROM 24AA02 type
@@ -247,10 +243,9 @@ Daemon::Daemon(configuration cfg, QObject* parent)
             }
         }
         uint64_t id = calib->getSerialID();
-        QString hwIdStr = QString::number(id, 16);
-        logParameter(LogParameter("uniqueId", hwIdStr, LogParameter::LOG_ONCE));
-		hwIdStr = "0x"+hwIdStr;
+        QString hwIdStr = "0x" + QString::number(id, 16);
         qInfo() << "EEP unique ID:" << hwIdStr;
+
     } else {
         qCritical() << "eeprom device NOT present!";
     }
@@ -317,6 +312,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     fileHandlerThread->start();
 
     // connect log signals to and from log engine and filehandler
+    connect(this, &Daemon::logParameter, &logEngine, &LogEngine::onLogParameterReceived);
     connect(&logEngine, &LogEngine::sendLogString, mqttHandler, &MuonPi::MqttHandler::sendLog);
     connect(&logEngine, &LogEngine::sendLogString, fileHandler, &FileHandler::writeToLogFile);
     // connect to the regular log timer signal to log several non-regularly polled parameters
@@ -1371,6 +1367,12 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos)
         checkRescaleHisto(histoMap[name], 1e-7 * pos.lat);
         histoMap[name].fill(1e-7 * pos.lat);
     }
+    double totalPosAccuracy = 1e-3 * std::sqrt( pos.hAcc * pos.hAcc + pos.vAcc * pos.vAcc );
+    kalmanGnssFilter.process(1e-7 * pos.lat, 1e-7 * pos.lon, totalPosAccuracy);
+	/*
+	qDebug() << "kalmanLat:" << kalmanGnssFilter.get_latitude() << "kalmanLon:" << kalmanGnssFilter.get_longitude()
+	<< "kalmanAcc:" << kalmanGnssFilter.get_accuracy();
+	*/
 }
 
 void Daemon::sendHistogram(const Histogram& hist)
@@ -2145,9 +2147,9 @@ void Daemon::UBXReceivedVersion(const QString& swString, const QString& hwString
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_VERSION);
     (*tcpMessage.dStream) << swString << hwString << protString;
     emit sendTcpMessage(tcpMessage);
-    emit logParameter(LogParameter("UBX_SW_Version", swString, LogParameter::LOG_ONCE));
-    emit logParameter(LogParameter("UBX_HW_Version", hwString, LogParameter::LOG_ONCE));
-    emit logParameter(LogParameter("UBX_Prot_Version", protString, LogParameter::LOG_ONCE));
+    logParameter(LogParameter("UBX_SW_Version", swString, LogParameter::LOG_ONCE));
+    logParameter(LogParameter("UBX_HW_Version", hwString, LogParameter::LOG_ONCE));
+    logParameter(LogParameter("UBX_Prot_Version", protString, LogParameter::LOG_ONCE));
     if (initialVersionInfo) {
         configGpsForVersion();
         qInfo() << "Ublox version: " << hwString << " (fw:" << swString << "prot:" << protString << ")";
