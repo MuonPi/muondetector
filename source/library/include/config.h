@@ -23,6 +23,7 @@ namespace MuonPi::Config {
 constexpr const char* file { "/etc/muondetector/muondetector.conf" };
 constexpr int event_count_deadtime_ticks { 1000 };
 constexpr int event_count_max_pileups { 50 };
+constexpr double max_lock_in_dop { 2.0 };
 
 namespace MQTT {
     constexpr const char* host { "116.202.96.181" };

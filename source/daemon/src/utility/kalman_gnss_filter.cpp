@@ -9,22 +9,20 @@ KalmanGnssFilter::KalmanGnssFilter(double accuracy_decay)
 { 
 }
 
-void KalmanGnssFilter::set_state(double lat, double lng, double accuracy) {
-	m_lat=lat;
-	m_lng=lng;
+void KalmanGnssFilter::set_state(double lat, double lng, double alt, double accuracy) {
+	m_lat = lat;
+	m_lng = lng;
+	m_alt = alt;
 	m_variance = accuracy * accuracy;
 	m_timestamp = std::chrono::steady_clock::now();
 }
 
-void KalmanGnssFilter::process(double lat_measurement, double lng_measurement, double accuracy) {
+void KalmanGnssFilter::process(double lat_measurement, double lng_measurement, double alt_measurement, double accuracy) {
 	double local_accuracy { accuracy };
 	if ( accuracy < c_min_accuracy) local_accuracy = c_min_accuracy;
 	if (m_variance < 0) {
 		// if variance < 0, object is unitialised, so initialise with current values
-		m_timestamp = std::chrono::steady_clock::now();
-		m_lat=lat_measurement;
-		m_lng = lng_measurement;
-		m_variance = local_accuracy * local_accuracy; 
+		set_state( lat_measurement, lng_measurement, alt_measurement, local_accuracy );
 	} else {
 		// else apply Kalman filter methodology
 		auto current_time = std::chrono::steady_clock::now();
@@ -42,6 +40,7 @@ void KalmanGnssFilter::process(double lat_measurement, double lng_measurement, d
 		// apply K
 		m_lat += K * (lat_measurement - m_lat);
 		m_lng += K * (lng_measurement - m_lng);
+		m_alt += K * (alt_measurement - m_alt);
 		// new Covariance  matrix is (IdentityMatrix - K) * Covariance 
 		m_variance = (1. - K) * m_variance;
 	}
