@@ -96,9 +96,15 @@ if(APPLE)
         link_libraries(${QWT})
         message("QWT found: ${QWT}")
     endif()
-
+elseif(WIN32)
+    find_library(QWT
+        NAMES qwt
+        HINTS ${QWT_DIR}/lib
+        REQUIRED)
+        if(QWT)
+            message("QWT found: ${QWT}")
+        endif()
 else()
-    
     find_library(QWT_QT5 qwt-qt5 REQUIRED)
 
 endif()
@@ -159,14 +165,11 @@ target_include_directories(muondetector-gui PUBLIC
     ${Qt5QuickWidgets_INCLUDE_DIRS}
     ${Qt5Qml_INCLUDE_DIRS}
     )
-target_link_directories(muondetector-gui PUBLIC
-    "${QWT_DIR}/lib/"
-    )
 
 target_link_libraries(muondetector-gui
     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
     muondetector-shared
-    qwt.lib
+    ${QWT}
     )
 
 elseif(APPLE)
