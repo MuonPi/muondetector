@@ -103,8 +103,10 @@ void i2cDevice::getCapabilities()
 
 bool i2cDevice::devicePresent()
 {
-    uint8_t dummy;
-    return (read(&dummy, 1) == 1);
+    uint8_t dummy { 0 };
+    int nread = read(&dummy, 1);
+    return ( (nread == 1) && (fMode != MODE_UNREACHABLE) );
+	
 }
 
 void i2cDevice::setAddress(uint8_t address)
@@ -126,8 +128,9 @@ void i2cDevice::setAddress(uint8_t address)
 int i2cDevice::read(uint8_t* buf, int nBytes)
 { //defines a function with a pointer buf as buffer and the number of bytes which
     //we want to read.
-    if (fHandle <= 0 || (fMode & MODE_LOCKED))
+    if (fHandle <= 0 || (fMode & MODE_LOCKED)) {
         return 0;
+	}
     int nread = ::read(fHandle, buf, nBytes); //"::" declares that the functions does not call itself again, but instead
     if (nread > 0) {
         fNrBytesRead += nread;
@@ -173,7 +176,6 @@ int i2cDevice::writeReg(uint8_t reg, uint8_t* buf, int nBytes)
 
 int i2cDevice::readReg(uint8_t reg, uint8_t* buf, int nBytes)
 {
-
     int n = write(&reg, 1);
     if (n != 1)
         return -1;
