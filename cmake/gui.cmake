@@ -94,7 +94,7 @@ if(APPLE)
     if(QWT)
         include_directories(${QWT}/Headers)
         link_libraries(${QWT})
-        message("QWT found: ${QWT}")
+        message(STATUS "QWT found: ${QWT}")
     endif()
 elseif(WIN32)
     find_library(QWT
@@ -102,7 +102,7 @@ elseif(WIN32)
         HINTS ${QWT_DIR}/lib
         REQUIRED)
         if(QWT)
-            message("QWT found: ${QWT}")
+            message(STATUS "QWT found: ${QWT}")
         endif()
 else()
     find_library(QWT_QT5 qwt-qt5 REQUIRED)
@@ -123,7 +123,6 @@ qt5_add_resources(qml_QRC "${MUONDETECTOR_GUI_RES_DIR}/resources.qrc")
 endif()
 
 if(APPLE)
-  
 
   set(MACOSX_BUNDLE_ICON_FILE muon.icns)
   set(myApp_ICON ${MUONDETECTOR_GUI_APPLE_RES_DIR}/muon.icns)
@@ -133,9 +132,13 @@ if(APPLE)
 
   set_target_properties(muondetector-gui PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${MUONDETECTOR_GUI_APPLE_RES_DIR}/Info.plist.in)
 
+elseif(WIN32)
+
+add_executable(muondetector-gui WIN32 ${MUONDETECTOR_GUI_SOURCE_FILES} ${MUONDETECTOR_GUI_HEADER_FILES} ${MUONDETECTOR_GUI_UI_FILES} ${MUONDETECTOR_GUI_RESOURCE_FILES} ${qml_QRC})
+
 else()
 
-add_executable(muondetector-gui  ${MUONDETECTOR_GUI_SOURCE_FILES} ${MUONDETECTOR_GUI_HEADER_FILES} ${MUONDETECTOR_GUI_UI_FILES} ${MUONDETECTOR_GUI_RESOURCE_FILES} ${qml_QRC})
+add_executable(muondetector-gui ${MUONDETECTOR_GUI_SOURCE_FILES} ${MUONDETECTOR_GUI_HEADER_FILES} ${MUONDETECTOR_GUI_UI_FILES} ${MUONDETECTOR_GUI_RESOURCE_FILES} ${qml_QRC})
 
 endif()
 
@@ -151,24 +154,12 @@ target_include_directories(muondetector-gui PUBLIC
     )
 
 if(WIN32)
-target_compile_definitions(muondetector-gui PUBLIC QWT_DLL)
-
-target_include_directories(muondetector-gui PUBLIC
-    $<BUILD_INTERFACE:${CRYPTOPP_DIR}/include>
-    $<INSTALL_INTERFACE:${CRYPTOPP_DIR}/include>
-    $<BUILD_INTERFACE:${QWT_DIR}/include>
-    $<INSTALL_INTERFACE:${QWT_DIR}/include>
-    ${Qt5Widgets_INCLUDE_DIRS}
-    ${Qt5Svg_INCLUDE_DIRS}
-    ${Qt5Network_INCLUDE_DIRS}
-    ${Qt5Quick_INCLUDE_DIRS}
-    ${Qt5QuickWidgets_INCLUDE_DIRS}
-    ${Qt5Qml_INCLUDE_DIRS}
-    )
+#target_compile_definitions(muondetector-gui PUBLIC QWT_DLL)
 
 target_link_libraries(muondetector-gui
     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
     muondetector-shared
+    pthread
     ${QWT}
     )
 
@@ -223,35 +214,39 @@ set(windeploy_options
     -printsupport
 ) # additional options for windeployqt.exe
 
-
 windeployqt(muondetector-gui "${PROJECT_BINARY_DIR}/bin" "${windeploy_options}")
 # create a list of files to copy
-set( THIRD_PARTY_DLLS
+message(STATUS "sdk: ${SDKROOT}")
+set( COPY_DLLS
    "${QWT_DIR}/lib/qwt.dll"
+   "${SDKROOT}/bin/libwinpthread-1.dll"
+   "${SDKROOT}/bin/libstdc++-6.dll"
+   "${SDKROOT}/bin/libgcc_s_seh-1.dll"
 )
 
 # do the copying
-foreach( file_i ${THIRD_PARTY_DLLS})
+foreach( file_i ${COPY_DLLS})
     add_custom_command(
             TARGET muondetector-gui POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy
                     "${file_i}"
-                    "${PROJECT_BINARY_DIR}/bin/"
+                    "${PROJECT_BINARY_DIR}/output/bin/"
     )
     install(FILES "${file_i}" DESTINATION "bin" COMPONENT gui)
 endforeach( file_i )
 
-
 set(CPACK_GENERATOR "NSIS")
 set(CPACK_PACKAGE_DESCRIPTION_FILE "${MUONDETECTOR_GUI_CONFIG_DIR}/description.txt")
 set(CPACK_NSIS_MODIFY_PATH ON)
-include(InstallRequiredSystemLibraries)
 
-#set(CPACK_PACKAGE_INSTALL_DIRECTORY "CMake ${CMake_VERSION_MAJOR}.${CMake_VERSION_MINOR}")
+set(CPACK_PACKAGE_NAME "muondetector-gui")
+set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}")
+
+include(InstallRequiredSystemLibraries)
 
 # There is a bug in NSI that does not handle full UNIX paths properly.
 # Make sure there is at least one set of four backlashes.
-#set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\muondetector-gui.exe")
+set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\muondetector-gui.exe")
 set(CPACK_NSIS_DISPLAY_NAME "Muondetector gui")
 set(CPACK_NSIS_HELP_LINK "https://muonpi.org")
 set(CPACK_NSIS_URL_INFO_ABOUT "https://muonpi.org")
