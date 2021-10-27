@@ -25,7 +25,7 @@ constexpr int event_count_deadtime_ticks { 1000 };
 constexpr int event_count_max_pileups { 50 };
 
 namespace MQTT {
-    constexpr const char* host { "116.202.96.181" };
+    constexpr const char* host { "data.muonpi.org" };
     constexpr int port { 1883 };
     constexpr int timeout { 2000 };
     constexpr int qos { 1 };
