@@ -222,6 +222,8 @@ set( COPY_DLLS
    "${SDKROOT}/bin/libwinpthread-1.dll"
    "${SDKROOT}/bin/libstdc++-6.dll"
    "${SDKROOT}/bin/libgcc_s_seh-1.dll"
+   "${QTTOOLS}/OpenSSL/Win_x64/bin/libssl-1_1-x64.dll"
+   "${QTTOOLS}/OpenSSL/Win_x64/bin/libcrypto-1_1-x64.dll"
 )
 
 # do the copying
