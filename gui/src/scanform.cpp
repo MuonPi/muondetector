@@ -7,6 +7,7 @@
 #include <cmath>
 #include <limits>
 #include <muondetector_structs.h>
+#include <qtextstream.h>
 #include <qwt_symbol.h>
 
 ScanForm::ScanForm(QWidget* parent)
@@ -61,7 +62,7 @@ void ScanForm::onDacReadbackReceived(uint8_t channel, float value)
 void ScanForm::onTimeMarkReceived(const UbxTimeMarkStruct& tm)
 {
     if (!tm.risingValid) {
-        qDebug() << "received invalid timemark";
+        std::cerr << "received invalid timemark";
         return;
     }
     if (active && OP_NAMES[obsPar] == "UBXRATE") {

@@ -35,6 +35,7 @@ add_compile_options(
     -Wall
     -O3
     )
+
 if (MSVC)
   # Force to always compile with W4
   if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
@@ -84,12 +85,12 @@ set(CMAKE_AUTORCC ON)
 
 
 if(WIN32)
-    set(QWT_DIR "C:/Qwt-6.1.4")
+    set(QWT_DIR "C:/Qwt-6.2.0")
     set(OPENSSL_DIR "C:/Qt/Tools/OpenSSL/Win_x64")
-    set(CRYPTOPP_DIR "C:/cryptopp")
-    list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.2/mingw81_64")
-    list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.2/mingw81_64/lib/cmake/Qt5QuickCompiler")
-    list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.15.2/mingw81_64/lib/cmake/Qt5")
+    set(SDKROOT "C:/Qt/5.15.2/mingw81_64")
+    list(APPEND CMAKE_PREFIX_PATH "${SDKROOT}")
+    list(APPEND CMAKE_PREFIX_PATH "${SDKROOT}/lib/cmake/Qt5QuickCompiler")
+    list(APPEND CMAKE_PREFIX_PATH "${SDKROOT}/lib/cmake/Qt5")
 
     if (MSVC)
         if("${MSVC_RUNTIME}" STREQUAL "")

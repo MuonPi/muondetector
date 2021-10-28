@@ -1,5 +1,6 @@
 #ifndef CUSTOMPLOT_H
 #define CUSTOMPLOT_H
+#include <qmap.h>
 #include <qwt_plot.h>
 #include <qwt_plot_curve.h>
 #include <qwt_plot_grid.h>

@@ -1,6 +1,8 @@
 #include <QTime>
 #include <plotcustom.h>
+#include <qpen.h>
 #include <qwt.h>
+#include <qwt_text.h>
 #include <qwt_legend.h>
 #include <qwt_scale_draw.h>
 

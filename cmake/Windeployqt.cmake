@@ -28,6 +28,10 @@ get_target_property(_qmake_executable Qt5::qmake IMPORTED_LOCATION)
 get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
 find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
 
+if(WINDEPLOYQT_EXECUTABLE)
+    message(STATUS "windeploy_qt found: ${WINDEPLOYQT_EXECUTABLE}")
+endif()
+
 # Running this with MSVC 2015 requires CMake 3.6+
 if((MSVC_VERSION VERSION_EQUAL 1900 OR MSVC_VERSION VERSION_GREATER 1900)
         AND CMAKE_VERSION VERSION_LESS "3.6")
@@ -42,9 +46,9 @@ function(windeployqt target directory options)
     add_custom_command(TARGET ${target} POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E
             env PATH="${_qt_bin_dir}" "${WINDEPLOYQT_EXECUTABLE}"
-                --verbose 0
+                #--verbose 0
                 ${options}
-                --release
+                #--release
                 --no-compiler-runtime
                 --no-angle
                 --no-opengl-sw
@@ -65,7 +69,6 @@ function(windeployqt target directory options)
         execute_process(
             COMMAND \"${CMAKE_COMMAND}\" -E
                 env PATH=\"${_qt_bin_dir}\" \"${WINDEPLOYQT_EXECUTABLE}\"
-                    --release
                     ${options}
                     --dry-run
                     --no-compiler-runtime
@@ -93,6 +96,7 @@ function(windeployqt target directory options)
     # so we fall back to one of CMake's own modules for copying them over
     set(CMAKE_INSTALL_UCRT_LIBRARIES TRUE)
     include(InstallRequiredSystemLibraries)
+    message(STATUS "CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS: ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS}")
     foreach(lib ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS})
         get_filename_component(filename "${lib}" NAME)
         add_custom_command(TARGET ${target} POST_BUILD
