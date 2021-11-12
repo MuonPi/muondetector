@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>res/muon.icns</file>
+        <file>res/muon.ico</file>
+        <file>qml/places/items/MapComponent.qml</file>
+        <file>qml/CustomMap.qml</file>
+        <file>qml/CustomMapForm.ui.qml</file>
+        <file>qml/places/helper.js</file>
+        <file>qml/places/resources/scale_end.png</file>
+        <file>qml/places/resources/scale.png</file>
+    </qresource>
+</RCC>
