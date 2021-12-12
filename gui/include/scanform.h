@@ -9,7 +9,7 @@
 #include <muondetector_structs.h>
 
 // list of possible scan parameters
-const static QVector<QString> SP_NAMES = { "VOID", "THR1", "THR2", "BIAS", "DAC4" };
+const static QVector<QString> SP_NAMES = { "VOID", "THR1", "THR2", "BIAS", "DAC4" , "TIME" };
 // list of possible observables
 const static QVector<QString> OP_NAMES = { "VOID", "UBXRATE" };
 
@@ -42,6 +42,7 @@ public slots:
 
 private slots:
     void on_scanStartPushButton_clicked();
+	void on_scanParComboBox_currentIndexChanged(int index);
     void scanParIteration();
     void adjustScanPar(QString scanParName, double value);
     void finishScan();
