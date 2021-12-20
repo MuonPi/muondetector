@@ -56,7 +56,6 @@ endif()
 if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
 add_compile_options(
     -mthumb
-    -mthumb-interwork
     -march=armv7-a
     )
 endif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
