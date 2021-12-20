@@ -42,6 +42,8 @@ signals:
     void request_timer_start(int);
     void request_timer_restart(int);
 
+    void giving_up();
+
 
 public slots:
     void start(const QString& username, const QString& password);
