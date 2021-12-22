@@ -61,7 +61,6 @@ void MqttHandler::callback_disconnected(int result)
     if (result != 0) {
         qWarning() << "Mqtt disconnected unexpectedly: " + QString::number(result);
         set_status(Status::Error);
-        m_tries = 1;
         emit request_timer_start(Config::MQTT::timeout * m_tries);
     } else {
         set_status(Status::Disconnected);
@@ -76,6 +75,14 @@ void MqttHandler::callback_message(const mosquitto_message* message)
 
 void MqttHandler::set_status(Status status)
 {
+    if (status == Status::Error) {
+	m_tries++;
+	qWarning() << "Tried: "<<m_tries;
+	if (m_tries > s_max_tries) {
+		exit(0);
+	    emit giving_up();
+	}
+    }
     if (m_status != status) {
         if (status == Status::Connected) {
             emit mqttConnectionStatus(true);
@@ -91,12 +98,9 @@ MqttHandler::MqttHandler(const QString& station_id, const int verbosity)
     , m_verbose { verbosity }
 {
     m_reconnect_timer.setInterval(Config::MQTT::timeout);
-    m_reconnect_timer.setSingleShot(true);
     connect(&m_reconnect_timer, &QTimer::timeout, this, [this](){mqttConnect();});
-    connect(this, &MqttHandler::request_timer_stop, &m_reconnect_timer, &QTimer::stop);
-    connect(this, &MqttHandler::request_timer_restart, this, &MqttHandler::timer_restart);
-    connect(this, &MqttHandler::request_timer_start, this, &MqttHandler::timer_start);
 }
+
 
 MqttHandler::~MqttHandler()
 {
@@ -135,7 +139,6 @@ void MqttHandler::start(const QString& username, const QString& password){
 
 void MqttHandler::mqttConnect(){
     if (connected()) {
-        qDebug() << "Already connected to Mqtt.";
         return;
     }
     qDebug() << "Trying to connect to MQTT.";

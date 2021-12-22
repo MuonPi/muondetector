@@ -298,6 +298,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     mqttHandler = new MuonPi::MqttHandler(cfg.station_ID, verbose - 1);
     mqttHandler->moveToThread(mqttHandlerThread);
     connect(mqttHandler, &MuonPi::MqttHandler::mqttConnectionStatus, this, &Daemon::sendMqttStatus);
+    connect(mqttHandler, &MuonPi::MqttHandler::giving_up, this, &Daemon::handleSigTerm);
     connect(fileHandlerThread, &QThread::finished, mqttHandler, &MuonPi::MqttHandler::deleteLater);
     connect(this, &Daemon::requestMqttConnectionStatus, mqttHandler, &MuonPi::MqttHandler::onRequestConnectionStatus);
     mqttHandlerThread->start();
