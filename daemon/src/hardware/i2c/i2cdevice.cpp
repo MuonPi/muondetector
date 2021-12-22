@@ -173,8 +173,8 @@ int i2cDevice::writeReg(uint8_t reg, uint8_t* buf, int nBytes)
 
 int i2cDevice::readReg(uint8_t reg, uint8_t* buf, int nBytes)
 {
-
-    int n = write(&reg, 1);
+    std::lock_guard<std::mutex> lock(fMutex);
+	int n = write(&reg, 1);
     if (n != 1)
         return -1;
     n = read(buf, nBytes);
@@ -249,7 +249,8 @@ int16_t i2cDevice::readBytes(uint8_t regAddr, uint16_t length, uint8_t* data)
 bool i2cDevice::writeBit(uint8_t regAddr, uint8_t bitNum, uint8_t data)
 {
     uint8_t b;
-    int n = readByte(regAddr, &b);
+    std::lock_guard<std::mutex> lock(fMutex);
+	int n = readByte(regAddr, &b);
     if (n != 1)
         return false;
     b = (data != 0) ? (b | (1 << bitNum)) : (b & ~(1 << bitNum));
@@ -273,7 +274,8 @@ bool i2cDevice::writeBits(uint8_t regAddr, uint8_t bitStart, uint8_t length, uin
     // 10100011 original & ~mask
     // 10101011 masked | value
     uint8_t b;
-    if (readByte(regAddr, &b) != 0) {
+	std::lock_guard<std::mutex> lock(fMutex);
+	if (readByte(regAddr, &b) != 0) {
         uint8_t mask = ((1 << length) - 1) << (bitStart - length + 1);
         data <<= (bitStart - length + 1); // shift data into correct position
         data &= mask; // zero all non-important bits in data
@@ -348,6 +350,81 @@ bool i2cDevice::writeWord(uint8_t regAddr, uint16_t data)
 {
     return writeWords(regAddr, 1, &data);
 }
+
+/** Read single word from a 16-bit device register.
+* @param regAddr Register regAddr to read from
+* @param data Container for word value read from device
+* @return Status of read operation (true = success)
+*/
+bool i2cDevice::readWord(uint8_t regAddr, uint16_t* data)
+{
+    return (readWords(regAddr, 1, data) == 1);
+}
+
+/** Read single word.
+* @param data Container for word value read from device
+* @return Status of read operation (true = success)
+*/
+bool i2cDevice::readWord(uint16_t* data)
+{
+    return (readWords(1, data) == 1);
+}
+
+/** Read multiple words from a 16-bit device register.
+* @param regAddr First register regAddr to read from
+* @param length Number of words to read
+* @param data Buffer to store read data in
+* @return Number of words read (-1 indicates failure)
+*/
+int16_t i2cDevice::readWords(uint8_t regAddr, uint16_t length, uint16_t* data)
+{
+    int16_t count = 0;
+    uint8_t buf[512];
+
+    count = readReg(regAddr, buf, length * 2);
+    if (count < 0) {
+        fprintf(stderr, "Failed to read device(%d): %s\n", count, ::strerror(errno));
+        return -1;
+    } else if (count != length * 2) {
+        fprintf(stderr, "Short read from device, expected %d, got %d\n", length * 2, count);
+        return count/2;
+    }
+
+    for (int i = 0; i < length; i++) {
+        data[i] = buf[i * 2] << 8;
+        data[i] |= buf[i * 2 + 1];
+    }
+
+    return count/2;
+}
+
+/** Read multiple words.
+* @param length Number of words to read
+* @param data Buffer to store read data in
+* @return Number of words read (-1 indicates failure)
+*/
+int16_t i2cDevice::readWords(uint16_t length, uint16_t* data)
+{
+    int16_t count = 0;
+    uint8_t buf[512];
+
+    count = read(buf, length * 2);
+    if (count < 0) {
+        fprintf(stderr, "Failed to read device(%d): %s\n", count, ::strerror(errno));
+        return -1;
+    } else if (count != length * 2) {
+        fprintf(stderr, "Short read from device, expected %d, got %d\n", length * 2, count);
+        return count/2;
+    }
+
+    for (int i = 0; i < length; i++) {
+        data[i] = buf[i * 2] << 8;
+        data[i] |= buf[i * 2 + 1];
+    }
+
+    return count/2;
+}
+
 
 void i2cDevice::startTimer()
 {

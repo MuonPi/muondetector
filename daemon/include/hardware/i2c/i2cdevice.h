@@ -7,11 +7,31 @@
 #include <sys/time.h> // for gettimeofday()
 #include <unistd.h>
 #include <vector>
+#include <mutex>
 
 #ifndef _I2CDEVICE_H_
 #define _I2CDEVICE_H_
 
 #define DEFAULT_DEBUG_LEVEL 0
+
+// Curiously Recursive Template Pattern (CRTP) magic
+template<class T>
+struct static_device_base
+{
+	friend class i2cDevice;
+	static bool identifyDevice(uint8_t addr) {
+		auto it = T::getGlobalDeviceList().begin();
+		bool found { false };
+		while ( !found && it != T::getGlobalDeviceList().end() ) {
+			if ( (*it)->getAddress() == addr) found = true;
+			it++;
+		}
+		if ( found ) return false;
+		T device(addr);
+		return device.identify();
+	}
+};
+
 
 //We define a class named i2cDevices to outsource the hardware dependent program parts. We want to
 //access components of integrated curcuits, like the ads1115 or other subdevices via i2c-bus.
@@ -47,13 +67,7 @@ public:
     static std::vector<i2cDevice*>& getGlobalDeviceList() { return fGlobalDeviceList; }
     virtual bool devicePresent();
     uint8_t getStatus() const { return fMode; }
-    void lock(bool locked = true)
-    {
-        if (locked)
-            fMode |= MODE_LOCKED;
-        else
-            fMode &= ~MODE_LOCKED;
-    }
+    void lock(bool locked = true);
 
     double getLastTimeInterval() const { return fLastTimeInterval; }
 
@@ -103,8 +117,14 @@ public:
     bool writeBytes(uint8_t regAddr, uint16_t length, uint8_t* data);
     bool writeWords(uint8_t regAddr, uint16_t length, uint16_t* data);
     bool writeWord(uint8_t regAddr, uint16_t data);
-
+	int16_t readWords(uint8_t regAddr, uint16_t length, uint16_t* data);
+	int16_t readWords(uint16_t length, uint16_t* data);
+	bool readWord(uint8_t regAddr, uint16_t* data);
+	bool readWord(uint16_t* data);
+	
     void getCapabilities();
+	
+	virtual bool identify();
 
 protected:
     int fHandle;
@@ -118,9 +138,10 @@ protected:
     struct timeval fT1, fT2;
     int fDebugLevel;
     static std::vector<i2cDevice*> fGlobalDeviceList;
-    std::string fTitle = "I2C device";
-    uint8_t fMode = MODE_NONE;
-    unsigned int fIOErrors = 0;
+    std::string fTitle { "I2C device" };
+    uint8_t fMode { MODE_NONE };
+    unsigned int fIOErrors { 0 };
+	std::mutex fMutex;
 
     // fuctions for measuring time intervals
     void startTimer();

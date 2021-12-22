@@ -225,6 +225,7 @@ private:
     void startRateScan(uint8_t channel);
     void printTimestamp();
     void delay(int millisecondsWait);
+	void onAdcSampleReady(ADS1115::Sample sample);
 
     void rateCounterIntervalActualisation();
     qreal getRateFromCounts(quint8 which_rate);

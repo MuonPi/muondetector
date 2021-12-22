@@ -336,10 +336,13 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     } else {
         qWarning() << "LM75 device NOT present!";
     }
-    // 4ch, 16/14bit ADC ADS1115/1015
+	
     adc = new ADS1115();
     if (adc->devicePresent()) {
-        adc->setPga(ADS1115::PGA4V);
+        bool ident = adc->identify();
+		if ( ident ) qInfo() << "ADS1115 identified at 0x"<<hex<<adc->getAddress();
+		else qCritical() << "ADS1115 failed to identify at 0x"<<hex<<adc->getAddress();
+		adc->setPga(ADS1115::PGA4V);
         adc->setRate(0x07); // ADS1115::RATE860
         adc->setAGC(false);
         if (!adc->setDataReadyPinMode()) {
@@ -1593,67 +1596,73 @@ void Daemon::sendGpioRates(int number, quint8 whichRate)
     emit sendTcpMessage(tcpMessage);
 }
 
-void Daemon::sampleAdc0Event()
-{
-    const uint8_t channel = 0;
-    if (adc == nullptr || adcSamplingMode == ADC_MODE_DISABLED) {
-        return;
-    }
-    if (adc->getStatus() & i2cDevice::MODE_UNREACHABLE)
-        return;
-    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_SAMPLE);
-    float value = adc->readVoltage(channel);
-    *(tcpMessage.dStream) << (quint8)channel << value;
-    emit sendTcpMessage(tcpMessage);
-    QString name = "pulseHeight";
-    histoMap[name].fill(value);
-    emit logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime()) + " ms", LogParameter::LOG_AVERAGE));
-    name = "adcSampleTime";
-    checkRescaleHisto(histoMap[name], adc->getLastConvTime());
-    histoMap[name].fill(adc->getLastConvTime());
-    currentAdcSampleIndex = 0;
-}
-
-void Daemon::sampleAdc0TraceEvent()
-{
-    const uint8_t channel = 0;
-    if (adc == nullptr || adcSamplingMode == ADC_MODE_DISABLED) {
-        return;
-    }
-    if (adc->getStatus() & i2cDevice::MODE_UNREACHABLE)
-        return;
-    float value = adc->readVoltage(channel);
-    adcSamplesBuffer.push_back(value);
-    if (adcSamplesBuffer.size() > MuonPi::Config::Hardware::ADC::buffer_size)
-        adcSamplesBuffer.pop_front();
-    if (currentAdcSampleIndex >= 0) {
-        currentAdcSampleIndex++;
-        if (currentAdcSampleIndex >= (MuonPi::Config::Hardware::ADC::buffer_size - MuonPi::Config::Hardware::ADC::pretrigger)) {
-            TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_TRACE);
-            *(tcpMessage.dStream) << (quint16)adcSamplesBuffer.size();
-            for (int i = 0; i < adcSamplesBuffer.size(); i++)
-                *(tcpMessage.dStream) << adcSamplesBuffer[i];
-            emit sendTcpMessage(tcpMessage);
-            currentAdcSampleIndex = -1;
-        }
-    }
-    emit logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime()) + " ms", LogParameter::LOG_AVERAGE));
-    checkRescaleHisto(histoMap["adcSampleTime"], adc->getLastConvTime());
-    histoMap["adcSampleTime"].fill(adc->getLastConvTime());
+void Daemon::onAdcSampleReady(ADS1115::Sample sample) {
+	const uint8_t channel = sample.channel;
+	float voltage = sample.voltage;
+	if ( channel != 0 ) {
+		TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_SAMPLE);
+		*(tcpMessage.dStream) << (quint8)channel << voltage;
+		emit sendTcpMessage(tcpMessage);
+	} else {
+		if (adcSamplingMode == ADC_MODE_TRACE ) {
+			adcSamplesBuffer.push_back(voltage);
+			if (adcSamplesBuffer.size() > MuonPi::Config::Hardware::ADC::buffer_size)
+			adcSamplesBuffer.pop_front();
+			if ( currentAdcSampleIndex == 0 ) {
+				TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_SAMPLE);
+				*(tcpMessage.dStream) << (quint8)channel << voltage;
+				emit sendTcpMessage(tcpMessage);
+				histoMap["pulseHeight"].fill(voltage);
+			}
+			if ( currentAdcSampleIndex >= 0 ) {
+				currentAdcSampleIndex++;
+				if (currentAdcSampleIndex >= (MuonPi::Config::Hardware::ADC::buffer_size - MuonPi::Config::Hardware::ADC::pretrigger)) 
+				{
+					TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_TRACE);
+					*(tcpMessage.dStream) << (quint16)adcSamplesBuffer.size();
+					for (int i = 0; i < adcSamplesBuffer.size(); i++) {
+						*(tcpMessage.dStream) << adcSamplesBuffer[i];
+					}
+					emit sendTcpMessage(tcpMessage);
+					currentAdcSampleIndex = -1;
+				}
+			}
+		} else if ( adcSamplingMode == ADC_MODE_PEAK ) {
+			TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_SAMPLE);
+			*(tcpMessage.dStream) << (quint8)channel << voltage;
+			emit sendTcpMessage(tcpMessage);
+			histoMap["pulseHeight"].fill(voltage);
+			currentAdcSampleIndex = 0;
+		}
+	}
+	emit logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime()) + " ms", LogParameter::LOG_AVERAGE));
+	checkRescaleHisto(histoMap["adcSampleTime"], adc->getLastConvTime());
+	histoMap["adcSampleTime"].fill(adc->getLastConvTime());
 }
 
 void Daemon::sampleAdcEvent(uint8_t channel)
 {
-    if (adc == nullptr || adcSamplingMode == ADC_MODE_DISABLED) {
-        return;
-    }
-    if (adc->getStatus() & i2cDevice::MODE_UNREACHABLE)
-        return;
-    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_SAMPLE);
-    float value = adc->readVoltage(channel);
-    *(tcpMessage.dStream) << (quint8)channel << value;
-    emit sendTcpMessage(tcpMessage);
+	if (adc == nullptr || adcSamplingMode == ADC_MODE_DISABLED) {
+		return;
+	}
+	if (adc->getStatus() & i2cDevice::MODE_UNREACHABLE) {
+		return;
+	}
+	//adc->setActiveChannel( channel );
+	adc->triggerConversion( channel );
 }
+
+void Daemon::sampleAdc0Event()
+{
+	sampleAdcEvent(0);
+	currentAdcSampleIndex = 0;
+}
+
+void Daemon::sampleAdc0TraceEvent()
+{
+	sampleAdcEvent(0);
+}
+
 
 void Daemon::getTemperature()
 {
@@ -2265,8 +2274,8 @@ void Daemon::aquireMonitoringParameters()
 
     double v1 = 0., v2 = 0.;
     if (adc && (!(adc->getStatus() & i2cDevice::MODE_UNREACHABLE)) && (adc->getStatus() & (i2cDevice::MODE_NORMAL | i2cDevice::MODE_FORCE))) {
-        v1 = adc->readVoltage(2);
-        v2 = adc->readVoltage(3);
+        v1 = adc->getVoltage(2);
+        v2 = adc->getVoltage(3);
         if (calib && calib->getCalibItem("VDIV").name == "VDIV") {
             CalibStruct vdivItem = calib->getCalibItem("VDIV");
             std::istringstream istr(vdivItem.value);
