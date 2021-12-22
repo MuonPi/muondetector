@@ -124,12 +124,30 @@ void i2cDevice::setAddress(uint8_t address)
     }
 }
 
+void i2cDevice::lock( bool locked )
+{
+	if (locked)
+		fMode |= MODE_LOCKED;
+	else
+		fMode &= ~MODE_LOCKED;
+}
+
+bool i2cDevice::identify()
+{
+	// this function should be reimplemented in derived classes
+	// if it is not reimplemented it returns false, i.e. the abstract i2cDevice can never be identified positively
+	// reimplement this method for specific devices and use whatever is needed to get an unanimous identification
+	// return true if device is identified correctly
+	return false;
+}
+
 int i2cDevice::read(uint8_t* buf, int nBytes)
 { //defines a function with a pointer buf as buffer and the number of bytes which
     //we want to read.
-    if (fHandle <= 0 || (fMode & MODE_LOCKED))
+	if (fHandle <= 0 || (fMode & MODE_LOCKED))
         return 0;
-    int nread = ::read(fHandle, buf, nBytes); //"::" declares that the functions does not call itself again, but instead
+	//std::lock_guard<std::mutex> lock(fMutex);
+	int nread = ::read(fHandle, buf, nBytes); //"::" declares that the functions does not call itself again, but instead uses the system call
     if (nread > 0) {
         fNrBytesRead += nread;
         fGlobalNrBytesRead += nread;
@@ -138,14 +156,15 @@ int i2cDevice::read(uint8_t* buf, int nBytes)
         fIOErrors++;
         fMode |= MODE_UNREACHABLE;
     }
-    return nread; //uses the read funktion with the set parameters of the bool function
+    return nread;
 }
 
 int i2cDevice::write(uint8_t* buf, int nBytes)
 {
     if (fHandle <= 0 || (fMode & MODE_LOCKED))
         return 0;
-    int nwritten = ::write(fHandle, buf, nBytes);
+    //std::lock_guard<std::mutex> lock(fMutex);
+	int nwritten = ::write(fHandle, buf, nBytes);
     if (nwritten > 0) {
         fNrBytesWritten += nwritten;
         fGlobalNrBytesWritten += nwritten;
