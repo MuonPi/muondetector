@@ -272,7 +272,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 
         for (auto signalIt = GPIO_PINMAP.begin(); signalIt != GPIO_PINMAP.end(); signalIt++) {
             const GPIO_PIN signalId = signalIt->first;
-            cout << GPIO_SIGNAL_MAP[signalId].name << "   \t: " << signalIt->second;
+            cout << GPIO_SIGNAL_MAP[signalId].name << " \t: " << signalIt->second;
             switch (GPIO_SIGNAL_MAP[signalId].direction) {
             case DIR_IN:
                 cout << " (in)";
@@ -357,11 +357,13 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 
         // set up peak sampling mode
         setAdcSamplingMode(ADC_MODE_PEAK);
+		
+		adc->registerConversionReadyCallback( [this](ADS1115::Sample sample) { this->onAdcSampleReady(sample); } );
 
         if (verbose > 2) {
             qInfo() << "ADS1115 device is present.";
-            bool ok = adc->setLowThreshold(0b00000000);
-            ok = ok && adc->setHighThreshold(0b10000000);
+            bool ok = adc->setLowThreshold(0b0000000000000000);
+            ok = ok && adc->setHighThreshold(0b1000000000000000);
             if (ok)
                 qDebug() << "successfully setting threshold registers";
             else
@@ -451,7 +453,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         pca->setOutputPorts(0b00000111);
         setPcaChannel(cfg.pcaPortMask);
     } else {
-        qCritical() << "PCA9536 device NOT present!";
+        qWarning() << "PCA9536 device NOT present!";
     }
 
     if (dac->devicePresent()) {

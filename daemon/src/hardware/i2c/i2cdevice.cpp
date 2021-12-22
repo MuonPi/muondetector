@@ -81,9 +81,10 @@ i2cDevice::i2cDevice(const char* busAddress, uint8_t slaveAddress)
 i2cDevice::~i2cDevice()
 {
     //destructor of the opening part from above
-    if (fHandle > 0)
-        fNrDevices--;
-    close(fHandle);
+	if (fHandle > 0) {
+		fNrDevices--;
+		close(fHandle);
+	}
     std::vector<i2cDevice*>::iterator it;
     it = std::find(fGlobalDeviceList.begin(), fGlobalDeviceList.end(), this);
     if (it != fGlobalDeviceList.end())

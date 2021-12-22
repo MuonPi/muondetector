@@ -123,6 +123,7 @@ bool SHT31::breakCommand() {
 	int n = 0;
 	n = write(writeBuf, 2);
 	usleep(15000);
+	return ( n != 2 );
 }
 
 bool SHT31::softReset()
