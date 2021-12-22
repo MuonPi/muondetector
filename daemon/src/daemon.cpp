@@ -936,8 +936,8 @@ void Daemon::clearHisto(const QString& histoName)
 
 void Daemon::checkRescaleHisto(Histogram& hist, double newValue)
 {
-    // Strategy: check if more than 10% of all entries in underflow/overflow
-    // set new center to old mean
+    // Strategy: check if more than 1% of all entries in underflow/overflow
+    // set new center to old center, adjust range by 20%
     // set center to newValue if histo empty or only underflow/overflow filled
     // histo will not be filled with supplied value, it has to be done externally
     double entries = hist.getEntries();
@@ -950,31 +950,29 @@ void Daemon::checkRescaleHisto(Histogram& hist, double newValue)
     double ofl = hist.getOverflow();
     entries -= ufl + ofl;
     double range = hist.getMax() - hist.getMin();
-    if (ufl > 0. && ofl > 0. && (ufl + ofl) > 0.05 * entries) {
-        // range is too small, underflow and overflow have more than 5% of all entries
-        hist.rescale(hist.getMean(), 1.2 * range);
-    } else if (ufl > 0.05 * entries) {
+	int lowest = hist.getLowestOccupiedBin();
+	int highest = hist.getHighestOccupiedBin();
+	double lowestEntry = hist.getBinCenter(lowest);
+	double highestEntry = hist.getBinCenter(highest);
+    if (ufl > 0. && ofl > 0. && (ufl + ofl) > 0.01 * entries) {
+        // range is too small, underflow and overflow have more than 1% of all entries
+        hist.rescale( 0.5 * (highestEntry-lowestEntry) + lowestEntry, 1.2 * range);
+    } else if (ufl > 0.005 * entries) {
         if (entries < 1.) {
             hist.rescale(newValue);
         } else {
-            hist.rescale(hist.getMean(), 1.2 * range);
+			hist.rescale( 0.5 * (highestEntry-lowestEntry) + lowestEntry, 1.2 * range);
         }
-    } else if (ofl > 0.05 * entries) {
+    } else if (ofl > 0.005 * entries) {
         if (entries < 1.) {
             hist.rescale(newValue);
         } else {
-            hist.rescale(hist.getMean(), 1.1 * range);
+			hist.rescale( 0.5 * (highestEntry-lowestEntry) + lowestEntry, 1.2 * range);
         }
     } else if (ufl < 1e-3 && ofl < 1e-3) {
         // check if range is too wide
-        if (entries > 100) {
-            int lowest = hist.getLowestOccupiedBin();
-            int highest = hist.getHighestOccupiedBin();
-            if ((float)lowest / hist.getNrBins() > 0.45) {
-                hist.rescale(hist.getMean(), 0.6 * range);
-            } else if ((float)(hist.getNrBins() - highest) / hist.getNrBins() > 0.45) {
-                hist.rescale(hist.getMean(), 0.6 * range);
-            }
+        if (entries > 1000) {
+            hist.rescale( 0.5 * (highestEntry-lowestEntry) + lowestEntry, 0.8 * range);
         }
     }
 }
