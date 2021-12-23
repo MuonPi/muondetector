@@ -1,10 +1,11 @@
 #include "hardware/i2c/mcp4728.h"
 #include <stdint.h>
+#include <iostream>
+#include <iomanip>
 
 /*
 * MCP4728 4 ch 12 bit DAC
 */
-
 const float MCP4728::VDD = 3.3; // change, if device powered with different voltage
 
 bool MCP4728::setVoltage(uint8_t channel, float voltage, bool toEEPROM)
@@ -126,4 +127,21 @@ float MCP4728::code2voltage(const DacChannel& channelData)
     if (channelData.gain == GAIN2 && channelData.vref != VREF_VDD)
         voltage *= 2.;
     return voltage;
+}
+
+bool MCP4728::identify() {
+	if ( fMode == MODE_FAILED ) return false;
+	if ( !devicePresent() ) return false;
+    uint8_t buf[24];
+    if (read(buf, 24) != 24) return false;
+	
+	if ( ( ( buf[0] & 0xf0 ) == 0xc0 ) &&
+		 ( ( buf[6] & 0xf0 ) == 0xd0 ) &&
+		 ( ( buf[12] & 0xf0 ) == 0xe0 ) &&
+		 ( ( buf[18] & 0xf0 ) == 0xf0 ) )
+	{
+		return true;
+	}
+	
+	return false;
 }

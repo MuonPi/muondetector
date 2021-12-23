@@ -1,5 +1,7 @@
 #include "hardware/i2c/ads1115.h"
 #include <future>
+#include <iostream>
+#include <iomanip>
 
 /*
 * ADS1115 4ch 16 bit ADC
@@ -378,31 +380,16 @@ bool ADS1115::identify()
 	if ( fMode == MODE_FAILED ) return false;
 	if ( !devicePresent() ) return false;
 	
-	uint16_t conf_reg { 0 };
-	if ( !readWord(static_cast<uint8_t>(REG::CONFIG), &conf_reg) ) return false;
-	uint8_t comp_queue { conf_reg & 0x03 };
+	uint16_t dataword { 0 };
+	if ( !readWord(static_cast<uint8_t>(REG::CONFIG), &dataword) ) return false;
+	if ( ( (dataword & 0x8000) == 0 ) && (dataword & 0x0100) ) return false;
+	uint16_t dataword2 { 0 };
+	// try to read at addr conf_reg+4 and compare with the previously read config register
+	// both should be identical since only the 2 LSBs of the pointer register are evaluated by the ADS1115
+	if ( !readWord(static_cast<uint8_t>(REG::CONFIG) | 0x04, &dataword2) ) return false;
+	if ( dataword != dataword2 ) return false;
 	
-	// look in which conversion mode the ADC is set
-	if ( ( conf_reg & 0x0100 ) == 0 )
-	{
-		// continuous conversion mode seems to be set
-		// so set to single shot mode
-		fConvMode = CONV_MODE::SINGLE;
-		if ( !writeConfig() ) return false;
-		// and read the config reg again
-		if ( !readWord(static_cast<uint8_t>(REG::CONFIG), &conf_reg) ) return false;
-	}
-	
-	if ( !setCompQueue( 0x00 ) ) return false;
-	if ( !readWord(static_cast<uint8_t>(REG::CONFIG), &conf_reg) ) return false;
-	if ( ( conf_reg & 0x03 ) != 0 ) return false;
-	if ( !setCompQueue( comp_queue ) ) return false;
-	if ( !readWord(static_cast<uint8_t>(REG::CONFIG), &conf_reg) ) return false;
-	if ( ( conf_reg & 0x03 ) != comp_queue ) return false;
-	// single shot mode should be set in any case
-	if ( ( conf_reg & 0x0100 ) == 0 ) return false;
 	return true;
-//    stopTimer();
 }
 
 double ADS1115::getVoltage(unsigned int channel)

@@ -2,9 +2,9 @@
 #define _MCP4728_H_
 #include "hardware/i2c/i2cdevice.h"
 
-/* MCP4728  */
+/* MCP4728 4ch 12bit DAC */
 
-class MCP4728 : public i2cDevice {
+class MCP4728 : public i2cDevice, public static_device_base<MCP4728> {
     // the DAC supports writing to input register but not sending latch bit to update the output register
     // here we will always send the "UDAC" (latch) bit because we don't need this functionality
     // MCP4728 listens to I2C Generall Call Commands
@@ -52,6 +52,7 @@ public:
 
     static float code2voltage(const DacChannel& channelData);
 
+	bool identify() override;
 private:
     unsigned int fLastConvTime;
 };

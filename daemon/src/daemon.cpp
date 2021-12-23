@@ -329,6 +329,9 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     // LM75A temp sensor
     lm75 = new LM75();
     if (lm75->devicePresent()) {
+        bool ident = lm75->identify();
+		if ( ident ) qInfo() << "LM75 identified at 0x"<<hex<<lm75->getAddress();
+		else qCritical() << "LM75 failed to identify at 0x"<<hex<<lm75->getAddress();
         if (verbose > 2) {
             qInfo() << "LM75 device is present.";
             qDebug() << "temperature is " << lm75->getTemperature() << DEGREE_CHARCODE << "C";
@@ -387,6 +390,9 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     // 4ch DAC MCP4728
     dac = new MCP4728();
     if (dac->devicePresent()) {
+        bool ident = dac->identify();
+		if ( ident ) qInfo() << "MCP4728 identified at 0x"<<hex<<dac->getAddress();
+		else qCritical() << "MCP4728 failed to identify at 0x"<<hex<<dac->getAddress();
         if (verbose > 2) {
             qInfo() << "MCP4728 device is present.";
             qDebug() << "DAC registers / output voltages:";
