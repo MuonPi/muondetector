@@ -16,5 +16,6 @@
 #include "hardware/i2c/tca9546a.h"
 #include "hardware/i2c/ubloxi2c.h"
 #include "hardware/i2c/x9119.h"
+#include "hardware/i2c/mic184.h"
 
 #endif // !_I2CDEVICES_H_

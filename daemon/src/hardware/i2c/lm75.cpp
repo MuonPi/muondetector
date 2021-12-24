@@ -5,6 +5,28 @@
 /*
 * LM75 Temperature Sensor
 */
+LM75::LM75()
+	: i2cDevice(0x4f)
+{
+	fTitle = "LM75";
+}
+
+LM75::LM75(const char* busAddress, uint8_t slaveAddress)
+	: i2cDevice(busAddress, slaveAddress)
+{
+	fTitle = "LM75";
+}
+
+LM75::LM75(uint8_t slaveAddress)
+	: i2cDevice(slaveAddress)
+{
+	fTitle = "LM75";
+}
+
+LM75::~LM75()
+{
+	
+}
 
 int16_t LM75::readRaw()
 {
@@ -63,7 +85,7 @@ bool LM75::identify()
 		// there was an error
 		return false;
 	}
-	// the 5 MSBs should always read zero
+	// the 5 LSBs should always read zero
 	if ( (dataword & 0x1f) != 0 ) return false;
 //	if ( ( (dataword & 0x1f) != 0 ) && ( dataword >> 5 ) == 0 ) return false;
 	
