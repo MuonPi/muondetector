@@ -223,6 +223,9 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     // since we want to log some initial one-time log parameters on start-up
     connect(this, &Daemon::logParameter, &logEngine, &LogEngine::onLogParameterReceived);
 
+	// reset the I2C bus by issuing a general call reset
+	I2cGeneralCall::resetDevices();
+	
     // try to find out on which hardware version we are running
     // for this to work, we have to initialize and read the eeprom first
     // EEPROM 24AA02 type
