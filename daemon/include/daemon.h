@@ -18,7 +18,6 @@
 
 #include "utility/custom_io_operators.h"
 #include "histogram.h"
-#include "hardware/i2cdevices.h"
 #include "logengine.h"
 #include "logparameter.h"
 #include "mqtthandler.h"
