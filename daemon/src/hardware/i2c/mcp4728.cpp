@@ -145,3 +145,16 @@ bool MCP4728::identify() {
 	
 	return false;
 }
+
+void MCP4728::dumpRegisters() {
+    uint8_t buf[24];
+    if (read(buf, 24) != 24) {
+        // somehow did not read exact same amount of bytes as it should
+        return;
+    }
+	for ( int ch = 0; ch < 4; ch++ ) {
+		std::cout << "DAC"<<ch<<": " << std::setw(2) << std::setfill('0') << std::hex 
+		<< (int)buf[ch*6] << " " << (int)buf[ch*6+1] << " " << (int)buf[ch*6+2]
+		<< " (eep: " << (int)buf[ch*6+3] << " " << (int)buf[ch*6+4] << " " << (int)buf[ch*6+5] << ")\n";
+	}
+}

@@ -53,6 +53,9 @@ public:
     static float code2voltage(const DacChannel& channelData);
 
 	bool identify() override;
+
+	void dumpRegisters();
+
 private:
     unsigned int fLastConvTime;
 };
