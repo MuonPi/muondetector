@@ -13,7 +13,7 @@ public:
     float getTemperature();
     float lastTemperatureValue() const { return fLastTemp; }
 
-    virtual bool identify() override;
+    bool identify() override;
 protected:
 	enum REG : uint8_t {
 		TEMP = 0x00,

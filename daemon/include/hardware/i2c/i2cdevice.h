@@ -14,7 +14,8 @@
 
 #define DEFAULT_DEBUG_LEVEL 0
 
-// Curiously Recursive Template Pattern (CRTP) magic
+// base class fragment static_device_base which implemets static functions available to all derived classes
+// by the Curiously Recursive Template Pattern (CRTP) mechanism
 template<class T>
 struct static_device_base
 {
@@ -127,16 +128,16 @@ public:
 	virtual bool identify();
 
 protected:
-    int fHandle;
-    uint8_t fAddress;
+    int fHandle { 0 };
+    uint8_t fAddress { 0x00 };
     static unsigned int fNrDevices;
-    unsigned long int fNrBytesWritten;
-    unsigned long int fNrBytesRead;
+    unsigned long int fNrBytesWritten { 0 };
+    unsigned long int fNrBytesRead { 0 };
     static unsigned long int fGlobalNrBytesRead;
     static unsigned long int fGlobalNrBytesWritten;
-    double fLastTimeInterval; // the last time measurement's result is stored here
+    double fLastTimeInterval { 0. }; // the last time measurement's result is stored here
     struct timeval fT1, fT2;
-    int fDebugLevel;
+    int fDebugLevel { 0 };
     static std::vector<i2cDevice*> fGlobalDeviceList;
     std::string fTitle { "I2C device" };
     uint8_t fMode { MODE_NONE };
