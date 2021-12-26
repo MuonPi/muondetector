@@ -40,6 +40,7 @@ set(MUONDETECTOR_I2C_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/mic184.cpp"
 
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/i2cdevice.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/i2cutil.cpp"
     )
 
 set(MUONDETECTOR_DAEMON_SOURCE_FILES

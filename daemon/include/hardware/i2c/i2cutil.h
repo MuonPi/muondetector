@@ -2,26 +2,30 @@
 #define _I2CUTIL_H_
 
 #include "hardware/i2c/i2cdevice.h"
+#include <vector>
+#include <iostream>
+#include <iomanip>
 
 class I2cGeneralCall : private i2cDevice {
 public:
-	static void resetDevices()
-	{
-		I2cGeneralCall gc;
-		uint8_t data { 0x06 };
-		gc.write( &data, 1 );
-	}
+	static void resetDevices();
 private:
-	I2cGeneralCall()
-	: i2cDevice( static_cast<uint8_t>( 0x00 ) )
-	{
-		fTitle = "GeneralCall";
-	}
-	I2cGeneralCall(const char* busAddress)
-	: i2cDevice( busAddress, static_cast<uint8_t>( 0x00 ) )
-	{
-		fTitle = "GeneralCall";
-	}
+	I2cGeneralCall();
+	I2cGeneralCall(const char* busAddress);
 };
+
+template <class T>
+std::vector <uint8_t> findI2cDeviceType() {
+	std::vector<uint8_t> addr_list { };
+	for ( uint16_t addr = 0x04; addr <= 0x78; addr++) {
+		bool ident { false };
+		ident = T::identifyDevice( static_cast<uint8_t>(addr) );
+		if ( ident ) {
+//			std::cout<<"device identified at 0x"<<std::setw(2) << std::setfill('0')<<std::hex<<(int)addr<<"\n";
+			addr_list.push_back(static_cast<uint8_t>(addr));
+		}
+	}
+	return addr_list;
+}
 
 #endif // !_I2CUTIL_H_
