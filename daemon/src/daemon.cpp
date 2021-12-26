@@ -331,9 +331,30 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     connect(fileHandler, &FileHandler::logRotateSignal, &logEngine, &LogEngine::onOnceLogTrigger);
 
     // instantiate, detect and initialize all other i2c devices
-    // LM75A temp sensor
-    lm75 = new LM75();
-    if (lm75->devicePresent()) {
+    
+/*
+	// MIC184 temp sensor
+	auto dev_addr_list = findI2cDeviceType<MIC184>();
+	if ( dev_addr_list.size() > 0 ) {
+		tempSensor = new MIC184( dev_addr_list.front() );
+		lm75 = dynamic_cast<LM75*>(tempSensor);
+	} else {
+		// LM75A temp sensor
+		dev_addr_list = findI2cDeviceType<LM75>();
+		if ( dev_addr_list.size() > 0 ) {
+			tempSensor = new LM75( dev_addr_list.front() );
+			lm75 = dynamic_cast<LM75*>(tempSensor);
+		}
+	}
+*/	
+	auto dev_addr_list = findI2cDeviceType<LM75>();
+	if ( dev_addr_list.size() == 1 ) {
+		lm75 = new LM75( dev_addr_list.front() );
+	} else { 
+		lm75 = new LM75();
+	}
+
+	if ( lm75!=nullptr && lm75->devicePresent() ) {
         bool ident = lm75->identify();
 		if ( ident ) qInfo() << "LM75 identified at 0x"<<hex<<lm75->getAddress();
 		else qCritical() << "LM75 failed to identify at 0x"<<hex<<lm75->getAddress();
@@ -646,6 +667,10 @@ Daemon::~Daemon()
         delete oled;
         oled = nullptr;
     }
+    if ( lm75 != nullptr ) {
+		delete lm75;
+		lm75 = nullptr;
+	}
     pigHandler.clear();
     unsigned long timeout = 2000;
     if (!mqttHandlerThread->wait(timeout)) {
