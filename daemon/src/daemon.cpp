@@ -227,13 +227,14 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 
 	// reset the I2C bus by issuing a general call reset
 	I2cGeneralCall::resetDevices();
-	
+
     // try to find out on which hardware version we are running
     // for this to work, we have to initialize and read the eeprom first
     // EEPROM 24AA02 type
     eep = new EEPROM24AA02();
-    calib = new ShowerDetectorCalib(eep);
-    if (eep->devicePresent()) {
+
+	calib = new ShowerDetectorCalib(eep);
+    if ( eep->identify() ) {
         calib->readFromEeprom();
         if (verbose > 2) {
             qInfo() << "EEP device is present";
@@ -614,7 +615,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 
     // establish ublox gnss module connection
     connectToGps();
-    //delay(1000);
 
     // configure the ublox module with preset ubx messages, if required
     if (configGnss) {
