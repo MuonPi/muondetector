@@ -39,18 +39,8 @@ void EEPROM24AA02::writeByte(uint8_t addr, uint8_t data)
     stopTimer();
 }
 
-/** Write multiple bytes to starting from given address into EEPROM memory.
-* @param addr First register address to write to
-* @param length Number of bytes to write
-* @param data Buffer to copy new data from
-* @return Status of operation (true = success)
-* @note this is an overloaded function to the one from the i2cdevice base class in order to
-* prevent sequential write operations crossing page boundaries of the EEPROM. This function conforms to
-* the page-wise sequential write (c.f. http://ww1.microchip.com/downloads/en/devicedoc/21709c.pdf  p.7).
-*/
 bool EEPROM24AA02::writeBytes(uint8_t addr, uint16_t length, uint8_t* data)
 {
-
     static const uint8_t PAGESIZE = 8;
     bool success = true;
     startTimer();
@@ -67,4 +57,41 @@ bool EEPROM24AA02::writeBytes(uint8_t addr, uint16_t length, uint8_t* data)
     }
     stopTimer();
     return success;
+}
+
+bool EEPROM24AA02::identify()
+{
+	if ( fMode == MODE_FAILED ) return false;
+	if ( !devicePresent() ) return false;
+
+	const unsigned int N { 256 };
+	uint8_t buf[N+1];
+//	std::cout << " attempt 1: offs=0, len="<<N<<std::endl;
+	if ( readBytes( 0x00, N, buf ) != N) {
+		// somehow did not read exact same amount of bytes as it should
+		return false;
+	}
+//	std::cout << " attempt 2: offs=1, len="<<N<<std::endl;
+	if ( readBytes( 0x01, N, buf ) != N) {
+		// somehow did not read exact same amount of bytes as it should
+		return false;
+	}
+//	std::cout << " attempt 3: offs=0, len="<<N+1<<std::endl;
+	if ( readBytes( 0x00, N+1, buf ) != N+1) {
+		// somehow did not read exact same amount of bytes as it should
+		return false;
+	}
+//	std::cout << " attempt 4: offs=0xfa, len="<<int(6)<<std::endl;
+	if ( readBytes( 0xfa, 6, buf ) != 6) {
+		// somehow did not read exact same amount of bytes as it should
+		return false;
+	}
+
+	// seems, we have a 24AA02 (or larger) at this point
+	// additionaly check, whether it could be a 24AA02UID, 
+	// i.e. if the last 6 bytes contain 2 bytes of vendor/device code and 4 bytes of unique id
+	if ( buf[0] == 0x29 && buf[1] == 0x41 ) {
+		fTitle = "24AA02UID";
+	}
+	return true;
 }

@@ -1,9 +1,10 @@
 #ifndef _MIC184_H_
 #define _MIC184_H_
 #include "hardware/i2c/i2cdevice.h"
-#include "hardware/i2c/lm75.h"
+//#include "hardware/i2c/lm75.h"
+#include "hardware/device_types.h"
 
-class MIC184 : public i2cDevice, public static_device_base<MIC184> {
+class MIC184 : public i2cDevice, public DeviceFunction<DeviceType::TEMP>, public static_device_base<MIC184> {
 public:
     MIC184();
     MIC184(const char* busAddress, uint8_t slaveAddress);
@@ -11,9 +12,8 @@ public:
 	virtual ~MIC184();
     bool devicePresent();
     int16_t readRaw();
-    float getTemperature();
-    float lastTemperatureValue() const { return fLastTemp; }
-    
+    float getTemperature() override;
+        
 	bool identify() override;
 	bool isExternal() const { return fExternal; }
 	bool setExternal( bool enable_external = true );
@@ -27,7 +27,6 @@ private:
 
 	unsigned int fLastConvTime;
     signed int fLastRawValue;
-    float fLastTemp;
 	bool fExternal { false };
 };
 #endif // !_MIC184_H_

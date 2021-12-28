@@ -222,7 +222,7 @@ ADS1115::Sample ADS1115::getSample( unsigned int channel )
     return sample;
 }
 
-bool ADS1115::triggerConversion( uint8_t channel )
+bool ADS1115::triggerConversion( unsigned int channel )
 {
 	// triggering a conversion makes only sense in single shot mode
 	if ( fConvMode == CONV_MODE::SINGLE /* && !fTriggered */ ) {

@@ -232,13 +232,15 @@ private:
     void clearRates();
 
     MCP4728* dac = nullptr;
-    ADS1115* adc = nullptr;
     PCA9536* pca = nullptr;
-    LM75* lm75 = nullptr;
     EEPROM24AA02* eep = nullptr;
     UbloxI2c* ubloxI2c = nullptr;
     Adafruit_SSD1306* oled = nullptr;
-    float biasVoltage = 0.;
+    
+	std::shared_ptr<i2cDevice> dac_p, io_extender_p, temp_sensor_p, eeprom_p, ublox_i2c_p, oled_p;
+	std::shared_ptr<DeviceFunction<DeviceType::ADC>> adc_p;
+	
+	float biasVoltage = 0.;
     bool biasON = false;
     GPIO_PIN eventTrigger;
     bool gainSwitch = false;

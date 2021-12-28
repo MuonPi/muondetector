@@ -1,8 +1,9 @@
 #ifndef _LM75_H_
 #define _LM75_H_
 #include "hardware/i2c/i2cdevice.h"
+#include "hardware/device_types.h"
 
-class LM75 : public i2cDevice, public static_device_base<LM75> {
+class LM75 : public i2cDevice, public DeviceFunction<DeviceType::TEMP>, public static_device_base<LM75> {
 public:
     LM75();
     LM75(const char* busAddress, uint8_t slaveAddress);
@@ -10,8 +11,8 @@ public:
 	virtual ~LM75();
     bool devicePresent();
     int16_t readRaw();
-    float getTemperature();
-    float lastTemperatureValue() const { return fLastTemp; }
+    float getTemperature() override;
+    //float lastTemperatureValue() const { return fLastTemp; }
 
     bool identify() override;
 protected:
@@ -24,6 +25,5 @@ protected:
 
 	unsigned int fLastConvTime;
     signed int fLastRawValue;
-    float fLastTemp;
 };
 #endif // !_LM75_H_

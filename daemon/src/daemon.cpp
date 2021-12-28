@@ -334,50 +334,48 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 
     // instantiate, detect and initialize all other i2c devices
     
-/*
-	// MIC184 temp sensor
-	auto dev_addr_list = findI2cDeviceType<MIC184>();
-	if ( dev_addr_list.size() > 0 ) {
-		tempSensor = new MIC184( dev_addr_list.front() );
-		lm75 = dynamic_cast<LM75*>(tempSensor);
+	// MIC184 or LM75 temp sensor
+	std::set<uint8_t> possible_addresses { 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f };
+	auto found_dev_addresses = findI2cDeviceType<MIC184>( possible_addresses );
+	if ( found_dev_addresses.size() > 0 ) {
+		temp_sensor_p = std::make_shared<MIC184>( found_dev_addresses.front() );
 	} else {
 		// LM75A temp sensor
-		dev_addr_list = findI2cDeviceType<LM75>();
-		if ( dev_addr_list.size() > 0 ) {
-			tempSensor = new LM75( dev_addr_list.front() );
-			lm75 = dynamic_cast<LM75*>(tempSensor);
+		found_dev_addresses = findI2cDeviceType<LM75>( possible_addresses );
+		if ( found_dev_addresses.size() > 0 ) {
+			temp_sensor_p = std::make_shared<LM75>( found_dev_addresses.front() );
+		} else {
+			qWarning() << "temp sensor NOT present!";
 		}
 	}
-*/	
-	auto dev_addr_list = findI2cDeviceType<LM75>();
-	if ( dev_addr_list.size() == 1 ) {
-		lm75 = new LM75( dev_addr_list.front() );
-	} else { 
-		lm75 = new LM75();
-	}
 
-	if ( lm75!=nullptr && lm75->devicePresent() ) {
-        bool ident = lm75->identify();
-		if ( ident ) qInfo() << "LM75 identified at 0x"<<hex<<lm75->getAddress();
-		else qCritical() << "LM75 failed to identify at 0x"<<hex<<lm75->getAddress();
+	if ( temp_sensor_p && temp_sensor_p->devicePresent() ) {
+		std::cout << "temp sensor "<< temp_sensor_p->getTitle() << " identified at 0x" << std::hex << (int)temp_sensor_p->getAddress() << std::endl;
         if (verbose > 2) {
-            qInfo() << "LM75 device is present.";
-            qDebug() << "temperature is " << lm75->getTemperature() << DEGREE_CHARCODE << "C";
-            qDebug() << "readout took" << lm75->getLastTimeInterval() << "ms";
+            std::cout << "function is " << dynamic_cast<DeviceFunction<DeviceType::TEMP>*>( temp_sensor_p.get() )->typeString() << std::endl;
+            std::cout << "temperature is " << dynamic_cast<DeviceFunction<DeviceType::TEMP>*>( temp_sensor_p.get() )->getTemperature() << std::endl;
+            std::cout << "readout took " << std::dec << temp_sensor_p->getLastTimeInterval() << "ms" << std::endl;
         }
-    } else {
-        qWarning() << "LM75 device NOT present!";
     }
+    
+    // detect and instantiate the I2C ADC ADS1015/1115
+	std::shared_ptr<ADS1115> ads1115_p;
+	possible_addresses = { 0x48, 0x49, 0x4a, 0x4b };
+	found_dev_addresses = findI2cDeviceType<ADS1115>( possible_addresses );
+	if ( found_dev_addresses.size() > 0 ) {
+		ads1115_p = std::make_shared<ADS1115>( found_dev_addresses.front() );
+		adc_p = std::static_pointer_cast<DeviceFunction<DeviceType::ADC>>( ads1115_p );
+		std::cout << "ADS1115 identified at 0x" << std::hex << (int)ads1115_p->getAddress() << std::endl;
+	} else {
+        adcSamplingMode = ADC_MODE_DISABLED;
+        qWarning() << "ADS1115 device NOT present!";
+	}
 	
-    adc = new ADS1115();
-    if (adc->devicePresent()) {
-        bool ident = adc->identify();
-		if ( ident ) qInfo() << "ADS1115 identified at 0x"<<hex<<adc->getAddress();
-		else qCritical() << "ADS1115 failed to identify at 0x"<<hex<<adc->getAddress();
-		adc->setPga(ADS1115::PGA4V);
-        adc->setRate(0x07); // ADS1115::RATE860
-        adc->setAGC(false);
-        if (!adc->setDataReadyPinMode()) {
+    if ( ads1115_p && ads1115_p->devicePresent() ) {
+		ads1115_p->setPga(ADS1115::PGA4V); // set full scale range to 4 Volts
+        ads1115_p->setRate( ADS1115::SPS860 ); // set sampling rate to the maximum of 860 samples per second
+        ads1115_p->setAGC(false); // turn AGC off for all channels
+        if (!ads1115_p->setDataReadyPinMode()) {
             qWarning() << "error: failed setting data ready pin mode (setting thresh regs)";
         }
 
@@ -390,31 +388,29 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         // set up peak sampling mode
         setAdcSamplingMode(ADC_MODE_PEAK);
 		
-		adc->registerConversionReadyCallback( [this](ADS1115::Sample sample) { this->onAdcSampleReady(sample); } );
+		// set callback function for sample-ready events of the ADC
+		adc_p->registerConversionReadyCallback( [this](ADS1115::Sample sample) { this->onAdcSampleReady(sample); } );
 
         if (verbose > 2) {
             qInfo() << "ADS1115 device is present.";
-            bool ok = adc->setLowThreshold(0b0000000000000000);
-            ok = ok && adc->setHighThreshold(0b1000000000000000);
+            bool ok = ads1115_p->setLowThreshold(0b0000000000000000);
+            ok = ok && ads1115_p->setHighThreshold(0b1000000000000000);
             if (ok)
                 qDebug() << "successfully setting threshold registers";
             else
                 qWarning() << "error: failed setting threshold registers";
             qDebug() << "single ended channels:";
-            qDebug() << "ch0: " << adc->readADC(0) << " ch1: " << adc->readADC(1)
-                     << " ch2: " << adc->readADC(2) << " ch3: " << adc->readADC(3);
-            adc->setDiffMode(true);
+            qDebug() << "ch0: " << ads1115_p->readADC(0) << " ch1: " << ads1115_p->readADC(1)
+                     << " ch2: " << ads1115_p->readADC(2) << " ch3: " << ads1115_p->readADC(3);
+            ads1115_p->setDiffMode(true);
             qDebug() << "diff channels:";
-            qDebug() << "ch0-1: " << adc->readADC(0) << " ch0-3: " << adc->readADC(1)
-                     << " ch1-3: " << adc->readADC(2) << " ch2-3: " << adc->readADC(3);
-            adc->setDiffMode(false);
-            qDebug() << "readout took " << adc->getLastTimeInterval() << " ms";
+            qDebug() << "ch0-1: " << ads1115_p->readADC(0) << " ch0-3: " << ads1115_p->readADC(1)
+                     << " ch1-3: " << ads1115_p->readADC(2) << " ch2-3: " << ads1115_p->readADC(3);
+            ads1115_p->setDiffMode(false);
+            qDebug() << "readout took " << ads1115_p->getLastTimeInterval() << " ms";
         }
-    } else {
-        adcSamplingMode = ADC_MODE_DISABLED;
-        qWarning() << "ADS1115 device NOT present!";
     }
-
+    
     // 4ch DAC MCP4728
     dac = new MCP4728();
     if (dac->devicePresent()) {
@@ -553,20 +549,20 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 
     // for diagnostics:
     // print out some i2c device statistics
-    if (verbose > 3) {
-        cout << "Nr. of invoked I2C devices (plain count): " << i2cDevice::getNrDevices() << endl;
-        cout << "Nr. of invoked I2C devices (gl. device list's size): " << i2cDevice::getGlobalDeviceList().size() << endl;
-        cout << "Nr. of bytes read on I2C bus: " << i2cDevice::getGlobalNrBytesRead() << endl;
-        cout << "Nr. of bytes written on I2C bus: " << i2cDevice::getGlobalNrBytesWritten() << endl;
-        cout << "list of device addresses: " << endl;
+    if (verbose > 2) {
+        std::cout << "Nr. of invoked I2C devices (plain count): " << std::dec << i2cDevice::getNrDevices() << std::endl;
+        std::cout << "Nr. of invoked I2C devices (gl. device list's size): " << i2cDevice::getGlobalDeviceList().size() << std::endl;
+        std::cout << "Nr. of bytes read on I2C bus: " << i2cDevice::getGlobalNrBytesRead() << std::endl;
+        std::cout << "Nr. of bytes written on I2C bus: " << i2cDevice::getGlobalNrBytesWritten() << std::endl;
+        std::cout << "list of device addresses: " << std::endl;
         for (uint8_t i = 0; i < i2cDevice::getGlobalDeviceList().size(); i++) {
-            cout << (int)i + 1 << " 0x" << hex << (int)i2cDevice::getGlobalDeviceList()[i]->getAddress() << " " << i2cDevice::getGlobalDeviceList()[i]->getTitle();
+            std::cout << (int)i + 1 << " 0x" << std::hex << (int)i2cDevice::getGlobalDeviceList()[i]->getAddress() << " " << i2cDevice::getGlobalDeviceList()[i]->getTitle();
             if (i2cDevice::getGlobalDeviceList()[i]->devicePresent())
-                cout << " present" << endl;
+                std::cout << " present" << endl;
             else
-                cout << " missing" << endl;
+                std::cout << " missing" << endl;
         }
-        lm75->getCapabilities();
+        if ( temp_sensor_p ) temp_sensor_p.get()->getCapabilities();
     }
 
     // for ublox gnss module
@@ -649,10 +645,6 @@ Daemon::~Daemon()
         delete dac;
         dac = nullptr;
     }
-    if (adc != nullptr) {
-        delete adc;
-        adc = nullptr;
-    }
     if (eep != nullptr) {
         delete eep;
         eep = nullptr;
@@ -669,10 +661,6 @@ Daemon::~Daemon()
         delete oled;
         oled = nullptr;
     }
-    if ( lm75 != nullptr ) {
-		delete lm75;
-		lm75 = nullptr;
-	}
     pigHandler.clear();
     unsigned long timeout = 2000;
     if (!mqttHandlerThread->wait(timeout)) {
@@ -1674,21 +1662,23 @@ void Daemon::onAdcSampleReady(ADS1115::Sample sample) {
 			currentAdcSampleIndex = 0;
 		}
 	}
-	emit logParameter(LogParameter("adcSamplingTime", QString::number(adc->getLastConvTime()) + " ms", LogParameter::LOG_AVERAGE));
-	checkRescaleHisto(histoMap["adcSampleTime"], adc->getLastConvTime());
-	histoMap["adcSampleTime"].fill(adc->getLastConvTime());
+	if ( adc_p ) {
+		emit logParameter(LogParameter("adcSamplingTime", QString::number(adc_p->getLastConvTime()) + " ms", LogParameter::LOG_AVERAGE));
+		checkRescaleHisto(histoMap["adcSampleTime"], adc_p->getLastConvTime());
+		histoMap["adcSampleTime"].fill(adc_p->getLastConvTime());
+	}
 }
 
 void Daemon::sampleAdcEvent(uint8_t channel)
 {
-	if (adc == nullptr || adcSamplingMode == ADC_MODE_DISABLED) {
+	if ( adc_p == nullptr || adcSamplingMode == ADC_MODE_DISABLED) {
 		return;
 	}
-	if (adc->getStatus() & i2cDevice::MODE_UNREACHABLE) {
+	if ( std::dynamic_pointer_cast<ADS1115>(adc_p)->getStatus() & i2cDevice::MODE_UNREACHABLE ) {
 		return;
 	}
 	//adc->setActiveChannel( channel );
-	adc->triggerConversion( channel );
+	adc_p->triggerConversion( channel );
 }
 
 void Daemon::sampleAdc0Event()
@@ -1705,13 +1695,13 @@ void Daemon::sampleAdc0TraceEvent()
 
 void Daemon::getTemperature()
 {
-    if (lm75 == nullptr) {
+    if ( !temp_sensor_p ) {
         return;
     }
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_TEMPERATURE);
-    if (lm75->getStatus() & i2cDevice::MODE_UNREACHABLE)
+    if (temp_sensor_p->getStatus() & i2cDevice::MODE_UNREACHABLE)
         return;
-    float value = lm75->getTemperature();
+    float value = dynamic_cast<DeviceFunction<DeviceType::TEMP>*>(temp_sensor_p.get())->getTemperature();
     *(tcpMessage.dStream) << value;
     emit sendTcpMessage(tcpMessage);
 }
@@ -2308,13 +2298,16 @@ void Daemon::intSignalHandler(int)
 
 void Daemon::aquireMonitoringParameters()
 {
-    if (lm75 && lm75->devicePresent())
-        emit logParameter(LogParameter("temperature", QString::number(lm75->getTemperature()) + " degC", LogParameter::LOG_AVERAGE));
+    if ( temp_sensor_p && temp_sensor_p->devicePresent())
+        emit logParameter(LogParameter("temperature", QString::number(dynamic_cast<DeviceFunction<DeviceType::TEMP>*>(temp_sensor_p.get())->getTemperature()) + " degC", LogParameter::LOG_AVERAGE));
 
     double v1 = 0., v2 = 0.;
-    if (adc && (!(adc->getStatus() & i2cDevice::MODE_UNREACHABLE)) && (adc->getStatus() & (i2cDevice::MODE_NORMAL | i2cDevice::MODE_FORCE))) {
-        v1 = adc->getVoltage(2);
-        v2 = adc->getVoltage(3);
+	if ( adc_p && 
+		 (!(std::dynamic_pointer_cast<ADS1115>(adc_p)->getStatus() & i2cDevice::MODE_UNREACHABLE)) &&
+		  (std::dynamic_pointer_cast<ADS1115>(adc_p)->getStatus() & (i2cDevice::MODE_NORMAL | i2cDevice::MODE_FORCE))
+	   ) {
+        v1 = adc_p->getVoltage(2);
+        v2 = adc_p->getVoltage(3);
         if (calib && calib->getCalibItem("VDIV").name == "VDIV") {
             CalibStruct vdivItem = calib->getCalibItem("VDIV");
             std::istringstream istr(vdivItem.value);
@@ -2392,8 +2385,6 @@ void Daemon::onLogParameterPolled()
         emit logParameter(LogParameter("ubxInputSwitch", "0x" + QString::number(pcaPortMask, 16), LogParameter::LOG_ON_CHANGE));
     if (pigHandler != nullptr)
         emit logParameter(LogParameter("gpioTriggerSelection", "0x" + QString::number((int)pigHandler->samplingTriggerSignal, 16), LogParameter::LOG_ON_CHANGE));
-    if (adc && !(adc->getStatus() & i2cDevice::MODE_UNREACHABLE)) {
-    }
 
     for (const auto& hist : histoMap) {
         sendHistogram(hist);
@@ -2494,7 +2485,9 @@ void Daemon::updateOledDisplay()
     oled->setCursor(0, 2);
     oled->print("*Cosmic Shower Det.*\n");
     oled->printf("Rates %4.1f %4.1f /s\n", getRateFromCounts(AND_RATE), getRateFromCounts(XOR_RATE));
-    oled->printf("temp %4.2f %cC\n", lm75->getTemperature(), DEGREE_CHARCODE);
+    if ( temp_sensor_p && temp_sensor_p->devicePresent() ) {
+		oled->printf("temp %4.2f %cC\n", dynamic_cast<DeviceFunction<DeviceType::TEMP>*>(temp_sensor_p.get())->getTemperature(), DEGREE_CHARCODE);
+	}
     oled->printf("%d(%d) Sats ", nrVisibleSats().toInt(), nrSats().toInt(), DEGREE_CHARCODE);
     oled->printf("%s\n", FIX_TYPE_STRINGS[fixStatus().toInt()].toStdString().c_str());
     oled->display();
