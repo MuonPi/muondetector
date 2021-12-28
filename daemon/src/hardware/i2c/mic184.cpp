@@ -117,12 +117,6 @@ bool MIC184::identify()
 	std::cout << "  tos   = 0x"<<std::setw(4) << std::setfill('0')<<tos_save<<"\n";
 	std::cout << "  temp  = 0x"<<std::setw(4) << std::setfill('0')<<dataword<<"\n";
 */	
-	// Read and save the config register
-//	if ( !readByte( static_cast<uint8_t>(REG::CONF), &conf_reg_save ) ) return false;
-	// read and save the Thyst register
-//	if ( !readWord( static_cast<uint8_t>(REG::THYST), &thyst_save ) ) return false;
-	// read and save the Tos register
-//	if ( !readWord( static_cast<uint8_t>(REG::TOS), &tos_save ) ) return false;
 	
 	// determine, whether we have a MIC184 or just a plain LM75
 	// datasheet: test, if the STS (status) bit in config register toggles when a alarm condition is provoked
@@ -182,4 +176,3 @@ bool MIC184::setExternal( bool enable_external )
 	fExternal = enable_external;
 	return true;
 }
-
