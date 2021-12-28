@@ -2,6 +2,7 @@
 #include <QThread>
 #include <QtNetwork>
 #include <chrono>
+#include <set>
 #include <config.h>
 #include <daemon.h>
 #include "utility/geohash.h"
@@ -20,6 +21,7 @@
 #include <unistd.h>
 #include "hardware/i2cdevices.h"
 #include "hardware/i2c/i2cutil.h"
+#include "hardware/device_types.h"
 
 #define DAC_BIAS 2 // channel of the dac where bias voltage is set
 #define DAC_TH1 0 // channel of the dac where threshold 1 is set

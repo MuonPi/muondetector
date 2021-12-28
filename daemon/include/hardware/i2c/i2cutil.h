@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include <iomanip>
+#include <set>
 
 class I2cGeneralCall : private i2cDevice {
 public:
@@ -15,9 +16,10 @@ private:
 };
 
 template <class T>
-std::vector <uint8_t> findI2cDeviceType() {
+std::vector <uint8_t> findI2cDeviceType( const std::set<uint8_t>& possible_addresses = std::set<uint8_t>() ) {
 	std::vector<uint8_t> addr_list { };
 	for ( uint16_t addr = 0x04; addr <= 0x78; addr++) {
+		if ( !possible_addresses.empty() && possible_addresses.find( static_cast<uint8_t>( addr ) ) == possible_addresses.cend() ) continue;
 		bool ident { false };
 		ident = T::identifyDevice( static_cast<uint8_t>(addr) );
 		if ( ident ) {

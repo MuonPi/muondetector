@@ -84,6 +84,7 @@ set(MUONDETECTOR_I2C_HEADER_FILES
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/i2cdevice.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/i2cutil.h"
 
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/device_types.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2cdevices.h"
     )
 

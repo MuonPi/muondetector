@@ -24,6 +24,7 @@
 #include "pigpiodhandler.h"
 #include "tcpconnection.h"
 #include "hardware/spidevices.h"
+#include "hardware/device_types.h"
 
 // for sig handling:
 #include <signal.h>
