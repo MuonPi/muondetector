@@ -187,6 +187,8 @@ private slots:
     void updateOledDisplay();
     void aquireMonitoringParameters();
     void doRateScanIteration(RateScanInfo* info);
+    void onStatusLed1Event( int onTimeMs );
+    void onStatusLed2Event( int onTimeMs );
 
 private:
     void incomingConnection(qintptr socketDescriptor) override;

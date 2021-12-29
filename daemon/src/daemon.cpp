@@ -723,6 +723,14 @@ void Daemon::connectToPigpiod()
     connect(this, &Daemon::GpioSetState, pigHandler, &PigpiodHandler::setGpioState);
     connect(this, &Daemon::GpioRegisterForCallback, pigHandler, &PigpiodHandler::registerForCallback);
     connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
+
+	connect(pigHandler, &PigpiodHandler::signal, this, [this](uint8_t gpio_pin) {
+			if ( gpio_pin == GPIO_PINMAP[EVT_AND] ) {
+				onStatusLed2Event( 50 );
+			}
+		}	
+	);
+
     connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
     connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) {
         if (histoMap.find("gpioEventInterval") != histoMap.end()) {
@@ -2526,3 +2534,26 @@ void Daemon::doRateScanIteration(RateScanInfo* info)
         delete info;
     }
 }
+
+void Daemon::onStatusLed1Event( int onTimeMs )
+{
+	emit GpioSetState( GPIO_PINMAP[STATUS1], true );
+	if ( onTimeMs )	{
+		QTimer::singleShot( onTimeMs, [&]() {
+				emit GpioSetState( GPIO_PINMAP[STATUS1], false );
+			}
+		);
+	}
+}
+
+void Daemon::onStatusLed2Event( int onTimeMs )
+{
+	emit GpioSetState( GPIO_PINMAP[STATUS2], true );
+	if ( onTimeMs )	{
+		QTimer::singleShot( onTimeMs, [&]() {
+				emit GpioSetState( GPIO_PINMAP[STATUS2], false );
+			}
+		);
+	}
+}
+
