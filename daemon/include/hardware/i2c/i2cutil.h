@@ -10,6 +10,8 @@
 class I2cGeneralCall : private i2cDevice {
 public:
 	static void resetDevices();
+	static void wakeUp();
+	static void softwareUpdate();
 private:
 	I2cGeneralCall();
 	I2cGeneralCall(const char* busAddress);
