@@ -84,8 +84,8 @@ On your network device or on your Raspberry Pi:
 
 ### Version >= 1.1.2
 
-1. `sudo pigpiod -s 1` for setting the GPIO sampling rate to 1 MHz
-2. start the daemon with `muondetector_daemon <device> [options]` where device is your serial interface (either "/dev/ttyS0" for Raspberry Pi 3 & 4 or "/dev/ttyAMA0" for Raspberry Pi 2). The options can be reviewed by adding `-h`. It is recommended to use the `-c` option on first start (if the configuration is not yet written to eeprom). To log on the MQTT service, add `-l` and enter your user name and password when asked. If you don't have a user account on our server yet, please send a mail to <support@muonpi.org>. With `-- id [station_id]` (integer from 0 to 9) you can set a unique station id in case you operate more than one station with one user account.  
+1. Either use our [apt repository / prebuild files](https://muonpi.org/download-area.html) or build the muondetector files: create a new directory <build_directory> anywhere, cd into <build_directory> run cmake <path_to_muondetector_git_repository> from inside the <build_directory>, run make, run cpack, run apt install output/packages/<package_name>.
+2. To log on the MQTT service, run the 'muondetector-login program' while the daemon is still offline. If you don't have a user account on our server yet, please send a mail to <support@muonpi.org>. Inside of /etc/muondetector/muondetector.conf you can set a configuration, for example you can set a unique station id in case you operate more than one station with one user account. Start the daemon with `systemctl start muondetector-daemon.service` (make sure it is also enabled by default).
 On your network device or on your Raspberry Pi: 
-3. Start the gui with `muondetector_gui` on the device of your choice and measure some tasty muons!
+3. Start the gui with `muondetector-gui` on the device of your choice and measure some tasty muons!
 
