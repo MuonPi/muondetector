@@ -84,8 +84,8 @@ On your network device or on your Raspberry Pi:
 
 ### Version >= 1.1.2
 
-1. Either use our [apt repository / prebuild files](https://muonpi.org/download-area.html) or build the muondetector files: create a new directory <build_directory> anywhere, cd into <build_directory> run cmake <path_to_muondetector_git_repository> from inside the <build_directory>, run make, run cpack, run apt install output/packages/<package_name>.
-2. To log on the MQTT service, run the 'muondetector-login program' while the daemon is still offline. If you don't have a user account on our server yet, please send a mail to <support@muonpi.org>. Inside of /etc/muondetector/muondetector.conf you can set a configuration, for example you can set a unique station id in case you operate more than one station with one user account. Start the daemon with `systemctl start muondetector-daemon.service` (make sure it is also enabled by default).
+1. Make sure the daemon is properly installed. You can check the muondetector-daemon status with 'systemctl status muondetector-daemon.service'. It should show something like "loaded inactive" with a grey indication circle. Don't start the daemon yet. If the service is not recognized, the installation probably did not work correctly.
+2. On first start: to log on the MQTT service, run the 'muondetector-login program' while the daemon is still offline. If you don't have a user account on our server yet, please send a mail to <support@muonpi.org>. Inside of /etc/muondetector/muondetector.conf you can set a configuration, for example you can set a unique station id in case you operate more than one station with one user account. Start the daemon with `systemctl start muondetector-daemon.service` (make sure it is also enabled by default using 'systemctl enable muondetector-daemon.service').
 On your network device or on your Raspberry Pi: 
-3. Start the gui with `muondetector-gui` on the device of your choice and measure some tasty muons!
+2. Start the gui with `muondetector-gui` on the device of your choice and measure some tasty muons!
 
