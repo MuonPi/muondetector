@@ -694,6 +694,9 @@ Daemon::~Daemon()
     if (!tcpThread->wait(timeout)) {
         qWarning() << "Timeout waiting for thread " + tcpThread->objectName();
     }
+    while ( !i2cDevice::getGlobalDeviceList().empty() ) {
+		if ( i2cDevice::getGlobalDeviceList().front() != nullptr ) delete i2cDevice::getGlobalDeviceList().front();
+	}
 }
 
 void Daemon::connectToPigpiod()
@@ -1304,20 +1307,21 @@ void Daemon::setAdcSamplingMode(quint8 mode)
 
 void Daemon::scanI2cBus()
 {
-    for (uint8_t addr = 1; addr < 0x7f; addr++) {
-        bool alreadyThere = false;
-        for (uint8_t i = 0; i < i2cDevice::getGlobalDeviceList().size(); i++) {
-            if (addr == i2cDevice::getGlobalDeviceList()[i]->getAddress()) {
-                alreadyThere = true;
-                break;
-            }
-        }
-        if (alreadyThere)
-            continue;
-        i2cDevice* dev = new i2cDevice(addr);
-        if (!dev->devicePresent())
-            delete dev;
-    }
+	for (uint8_t addr = 0x04; addr <= 0x78; addr++) {
+		bool alreadyThere = false;
+		for (uint8_t i = 0; i < i2cDevice::getGlobalDeviceList().size(); i++) {
+			if (addr == i2cDevice::getGlobalDeviceList()[i]->getAddress()) {
+				alreadyThere = true;
+				break;
+			}
+		}
+		if (alreadyThere) {
+			continue;
+		}
+
+		i2cDevice* new_dev { instantiateI2cDevice( addr ) };
+		if ( new_dev && !new_dev->devicePresent() ) delete new_dev;
+	}
 }
 
 void Daemon::sendLogInfo()

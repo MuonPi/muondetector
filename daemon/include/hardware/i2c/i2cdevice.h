@@ -24,10 +24,17 @@ struct static_device_base
 		auto it = T::getGlobalDeviceList().begin();
 		bool found { false };
 		while ( !found && it != T::getGlobalDeviceList().end() ) {
-			if ( (*it)->getAddress() == addr) found = true;
+			if ( (*it)->getAddress() == addr) { 
+				found = true;
+				break;
+			}
 			it++;
 		}
-		if ( found ) return false;
+		if ( found ) {
+			T dummyDevice( 0x00 );
+			if ( (*it)->getTitle() == dummyDevice.getTitle() ) return true;
+			return false;
+		}
 		T device(addr);
 		return device.identify();
 	}
