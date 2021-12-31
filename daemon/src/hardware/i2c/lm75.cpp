@@ -8,19 +8,19 @@
 LM75::LM75()
 	: i2cDevice(0x4f)
 {
-	fTitle = "LM75";
+	fTitle = fName = "LM75";
 }
 
 LM75::LM75(const char* busAddress, uint8_t slaveAddress)
 	: i2cDevice(busAddress, slaveAddress)
 {
-	fTitle = "LM75";
+	fTitle = fName = "LM75";
 }
 
 LM75::LM75(uint8_t slaveAddress)
 	: i2cDevice(slaveAddress)
 {
-	fTitle = "LM75";
+	fTitle = fName = "LM75";
 }
 
 LM75::~LM75()
@@ -48,6 +48,7 @@ int16_t LM75::readRaw()
     return val;
 }
 
+/*
 bool LM75::devicePresent()
 {
     uint8_t readBuf[2]; // 2 byte buffer to store the data read from the I2C device
@@ -56,6 +57,7 @@ bool LM75::devicePresent()
     int n = read(readBuf, 2); // Read the data register into readBuf
     return (n == 2);
 }
+*/
 
 float LM75::getTemperature()
 {

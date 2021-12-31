@@ -201,14 +201,15 @@ private:
     qreal getRateFromCounts(quint8 which_rate);
     void clearRates();
 
-    MCP4728* dac = nullptr;
-    PCA9536* pca = nullptr;
-    EEPROM24AA02* eep = nullptr;
     UbloxI2c* ubloxI2c = nullptr;
     Adafruit_SSD1306* oled = nullptr;
     
-	std::shared_ptr<i2cDevice> dac_p, io_extender_p, temp_sensor_p, eeprom_p, ublox_i2c_p, oled_p;
+	std::shared_ptr<i2cDevice> eeprom_p, ublox_i2c_p, oled_p;
+	std::shared_ptr<DeviceFunction<DeviceType::TEMP>> temp_sensor_p;
 	std::shared_ptr<DeviceFunction<DeviceType::ADC>> adc_p;
+	std::shared_ptr<DeviceFunction<DeviceType::DAC>> dac_p;
+	std::shared_ptr<DeviceFunction<DeviceType::EEPROM>> eep_p;
+	std::shared_ptr<DeviceFunction<DeviceType::IO_EXTENDER>> io_extender_p;
 	
 	float biasVoltage = 0.;
     bool biasON = false;

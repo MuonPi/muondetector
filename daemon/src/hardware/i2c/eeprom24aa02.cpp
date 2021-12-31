@@ -1,6 +1,8 @@
 #include "hardware/i2c/eeprom24aa02.h"
 #include <stdint.h>
 #include <unistd.h>
+#include <thread>
+#include <chrono>
 
 /*
 * 24AA02 EEPROM
@@ -51,12 +53,17 @@ bool EEPROM24AA02::writeBytes(uint8_t addr, uint16_t length, uint8_t* data)
         if (currAddr + pageRemainder >= length)
             pageRemainder = length - currAddr;
         int n = writeReg(currAddr, &data[i], pageRemainder);
-        usleep(5000);
+        std::this_thread::sleep_for( std::chrono::microseconds( 5000 ) );
         i += pageRemainder;
         success = success && (n == pageRemainder);
     }
     stopTimer();
     return success;
+}
+
+int16_t EEPROM24AA02::readBytes(uint8_t regAddr, uint16_t length, uint8_t* data)
+{
+	return i2cDevice::readBytes( regAddr, length, data );
 }
 
 bool EEPROM24AA02::identify()
@@ -91,7 +98,7 @@ bool EEPROM24AA02::identify()
 	// additionaly check, whether it could be a 24AA02UID, 
 	// i.e. if the last 6 bytes contain 2 bytes of vendor/device code and 4 bytes of unique id
 	if ( buf[0] == 0x29 && buf[1] == 0x41 ) {
-		fTitle = "24AA02UID";
+		fTitle = fName = "24AA02UID";
 	}
 	return true;
 }

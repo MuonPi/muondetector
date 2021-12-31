@@ -83,6 +83,11 @@ bool MCP4728::writeChannel(uint8_t channel, const DacChannel& channelData)
     return true;
 }
 
+bool MCP4728::storeSettings()
+{
+	return false;
+}
+
 bool MCP4728::devicePresent()
 {
 	return readRegisters();

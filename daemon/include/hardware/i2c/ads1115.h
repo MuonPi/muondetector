@@ -56,23 +56,21 @@ public:
     double getVoltage(unsigned int channel) override;
     void getVoltage(unsigned int channel, double& voltage);
     void getVoltage(unsigned int channel, int16_t& adc, double& voltage);
-    bool devicePresent();
+    //bool devicePresent() override;
     void setDiffMode(bool mode) { fDiffMode = mode; }
     bool setDataReadyPinMode();
     unsigned int getReadWaitDelay() const { return fReadWaitDelay; }
-//     double getLastConvTime() const { return fLastConvTime; }
     bool setContinuousSampling( bool cont_sampling = true );
  	bool triggerConversion( unsigned int channel ) override;
-//     void registerConversionReadyCallback(std::function<void(Sample)> fn) {	fConvReadyFn = fn; }
 	Sample getSample( unsigned int channel ) override;
 	Sample conversionFinished();
+	bool probeDevicePresence() override { return devicePresent(); }
     
 protected:
     CFG_PGA fPga[4] { PGA4V, PGA4V, PGA4V, PGA4V };
     uint8_t fRate { 0x00 };
 	uint8_t fCurrentChannel { 0 };
 	uint8_t fSelectedChannel { 0 };
-//     double fLastConvTime { 0. };
     unsigned int fReadWaitDelay { READ_WAIT_DELAY_US_INIT }; ///< conversion wait time in us
     bool fAGC[4] { false, false, false, false }; ///< software agc which switches over to a better pga setting if voltage too low/high
     bool fDiffMode { false }; ///< measure differential input signals (true) or single ended (false=default)

@@ -23,8 +23,8 @@ void ShowerDetectorCalib::init()
     for (int i = 0; i < n; i++)
         fEepBuffer[i] = 0;
     buildCalibList();
-    if (fEeprom != nullptr) {
-        fEepromValid = fEeprom->devicePresent() && readFromEeprom();
+    if ( fEeprom ) {
+        fEepromValid = fEeprom->probeDevicePresence() && readFromEeprom();
     }
 }
 

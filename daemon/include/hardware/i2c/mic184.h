@@ -10,9 +10,10 @@ public:
     MIC184(const char* busAddress, uint8_t slaveAddress);
     MIC184(uint8_t slaveAddress);
 	virtual ~MIC184();
-    bool devicePresent();
+    //bool devicePresent();
     int16_t readRaw();
     float getTemperature() override;
+	bool probeDevicePresence() override { return devicePresent(); }
         
 	bool identify() override;
 	bool isExternal() const { return fExternal; }

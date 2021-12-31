@@ -58,7 +58,7 @@ ADS1115::~ADS1115() {
 void ADS1115::init()
 {
 	fRate = 0x00; // RATE8
-	fTitle = "ADS1115";
+	fTitle = fName = "ADS1115";
 }
 
 void ADS1115::setPga(uint8_t channel, CFG_PGA pga)
@@ -360,11 +360,13 @@ bool ADS1115::setCompQueue( uint8_t bitpattern )
 	return true;
 }
 
+/*
 bool ADS1115::devicePresent()
 {
     uint8_t buf[2];
     return (read(buf, 2) == 2); // Read the currently selected register into readBuf
 }
+*/
 
 bool ADS1115::identify()
 {

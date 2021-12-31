@@ -10,19 +10,19 @@
 MIC184::MIC184()
 	: i2cDevice(0x4f)
 {
-	fTitle = "MIC184";
+	fTitle = fName = "MIC184";
 }
 
 MIC184::MIC184(const char* busAddress, uint8_t slaveAddress)
 	: i2cDevice(busAddress, slaveAddress)
 {
-	fTitle = "MIC184";
+	fTitle = fName = "MIC184";
 }
 
 MIC184::MIC184(uint8_t slaveAddress)
 	: i2cDevice(slaveAddress)
 {
-	fTitle = "MIC184";
+	fTitle = fName = "MIC184";
 }
 
 MIC184::~MIC184()
@@ -49,6 +49,7 @@ int16_t MIC184::readRaw()
     return val;
 }
 
+/*
 bool MIC184::devicePresent()
 {
     uint8_t readBuf[2]; // 2 byte buffer to store the data read from the I2C device
@@ -57,6 +58,7 @@ bool MIC184::devicePresent()
     int n = read(readBuf, 2);
     return (n == 2);
 }
+*/
 
 float MIC184::getTemperature()
 {

@@ -231,23 +231,35 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     // try to find out on which hardware version we are running
     // for this to work, we have to initialize and read the eeprom first
     // EEPROM 24AA02 type
-    eep = new EEPROM24AA02();
+	std::shared_ptr<EEPROM24AA02> eep24aa02_p;
+	std::set<uint8_t> possible_addresses { 0x50 };
+	auto found_dev_addresses = findI2cDeviceType<EEPROM24AA02>( possible_addresses );
+	if ( found_dev_addresses.size() > 0 ) {
+		eep24aa02_p = std::make_shared<EEPROM24AA02>( found_dev_addresses.front() );
+	}
+	if ( eep24aa02_p && eep24aa02_p->identify() )
+	{
+		eep_p = std::static_pointer_cast<DeviceFunction<DeviceType::EEPROM>>( eep24aa02_p );
+		std::cout << "eeprom " << eep24aa02_p->getName() <<" identified at 0x" << std::hex << (int)eep24aa02_p->getAddress() << std::endl;
+	} else {
+		eep24aa02_p.reset();
+		qCritical() << "eeprom device NOT found!";
+	}
 
-	calib = new ShowerDetectorCalib(eep);
-    if ( eep->identify() ) {
+	calib = new ShowerDetectorCalib( eep24aa02_p );
+    if ( eep_p->probeDevicePresence() ) {
         calib->readFromEeprom();
         if (verbose > 2) {
-            qInfo() << "EEP device is present";
 
             // Caution, only for debugging. This code snippet writes a test sequence into the eeprom
             if (1 == 0) {
                 uint8_t buf[256];
                 for (int i = 0; i < 256; i++)
                     buf[i] = i;
-                if (!eep->writeBytes(0, 256, buf))
+                if ( !eep24aa02_p->writeBytes(0, 256, buf) )
                     cerr << "error: write to eeprom failed!" << endl;
                 if (verbose > 2)
-                    cout << "eep write took " << eep->getLastTimeInterval() << " ms" << endl;
+                    cout << "eep write took " << eep24aa02_p->getLastTimeInterval() << " ms" << endl;
                 readEeprom();
             }
             if (1 == 1) {
@@ -259,8 +271,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         logParameter(LogParameter("uniqueId", hwIdStr, LogParameter::LOG_ONCE));
 		hwIdStr = "0x"+hwIdStr;
         qInfo() << "EEP unique ID:" << hwIdStr;
-    } else {
-        qCritical() << "eeprom device NOT present!";
     }
     CalibStruct verStruct = calib->getCalibItem("VERSION");
     unsigned int version = 0;
@@ -334,10 +344,10 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     connect(fileHandler, &FileHandler::logRotateSignal, &logEngine, &LogEngine::onOnceLogTrigger);
 
     // instantiate, detect and initialize all other i2c devices
-    
+	
 	// MIC184 or LM75 temp sensor
-	std::set<uint8_t> possible_addresses { 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f };
-	auto found_dev_addresses = findI2cDeviceType<MIC184>( possible_addresses );
+	possible_addresses = { 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f };
+	found_dev_addresses = findI2cDeviceType<MIC184>( possible_addresses );
 	if ( found_dev_addresses.size() > 0 ) {
 		temp_sensor_p = std::make_shared<MIC184>( found_dev_addresses.front() );
 	} else {
@@ -350,13 +360,16 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 		}
 	}
 
-	if ( temp_sensor_p && temp_sensor_p->devicePresent() ) {
-		std::cout << "temp sensor "<< temp_sensor_p->getTitle() << " identified at 0x" << std::hex << (int)temp_sensor_p->getAddress() << std::endl;
+	if ( temp_sensor_p && temp_sensor_p->probeDevicePresence() ) {
+		std::cout << "temp sensor "<< temp_sensor_p->getName() << " identified at 0x" << std::hex << (int)dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getAddress() << std::endl;
         if (verbose > 2) {
-            std::cout << "function is " << dynamic_cast<DeviceFunction<DeviceType::TEMP>*>( temp_sensor_p.get() )->typeString() << std::endl;
-            std::cout << "temperature is " << dynamic_cast<DeviceFunction<DeviceType::TEMP>*>( temp_sensor_p.get() )->getTemperature() << std::endl;
-            std::cout << "readout took " << std::dec << temp_sensor_p->getLastTimeInterval() << "ms" << std::endl;
+            std::cout << "function is " << temp_sensor_p->typeString() << std::endl;
+            std::cout << "temperature is " << temp_sensor_p->getTemperature() << std::endl;
+            std::cout << "readout took " << std::dec << dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getLastTimeInterval() << "ms" << std::endl;
         }
+        if ( dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getTitle() == "MIC184" ) {
+			dynamic_cast<MIC184*>( temp_sensor_p.get() )->setExternal( false );
+		}
     }
     
     // detect and instantiate the I2C ADC ADS1015/1115
@@ -372,7 +385,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         qWarning() << "ADS1115 device NOT present!";
 	}
 	
-    if ( ads1115_p && ads1115_p->devicePresent() ) {
+    if ( ads1115_p && ads1115_p->probeDevicePresence() ) {
 		ads1115_p->setPga(ADS1115::PGA4V); // set full scale range to 4 Volts
         ads1115_p->setRate( ADS1115::SPS860 ); // set sampling rate to the maximum of 860 samples per second
         ads1115_p->setAGC(false); // turn AGC off for all channels
@@ -412,50 +425,56 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     }
     
     // 4ch DAC MCP4728
-    dac = new MCP4728();
-    if (dac->devicePresent()) {
-        bool ident = dac->identify();
-		if ( ident ) qInfo() << "MCP4728 identified at 0x"<<hex<<dac->getAddress();
-		else qCritical() << "MCP4728 failed to identify at 0x"<<hex<<dac->getAddress();
-        if (verbose > 2) {
+	std::shared_ptr<MCP4728> mcp4728_p;
+	possible_addresses = { 0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67 };
+	found_dev_addresses = findI2cDeviceType<MCP4728>( possible_addresses );
+	if ( found_dev_addresses.size() > 0 ) {
+		mcp4728_p = std::make_shared<MCP4728>( found_dev_addresses.front() );
+		dac_p = std::static_pointer_cast<DeviceFunction<DeviceType::DAC>>( mcp4728_p );
+		std::cout << "MCP4728 identified at 0x" << std::hex << (int)mcp4728_p->getAddress() << std::endl;
+	} else {
+        qFatal("MCP4728 device NOT present!");
+        // this error is critical, since the whole concept of counting muons is based on
+        // the function of the threshold discriminator
+        // we should quit here returning an error code (?)
+	}
+
+    if ( mcp4728_p && mcp4728_p->probeDevicePresence() ) {
+        //mcp4728_p->setVRef( MCP4728::VREF_VDD );
+		if (verbose > 2) {
             qInfo() << "MCP4728 device is present.";
             qDebug() << "DAC registers / output voltages:";
             for (int i = 0; i < 4; i++) {
                 MCP4728::DacChannel dacChannel;
                 MCP4728::DacChannel eepromChannel;
                 eepromChannel.eeprom = true;
-                dac->readChannel(i, dacChannel);
-                dac->readChannel(i, eepromChannel);
+                mcp4728_p->readChannel(i, dacChannel);
+                mcp4728_p->readChannel(i, eepromChannel);
                 qDebug() << "  ch" << i << ": " << dacChannel.value << " = " << MCP4728::code2voltage(dacChannel) << " V"
                                                                                                                      "  (stored: "
                          << eepromChannel.value << " = " << MCP4728::code2voltage(eepromChannel) << " V)";
             }
-            qDebug() << "readout took " << dac->getLastTimeInterval() << " ms";
+            qDebug() << "readout took " << mcp4728_p->getLastTimeInterval() << " ms";
         }
-    } else {
-        qCritical("MCP4728 device NOT present!");
-        // this error is critical, since the whole concept of counting muons is based on
-        // the function of the threshold discriminator
-        // we should quit here returning an error code (?)
     }
 
     for (int i = std::min(DAC_TH1, DAC_TH2); i <= std::max(DAC_TH1, DAC_TH2); i++) {
-        if (cfg.dacThresh[i] < 0. && dac->devicePresent()) {
+        if ( cfg.dacThresh[i] < 0. && mcp4728_p->probeDevicePresence() ) {
             MCP4728::DacChannel dacChannel;
             MCP4728::DacChannel eepromChannel;
             eepromChannel.eeprom = true;
-            dac->readChannel(i, dacChannel);
-            dac->readChannel(i, eepromChannel);
+            mcp4728_p->readChannel(i, dacChannel);
+            mcp4728_p->readChannel(i, eepromChannel);
             cfg.dacThresh[i] = MCP4728::code2voltage(dacChannel);
         }
     }
     dacThresh.push_back(cfg.dacThresh[0]);
     dacThresh.push_back(cfg.dacThresh[1]);
 
-    if (dac->devicePresent()) {
+    if ( mcp4728_p->probeDevicePresence() ) {
         MCP4728::DacChannel eeprom_value;
         eeprom_value.eeprom = true;
-        dac->readChannel(DAC_BIAS, eeprom_value);
+        mcp4728_p->readChannel(DAC_BIAS, eeprom_value);
         if (eeprom_value.value == 0) {
             setBiasVoltage(MuonPi::Config::Hardware::DAC::Voltage::bias);
             setDacThresh(0, MuonPi::Config::Hardware::DAC::Voltage::threshold[0]);
@@ -464,36 +483,46 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     }
 
     biasVoltage = cfg.biasVoltage;
-    if (biasVoltage < 0. && dac->devicePresent()) {
+    if (biasVoltage < 0. && mcp4728_p->probeDevicePresence()) {
         MCP4728::DacChannel dacChannel;
         MCP4728::DacChannel eepromChannel;
         eepromChannel.eeprom = true;
-        dac->readChannel(DAC_BIAS, dacChannel);
-        dac->readChannel(DAC_BIAS, eepromChannel);
+        mcp4728_p->readChannel(DAC_BIAS, dacChannel);
+        mcp4728_p->readChannel(DAC_BIAS, eepromChannel);
         biasVoltage = MCP4728::code2voltage(dacChannel);
     }
 
     // PCA9536 4 bit I/O I2C device used for selecting the UBX timing input
-    pca = new PCA9536();
-    if (pca->devicePresent()) {
-        if (verbose > 2) {
+	std::shared_ptr<PCA9536> pca9536_p;
+	possible_addresses = { 0x41 };
+	found_dev_addresses = findI2cDeviceType<PCA9536>( possible_addresses );
+	if ( found_dev_addresses.size() > 0 ) {
+		pca9536_p = std::make_shared<PCA9536>( found_dev_addresses.front() );
+		io_extender_p = std::static_pointer_cast<DeviceFunction<DeviceType::IO_EXTENDER>>( pca9536_p );
+		std::cout << "PCA9536 identified at 0x" << std::hex << (int)pca9536_p->getAddress() << std::endl;
+	} else {
+        qWarning() << "PCA9536 device NOT found!";
+	}
+	
+//	pca = new PCA9536();
+    if ( io_extender_p->probeDevicePresence() ) {
+        pca9536_p->identify();
+		if (verbose > 2) {
             qInfo() << "PCA9536 device is present." << endl;
-            qDebug() << " inputs: 0x" << hex << (int)pca->getInputState();
-            qDebug() << "readout took " << dec << pca->getLastTimeInterval() << " ms";
+            qDebug() << " inputs: 0x" << hex << (int)io_extender_p->getInputState();
+            qDebug() << "readout took " << dec << pca9536_p->getLastTimeInterval() << " ms";
         }
-        pca->setOutputPorts(0b00000111);
+        io_extender_p->setOutputPorts(0b00000111);
         setPcaChannel(cfg.pcaPortMask);
-    } else {
-        qWarning() << "PCA9536 device NOT present!";
     }
 
-    if (dac->devicePresent()) {
+    if ( mcp4728_p->probeDevicePresence() ) {
         if (dacThresh[0] > 0)
-            dac->setVoltage(DAC_TH1, dacThresh[0]);
+            dac_p->setVoltage(DAC_TH1, dacThresh[0]);
         if (dacThresh[1] > 0)
-            dac->setVoltage(DAC_TH2, dacThresh[1]);
+            dac_p->setVoltage(DAC_TH2, dacThresh[1]);
         if (biasVoltage > 0)
-            dac->setVoltage(DAC_BIAS, biasVoltage);
+            dac_p->setVoltage(DAC_BIAS, biasVoltage);
     }
 
     // removed initialization of ublox i2c interface since it doesn't work properly on RPi
@@ -562,7 +591,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
             else
                 std::cout << " missing" << endl;
         }
-        if ( temp_sensor_p ) temp_sensor_p.get()->getCapabilities();
+        if ( temp_sensor_p ) dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getCapabilities();
     }
 
     // for ublox gnss module
@@ -636,18 +665,6 @@ Daemon::~Daemon()
     snHup.clear();
     snTerm.clear();
     snInt.clear();
-    if (pca != nullptr) {
-        delete pca;
-        pca = nullptr;
-    }
-    if (dac != nullptr) {
-        delete dac;
-        dac = nullptr;
-    }
-    if (eep != nullptr) {
-        delete eep;
-        eep = nullptr;
-    }
     if (calib != nullptr) {
         delete calib;
         calib = nullptr;
@@ -1168,9 +1185,9 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         quint8 channel;
         *(tcpMessage.dStream) >> channel;
         MCP4728::DacChannel channelData;
-        if (!dac->devicePresent())
+        if ( !dac_p || !dac_p->probeDevicePresence() )
             return;
-        dac->readChannel(channel, channelData);
+        dynamic_cast<MCP4728*>( dac_p.get() )->readChannel(channel, channelData);
         float voltage = MCP4728::code2voltage(channelData);
         sendDacReadbackValue(channel, voltage);
     }
@@ -1701,9 +1718,9 @@ void Daemon::getTemperature()
         return;
     }
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_TEMPERATURE);
-    if (temp_sensor_p->getStatus() & i2cDevice::MODE_UNREACHABLE)
+    if ( dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getStatus() & i2cDevice::MODE_UNREACHABLE )
         return;
-    float value = dynamic_cast<DeviceFunction<DeviceType::TEMP>*>(temp_sensor_p.get())->getTemperature();
+    float value = temp_sensor_p->getTemperature();
     *(tcpMessage.dStream) << value;
     emit sendTcpMessage(tcpMessage);
 }
@@ -1726,7 +1743,7 @@ void Daemon::setEventTriggerSelection(GPIO_PIN signal)
 // ALL FUNCTIONS ABOUT SETTINGS FOR THE I2C-DEVICES (DAC, ADC, PCA...)
 void Daemon::setPcaChannel(uint8_t channel)
 {
-    if (!pca || !pca->devicePresent()) {
+    if (!io_extender_p || !io_extender_p->probeDevicePresence()) {
         return;
     }
     if (channel > ((HW_VERSION == 1) ? 3 : 7)) {
@@ -1737,7 +1754,7 @@ void Daemon::setPcaChannel(uint8_t channel)
         qInfo() << "changed pcaPortMask to " << channel;
     }
     pcaPortMask = channel;
-    pca->setOutputState(channel);
+    io_extender_p->setOutputState(channel);
     emit logParameter(LogParameter("ubxInputSwitch", "0x" + QString::number(pcaPortMask, 16), LogParameter::LOG_EVERY));
 }
 
@@ -1747,8 +1764,8 @@ void Daemon::setBiasVoltage(float voltage)
     if (verbose > 0) {
         qInfo() << "change biasVoltage to " << voltage;
     }
-    if (dac && dac->devicePresent()) {
-        dac->setVoltage(DAC_BIAS, voltage);
+    if ( dac_p && dac_p->probeDevicePresence() ) {
+        dac_p->setVoltage(DAC_BIAS, voltage);
         emit logParameter(LogParameter("biasDAC", QString::number(voltage) + " V", LogParameter::LOG_EVERY));
     }
     clearRates();
@@ -1776,8 +1793,8 @@ void Daemon::setDacThresh(uint8_t channel, float threshold)
         return;
     }
     if (channel == 2 || channel == 3) {
-        if (dac->devicePresent()) {
-            dac->setVoltage(channel, threshold);
+        if ( dac_p ) {
+            dac_p->setVoltage(channel, threshold);
         }
         return;
     }
@@ -1789,38 +1806,32 @@ void Daemon::setDacThresh(uint8_t channel, float threshold)
     }
     dacThresh[channel] = threshold;
     clearRates();
-    if (dac->devicePresent()) {
-        dac->setVoltage(channel, threshold);
-        emit logParameter(LogParameter("thresh" + QString::number(channel + 1), QString::number(dacThresh[channel]) + " V", LogParameter::LOG_EVERY));
+    if ( dac_p && dac_p->setVoltage(channel, threshold) ) {
+		emit logParameter(LogParameter("thresh" + QString::number(channel + 1), QString::number(dacThresh[channel]) + " V", LogParameter::LOG_EVERY));
     }
 }
 
 void Daemon::saveDacValuesToEeprom()
 {
-    for (int i = 0; i < 4; i++) {
+    if ( !dac_p || !dac_p->probeDevicePresence() ) return;
+	for (int i = 0; i < 4; i++) {
         MCP4728::DacChannel dacChannel;
-        dac->readChannel(i, dacChannel);
+        dynamic_cast<MCP4728*>( dac_p.get() )->readChannel(i, dacChannel);
         dacChannel.eeprom = true;
-        dac->writeChannel(i, dacChannel);
+        dynamic_cast<MCP4728*>( dac_p.get() )->writeChannel(i, dacChannel);
     }
 }
 
 bool Daemon::readEeprom()
 {
-    if (eep == nullptr)
-        return false;
-    if (eep->devicePresent()) {
-        if (verbose > 2)
-            cout << "eep device is present." << endl;
-    } else {
-        cerr << "eeprom device NOT present!" << endl;
-        return false;
-    }
+	if ( !eep_p || !eep_p->probeDevicePresence() ) {
+		return false;
+	}
     uint16_t n = 256;
     uint8_t buf[256];
     for (int i = 0; i < n; i++)
         buf[i] = 0;
-    bool retval = (eep->readBytes(0, n, buf) == n);
+    bool retval = ( eep_p->readBytes(0, n, buf) == n);
     cout << "*** EEPROM content ***" << endl;
     for (int j = 0; j < 16; j++) {
         cout << hex << std::setfill('0') << std::setw(2) << j * 16 << ": ";
@@ -2300,8 +2311,8 @@ void Daemon::intSignalHandler(int)
 
 void Daemon::aquireMonitoringParameters()
 {
-    if ( temp_sensor_p && temp_sensor_p->devicePresent())
-        emit logParameter(LogParameter("temperature", QString::number(dynamic_cast<DeviceFunction<DeviceType::TEMP>*>(temp_sensor_p.get())->getTemperature()) + " degC", LogParameter::LOG_AVERAGE));
+    if ( temp_sensor_p && temp_sensor_p->probeDevicePresence())
+        emit logParameter(LogParameter("temperature", QString::number(temp_sensor_p->getTemperature()) + " degC", LogParameter::LOG_AVERAGE));
 
     double v1 = 0., v2 = 0.;
 	if ( adc_p && 
@@ -2377,13 +2388,13 @@ void Daemon::onLogParameterPolled()
     emit logParameter(LogParameter("polaritySwitch1", QString::number((int)polarity1), LogParameter::LOG_ON_CHANGE));
     emit logParameter(LogParameter("polaritySwitch2", QString::number((int)polarity2), LogParameter::LOG_ON_CHANGE));
 
-    if (dac && dac->devicePresent()) {
+    if ( dac_p && dac_p->probeDevicePresence() ) {
         emit logParameter(LogParameter("thresh1", QString::number(dacThresh[0]) + " V", LogParameter::LOG_ON_CHANGE));
         emit logParameter(LogParameter("thresh2", QString::number(dacThresh[1]) + " V", LogParameter::LOG_ON_CHANGE));
         emit logParameter(LogParameter("biasDAC", QString::number(biasVoltage) + " V", LogParameter::LOG_ON_CHANGE));
     }
 
-    if (pca && pca->devicePresent())
+    if ( io_extender_p && io_extender_p->probeDevicePresence() )
         emit logParameter(LogParameter("ubxInputSwitch", "0x" + QString::number(pcaPortMask, 16), LogParameter::LOG_ON_CHANGE));
     if (pigHandler != nullptr)
         emit logParameter(LogParameter("gpioTriggerSelection", "0x" + QString::number((int)pigHandler->samplingTriggerSignal, 16), LogParameter::LOG_ON_CHANGE));

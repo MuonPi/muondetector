@@ -32,33 +32,32 @@ public:
     MCP4728()
         : i2cDevice(0x60)
     {
-        fTitle = "MCP4728";
+        fTitle = fName = "MCP4728";
     }
     MCP4728(const char* busAddress, uint8_t slaveAddress)
         : i2cDevice(busAddress, slaveAddress)
     {
-        fTitle = "MCP4728";
+        fTitle = fName = "MCP4728";
     }
     MCP4728(uint8_t slaveAddress)
         : i2cDevice(slaveAddress)
     {
-        fTitle = "MCP4728";
+        fTitle = fName = "MCP4728";
     }
-    bool devicePresent();
-    bool setVoltage(uint8_t channel, float voltage, bool toEEPROM = false);
-    bool setValue(uint8_t channel, uint16_t value, CFG_GAIN gain = GAIN1, bool toEEPROM = false);
-    bool writeChannel(uint8_t channel, const DacChannel& channelData);
-    bool readChannel(uint8_t channel, DacChannel& channelData);
+    bool devicePresent() override;
+	bool setVoltage( unsigned int channel, float voltage ) override;
+	bool storeSettings() override;
+	bool writeChannel( uint8_t channel, const DacChannel& channelData );
+	bool readChannel( uint8_t channel, DacChannel& channelData );
 	bool setVRef( unsigned int channel, CFG_VREF vref_setting );
+	bool setVRef( CFG_VREF vref_setting );
 	
     static float code2voltage(const DacChannel& channelData);
 
 	bool identify() override;
-
-	void dumpRegisters();
+	bool probeDevicePresence() override { return devicePresent(); }
 
 private:
-    unsigned int fLastConvTime;
 	static constexpr float fVddRefVoltage { 3.3 }; ///< voltage at which the device is powered
 	enum COMMAND: uint8_t {
 		DAC_FAST_WRITE		= 	0b00000000,
@@ -73,8 +72,11 @@ private:
 	DacChannel fChannelSetting[4], fChannelSettingEep[4];
 	std::chrono::time_point<std::chrono::steady_clock> fLastRegisterUpdate { };
 	
+	bool setVoltage( uint8_t channel, float voltage, bool toEEPROM );
+	bool setValue( uint8_t channel, uint16_t value, CFG_GAIN gain = GAIN1, bool toEEPROM = false );
 	bool readRegisters();
 	void parseChannelData( uint8_t* buf );
+	void dumpRegisters();
 };
 
 #endif //!_MCP4728_H_
