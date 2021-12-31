@@ -93,7 +93,7 @@ protected:
 	static constexpr auto lsb_voltage( const CFG_PGA pga_setting ) -> float { return ( PGAGAINS[pga_setting]/MAX_ADC_VALUE ); }
 	void waitConversionFinished(bool& error);
 private:
-    static constexpr float PGAGAINS[6] { 6.144, 4.096, 2.048, 1.024, 0.512, 0.256 };
+    static constexpr float PGAGAINS[8] { 6.144, 4.096, 2.048, 1.024, 0.512, 0.256, 0.256, 0.256 };
 };
 
 #endif // !_ADS1115_H_
