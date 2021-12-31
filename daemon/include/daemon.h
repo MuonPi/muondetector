@@ -37,36 +37,6 @@ class Property;
 enum GPIO_PIN;
 
 
-struct RateScanInfo {
-    uint8_t origPcaMask = 0;
-    GPIO_PIN origEventTrigger = GPIO_PIN::UNDEFINED_PIN;
-    uint16_t lastEvtCounter = 0;
-    uint8_t thrChannel = 0;
-    float origThr = 3.3;
-    float thrIncrement = 0.1;
-    float minThr = 0.05;
-    float maxThr = 3.3;
-    float currentThr = 0.;
-    uint16_t nrLoops = 0;
-    uint16_t currentLoop = 0;
-};
-
-struct RateScan {
-    uint8_t origPcaMask = 0;
-    GPIO_PIN origEventTrigger = GPIO_PIN::UNDEFINED_PIN;
-    float origScanPar = 3.3;
-    double minScanPar = 0.;
-    double maxScanPar = 1.;
-    double currentScanPar = 0.;
-    double scanParIncrement = 0.;
-    uint32_t currentCounts = 0;
-    double currentTimeInterval = 0.;
-    double maxTimeInterval = 1.;
-    uint16_t nrLoops = 0;
-    uint16_t currentLoop = 0;
-    QMap<double, double> scanMap;
-};
-
 class Daemon : public QTcpServer {
     Q_OBJECT
 
@@ -186,7 +156,6 @@ private slots:
     void onRateBufferReminder();
     void updateOledDisplay();
     void aquireMonitoringParameters();
-    void doRateScanIteration(RateScanInfo* info);
     void onStatusLed1Event( int onTimeMs );
     void onStatusLed2Event( int onTimeMs );
 
@@ -224,7 +193,6 @@ private:
     void checkRescaleHisto(Histogram& hist, double newValue);
     void clearHisto(const QString& histoName);
     void setAdcSamplingMode(quint8 mode);
-    void startRateScan(uint8_t channel);
     void printTimestamp();
     void delay(int millisecondsWait);
 	void onAdcSampleReady(ADS1115::Sample sample);

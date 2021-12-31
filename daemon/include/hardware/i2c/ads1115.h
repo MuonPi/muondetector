@@ -3,8 +3,6 @@
 
 #include <thread>
 #include <chrono>
-//#include <queue>
-//#include <list>
 #include <mutex>
 #include <functional>
 
@@ -18,16 +16,6 @@ constexpr unsigned int READ_WAIT_DELAY_US_INIT { 10 };
 
 class ADS1115 : public i2cDevice, public DeviceFunction<DeviceType::ADC>, public static_device_base<ADS1115> {
 public:
-// 	struct Sample {
-// 		std::chrono::time_point<std::chrono::steady_clock> timestamp;
-// 		int16_t value;
-// 		float voltage;
-// 		float lsb_voltage;
-// 		uint8_t channel;
-// 		bool operator==(const Sample& other);
-// 		bool operator!=(const Sample& other);
-// 	};
-// 	static constexpr Sample InvalidSample { std::chrono::steady_clock::time_point::min(), 0, 0., 0., 0 };
 
 	typedef std::function<void(Sample)> SampleCallbackType;
 	
@@ -92,8 +80,6 @@ protected:
 	Sample fLastSample[4] { InvalidSample, InvalidSample, InvalidSample, InvalidSample };
 	
 	std::mutex fMutex;
-// 	std::function<void(Sample)> fConvReadyFn { };
-	bool fTriggered { false };
 	
     enum REG : uint8_t {
 		CONVERSION = 0x00,

@@ -393,7 +393,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 		adc_p->registerConversionReadyCallback( [this](ADS1115::Sample sample) { this->onAdcSampleReady(sample); } );
 
         if (verbose > 2) {
-            qInfo() << "ADS1115 device is present.";
             bool ok = ads1115_p->setLowThreshold(0b0000000000000000);
             ok = ok && ads1115_p->setHighThreshold(0b1000000000000000);
             if (ok)
@@ -1266,11 +1265,6 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
     }
     if (msgID == TCP_MSG_KEY::MSG_LOG_INFO) {
         sendLogInfo();
-    }
-    if (msgID == TCP_MSG_KEY::MSG_RATE_SCAN) {
-        quint8 channel = 0;
-        *(tcpMessage.dStream) >> channel;
-        startRateScan(channel);
     }
     if (msgID == TCP_MSG_KEY::MSG_GPIO_INHIBIT) {
         bool inhibit = true;
@@ -2493,46 +2487,12 @@ void Daemon::updateOledDisplay()
     oled->setCursor(0, 2);
     oled->print("*Cosmic Shower Det.*\n");
     oled->printf("Rates %4.1f %4.1f /s\n", getRateFromCounts(AND_RATE), getRateFromCounts(XOR_RATE));
-    if ( temp_sensor_p && temp_sensor_p->devicePresent() ) {
-		oled->printf("temp %4.2f %cC\n", dynamic_cast<DeviceFunction<DeviceType::TEMP>*>(temp_sensor_p.get())->getTemperature(), DEGREE_CHARCODE);
+    if ( temp_sensor_p && temp_sensor_p->probeDevicePresence() ) {
+		oled->printf("temp %4.2f %cC\n", temp_sensor_p->getTemperature(), DEGREE_CHARCODE);
 	}
     oled->printf("%d(%d) Sats ", nrVisibleSats().toInt(), nrSats().toInt(), DEGREE_CHARCODE);
     oled->printf("%s\n", FIX_TYPE_STRINGS[fixStatus().toInt()].toStdString().c_str());
     oled->display();
-}
-
-void Daemon::startRateScan(uint8_t channel)
-{
-    if (!dac->devicePresent() || channel > 1)
-        return;
-    // save all the settings which will be altered during the scan
-}
-
-void Daemon::doRateScanIteration(RateScanInfo* info)
-{
-    uint currCounter = propertyMap["events"]().toUInt();
-    uint diffCount = currCounter - info->lastEvtCounter;
-    info->lastEvtCounter = static_cast<quint16>(currCounter);
-
-    float thr = info->currentThr + info->thrIncrement;
-    double rate = diffCount * 1000.0 / MuonPi::Config::Hardware::RateScan::interval;
-    qDebug() << info->currentThr << " " << rate << " Hz";
-    if (thr <= info->maxThr) {
-        // initiate next scan step
-        dac->setVoltage(info->thrChannel, thr);
-        info->currentThr = thr;
-        QTimer::singleShot(MuonPi::Config::Hardware::RateScan::interval, [this, info]() {
-            this->doRateScanIteration(info);
-        });
-    } else {
-        // scan is done, restore the original settings now
-        setDacThresh(0, dacThresh[0]);
-        setDacThresh(1, dacThresh[1]);
-        setPcaChannel(info->origPcaMask);
-        setEventTriggerSelection(info->origEventTrigger);
-        pigHandler->setInhibited(false);
-        delete info;
-    }
 }
 
 void Daemon::onStatusLed1Event( int onTimeMs )

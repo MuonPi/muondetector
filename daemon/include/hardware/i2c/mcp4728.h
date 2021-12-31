@@ -24,7 +24,7 @@ public:
     struct DacChannel {
         uint8_t pd = 0x00;
         CFG_GAIN gain = GAIN1;
-        CFG_VREF vref = VREF_VDD;
+        CFG_VREF vref = VREF_2V;
         bool eeprom = false;
         uint16_t value = 0;
     };

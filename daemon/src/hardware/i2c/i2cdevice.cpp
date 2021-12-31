@@ -104,7 +104,7 @@ void i2cDevice::getCapabilities()
 
 bool i2cDevice::devicePresent()
 {
-    uint8_t dummy;
+    uint8_t dummy { 0 };
     return (read(&dummy, 1) == 1);
 }
 

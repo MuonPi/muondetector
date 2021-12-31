@@ -81,8 +81,6 @@ bool ADS1115::setContinuousSampling( bool cont_sampling )
 
 bool ADS1115::writeConfig( bool startNewConversion )
 {
-//	if ( fThreadRunning && fTriggered ) return false;
-
 	uint16_t conf_reg { 0 };
 	
 	// read in the current contents of config reg only if conv_mode is unknown
@@ -114,12 +112,7 @@ bool ADS1115::writeConfig( bool startNewConversion )
     conf_reg |= (fRate & 0x07) << 5;
 	
 	if ( !writeWord(static_cast<uint8_t>(REG::CONFIG), conf_reg) ) return false;
-	if ( fConvMode == CONV_MODE::SINGLE && startNewConversion ) {
-		fTriggered = true;
-	}
-	//fMutex.lock();
 	fCurrentChannel = fSelectedChannel;
-	//fMutex.unlock();
 	return true;
 }
 
@@ -129,7 +122,6 @@ void ADS1115::waitConversionFinished(bool& error) {
     int nloops = 0;
     while ((conf_reg & 0x8000) == 0 && nloops * fReadWaitDelay / 1000 < 1000) // readBuf[0] contains 8 MSBs of config register, AND with 10000000 to select bit 15
     {
-        //usleep(fReadWaitDelay);
 		std::this_thread::sleep_for( std::chrono::microseconds( fReadWaitDelay) );
         if ( !readWord(static_cast<uint8_t>(REG::CONFIG), &conf_reg) ) 
 		{ 
@@ -225,7 +217,7 @@ ADS1115::Sample ADS1115::getSample( unsigned int channel )
 bool ADS1115::triggerConversion( unsigned int channel )
 {
 	// triggering a conversion makes only sense in single shot mode
-	if ( fConvMode == CONV_MODE::SINGLE /* && !fTriggered */ ) {
+	if ( fConvMode == CONV_MODE::SINGLE ) {
 		try {
 			std::thread sampler( &ADS1115::getSample, this, channel );
 			sampler.detach();

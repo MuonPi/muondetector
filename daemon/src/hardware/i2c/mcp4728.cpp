@@ -121,7 +121,7 @@ bool MCP4728::readChannel(uint8_t channel, DacChannel& channelData)
 float MCP4728::code2voltage(const DacChannel& channelData)
 {
     float vref = (channelData.vref == VREF_2V) ? 2.048 : fVddRefVoltage;
-    float voltage = vref * channelData.value / 4096;
+    float voltage = vref * channelData.value / 4096.;
     if (channelData.gain == GAIN2 && channelData.vref != VREF_VDD)
         voltage *= 2.;
     return voltage;
