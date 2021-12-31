@@ -1,16 +1,16 @@
 #ifndef _DEVICE_TYPES_H_
 #define _DEVICE_TYPES_H_
-//#include "hardware/i2c/i2cdevice.h"
+
 #include <map>
 #include <string>
 #include <chrono>
 #include <functional>
 
 enum class DeviceType {
-	ADC, DAC, IO_EXTENDER, TEMP, PRESSURE, HUMIDITY, EEPROM, BUS_SWITCH, RTC, TDC, DISPLAY, OTHER
+	ADC, DAC, IO_EXTENDER, TEMP, PRESSURE, HUMIDITY, EEPROM, BUS_SWITCH, RTC, TDC, DISPLAY, MAGNETIC_FIELD, GYRO, ACCELERATION, OTHER
 };
 
-const std::map<DeviceType, std::string> DeviceTypeStrings = { 
+const std::map<DeviceType, std::string> DeviceTypes = { 
 	{ DeviceType::ADC, "ADC"},
 	{ DeviceType::DAC, "DAC" },
 	{ DeviceType::IO_EXTENDER, "IO_EXTENDER" },
@@ -22,6 +22,9 @@ const std::map<DeviceType, std::string> DeviceTypeStrings = {
 	{ DeviceType::RTC, "RTC" },
 	{ DeviceType::TDC, "TDC" },
 	{ DeviceType::DISPLAY, "DISPLAY" },
+	{ DeviceType::MAGNETIC_FIELD, "MAGNETIC_FIELD" },
+	{ DeviceType::GYRO, "GYRO" },
+	{ DeviceType::ACCELERATION, "ACCELERATION" },
 	{ DeviceType::OTHER, "OTHER" }
 };
 
@@ -30,11 +33,22 @@ template <DeviceType T = DeviceType::OTHER>
 class DeviceFunctionBase {
 public:
 	DeviceType type { T };
+	const std::string& getName() { return fName; }
+	void setName( const std::string& name ) { fName = name; }
 	static const std::string typeString() {
-		auto it = DeviceTypeStrings.find( T );
-		if ( it != DeviceTypeStrings.end() ) return it->second;
+		auto it = DeviceTypes.find( T );
+		if ( it != DeviceTypes.end() ) return it->second;
 		return "UNKNOWN";
 	}
+	/** @brief probe the presence of the device
+	 * This method provides a functionality to find out wether the given device is responsive. 
+	 * @return Device was responding (true = success)
+	 * @note The probing should be non-invasive, i.e. most devices will not change settings when a read access is performed.
+	 * This method must be implemented in the derived classes.
+	 * */
+	virtual bool probeDevicePresence() = 0;
+protected:
+	std::string fName { DeviceTypes.at(T)+"_DEVICE" };
 };
 
 /// abstract empty general template class for device functions
@@ -61,7 +75,7 @@ protected:
 };
 
 /** specialization for ADCs
- the specialization has getVoltage() and getSample methods, which must be implemented in the derived class
+ the specialization has getVoltage(), getSample() and triggerConversion() methods, which must be implemented in the derived class
 */
 template <>
 class DeviceFunction<DeviceType::ADC> : public DeviceFunctionBase<DeviceType::ADC> {
@@ -85,6 +99,42 @@ public:
 protected:
 	std::function<void(Sample)> fConvReadyFn { };
 	double fLastConvTime { 0. };
+};
+
+/** specialization for DACs
+ the specialization has a setVoltage() method, which must be implemented in the derived class
+*/
+template <>
+class DeviceFunction<DeviceType::DAC> : public DeviceFunctionBase<DeviceType::DAC> {
+public:
+	virtual bool setVoltage( unsigned int channel, float voltage ) = 0;
+	virtual bool storeSettings() = 0;
+	double getLastConvTime() const { return fLastConvTime; }
+protected:
+	double fLastConvTime { 0. };
+};
+
+/** specialization for EEPROMs
+ the specialization has readBytes() and writeBytes methods, which must be implemented in the derived class
+*/
+template <>
+class DeviceFunction<DeviceType::EEPROM> : public DeviceFunctionBase<DeviceType::EEPROM> {
+public:
+	virtual int16_t readBytes(uint8_t regAddr, uint16_t length, uint8_t* data) = 0;
+	virtual bool writeBytes(uint8_t addr, uint16_t length, uint8_t* data) = 0;
+protected:
+};
+
+/** specialization for I/O extenders
+ the specialization has setOutputPorts(), setOutputState and getInputState methods, which must be implemented in the derived class
+*/
+template <>
+class DeviceFunction<DeviceType::IO_EXTENDER> : public DeviceFunctionBase<DeviceType::IO_EXTENDER> {
+public:
+	virtual bool setOutputPorts(uint8_t portMask) = 0;
+	virtual bool setOutputState(uint8_t portMask) = 0;
+	virtual uint8_t getInputState() = 0;
+protected:
 };
 
 #endif // !_DEVICE_TYPES_H_
