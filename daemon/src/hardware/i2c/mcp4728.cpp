@@ -10,20 +10,35 @@
 */
 constexpr auto DataValidityTimeout { std::chrono::milliseconds( 100 ) };
 
+bool MCP4728::setVoltage(unsigned int channel, float voltage)
+{
+	if ( voltage < 0 || channel > 3 ) {
+		return false;
+	}
+	return setVoltage( channel, voltage, false );
+}
+
 bool MCP4728::setVoltage(uint8_t channel, float voltage, bool toEEPROM)
 {
-    if (voltage < 0) {
+    if ( voltage < 0 || channel > 3 ) {
         return false;
     }
     CFG_GAIN gain = GAIN1;
-    // Vout = (2.048V * Dn) / 4096 * Gx <= VDD
-    unsigned int value = std::lround( voltage * 2000 );
-    if (value > 0xfff) {
-        value = value >> 1;
-        gain = GAIN2;
-    }
-    if (value > 0xfff) {
-        // error message
+    // Vref=internal: Vout = (2.048V * Dn) / 4096 * Gx
+    // Vref=Vdd: Vout = (Vdd * Dn) / 4096
+    uint16_t value { 0x0000 };
+	if ( fChannelSetting[channel].vref == VREF_2V ) {
+		value = std::lround( voltage * 2000 );
+		if ( value > 0xfff ) {
+			value = value >> 1;
+			gain = GAIN2;
+		}
+	} else {
+		value = std::lround( voltage * 4096 / fVddRefVoltage );
+	}
+
+	if (value > 0xfff) {
+        // error: desired voltage is out of range
         return false;
     }
     return setValue(channel, value, gain, toEEPROM);
@@ -151,8 +166,51 @@ bool MCP4728::identify() {
 
 bool MCP4728::setVRef( unsigned int channel, CFG_VREF vref_setting )
 {
-	return false;
+	startTimer();
+	channel = channel & 0x03;
+	uint8_t databyte { 0 };
+	databyte = COMMAND::VREF_WRITE >> 1;
+	for ( unsigned int ch = 0; ch < 4; ch++ ) {
+		if ( ch == channel ) {
+			databyte |= vref_setting;
+		} else {
+			databyte |= fChannelSetting[ch].vref;
+		}
+		databyte = (databyte << 1);
+	}
+	
+    if ( write( &databyte, 1 ) != 1 ) {
+        // somehow did not write exact same amount of bytes as it should
+        return false;
+    }
+    stopTimer();
+    fLastConvTime = fLastTimeInterval;
+	
+	fChannelSetting[channel].vref = vref_setting;
+    return true;
 }
+
+bool MCP4728::setVRef( CFG_VREF vref_setting )
+{
+	startTimer();
+	uint8_t databyte { 0 };
+	databyte = COMMAND::VREF_WRITE >> 1;
+	for ( unsigned int ch = 0; ch < 4; ch++ ) {
+		databyte |= vref_setting;
+		databyte = (databyte << 1);
+	}
+	
+    if ( write( &databyte, 1 ) != 1 ) {
+        // somehow did not write exact same amount of bytes as it should
+        return false;
+    }
+    stopTimer();
+    fLastConvTime = fLastTimeInterval;
+	
+	fChannelSetting[0].vref = fChannelSetting[1].vref = fChannelSetting[2].vref = fChannelSetting[3].vref = vref_setting;
+    return true;
+}
+
 
 void MCP4728::parseChannelData( uint8_t* buf )
 {
