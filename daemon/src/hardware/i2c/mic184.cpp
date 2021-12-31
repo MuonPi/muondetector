@@ -84,8 +84,8 @@ bool MIC184::identify()
 		// there was an error
 		return false;
 	}
-	// datasheet: 3 MSBs of conf register should be all zero when device is in init state
-	if ( ( conf_reg_save >> 5 ) != 0 ) return false;
+	// datasheet: the interrupt mask bit in conf register should be zero when device is in init state
+	if ( ( conf_reg_save & 0b01000000 ) != 0 ) return false;
 	
 	// read temp register
 	if ( !readWord( static_cast<uint8_t>(REG::TEMP), &dataword ) ) {
