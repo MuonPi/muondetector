@@ -33,7 +33,7 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget* parent)
         ui->timingSelectionComboBox->addItem(item);
     }
     connect(ui->adcTraceGroupBox, &QGroupBox::clicked, this, [this](bool checked) {
-        emit adcModeChanged((checked) ? ADC_MODE_TRACE : ADC_MODE_PEAK);
+        emit adcModeChanged((checked) ? ADC_SAMPLING_MODE::TRACE : ADC_SAMPLING_MODE::PEAK);
         ui->adcTracePlot->setEnabled(checked);
     });
     connect(ui->preamp1EnCheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::preamp1EnableChanged);
@@ -52,7 +52,7 @@ void ParameterMonitorForm::on_timingSelectionComboBox_currentIndexChanged(int in
 void ParameterMonitorForm::on_adcTriggerSelectionComboBox_currentIndexChanged(int index)
 {
     for (auto signalIt = GPIO_SIGNAL_MAP.begin(); signalIt != GPIO_SIGNAL_MAP.end(); ++signalIt) {
-        const GPIO_PIN signalId = signalIt.key();
+        const GPIO_SIGNAL signalId = signalIt.key();
         if (GPIO_SIGNAL_MAP[signalId].name == ui->adcTriggerSelectionComboBox->itemText(index)) {
             emit triggerSelectionChanged(signalId);
             return;
@@ -163,7 +163,7 @@ void ParameterMonitorForm::onPreampSwitchReceived(uint8_t channel, bool state)
         ui->preamp2EnCheckBox->setChecked(state);
 }
 
-void ParameterMonitorForm::onTriggerSelectionReceived(GPIO_PIN signal)
+void ParameterMonitorForm::onTriggerSelectionReceived(GPIO_SIGNAL signal)
 {
     int i = 0;
     while (i < ui->adcTriggerSelectionComboBox->count()) {

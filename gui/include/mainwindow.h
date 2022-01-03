@@ -24,7 +24,7 @@ struct GnssMonHwStruct;
 struct GnssMonHw2Struct;
 struct LogInfoStruct;
 struct UbxTimeMarkStruct;
-
+enum class ADC_SAMPLING_MODE;
 enum class TCP_MSG_KEY : quint16;
 
 namespace Ui {
@@ -73,7 +73,7 @@ signals:
     void ubxUptimeReceived(quint32 val);
     void gpsTP5Received(const UbxTimePulseStruct& tp);
     void histogramReceived(const Histogram& h);
-    void triggerSelectionReceived(GPIO_PIN signal);
+    void triggerSelectionReceived(GPIO_SIGNAL signal);
     void timepulseReceived();
     void adcModeReceived(quint8 mode);
     void logInfoReceived(const LogInfoStruct& lis);
@@ -85,14 +85,14 @@ signals:
 
 public slots:
     void receivedTcpMessage(TcpMessage tcpMessage);
-    void receivedGpioRisingEdge(GPIO_PIN pin);
+    void receivedGpioRisingEdge(GPIO_SIGNAL pin);
     void sendRequestUbxMsgRates();
     void sendSetUbxMsgRateChanges(QMap<uint16_t, int> changes);
     void onSendUbxReset();
     void makeConnection(QString ipAddress, quint16 port);
-    void onTriggerSelectionChanged(GPIO_PIN signal);
+    void onTriggerSelectionChanged(GPIO_SIGNAL signal);
     void onHistogramCleared(QString histogramName);
-    void onAdcModeChanged(quint8 mode);
+    void onAdcModeChanged(ADC_SAMPLING_MODE mode);
     void onRateScanStart(uint8_t ch);
     void gpioInhibit(bool inhibit);
     void mqttInhibit(bool inhibit);

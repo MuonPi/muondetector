@@ -7,11 +7,39 @@
 #include <sys/time.h> // for gettimeofday()
 #include <unistd.h>
 #include <vector>
+#include <mutex>
 
 #ifndef _I2CDEVICE_H_
 #define _I2CDEVICE_H_
 
 #define DEFAULT_DEBUG_LEVEL 0
+
+// base class fragment static_device_base which implemets static functions available to all derived classes
+// by the Curiously Recursive Template Pattern (CRTP) mechanism
+template<class T>
+struct static_device_base
+{
+	friend class i2cDevice;
+	static bool identifyDevice(uint8_t addr) {
+		auto it = T::getGlobalDeviceList().begin();
+		bool found { false };
+		while ( !found && it != T::getGlobalDeviceList().end() ) {
+			if ( (*it)->getAddress() == addr) { 
+				found = true;
+				break;
+			}
+			it++;
+		}
+		if ( found ) {
+			T dummyDevice( 0x00 );
+			if ( (*it)->getTitle() == dummyDevice.getTitle() ) return true;
+			return false;
+		}
+		T device(addr);
+		return device.identify();
+	}
+};
+
 
 //We define a class named i2cDevices to outsource the hardware dependent program parts. We want to
 //access components of integrated curcuits, like the ads1115 or other subdevices via i2c-bus.
@@ -47,13 +75,7 @@ public:
     static std::vector<i2cDevice*>& getGlobalDeviceList() { return fGlobalDeviceList; }
     virtual bool devicePresent();
     uint8_t getStatus() const { return fMode; }
-    void lock(bool locked = true)
-    {
-        if (locked)
-            fMode |= MODE_LOCKED;
-        else
-            fMode &= ~MODE_LOCKED;
-    }
+    void lock(bool locked = true);
 
     double getLastTimeInterval() const { return fLastTimeInterval; }
 
@@ -103,24 +125,31 @@ public:
     bool writeBytes(uint8_t regAddr, uint16_t length, uint8_t* data);
     bool writeWords(uint8_t regAddr, uint16_t length, uint16_t* data);
     bool writeWord(uint8_t regAddr, uint16_t data);
-
+	int16_t readWords(uint8_t regAddr, uint16_t length, uint16_t* data);
+	int16_t readWords(uint16_t length, uint16_t* data);
+	bool readWord(uint8_t regAddr, uint16_t* data);
+	bool readWord(uint16_t* data);
+	
     void getCapabilities();
+	
+	virtual bool identify();
 
 protected:
-    int fHandle;
-    uint8_t fAddress;
+    int fHandle { 0 };
+    uint8_t fAddress { 0x00 };
     static unsigned int fNrDevices;
-    unsigned long int fNrBytesWritten;
-    unsigned long int fNrBytesRead;
+    unsigned long int fNrBytesWritten { 0 };
+    unsigned long int fNrBytesRead { 0 };
     static unsigned long int fGlobalNrBytesRead;
     static unsigned long int fGlobalNrBytesWritten;
-    double fLastTimeInterval; // the last time measurement's result is stored here
+    double fLastTimeInterval { 0. }; // the last time measurement's result is stored here
     struct timeval fT1, fT2;
-    int fDebugLevel;
+    int fDebugLevel { 0 };
     static std::vector<i2cDevice*> fGlobalDeviceList;
-    std::string fTitle = "I2C device";
-    uint8_t fMode = MODE_NONE;
-    unsigned int fIOErrors = 0;
+    std::string fTitle { "I2C device" };
+    uint8_t fMode { MODE_NONE };
+    unsigned int fIOErrors { 0 };
+	std::mutex fMutex;
 
     // fuctions for measuring time intervals
     void startTimer();

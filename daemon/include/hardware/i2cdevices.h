@@ -16,5 +16,12 @@
 #include "hardware/i2c/tca9546a.h"
 #include "hardware/i2c/ubloxi2c.h"
 #include "hardware/i2c/x9119.h"
+#include "hardware/i2c/mic184.h"
+
+//#include "hardware/i2c/i2cdevice.h"
+
+class i2cDevice;
+
+i2cDevice* instantiateI2cDevice( uint8_t addr );
 
 #endif // !_I2CDEVICES_H_

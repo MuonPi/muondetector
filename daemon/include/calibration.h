@@ -43,8 +43,8 @@ public:
     static const CalibStruct InvalidCalibStruct;
 
     ShowerDetectorCalib() { init(); }
-    ShowerDetectorCalib(EEPROM24AA02* eep)
-        : fEeprom(eep)
+    ShowerDetectorCalib( std::shared_ptr<EEPROM24AA02> eep )
+        : fEeprom( eep )
     {
         init();
     }
@@ -79,7 +79,8 @@ private:
     void buildCalibList();
 
     std::vector<CalibStruct> fCalibList;
-    EEPROM24AA02* fEeprom = nullptr;
+    std::shared_ptr<EEPROM24AA02> fEeprom { };
+	//EEPROM24AA02* fEeprom = nullptr;
     uint8_t fEepBuffer[256];
     bool fEepromValid = false;
     bool fValid = false;

@@ -18,13 +18,13 @@
 
 #include "utility/custom_io_operators.h"
 #include "histogram.h"
-#include "hardware/i2cdevices.h"
 #include "logengine.h"
 #include "logparameter.h"
 #include "mqtthandler.h"
 #include "pigpiodhandler.h"
 #include "tcpconnection.h"
 #include "hardware/spidevices.h"
+#include "hardware/device_types.h"
 
 // for sig handling:
 #include <signal.h>
@@ -33,104 +33,9 @@
 
 struct CalibStruct;
 struct UbxTimeMarkStruct;
-enum GPIO_PIN;
+class Property;
+enum GPIO_SIGNAL;
 
-class Property {
-public:
-    Property() = default;
-
-    template <typename T>
-    Property(const T& val)
-        : name("")
-        , unit("")
-    {
-        typeId = qMetaTypeId<T>();
-        if (typeId == QMetaType::UnknownType) {
-            typeId = qRegisterMetaType<T>();
-        }
-        value = QVariant(val);
-        updated = true;
-    }
-
-    template <typename T>
-    Property(const QString& a_name, const T& val, const QString& a_unit = "")
-        : name(a_name)
-        , unit(a_unit)
-    {
-        typeId = qMetaTypeId<T>();
-        if (typeId == QMetaType::UnknownType) {
-            typeId = qRegisterMetaType<T>();
-        }
-        value = QVariant(val);
-        updated = true;
-    }
-
-    Property(const Property& prop) = default;
-    Property& operator=(const Property& prop)
-    {
-        name = prop.name;
-        unit = prop.unit;
-        value = prop.value;
-        typeId = prop.typeId;
-        updated = prop.updated;
-        return *this;
-    }
-
-    Property& operator=(const QVariant& val)
-    {
-        value = val;
-        //lastUpdate = std::chrono::system_clock::now();
-        updated = true;
-        return *this;
-    }
-
-    const QVariant& operator()()
-    {
-        updated = false;
-        return value;
-    }
-
-    bool isUpdated() const { return updated; }
-    int type() const { return typeId; }
-
-    QString name = "";
-    QString unit = "";
-
-private:
-    QVariant value;
-    bool updated = false;
-    int typeId = 0;
-};
-
-struct RateScanInfo {
-    uint8_t origPcaMask = 0;
-    GPIO_PIN origEventTrigger = GPIO_PIN::UNDEFINED_PIN;
-    uint16_t lastEvtCounter = 0;
-    uint8_t thrChannel = 0;
-    float origThr = 3.3;
-    float thrIncrement = 0.1;
-    float minThr = 0.05;
-    float maxThr = 3.3;
-    float currentThr = 0.;
-    uint16_t nrLoops = 0;
-    uint16_t currentLoop = 0;
-};
-
-struct RateScan {
-    uint8_t origPcaMask = 0;
-    GPIO_PIN origEventTrigger = GPIO_PIN::UNDEFINED_PIN;
-    float origScanPar = 3.3;
-    double minScanPar = 0.;
-    double maxScanPar = 1.;
-    double currentScanPar = 0.;
-    double scanParIncrement = 0.;
-    uint32_t currentCounts = 0;
-    double currentTimeInterval = 0.;
-    double maxTimeInterval = 1.;
-    uint16_t nrLoops = 0;
-    uint16_t currentLoop = 0;
-    QMap<double, double> scanMap;
-};
 
 class Daemon : public QTcpServer {
     Q_OBJECT
@@ -148,7 +53,7 @@ public:
         bool dumpRaw;
         int baudrate { 9600 };
         bool configGnss { false };
-        unsigned int eventTrigger { EVT_XOR };
+        GPIO_SIGNAL eventTrigger { EVT_XOR };
         QString peerAddress { "" };
         quint16 peerPort { 0 };
         QString serverAddress { "" };
@@ -242,7 +147,7 @@ signals:
     void UBXSetCfgTP5(const UbxTimePulseStruct& tp);
     void UBXSetAopCfg(bool enable = true, uint16_t maxOrbErr = 0);
     void UBXSaveCfg(uint8_t devMask = QtSerialUblox::DEV_BBR | QtSerialUblox::DEV_FLASH);
-    void setSamplingTriggerSignal(GPIO_PIN signalName);
+    void setSamplingTriggerSignal(GPIO_SIGNAL signalName);
     void timeMarkIntervalCountUpdate(uint16_t newCounts, double lastInterval);
     void requestMqttConnectionStatus();
     void eventMessage(const QString& messageString);
@@ -251,13 +156,14 @@ private slots:
     void onRateBufferReminder();
     void updateOledDisplay();
     void aquireMonitoringParameters();
-    void doRateScanIteration(RateScanInfo* info);
+    void onStatusLed1Event( int onTimeMs );
+    void onStatusLed2Event( int onTimeMs );
 
 private:
     void incomingConnection(qintptr socketDescriptor) override;
     void setPcaChannel(uint8_t channel); // channel 0 to 3
         // 0: coincidence ; 1: xor ; 2: discr 1 ; 3: discr 2
-    void setEventTriggerSelection(GPIO_PIN signal);
+    void setEventTriggerSelection(GPIO_SIGNAL signal);
     void sendPcaChannel();
     void sendEventTriggerSelection();
     void setDacThresh(uint8_t channel, float threshold); // channel 0 or 1 ; threshold in volts
@@ -286,25 +192,26 @@ private:
     void rescaleHisto(Histogram& hist, double center);
     void checkRescaleHisto(Histogram& hist, double newValue);
     void clearHisto(const QString& histoName);
-    void setAdcSamplingMode(quint8 mode);
-    void startRateScan(uint8_t channel);
+    void setAdcSamplingMode(ADC_SAMPLING_MODE mode);
     void printTimestamp();
     void delay(int millisecondsWait);
+	void onAdcSampleReady(ADS1115::Sample sample);
 
     void rateCounterIntervalActualisation();
     qreal getRateFromCounts(quint8 which_rate);
     void clearRates();
 
-    MCP4728* dac = nullptr;
-    ADS1115* adc = nullptr;
-    PCA9536* pca = nullptr;
-    LM75* lm75 = nullptr;
-    EEPROM24AA02* eep = nullptr;
-    UbloxI2c* ubloxI2c = nullptr;
-    Adafruit_SSD1306* oled = nullptr;
-    float biasVoltage = 0.;
+	std::shared_ptr<DeviceFunction<DeviceType::TEMP>> temp_sensor_p;
+	std::shared_ptr<DeviceFunction<DeviceType::ADC>> adc_p;
+	std::shared_ptr<DeviceFunction<DeviceType::DAC>> dac_p;
+	std::shared_ptr<DeviceFunction<DeviceType::EEPROM>> eep_p;
+	std::shared_ptr<DeviceFunction<DeviceType::IO_EXTENDER>> io_extender_p;
+	std::shared_ptr<Adafruit_SSD1306> oled_p { };
+    std::shared_ptr<UbloxI2c> ublox_i2c_p { };
+
+	float biasVoltage = 0.;
     bool biasON = false;
-    GPIO_PIN eventTrigger;
+    GPIO_SIGNAL eventTrigger;
     bool gainSwitch = false;
     bool preampStatus[2];
     uint8_t pcaPortMask = 0;
@@ -362,7 +269,7 @@ private:
     Property nrSats, nrVisibleSats, fixStatus;
     QVector<QTcpSocket*> peerList;
     QList<float> adcSamplesBuffer;
-    uint8_t adcSamplingMode = ADC_MODE_PEAK;
+    ADC_SAMPLING_MODE adcSamplingMode = ADC_SAMPLING_MODE::PEAK;
     qint16 currentAdcSampleIndex = -1;
     QTimer samplingTimer;
     QTimer parameterMonitorTimer;

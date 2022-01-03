@@ -38,7 +38,7 @@ MainWindow::MainWindow(QWidget* parent)
     qRegisterMetaType<CalibStruct>("CalibStruct");
     qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
     qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
-    qRegisterMetaType<GPIO_PIN>("GPIO_PIN");
+    qRegisterMetaType<GPIO_SIGNAL>("GPIO_SIGNAL");
     qRegisterMetaType<GnssMonHwStruct>("GnssMonHwStruct");
     qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
     qRegisterMetaType<UbxTimeMarkStruct>("UbxTimeMarkStruct");
@@ -52,6 +52,7 @@ MainWindow::MainWindow(QWidget* parent)
     qRegisterMetaType<std::string>("std::string");
     qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
     qRegisterMetaType<timespec>("timespec");
+	qRegisterMetaType<ADC_SAMPLING_MODE>("ADC_SAMPLING_MODE");
 
     ui->setupUi(this);
     this->setWindowTitle(QString("muondetector-gui  " + QString::fromStdString(MuonPi::Version::software.string())));
@@ -284,7 +285,7 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port)
     tcpThread->start();
 }
 
-void MainWindow::onTriggerSelectionChanged(GPIO_PIN signal)
+void MainWindow::onTriggerSelectionChanged(GPIO_SIGNAL signal)
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_EVENTTRIGGER);
     *(tcpMessage.dStream) << signal;
@@ -367,7 +368,7 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
     if (msgID == TCP_MSG_KEY::MSG_GPIO_EVENT) {
         unsigned int gpioPin;
         *(tcpMessage.dStream) >> gpioPin;
-        receivedGpioRisingEdge((GPIO_PIN)gpioPin);
+        receivedGpioRisingEdge((GPIO_SIGNAL)gpioPin);
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_MSG_RATE) {
@@ -426,7 +427,7 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
     if (msgID == TCP_MSG_KEY::MSG_EVENTTRIGGER) {
         unsigned int signal;
         *(tcpMessage.dStream) >> signal;
-        emit triggerSelectionReceived((GPIO_PIN)signal);
+        emit triggerSelectionReceived((GPIO_SIGNAL)signal);
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_GPIO_RATE) {
@@ -803,10 +804,10 @@ void MainWindow::onHistogramCleared(QString histogramName)
     emit sendTcpMessage(tcpMessage);
 }
 
-void MainWindow::onAdcModeChanged(quint8 mode)
+void MainWindow::onAdcModeChanged(ADC_SAMPLING_MODE mode)
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_MODE);
-    *(tcpMessage.dStream) << mode;
+    *(tcpMessage.dStream) << static_cast<quint8>(mode);
     emit sendTcpMessage(tcpMessage);
 }
 
@@ -856,7 +857,7 @@ void MainWindow::sendRequestGpioRateBuffer()
     emit sendTcpMessage(andRateRequest);
 }
 
-void MainWindow::receivedGpioRisingEdge(GPIO_PIN pin)
+void MainWindow::receivedGpioRisingEdge(GPIO_SIGNAL pin)
 {
     if (pin == EVT_AND) {
         ui->ANDHit->setStyleSheet("QLabel {background-color: darkGreen;}");
