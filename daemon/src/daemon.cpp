@@ -1712,10 +1712,15 @@ void Daemon::getTemperature()
     if ( !temp_sensor_p ) {
         return;
     }
-    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_TEMPERATURE);
-    if ( dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getStatus() & i2cDevice::MODE_UNREACHABLE )
+    if ( dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getStatus() & i2cDevice::MODE_UNREACHABLE ) {
         return;
-    float value = temp_sensor_p->getTemperature();
+	}
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_TEMPERATURE);
+    if ( temp_sensor_p->getName() == "MIC184" && dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getAddress() < 0x4c ) {
+		// the attached temp sensor has a remote zone
+		if ( dynamic_cast<MIC184*>(temp_sensor_p.get())->isExternal() ) return;
+	}
+	float value = temp_sensor_p->getTemperature();
     *(tcpMessage.dStream) << value;
     emit sendTcpMessage(tcpMessage);
 }
@@ -2306,8 +2311,21 @@ void Daemon::intSignalHandler(int)
 
 void Daemon::aquireMonitoringParameters()
 {
-    if ( temp_sensor_p && temp_sensor_p->probeDevicePresence())
-        emit logParameter(LogParameter("temperature", QString::number(temp_sensor_p->getTemperature()) + " degC", LogParameter::LOG_AVERAGE));
+    if ( temp_sensor_p && temp_sensor_p->probeDevicePresence()) {
+	    if ( temp_sensor_p->getName() == "MIC184" && dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getAddress() < 0x4c ) {
+			// the attached temp sensor has a remote zone
+			// switch zones alternating
+			bool is_ext { dynamic_cast<MIC184*>(temp_sensor_p.get())->isExternal() };
+			if ( is_ext ) {
+				emit logParameter(LogParameter("sensor_temperature", QString::number(temp_sensor_p->getTemperature()) + " degC", LogParameter::LOG_AVERAGE));
+			} else {
+				emit logParameter(LogParameter("temperature", QString::number(temp_sensor_p->getTemperature()) + " degC", LogParameter::LOG_AVERAGE));
+			}
+			dynamic_cast<MIC184*>(temp_sensor_p.get())->setExternal( !is_ext );
+		} else {
+			emit logParameter(LogParameter("temperature", QString::number(temp_sensor_p->getTemperature()) + " degC", LogParameter::LOG_AVERAGE));
+		}
+	}
 
     double v1 = 0., v2 = 0.;
 	if ( adc_p && 
