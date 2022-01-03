@@ -186,6 +186,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
     qRegisterMetaType<UbxTimeMarkStruct>("UbxTimeMarkStruct");
     qRegisterMetaType<I2cDeviceEntry>("I2cDeviceEntry");
+	qRegisterMetaType<ADC_SAMPLING_MODE>("ADC_SAMPLING_MODE");
 
     // signal handling
     setup_unix_signal_handlers();
@@ -381,7 +382,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 		adc_p = std::static_pointer_cast<DeviceFunction<DeviceType::ADC>>( ads1115_p );
 		std::cout << "ADS1115 identified at 0x" << std::hex << (int)ads1115_p->getAddress() << std::endl;
 	} else {
-        adcSamplingMode = ADC_MODE_DISABLED;
+        adcSamplingMode = ADC_SAMPLING_MODE::DISABLED;
         qWarning() << "ADS1115 device NOT present!";
 	}
 	
@@ -400,7 +401,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         connect(&samplingTimer, &QTimer::timeout, this, &Daemon::sampleAdc0TraceEvent);
 
         // set up peak sampling mode
-        setAdcSamplingMode(ADC_MODE_PEAK);
+        setAdcSamplingMode(ADC_SAMPLING_MODE::PEAK);
 		
 		// set callback function for sample-ready events of the ADC
 		adc_p->registerConversionReadyCallback( [this](ADS1115::Sample sample) { this->onAdcSampleReady(sample); } );
@@ -1272,15 +1273,15 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
     }
     if (msgID == TCP_MSG_KEY::MSG_ADC_MODE_REQUEST) {
         TcpMessage answer(TCP_MSG_KEY::MSG_ADC_MODE);
-        *(answer.dStream) << (quint8)adcSamplingMode;
+        *(answer.dStream) << static_cast<quint8>(adcSamplingMode);
         emit sendTcpMessage(answer);
     }
     if (msgID == TCP_MSG_KEY::MSG_ADC_MODE) {
-        quint8 mode = 0;
+        quint8 mode { 0 };
         *(tcpMessage.dStream) >> mode;
-        setAdcSamplingMode(mode);
+		setAdcSamplingMode( static_cast<ADC_SAMPLING_MODE>(mode) );
         TcpMessage answer(TCP_MSG_KEY::MSG_ADC_MODE);
-        *(answer.dStream) << (quint8)adcSamplingMode;
+        *(answer.dStream) << static_cast<quint8>(adcSamplingMode);
         emit sendTcpMessage(answer);
     }
     if (msgID == TCP_MSG_KEY::MSG_LOG_INFO) {
@@ -1294,12 +1295,10 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
     }
 }
 
-void Daemon::setAdcSamplingMode(quint8 mode)
+void Daemon::setAdcSamplingMode(ADC_SAMPLING_MODE mode)
 {
-    if (mode > ADC_MODE_TRACE)
-        return;
     adcSamplingMode = mode;
-    if (mode == ADC_MODE_TRACE)
+    if (mode == ADC_SAMPLING_MODE::TRACE)
         samplingTimer.start();
     else
         samplingTimer.stop();
@@ -1654,7 +1653,7 @@ void Daemon::onAdcSampleReady(ADS1115::Sample sample) {
 		*(tcpMessage.dStream) << (quint8)channel << voltage;
 		emit sendTcpMessage(tcpMessage);
 	} else {
-		if (adcSamplingMode == ADC_MODE_TRACE ) {
+		if (adcSamplingMode == ADC_SAMPLING_MODE::TRACE ) {
 			adcSamplesBuffer.push_back(voltage);
 			if (adcSamplesBuffer.size() > MuonPi::Config::Hardware::ADC::buffer_size)
 			adcSamplesBuffer.pop_front();
@@ -1677,7 +1676,7 @@ void Daemon::onAdcSampleReady(ADS1115::Sample sample) {
 					currentAdcSampleIndex = -1;
 				}
 			}
-		} else if ( adcSamplingMode == ADC_MODE_PEAK ) {
+		} else if ( adcSamplingMode == ADC_SAMPLING_MODE::PEAK ) {
 			TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_SAMPLE);
 			*(tcpMessage.dStream) << (quint8)channel << voltage;
 			emit sendTcpMessage(tcpMessage);
@@ -1694,7 +1693,7 @@ void Daemon::onAdcSampleReady(ADS1115::Sample sample) {
 
 void Daemon::sampleAdcEvent(uint8_t channel)
 {
-	if ( adc_p == nullptr || adcSamplingMode == ADC_MODE_DISABLED) {
+	if ( adc_p == nullptr || adcSamplingMode == ADC_SAMPLING_MODE::DISABLED) {
 		return;
 	}
 	if ( std::dynamic_pointer_cast<ADS1115>(adc_p)->getStatus() & i2cDevice::MODE_UNREACHABLE ) {

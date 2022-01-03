@@ -192,7 +192,7 @@ private:
     void rescaleHisto(Histogram& hist, double center);
     void checkRescaleHisto(Histogram& hist, double newValue);
     void clearHisto(const QString& histoName);
-    void setAdcSamplingMode(quint8 mode);
+    void setAdcSamplingMode(ADC_SAMPLING_MODE mode);
     void printTimestamp();
     void delay(int millisecondsWait);
 	void onAdcSampleReady(ADS1115::Sample sample);
@@ -271,7 +271,7 @@ private:
     Property nrSats, nrVisibleSats, fixStatus;
     QVector<QTcpSocket*> peerList;
     QList<float> adcSamplesBuffer;
-    uint8_t adcSamplingMode = ADC_MODE_PEAK;
+    ADC_SAMPLING_MODE adcSamplingMode = ADC_SAMPLING_MODE::PEAK;
     qint16 currentAdcSampleIndex = -1;
     QTimer samplingTimer;
     QTimer parameterMonitorTimer;

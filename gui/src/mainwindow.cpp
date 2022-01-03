@@ -52,6 +52,7 @@ MainWindow::MainWindow(QWidget* parent)
     qRegisterMetaType<std::string>("std::string");
     qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
     qRegisterMetaType<timespec>("timespec");
+	qRegisterMetaType<ADC_SAMPLING_MODE>("ADC_SAMPLING_MODE");
 
     ui->setupUi(this);
     this->setWindowTitle(QString("muondetector-gui  " + QString::fromStdString(MuonPi::Version::software.string())));
@@ -803,10 +804,10 @@ void MainWindow::onHistogramCleared(QString histogramName)
     emit sendTcpMessage(tcpMessage);
 }
 
-void MainWindow::onAdcModeChanged(quint8 mode)
+void MainWindow::onAdcModeChanged(ADC_SAMPLING_MODE mode)
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_MODE);
-    *(tcpMessage.dStream) << mode;
+    *(tcpMessage.dStream) << static_cast<quint8>(mode);
     emit sendTcpMessage(tcpMessage);
 }
 

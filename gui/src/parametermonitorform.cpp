@@ -33,7 +33,7 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget* parent)
         ui->timingSelectionComboBox->addItem(item);
     }
     connect(ui->adcTraceGroupBox, &QGroupBox::clicked, this, [this](bool checked) {
-        emit adcModeChanged((checked) ? ADC_MODE_TRACE : ADC_MODE_PEAK);
+        emit adcModeChanged((checked) ? ADC_SAMPLING_MODE::TRACE : ADC_SAMPLING_MODE::PEAK);
         ui->adcTracePlot->setEnabled(checked);
     });
     connect(ui->preamp1EnCheckBox, &QCheckBox::clicked, this, &ParameterMonitorForm::preamp1EnableChanged);

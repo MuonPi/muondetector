@@ -24,7 +24,7 @@ struct GnssMonHwStruct;
 struct GnssMonHw2Struct;
 struct LogInfoStruct;
 struct UbxTimeMarkStruct;
-
+enum class ADC_SAMPLING_MODE;
 enum class TCP_MSG_KEY : quint16;
 
 namespace Ui {
@@ -92,7 +92,7 @@ public slots:
     void makeConnection(QString ipAddress, quint16 port);
     void onTriggerSelectionChanged(GPIO_PIN signal);
     void onHistogramCleared(QString histogramName);
-    void onAdcModeChanged(quint8 mode);
+    void onAdcModeChanged(ADC_SAMPLING_MODE mode);
     void onRateScanStart(uint8_t ch);
     void gpioInhibit(bool inhibit);
     void mqttInhibit(bool inhibit);

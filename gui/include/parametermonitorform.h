@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <gpio_pin_definitions.h>
+#include <muondetector_structs.h>
 
 struct CalibStruct;
 struct UbxTimeMarkStruct;
@@ -22,7 +23,7 @@ signals:
     void setDacVoltage(uint8_t ch, float val);
     void biasVoltageCalculated(float vbias);
     void biasCurrentCalculated(float ibias);
-    void adcModeChanged(quint8 mode);
+    void adcModeChanged(ADC_SAMPLING_MODE mode);
     void gpioInhibitChanged(bool inhibitState);
     void mqttInhibitChanged(bool inhibitState);
     void biasEnableChanged(bool state);
