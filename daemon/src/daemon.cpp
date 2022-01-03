@@ -529,43 +529,43 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     // removed initialization of ublox i2c interface since it doesn't work properly on RPi
     // the Ublox i2c relies on clock stretching, which RPi is not supporting
     // the ublox's i2c address is still occupied but locked, i.e. access is prohibited
-    ubloxI2c = new UbloxI2c(0x42);
-    ubloxI2c->lock();
-    if (ubloxI2c->devicePresent()) {
-        if (verbose > 2) {
-            qInfo() << "ublox I2C device interface is present.";
-            uint16_t bufcnt = 0;
-            bool ok = ubloxI2c->getTxBufCount(bufcnt);
-            if (ok)
-                qDebug() << "bytes in TX buf: " << bufcnt;
-        }
-    } else {
-    }
+	ublox_i2c_p = std::make_shared<UbloxI2c>( 0x42 );
+	ublox_i2c_p->lock();
+	if ( (verbose > 2) && ublox_i2c_p->devicePresent() ) {
+		qInfo() << "ublox I2C device interface is present.";
+		uint16_t bufcnt = 0;
+		bool ok = ublox_i2c_p->getTxBufCount(bufcnt);
+		if (ok) qDebug() << "bytes in TX buf: " << bufcnt;
+	}
 
     // check if also an Adafruit-SSD1306 compatible i2c OLED display is present
     // initialize and start loop for display of several state variables
-    oled = new Adafruit_SSD1306(0x3c);
-    if (oled->devicePresent()) {
+	oled_p = std::make_shared<Adafruit_SSD1306>( 0x3c );
+	if ( !oled_p->devicePresent() ) {
+		oled_p = std::make_shared<Adafruit_SSD1306>( 0x3d );
+	}
+    if ( oled_p->devicePresent() ) {
         if (verbose > -1) {
-            qInfo() << "I2C SSD1306-type OLED display found at address 0x3c";
+            qInfo() << "I2C SSD1306-type OLED display found at address 0x" << hex << oled_p->getAddress();
         }
-        oled->begin();
-        oled->clearDisplay();
+        oled_p->begin();
+        oled_p->clearDisplay();
 
         // text display tests
-        oled->setTextSize(1);
-        oled->setTextColor(Adafruit_SSD1306::WHITE);
-        oled->setCursor(0, 2);
-        oled->print("*Cosmic Shower Det.*\n");
-        oled->print("V");
-        oled->print(MuonPi::Version::software.string().c_str());
-        oled->print("\n");
-        oled->display();
-        usleep(500000L);
+        oled_p->setTextSize(1);
+        oled_p->setTextColor(Adafruit_SSD1306::WHITE);
+        oled_p->setCursor(0, 2);
+        oled_p->print("*Cosmic Shower Det.*\n");
+        oled_p->print("V");
+        oled_p->print(MuonPi::Version::software.string().c_str());
+        oled_p->print("\n");
+        oled_p->display();
+        usleep(50000L);
         connect(&oledUpdateTimer, SIGNAL(timeout()), this, SLOT(updateOledDisplay()));
 
         oledUpdateTimer.start(MuonPi::Config::Hardware::OLED::update_interval);
     } else {
+		oled_p.reset();
     }
 
     // for pigpio signals:
@@ -669,14 +669,6 @@ Daemon::~Daemon()
     if (calib != nullptr) {
         delete calib;
         calib = nullptr;
-    }
-    if (ubloxI2c != nullptr) {
-        delete ubloxI2c;
-        ubloxI2c = nullptr;
-    }
-    if (oled != nullptr) {
-        delete oled;
-        oled = nullptr;
     }
     pigHandler.clear();
     unsigned long timeout = 2000;
@@ -2495,18 +2487,17 @@ void Daemon::onUBXReceivedTimeTM2(const UbxTimeMarkStruct& tm)
 
 void Daemon::updateOledDisplay()
 {
-    if (!oled->devicePresent())
-        return;
-    oled->clearDisplay();
-    oled->setCursor(0, 2);
-    oled->print("*Cosmic Shower Det.*\n");
-    oled->printf("Rates %4.1f %4.1f /s\n", getRateFromCounts(AND_RATE), getRateFromCounts(XOR_RATE));
+    if ( !oled_p || !oled_p->devicePresent() ) return;
+    oled_p->clearDisplay();
+    oled_p->setCursor(0, 2);
+    oled_p->print("*Cosmic Shower Det.*\n");
+    oled_p->printf("Rates %4.1f %4.1f /s\n", getRateFromCounts(AND_RATE), getRateFromCounts(XOR_RATE));
     if ( temp_sensor_p && temp_sensor_p->probeDevicePresence() ) {
-		oled->printf("temp %4.2f %cC\n", temp_sensor_p->getTemperature(), DEGREE_CHARCODE);
+		oled_p->printf("temp %4.2f %cC\n", temp_sensor_p->getTemperature(), DEGREE_CHARCODE);
 	}
-    oled->printf("%d(%d) Sats ", nrVisibleSats().toInt(), nrSats().toInt(), DEGREE_CHARCODE);
-    oled->printf("%s\n", FIX_TYPE_STRINGS[fixStatus().toInt()].toStdString().c_str());
-    oled->display();
+    oled_p->printf("%d(%d) Sats ", nrVisibleSats().toInt(), nrSats().toInt(), DEGREE_CHARCODE);
+    oled_p->printf("%s\n", FIX_TYPE_STRINGS[fixStatus().toInt()].toStdString().c_str());
+    oled_p->display();
 }
 
 void Daemon::onStatusLed1Event( int onTimeMs )

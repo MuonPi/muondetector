@@ -201,16 +201,14 @@ private:
     qreal getRateFromCounts(quint8 which_rate);
     void clearRates();
 
-    UbloxI2c* ubloxI2c = nullptr;
-    Adafruit_SSD1306* oled = nullptr;
-    
-	std::shared_ptr<i2cDevice> eeprom_p, ublox_i2c_p, oled_p;
 	std::shared_ptr<DeviceFunction<DeviceType::TEMP>> temp_sensor_p;
 	std::shared_ptr<DeviceFunction<DeviceType::ADC>> adc_p;
 	std::shared_ptr<DeviceFunction<DeviceType::DAC>> dac_p;
 	std::shared_ptr<DeviceFunction<DeviceType::EEPROM>> eep_p;
 	std::shared_ptr<DeviceFunction<DeviceType::IO_EXTENDER>> io_extender_p;
-	
+	std::shared_ptr<Adafruit_SSD1306> oled_p { };
+    std::shared_ptr<UbloxI2c> ublox_i2c_p { };
+
 	float biasVoltage = 0.;
     bool biasON = false;
     GPIO_PIN eventTrigger;
