@@ -164,5 +164,7 @@ bool MIC184::setExternal( bool enable_external )
 	if ( !readByte( static_cast<uint8_t>(REG::CONF), &conf_reg ) ) return false;
 	if ( (conf_reg & 0x20) != (conf_reg_save & 0x20) ) return false;
 	fExternal = enable_external;
+	// wait one cycle until a conversion in the new zone is ready
+	std::this_thread::sleep_for( std::chrono::milliseconds( 160 ) );
 	return true;
 }
