@@ -34,7 +34,7 @@ protected:
 	
 struct IoConfiguration {
 	TIMING_MUX_SELECTION timing_input { TIMING_MUX_SELECTION::UNDEFINED };
-	GPIO_PIN event_trigger { GPIO_PIN::UNDEFINED_PIN };
+	GPIO_SIGNAL event_trigger { GPIO_SIGNAL::UNDEFINED_PIN };
 	GeneralEvent led1_event;
 	GeneralEvent led2_event;
 };	

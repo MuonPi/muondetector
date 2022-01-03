@@ -34,7 +34,7 @@
 struct CalibStruct;
 struct UbxTimeMarkStruct;
 class Property;
-enum GPIO_PIN;
+enum GPIO_SIGNAL;
 
 
 class Daemon : public QTcpServer {
@@ -53,7 +53,7 @@ public:
         bool dumpRaw;
         int baudrate { 9600 };
         bool configGnss { false };
-        GPIO_PIN eventTrigger { EVT_XOR };
+        GPIO_SIGNAL eventTrigger { EVT_XOR };
         QString peerAddress { "" };
         quint16 peerPort { 0 };
         QString serverAddress { "" };
@@ -147,7 +147,7 @@ signals:
     void UBXSetCfgTP5(const UbxTimePulseStruct& tp);
     void UBXSetAopCfg(bool enable = true, uint16_t maxOrbErr = 0);
     void UBXSaveCfg(uint8_t devMask = QtSerialUblox::DEV_BBR | QtSerialUblox::DEV_FLASH);
-    void setSamplingTriggerSignal(GPIO_PIN signalName);
+    void setSamplingTriggerSignal(GPIO_SIGNAL signalName);
     void timeMarkIntervalCountUpdate(uint16_t newCounts, double lastInterval);
     void requestMqttConnectionStatus();
     void eventMessage(const QString& messageString);
@@ -163,7 +163,7 @@ private:
     void incomingConnection(qintptr socketDescriptor) override;
     void setPcaChannel(uint8_t channel); // channel 0 to 3
         // 0: coincidence ; 1: xor ; 2: discr 1 ; 3: discr 2
-    void setEventTriggerSelection(GPIO_PIN signal);
+    void setEventTriggerSelection(GPIO_SIGNAL signal);
     void sendPcaChannel();
     void sendEventTriggerSelection();
     void setDacThresh(uint8_t channel, float threshold); // channel 0 or 1 ; threshold in volts
@@ -211,7 +211,7 @@ private:
 
 	float biasVoltage = 0.;
     bool biasON = false;
-    GPIO_PIN eventTrigger;
+    GPIO_SIGNAL eventTrigger;
     bool gainSwitch = false;
     bool preampStatus[2];
     uint8_t pcaPortMask = 0;

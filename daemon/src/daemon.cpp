@@ -181,7 +181,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
     qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
     qRegisterMetaType<timespec>("timespec");
-    qRegisterMetaType<GPIO_PIN>("GPIO_PIN");
+    qRegisterMetaType<GPIO_SIGNAL>("GPIO_SIGNAL");
     qRegisterMetaType<GnssMonHwStruct>("GnssMonHwStruct");
     qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
     qRegisterMetaType<UbxTimeMarkStruct>("UbxTimeMarkStruct");
@@ -290,7 +290,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         cout << "GPIO pin mapping:" << endl;
 
         for (auto signalIt = GPIO_PINMAP.begin(); signalIt != GPIO_PINMAP.end(); signalIt++) {
-            const GPIO_PIN signalId = signalIt->first;
+            const GPIO_SIGNAL signalId = signalIt->first;
             cout << GPIO_SIGNAL_MAP[signalId].name << " \t: " << signalIt->second;
             switch (GPIO_SIGNAL_MAP[signalId].direction) {
             case DIR_IN:
@@ -1158,7 +1158,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
     if (msgID == TCP_MSG_KEY::MSG_EVENTTRIGGER) {
         unsigned int signal;
         *(tcpMessage.dStream) >> signal;
-        setEventTriggerSelection((GPIO_PIN)signal);
+        setEventTriggerSelection((GPIO_SIGNAL)signal);
         usleep(1000);
         sendEventTriggerSelection();
         return;
@@ -1456,9 +1456,9 @@ void Daemon::sendGpioPinEvent(uint8_t gpio_pin)
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GPIO_EVENT);
     // reverse lookup of gpio function from given pin (first occurence)
-    auto result = std::find_if(GPIO_PINMAP.begin(), GPIO_PINMAP.end(), [&gpio_pin](const std::pair<GPIO_PIN, unsigned int>& item) { return item.second == gpio_pin; });
+    auto result = std::find_if(GPIO_PINMAP.begin(), GPIO_PINMAP.end(), [&gpio_pin](const std::pair<GPIO_SIGNAL, unsigned int>& item) { return item.second == gpio_pin; });
     if (result != GPIO_PINMAP.end()) {
-        *(tcpMessage.dStream) << (GPIO_PIN)result->first;
+        *(tcpMessage.dStream) << (GPIO_SIGNAL)result->first;
         emit sendTcpMessage(tcpMessage);
     }
 }
@@ -1513,7 +1513,7 @@ void Daemon::sendEventTriggerSelection()
     if (pigHandler == nullptr)
         return;
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_EVENTTRIGGER);
-    *(tcpMessage.dStream) << (GPIO_PIN)pigHandler->samplingTriggerSignal;
+    *(tcpMessage.dStream) << (GPIO_SIGNAL)pigHandler->samplingTriggerSignal;
     emit sendTcpMessage(tcpMessage);
 }
 
@@ -1725,7 +1725,7 @@ void Daemon::getTemperature()
     emit sendTcpMessage(tcpMessage);
 }
 
-void Daemon::setEventTriggerSelection(GPIO_PIN signal)
+void Daemon::setEventTriggerSelection(GPIO_SIGNAL signal)
 {
     if (pigHandler == nullptr)
         return;

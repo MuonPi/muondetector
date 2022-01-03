@@ -24,7 +24,7 @@ public:
     // can't make it private because of access of PigpiodHandler with global pointer
     QDateTime startOfProgram, lastSamplingTime; // the exact time when the program starts (Utc)
     QElapsedTimer elapsedEventTimer;
-    GPIO_PIN samplingTriggerSignal = EVT_XOR;
+    GPIO_SIGNAL samplingTriggerSignal = EVT_XOR;
 
     double clockMeasurementSlope = 0.;
     double clockMeasurementOffset = 0.;
@@ -51,7 +51,7 @@ public slots:
     void setPullUp(unsigned int gpio);
     void setPullDown(unsigned int gpio);
     void setGpioState(unsigned int gpio, bool state);
-    void setSamplingTriggerSignal(GPIO_PIN signalName) { samplingTriggerSignal = signalName; }
+    void setSamplingTriggerSignal(GPIO_SIGNAL signalName) { samplingTriggerSignal = signalName; }
     void registerForCallback(unsigned int gpio, bool edge); // false=falling, true=rising
 
     // spi related slots

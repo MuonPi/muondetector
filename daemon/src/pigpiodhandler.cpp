@@ -123,7 +123,7 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
         // allow only registered signals to be processed here
         // if gpio pin fired which is not in GPIO_PIN list, return immediately
         auto it = std::find_if(GPIO_PINMAP.cbegin(), GPIO_PINMAP.cend(),
-            [&user_gpio](const std::pair<GPIO_PIN, unsigned int>& val) {
+            [&user_gpio](const std::pair<GPIO_SIGNAL, unsigned int>& val) {
                 if (val.second == user_gpio)
                     return true;
                 return false;
@@ -248,7 +248,7 @@ void PigpiodHandler::registerForCallback(unsigned int gpio, bool edge)
 {
     int result = callback(pi, gpio, edge ? FALLING_EDGE : RISING_EDGE, cbFunction);
     if (result < 0) {
-        GPIO_PIN pin = bcmToGpioSignal(gpio);
+        GPIO_SIGNAL pin = bcmToGpioSignal(gpio);
         qCritical() << "error registering gpio callback for BCM pin" << GPIO_SIGNAL_MAP[pin].name;
     }
 }

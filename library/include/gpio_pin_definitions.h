@@ -16,7 +16,7 @@
 // of the RPi GPIO header. To be independent of the specific hardware implementation,
 // the pin numbers for these signals are defined in gpio_pin_mapping.h on the daemon side
 
-enum GPIO_PIN { UBIAS_EN,
+enum GPIO_SIGNAL { UBIAS_EN,
     PREAMP_1,
     PREAMP_2,
     EVT_AND,
@@ -47,7 +47,7 @@ struct GpioSignalDescriptor {
     SIGNAL_DIRECTION direction;
 };
 
-static const QMap<GPIO_PIN, GpioSignalDescriptor> GPIO_SIGNAL_MAP = { { UBIAS_EN, { "UBIAS_EN", DIR_OUT } },
+static const QMap<GPIO_SIGNAL, GpioSignalDescriptor> GPIO_SIGNAL_MAP = { { UBIAS_EN, { "UBIAS_EN", DIR_OUT } },
     { PREAMP_1, { "PREAMP_1", DIR_OUT } },
     { PREAMP_2, { "PREAMP_2", DIR_OUT } },
     { EVT_AND, { "EVT_AND", DIR_IN } },
