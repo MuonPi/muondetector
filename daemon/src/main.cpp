@@ -493,44 +493,43 @@ int main(int argc, char* argv[])
         }
     }
 
-    if (parser.isSet(eventInputOption)) {
-        daemonConfig.eventTrigger = parser.value(eventInputOption).toUInt(&ok);
-        if (!ok || daemonConfig.eventTrigger > 1) {
-            qCritical() << "wrong trigger input signal (valid: 0,1)";
+	int eventTriggerCfg { -1 };
+	daemonConfig.eventTrigger = EVT_AND;
+    if ( parser.isSet( eventInputOption ) ) {
+        eventTriggerCfg = parser.value(eventInputOption).toInt(&ok);
+		if ( !ok || eventTriggerCfg > 3 ) {
+            qCritical() << "wrong trigger input signal (valid: 0..3)";
             return -1;
-        } else {
-            switch (daemonConfig.eventTrigger) {
-            case 1:
-                daemonConfig.eventTrigger = EVT_AND;
-                break;
-            case 0:
-            default:
-                daemonConfig.eventTrigger = EVT_XOR;
-                break;
-            }
         }
-    } else
-        try {
-            int eventTriggerCfg = cfg.lookup("trigger_input");
-            if (verbose > 2)
-                qDebug() << "event trigger : " << eventTriggerCfg;
-            switch (eventTriggerCfg) {
-            case 1:
-                daemonConfig.eventTrigger = EVT_AND;
-                break;
-            case 0:
-            default:
-                daemonConfig.eventTrigger = EVT_XOR;
-                break;
-            }
-        } catch (const libconfig::SettingNotFoundException& nfex) {
-            qWarning() << "No 'trigger_input' setting in configuration file. Assuming signal" << GPIO_SIGNAL_MAP[(GPIO_PIN)daemonConfig.eventTrigger].name;
-        }
+	} else try {
+		eventTriggerCfg = cfg.lookup("trigger_input");
+		if (verbose > 2) qDebug() << "event trigger : " << eventTriggerCfg;
+	} catch (const libconfig::SettingNotFoundException& nfex) {
+		qWarning() << "No 'trigger_input' setting in configuration file. Assuming signal" << GPIO_SIGNAL_MAP[daemonConfig.eventTrigger].name;
+	}
+
+	switch (eventTriggerCfg) {
+		case 0:
+			daemonConfig.eventTrigger = EVT_XOR;
+			break;
+		case 1:
+			daemonConfig.eventTrigger = EVT_AND;
+			break;
+		case 2:
+			daemonConfig.eventTrigger = TIME_MEAS_OUT;
+			break;
+		case 3:
+			daemonConfig.eventTrigger = EXT_TRIGGER;
+			break;
+		default:
+			daemonConfig.eventTrigger = EVT_AND;
+			break;
+	}
 
     if (parser.isSet(pol1Option)) {
         unsigned int pol1int = parser.value(pol1Option).toUInt(&ok);
         if (!ok || pol1int > 1) {
-            qCritical() << "wrong input polarity setting ch1 (valid: 0,1)";
+            qCritical() << "wrong input polarity setting ch1 (valid: 0..3)";
             return -1;
         } else {
             daemonConfig.polarity[0] = (bool)pol1int;

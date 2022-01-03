@@ -53,7 +53,7 @@ public:
         bool dumpRaw;
         int baudrate { 9600 };
         bool configGnss { false };
-        unsigned int eventTrigger { EVT_XOR };
+        GPIO_PIN eventTrigger { EVT_XOR };
         QString peerAddress { "" };
         quint16 peerPort { 0 };
         QString serverAddress { "" };

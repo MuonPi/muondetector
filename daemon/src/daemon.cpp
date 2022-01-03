@@ -572,7 +572,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     preampStatus[1] = cfg.preamp[1];
     gainSwitch = cfg.gain;
     biasON = cfg.bias_ON;
-    eventTrigger = (GPIO_PIN)cfg.eventTrigger;
+    eventTrigger = cfg.eventTrigger;
     polarity1 = cfg.polarity[0];
     polarity2 = cfg.polarity[1];
 
