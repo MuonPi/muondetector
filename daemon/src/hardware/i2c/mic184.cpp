@@ -41,24 +41,12 @@ int16_t MIC184::readRaw()
 	}
 
 	int16_t val = static_cast<int16_t>( dataword );
-//    val = ((int16_t)readBuf[0] << 8) | readBuf[1];
     fLastRawValue = val;
 
     stopTimer();
 
     return val;
 }
-
-/*
-bool MIC184::devicePresent()
-{
-    uint8_t readBuf[2]; // 2 byte buffer to store the data read from the I2C device
-    readBuf[0] = 0;
-    readBuf[1] = 0;
-    int n = read(readBuf, 2);
-    return (n == 2);
-}
-*/
 
 float MIC184::getTemperature()
 {

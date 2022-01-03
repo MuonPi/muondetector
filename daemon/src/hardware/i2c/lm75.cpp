@@ -48,17 +48,6 @@ int16_t LM75::readRaw()
     return val;
 }
 
-/*
-bool LM75::devicePresent()
-{
-    uint8_t readBuf[2]; // 2 byte buffer to store the data read from the I2C device
-    readBuf[0] = 0;
-    readBuf[1] = 0;
-    int n = read(readBuf, 2); // Read the data register into readBuf
-    return (n == 2);
-}
-*/
-
 float LM75::getTemperature()
 {
 	int16_t dataword = readRaw();

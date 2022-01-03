@@ -10,8 +10,7 @@ public:
     MIC184(const char* busAddress, uint8_t slaveAddress);
     MIC184(uint8_t slaveAddress);
 	virtual ~MIC184();
-    //bool devicePresent();
-    int16_t readRaw();
+
     float getTemperature() override;
 	bool probeDevicePresence() override { return devicePresent(); }
         
@@ -19,6 +18,8 @@ public:
 	bool isExternal() const { return fExternal; }
 	bool setExternal( bool enable_external = true );
 private:
+	int16_t readRaw();
+
 	enum REG : uint8_t {
 		TEMP = 0x00,
 		CONF = 0x01,

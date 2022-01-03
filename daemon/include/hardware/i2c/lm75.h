@@ -9,14 +9,13 @@ public:
     LM75(const char* busAddress, uint8_t slaveAddress);
     LM75(uint8_t slaveAddress);
 	virtual ~LM75();
-    //bool devicePresent();
-    int16_t readRaw();
     float getTemperature() override;
-    //float lastTemperatureValue() const { return fLastTemp; }
 
     bool identify() override;
 	bool probeDevicePresence() override { return devicePresent(); }
 protected:
+    int16_t readRaw();
+
 	enum REG : uint8_t {
 		TEMP = 0x00,
 		CONF = 0x01,
