@@ -484,8 +484,7 @@ int main(int argc, char* argv[])
     } else {
         try {
             int gainCfg = cfg.lookup("gain_switch");
-            if (verbose > 2)
-                qDebug() << "gain switch:" << gainCfg;
+            if (verbose > 2) qDebug() << "gain switch:" << gainCfg;
             daemonConfig.gain = gainCfg;
         } catch (const libconfig::SettingNotFoundException& nfex) {
             if (verbose > 0)
