@@ -2438,12 +2438,11 @@ void Daemon::onUBXReceivedTimeTM2(const UbxTimeMarkStruct& tm)
     long double dts = (tm.falling.tv_sec - tm.rising.tv_sec) * 1.0e9L;
     dts += (tm.falling.tv_nsec - tm.rising.tv_nsec);
     if ((dts > 0.0L) && tm.fallingValid) {
-        checkRescaleHisto(histoMap["UbxEventLength"], static_cast<double>(dts));
         histoMap["UbxEventLength"].fill(static_cast<double>(dts));
     }
     long double interval = (tm.rising.tv_sec - lastTimeMark.rising.tv_sec) * 1.0e9L;
     interval += (tm.rising.tv_nsec - lastTimeMark.rising.tv_nsec);
-    histoMap["UbxEventInterval"].fill(static_cast<double>(1.0e-6L * interval));
+    if ( interval < 1e12 ) histoMap["UbxEventInterval"].fill(static_cast<double>(1.0e-6L * interval));
     uint16_t diffCount = tm.evtCounter - lastTimeMark.evtCounter;
     emit timeMarkIntervalCountUpdate(diffCount, static_cast<double>(interval * 1.0e-9L));
     lastTimeMark = tm;
