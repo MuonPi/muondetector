@@ -137,12 +137,6 @@ int main(int argc, char* argv[])
     parser.addPositionalArgument("device", QCoreApplication::translate("main", "path to u-blox GNSS device\n"
                                                                                "e.g. /dev/ttyAMA0"));
 
-    // login option
-    QCommandLineOption mqttLoginOption(QStringList() << "l"
-                                                     << "login",
-        QCoreApplication::translate("main", "ask for login to the online mqtt server"));
-    parser.addOption(mqttLoginOption);
-
     // station ID (some name for individual stations if someone has multiple)
     QCommandLineOption stationIdOption("id",
         QCoreApplication::translate("main", "set station ID"),
@@ -565,25 +559,18 @@ int main(int argc, char* argv[])
         }
     }
 
-    std::string username = "";
-    std::string password = "";
-    if (parser.isSet(mqttLoginOption)) {
-        std::cout << "To set the login for the mqtt-server, please enter user name:\n"
-                  << std::flush;
-        std::cin >> username;
-        password = getpass("please enter password:", true);
-    } else
-        try {
-            std::string userNameCfg = cfg.lookup("mqtt_user");
-            std::string passwordCfg = cfg.lookup("mqtt_password");
-            if (verbose > 2)
-                qDebug() << "mqtt user: " << QString::fromStdString(userNameCfg) << " passw: " << QString::fromStdString(passwordCfg);
-            username = userNameCfg;
-            password = passwordCfg;
-        } catch (const libconfig::SettingNotFoundException& nfex) {
-            if (verbose > 1)
-                qDebug() << "No 'mqtt_user' or 'mqtt_password' setting in configuration file. Will continue with previously stored credentials";
-        }
+    try {
+        std::string userNameCfg = cfg.lookup("mqtt_user");
+        std::string passwordCfg = cfg.lookup("mqtt_password");
+        if (verbose > 2)
+            qDebug() << "mqtt user: " << QString::fromStdString(userNameCfg) << " passw: " << QString::fromStdString(passwordCfg);
+
+        daemonConfig.username = QString::fromStdString(userNameCfg);
+        daemonConfig.password = QString::fromStdString(passwordCfg);
+    } catch (const libconfig::SettingNotFoundException& nfex) {
+        if (verbose > 1)
+            qDebug() << "No 'mqtt_user' or 'mqtt_password' setting in configuration file. Will continue with previously stored credentials";
+    }
 
     if (parser.isSet(stationIdOption)) {
         daemonConfig.station_ID = parser.value(stationIdOption);
