@@ -37,6 +37,8 @@ public:
     double getEntries();
     void rescale(double center, double width);
     void rescale(double center);
+    void rescale();
+	void setAutoscale( bool autoscale = true );
 
     friend QDataStream& operator<<(QDataStream& out, const Histogram& h);
     friend QDataStream& operator>>(QDataStream& in, Histogram& h);
@@ -56,6 +58,7 @@ protected:
     double fOverflow = 0;
     double fUnderflow = 0;
     std::map<int, double> fHistogramMap;
+	bool fAutoscale { false };
 };
 
 #endif // HISTOGRAM_H

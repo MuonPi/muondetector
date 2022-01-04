@@ -714,7 +714,6 @@ void Daemon::connectToPigpiod()
     //tdc <-> thread & daemon
     connect(tdc7200, &TDC7200::tdcEvent, this, [this](double usecs) {
         if (histoMap.find("Time-to-Digital Time Diff") != histoMap.end()) {
-            checkRescaleHisto(histoMap["Time-to-Digital Time Diff"], usecs);
             histoMap["Time-to-Digital Time Diff"].fill(usecs);
         }
     });
@@ -746,7 +745,6 @@ void Daemon::connectToPigpiod()
     connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
     connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) {
         if (histoMap.find("gpioEventInterval") != histoMap.end()) {
-            checkRescaleHisto(histoMap["gpioEventInterval"], 1e-6 * nsecs);
             histoMap["gpioEventInterval"].fill(1e-6 * nsecs);
         }
     });
@@ -758,7 +756,6 @@ void Daemon::connectToPigpiod()
     });
     connect(pigHandler, &PigpiodHandler::timePulseDiff, this, [this](qint32 usecs) {
         if (histoMap.find("TPTimeDiff") != histoMap.end()) {
-            checkRescaleHisto(histoMap["TPTimeDiff"], usecs);
             histoMap["TPTimeDiff"].fill((double)usecs);
         }
     });
@@ -930,45 +927,59 @@ void Daemon::setupHistos()
 {
     Histogram hist = Histogram("geoHeight", 200, 0., 199.);
     hist.setUnit("m");
+    hist.setAutoscale();
     histoMap["geoHeight"] = hist;
     hist = Histogram("geoLongitude", 200, 0., 0.003);
     hist.setUnit("deg");
+    hist.setAutoscale();
     histoMap["geoLongitude"] = hist;
     hist = Histogram("geoLatitude", 200, 0., 0.003);
     hist.setUnit("deg");
+    hist.setAutoscale();
     histoMap["geoLatitude"] = hist;
     hist = Histogram("weightedGeoHeight", 200, 0., 199.);
     hist.setUnit("m");
+    hist.setAutoscale();
     histoMap["weightedGeoHeight"] = hist;
     hist = Histogram("pulseHeight", 500, 0., 3.8);
     hist.setUnit("V");
+    hist.setAutoscale( false );
     histoMap["pulseHeight"] = hist;
-    hist = Histogram("adcSampleTime", 500, 0., 49.9);
+    hist = Histogram("adcSampleTime", 500, 0., 10.0);
     hist.setUnit("ms");
+    hist.setAutoscale();
     histoMap["adcSampleTime"] = hist;
     hist = Histogram("UbxEventLength", 100, 50., 149.);
     hist.setUnit("ns");
+    hist.setAutoscale();
     histoMap["UbxEventLength"] = hist;
-    hist = Histogram("gpioEventInterval", 400, 0., 1500.);
+    hist = Histogram("gpioEventInterval", 400, 0., 2000.);
     hist.setUnit("ms");
+    hist.setAutoscale();
     histoMap["gpioEventInterval"] = hist;
     hist = Histogram("gpioEventIntervalShort", 50, 0., 49.);
     hist.setUnit("us");
-    histoMap["gpioEventIntervalShort"] = hist;
-    hist = Histogram("UbxEventInterval", 200, 0., 1100.);
+    hist.setAutoscale( false );
+	histoMap["gpioEventIntervalShort"] = hist;
+    hist = Histogram("UbxEventInterval", 200, 0., 2000.);
     hist.setUnit("ms");
+    hist.setAutoscale();
     histoMap["UbxEventInterval"] = hist;
     hist = Histogram("TPTimeDiff", 200, -999., 1000.);
     hist.setUnit("us");
+    hist.setAutoscale();
     histoMap["TPTimeDiff"] = hist;
     hist = Histogram("Time-to-Digital Time Diff", 400, 0., 1e6);
     hist.setUnit("ns");
+    hist.setAutoscale();
     histoMap["Time-to-Digital Time Diff"] = hist;
-    hist = Histogram("Bias Voltage", 500, 0., 1.);
+    hist = Histogram("Bias Voltage", 200, 0., 1.);
     hist.setUnit("V");
+    hist.setAutoscale();
     histoMap["Bias Voltage"] = hist;
     hist = Histogram("Bias Current", 200, 0., 50.);
     hist.setUnit("uA");
+    hist.setAutoscale();
     histoMap["Bias Current"] = hist;
 }
 
@@ -979,49 +990,6 @@ void Daemon::clearHisto(const QString& histoName)
         emit sendHistogram(histoMap[histoName]);
     }
     return;
-}
-
-void Daemon::checkRescaleHisto(Histogram& hist, double newValue)
-{
-    // Strategy: check if more than 1% of all entries in underflow/overflow
-    // set new center to old center, adjust range by 20%
-    // set center to newValue if histo empty or only underflow/overflow filled
-    // histo will not be filled with supplied value, it has to be done externally
-    double entries = hist.getEntries();
-    // do nothing if histo is empty
-    if (entries < 3.) {
-        return;
-        hist.rescale(newValue);
-    }
-    double ufl = hist.getUnderflow();
-    double ofl = hist.getOverflow();
-    entries -= ufl + ofl;
-    double range = hist.getMax() - hist.getMin();
-	int lowest = hist.getLowestOccupiedBin();
-	int highest = hist.getHighestOccupiedBin();
-	double lowestEntry = hist.getBinCenter(lowest);
-	double highestEntry = hist.getBinCenter(highest);
-    if (ufl > 0. && ofl > 0. && (ufl + ofl) > 0.01 * entries) {
-        // range is too small, underflow and overflow have more than 1% of all entries
-        hist.rescale( 0.5 * (highestEntry-lowestEntry) + lowestEntry, 1.2 * range);
-    } else if (ufl > 0.005 * entries) {
-        if (entries < 1.) {
-            hist.rescale(newValue);
-        } else {
-			hist.rescale( 0.5 * (highestEntry-lowestEntry) + lowestEntry, 1.2 * range);
-        }
-    } else if (ofl > 0.005 * entries) {
-        if (entries < 1.) {
-            hist.rescale(newValue);
-        } else {
-			hist.rescale( 0.5 * (highestEntry-lowestEntry) + lowestEntry, 1.2 * range);
-        }
-    } else if (ufl < 1e-3 && ofl < 1e-3) {
-        // check if range is too wide
-        if (entries > 1000) {
-            hist.rescale( 0.5 * (highestEntry-lowestEntry) + lowestEntry, 0.8 * range);
-        }
-    }
 }
 
 // ALL FUNCTIONS ABOUT TCPMESSAGE SENDING AND RECEIVING
@@ -1397,22 +1365,18 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos)
     if (1e-3 * pos.vAcc < 100.) {
         QString name = "geoHeight";
         if (histoMap.find(name) != histoMap.end()) {
-            checkRescaleHisto(histoMap[name], 1e-3 * pos.hMSL);
             histoMap[name].fill(1e-3 * pos.hMSL);
             if (currentDOP.vDOP > 0) {
                 name = "weightedGeoHeight";
                 double heightWeight = 100. / currentDOP.vDOP;
-                checkRescaleHisto(histoMap[name], 1e-3 * pos.hMSL);
                 histoMap[name].fill(1e-3 * pos.hMSL, heightWeight);
             }
         }
     }
     if (1e-3 * pos.hAcc < 100.) {
         QString name = "geoLongitude";
-        checkRescaleHisto(histoMap[name], 1e-7 * pos.lon);
         histoMap[name].fill(1e-7 * pos.lon);
         name = "geoLatitude";
-        checkRescaleHisto(histoMap[name], 1e-7 * pos.lat);
         histoMap[name].fill(1e-7 * pos.lat);
     }
 }
@@ -1678,7 +1642,6 @@ void Daemon::onAdcSampleReady(ADS1115::Sample sample) {
 	}
 	if ( adc_p ) {
 		emit logParameter(LogParameter("adcSamplingTime", QString::number(adc_p->getLastConvTime()) + " ms", LogParameter::LOG_AVERAGE));
-		checkRescaleHisto(histoMap["adcSampleTime"], adc_p->getLastConvTime());
 		histoMap["adcSampleTime"].fill(adc_p->getLastConvTime());
 	}
 }
@@ -2352,7 +2315,6 @@ void Daemon::aquireMonitoringParameters()
             logParameter(LogParameter("calib_rsense", QString::number(rsense * 1000.) + " kOhm", LogParameter::LOG_ONCE));
             double ubias = v2 * vdiv;
             logParameter(LogParameter("vbias", QString::number(ubias) + " V", LogParameter::LOG_AVERAGE));
-            checkRescaleHisto(histoMap["Bias Voltage"], ubias);
             histoMap["Bias Voltage"].fill(ubias);
             double usense = (v1 - v2) * vdiv;
             logParameter(LogParameter("vsense", QString::number(usense) + " V", LogParameter::LOG_AVERAGE));
@@ -2380,7 +2342,6 @@ void Daemon::aquireMonitoringParameters()
                 icorr = ubias * islope + ioffs;
             }
             double ibias = usense / rsense - icorr;
-            checkRescaleHisto(histoMap["Bias Current"], ibias);
             histoMap["Bias Current"].fill(ibias);
             logParameter(LogParameter("ibias", QString::number(ibias) + " uA", LogParameter::LOG_AVERAGE));
 
@@ -2412,8 +2373,9 @@ void Daemon::onLogParameterPolled()
     if (pigHandler != nullptr)
         emit logParameter(LogParameter("gpioTriggerSelection", "0x" + QString::number((int)pigHandler->samplingTriggerSignal, 16), LogParameter::LOG_ON_CHANGE));
 
-    for (const auto& hist : histoMap) {
-        sendHistogram(hist);
+    for (auto& hist : histoMap) {
+		sendHistogram(hist);
+        hist.rescale();
     }
 
     sendLogInfo();

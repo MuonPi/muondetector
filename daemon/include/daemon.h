@@ -190,7 +190,6 @@ private:
     void setupHistos();
     void rescaleHisto(Histogram& hist, double center, double width);
     void rescaleHisto(Histogram& hist, double center);
-    void checkRescaleHisto(Histogram& hist, double newValue);
     void clearHisto(const QString& histoName);
     void setAdcSamplingMode(ADC_SAMPLING_MODE mode);
     void printTimestamp();
