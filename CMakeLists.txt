@@ -15,7 +15,7 @@ execute_process(COMMAND bash "-c" "git rev-parse --short HEAD | tr -d '\n'"
 
 
 
-if ((${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l"))
+if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "^(armv7|armv6)")
     set(MUONDETECTOR_BUILD_DAEMON ON)
     set(MUONDETECTOR_ON_RASPBERRYPI ON)
 endif ()
@@ -57,8 +57,19 @@ if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
 add_compile_options(
     -mthumb
     -march=armv7-a
+    -mfpu=vfp
+    -mfloat-abi=hard
     )
 endif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
+
+if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv6l")
+add_compile_options(
+    -mthumb
+    -march=armv6-a
+    -mfpu=vfp
+    -mfloat-abi=hard
+    )
+endif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv6l")
 
 
 if (NOT (WIN32 OR APPLE))
