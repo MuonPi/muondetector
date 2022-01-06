@@ -64,8 +64,7 @@ endif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
 
 if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv6l")
 add_compile_options(
-    -mthumb
-    -march=armv6-a
+    -march=armv6
     -mfpu=vfp
     -mfloat-abi=hard
     )
