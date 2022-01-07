@@ -166,5 +166,7 @@ bool MIC184::setExternal( bool enable_external )
 	fExternal = enable_external;
 	// wait one cycle until a conversion in the new zone is ready
 	std::this_thread::sleep_for( std::chrono::milliseconds( 160 ) );
+	// and wait twice as long if external zone enabled (datasheet: tconv=160ms (int) and 320ms (ext))
+	if ( fExternal ) std::this_thread::sleep_for( std::chrono::milliseconds( 160 ) );
 	return true;
 }
