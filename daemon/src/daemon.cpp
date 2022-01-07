@@ -506,7 +506,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 	}
 	
 //	pca = new PCA9536();
-    if ( io_extender_p->probeDevicePresence() ) {
+    if ( io_extender_p && io_extender_p->probeDevicePresence() ) {
         pca9536_p->identify();
 		if (verbose > 2) {
             qInfo() << "PCA9536 device is present." << endl;
