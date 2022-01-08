@@ -71,12 +71,14 @@ private:
 	};
 	DacChannel fChannelSetting[4], fChannelSettingEep[4];
 	std::chrono::time_point<std::chrono::steady_clock> fLastRegisterUpdate { };
+	bool fBusy { false };
 	
 	bool setVoltage( uint8_t channel, float voltage, bool toEEPROM );
 	bool setValue( uint8_t channel, uint16_t value, CFG_GAIN gain = GAIN1, bool toEEPROM = false );
 	bool readRegisters();
 	void parseChannelData( uint8_t* buf );
 	void dumpRegisters();
+	bool waitEepReady();
 };
 
 #endif //!_MCP4728_H_

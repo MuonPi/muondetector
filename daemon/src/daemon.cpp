@@ -1777,12 +1777,8 @@ void Daemon::setDacThresh(uint8_t channel, float threshold)
 void Daemon::saveDacValuesToEeprom()
 {
     if ( !dac_p || !dac_p->probeDevicePresence() ) return;
-	for (int i = 0; i < 4; i++) {
-        MCP4728::DacChannel dacChannel;
-        dynamic_cast<MCP4728*>( dac_p.get() )->readChannel(i, dacChannel);
-        dacChannel.eeprom = true;
-        dynamic_cast<MCP4728*>( dac_p.get() )->writeChannel(i, dacChannel);
-    }
+	bool ok = dac_p->storeSettings();
+	if ( !ok ) std::cerr << "error writing DAC eeprom" << std::endl;
 }
 
 bool Daemon::readEeprom()
