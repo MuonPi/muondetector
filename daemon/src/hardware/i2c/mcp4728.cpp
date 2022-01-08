@@ -95,6 +95,8 @@ bool MCP4728::writeChannel(uint8_t channel, const DacChannel& channelData)
 	} else {
 		fChannelSetting[channel] = channelData;
 	}
+    // force a register update next time anything is read
+    fLastRegisterUpdate = { };
     return true;
 }
 
