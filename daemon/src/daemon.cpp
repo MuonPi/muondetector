@@ -736,7 +736,7 @@ void Daemon::connectToPigpiod()
     connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
 
 	connect(pigHandler, &PigpiodHandler::signal, this, [this](uint8_t gpio_pin) {
-			if ( gpio_pin == GPIO_PINMAP[EVT_AND] ) {
+			if ( gpio_pin == GPIO_PINMAP[TIME_MEAS_OUT] ) {
 				onStatusLed2Event( 50 );
 			}
 		}	
