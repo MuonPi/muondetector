@@ -44,7 +44,7 @@ public:
 	
 signals:
 	void filteredEvent( unsigned int gpio, EventTime event_time );
-	void eventIntervalSignal( unsigned int gpio, std::chrono::nanoseconds ns); 
+	void eventIntervalSignal( unsigned int gpio, std::chrono::nanoseconds ns );
 	
 public slots:
 	void onEvent(unsigned int gpio, EventTime event_time );
@@ -53,6 +53,9 @@ private:
 	double fRateLimit { MAX_AVG_RATE };
 	std::chrono::microseconds fBufferTime { MAX_BUFFER_TIME };
 	std::map<unsigned int, BufferItem> buffermap { };
+	std::map<std::pair<unsigned int, unsigned int>, std::chrono::nanoseconds> fIntervalMap { };
+	
+	void updateAllIntervals( unsigned int new_gpio, EventTime new_event_time );
 	
 };
 

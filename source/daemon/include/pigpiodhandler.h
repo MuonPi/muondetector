@@ -91,16 +91,16 @@ private:
 
 	void measureGpioClockTime();
 	void reloadInterruptSettings();
-	void threadLoop();
+	[[gnu::hot]] void eventHandler( struct gpiod_line *line );
+	[[gnu::hot]] void processEvent( unsigned int gpio, std::shared_ptr<gpiod_line_event> line_event );
 	
 	bool inhibit=false;
 	int verbose=0;
 	gpiod_chip* fChip { nullptr };
 	std::map<unsigned int, gpiod_line*> fInterruptLineMap { };
-	gpiod_line_bulk fInterruptLineBulk;
 	std::map<unsigned int, gpiod_line*> fLineMap { };
 	bool fThreadRunning { false };
-	std::unique_ptr<std::thread> fThread { nullptr };
+	std::map<unsigned int, std::unique_ptr<std::thread>> fThreads { };
 	std::mutex fMutex;
 };
 

@@ -636,19 +636,27 @@ Daemon::Daemon(QString username, QString password, QString new_gpsdevname, int n
 	connect(&rateBuffer, &RateBuffer::filteredEvent, this, &Daemon::sendGpioPinEvent);
 	connect(&rateBuffer, &RateBuffer::filteredEvent, this, &Daemon::onGpioPinEvent);
 
-	connect(this, &Daemon::eventInterval, this, [this](quint64 nsecs)
-    { 	if (histoMap.find("gpioEventInterval")!=histoMap.end()) {
+//	connect(this, &Daemon::eventInterval, this, [this](quint64 nsecs)
+	connect(&rateBuffer, &RateBuffer::eventIntervalSignal, this, [this](unsigned int gpio, std::chrono::nanoseconds ns)
+    { 	
+		if ( histoMap.find("gpioEventInterval")!=histoMap.end() 
+		     && ( GPIO_PINMAP[eventTrigger] == gpio ) ) 
+		{
             //checkRescaleHisto(histoMap["gpioEventInterval"], 1e-6*nsecs);
-            histoMap["gpioEventInterval"].fill(1e-6*nsecs);
+            histoMap["gpioEventInterval"].fill( 1e-6 * ns.count() );
         }
     } );
 
     connect(this, &Daemon::eventInterval, this, [this](quint64 nsecs)
-    { 	if (histoMap.find("gpioEventIntervalShort")!=histoMap.end()) {
-            if (nsecs/1000<=histoMap["gpioEventIntervalShort"].getMax())
-                histoMap["gpioEventIntervalShort"].fill((double)nsecs/1000.);
-        }
-    } );
+//	connect(&rateBuffer, &RateBuffer::eventIntervalSignal, this, [this](unsigned int gpio, std::chrono::nanoseconds ns)
+    { 	
+		if ( histoMap.find("gpioEventIntervalShort")!=histoMap.end() )			
+		{
+			if ( nsecs/1000 <= histoMap["gpioEventIntervalShort"].getMax() ) {
+				histoMap["gpioEventIntervalShort"].fill( 1e-3 * nsecs );
+			}
+		}
+	} );
 
 	// establish ublox gnss module connection
     connectToGps();
@@ -815,7 +823,7 @@ void Daemon::connectToPigpiod(){
         //emit GpioSetInput(GPIO_PINMAP[TDC_INTB]);
         emit GpioRegisterForCallback(GPIO_PINMAP[TDC_INTB], PigpiodHandler::EventEdge::FallingEdge);
         //emit GpioSetInput(GPIO_PINMAP[TIME_MEAS_OUT]);
-        emit GpioRegisterForCallback(GPIO_PINMAP[TIME_MEAS_OUT], PigpiodHandler::EventEdge::FallingEdge);
+        emit GpioRegisterForCallback(GPIO_PINMAP[TIME_MEAS_OUT], PigpiodHandler::EventEdge::RisingEdge);
     }
     if (HW_VERSION>=3) {
         emit GpioSetOutput(GPIO_PINMAP[IN_POL1]);
@@ -1491,12 +1499,37 @@ void Daemon::onGpioPinEvent(unsigned int gpio, EventTime event_time) {
 			}
         }
 		if ( result->first == eventTrigger ) {
+			/*
 			auto nsecs = rateBuffer.lastInterval(gpio).count();
 			if ( nsecs > 0 ) { 
 				emit eventInterval( rateBuffer.lastInterval(gpio).count() );
 			}
+			*/
 			emit sampleAdc0Event();
 		}
+		
+		if ( result->first == TIME_MEAS_OUT ) {
+			auto start_gpio = GPIO_PINMAP.find(eventTrigger);
+			if ( start_gpio != GPIO_PINMAP.end() ) {
+				long long nsecs { 0 };
+				if ( result->first != eventTrigger ) {
+					nsecs = rateBuffer.lastInterval( gpio, start_gpio->second ).count();
+					if ( nsecs < 0 ) nsecs = rateBuffer.lastInterval( start_gpio->second, gpio ).count();
+				} else {
+					nsecs = rateBuffer.lastInterval( gpio ).count();
+				}
+				if ( nsecs > 0 ) { 
+					//emit eventInterval( nsecs );
+					if ( nsecs < 100000L ) {
+						emit eventInterval( nsecs );
+						std::cout<<"trigger interval="<<nsecs<<"ns"<<std::endl;
+					}
+				} else {
+					std::cout<<"Warning: trigger interval="<<nsecs<<"ns"<<std::endl;
+				}
+			}
+		}
+		
     }
 }
 

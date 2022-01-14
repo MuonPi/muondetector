@@ -8,15 +8,26 @@ RateBuffer::RateBuffer(QObject *parent) : QObject(parent)
 	
 }
 
-void RateBuffer::onEvent(unsigned int gpio, EventTime event_time ) {
-//	auto now = std::chrono::steady_clock::now();
+void RateBuffer::updateAllIntervals( unsigned int new_gpio, EventTime new_event_time )
+{
+	for ( const auto [ other_gpio, buffer_item ] : buffermap ) {
+		if ( new_gpio == other_gpio ) continue;
+		if ( buffer_item.eventbuffer.empty() ) continue;
+		auto last_other_time = buffer_item.eventbuffer.back();
+		std::chrono::nanoseconds nsecs = std::chrono::duration_cast<std::chrono::nanoseconds>( new_event_time - last_other_time );
+		fIntervalMap.insert_or_assign( std::make_pair( new_gpio, other_gpio ), nsecs );
+	}
+}
+
+void RateBuffer::onEvent( unsigned int gpio, EventTime event_time ) {
+	updateAllIntervals( gpio, event_time );
 	if ( buffermap[gpio].eventbuffer.empty() ) {
 		buffermap[gpio].eventbuffer.push(event_time);
 		emit filteredEvent(gpio, event_time);
 		return;
 	}
 
-	while ( 	!buffermap[gpio].eventbuffer.empty() 
+	while ( 	!buffermap.at(gpio).eventbuffer.empty() 
 			&& ( event_time - buffermap[gpio].eventbuffer.front() > fBufferTime) )
 	{
 		buffermap[gpio].eventbuffer.pop();
@@ -34,7 +45,7 @@ void RateBuffer::onEvent(unsigned int gpio, EventTime event_time ) {
 			}
 		} else {
 			unsigned long deadtime = buffermap[gpio].current_deadtime.count();
-			if ( deadtime>0 ) {
+			if ( deadtime > 0 ) {
 				deadtime--;
 				buffermap[gpio].current_deadtime -= std::chrono::microseconds(1);
 			}
@@ -75,11 +86,9 @@ auto RateBuffer::lastInterval(unsigned int gpio) const -> std::chrono::nanosecon
 
 auto RateBuffer::lastInterval(unsigned int gpio1, unsigned int gpio2) const -> std::chrono::nanoseconds
 {
-	auto it1 = buffermap.find(gpio1);
-	if ( it1 == buffermap.end() || it1->second.eventbuffer.empty() ) return std::chrono::nanoseconds(0);
-	auto it2 = buffermap.find(gpio2);
-	if ( it2 == buffermap.end() || it2->second.eventbuffer.empty() ) return std::chrono::nanoseconds(0);
-	return std::chrono::duration_cast<std::chrono::nanoseconds>( it2->second.eventbuffer.back() - it1->second.eventbuffer.back() );
+	auto it = fIntervalMap.find( std::make_pair( gpio1, gpio2 ) );
+	if ( it == fIntervalMap.end() ) return std::chrono::nanoseconds(0);
+	return fIntervalMap.at( std::make_pair( gpio1, gpio2 ) );
 }
 
 auto RateBuffer::lastEventTime(unsigned int gpio) const -> EventTime

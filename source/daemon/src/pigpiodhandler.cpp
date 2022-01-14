@@ -244,37 +244,44 @@ PigpiodHandler::~PigpiodHandler() {
 	if ( fChip != nullptr )	gpiod_chip_close( fChip );
 }
 
+void PigpiodHandler::processEvent( unsigned int gpio, std::shared_ptr<gpiod_line_event> line_event )
+{
+	
+	//std::uint64_t ns = line_event.ts.tv_sec*1e9 + line_event.ts.tv_nsec;
+	//const std::chrono::nanoseconds since_epoch_ns(ns);
+	std::chrono::nanoseconds since_epoch_ns(line_event->ts.tv_nsec);
+	since_epoch_ns += std::chrono::seconds(line_event->ts.tv_sec);
+	//auto since_epoch = std::chrono::duration_cast<std::chrono::system_clock::duration>(since_epoch_ns);
+	EventTime timestamp(since_epoch_ns);
+	emit event(gpio, timestamp);
+	if ( verbose > 3 ) {
+		qDebug()<<"line event: gpio"<<gpio<<" edge: "
+		<<QString((line_event->event_type==GPIOD_LINE_EVENT_RISING_EDGE)?"rising":"falling")
+		<<" ts="<<since_epoch_ns.count();
+	}
+}
 
-void PigpiodHandler::threadLoop() {
-	while (fThreadRunning) {
+void PigpiodHandler::eventHandler( struct gpiod_line *line ) {
+	static const struct timespec timeout { 4ULL, 0ULL };
+	while ( fThreadRunning ) {
 		if ( inhibit ) { 
 			std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
 			continue;
 		}
-		const struct timespec timeout { 0, 100000000UL };
-		gpiod_line_bulk event_bulk { };
-		int ret = gpiod_line_event_wait_bulk(&fInterruptLineBulk, &timeout, &event_bulk);
+
+		const unsigned int gpio = gpiod_line_offset( line );
+		std::shared_ptr<gpiod_line_event> line_event { std::make_shared<gpiod_line_event>() };
+		int ret = gpiod_line_event_wait( line, &timeout );
 		if ( ret > 0 ) {
-			unsigned int line_index = 0;
-			while ( line_index < event_bulk.num_lines ) {
-				gpiod_line_event line_event { };
-				int result = gpiod_line_event_read( event_bulk.lines[line_index], &line_event);
-				if ( result == 0 ) {
-					unsigned int gpio = gpiod_line_offset( event_bulk.lines[line_index] );
-					//std::uint64_t ns = line_event.ts.tv_sec*1e9 + line_event.ts.tv_nsec;
-					//const std::chrono::nanoseconds since_epoch_ns(ns);
-					std::chrono::nanoseconds since_epoch_ns(line_event.ts.tv_nsec);
-					since_epoch_ns += std::chrono::seconds(line_event.ts.tv_sec);
-					//auto since_epoch = std::chrono::duration_cast<std::chrono::system_clock::duration>(since_epoch_ns);
-					EventTime timestamp(since_epoch_ns);
-					emit event(gpio, timestamp);
-					if ( verbose > 2 ) {
-						qDebug()<<"line event: gpio"<<gpio<<" edge: "
-						<<QString((line_event.event_type==GPIOD_LINE_EVENT_RISING_EDGE)?"rising":"falling")
-						<<" ts="<<since_epoch_ns.count();
-					}
-				}
-				line_index++;
+			int read_result = gpiod_line_event_read( line, line_event.get() );
+			if ( read_result == 0 ) {
+				std::thread process_event_bg( &PigpiodHandler::processEvent, this, gpio, std::move(line_event) );
+				process_event_bg.detach();
+				//processEvent( gpio, std::move( line_event ) );
+			} else {
+				// an error occured
+				// what should we do here?
+				qCritical()<<"read gpio line event failed";
 			}
 		} else if ( ret == 0 ) {
 			// a timeout occurred, no event was detected
@@ -282,8 +289,8 @@ void PigpiodHandler::threadLoop() {
 		} else {
 			// an error occured
 			// what should we do here?
-			qCritical()<<"Wait for gpio line events failed";
-		}
+			qCritical()<<"wait for gpio line event failed";
+		}		
 	}
 }
 
@@ -366,6 +373,7 @@ bool PigpiodHandler::setPinBias(unsigned int gpio, std::uint8_t pin_bias) {
 		// line object exists, set config
 		dir = gpiod_line_direction(it->second);
 		gpiod_line_release(it->second);
+		fLineMap.erase( it );
 	}
 	// line was not allocated yet, so do it now
 	gpiod_line* line = gpiod_chip_get_line(fChip, gpio);
@@ -405,11 +413,6 @@ bool PigpiodHandler::setPinState(unsigned int gpio, bool state) {
 void PigpiodHandler::reloadInterruptSettings()
 {
 	this->stop();
-	gpiod_line_bulk_init( &fInterruptLineBulk );
-	// rerequest bulk events
-	for (auto [gpio,line] : fInterruptLineMap) {
-		gpiod_line_bulk_add( &fInterruptLineBulk, line );
-	}
 	this->start();
 }
 
@@ -423,7 +426,8 @@ bool PigpiodHandler::registerInterrupt(unsigned int gpio, EventEdge edge) {
 		// It is bypassed, since it does not work as intended.
 		// The function simply does nothing in this case.
 		return false;
-		gpiod_line_release(it->second);
+		//stop();
+		//gpiod_line_release(it->second);
 		if ( gpiod_line_update(it->second) < 0 ) {
 			qCritical()<<"update of gpio line" << gpio << "after release failed";
 			//return false;
@@ -500,15 +504,18 @@ bool PigpiodHandler::initialised(){
 
 void PigpiodHandler::stop() {
 	fThreadRunning = false;
-	if ( fThread != nullptr ) {
-		fThread->join();
+	for ( auto &[ gpio, line_thread ] : fThreads ) {
+		if ( line_thread ) line_thread->join();
 	}
 }
 
 void PigpiodHandler::start() {
 	if (fThreadRunning) return;
 	fThreadRunning = true;
-	fThread.reset(new std::thread( [this](){ this->threadLoop(); } ) );
+
+	for ( auto &[ gpio, line ] : fInterruptLineMap ) {
+		fThreads[ gpio ] = std::make_unique<std::thread>( [this, gpio, line](){ this->eventHandler( line ); } );
+	}
 }
 
 void PigpiodHandler::measureGpioClockTime() {
