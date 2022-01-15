@@ -37,7 +37,7 @@ Depending on the device of you choice, install the GUI for controlling the softw
 The steps to building the daemon are as follows:
 1. Install all dependencies
 2. Enter the build directory
-3. run `cmake ../source`
+3. run `cmake ../`
 6. run `make package`
 7. enter `output/packages`
 8. install the debian packages found there with `sudo apt install ./<filename>.deb`
