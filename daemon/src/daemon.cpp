@@ -29,6 +29,10 @@
 
 #define DEGREE_CHARCODE 248
 
+#define XOR_RATE 0
+#define AND_RATE 1
+#define COMBINED_RATE 2
+
 // REMEMBER: "emit" keyword is just syntactic sugar and not needed AT ALL ... learned it after 1 year *clap* *clap*
 
 using namespace std;
