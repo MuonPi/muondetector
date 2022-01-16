@@ -729,34 +729,12 @@ void Daemon::connectToPigpiod(){
 	const std::vector<unsigned int> gpio_pins({ GPIO_PINMAP[EVT_AND], GPIO_PINMAP[EVT_XOR],
                                             GPIO_PINMAP[TIMEPULSE] });
     pigHandler = new PigpiodHandler(gpio_pins);
-    //tdc7200 = new TDC7200(GPIO_PINMAP[TDC_INTB]);
     pigThread = new QThread();
     pigThread->setObjectName("muondetector-daemon-pigpio");
     pigHandler->moveToThread(pigThread);
-    //tdc7200->moveToThread(pigThread);
     connect(this, &Daemon::aboutToQuit, pigThread, &QThread::quit);
     connect(pigThread, &QThread::finished, pigThread, &QThread::deleteLater);
 
-    //pighandler <-> tdc
-/*
-	connect(pigHandler, &PigpiodHandler::spiData, tdc7200, &TDC7200::onDataReceived);
-    connect(pigHandler, &PigpiodHandler::signal, tdc7200, &TDC7200::onDataAvailable);
-    connect(tdc7200, &TDC7200::readData, pigHandler, &PigpiodHandler::readSpi);
-    connect(tdc7200, &TDC7200::writeData, pigHandler, &PigpiodHandler::writeSpi);
-
-    //tdc <-> thread & daemon
-    connect(tdc7200, &TDC7200::tdcEvent, this, [this](double usecs){
-        if (histoMap.find("Time-to-Digital Time Diff")!=histoMap.end()) {
-            histoMap["Time-to-Digital Time Diff"].fill(usecs);
-        }
-    });
-    connect(tdc7200, &TDC7200::statusUpdated, this, [this](bool isPresent) {
-        spiDevicePresent = isPresent;
-        sendSpiStats();
-    });
-    connect(pigThread, &QThread::started, tdc7200, &TDC7200::initialise);
-    connect(pigThread, &QThread::finished, tdc7200, &TDC7200::deleteLater);
-*/
     //pigHandler <-> thread & daemon
     connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
     connect(pigThread, &QThread::finished, pigHandler, &PigpiodHandler::deleteLater);
@@ -767,14 +745,6 @@ void Daemon::connectToPigpiod(){
     connect(this, &Daemon::GpioSetState, pigHandler, &PigpiodHandler::setPinState );
     connect(this, &Daemon::GpioRegisterForCallback, pigHandler, &PigpiodHandler::registerInterrupt);
     //connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
-/*
-	connect(pigHandler, &PigpiodHandler::signal, this, [this](uint8_t gpio_pin) {
-			if ( gpio_pin == GPIO_PINMAP[TIME_MEAS_OUT] ) {
-				onStatusLed2Event( 50 );
-			}
-		}	
-	);
-*/
     struct timespec ts_res;
     clock_getres(CLOCK_REALTIME, &ts_res);
     if (verbose > 3) {
@@ -784,7 +754,7 @@ void Daemon::connectToPigpiod(){
     timespec_get(&lastRateInterval, TIME_UTC);
     startOfProgram = lastRateInterval;
 
-    pigThread->start();
+	pigThread->start();
     rateBufferReminder.setInterval(rateBufferInterval);
     rateBufferReminder.setSingleShot(false);
     connect(&rateBufferReminder, &QTimer::timeout, this, &Daemon::onRateBufferReminder);

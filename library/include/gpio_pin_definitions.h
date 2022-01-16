@@ -62,7 +62,7 @@ static const QMap<GPIO_SIGNAL, GpioSignalDescriptor> GPIO_SIGNAL_MAP = { { UBIAS
     { TDC_STATUS, { "TDC_STATUS", DIR_OUT } },
     { IN_POL1, { "IN_POL1", DIR_OUT } },
     { IN_POL2, { "IN_POL2", DIR_OUT } },
-		{ UNDEFINED_SIGNAL, { "UNDEFINED_SIGNAL", DIR_UNDEFINED} }
+	{ UNDEFINED_SIGNAL, { "UNDEFINED_SIGNAL", DIR_UNDEFINED} }
 	};
 
 static const QVector<QString> TIMING_MUX_SIGNAL_NAMES = {

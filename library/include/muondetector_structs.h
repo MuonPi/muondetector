@@ -25,8 +25,6 @@ enum class ADC_SAMPLING_MODE {
     TRACE = 2 
 };
 
-//enum TIMING_MUX_INPUTS { MUX_AND=0, MUX_XOR=1, MUX_DISC1=2, MUX_DISC2=3 };
-
 class GeneralEvent {
 public:
 	explicit GeneralEvent( std::function<void()> fn );
