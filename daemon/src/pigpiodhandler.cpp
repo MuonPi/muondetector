@@ -343,20 +343,20 @@ bool PigpiodHandler::setPinOutput(unsigned int gpio, bool initState) {
 	return true;
 }
 
-bool PigpiodHandler::setPinBias(unsigned int gpio, std::uint8_t pin_bias) {
+bool PigpiodHandler::setPinBias(unsigned int gpio, std::uint8_t bias_flags) {
 	if (!isInitialised) return false;
 	int flags = 0;
-	if ( pin_bias & PinBias::OpenDrain ) {
+	if ( bias_flags & PinBias::OpenDrain ) {
 		flags |= GPIOD_LINE_REQUEST_FLAG_OPEN_DRAIN;
-	} else if ( pin_bias & PinBias::OpenSource ) {
+	} else if ( bias_flags & PinBias::OpenSource ) {
 		flags |= GPIOD_LINE_REQUEST_FLAG_OPEN_SOURCE;
-	} else if ( pin_bias & PinBias::ActiveLow ) {
+	} else if ( bias_flags & PinBias::ActiveLow ) {
 		flags |= GPIOD_LINE_REQUEST_FLAG_ACTIVE_LOW;
-	} else if ( pin_bias & PinBias::PullDown ) {
+	} else if ( bias_flags & PinBias::PullDown ) {
 		//flags |= GPIOD_LINE_REQUEST_FLAG_BIAS_PULL_DOWN;
-	} else if ( pin_bias & PinBias::PullUp ) {
+	} else if ( bias_flags & PinBias::PullUp ) {
 		//flags |= GPIOD_LINE_REQUEST_FLAG_BIAS_PULL_UP;
-	} else if ( !(pin_bias & PinBias::PullDown) && !(pin_bias & PinBias::PullUp) ) {
+	} else if ( !(bias_flags & PinBias::PullDown) && !(bias_flags & PinBias::PullUp) ) {
 		//flags |= GPIOD_LINE_REQUEST_FLAG_BIAS_DISABLED;
 	}
 

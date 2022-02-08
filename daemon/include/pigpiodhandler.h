@@ -57,7 +57,7 @@ public slots:
     bool setPinInput(unsigned int gpio);
     bool setPinOutput(unsigned int gpio, bool initState);
 	
-	bool setPinBias(unsigned int gpio, std::uint8_t pin_bias);
+	bool setPinBias(unsigned int gpio, std::uint8_t bias_flags);
     bool setPinState(unsigned int gpio, bool state);
     bool registerInterrupt(unsigned int gpio, EventEdge edge);
     bool unRegisterInterrupt(unsigned int gpio);
