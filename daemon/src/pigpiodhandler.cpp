@@ -211,9 +211,7 @@ PigpiodHandler::PigpiodHandler(std::vector<unsigned int> gpioPins, QObject *pare
 		int ret = gpiod_line_request_rising_edge_events_flags( line, CONSUMER, flags);
 		if ( ret < 0 ) {
 			qCritical()<<"Request for registering gpio line"<<gpioPin<<"for event notification failed";
-			//throw std::exception();
 			continue;
-			//return;
 		}
 		fInterruptLineMap.emplace( std::make_pair( gpioPin, line) );
 	}
@@ -240,11 +238,8 @@ PigpiodHandler::~PigpiodHandler() {
 void PigpiodHandler::processEvent( unsigned int gpio, std::shared_ptr<gpiod_line_event> line_event )
 {
 	
-	//std::uint64_t ns = line_event.ts.tv_sec*1e9 + line_event.ts.tv_nsec;
-	//const std::chrono::nanoseconds since_epoch_ns(ns);
 	std::chrono::nanoseconds since_epoch_ns(line_event->ts.tv_nsec);
 	since_epoch_ns += std::chrono::seconds(line_event->ts.tv_sec);
-	//auto since_epoch = std::chrono::duration_cast<std::chrono::system_clock::duration>(since_epoch_ns);
 	EventTime timestamp(since_epoch_ns);
 	emit event(gpio, timestamp);
 	if ( verbose > 3 ) {
@@ -270,7 +265,6 @@ void PigpiodHandler::eventHandler( struct gpiod_line *line ) {
 			if ( read_result == 0 ) {
 				std::thread process_event_bg( &PigpiodHandler::processEvent, this, gpio, std::move(line_event) );
 				process_event_bg.detach();
-				//processEvent( gpio, std::move( line_event ) );
 			} else {
 				// an error occured
 				// what should we do here?
