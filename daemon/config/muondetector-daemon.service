@@ -1,12 +1,6 @@
 [Unit]
 Description=muondetector-daemon - Daemon for custom muondetector board
-<<<<<<< HEAD:daemon/config/muondetector-daemon.service
 After=sockets.target network-online.target
-=======
-Requires=pigpiod.service
-BindsTo=pigpiod.service
-After=pigpiod.service sockets.target network-online.target
->>>>>>> dev:daemon/config/muondetector-daemon.service
 
 [Service]
 Type=simple
