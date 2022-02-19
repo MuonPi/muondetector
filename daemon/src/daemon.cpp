@@ -1449,13 +1449,11 @@ void Daemon::onGpioPinEvent(unsigned int gpio, EventTime event_time) {
 					//emit eventInterval( nsecs );
 					if ( nsecs < 100000L ) {
 						emit eventInterval( nsecs );
-						std::cout<<"trigger interval="<<nsecs<<"ns"<<std::endl;
 					}
 				} else {
-					std::cout<<"Warning: trigger interval="<<nsecs<<"ns"<<std::endl;
 				}
 			}
-			onStatusLed2Event( 50 );
+			onStatusLed2Event( 10 );
 		}
     }
 }
@@ -1532,10 +1530,8 @@ void Daemon::sendMqttStatus(bool connected)
     *(tcpMessage.dStream) << connected;
     if (connected != mqttConnectionStatus) {
         if (connected) {
-            qInfo() << "MQTT (re)connected";
             emit GpioSetState(GPIO_PINMAP[STATUS1], 1);
         } else {
-            qWarning() << "MQTT connection lost";
             emit GpioSetState(GPIO_PINMAP[STATUS1], 0);
         }
     }

@@ -277,7 +277,7 @@ void PigpiodHandler::eventHandler( struct gpiod_line *line ) {
 			// an error occured
 			// what should we do here?
 			qCritical()<<"wait for gpio line event failed";
-		}		
+		}
 	}
 }
 
