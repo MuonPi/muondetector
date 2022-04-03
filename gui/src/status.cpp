@@ -68,6 +68,7 @@ Status::Status(QWidget* parent)
 
 void Status::onGpioRatesReceived(quint8 whichrate, QVector<QPointF> rates)
 {
+    if ( rates.isEmpty() ) return;
     if (whichrate == 0) {
         if (xorSamples.size() > 0) {
             for (int k = rates.size() - 1; k >= 0; k--) {

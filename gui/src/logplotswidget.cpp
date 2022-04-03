@@ -177,10 +177,12 @@ void LogPlotsWidget::on_pointSizeSpinBox_valueChanged(int arg1)
 
 void LogPlotsWidget::onGpioRatesReceived(quint8 whichrate, QVector<QPointF> rates)
 {
+    if ( rates.isEmpty() ) return;
+
     QString name = "XOR Rate";
     if (whichrate == 0) {
         name = "XOR Rate";
-    } else if (whichrate == 0) {
+    } else if (whichrate == 1) {
         name = "AND Rate";
     } else
         return;
