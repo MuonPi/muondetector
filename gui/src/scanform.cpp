@@ -100,7 +100,7 @@ void ScanForm::scanParIteration()
         updateScanPlot();
     }
     currentScanPar += stepSize;
-    if ( currentScanPar > maxRange + EPSILON ) {
+    if (currentScanPar > maxRange + EPSILON) {
         // measurement finished
         finishScan();
         return;
@@ -118,27 +118,29 @@ void ScanForm::adjustScanPar(QString scanParName, double value)
         emit setThresholdVoltage(1, value);
     } else if (scanParName == "BIAS") {
         emit setBiasControlVoltage(value);
-    } else return;
+    } else
+        return;
     QThread::msleep(100);
 }
 
 void ScanForm::on_scanParComboBox_currentIndexChanged(int index)
 {
-	if ( index < 0 || index >= SP_NAMES.size() ) return;
+    if (index < 0 || index >= SP_NAMES.size())
+        return;
     if (SP_NAMES[index] == "TIME") {
-		ui->minRangeLineEdit->setEnabled(false);
-		ui->maxRangeLineEdit->setEnabled(false);
-		//ui->stepSizeLineEdit->setEnabled(false);
-		ui->activateNrMeasurementsCheckBox->setChecked(true);
-		ui->limitStatisticsCheckBox->setEnabled(false);
-		ui->maxStatisticsComboBox->setEnabled(false);
-	} else {
-		ui->minRangeLineEdit->setEnabled(true);
-		ui->maxRangeLineEdit->setEnabled(true);
-		//ui->stepSizeLineEdit->setEnabled(true);
-		ui->limitStatisticsCheckBox->setEnabled(true);
-		ui->maxStatisticsComboBox->setEnabled(ui->limitStatisticsCheckBox->isChecked());
-	}
+        ui->minRangeLineEdit->setEnabled(false);
+        ui->maxRangeLineEdit->setEnabled(false);
+        //ui->stepSizeLineEdit->setEnabled(false);
+        ui->activateNrMeasurementsCheckBox->setChecked(true);
+        ui->limitStatisticsCheckBox->setEnabled(false);
+        ui->maxStatisticsComboBox->setEnabled(false);
+    } else {
+        ui->minRangeLineEdit->setEnabled(true);
+        ui->maxRangeLineEdit->setEnabled(true);
+        //ui->stepSizeLineEdit->setEnabled(true);
+        ui->limitStatisticsCheckBox->setEnabled(true);
+        ui->maxStatisticsComboBox->setEnabled(ui->limitStatisticsCheckBox->isChecked());
+    }
 }
 
 void ScanForm::on_scanStartPushButton_clicked()
@@ -148,48 +150,48 @@ void ScanForm::on_scanStartPushButton_clicked()
         return;
     }
 
-	maxMeasurementTimeInterval = ui->timeIntervalSpinBox->value();
+    maxMeasurementTimeInterval = ui->timeIntervalSpinBox->value();
 
     bool ok = false;
-	minRange = ui->minRangeLineEdit->text().toDouble(&ok);
-	if (!ok)
-		return;
-	maxRange = ui->maxRangeLineEdit->text().toDouble(&ok);
-	if (!ok)
-		return;
-	if ( ui->activateNrMeasurementsCheckBox->isChecked() ) {
-		if ( ui->nrMeasurementSpinBox->value() < 2 ) {
-			stepSize = maxRange + 2. * EPSILON;
-		} else {
-			stepSize = ( maxRange - minRange ) / ( ui->nrMeasurementSpinBox->value() - 1 );
-		}
-	} else {
-		stepSize = ui->stepSizeLineEdit->text().toDouble(&ok);
-		if (!ok)
-			return;
-	}
-	    
-	scanPar = ui->scanParComboBox->currentIndex();
+    minRange = ui->minRangeLineEdit->text().toDouble(&ok);
+    if (!ok)
+        return;
+    maxRange = ui->maxRangeLineEdit->text().toDouble(&ok);
+    if (!ok)
+        return;
+    if (ui->activateNrMeasurementsCheckBox->isChecked()) {
+        if (ui->nrMeasurementSpinBox->value() < 2) {
+            stepSize = maxRange + 2. * EPSILON;
+        } else {
+            stepSize = (maxRange - minRange) / (ui->nrMeasurementSpinBox->value() - 1);
+        }
+    } else {
+        stepSize = ui->stepSizeLineEdit->text().toDouble(&ok);
+        if (!ok)
+            return;
+    }
+
+    scanPar = ui->scanParComboBox->currentIndex();
     if (SP_NAMES[scanPar] == "VOID") {
         return;
-	}
+    }
     obsPar = ui->observableComboBox->currentIndex();
     if (OP_NAMES[obsPar] == "VOID") {
         return;
-	}
-	if (ui->limitStatisticsCheckBox->isChecked()) {
-		int power = ui->maxStatisticsComboBox->currentIndex() + 1;
-		maxMeasurementStatistics = std::pow(10, power);
-	} else {
-		maxMeasurementStatistics = std::numeric_limits<unsigned long>::max();
-	}
-	if (SP_NAMES[scanPar] == "TIME") {
-		minRange = 0.;
-		maxRange = maxMeasurementTimeInterval * ( ui->nrMeasurementSpinBox->value() - 1 );
-		stepSize = maxMeasurementTimeInterval;
-	}
+    }
+    if (ui->limitStatisticsCheckBox->isChecked()) {
+        int power = ui->maxStatisticsComboBox->currentIndex() + 1;
+        maxMeasurementStatistics = std::pow(10, power);
+    } else {
+        maxMeasurementStatistics = std::numeric_limits<unsigned long>::max();
+    }
+    if (SP_NAMES[scanPar] == "TIME") {
+        minRange = 0.;
+        maxRange = maxMeasurementTimeInterval * (ui->nrMeasurementSpinBox->value() - 1);
+        stepSize = maxMeasurementTimeInterval;
+    }
 
-	if (OP_NAMES[obsPar] == "UBXRATE") {
+    if (OP_NAMES[obsPar] == "UBXRATE") {
         emit gpioInhibitChanged(true);
         emit mqttInhibitChanged(true);
     }

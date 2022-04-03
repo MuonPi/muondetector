@@ -106,16 +106,16 @@ int Histogram::getHighestOccupiedBin() const
 
 void Histogram::fill(double x, double mult)
 {
-	int bin = value2Bin(x);
-	if ( fAutoscale && getEntries() < 1e-6 ) {
-		// initial fill, so lets see if we should rescale to the first value
-		if ( bin < 0 || bin >= fNrBins ) {
-			rescale( x );
-			fill( x, mult );
-			return;
-		}
-	}
-	if (bin < 0) {
+    int bin = value2Bin(x);
+    if (fAutoscale && getEntries() < 1e-6) {
+        // initial fill, so lets see if we should rescale to the first value
+        if (bin < 0 || bin >= fNrBins) {
+            rescale(x);
+            fill(x, mult);
+            return;
+        }
+    }
+    if (bin < 0) {
         fUnderflow += mult;
     } else if (bin >= fNrBins) {
         fOverflow += mult;
@@ -225,43 +225,44 @@ void Histogram::rescale(double center)
 
 void Histogram::rescale()
 {
-    if ( !fAutoscale ) return;
-	
+    if (!fAutoscale)
+        return;
+
     // Strategy: check if more than 1% of all entries in underflow/overflow
     // set new center to old center, adjust range by 20%
     // set center to newValue if histo empty or only underflow/overflow filled
     // histo will not be filled with supplied value, it has to be done externally
     double entries = getEntries();
     // do nothing if histo is empty
-    if ( entries < 3. ) {
+    if (entries < 3.) {
         return;
     }
     double ufl = getUnderflow();
     double ofl = getOverflow();
     entries -= ufl + ofl;
     double range = getMax() - getMin();
-	int lowest = getLowestOccupiedBin();
-	int highest = getHighestOccupiedBin();
-	double lowestEntry = getBinCenter(lowest);
-	double highestEntry = getBinCenter(highest);
+    int lowest = getLowestOccupiedBin();
+    int highest = getHighestOccupiedBin();
+    double lowestEntry = getBinCenter(lowest);
+    double highestEntry = getBinCenter(highest);
     if (ufl > 0. && ofl > 0. && (ufl + ofl) > 0.01 * entries) {
         // range is too small, underflow and overflow have more than 1% of all entries
-        rescale( 0.5 * ( highestEntry-lowestEntry ) + lowestEntry, 1.2 * range );
-    } else if ( ufl > 0.005 * entries ) {
-		setMin( getMax() - range * 1.2 );
-		clear();
-    } else if ( ofl > 0.005 * entries ) {
-		setMax( getMin() + range * 1.2 );
-		clear();
-    } else if ( ufl < 1e-3 && ofl < 1e-3 ) {
+        rescale(0.5 * (highestEntry - lowestEntry) + lowestEntry, 1.2 * range);
+    } else if (ufl > 0.005 * entries) {
+        setMin(getMax() - range * 1.2);
+        clear();
+    } else if (ofl > 0.005 * entries) {
+        setMax(getMin() + range * 1.2);
+        clear();
+    } else if (ufl < 1e-3 && ofl < 1e-3) {
         // check if range is too wide
-        if ( entries > 1000. && static_cast<double>(highest-lowest)/fNrBins < 0.05 ) {
-            rescale( 0.5 * ( highestEntry-lowestEntry ) + lowestEntry, 0.8 * range );
+        if (entries > 1000. && static_cast<double>(highest - lowest) / fNrBins < 0.05) {
+            rescale(0.5 * (highestEntry - lowestEntry) + lowestEntry, 0.8 * range);
         }
     }
 }
 
-void Histogram::setAutoscale( bool autoscale )
+void Histogram::setAutoscale(bool autoscale)
 {
-	fAutoscale = autoscale;
+    fAutoscale = autoscale;
 }

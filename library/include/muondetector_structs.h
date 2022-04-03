@@ -1,62 +1,61 @@
 #ifndef MUONDETECTOR_STRUCTS_H
 #define MUONDETECTOR_STRUCTS_H
 
+#include "gpio_pin_definitions.h"
 #include "histogram.h"
 #include "muondetector_shared_global.h"
-#include "gpio_pin_definitions.h"
 
 #include <QDataStream>
 #include <QList>
 #include <QMap>
 #include <QString>
 #include <QVariant>
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <string>
-#include <functional>
 #include <sys/types.h>
 
-enum class ADC_SAMPLING_MODE { 
-	DISABLED = 0,
+enum class ADC_SAMPLING_MODE {
+    DISABLED = 0,
     PEAK = 1,
-    TRACE = 2 
+    TRACE = 2
 };
-
 
 class GeneralEvent {
 public:
-	explicit GeneralEvent( std::function<void()> fn );
+    explicit GeneralEvent(std::function<void()> fn);
 public slots:
-	void trigger();
-protected:	
-	std::function<void()> fFn;
+    void trigger();
+
+protected:
+    std::function<void()> fFn;
 };
-	
+
 struct IoConfiguration {
-	TIMING_MUX_SELECTION timing_input { TIMING_MUX_SELECTION::UNDEFINED };
-	GPIO_SIGNAL event_trigger { GPIO_SIGNAL::UNDEFINED_PIN };
-	GeneralEvent led1_event;
-	GeneralEvent led2_event;
-};	
-	
-	
+    TIMING_MUX_SELECTION timing_input { TIMING_MUX_SELECTION::UNDEFINED };
+    GPIO_SIGNAL event_trigger { GPIO_SIGNAL::UNDEFINED_PIN };
+    GeneralEvent led1_event;
+    GeneralEvent led2_event;
+};
+
 struct CalibStruct {
 public:
-    enum { 
-		CALIBFLAGS_NO_CALIB = 0x00,
+    enum {
+        CALIBFLAGS_NO_CALIB = 0x00,
         CALIBFLAGS_COMPONENTS = 0x01,
         CALIBFLAGS_VOLTAGE_COEFFS = 0x02,
-        CALIBFLAGS_CURRENT_COEFFS = 0x04 
-	};
+        CALIBFLAGS_CURRENT_COEFFS = 0x04
+    };
 
-    enum { 
-		FEATUREFLAGS_NONE = 0x00,
+    enum {
+        FEATUREFLAGS_NONE = 0x00,
         FEATUREFLAGS_GNSS = 0x01,
         FEATUREFLAGS_ENERGY = 0x02,
         FEATUREFLAGS_DETBIAS = 0x04,
         FEATUREFLAGS_PREAMP_BIAS = 0x08,
-		FEATUREFLAGS_DUAL_CHANNEL = 0x10
-	};
+        FEATUREFLAGS_DUAL_CHANNEL = 0x10
+    };
 
     CalibStruct() = default;
     CalibStruct(const std::string& a_name, const std::string& a_type, uint8_t a_address, const std::string& a_value)
@@ -516,6 +515,5 @@ private:
     bool updated = false;
     int typeId = 0;
 };
-
 
 #endif // MUONDETECTOR_STRUCTS_H
