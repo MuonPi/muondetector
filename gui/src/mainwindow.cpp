@@ -252,11 +252,10 @@ MainWindow::MainWindow(QWidget* parent)
 
     m_connection_timeout.setSingleShot(true);
     m_connection_timeout.setInterval(CONNECTION_TIMEOUT);
-    connect(&m_connection_timeout, &QTimer::timeout, this, 
+    connect(&m_connection_timeout, &QTimer::timeout, this,
         [this]() {
             this->connection_error(255, QString("connection timeout"));
-        }
-    );
+        });
     // initialise all ui elements that will be inactive at start
     uiSetDisconnectedState();
 }
