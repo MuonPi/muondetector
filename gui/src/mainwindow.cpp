@@ -27,6 +27,8 @@
 
 using namespace std;
 
+constexpr std::chrono::milliseconds CONNECTION_TIMEOUT { 20'000UL };
+
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -247,6 +249,14 @@ MainWindow::MainWindow(QWidget* parent)
     const QStandardItemModel* model = dynamic_cast<QStandardItemModel*>(ui->biasControlTypeComboBox->model());
     QStandardItem* item = model->item(1);
     item->setEnabled(false);
+
+    m_connection_timeout.setSingleShot(true);
+    m_connection_timeout.setInterval(CONNECTION_TIMEOUT);
+    connect(&m_connection_timeout, &QTimer::timeout, this, 
+        [this]() {
+            this->connection_error(255, QString("connection timeout"));
+        }
+    );
     // initialise all ui elements that will be inactive at start
     uiSetDisconnectedState();
 }
@@ -364,6 +374,7 @@ bool MainWindow::eventFilter(QObject* object, QEvent* event)
 
 void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
 {
+    m_connection_timeout.start();
     TCP_MSG_KEY msgID = static_cast<TCP_MSG_KEY>(tcpMessage.getMsgID());
     if (msgID == TCP_MSG_KEY::MSG_GPIO_EVENT) {
         unsigned int gpioPin;
@@ -898,6 +909,7 @@ void MainWindow::uiSetDisconnectedState()
     ui->controlWidget->setEnabled(false);
     // disable other widgets
     emit setUiEnabledStates(false);
+    m_connection_timeout.stop();
 }
 
 void MainWindow::uiSetConnectedState()

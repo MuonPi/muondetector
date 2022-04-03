@@ -167,6 +167,7 @@ private:
     double biasCalibSlope = 1.;
     double minBiasVoltage = 0.;
     double maxBiasVoltage = 3.3;
+    QTimer m_connection_timeout { };
 };
 
 #endif // MAINWINDOW_H
