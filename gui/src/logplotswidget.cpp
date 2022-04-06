@@ -105,8 +105,8 @@ void LogPlotsWidget::updateLogTable()
         i++;
     }
 
-    if (fCurrentLog.size()) {
-        for (int j = 0; i < ui->tableWidget->rowCount(); j++) {
+    if ( !fCurrentLog.isEmpty() ) {
+        for (int j = 0; j < ui->tableWidget->rowCount(); j++) {
             if (ui->tableWidget->item(j, 0)->text() == fCurrentLog) {
                 on_tableWidget_cellClicked(j, 0);
             }
