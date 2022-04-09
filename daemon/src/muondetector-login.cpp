@@ -192,11 +192,12 @@ int main()
     QObject::connect(&mqttHandler, &MuonPi::MqttHandler::mqttConnectionStatus,
         [context = std::move(context)](bool connected) mutable {
             if (connected) {
-                std::cout << "login data is correct!\n";
+                std::cout << "Login data is correct!\n";
             }
             context.release();
         });
     mqttHandler.start(QString::fromStdString(username), QString::fromStdString(password));
+    std::this_thread::sleep_for( std::chrono::seconds( 3 ) );
     mqttHandler.mqttDisconnect();
     return 0;
 }
