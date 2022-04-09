@@ -17,6 +17,8 @@
 #include <string>
 #include <termios.h>
 #include <unistd.h>
+#include <config.h>
+#include <thread>
 
 #include "mqtthandler.h"
 
@@ -175,9 +177,8 @@ int main()
     std::string username {};
     std::cin >> username;
     std::string password { getpass("password: ", true) };
-    QString hashedMacAddress { QString { QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex() } };
     QDir temp;
-    QString saveDirPath { "/var/muondetector/" + hashedMacAddress };
+    QString saveDirPath { MuonPi::Config::data_path };
     if (!temp.exists(saveDirPath)) {
         temp.mkpath(saveDirPath);
         if (!temp.exists(saveDirPath)) {

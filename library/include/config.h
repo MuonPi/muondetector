@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <string>
+#include <chrono>
 
 namespace MuonPi::Version {
 constexpr struct Version {
@@ -21,6 +22,7 @@ constexpr struct Version {
 
 namespace MuonPi::Config {
 constexpr const char* file { "/etc/muondetector/muondetector.conf" };
+constexpr const char* data_path { "/var/muondetector/" };
 constexpr int event_count_deadtime_ticks { 1000 };
 constexpr int event_count_max_pileups { 50 };
 
@@ -36,6 +38,7 @@ namespace MQTT {
 namespace Log {
     constexpr int interval { 1 };
     constexpr int max_geohash_length { 6 };
+    constexpr std::chrono::seconds rotate_period_default { 7 * 86400UL };
 }
 namespace Upload {
     constexpr int reminder { 5 };
@@ -75,6 +78,7 @@ namespace Hardware {
 namespace MuonPi::Settings {
 struct {
     int max_geohash_length { Config::Log::max_geohash_length };
+    std::chrono::seconds rotate_period { Config::Log::rotate_period_default };
 } log;
 
 struct {

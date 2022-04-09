@@ -10,7 +10,7 @@
 #include <QThread>
 #include <QTimer>
 #include <QtGlobal>
-#include <config.h>
+//#include <config.h>
 #include <crypto++/aes.h>
 #include <crypto++/filters.h>
 #include <crypto++/hex.h>
@@ -93,25 +93,16 @@ FileHandler::FileHandler(const QString& userName, const QString& passWord, quint
     dailyUploadTime = QTime(11, 11, 11, 111);
     fileSize = fileSizeMB;
     QDir temp;
-    QString fullPath = +"/var/muondetector/";
-    hashedMacAddress = QString(QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex());
-    fullPath += hashedMacAddress;
+    QString fullPath { MuonPi::Config::data_path };
     configPath = fullPath + "/";
     configFilePath = fullPath + "/currentWorkingFileInformation.conf";
     loginDataFilePath = fullPath + "/loginData.save";
-    fullPath += "/notUploadedFiles/";
-    dataFolderPath = fullPath;
-    if (!temp.exists(fullPath)) {
-        temp.mkpath(fullPath);
-        if (!temp.exists(fullPath)) {
-            qDebug() << "could not create folder " << fullPath;
-        }
-    }
-    QString uploadedFiles = configPath + "uploadedFiles/";
-    if (!temp.exists(uploadedFiles)) {
-        temp.mkpath(uploadedFiles);
-        if (!temp.exists(uploadedFiles)) {
-            qDebug() << "could not create folder " << uploadedFiles;
+    //fullPath += "/notUploadedFiles/";
+    dataFolderPath = fullPath + "/data/";
+    if (!temp.exists(dataFolderPath)) {
+        temp.mkpath(dataFolderPath);
+        if (!temp.exists(dataFolderPath)) {
+            qDebug() << "could not create folder " << dataFolderPath;
         }
     }
     bool rewrite_login = false;
@@ -226,7 +217,7 @@ bool FileHandler::openFiles(bool writeHeader)
         QString fileNamePart = createFileName();
         currentWorkingFilePath = dataFolderPath + "data_" + fileNamePart;
         currentWorkingLogPath = dataFolderPath + "log_" + fileNamePart;
-        while (notUploadedFilesNames.contains(QFileInfo(currentWorkingFilePath).fileName())) {
+        while (m_filename_list.contains(QFileInfo(currentWorkingFilePath).fileName())) {
             fileNamePart = createFileName();
             currentWorkingFilePath = dataFolderPath + "data_" + fileNamePart;
             currentWorkingLogPath = dataFolderPath + "log_" + fileNamePart;
@@ -291,9 +282,26 @@ bool FileHandler::writeConfigFile()
     return true;
 }
 
+bool FileHandler::removeOldFiles()
+{
+    for (auto& fileName : m_filename_list) {
+        QString filePath = dataFolderPath + fileName;
+        if (filePath != currentWorkingFilePath 
+            && filePath != currentWorkingLogPath )
+        {
+            QFileInfo fileInfo(filePath); 
+            qint64 fileAgeSecs = QDateTime::currentSecsSinceEpoch() - fileInfo.lastModified().toSecsSinceEpoch();
+            if (fileAgeSecs > m_logrotate_period.count()) {
+                QFile::remove(filePath);
+            }
+        }
+    }
+}
+
 bool FileHandler::switchFiles(QString fileName)
 {
     closeFiles();
+    removeOldFiles();
     currentWorkingFilePath = "data_" + fileName;
     currentWorkingLogPath = "log_" + fileName;
     if (fileName == "") {
@@ -312,7 +320,7 @@ bool FileHandler::switchFiles(QString fileName)
 bool FileHandler::readFileInformation()
 {
     QDir directory(dataFolderPath);
-    notUploadedFilesNames = directory.entryList(QStringList() << "*.dat", QDir::Files);
+    m_filename_list = directory.entryList(QStringList() << "*.dat", QDir::Files);
     QFile configFile(configFilePath);
     if (!configFile.open(QIODevice::ReadWrite)) {
         qDebug() << "file open failed in 'ReadWrite' mode at location " << configFilePath;
@@ -333,7 +341,7 @@ bool FileHandler::readFileInformation()
 
 void FileHandler::writeToDataFile(const QString& data)
 {
-    if (dataFile == nullptr) {
+    if (!m_log_events || dataFile == nullptr) {
         return;
     }
     QTextStream out(dataFile);
@@ -359,70 +367,6 @@ QString FileHandler::createFileName()
     QString fileName = dateStringNow();
     fileName = fileName + ".dat";
     return fileName;
-}
-
-// upload related stuff
-
-bool FileHandler::uploadDataFile(QString fileName)
-{
-    char envName[] = "LFTP_PASSWORD";
-    if (setenv(envName, password.toStdString().c_str(), 1) != 0) {
-        qDebug() << "setenv returned not 0";
-    }
-    QProcess lftpProcess(this);
-    lftpProcess.setProgram("lftp");
-    QStringList arguments;
-    arguments << "--env-password";
-    arguments << "-p" << QString::number(MuonPi::Config::Upload::port);
-    arguments << "-u" << QString(username);
-    arguments << MuonPi::Config::Upload::url;
-    arguments << "-e" << QString("mkdir " + hashedMacAddress + " ; cd " + hashedMacAddress + " && put " + fileName + " ; exit");
-    lftpProcess.setArguments(arguments);
-    lftpProcess.start();
-    if (!lftpProcess.waitForFinished(lftpUploadTimeout)) {
-        qDebug() << lftpProcess.readAllStandardOutput();
-        qDebug() << lftpProcess.readAllStandardError();
-        qDebug() << "lftp not installed or timed out after " << lftpUploadTimeout / 1000 << " s";
-        system("unset LFTP_PASSWORD");
-        return false;
-    }
-    if (lftpProcess.exitStatus() != 0) {
-        qDebug() << "lftp returned exit status other than 0";
-        unsetenv(envName);
-        return false;
-    }
-    unsetenv(envName);
-    return true;
-}
-
-bool FileHandler::uploadRecentDataFiles()
-{
-    readFileInformation();
-    QDir lftpDir;
-    lftpDir.setPath(lftpDir.homePath() + "/.lftp");
-    if (!lftpDir.exists()) {
-        lftpDir.mkpath(".");
-    }
-    QFile lftp_rc_file(lftpDir.path() + "/rc");
-    if (!lftp_rc_file.exists() || lftp_rc_file.size() < 10) {
-        if (!lftp_rc_file.open(QIODevice::ReadWrite)) {
-            qDebug() << "could not open .lftp/rc file";
-            return false;
-        }
-        lftp_rc_file.write("set ssl:verify-certificate no\n");
-        lftp_rc_file.close();
-    }
-    for (auto& fileName : notUploadedFilesNames) {
-        QString filePath = dataFolderPath + fileName;
-        if (filePath != currentWorkingFilePath && filePath != currentWorkingLogPath) {
-            if (!uploadDataFile(filePath)) {
-                qDebug() << "failed to upload recent files";
-                return false;
-            }
-            QFile::rename(filePath, QString(configPath + "uploadedFiles/" + fileName));
-        }
-    }
-    return true;
 }
 
 // crypto related stuff

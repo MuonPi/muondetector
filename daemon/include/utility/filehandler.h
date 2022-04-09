@@ -8,6 +8,7 @@
 #include <QQueue>
 #include <QStandardPaths>
 #include <QVector>
+#include <config.h>
 #include "logparameter.h"
 
 class FileHandler : public QObject {
@@ -48,20 +49,21 @@ private:
     QString username;
     QString password;
     QFlags<QFileDevice::Permission> defaultPermissions = QFileDevice::WriteOwner | QFileDevice::WriteUser | QFileDevice::WriteGroup | QFileDevice::ReadOwner | QFileDevice::ReadUser | QFileDevice::ReadGroup | QFileDevice::ReadOther;
-    QStringList notUploadedFilesNames;
+    QStringList m_filename_list;
     bool saveLoginData(QString username, QString password);
     bool readLoginData();
     bool openFiles(bool writeHeader = false); // reads the config file and opens the correct data file to write to
     bool readFileInformation();
-    bool uploadDataFile(QString fileName); // sends a data file with some filename via lftp script to the server
-    bool uploadRecentDataFiles();
     bool switchFiles(QString fileName = ""); // closes the old file and opens a new one, changing "dataConfig.conf" to the new file
+    bool removeOldFiles();
     bool writeConfigFile();
     void closeFiles();
     QString createFileName(); // creates a fileName based on date time and mac address
     quint32 fileSize; // in MB
     QDateTime lastUploadDateTime;
     QTime dailyUploadTime;
+    bool m_log_events { MuonPi::Settings::events.store_local };
+    std::chrono::seconds m_logrotate_period { MuonPi::Settings::log.rotate_period };
 };
 
 #endif // FILEHANDLER_H
