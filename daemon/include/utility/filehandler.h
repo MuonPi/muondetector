@@ -21,6 +21,8 @@ public:
     QFileInfo dataFileInfo() const;
     QFileInfo logFileInfo() const;
     qint64 currentLogAge();
+    bool eventLogEnabled() const { return m_log_events; }
+    std::chrono::seconds logRotatePeriod() const { return m_logrotate_period; }
 
 signals:
     void logIntervalSignal();

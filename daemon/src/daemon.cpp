@@ -1292,6 +1292,9 @@ void Daemon::sendLogInfo()
     lis.dataFileSize = fileHandler->dataFileInfo().size();
     lis.status = (quint8)(fileHandler->dataFileInfo().exists() && fileHandler->logFileInfo().exists());
     lis.logAge = (qint32)fileHandler->currentLogAge();
+    lis.logEnabled = fileHandler->eventLogEnabled();
+    lis.logRotationDuration = fileHandler->logRotatePeriod();
+
     TcpMessage answer(TCP_MSG_KEY::MSG_LOG_INFO);
     *(answer.dStream) << lis;
     emit sendTcpMessage(answer);

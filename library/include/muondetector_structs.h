@@ -251,6 +251,8 @@ struct LogInfoStruct {
     quint32 logFileSize;
     quint32 dataFileSize;
     qint32 logAge;
+    std::chrono::seconds logRotationDuration { 86400L };
+    bool logEnabled { true };
 };
 
 struct OledItem {
@@ -415,15 +417,17 @@ inline QDataStream& operator<<(QDataStream& out, const GnssMonHw2Struct& hw2)
 
 inline QDataStream& operator>>(QDataStream& in, LogInfoStruct& lis)
 {
+    qint32 seconds;
     in >> lis.logFileName >> lis.dataFileName >> lis.status >> lis.logFileSize
-        >> lis.dataFileSize >> lis.logAge;
+        >> lis.dataFileSize >> lis.logAge >> seconds >> lis.logEnabled;
+    lis.logRotationDuration = std::chrono::seconds(seconds);
     return in;
 }
 
 inline QDataStream& operator<<(QDataStream& out, const LogInfoStruct& lis)
 {
     out << lis.logFileName << lis.dataFileName << lis.status << lis.logFileSize
-        << lis.dataFileSize << lis.logAge;
+        << lis.dataFileSize << lis.logAge << static_cast<qint32>(lis.logRotationDuration.count()) << lis.logEnabled;
     return out;
 }
 
