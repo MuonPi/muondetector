@@ -36,15 +36,9 @@ namespace MQTT {
     constexpr const char* log_topic { "muonpi/log/" };
 }
 namespace Log {
-    constexpr int interval { 1 };
+    constexpr std::chrono::seconds interval { 60 };
     constexpr int max_geohash_length { 6 };
     constexpr std::chrono::seconds rotate_period_default { 7 * 86400UL };
-}
-namespace Upload {
-    constexpr int reminder { 5 };
-    constexpr std::size_t timeout { 600000UL };
-    constexpr const char* url { "balu.physik.uni-giessen.de:/cosmicshower" };
-    constexpr int port { 35221 };
 }
 namespace Hardware {
     namespace OLED {

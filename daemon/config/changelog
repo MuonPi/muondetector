@@ -3,7 +3,10 @@ muondetector-daemon (2.1.0) ; urgency=low
   * Bugfixes:
   
   * Updates:
-  - restructured data logging system: introduced log rotation and possibility to enable/disable data logging; simplified structure of data storage path under /var/muondetector
+  - restructured data logging system: 
+   - introduced log rotation and possibility to enable/disable data logging
+   - simplified structure of data storage path under /var/muondetector
+   - auto delete old data and log files
   
  -- MuonPi <developer@muonpi.org>  Fri, 8. Apr 2022 10:10:00 +0100
 

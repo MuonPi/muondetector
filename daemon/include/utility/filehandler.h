@@ -15,7 +15,7 @@ class FileHandler : public QObject {
     Q_OBJECT
 
 public:
-    FileHandler(const QString& userName, const QString& passWord, quint32 fileSizeMB = 500, QObject* parent = nullptr);
+    FileHandler(const QString& username, const QString& password, quint32 fileSizeMB = 500, QObject* parent = nullptr);
     QString getCurrentDataFileName() const;
     QString getCurrentLogFileName() const;
     QFileInfo dataFileInfo() const;
@@ -46,15 +46,15 @@ private:
     QString dataFolderPath;
     QString currentWorkingFilePath;
     QString currentWorkingLogPath;
-    QString username;
-    QString password;
+    QString m_username {};
+    QString m_password {};
     QFlags<QFileDevice::Permission> defaultPermissions = QFileDevice::WriteOwner | QFileDevice::WriteUser | QFileDevice::WriteGroup | QFileDevice::ReadOwner | QFileDevice::ReadUser | QFileDevice::ReadGroup | QFileDevice::ReadOther;
     QStringList m_filename_list;
     bool saveLoginData(QString username, QString password);
     bool readLoginData();
     bool openFiles(bool writeHeader = false); // reads the config file and opens the correct data file to write to
     bool readFileInformation();
-    bool switchFiles(QString fileName = ""); // closes the old file and opens a new one, changing "dataConfig.conf" to the new file
+    bool rotateFiles(); // closes the old file and opens a new one, changing "dataConfig.conf" to the new file
     bool removeOldFiles();
     bool writeConfigFile();
     void closeFiles();

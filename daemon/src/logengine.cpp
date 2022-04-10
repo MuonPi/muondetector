@@ -14,7 +14,7 @@ LogEngine::LogEngine(QObject* parent)
     : QObject(parent)
 {
     QTimer* logReminder = new QTimer(this);
-    logReminder->setInterval(60 * 1000 * MuonPi::Config::Log::interval);
+    logReminder->setInterval(1000 * MuonPi::Config::Log::interval.count());
     logReminder->setSingleShot(false);
     connect(logReminder, &QTimer::timeout, this, &LogEngine::onLogInterval);
     logReminder->start();
