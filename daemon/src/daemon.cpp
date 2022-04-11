@@ -408,7 +408,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 
         if (verbose > 2) {
             bool ok = ads1115_p->setLowThreshold(0b0000000000000000);
-            ok = ok && ads1115_p->setHighThreshold(0b1000000000000000);
+            ok = ok && ads1115_p->setHighThreshold(-32768);
             if (ok)
                 qDebug() << "successfully setting threshold registers";
             else
@@ -1193,16 +1193,16 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         receivedCalibItems(calibs);
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_GNSS_CONFIG) {
-        std::vector<GnssConfigStruct> configs;
+        std::vector<GnssConfigStruct> gnss_configs;
         int nrEntries = 0;
         *(tcpMessage.dStream) >> nrEntries;
         for (int i = 0; i < nrEntries; i++) {
-            GnssConfigStruct config;
-            *(tcpMessage.dStream) >> config.gnssId >> config.resTrkCh >> config.maxTrkCh >> config.flags;
-            configs.push_back(config);
+            GnssConfigStruct gnss_config;
+            *(tcpMessage.dStream) >> gnss_config.gnssId >> gnss_config.resTrkCh >> gnss_config.maxTrkCh >> gnss_config.flags;
+            gnss_configs.push_back(gnss_config);
         }
-        emit setGnssConfig(configs);
-        usleep(150000L);
+        emit setGnssConfig(gnss_configs);
+        std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
         emit sendPollUbxMsg(UBX_CFG_GNSS);
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_CFG_TP5) {
