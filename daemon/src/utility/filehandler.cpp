@@ -125,7 +125,7 @@ QString FileHandler::getCurrentDataFileName() const
 
 QString FileHandler::getCurrentLogFileName() const
 {
-    if (logFile != nullptr)
+    if (logFile == nullptr)
         return "";
     QFileInfo fi(*logFile);
     return fi.absoluteFilePath();
