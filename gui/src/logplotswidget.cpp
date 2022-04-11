@@ -105,7 +105,7 @@ void LogPlotsWidget::updateLogTable()
         i++;
     }
 
-    if ( !fCurrentLog.isEmpty() ) {
+    if (!fCurrentLog.isEmpty()) {
         for (int j = 0; j < ui->tableWidget->rowCount(); j++) {
             if (ui->tableWidget->item(j, 0)->text() == fCurrentLog) {
                 on_tableWidget_cellClicked(j, 0);
@@ -141,6 +141,16 @@ void LogPlotsWidget::onUiEnabledStateChange(bool connected)
         ui->logPlot->curve("curve1").hide();
         ui->logNameLabel->setText("N/A");
         ui->nrLogsLabel->setText(QString::number(0));
+        ui->dataFileNameLineEdit->setText("N/A");
+        ui->logFileNameLineEdit->setText("N/A");
+        ui->dataSizeLabel->setText(QString::number(0));
+        ui->logSizeLabel->setText(QString::number(0));
+        ui->logStatusLabel->setText("N/A");
+        ui->logAgeLabel->setText("N/A");
+        ui->logRotationSpinBox->setValue(1);
+        ui->logRotationSpinBox->setEnabled(false);
+        ui->logEnableCheckBox->setChecked(false);
+        ui->logEnableCheckBox->setEnabled(false);
         fLogMap.clear();
         fCurrentLog = "";
         ui->logPlot->replot();
@@ -212,5 +222,11 @@ void LogPlotsWidget::onLogInfoReceived(const LogInfoStruct& lis)
     if (lis.status > 0)
         st = "ok (" + QString::number(lis.status) + ")";
     ui->logStatusLabel->setText(st);
-    ui->logAgeLabel->setText(QString::number(lis.logAge / 3600., 'f', 2) + " h");
+    ui->logAgeLabel->setText(QString::number(lis.logAge.count() / 3600., 'f', 2) + " h");
+    ui->logRotationSpinBox->setValue(lis.logRotationDuration.count() / 86400);
+    if (!ui->logRotationSpinBox->isEnabled())
+        ui->logRotationSpinBox->setEnabled(true);
+    ui->logEnableCheckBox->setChecked(lis.logEnabled);
+    if (!ui->logEnableCheckBox->isEnabled())
+        ui->logEnableCheckBox->setEnabled(true);
 }

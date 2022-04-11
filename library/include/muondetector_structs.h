@@ -248,7 +248,7 @@ struct LogInfoStruct {
     QString logFileName;
     QString dataFileName;
     enum status_t : quint8 {
-        ERROR=0,
+        ERROR = 0,
         NORMAL,
         LOG_ONLY,
         OFF

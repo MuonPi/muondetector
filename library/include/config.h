@@ -3,9 +3,9 @@
 
 #include "version.h"
 
+#include <chrono>
 #include <cstdint>
 #include <string>
-#include <chrono>
 
 namespace MuonPi::Version {
 constexpr struct Version {
