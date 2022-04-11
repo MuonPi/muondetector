@@ -247,10 +247,15 @@ struct I2cDeviceEntry {
 struct LogInfoStruct {
     QString logFileName;
     QString dataFileName;
-    quint8 status;
+    enum status_t : quint8 {
+        ERROR=0,
+        NORMAL,
+        LOG_ONLY,
+        OFF
+    } status;
     quint32 logFileSize;
     quint32 dataFileSize;
-    qint32 logAge;
+    std::chrono::seconds logAge;
     std::chrono::seconds logRotationDuration { 86400L };
     bool logEnabled { true };
 };
@@ -417,17 +422,21 @@ inline QDataStream& operator<<(QDataStream& out, const GnssMonHw2Struct& hw2)
 
 inline QDataStream& operator>>(QDataStream& in, LogInfoStruct& lis)
 {
-    qint32 seconds;
-    in >> lis.logFileName >> lis.dataFileName >> lis.status >> lis.logFileSize
-        >> lis.dataFileSize >> lis.logAge >> seconds >> lis.logEnabled;
-    lis.logRotationDuration = std::chrono::seconds(seconds);
+    qint32 logRotation;
+    qint32 logAge;
+    quint8 status;
+    in >> lis.logFileName >> lis.dataFileName >> status >> lis.logFileSize
+        >> lis.dataFileSize >> logAge >> logRotation >> lis.logEnabled;
+    lis.logAge = std::chrono::seconds(logAge);
+    lis.logRotationDuration = std::chrono::seconds(logRotation);
+    lis.status = static_cast<LogInfoStruct::status_t>(status);
     return in;
 }
 
 inline QDataStream& operator<<(QDataStream& out, const LogInfoStruct& lis)
 {
-    out << lis.logFileName << lis.dataFileName << lis.status << lis.logFileSize
-        << lis.dataFileSize << lis.logAge << static_cast<qint32>(lis.logRotationDuration.count()) << lis.logEnabled;
+    out << lis.logFileName << lis.dataFileName << static_cast<quint8>(lis.status) << lis.logFileSize
+        << lis.dataFileSize << static_cast<qint32>(lis.logAge.count()) << static_cast<qint32>(lis.logRotationDuration.count()) << lis.logEnabled;
     return out;
 }
 

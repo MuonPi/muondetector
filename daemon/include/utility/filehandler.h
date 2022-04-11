@@ -9,6 +9,7 @@
 #include <QStandardPaths>
 #include <QVector>
 #include <config.h>
+#include <muondetector_structs.h>
 #include "logparameter.h"
 
 class FileHandler : public QObject {
@@ -20,9 +21,11 @@ public:
     QString getCurrentLogFileName() const;
     QFileInfo dataFileInfo() const;
     QFileInfo logFileInfo() const;
-    qint64 currentLogAge();
+    std::chrono::seconds currentLogAge();
     bool eventLogEnabled() const { return m_log_events; }
     std::chrono::seconds logRotatePeriod() const { return m_logrotate_period; }
+    LogInfoStruct getInfo();
+    LogInfoStruct::status_t getStatus();
 
 signals:
     void logIntervalSignal();
@@ -31,16 +34,17 @@ signals:
 
 public slots:
     void start();
-    void writeToDataFile(const QString& data); // writes data to the file opened in "dataFile"
-    void writeToLogFile(const QString& log); // writes log data to the file opened in "logFile"
+    void writeToDataFile(const QString& data); //!< writes data to the file opened in "dataFile"
+    void writeToLogFile(const QString& log); //!< writes log data to the file opened in "logFile"
+    void enableEventLog(bool enabled = true) { m_log_events = enabled; }
+    void setLogRotatePeriod(std::chrono::seconds period) { m_logrotate_period = period; }
 
 private slots:
     void onUploadRemind();
 
 private:
-    // save and send data everyday
-    QFile* dataFile = nullptr; // the file date is currently written to. (timestamps)
-    QFile* logFile = nullptr; // the file log information is written to.
+    QFile* dataFile = nullptr; //!< pointer to the file the events are currently written to
+    QFile* logFile = nullptr; //!< pointer to the file the log information is written to
     QString hashedMacAddress;
     QString configFilePath;
     QString loginDataFilePath;
@@ -54,14 +58,14 @@ private:
     QStringList m_filename_list;
     bool saveLoginData(QString username, QString password);
     bool readLoginData();
-    bool openFiles(bool writeHeader = false); // reads the config file and opens the correct data file to write to
+    bool openFiles(bool writeHeader = false); //!< reads the config file and opens the correct data file to write into
     bool readFileInformation();
-    bool rotateFiles(); // closes the old file and opens a new one, changing "dataConfig.conf" to the new file
+    bool rotateFiles(); //!< closes the old files and opens a new data/log file pair, changing the log config to the new files
     bool removeOldFiles();
     bool writeConfigFile();
     void closeFiles();
-    QString createFileName(); // creates a fileName based on date time and mac address
-    quint32 fileSize; // in MB
+    QString createFileName(); //!< creates a fileName based on date and time
+    quint32 fileSize; //!< max file size limit in MB
     QDateTime lastUploadDateTime;
     QTime dailyUploadTime;
     bool m_log_events { MuonPi::Settings::events.store_local };

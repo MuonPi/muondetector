@@ -148,12 +148,10 @@ QFileInfo FileHandler::logFileInfo() const
 }
 
 // return current log file age in s
-qint64 FileHandler::currentLogAge()
+std::chrono::seconds FileHandler::currentLogAge()
 {
-    if (dataFile == nullptr)
-        return -1;
-    if (configFilePath == "")
-        return -1;
+    if (dataFile == nullptr || configFilePath == "") 
+        return std::chrono::seconds { -1 };
     QDateTime now = QDateTime::currentDateTime();
     QFileInfo fi(configFilePath);
 #if QT_VERSION >= 0x050a00
@@ -162,7 +160,32 @@ qint64 FileHandler::currentLogAge()
     qint64 difftime = -now.secsTo(fi.created());
 #endif
 
-    return difftime;
+    return std::chrono::seconds { difftime };
+}
+
+LogInfoStruct::status_t FileHandler::getStatus()
+{
+    LogInfoStruct::status_t status { LogInfoStruct::status_t::ERROR };
+    if (dataFileInfo().exists() && logFileInfo().exists()) {
+        if (m_log_events) {
+            status = LogInfoStruct::status_t::NORMAL;
+        } else status = LogInfoStruct::status_t::LOG_ONLY;
+    }
+    return status;
+}
+
+LogInfoStruct FileHandler::getInfo()
+{
+    LogInfoStruct lis;
+    lis.logFileName = getCurrentLogFileName();
+    lis.dataFileName = getCurrentDataFileName();
+    lis.status = getStatus();
+    lis.logFileSize = logFileInfo().size();
+    lis.dataFileSize = dataFileInfo().size();
+    lis.logAge = currentLogAge();
+    lis.logRotationDuration = logRotatePeriod();
+    lis.logEnabled = eventLogEnabled();
+    return lis;
 }
 
 void FileHandler::start()
