@@ -23,15 +23,12 @@
 #include "hardware/i2c/i2cutil.h"
 #include "hardware/device_types.h"
 
-#define DAC_BIAS 2 // channel of the dac where bias voltage is set
-#define DAC_TH1 0 // channel of the dac where threshold 1 is set
-#define DAC_TH2 1 // channel of the dac where threshold 2 is set
-
 #define DEGREE_CHARCODE 248
 
 // REMEMBER: "emit" keyword is just syntactic sugar and not needed AT ALL ... learned it after 1 year *clap* *clap*
 
 using namespace std;
+using namespace MuonPi;
 
 static unsigned int HW_VERSION = 0; // default value is set in calibration.h
 
@@ -459,14 +456,14 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         }
     }
 
-    for (int i = std::min(DAC_TH1, DAC_TH2); i <= std::max(DAC_TH1, DAC_TH2); i++) {
-        if ( cfg.dacThresh[i] < 0. && mcp4728_p->probeDevicePresence() ) {
+    for (int channel = 0; channel < 2; channel++) {
+        if ( cfg.dacThresh[Config::Hardware::DAC::Channel::threshold[channel]] < 0. && mcp4728_p->probeDevicePresence() ) {
             MCP4728::DacChannel dacChannel;
             MCP4728::DacChannel eepromChannel;
             eepromChannel.eeprom = true;
-            mcp4728_p->readChannel(i, dacChannel);
-            mcp4728_p->readChannel(i, eepromChannel);
-            cfg.dacThresh[i] = MCP4728::code2voltage(dacChannel);
+            mcp4728_p->readChannel(Config::Hardware::DAC::Channel::threshold[channel], dacChannel);
+            mcp4728_p->readChannel(Config::Hardware::DAC::Channel::threshold[channel], eepromChannel);
+            cfg.dacThresh[Config::Hardware::DAC::Channel::threshold[channel]] = MCP4728::code2voltage(dacChannel);
         }
     }
     dacThresh.push_back(cfg.dacThresh[0]);
@@ -475,11 +472,11 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     if ( mcp4728_p->probeDevicePresence() ) {
         MCP4728::DacChannel eeprom_value;
         eeprom_value.eeprom = true;
-        mcp4728_p->readChannel(DAC_BIAS, eeprom_value);
+        mcp4728_p->readChannel(Config::Hardware::DAC::Channel::bias, eeprom_value);
         if (eeprom_value.value == 0) {
-            setBiasVoltage(MuonPi::Config::Hardware::DAC::Voltage::bias);
-            setDacThresh(0, MuonPi::Config::Hardware::DAC::Voltage::threshold[0]);
-            setDacThresh(1, MuonPi::Config::Hardware::DAC::Voltage::threshold[1]);
+            setBiasVoltage(Config::Hardware::DAC::Voltage::bias);
+            setDacThresh(Config::Hardware::DAC::Channel::threshold[0], Config::Hardware::DAC::Voltage::threshold[0]);
+            setDacThresh(Config::Hardware::DAC::Channel::threshold[1], Config::Hardware::DAC::Voltage::threshold[1]);
         }
     }
 
@@ -488,8 +485,8 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         MCP4728::DacChannel dacChannel;
         MCP4728::DacChannel eepromChannel;
         eepromChannel.eeprom = true;
-        mcp4728_p->readChannel(DAC_BIAS, dacChannel);
-        mcp4728_p->readChannel(DAC_BIAS, eepromChannel);
+        mcp4728_p->readChannel(Config::Hardware::DAC::Channel::bias, dacChannel);
+        mcp4728_p->readChannel(Config::Hardware::DAC::Channel::bias, eepromChannel);
         biasVoltage = MCP4728::code2voltage(dacChannel);
     }
 
@@ -519,11 +516,11 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 
     if ( mcp4728_p->probeDevicePresence() ) {
         if (dacThresh[0] > 0)
-            dac_p->setVoltage(DAC_TH1, dacThresh[0]);
+            dac_p->setVoltage(Config::Hardware::DAC::Channel::threshold[0], dacThresh[0]);
         if (dacThresh[1] > 0)
-            dac_p->setVoltage(DAC_TH2, dacThresh[1]);
+            dac_p->setVoltage(Config::Hardware::DAC::Channel::threshold[1], dacThresh[1]);
         if (biasVoltage > 0)
-            dac_p->setVoltage(DAC_BIAS, biasVoltage);
+            dac_p->setVoltage(Config::Hardware::DAC::Channel::bias, biasVoltage);
     }
 
     // removed initialization of ublox i2c interface since it doesn't work properly on RPi
@@ -1005,13 +1002,13 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
                 qWarning() << "setting DAC " << channel << " to 0!";
         } else
             setDacThresh(channel, threshold);
-        sendDacThresh(DAC_TH1);
-        sendDacThresh(DAC_TH2);
+        sendDacThresh(Config::Hardware::DAC::Channel::threshold[0]);
+        sendDacThresh(Config::Hardware::DAC::Channel::threshold[1]);
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_THRESHOLD_REQUEST) {
-        sendDacThresh(DAC_TH1);
-        sendDacThresh(DAC_TH2);
+        sendDacThresh(Config::Hardware::DAC::Channel::threshold[0]);
+        sendDacThresh(Config::Hardware::DAC::Channel::threshold[1]);
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE) {
@@ -1722,7 +1719,7 @@ void Daemon::setBiasVoltage(float voltage)
         qInfo() << "change biasVoltage to " << voltage;
     }
     if ( dac_p && dac_p->probeDevicePresence() ) {
-        dac_p->setVoltage(DAC_BIAS, voltage);
+        dac_p->setVoltage(Config::Hardware::DAC::Channel::bias, voltage);
         emit logParameter(LogParameter("biasDAC", QString::number(voltage) + " V", LogParameter::LOG_EVERY));
     }
     clearRates();

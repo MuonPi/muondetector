@@ -50,6 +50,10 @@ namespace Hardware {
         constexpr int deadtime { 8 };
     }
     namespace DAC {
+        namespace Channel {
+            constexpr int bias { 2 }; //!< channel of the dac where bias voltage is set
+            constexpr int threshold[2] { 0, 1 }; //!< channel of the dac where thresholds 1 and 2 are set
+        }
         namespace Voltage {
             constexpr float bias { 0.5 };
             constexpr float threshold[2] { 0.1, 1.0 };
