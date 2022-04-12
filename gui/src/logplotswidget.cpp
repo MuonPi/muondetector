@@ -224,9 +224,5 @@ void LogPlotsWidget::onLogInfoReceived(const LogInfoStruct& lis)
     ui->logStatusLabel->setText(st);
     ui->logAgeLabel->setText(QString::number(lis.logAge.count() / 3600., 'f', 2) + " h");
     ui->logRotationSpinBox->setValue(lis.logRotationDuration.count() / 86400);
-    if (!ui->logRotationSpinBox->isEnabled())
-        ui->logRotationSpinBox->setEnabled(true);
     ui->logEnableCheckBox->setChecked(lis.logEnabled);
-    if (!ui->logEnableCheckBox->isEnabled())
-        ui->logEnableCheckBox->setEnabled(true);
 }
