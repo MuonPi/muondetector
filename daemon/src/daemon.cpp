@@ -41,13 +41,13 @@ int64_t msecdiff(timespec& ts, timespec& st)
     return diff;
 }
 
-static QVector<uint16_t> allMsgCfgID({ UBX_TIM_TM2, UBX_TIM_TP,
-    UBX_NAV_CLOCK, UBX_NAV_DGPS, UBX_NAV_AOPSTATUS, UBX_NAV_DOP,
-    UBX_NAV_POSECEF, UBX_NAV_POSLLH, UBX_NAV_PVT, UBX_NAV_SBAS, UBX_NAV_SOL,
-    UBX_NAV_STATUS, UBX_NAV_SVINFO, UBX_NAV_TIMEGPS, UBX_NAV_TIMEUTC, UBX_NAV_VELECEF,
-    UBX_NAV_VELNED,
-    UBX_MON_HW, UBX_MON_HW2, UBX_MON_IO, UBX_MON_MSGPP,
-    UBX_MON_RXBUF, UBX_MON_RXR, UBX_MON_TXBUF });
+static QVector<uint16_t> allMsgCfgID({ UBX_MSG::TIM_TM2, UBX_MSG::TIM_TP,
+    UBX_MSG::NAV_CLOCK, UBX_MSG::NAV_DGPS, UBX_MSG::NAV_AOPSTATUS, UBX_MSG::NAV_DOP,
+    UBX_MSG::NAV_POSECEF, UBX_MSG::NAV_POSLLH, UBX_MSG::NAV_PVT, UBX_MSG::NAV_SBAS, UBX_MSG::NAV_SOL,
+    UBX_MSG::NAV_STATUS, UBX_MSG::NAV_SVINFO, UBX_MSG::NAV_TIMEGPS, UBX_MSG::NAV_TIMEUTC, UBX_MSG::NAV_VELECEF,
+    UBX_MSG::NAV_VELNED,
+    UBX_MSG::MON_HW, UBX_MSG::MON_HW2, UBX_MSG::MON_IO, UBX_MSG::MON_MSGPP,
+    UBX_MSG::MON_RXBUF, UBX_MSG::MON_RXR, UBX_MSG::MON_TXBUF });
 
 // signal handling stuff: put code to execute before shutdown down there
 static int setup_unix_signal_handlers()
@@ -448,16 +448,16 @@ Daemon::Daemon(configuration cfg, QObject* parent)
                 eepromChannel.eeprom = true;
                 mcp4728_p->readChannel(i, dacChannel);
                 mcp4728_p->readChannel(i, eepromChannel);
-                qDebug() << "  ch" << i << ": " << dacChannel.value << " = " << MCP4728::code2voltage(dacChannel) << " V"
-                                                                                                                     "  (stored: "
-                         << eepromChannel.value << " = " << MCP4728::code2voltage(eepromChannel) << " V)";
+                qDebug() << "  ch" << i << ": " << dacChannel.value << " = " << MCP4728::code2voltage(dacChannel) << " V" << "  (stored: " << eepromChannel.value << " = " << MCP4728::code2voltage(eepromChannel) << " V)";
             }
             qDebug() << "readout took " << mcp4728_p->getLastTimeInterval() << " ms";
         }
     }
 
     for (int channel = 0; channel < 2; channel++) {
-        if ( cfg.dacThresh[Config::Hardware::DAC::Channel::threshold[channel]] < 0. && mcp4728_p->probeDevicePresence() ) {
+        if ( cfg.dacThresh[Config::Hardware::DAC::Channel::threshold[channel]] < 0. 
+            && mcp4728_p->probeDevicePresence() ) 
+        {
             MCP4728::DacChannel dacChannel;
             MCP4728::DacChannel eepromChannel;
             eepromChannel.eeprom = true;
@@ -1200,19 +1200,19 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         }
         emit setGnssConfig(gnss_configs);
         std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
-        emit sendPollUbxMsg(UBX_CFG_GNSS);
+        emit sendPollUbxMsg(UBX_MSG::CFG_GNSS);
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_CFG_TP5) {
         UbxTimePulseStruct tp;
         *(tcpMessage.dStream) >> tp;
         emit UBXSetCfgTP5(tp);
-        emit sendPollUbxMsg(UBX_CFG_TP5);
+        emit sendPollUbxMsg(UBX_MSG::CFG_TP5);
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_CFG_SAVE) {
         emit UBXSaveCfg();
-        emit sendPollUbxMsg(UBX_CFG_TP5);
-        emit sendPollUbxMsg(UBX_CFG_GNSS);
+        emit sendPollUbxMsg(UBX_MSG::CFG_TP5);
+        emit sendPollUbxMsg(UBX_MSG::CFG_GNSS);
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_QUIT_CONNECTION) {
@@ -1809,39 +1809,39 @@ void Daemon::configGps()
     emit UBXSetCfgPrt(1, PROTO_UBX);
 
     // set dynamic model: Stationary
-    emit UBXSetDynModel(2);
+    emit UBXSetDynModel(UbxDynamicModel::stationary);
 
     emit UBXSetAopCfg(true);
 
-    emit sendPollUbxMsg(UBX_MON_VER);
+    emit sendPollUbxMsg(UBX_MSG::MON_VER);
 
     int measrate = 10;
     emit UBXSetCfgRate(1000 / measrate, 1); // UBX_RATE
 
-    emit UBXSetCfgMsgRate(UBX_TIM_TM2, 1, 1); // TIM-TM2
-    emit UBXSetCfgMsgRate(UBX_TIM_TP, 1, 0); // TIM-TP
-    emit UBXSetCfgMsgRate(UBX_NAV_TIMEUTC, 1, 131); // NAV-TIMEUTC
-    emit UBXSetCfgMsgRate(UBX_MON_HW, 1, 47); // MON-HW
-    emit UBXSetCfgMsgRate(UBX_MON_HW2, 1, 49); // MON-HW
-    emit UBXSetCfgMsgRate(UBX_NAV_POSLLH, 1, 127); // MON-POSLLH
+    emit UBXSetCfgMsgRate(UBX_MSG::TIM_TM2, 1, 1); // TIM-TM2
+    emit UBXSetCfgMsgRate(UBX_MSG::TIM_TP, 1, 0); // TIM-TP
+    emit UBXSetCfgMsgRate(UBX_MSG::NAV_TIMEUTC, 1, 131); // NAV-TIMEUTC
+    emit UBXSetCfgMsgRate(UBX_MSG::MON_HW, 1, 47); // MON-HW
+    emit UBXSetCfgMsgRate(UBX_MSG::MON_HW2, 1, 49); // MON-HW
+    emit UBXSetCfgMsgRate(UBX_MSG::NAV_POSLLH, 1, 127); // MON-POSLLH
     // probably also configured with UBX-CFG-INFO...
-    emit UBXSetCfgMsgRate(UBX_NAV_TIMEGPS, 1, 0); // NAV-TIMEGPS
-    emit UBXSetCfgMsgRate(UBX_NAV_SOL, 1, 0); // NAV-SOL
-    emit UBXSetCfgMsgRate(UBX_NAV_STATUS, 1, 71); // NAV-STATUS
-    emit UBXSetCfgMsgRate(UBX_NAV_CLOCK, 1, 189); // NAV-CLOCK
-    emit UBXSetCfgMsgRate(UBX_MON_RXBUF, 1, 53); // MON-TXBUF
-    emit UBXSetCfgMsgRate(UBX_MON_TXBUF, 1, 51); // MON-TXBUF
-    emit UBXSetCfgMsgRate(UBX_NAV_SBAS, 1, 0); // NAV-SBAS
-    emit UBXSetCfgMsgRate(UBX_NAV_DOP, 1, 254); // NAV-DOP
+    emit UBXSetCfgMsgRate(UBX_MSG::NAV_TIMEGPS, 1, 0); // NAV-TIMEGPS
+    emit UBXSetCfgMsgRate(UBX_MSG::NAV_SOL, 1, 0); // NAV-SOL
+    emit UBXSetCfgMsgRate(UBX_MSG::NAV_STATUS, 1, 71); // NAV-STATUS
+    emit UBXSetCfgMsgRate(UBX_MSG::NAV_CLOCK, 1, 189); // NAV-CLOCK
+    emit UBXSetCfgMsgRate(UBX_MSG::MON_RXBUF, 1, 53); // MON-TXBUF
+    emit UBXSetCfgMsgRate(UBX_MSG::MON_TXBUF, 1, 51); // MON-TXBUF
+    emit UBXSetCfgMsgRate(UBX_MSG::NAV_SBAS, 1, 0); // NAV-SBAS
+    emit UBXSetCfgMsgRate(UBX_MSG::NAV_DOP, 1, 254); // NAV-DOP
     // this poll is for checking the port cfg (which protocols are enabled etc.)
-    emit sendPollUbxMsg(UBX_CFG_PRT);
-    emit sendPollUbxMsg(UBX_MON_VER);
-    emit sendPollUbxMsg(UBX_MON_VER);
-    emit sendPollUbxMsg(UBX_MON_VER);
-    emit sendPollUbxMsg(UBX_CFG_GNSS);
-    emit sendPollUbxMsg(UBX_CFG_NAVX5);
-    emit sendPollUbxMsg(UBX_CFG_ANT);
-    emit sendPollUbxMsg(UBX_CFG_TP5);
+    emit sendPollUbxMsg(UBX_MSG::CFG_PRT);
+    emit sendPollUbxMsg(UBX_MSG::MON_VER);
+    emit sendPollUbxMsg(UBX_MSG::MON_VER);
+    emit sendPollUbxMsg(UBX_MSG::MON_VER);
+    emit sendPollUbxMsg(UBX_MSG::CFG_GNSS);
+    emit sendPollUbxMsg(UBX_MSG::CFG_NAVX5);
+    emit sendPollUbxMsg(UBX_MSG::CFG_ANT);
+    emit sendPollUbxMsg(UBX_MSG::CFG_TP5);
 
     configGpsForVersion();
 }
@@ -1851,13 +1851,13 @@ void Daemon::configGpsForVersion()
     if (QtSerialUblox::getProtVersion() <= 0.1)
         return;
     if (QtSerialUblox::getProtVersion() > 15.0) {
-        if (std::find(allMsgCfgID.begin(), allMsgCfgID.end(), UBX_NAV_SAT) == allMsgCfgID.end()) {
-            allMsgCfgID.push_back(UBX_NAV_SAT);
+        if (std::find(allMsgCfgID.begin(), allMsgCfgID.end(), UBX_MSG::NAV_SAT) == allMsgCfgID.end()) {
+            allMsgCfgID.push_back(UBX_MSG::NAV_SAT);
         }
-        emit UBXSetCfgMsgRate(UBX_NAV_SAT, 1, 69); // NAV-SAT
-        emit UBXSetCfgMsgRate(UBX_NAV_SVINFO, 1, 0);
+        emit UBXSetCfgMsgRate(UBX_MSG::NAV_SAT, 1, 69); // NAV-SAT
+        emit UBXSetCfgMsgRate(UBX_MSG::NAV_SVINFO, 1, 0);
     } else
-        emit UBXSetCfgMsgRate(UBX_NAV_SVINFO, 1, 69); // NAV-SVINFO
+        emit UBXSetCfgMsgRate(UBX_MSG::NAV_SVINFO, 1, 69); // NAV-SVINFO
 }
 
 void Daemon::pollAllUbxMsgRate()
@@ -1872,7 +1872,7 @@ void Daemon::UBXReceivedAckNak(uint16_t ackedMsgID, uint16_t ackedCfgMsgID)
     // the value was already set correctly before by either poll or set,
     // if not acknowledged or timeout we set the value to -1 (unknown/undefined)
     switch (ackedMsgID) {
-    case UBX_CFG_MSG:
+    case UBX_MSG::CFG_MSG:
         msgRateCfgs.insert(ackedCfgMsgID, -1);
         break;
     default:
@@ -1991,7 +1991,7 @@ void Daemon::onUBXReceivedTP5(const UbxTimePulseStruct& tp)
         newTp.flags &= ~((uint32_t)UbxTimePulseStruct::GRID_UTC_GPS);
         emit UBXSetCfgTP5(newTp);
         qDebug() << "forced time grid to UTC";
-        emit sendPollUbxMsg(UBX_CFG_TP5);
+        emit sendPollUbxMsg(UBX_MSG::CFG_TP5);
     }
 }
 
@@ -2176,11 +2176,11 @@ void Daemon::onMadeConnection(QString remotePeerAddress, quint16 remotePeerPort,
     if (verbose > 3)
         cout << "established connection with " << remotePeerAddress << ":" << remotePeerPort << endl;
 
-    emit sendPollUbxMsg(UBX_MON_VER);
-    emit sendPollUbxMsg(UBX_CFG_GNSS);
-    emit sendPollUbxMsg(UBX_CFG_NAV5);
-    emit sendPollUbxMsg(UBX_CFG_TP5);
-    emit sendPollUbxMsg(UBX_CFG_NAVX5);
+    emit sendPollUbxMsg(UBX_MSG::MON_VER);
+    emit sendPollUbxMsg(UBX_MSG::CFG_GNSS);
+    emit sendPollUbxMsg(UBX_MSG::CFG_NAV5);
+    emit sendPollUbxMsg(UBX_MSG::CFG_TP5);
+    emit sendPollUbxMsg(UBX_MSG::CFG_NAVX5);
 
     sendBiasStatus();
     sendBiasVoltage();

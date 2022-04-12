@@ -17,8 +17,8 @@ const uint8_t usedPort = 1; // this is the uart port. (0 = i2c; 1 = uart; 2 = us
 // all about processing different ubx-messages:
 void QtSerialUblox::processMessage(const UbxMessage& msg)
 {
-    uint8_t classID = (msg.msgID & 0xff00) >> 8;
-    uint8_t messageID = msg.msgID & 0xff;
+    uint8_t classID = msg.class_id();
+    uint8_t messageID = msg.message_id();
     std::vector<GnssSatellite> sats;
     std::stringstream tempStream;
     uint16_t ackedMsgID;
@@ -47,7 +47,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
             emit toConsole(QString::fromStdString(tempStream.str()));
         }
         ackedMsgID = (uint16_t)(msg.data[0]) << 8 | msg.data[1];
-        if (ackedMsgID != msgWaitingForAck->msgID) {
+        if (ackedMsgID != msgWaitingForAck->full_id) {
             if (verbose > 1) {
                 tempStream << "received unexpected UBX-ACK message about msgID: 0x";
                 tempStream << std::setfill('0') << std::setw(2) << std::hex << (int)msg.data[0] << " 0x"
@@ -58,7 +58,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
         }
         switch (messageID) {
         case 0x00:
-            emit UBXReceivedAckNak(msgWaitingForAck->msgID,
+            emit UBXReceivedAckNak(msgWaitingForAck->full_id,
                 (uint16_t)(msgWaitingForAck->data[0]) << 8
                     | msgWaitingForAck->data[1]);
             break;
@@ -259,7 +259,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
         break;
     case 0x0a: // UBX-MON
         switch (messageID) {
-        case (UBX_MON_RXBUF & 0xff):
+            case (UBX_MSG::MON_RXBUF & 0xff):
             if (verbose > 2) {
                 tempStream << "received UBX-MON-RXBUF message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
                            << " 0x" << std::hex << (int)messageID << ")\n";
@@ -267,7 +267,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
             }
             UBXMonRx(msg.data);
             break;
-        case (UBX_MON_TXBUF & 0xff):
+        case (UBX_MSG::MON_TXBUF & 0xff):
             if (verbose > 2) {
                 tempStream << "received UBX-MON-TXBUF message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
                            << " 0x" << std::hex << (int)messageID << ")\n";
@@ -907,7 +907,7 @@ void QtSerialUblox::onSetGnssConfig(const std::vector<GnssConfigStruct>& gnssCon
         data[11 + 8 * i] = (flags >> 24) & 0xff;
     }
 
-    enqueueMsg(UBX_CFG_GNSS, toStdString(data, static_cast<int>(4 + 8 * N)));
+    enqueueMsg(UBX_MSG::CFG_GNSS, toStdString(data, static_cast<int>(4 + 8 * N)));
     free(data);
 }
 
@@ -953,7 +953,7 @@ void QtSerialUblox::setDynamicModel(uint8_t model)
     buf[1] = 0x00;
     buf[2] = model; // dyn Model
     string str(buf, 36);
-    enqueueMsg(UBX_CFG_NAV5, str);
+    enqueueMsg(UBX_MSG::CFG_NAV5, str);
 }
 
 void QtSerialUblox::UBXNavStatus(const string& msg)
@@ -1396,7 +1396,7 @@ void QtSerialUblox::UBXMonVer(const std::string& msg)
                     str.erase(str.size() - 1, 1);
                 fProtVersionString = str;
                 if (verbose > 3)
-                    emit toConsole("catched PROTVER string: '" + QString::fromStdString(fProtVersionString) + "'\n");
+                    emit toConsole("caught PROTVER string: '" + QString::fromStdString(fProtVersionString) + "'\n");
                 float nr = QtSerialUblox::getProtVersion();
                 if (verbose > 3)
                     emit toConsole("ver: " + QString::number(nr) + "\n");
@@ -1697,7 +1697,7 @@ void QtSerialUblox::UBXSetCfgTP5(const UbxTimePulseStruct& tp)
     msg[30] = (tp.flags >> 16) & 0xff;
     msg[31] = (tp.flags >> 24) & 0xff;
 
-    enqueueMsg(UBX_CFG_TP5, toStdString(msg, 32));
+    enqueueMsg(UBX_MSG::CFG_TP5, toStdString(msg, 32));
 }
 
 void QtSerialUblox::UBXNavDOP(const string& msg)

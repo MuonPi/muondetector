@@ -27,7 +27,6 @@ set(MUONDETECTOR_LIBRARY_HEADER_FILES
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/tcpmessage.h"
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/tcpmessage_keys.h"
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/ublox_messages.h"
-    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/ubx_msg_key_name_map.h"
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/ublox_structs.h"
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/muondetector_structs.h"
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/config.h"

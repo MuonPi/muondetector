@@ -128,7 +128,7 @@ void QtSerialUblox::ackTimeout()
     if (verbose > 1) {
         std::stringstream tempStream;
         tempStream << "ack timeout, trying to resend message 0x" << std::setfill('0') << std::setw(2) << hex
-                   << ((msgWaitingForAck->msgID & 0xff00) >> 8) << " 0x" << std::setfill('0') << std::setw(2) << hex << (msgWaitingForAck->msgID & 0x00ff);
+                   << static_cast<int>(msgWaitingForAck->class_id()) << " 0x" << std::setfill('0') << std::setw(2) << hex << static_cast<int>(msgWaitingForAck->message_id());
         for (unsigned int i = 0; i < msgWaitingForAck->data.length(); i++) {
             tempStream << " 0x" << std::setfill('0') << std::setw(2) << hex << (int)(msgWaitingForAck->data[i]);
         }
@@ -157,8 +157,8 @@ void QtSerialUblox::onReadyRead()
         if (showin) {
             std::stringstream tempStream;
             tempStream << " in: ";
-            int classID = (int)((message.msgID & 0xff00) >> 8);
-            int msgID = (int)(message.msgID & 0xff);
+            int classID = message.class_id();
+            int msgID = message.message_id();
             tempStream << "0x" << std::setfill('0') << std::setw(2) << std::hex << classID;
             tempStream << " 0x" << std::setfill('0') << std::setw(2) << std::hex << msgID << " ";
             for (std::string::size_type i = 0; i < message.data.length(); i++) {
@@ -201,8 +201,8 @@ bool QtSerialUblox::scanUnknownMessage(string& buffer, UbxMessage& message)
         }
         return false;
     }
-    message.msgID = (uint16_t)mess[2] << 8;
-    message.msgID += (uint16_t)mess[3];
+    message.full_id = (uint16_t)mess[2] << 8;
+    message.full_id += (uint16_t)mess[3];
     if (mess.size() < 8)
         return false;
     int len = (int)(mess[4]);
@@ -290,7 +290,7 @@ bool QtSerialUblox::sendUBX(uint16_t msgID, unsigned char* payload, uint16_t nBy
 
 bool QtSerialUblox::sendUBX(UbxMessage& msg)
 {
-    return sendUBX(msg.msgID, msg.data, msg.data.size());
+    return sendUBX(msg.full_id, msg.data, msg.data.size());
 }
 
 void QtSerialUblox::calcChkSum(const std::string& buf, unsigned char* chkA, unsigned char* chkB)
@@ -324,7 +324,7 @@ void QtSerialUblox::UBXSetCfgRate(uint16_t measRate, uint16_t navRate)
     data[4] = 0;
     data[5] = 0;
 
-    enqueueMsg(UBX_CFG_RATE, toStdString(data, 6));
+    enqueueMsg(UBX_MSG::CFG_RATE, toStdString(data, 6));
 }
 
 void QtSerialUblox::UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask)
@@ -374,7 +374,7 @@ void QtSerialUblox::UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask)
         data[18] = 0;
         data[19] = 0; // reserved
     }
-    enqueueMsg(UBX_CFG_PRT, toStdString(data, 20));
+    enqueueMsg(UBX_MSG::CFG_PRT, toStdString(data, 20));
 }
 
 void QtSerialUblox::UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate)
@@ -401,7 +401,7 @@ void QtSerialUblox::UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate)
         }
     }
 
-    enqueueMsg(UBX_CFG_MSG, toStdString(data, 8));
+    enqueueMsg(UBX_MSG::CFG_MSG, toStdString(data, 8));
 }
 
 void QtSerialUblox::UBXReset(uint32_t resetFlags)
@@ -415,7 +415,7 @@ void QtSerialUblox::UBXReset(uint32_t resetFlags)
     data[3] = 0;
 
     UbxMessage newMessage;
-    newMessage.msgID = UBX_CFG_RST;
+    newMessage.full_id = UBX_MSG::CFG_RST;
     newMessage.data = toStdString(data, 4);
     sendUBX(newMessage);
 }
@@ -432,7 +432,7 @@ void QtSerialUblox::UBXSetMinMaxSVs(uint8_t minSVs, uint8_t maxSVs)
     data[10] = minSVs;
     data[11] = maxSVs;
 
-    enqueueMsg(UBX_CFG_NAVX5, toStdString(data, 40));
+    enqueueMsg(UBX_MSG::CFG_NAVX5, toStdString(data, 40));
 }
 
 void QtSerialUblox::UBXSetMinCNO(uint8_t minCNO)
@@ -446,7 +446,7 @@ void QtSerialUblox::UBXSetMinCNO(uint8_t minCNO)
     data[7] = 0;
     data[12] = minCNO;
 
-    enqueueMsg(UBX_CFG_NAVX5, toStdString(data, 40));
+    enqueueMsg(UBX_MSG::CFG_NAVX5, toStdString(data, 40));
 }
 
 void QtSerialUblox::UBXSetAopCfg(bool enable, uint16_t maxOrbErr)
@@ -463,7 +463,7 @@ void QtSerialUblox::UBXSetAopCfg(bool enable, uint16_t maxOrbErr)
     data[30] = maxOrbErr & 0xff;
     data[31] = (maxOrbErr >> 8) & 0xff;
 
-    enqueueMsg(UBX_CFG_NAVX5, toStdString(data, 40));
+    enqueueMsg(UBX_MSG::CFG_NAVX5, toStdString(data, 40));
 }
 
 void QtSerialUblox::UBXSaveCfg(uint8_t devMask)
@@ -481,7 +481,7 @@ void QtSerialUblox::UBXSaveCfg(uint8_t devMask)
     data[7] = (sectionMask >> 24) & 0xff;
     data[12] = devMask;
 
-    enqueueMsg(UBX_CFG_CFG, toStdString(data, 13));
+    enqueueMsg(UBX_MSG::CFG_CFG, toStdString(data, 13));
 }
 
 void QtSerialUblox::onRequestGpsProperties()
@@ -503,7 +503,7 @@ void QtSerialUblox::pollMsgRate(uint16_t msgID)
     unsigned char temp[2];
     temp[0] = (uint8_t)((msgID & 0xff00) >> 8);
     temp[1] = (uint8_t)(msgID & 0xff);
-    enqueueMsg(UBX_CFG_MSG, toStdString(temp, 2));
+    enqueueMsg(UBX_MSG::CFG_MSG, toStdString(temp, 2));
 }
 
 void QtSerialUblox::pollMsg(uint16_t msgID)
@@ -511,26 +511,26 @@ void QtSerialUblox::pollMsg(uint16_t msgID)
     UbxMessage msg;
     unsigned char temp[1];
     switch (msgID) {
-    case UBX_CFG_PRT: // CFG-PRT
+    case UBX_MSG::CFG_PRT: // CFG-PRT
         // in this special case "rate" is the port ID
         temp[0] = 1;
-        msg.msgID = msgID;
+        msg.full_id = msgID;
         msg.data = toStdString(temp, 1);
         outMsgBuffer.push(msg);
         if (!msgWaitingForAck) {
             sendQueuedMsg();
         }
         break;
-    case UBX_MON_VER:
+    case UBX_MSG::MON_VER:
         // the VER message apparently does not confirm reception with an ACK
-        msg.msgID = msgID;
+        msg.full_id = msgID;
         msg.data = "";
         sendUBX(msg);
         break;
 
     default:
         // for most messages the poll msg is just the message without payload
-        msg.msgID = msgID;
+        msg.full_id = msgID;
         msg.data = "";
         enqueueMsg(msgID, "");
         break;
@@ -550,7 +550,7 @@ auto QtSerialUblox::getProtVersion() -> double
 void QtSerialUblox::enqueueMsg(uint16_t msgID, const std::string& payload)
 {
     UbxMessage newMessage;
-    newMessage.msgID = msgID;
+    newMessage.full_id = msgID;
     newMessage.data = payload;
     outMsgBuffer.push(newMessage);
     if (!msgWaitingForAck) {
