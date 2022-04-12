@@ -416,16 +416,16 @@ int main(int argc, char* argv[])
     daemonConfig.showin = parser.isSet(showinOption);
 
     if (parser.isSet(discr1Option)) {
-        daemonConfig.dacThresh[0] = parser.value(discr1Option).toFloat(&ok);
+        daemonConfig.thresholdVoltage[0] = parser.value(discr1Option).toFloat(&ok);
         if (!ok) {
-            daemonConfig.dacThresh[0] = -1.;
+            daemonConfig.thresholdVoltage[0] = -1.;
             qCritical() << "error in value for discr1 (maybe not a float)";
         }
     }
     if (parser.isSet(discr2Option)) {
-        daemonConfig.dacThresh[1] = parser.value(discr2Option).toFloat(&ok);
+        daemonConfig.thresholdVoltage[1] = parser.value(discr2Option).toFloat(&ok);
         if (!ok) {
-            daemonConfig.dacThresh[1] = -1.;
+            daemonConfig.thresholdVoltage[1] = -1.;
             qCritical() << "error in value for discr2 (maybe not a float)";
         }
     }
@@ -450,39 +450,39 @@ int main(int argc, char* argv[])
         }
 
     if (parser.isSet(preamp1Option)) {
-        daemonConfig.preamp[0] = true;
+        daemonConfig.preamp_enable[0] = true;
     } else
         try {
             int preamp1Cfg = cfg.lookup("preamp1_switch");
             if (verbose > 2)
                 qDebug() << "preamp1 switch:" << preamp1Cfg;
-            daemonConfig.preamp[0] = preamp1Cfg;
+            daemonConfig.preamp_enable[0] = preamp1Cfg;
         } catch (const libconfig::SettingNotFoundException& nfex) {
-            qWarning() << "No 'preamp1_switch' setting in configuration file. Assuming" << (int)daemonConfig.preamp[0];
+            qWarning() << "No 'preamp1_switch' setting in configuration file. Assuming" << (int)daemonConfig.preamp_enable[0];
         }
 
     if (parser.isSet(preamp2Option)) {
-        daemonConfig.preamp[1] = true;
+        daemonConfig.preamp_enable[1] = true;
     } else
         try {
             int preamp2Cfg = cfg.lookup("preamp2_switch");
             if (verbose > 2)
                 qDebug() << "preamp2 switch:" << preamp2Cfg;
-            daemonConfig.preamp[1] = preamp2Cfg;
+            daemonConfig.preamp_enable[1] = preamp2Cfg;
         } catch (const libconfig::SettingNotFoundException& nfex) {
-            qWarning() << "No 'preamp2_switch' setting in configuration file. Assuming " << (int)daemonConfig.preamp[1];
+            qWarning() << "No 'preamp2_switch' setting in configuration file. Assuming " << (int)daemonConfig.preamp_enable[1];
         }
 
     if (parser.isSet(gainOption)) {
-        daemonConfig.gain = true;
+        daemonConfig.hi_gain = true;
     } else {
         try {
             int gainCfg = cfg.lookup("gain_switch");
             if (verbose > 2) qDebug() << "gain switch:" << gainCfg;
-            daemonConfig.gain = gainCfg;
+            daemonConfig.hi_gain = gainCfg;
         } catch (const libconfig::SettingNotFoundException& nfex) {
             if (verbose > 0)
-                qWarning() << "No 'gain_switch' setting in configuration file. Assuming" << (int)daemonConfig.gain;
+                qWarning() << "No 'gain_switch' setting in configuration file. Assuming" << (int)daemonConfig.hi_gain;
         }
     }
 

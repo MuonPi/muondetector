@@ -47,7 +47,7 @@ public:
         QString gpsdevname { "" };
         int verbose { 0 };
         quint8 pcaPortMask { 0 };
-        std::array<float, 2> dacThresh { -1.0F, -1.0F };
+        std::array<float, 2> thresholdVoltage { -1.0F, -1.0F };
         float biasVoltage { -1.0F };
         bool bias_ON { false };
         bool dumpRaw;
@@ -60,8 +60,8 @@ public:
         quint16 serverPort { 0 };
         bool showout { false };
         bool showin { false };
-        std::array<bool, 2> preamp { false, false };
-        bool gain { false };
+        std::array<bool, 2> preamp_enable { false, false };
+        bool hi_gain { false };
         QString station_ID { "0" };
         std::array<bool, 2> polarity { true, true };
         int maxGeohashLength { MuonPi::Settings::log.max_geohash_length };
@@ -208,13 +208,6 @@ private:
 	std::shared_ptr<Adafruit_SSD1306> oled_p { };
     std::shared_ptr<UbloxI2c> ublox_i2c_p { };
 
-	float biasVoltage = 0.;
-    bool biasON = false;
-    GPIO_SIGNAL eventTrigger;
-    bool gainSwitch = false;
-    bool preampStatus[2];
-    uint8_t pcaPortMask = 0;
-    QVector<float> dacThresh; // do not give values here because of push_back in constructor of deamon
     QPointer<PigpiodHandler> pigHandler;
     QPointer<TDC7200> tdc7200;
     bool spiDevicePresent = false;
@@ -231,8 +224,6 @@ private:
     int gpsTimeout = 5000;
     bool dumpRaw, configGnss, showout, showin;
     bool mqttConnectionStatus = false;
-    bool polarity1 = true; // input polarity switch: true=pos, false=neg
-    bool polarity2 = true;
 
     // file handling
     QPointer<FileHandler> fileHandler;

@@ -206,7 +206,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     connect(snInt, SIGNAL(activated(int)), this, SLOT(handleSigInt()));
 
     // general
-    verbose = cfg.verbose;
+    verbose = config.verbose;
     if (verbose > 4) {
         qDebug() << "daemon running in thread " << this->thread()->objectName();
     }
@@ -311,7 +311,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     connect(this, &Daemon::aboutToQuit, mqttHandlerThread, &QThread::quit);
     connect(mqttHandlerThread, &QThread::finished, mqttHandlerThread, &QThread::deleteLater);
 
-    mqttHandler = new MuonPi::MqttHandler(cfg.station_ID, verbose - 1);
+    mqttHandler = new MuonPi::MqttHandler(config.station_ID, verbose - 1);
     mqttHandler->moveToThread(mqttHandlerThread);
     connect(mqttHandler, &MuonPi::MqttHandler::mqttConnectionStatus, this, &Daemon::sendMqttStatus);
     connect(mqttHandler, &MuonPi::MqttHandler::giving_up, this, &Daemon::handleSigTerm);
@@ -325,7 +325,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     connect(this, &Daemon::aboutToQuit, fileHandlerThread, &QThread::quit);
     connect(fileHandlerThread, &QThread::finished, fileHandlerThread, &QThread::deleteLater);
 
-    fileHandler = new FileHandler(cfg.username, cfg.password);
+    fileHandler = new FileHandler(config.username, config.password);
     fileHandler->moveToThread(fileHandlerThread);
     connect(this, &Daemon::aboutToQuit, fileHandler, &FileHandler::deleteLater);
     connect(fileHandlerThread, &QThread::started, fileHandler, &FileHandler::start);
@@ -455,7 +455,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     }
 
     for (int channel = 0; channel < 2; channel++) {
-        if ( cfg.dacThresh[Config::Hardware::DAC::Channel::threshold[channel]] < 0. 
+        if ( config.thresholdVoltage[Config::Hardware::DAC::Channel::threshold[channel]] < 0. 
             && mcp4728_p->probeDevicePresence() ) 
         {
             MCP4728::DacChannel dacChannel;
@@ -463,11 +463,9 @@ Daemon::Daemon(configuration cfg, QObject* parent)
             eepromChannel.eeprom = true;
             mcp4728_p->readChannel(Config::Hardware::DAC::Channel::threshold[channel], dacChannel);
             mcp4728_p->readChannel(Config::Hardware::DAC::Channel::threshold[channel], eepromChannel);
-            cfg.dacThresh[Config::Hardware::DAC::Channel::threshold[channel]] = MCP4728::code2voltage(dacChannel);
+            config.thresholdVoltage[Config::Hardware::DAC::Channel::threshold[channel]] = MCP4728::code2voltage(dacChannel);
         }
     }
-    dacThresh.push_back(cfg.dacThresh[0]);
-    dacThresh.push_back(cfg.dacThresh[1]);
 
     if ( mcp4728_p->probeDevicePresence() ) {
         MCP4728::DacChannel eeprom_value;
@@ -480,14 +478,13 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         }
     }
 
-    biasVoltage = cfg.biasVoltage;
-    if (biasVoltage < 0. && mcp4728_p->probeDevicePresence()) {
+    if (config.biasVoltage < 0. && mcp4728_p->probeDevicePresence()) {
         MCP4728::DacChannel dacChannel;
         MCP4728::DacChannel eepromChannel;
         eepromChannel.eeprom = true;
         mcp4728_p->readChannel(Config::Hardware::DAC::Channel::bias, dacChannel);
         mcp4728_p->readChannel(Config::Hardware::DAC::Channel::bias, eepromChannel);
-        biasVoltage = MCP4728::code2voltage(dacChannel);
+        config.biasVoltage = MCP4728::code2voltage(dacChannel);
     }
 
     // PCA9536 4 bit I/O I2C device used for selecting the UBX timing input
@@ -511,16 +508,16 @@ Daemon::Daemon(configuration cfg, QObject* parent)
             qDebug() << "readout took " << dec << pca9536_p->getLastTimeInterval() << " ms";
         }
         io_extender_p->setOutputPorts(0b00000111);
-        setPcaChannel(cfg.pcaPortMask);
+        setPcaChannel(config.pcaPortMask);
     }
 
     if ( mcp4728_p->probeDevicePresence() ) {
-        if (dacThresh[0] > 0)
-            dac_p->setVoltage(Config::Hardware::DAC::Channel::threshold[0], dacThresh[0]);
-        if (dacThresh[1] > 0)
-            dac_p->setVoltage(Config::Hardware::DAC::Channel::threshold[1], dacThresh[1]);
-        if (biasVoltage > 0)
-            dac_p->setVoltage(Config::Hardware::DAC::Channel::bias, biasVoltage);
+        if (config.thresholdVoltage[0] > 0.)
+            dac_p->setVoltage(Config::Hardware::DAC::Channel::threshold[0], config.thresholdVoltage[0]);
+        if (config.thresholdVoltage[1] > 0.)
+            dac_p->setVoltage(Config::Hardware::DAC::Channel::threshold[1], config.thresholdVoltage[1]);
+        if (config.biasVoltage > 0)
+            dac_p->setVoltage(Config::Hardware::DAC::Channel::bias, config.biasVoltage);
     }
 
     // removed initialization of ublox i2c interface since it doesn't work properly on RPi
@@ -565,15 +562,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 		oled_p.reset();
     }
 
-    // for pigpio signals:
-    preampStatus[0] = cfg.preamp[0];
-    preampStatus[1] = cfg.preamp[1];
-    gainSwitch = cfg.gain;
-    biasON = cfg.bias_ON;
-    eventTrigger = cfg.eventTrigger;
-    polarity1 = cfg.polarity[0];
-    polarity2 = cfg.polarity[1];
-
     // for diagnostics:
     // print out some i2c device statistics
     if (verbose > 2) {
@@ -593,31 +581,31 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     }
 
     // for ublox gnss module
-    gpsdevname = cfg.gpsdevname;
-    dumpRaw = cfg.dumpRaw;
-    baudrate = cfg.baudrate;
-    configGnss = cfg.configGnss;
-    showout = cfg.showout;
-    showin = cfg.showin;
+    gpsdevname = config.gpsdevname;
+    dumpRaw = config.dumpRaw;
+    baudrate = config.baudrate;
+    configGnss = config.configGnss;
+    showout = config.showout;
+    showin = config.showin;
 
     // for tcp connection with fileServer
-    peerPort = cfg.peerPort;
+    peerPort = config.peerPort;
     if (peerPort == 0) {
         peerPort = 51508;
     }
-    peerAddress = cfg.peerAddress;
+    peerAddress = config.peerAddress;
     if (peerAddress.isEmpty() || peerAddress == "local" || peerAddress == "localhost") {
         peerAddress = QHostAddress(QHostAddress::LocalHost).toString();
     }
 
-    if (cfg.serverAddress.isEmpty()) {
+    if (config.serverAddress.isEmpty()) {
         // if not otherwise specified: listen on all available addresses
         daemonAddress = QHostAddress(QHostAddress::Any);
         if (verbose > 3) {
             qDebug() << "daemon address: " << daemonAddress.toString();
         }
     }
-    daemonPort = cfg.serverPort;
+    daemonPort = config.serverPort;
     if (daemonPort == 0) {
         // maybe think about other fall back solution
         daemonPort = MuonPi::Settings::gui.port;
@@ -655,7 +643,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     connect(&parameterMonitorTimer, &QTimer::timeout, this, &Daemon::aquireMonitoringParameters);
     parameterMonitorTimer.start();
 
-    logEngine.setHashLength(cfg.maxGeohashLength);
+    logEngine.setHashLength(config.maxGeohashLength);
 }
 
 Daemon::~Daemon()
@@ -756,7 +744,7 @@ void Daemon::connectToPigpiod()
             histoMap["TPTimeDiff"].fill((double)usecs);
         }
     });
-    pigHandler->setSamplingTriggerSignal(eventTrigger);
+    pigHandler->setSamplingTriggerSignal(config.eventTrigger);
     connect(this, &Daemon::setSamplingTriggerSignal, pigHandler, &PigpiodHandler::setSamplingTriggerSignal);
 
     struct timespec ts_res;
@@ -782,13 +770,13 @@ void Daemon::connectToPigpiod()
     connect(&rateBufferReminder, &QTimer::timeout, this, &Daemon::onRateBufferReminder);
     rateBufferReminder.start();
     emit GpioSetOutput(GPIO_PINMAP[UBIAS_EN]);
-    emit GpioSetState(GPIO_PINMAP[UBIAS_EN], (HW_VERSION == 1) ? (biasON ? 1 : 0) : (biasON ? 0 : 1));
+    emit GpioSetState(GPIO_PINMAP[UBIAS_EN], (HW_VERSION == 1) ? (config.bias_ON ? 1 : 0) : (config.bias_ON ? 0 : 1));
     emit GpioSetOutput(GPIO_PINMAP[PREAMP_1]);
     emit GpioSetOutput(GPIO_PINMAP[PREAMP_2]);
     emit GpioSetOutput(GPIO_PINMAP[GAIN_HL]);
-    emit GpioSetState(GPIO_PINMAP[PREAMP_1], preampStatus[0]);
-    emit GpioSetState(GPIO_PINMAP[PREAMP_2], preampStatus[1]);
-    emit GpioSetState(GPIO_PINMAP[GAIN_HL], gainSwitch);
+    emit GpioSetState(GPIO_PINMAP[PREAMP_1], config.preamp_enable[0]);
+    emit GpioSetState(GPIO_PINMAP[PREAMP_2], config.preamp_enable[1]);
+    emit GpioSetState(GPIO_PINMAP[GAIN_HL], config.hi_gain);
     emit GpioSetOutput(GPIO_PINMAP[STATUS1]);
     emit GpioSetOutput(GPIO_PINMAP[STATUS2]);
     emit GpioSetState(GPIO_PINMAP[STATUS1], 0);
@@ -808,8 +796,8 @@ void Daemon::connectToPigpiod()
     if (HW_VERSION >= 3) {
         emit GpioSetOutput(GPIO_PINMAP[IN_POL1]);
         emit GpioSetOutput(GPIO_PINMAP[IN_POL2]);
-        emit GpioSetState(GPIO_PINMAP[IN_POL1], polarity1);
-        emit GpioSetState(GPIO_PINMAP[IN_POL2], polarity2);
+        emit GpioSetState(GPIO_PINMAP[IN_POL1], config.polarity[0]);
+        emit GpioSetState(GPIO_PINMAP[IN_POL2], config.polarity[1]);
     }
 }
 
@@ -880,11 +868,9 @@ void Daemon::connectToGps()
 
     // connect fileHandler related stuff
     if (fileHandler != nullptr) {
-        //connect(qtGps, &QtSerialUblox::timTM2, fileHandler, &FileHandler::writeToDataFile);
         if (config.storeLocal) {
             connect(this, &Daemon::eventMessage, fileHandler, &FileHandler::writeToDataFile);
         }
-        //connect(qtGps, &QtSerialUblox::timTM2, mqttHandler, &MuonPi::MqttHandler::sendData);
         connect(this, &Daemon::eventMessage, mqttHandler, &MuonPi::MqttHandler::sendData);
     }
     // after thread start there will be a signal emitted which starts the qtGps makeConnection function
@@ -997,13 +983,13 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         uint8_t channel;
         float threshold;
         *(tcpMessage.dStream) >> channel >> threshold;
+        if (channel > 1) return;
         if (threshold < 0.001) {
             if (verbose > 2)
                 qWarning() << "setting DAC " << channel << " to 0!";
         } else
             setDacThresh(channel, threshold);
-        sendDacThresh(Config::Hardware::DAC::Channel::threshold[0]);
-        sendDacThresh(Config::Hardware::DAC::Channel::threshold[1]);
+        sendDacThresh(Config::Hardware::DAC::Channel::threshold[channel]);
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_THRESHOLD_REQUEST) {
@@ -1039,13 +1025,13 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         bool status;
         *(tcpMessage.dStream) >> channel >> status;
         if (channel == 0) {
-            preampStatus[0] = status;
+            config.preamp_enable[0] = status;
             emit GpioSetState(GPIO_PINMAP[PREAMP_1], status);
-            emit logParameter(LogParameter("preampSwitch1", QString::number((int)preampStatus[0]), LogParameter::LOG_EVERY));
+            emit logParameter(LogParameter("preampSwitch1", QString::number((int)config.preamp_enable[0]), LogParameter::LOG_EVERY));
         } else if (channel == 1) {
-            preampStatus[1] = status;
+            config.preamp_enable[1] = status;
             emit GpioSetState(GPIO_PINMAP[PREAMP_2], status);
-            emit logParameter(LogParameter("preampSwitch2", QString::number((int)preampStatus[1]), LogParameter::LOG_EVERY));
+            emit logParameter(LogParameter("preampSwitch2", QString::number((int)config.preamp_enable[1]), LogParameter::LOG_EVERY));
         }
         sendPreampStatus(0);
         sendPreampStatus(1);
@@ -1058,15 +1044,15 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
     if (msgID == TCP_MSG_KEY::MSG_POLARITY_SWITCH) {
         bool pol1, pol2;
         *(tcpMessage.dStream) >> pol1 >> pol2;
-        if (HW_VERSION >= 3 && pol1 != polarity1) {
-            polarity1 = pol1;
-            emit GpioSetState(GPIO_PINMAP[IN_POL1], polarity1);
-            emit logParameter(LogParameter("polaritySwitch1", QString::number((int)polarity1), LogParameter::LOG_EVERY));
+        if (HW_VERSION >= 3 && pol1 != config.polarity[0]) {
+            config.polarity[0] = pol1;
+            emit GpioSetState(GPIO_PINMAP[IN_POL1], config.polarity[0]);
+            emit logParameter(LogParameter("polaritySwitch1", QString::number((int)config.polarity[0]), LogParameter::LOG_EVERY));
         }
-        if (HW_VERSION >= 3 && pol2 != polarity2) {
-            polarity2 = pol2;
-            emit GpioSetState(GPIO_PINMAP[IN_POL2], polarity2);
-            emit logParameter(LogParameter("polaritySwitch2", QString::number((int)polarity2), LogParameter::LOG_EVERY));
+        if (HW_VERSION >= 3 && pol2 != config.polarity[1]) {
+            config.polarity[1] = pol2;
+            emit GpioSetState(GPIO_PINMAP[IN_POL2], config.polarity[1]);
+            emit logParameter(LogParameter("polaritySwitch2", QString::number((int)config.polarity[1]), LogParameter::LOG_EVERY));
         }
         sendPolarityStatus();
     }
@@ -1076,11 +1062,11 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
     if (msgID == TCP_MSG_KEY::MSG_GAIN_SWITCH) {
         bool status;
         *(tcpMessage.dStream) >> status;
-        gainSwitch = status;
+        config.hi_gain = status;
         emit GpioSetState(GPIO_PINMAP[GAIN_HL], status);
         if (histoMap.find("pulseHeight") != histoMap.end())
             histoMap["pulseHeight"].clear();
-        emit logParameter(LogParameter("gainSwitch", QString::number((int)gainSwitch), LogParameter::LOG_EVERY));
+        emit logParameter(LogParameter("gainSwitch", QString::number((int)config.hi_gain), LogParameter::LOG_EVERY));
         sendGainSwitchStatus();
         return;
     }
@@ -1392,7 +1378,7 @@ void Daemon::sendDacThresh(uint8_t channel)
         return;
     }
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_THRESHOLD);
-    *(tcpMessage.dStream) << (quint8)channel << dacThresh[(int)channel];
+    *(tcpMessage.dStream) << (quint8)channel << config.thresholdVoltage[(int)channel];
     emit sendTcpMessage(tcpMessage);
 }
 
@@ -1421,21 +1407,21 @@ void Daemon::sendGpioPinEvent(uint8_t gpio_pin)
 void Daemon::sendBiasVoltage()
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_BIAS_VOLTAGE);
-    *(tcpMessage.dStream) << biasVoltage;
+    *(tcpMessage.dStream) << config.biasVoltage;
     emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::sendBiasStatus()
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_BIAS_SWITCH);
-    *(tcpMessage.dStream) << biasON;
+    *(tcpMessage.dStream) << config.bias_ON;
     emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::sendGainSwitchStatus()
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GAIN_SWITCH);
-    *(tcpMessage.dStream) << gainSwitch;
+    *(tcpMessage.dStream) << config.hi_gain;
     emit sendTcpMessage(tcpMessage);
 }
 
@@ -1445,21 +1431,21 @@ void Daemon::sendPreampStatus(uint8_t channel)
         return;
     }
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_PREAMP_SWITCH);
-    *(tcpMessage.dStream) << (quint8)channel << preampStatus[channel];
+    *(tcpMessage.dStream) << (quint8)channel << config.preamp_enable[channel];
     emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::sendPolarityStatus()
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_POLARITY_SWITCH);
-    *(tcpMessage.dStream) << polarity1 << polarity2;
+    *(tcpMessage.dStream) << config.polarity[0] << config.polarity[1];
     emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::sendPcaChannel()
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_PCA_SWITCH);
-    *(tcpMessage.dStream) << (quint8)pcaPortMask;
+    *(tcpMessage.dStream) << (quint8)config.pcaPortMask;
     emit sendTcpMessage(tcpMessage);
 }
 
@@ -1707,27 +1693,27 @@ void Daemon::setPcaChannel(uint8_t channel)
     if (verbose > 0) {
         qInfo() << "changed pcaPortMask to " << channel;
     }
-    pcaPortMask = channel;
+    config.pcaPortMask = channel;
     io_extender_p->setOutputState(channel);
-    emit logParameter(LogParameter("ubxInputSwitch", "0x" + QString::number(pcaPortMask, 16), LogParameter::LOG_EVERY));
+    emit logParameter(LogParameter("ubxInputSwitch", "0x" + QString::number(config.pcaPortMask, 16), LogParameter::LOG_EVERY));
 }
 
 void Daemon::setBiasVoltage(float voltage)
 {
-    biasVoltage = voltage;
     if (verbose > 0) {
         qInfo() << "change biasVoltage to " << voltage;
     }
     if ( dac_p && dac_p->probeDevicePresence() ) {
         dac_p->setVoltage(Config::Hardware::DAC::Channel::bias, voltage);
         emit logParameter(LogParameter("biasDAC", QString::number(voltage) + " V", LogParameter::LOG_EVERY));
+        config.biasVoltage = voltage;
     }
     clearRates();
 }
 
 void Daemon::setBiasStatus(bool status)
 {
-    biasON = status;
+    config.bias_ON = status;
     if (verbose > 0) {
         qInfo() << "change biasStatus to " << status;
     }
@@ -1758,10 +1744,10 @@ void Daemon::setDacThresh(uint8_t channel, float threshold)
     if (verbose > 0) {
         qInfo() << "change dacThresh " << channel << " to " << threshold;
     }
-    dacThresh[channel] = threshold;
+    config.thresholdVoltage[channel] = threshold;
     clearRates();
     if ( dac_p && dac_p->setVoltage(channel, threshold) ) {
-		emit logParameter(LogParameter("thresh" + QString::number(channel + 1), QString::number(dacThresh[channel]) + " V", LogParameter::LOG_EVERY));
+		emit logParameter(LogParameter("thresh" + QString::number(channel + 1), QString::number(config.thresholdVoltage[channel]) + " V", LogParameter::LOG_EVERY));
     }
 }
 
@@ -2342,21 +2328,21 @@ void Daemon::aquireMonitoringParameters()
 void Daemon::onLogParameterPolled()
 {
     // connect to the regular log timer signal to log several non-regularly polled parameters
-    emit logParameter(LogParameter("biasSwitch", QString::number(biasON), LogParameter::LOG_ON_CHANGE));
-    emit logParameter(LogParameter("preampSwitch1", QString::number((int)preampStatus[0]), LogParameter::LOG_ON_CHANGE));
-    emit logParameter(LogParameter("preampSwitch2", QString::number((int)preampStatus[1]), LogParameter::LOG_ON_CHANGE));
-    emit logParameter(LogParameter("gainSwitch", QString::number((int)gainSwitch), LogParameter::LOG_ON_CHANGE));
-    emit logParameter(LogParameter("polaritySwitch1", QString::number((int)polarity1), LogParameter::LOG_ON_CHANGE));
-    emit logParameter(LogParameter("polaritySwitch2", QString::number((int)polarity2), LogParameter::LOG_ON_CHANGE));
+    emit logParameter(LogParameter("biasSwitch", QString::number(config.bias_ON), LogParameter::LOG_ON_CHANGE));
+    emit logParameter(LogParameter("preampSwitch1", QString::number((int)config.preamp_enable[0]), LogParameter::LOG_ON_CHANGE));
+    emit logParameter(LogParameter("preampSwitch2", QString::number((int)config.preamp_enable[1]), LogParameter::LOG_ON_CHANGE));
+    emit logParameter(LogParameter("gainSwitch", QString::number((int)config.hi_gain), LogParameter::LOG_ON_CHANGE));
+    emit logParameter(LogParameter("polaritySwitch1", QString::number((int)config.polarity[0]), LogParameter::LOG_ON_CHANGE));
+    emit logParameter(LogParameter("polaritySwitch2", QString::number((int)config.polarity[1]), LogParameter::LOG_ON_CHANGE));
 
     if ( dac_p && dac_p->probeDevicePresence() ) {
-        emit logParameter(LogParameter("thresh1", QString::number(dacThresh[0]) + " V", LogParameter::LOG_ON_CHANGE));
-        emit logParameter(LogParameter("thresh2", QString::number(dacThresh[1]) + " V", LogParameter::LOG_ON_CHANGE));
-        emit logParameter(LogParameter("biasDAC", QString::number(biasVoltage) + " V", LogParameter::LOG_ON_CHANGE));
+        emit logParameter(LogParameter("thresh1", QString::number(config.thresholdVoltage[0]) + " V", LogParameter::LOG_ON_CHANGE));
+        emit logParameter(LogParameter("thresh2", QString::number(config.thresholdVoltage[1]) + " V", LogParameter::LOG_ON_CHANGE));
+        emit logParameter(LogParameter("biasDAC", QString::number(config.biasVoltage) + " V", LogParameter::LOG_ON_CHANGE));
     }
 
     if ( io_extender_p && io_extender_p->probeDevicePresence() )
-        emit logParameter(LogParameter("ubxInputSwitch", "0x" + QString::number(pcaPortMask, 16), LogParameter::LOG_ON_CHANGE));
+        emit logParameter(LogParameter("ubxInputSwitch", "0x" + QString::number(config.pcaPortMask, 16), LogParameter::LOG_ON_CHANGE));
     if (pigHandler != nullptr)
         emit logParameter(LogParameter("gpioTriggerSelection", "0x" + QString::number((int)pigHandler->samplingTriggerSignal, 16), LogParameter::LOG_ON_CHANGE));
 
