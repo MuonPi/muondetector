@@ -311,12 +311,12 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     connect(this, &Daemon::aboutToQuit, mqttHandlerThread, &QThread::quit);
     connect(mqttHandlerThread, &QThread::finished, mqttHandlerThread, &QThread::deleteLater);
 
-    mqttHandler = new MuonPi::MqttHandler(config.station_ID, verbose - 1);
+    mqttHandler = new MqttHandler(config.station_ID, verbose - 1);
     mqttHandler->moveToThread(mqttHandlerThread);
-    connect(mqttHandler, &MuonPi::MqttHandler::mqttConnectionStatus, this, &Daemon::sendMqttStatus);
-    connect(mqttHandler, &MuonPi::MqttHandler::giving_up, this, &Daemon::handleSigTerm);
-    connect(fileHandlerThread, &QThread::finished, mqttHandler, &MuonPi::MqttHandler::deleteLater);
-    connect(this, &Daemon::requestMqttConnectionStatus, mqttHandler, &MuonPi::MqttHandler::onRequestConnectionStatus);
+    connect(mqttHandler, &MqttHandler::mqttConnectionStatus, this, &Daemon::sendMqttStatus);
+    connect(mqttHandler, &MqttHandler::giving_up, this, &Daemon::handleSigTerm);
+    connect(fileHandlerThread, &QThread::finished, mqttHandler, &MqttHandler::deleteLater);
+    connect(this, &Daemon::requestMqttConnectionStatus, mqttHandler, &MqttHandler::onRequestConnectionStatus);
     mqttHandlerThread->start();
 
     // create fileHandler
@@ -330,11 +330,11 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     connect(this, &Daemon::aboutToQuit, fileHandler, &FileHandler::deleteLater);
     connect(fileHandlerThread, &QThread::started, fileHandler, &FileHandler::start);
     connect(fileHandlerThread, &QThread::finished, fileHandler, &FileHandler::deleteLater);
-    connect(fileHandler, &FileHandler::mqttConnect, mqttHandler, &MuonPi::MqttHandler::start);
+    connect(fileHandler, &FileHandler::mqttConnect, mqttHandler, &MqttHandler::start);
     fileHandlerThread->start();
 
     // connect log signals to and from log engine and filehandler
-    connect(&logEngine, &LogEngine::sendLogString, mqttHandler, &MuonPi::MqttHandler::sendLog);
+    connect(&logEngine, &LogEngine::sendLogString, mqttHandler, &MqttHandler::sendLog);
     connect(&logEngine, &LogEngine::sendLogString, fileHandler, &FileHandler::writeToLogFile);
     // connect to the regular log timer signal to log several non-regularly polled parameters
     connect(&logEngine, &LogEngine::logIntervalSignal, this, &Daemon::onLogParameterPolled);
@@ -392,7 +392,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         }
 
         // set up sampling timer used for continuous sampling mode
-        samplingTimer.setInterval(MuonPi::Config::Hardware::trace_sampling_interval);
+        samplingTimer.setInterval(Config::Hardware::trace_sampling_interval);
         samplingTimer.setSingleShot(false);
         samplingTimer.setTimerType(Qt::PreciseTimer);
         connect(&samplingTimer, &QTimer::timeout, this, &Daemon::sampleAdc0TraceEvent);
@@ -551,13 +551,13 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         oled_p->setCursor(0, 2);
         oled_p->print("*Cosmic Shower Det.*\n");
         oled_p->print("V");
-        oled_p->print(MuonPi::Version::software.string().c_str());
+        oled_p->print(Version::software.string().c_str());
         oled_p->print("\n");
         oled_p->display();
         usleep(50000L);
         connect(&oledUpdateTimer, SIGNAL(timeout()), this, SLOT(updateOledDisplay()));
 
-        oledUpdateTimer.start(MuonPi::Config::Hardware::OLED::update_interval);
+        oledUpdateTimer.start(Config::Hardware::OLED::update_interval);
     } else {
 		oled_p.reset();
     }
@@ -605,7 +605,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     daemonPort = config.serverPort;
     if (daemonPort == 0) {
         // maybe think about other fall back solution
-        daemonPort = MuonPi::Settings::gui.port;
+        daemonPort = Settings::gui.port;
     }
     if (!this->listen(daemonAddress, daemonPort)) {
         qCritical() << tr("Unable to start the server: %1.\n").arg(this->errorString());
@@ -865,10 +865,12 @@ void Daemon::connectToGps()
 
     // connect fileHandler related stuff
     if (fileHandler != nullptr) {
+        qDebug() << "store_local flag ="<<config.storeLocal;
+
         if (config.storeLocal) {
             connect(this, &Daemon::eventMessage, fileHandler, &FileHandler::writeToDataFile);
         }
-        connect(this, &Daemon::eventMessage, mqttHandler, &MuonPi::MqttHandler::sendData);
+        connect(this, &Daemon::eventMessage, mqttHandler, &MqttHandler::sendData);
     }
     // after thread start there will be a signal emitted which starts the qtGps makeConnection function
     gpsThread->start();
@@ -1586,7 +1588,7 @@ void Daemon::onAdcSampleReady(ADS1115::Sample sample) {
 	} else {
 		if (adcSamplingMode == ADC_SAMPLING_MODE::TRACE ) {
 			adcSamplesBuffer.push_back(voltage);
-			if (adcSamplesBuffer.size() > MuonPi::Config::Hardware::ADC::buffer_size)
+			if (adcSamplesBuffer.size() > Config::Hardware::ADC::buffer_size)
 			adcSamplesBuffer.pop_front();
 			if ( currentAdcSampleIndex == 0 ) {
 				TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_SAMPLE);
@@ -1596,7 +1598,7 @@ void Daemon::onAdcSampleReady(ADS1115::Sample sample) {
 			}
 			if ( currentAdcSampleIndex >= 0 ) {
 				currentAdcSampleIndex++;
-				if (currentAdcSampleIndex >= (MuonPi::Config::Hardware::ADC::buffer_size - MuonPi::Config::Hardware::ADC::pretrigger)) 
+				if (currentAdcSampleIndex >= (Config::Hardware::ADC::buffer_size - Config::Hardware::ADC::pretrigger)) 
 				{
 					TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_TRACE);
 					*(tcpMessage.dStream) << (quint16)adcSamplesBuffer.size();
