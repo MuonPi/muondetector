@@ -314,6 +314,12 @@ int main(int argc, char* argv[])
     } catch (const libconfig::SettingNotFoundException&) {
     }
 
+    try {
+        int model = cfg.lookup("gnss_dynamic_model");
+        daemonConfig.gnss_dynamic_model = static_cast<UbxDynamicModel>( model );
+    } catch (const libconfig::SettingNotFoundException&) {
+    }
+
     // setup all variables for ublox module manager, then make the object run
     if (!args.empty() && args.at(0) != "") {
         daemonConfig.gpsdevname = args.at(0);
@@ -339,25 +345,27 @@ int main(int argc, char* argv[])
         qDebug() << "int main running in thread"
                  << QString("0x%1").arg(reinterpret_cast<std::uint64_t>(QCoreApplication::instance()->thread()));
     }
-    daemonConfig.dumpRaw = parser.isSet(dumpRawOption);
+    daemonConfig.gnss_dump_raw = parser.isSet(dumpRawOption);
+    
     if (parser.isSet(baudrateOption)) {
-        daemonConfig.baudrate = parser.value(baudrateOption).toInt(&ok);
-        if (!ok || daemonConfig.baudrate < 0) {
-            daemonConfig.baudrate = 9600;
-            qWarning() << "wrong input for baudrate...using default:" << daemonConfig.baudrate;
+        daemonConfig.gnss_baudrate = parser.value(baudrateOption).toInt(&ok);
+        if (!ok || daemonConfig.gnss_baudrate < 0) {
+            daemonConfig.gnss_baudrate = 9600;
+            qWarning() << "wrong input for baudrate...using default:" << daemonConfig.gnss_baudrate;
         }
     } else
         try {
             int baudrateCfg = cfg.lookup("ublox_baud");
             if (verbose > 2)
                 qInfo() << "ublox baudrate:" << baudrateCfg;
-            daemonConfig.baudrate = baudrateCfg;
+            daemonConfig.gnss_baudrate = baudrateCfg;
         } catch (const libconfig::SettingNotFoundException& nfex) {
             if (verbose > 1)
-                qWarning() << "No 'ublox_baud' setting in configuration file. Assuming" << daemonConfig.baudrate;
+                qWarning() << "No 'ublox_baud' setting in configuration file. Assuming" << daemonConfig.gnss_baudrate;
         }
 
-    daemonConfig.configGnss = parser.isSet(showGnssConfigOption);
+    daemonConfig.gnss_config = parser.isSet(showGnssConfigOption);
+    
     if (parser.isSet(peerPortOption)) {
         daemonConfig.peerPort = parser.value(peerPortOption).toUInt(&ok);
         if (!ok) {

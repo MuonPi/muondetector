@@ -582,9 +582,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 
     // for ublox gnss module
     gpsdevname = config.gpsdevname;
-    dumpRaw = config.dumpRaw;
-    baudrate = config.baudrate;
-    configGnss = config.configGnss;
     showout = config.showout;
     showin = config.showin;
 
@@ -631,14 +628,14 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     connectToGps();
 
     // configure the ublox module with preset ubx messages, if required
-    if (configGnss) {
+    if (config.gnss_config) {
         configGps();
     }
     pollAllUbxMsgRate();
 
     // set up cyclic timer monitoring following operational parameters:
     // temp, vadc, vbias, ibias
-    parameterMonitorTimer.setInterval(MuonPi::Config::Hardware::monitor_interval);
+    parameterMonitorTimer.setInterval(Config::Hardware::monitor_interval);
     parameterMonitorTimer.setSingleShot(false);
     connect(&parameterMonitorTimer, &QTimer::timeout, this, &Daemon::aquireMonitoringParameters);
     parameterMonitorTimer.start();
@@ -815,7 +812,7 @@ void Daemon::connectToGps()
     prepareSerial.waitForFinished();
 
     // here is where the magic threading happens look closely
-    qtGps = new QtSerialUblox(gpsdevname, gpsTimeout, baudrate, dumpRaw, verbose - 1, showout, showin);
+    qtGps = new QtSerialUblox(gpsdevname, gpsTimeout, config.gnss_baudrate, config.gnss_dump_raw, verbose - 1, showout, showin);
     gpsThread = new QThread();
     gpsThread->setObjectName("muondetector-daemon-gnss");
     qtGps->moveToThread(gpsThread);
@@ -1269,6 +1266,7 @@ void Daemon::scanI2cBus()
 void Daemon::sendLogInfo()
 {
     LogInfoStruct lis { fileHandler->getInfo() };
+    lis.logEnabled = config.storeLocal;
     TcpMessage answer(TCP_MSG_KEY::MSG_LOG_INFO);
     *(answer.dStream) << lis;
     emit sendTcpMessage(answer);
@@ -1795,7 +1793,8 @@ void Daemon::configGps()
     emit UBXSetCfgPrt(1, PROTO_UBX);
 
     // set dynamic model: Stationary
-    emit UBXSetDynModel(UbxDynamicModel::stationary);
+    qDebug() << "setting GNSS dynamic model to"<<config.gnss_dynamic_model;
+    emit UBXSetDynModel(config.gnss_dynamic_model);
 
     emit UBXSetAopCfg(true);
 

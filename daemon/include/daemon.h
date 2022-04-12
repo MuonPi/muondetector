@@ -26,16 +26,14 @@
 #include "hardware/spidevices.h"
 #include "hardware/device_types.h"
 
+#include <muondetector_structs.h>
+
 // for sig handling:
 #include <signal.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 
-struct CalibStruct;
-struct UbxTimeMarkStruct;
-class Property;
 enum GPIO_SIGNAL;
-
 
 class Daemon : public QTcpServer {
     Q_OBJECT
@@ -50,9 +48,6 @@ public:
         std::array<float, 2> thresholdVoltage { -1.0F, -1.0F };
         float biasVoltage { -1.0F };
         bool bias_ON { false };
-        bool dumpRaw;
-        int baudrate { 9600 };
-        bool configGnss { false };
         GPIO_SIGNAL eventTrigger { EVT_XOR };
         QString peerAddress { "" };
         quint16 peerPort { 0 };
@@ -66,6 +61,11 @@ public:
         std::array<bool, 2> polarity { true, true };
         int maxGeohashLength { MuonPi::Settings::log.max_geohash_length };
         bool storeLocal { false };
+        /* GNSS configs */
+        bool gnss_dump_raw { false };
+        int gnss_baudrate { 9600 };
+        bool gnss_config { false };
+        UbxDynamicModel gnss_dynamic_model { UbxDynamicModel::stationary };
     };
 
     Daemon(configuration cfg, QObject* parent = nullptr);
