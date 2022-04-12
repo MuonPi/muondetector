@@ -22,7 +22,6 @@ public:
     QFileInfo dataFileInfo() const;
     QFileInfo logFileInfo() const;
     std::chrono::seconds currentLogAge();
-    bool eventLogEnabled() const { return m_log_events; }
     std::chrono::seconds logRotatePeriod() const { return m_logrotate_period; }
     LogInfoStruct getInfo();
     LogInfoStruct::status_t getStatus();
@@ -36,7 +35,6 @@ public slots:
     void start();
     void writeToDataFile(const QString& data); //!< writes data to the file opened in "dataFile"
     void writeToLogFile(const QString& log); //!< writes log data to the file opened in "logFile"
-    void enableEventLog(bool enabled = true) { m_log_events = enabled; }
     void setLogRotatePeriod(std::chrono::seconds period) { m_logrotate_period = period; }
 
 private slots:
@@ -68,7 +66,6 @@ private:
     quint32 fileSize; //!< max file size limit in MB
     QDateTime lastUploadDateTime;
     QTime dailyUploadTime;
-    bool m_log_events { MuonPi::Settings::events.store_local };
     std::chrono::seconds m_logrotate_period { MuonPi::Settings::log.rotate_period };
 };
 

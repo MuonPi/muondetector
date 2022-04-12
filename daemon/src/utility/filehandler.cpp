@@ -167,9 +167,7 @@ LogInfoStruct::status_t FileHandler::getStatus()
 {
     LogInfoStruct::status_t status { LogInfoStruct::status_t::ERROR };
     if (dataFileInfo().exists() && logFileInfo().exists()) {
-        if (m_log_events) {
-            status = LogInfoStruct::status_t::NORMAL;
-        } else status = LogInfoStruct::status_t::LOG_ONLY;
+        status = LogInfoStruct::status_t::NORMAL;
     }
     return status;
 }
@@ -184,7 +182,7 @@ LogInfoStruct FileHandler::getInfo()
     lis.dataFileSize = dataFileInfo().size();
     lis.logAge = currentLogAge();
     lis.logRotationDuration = logRotatePeriod();
-    lis.logEnabled = eventLogEnabled();
+    lis.logEnabled = true;
     return lis;
 }
 
@@ -359,7 +357,7 @@ bool FileHandler::readFileInformation()
 
 void FileHandler::writeToDataFile(const QString& data)
 {
-    if (!m_log_events || dataFile == nullptr) {
+    if (dataFile == nullptr) {
         return;
     }
     QTextStream out(dataFile);
