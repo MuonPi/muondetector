@@ -25,8 +25,6 @@
 
 #define DEGREE_CHARCODE 248
 
-// REMEMBER: "emit" keyword is just syntactic sugar and not needed AT ALL ... learned it after 1 year *clap* *clap*
-
 using namespace std;
 using namespace MuonPi;
 
@@ -653,7 +651,7 @@ Daemon::~Daemon()
         calib = nullptr;
     }
     pigHandler.clear();
-    unsigned long timeout = 2000;
+    constexpr unsigned long timeout { 2000 };
     if (!mqttHandlerThread->wait(timeout)) {
         qWarning() << "Timeout waiting for thread " + mqttHandlerThread->objectName();
     }

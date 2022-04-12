@@ -74,7 +74,7 @@ void QtSerialUblox::makeConnection()
     connect(ackTimer, &QTimer::timeout, this, &QtSerialUblox::ackTimeout);
     connect(serialPort, &QSerialPort::readyRead, this, &QtSerialUblox::onReadyRead);
     serialPort->clear(QSerialPort::AllDirections);
-    if (verbose == 1) {
+    if (verbose > 1) {
         emit toConsole("rising               falling               accEst valid timebase utc\n");
     }
 }
