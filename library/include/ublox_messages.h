@@ -9,10 +9,10 @@
 // not in this list are all msg of types: LOG, AID and INF
 
 namespace UBX_MSG {
-enum msg_id: std::uint16_t {
+enum msg_id : std::uint16_t {
     ACK = 0x0501,
     NAK = 0x0500,
-    
+
     NAV_CLOCK = 0x0122,
     NAV_DGPS = 0x0131,
     NAV_AOPSTATUS = 0x0160,
@@ -38,7 +38,7 @@ enum msg_id: std::uint16_t {
     NAV_TIMEUTC = 0x0121,
     NAV_VELECEF = 0x0111,
     NAV_VELNED = 0x0112,
-    
+
     CFG_ANT = 0x0613,
     CFG_CFG = 0x0609,
     CFG_DAT = 0x0606,
@@ -111,21 +111,21 @@ enum msg_id: std::uint16_t {
     NMEA_RATE = 0xf140,
     NMEA_SVSTATUS = 0xf103,
     NMEA_TIME = 0xf104,
-    
-    RXM_RAW = 0x0210,      /* ubx message id: raw measurement data */
-    RXM_SFRB = 0x0211,      /* ubx message id: subframe buffer */
-    RXM_SFRBX = 0x0213,      /* ubx message id: raw subframe data */
-    RXM_RAWX = 0x0215,      /* ubx message id: multi-gnss raw meas data */
 
-    TRK_D5 = 0x030A,      /* ubx message id: trace mesurement data */
-    TRK_MEAS = 0x0310,      /* ubx message id: trace mesurement data */
-    TRK_SFRBX = 0x030F      /* ubx message id: trace subframe buffer */
+    RXM_RAW = 0x0210, /* ubx message id: raw measurement data */
+    RXM_SFRB = 0x0211, /* ubx message id: subframe buffer */
+    RXM_SFRBX = 0x0213, /* ubx message id: raw subframe data */
+    RXM_RAWX = 0x0215, /* ubx message id: multi-gnss raw meas data */
+
+    TRK_D5 = 0x030A, /* ubx message id: trace mesurement data */
+    TRK_MEAS = 0x0310, /* ubx message id: trace mesurement data */
+    TRK_SFRBX = 0x030F /* ubx message id: trace subframe buffer */
 };
 
 const static std::map<msg_id, std::string> msg_string {
     { ACK, "ACK-ACK" },
     { NAK, "ACK-NAK" },
-    
+
     { NAV_CLOCK, "NAV-CLOCK" },
     { NAV_DGPS, "NAV-DGPS" },
     { NAV_AOPSTATUS, "NAV-AOPSTATUS" },

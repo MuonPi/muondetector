@@ -69,8 +69,7 @@ void Settings::addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates)
         item->setFlags(item->flags() & (~Qt::ItemIsUserCheckable)); // disables checkbox edit from user
         item->setFlags(item->flags() & (~Qt::ItemIsEditable));
         item->key = it.key();
-//        item->name = ubxMsgKeyNameMap.value(it.key());
-        item->name = QString::fromStdString(UBX_MSG::msg_string.at(static_cast<UBX_MSG::msg_id>( it.key() )));
+        item->name = QString::fromStdString(UBX_MSG::msg_string.at(static_cast<UBX_MSG::msg_id>(it.key())));
         item->setText(item->name);
         item->setSizeHint(QSize(120, 24));
         value->key = it.key();
