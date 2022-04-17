@@ -90,7 +90,7 @@ void Daemon::handleSigTerm()
 
     // do Qt stuff
     if (verbose > 1) {
-        cout << "\nSIGTERM received" << endl;
+        std::cout << "\nSIGTERM received" << std::endl;
     }
 
     // save ublox config in built-in flash to provide latest orbit info of sats for next start-up
@@ -110,7 +110,7 @@ void Daemon::handleSigHup()
 
     // do Qt stuff
     if (verbose > 1) {
-        cout << "\nSIGHUP received" << endl;
+        std::cout << "\nSIGHUP received" << std::endl;
     }
 
     // save ublox config in built-in flash to provide latest orbit info of sats for next start-up
@@ -130,13 +130,13 @@ void Daemon::handleSigInt()
 
     // do Qt stuff
     if (verbose > 1) {
-        cout << "\nSIGINT received" << endl;
+        std::cout << "\nSIGINT received" << std::endl;
     }
     if (showin || showout) {
         qDebug() << allMsgCfgID.size();
         qDebug() << msgRateCfgs.size();
         for (QMap<uint16_t, int>::iterator it = msgRateCfgs.begin(); it != msgRateCfgs.end(); it++) {
-            qDebug().nospace() << "0x" << hex << (uint8_t)(it.key() >> 8) << " 0x" << hex << (uint8_t)(it.key() & 0xff) << " " << dec << it.value();
+            qDebug().nospace() << "0x" << Qt::hex << (uint8_t)(it.key() >> 8) << " 0x" << Qt::hex << (uint8_t)(it.key() & 0xff) << " " << Qt::dec << it.value();
         }
     }
 
@@ -252,9 +252,9 @@ Daemon::Daemon(configuration cfg, QObject* parent)
                 for (int i = 0; i < 256; i++)
                     buf[i] = i;
                 if ( !eep24aa02_p->writeBytes(0, 256, buf) )
-                    cerr << "error: write to eeprom failed!" << endl;
+                    std::cerr << "error: write to eeprom failed!" << std::endl;
                 if (verbose > 2)
-                    cout << "eep write took " << eep24aa02_p->getLastTimeInterval() << " ms" << endl;
+                    std::cout << "eep write took " << eep24aa02_p->getLastTimeInterval() << " ms" << std::endl;
                 readEeprom();
             }
             if (1 == 1) {
@@ -500,9 +500,9 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     if ( io_extender_p && io_extender_p->probeDevicePresence() ) {
         pca9536_p->identify();
 		if (verbose > 2) {
-            qInfo() << "PCA9536 device is present." << endl;
-            qDebug() << " inputs: 0x" << hex << (int)io_extender_p->getInputState();
-            qDebug() << "readout took " << dec << pca9536_p->getLastTimeInterval() << " ms";
+            qInfo() << "PCA9536 device is present.";
+            qDebug() << " inputs: 0x" << Qt::hex << (int)io_extender_p->getInputState();
+            qDebug() << "readout took " << Qt::dec << pca9536_p->getLastTimeInterval() << " ms";
         }
         io_extender_p->setOutputPorts(0b00000111);
         setPcaChannel(config.pcaPortMask);
@@ -537,7 +537,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 	}
     if ( oled_p->devicePresent() ) {
         if (verbose > -1) {
-            qInfo() << "I2C SSD1306-type OLED display found at address 0x" << hex << oled_p->getAddress();
+            qInfo() << "I2C SSD1306-type OLED display found at address 0x" << Qt::hex << oled_p->getAddress();
         }
         oled_p->begin();
         oled_p->clearDisplay();
@@ -613,7 +613,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
                            .arg(serverPort());
         }
     }
-    flush(cout);
+    std::flush(std::cout);
 
     // connect to the pigpio daemon interface for gpio control
     connectToPigpiod();
@@ -1779,13 +1779,13 @@ bool Daemon::readEeprom()
     for (int i = 0; i < n; i++)
         buf[i] = 0;
     bool retval = ( eep_p->readBytes(0, n, buf) == n);
-    cout << "*** EEPROM content ***" << endl;
+    std::cout << "*** EEPROM content ***" << std::endl;
     for (int j = 0; j < 16; j++) {
-        cout << hex << std::setfill('0') << std::setw(2) << j * 16 << ": ";
+        std::cout << std::hex << std::setfill('0') << std::setw(2) << j * 16 << ": ";
         for (int i = 0; i < 16; i++) {
-            cout << hex << std::setfill('0') << std::setw(2) << (int)buf[j * 16 + i] << " ";
+            std::cout << std::hex << std::setfill('0') << std::setw(2) << (int)buf[j * 16 + i] << " ";
         }
-        cout << endl;
+        std::cout << std::endl;
     }
     return retval;
 }
@@ -1917,9 +1917,9 @@ void Daemon::onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
         visibleSats.pop_back();
 
     if (verbose > 3) {
-        cout << std::chrono::system_clock::now()
+        std::cout << std::chrono::system_clock::now()
                 - std::chrono::duration_cast<std::chrono::microseconds>(lastUpdated)
-             << "Nr of satellites: " << visibleSats.size() << " (out of " << sats.size() << endl;
+             << "Nr of satellites: " << visibleSats.size() << " (out of " << sats.size() << std::endl;
         // read nrSats property without evaluation to prevent separate display of this property
         // in the common message poll below
         GnssSatellite::PrintHeader(true);
@@ -2030,21 +2030,21 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
     switch (propertyName) {
     case 's':
         if (verbose > 3)
-            cout << std::chrono::system_clock::now()
+            std::cout << std::chrono::system_clock::now()
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
-                 << "Nr of available satellites: " << (int)data << endl;
+                 << "Nr of available satellites: " << (int)data << std::endl;
         break;
     case 'e':
         if (verbose > 3)
-            cout << std::chrono::system_clock::now()
+            std::cout << std::chrono::system_clock::now()
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
-                 << "quant error: " << (int)data << " ps" << endl;
+                 << "quant error: " << (int)data << " ps" << std::endl;
         break;
     case 'f':
         if (verbose > 3)
-            cout << std::chrono::system_clock::now()
+            std::cout << std::chrono::system_clock::now()
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
-                 << "Fix value: " << (int)data << endl;
+                 << "Fix value: " << (int)data << std::endl;
         tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_FIXSTATUS);
         *(tcpMessage->dStream) << (quint8)data;
         emit sendTcpMessage(*tcpMessage);
@@ -2066,9 +2066,9 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
     switch (propertyName) {
     case 'a':
         if (verbose > 3)
-            cout << std::chrono::system_clock::now()
+            std::cout << std::chrono::system_clock::now()
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
-                 << "time accuracy: " << data << " ns" << endl;
+                 << "time accuracy: " << data << " ns" << std::endl;
         tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_TIME_ACCURACY);
         *(tcpMessage->dStream) << (quint32)data;
         emit sendTcpMessage(*tcpMessage);
@@ -2077,9 +2077,9 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
         break;
     case 'f':
         if (verbose > 3)
-            cout << std::chrono::system_clock::now()
+            std::cout << std::chrono::system_clock::now()
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
-                 << "frequency accuracy: " << data << " ps/s" << endl;
+                 << "frequency accuracy: " << data << " ps/s" << std::endl;
         tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_FREQ_ACCURACY);
         *(tcpMessage->dStream) << (quint32)data;
         emit sendTcpMessage(*tcpMessage);
@@ -2088,9 +2088,9 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
         break;
     case 'u':
         if (verbose > 3)
-            cout << std::chrono::system_clock::now()
+            std::cout << std::chrono::system_clock::now()
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
-                 << "Ublox uptime: " << data << " s" << endl;
+                 << "Ublox uptime: " << data << " s" << std::endl;
         tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_UPTIME);
         *(tcpMessage->dStream) << (quint32)data;
         emit sendTcpMessage(*tcpMessage);
@@ -2099,9 +2099,9 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
         break;
     case 'c':
         if (verbose > 3)
-            cout << std::chrono::system_clock::now()
+            std::cout << std::chrono::system_clock::now()
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
-                 << "rising edge counter: " << data << endl;
+                 << "rising edge counter: " << data << std::endl;
         propertyMap["events"] = Property("events", (quint16)data);
         tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_EVENTCOUNTER);
         *(tcpMessage->dStream) << (quint32)data;
@@ -2119,17 +2119,17 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
     switch (propertyName) {
     case 'd':
         if (verbose > 3)
-            cout << std::chrono::system_clock::now()
+            std::cout << std::chrono::system_clock::now()
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
-                 << "clock drift: " << data << " ns/s" << endl;
+                 << "clock drift: " << data << " ns/s" << std::endl;
         logParameter(LogParameter("clockDrift", QString::number(data) + " ns/s", LogParameter::LOG_AVERAGE));
         propertyMap["clkDrift"] = Property("clkDrift", (qint32)data);
         break;
     case 'b':
         if (verbose > 3)
-            cout << std::chrono::system_clock::now()
+            std::cout << std::chrono::system_clock::now()
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
-                 << "clock bias: " << data << " ns" << endl;
+                 << "clock bias: " << data << " ns" << std::endl;
         emit logParameter(LogParameter("clockBias", QString::number(data) + " ns", LogParameter::LOG_AVERAGE));
         propertyMap["clkBias"] = Property("clkBias", (qint32)data);
         break;
@@ -2156,12 +2156,12 @@ void Daemon::UBXReceivedVersion(const QString& swString, const QString& hwString
 
 void Daemon::toConsole(const QString& data)
 {
-    cout << data << endl;
+    std::cout << data << std::endl;
 }
 
 void Daemon::gpsToConsole(const QString& data)
 {
-    cout << data << flush;
+    std::cout << data << std::flush;
 }
 
 void Daemon::gpsConnectionError()
@@ -2172,7 +2172,7 @@ void Daemon::gpsConnectionError()
 void Daemon::onMadeConnection(QString remotePeerAddress, quint16 remotePeerPort, QString /*localAddress*/, quint16 /*localPort*/)
 {
     if (verbose > 3)
-        cout << "established connection with " << remotePeerAddress << ":" << remotePeerPort << endl;
+        std::cout << "established connection with " << remotePeerAddress << ":" << remotePeerPort << std::endl;
 
     emit sendPollUbxMsg(UBX_MSG::MON_VER);
     emit sendPollUbxMsg(UBX_MSG::CFG_GNSS);
@@ -2193,8 +2193,8 @@ void Daemon::onStoppedConnection(QString remotePeerAddress, quint16 remotePeerPo
     quint32 timeoutTime, quint32 connectionDuration)
 {
     if (verbose > 3) {
-        qDebug() << "stopped connection with " << remotePeerAddress << ":" << remotePeerPort << endl;
-        qDebug() << "connection timeout at " << timeoutTime << "  connection lasted " << connectionDuration << "s" << endl;
+        qDebug() << "stopped connection with " << remotePeerAddress << ":" << remotePeerPort;
+        qDebug() << "connection timeout at " << timeoutTime << "  connection lasted " << connectionDuration << "s";
     }
 }
 
@@ -2218,7 +2218,7 @@ void Daemon::displaySocketError(int socketError, QString message)
     default:
         qCritical() << tr("The following error occurred: %1.").arg(message);
     }
-    flush(cout);
+    std::flush(std::cout);
 }
 
 void Daemon::delay(int millisecondsWait)
@@ -2237,7 +2237,7 @@ void Daemon::printTimestamp()
     std::chrono::seconds secs = std::chrono::duration_cast<std::chrono::seconds>(mus);
     std::chrono::microseconds subs = mus - secs;
 
-    cout << secs.count() << "." << setw(6) << setfill('0') << subs.count() << " " << setfill(' ');
+    std::cout << secs.count() << "." << std::setw(6) << std::setfill('0') << subs.count() << " " << std::setfill(' ');
 }
 
 // some signal handling stuff
@@ -2312,7 +2312,7 @@ void Daemon::aquireMonitoringParameters()
             istr.str(flagItem.value);
             istr >> calFlags;
             if (verbose > 2) {
-                qDebug() << "cal flags:" << QString::fromStdString(flagItem.value) << " (" << (int)calFlags << dec << ")";
+                qDebug() << "cal flags:" << QString::fromStdString(flagItem.value) << " (" << (int)calFlags << Qt::dec << ")";
             }
             double icorr = 0.;
             if (calFlags & CalibStruct::CALIBFLAGS_CURRENT_COEFFS) {

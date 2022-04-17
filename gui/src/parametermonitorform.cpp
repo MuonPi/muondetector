@@ -72,9 +72,6 @@ void ParameterMonitorForm::onCalibReceived(bool /*valid*/, bool /*eepromValid*/,
     for (int i = 0; i < calibList.size(); i++) {
         fCalibList.push_back(calibList[i]);
     }
-
-    //    int ver = getCalibParameter("VERSION").toInt();
-    //    ui->hwVersionLabel->setText(QString::number(ver));
 }
 
 void ParameterMonitorForm::onAdcSampleReceived(uint8_t channel, float value)

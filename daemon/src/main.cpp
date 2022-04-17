@@ -337,7 +337,7 @@ int main(int argc, char* argv[])
                 daemonConfig.gpsdevname = QString("/dev/" + serialports.last());
                 qInfo() << "detected" << daemonConfig.gpsdevname << "as most probable candidate";
             } else {
-                qCritical() << "no device selected, will not connect to GNSS module" << endl;
+                qCritical() << "no device selected, will not connect to GNSS module";
             }
         }
 
@@ -414,7 +414,7 @@ int main(int argc, char* argv[])
         try {
             int pcaPortMaskCfg = cfg.lookup("timing_input");
             if (verbose > 2)
-                qDebug() << "timing input: " << pcaPortMaskCfg << endl;
+                qDebug() << "timing input: " << pcaPortMaskCfg;
             daemonConfig.pcaPortMask = pcaPortMaskCfg;
         } catch (const libconfig::SettingNotFoundException& nfex) {
             qWarning() << "No 'timing_input' setting in configuration file. Assuming" << (int)daemonConfig.pcaPortMask;
