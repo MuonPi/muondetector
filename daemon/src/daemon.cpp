@@ -2486,4 +2486,3 @@ void Daemon::onStatusLed2Event( int onTimeMs )
 		);
 	}
 }
-
