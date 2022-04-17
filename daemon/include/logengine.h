@@ -13,7 +13,6 @@ class LogEngine : public QObject {
 public:
     LogEngine(QObject* parent = nullptr);
     ~LogEngine();
-    void setHashLength(int hash_length);
 
 signals:
     void sendLogString(const QString& str);
@@ -27,7 +26,6 @@ public slots:
 private:
     QMap<QString, QVector<LogParameter>> logData;
     bool onceLogFlag = true;
-    int hashLength { MuonPi::Config::Log::max_geohash_length };
 };
 
 #endif // LOGENGINE_H

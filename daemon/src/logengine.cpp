@@ -24,11 +24,6 @@ LogEngine::~LogEngine()
 {
 }
 
-void LogEngine::setHashLength(int hash_length)
-{
-    hashLength = hash_length;
-}
-
 void LogEngine::onLogParameterReceived(const LogParameter& logpar)
 {
     if (logpar.logType() == LogParameter::LOG_NEVER) {
@@ -61,10 +56,6 @@ void LogEngine::onLogParameterReceived(const LogParameter& logpar)
 void LogEngine::onLogInterval()
 {
     emit logIntervalSignal();
-    // send log items which should always be sent
-    emit sendLogString(dateStringNow() + " maxGeohashLength " + QString::number(hashLength));
-    emit sendLogString(dateStringNow() + " softwareVersionString " + QString::fromStdString(MuonPi::Version::software.string()));
-    emit sendLogString(dateStringNow() + " hardwareVersionString " + QString::fromStdString(MuonPi::Version::hardware.string()));
 
     // loop over the map with all accumulated parameters since last log reminder
     // no increment here since we erase and invalidate iterators within the loop

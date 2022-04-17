@@ -638,7 +638,9 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     connect(&parameterMonitorTimer, &QTimer::timeout, this, &Daemon::aquireMonitoringParameters);
     parameterMonitorTimer.start();
 
-    logEngine.setHashLength(config.maxGeohashLength);
+    emit logParameter(LogParameter("maxGeohashLength", QString::number(config.maxGeohashLength), LogParameter::LOG_ONCE));
+    emit logParameter(LogParameter("softwareVersionString", QString::fromStdString(MuonPi::Version::software.string()), LogParameter::LOG_ONCE));
+    emit logParameter(LogParameter("hardwareVersionString", QString::fromStdString(MuonPi::Version::hardware.string()), LogParameter::LOG_ONCE));
 }
 
 Daemon::~Daemon()

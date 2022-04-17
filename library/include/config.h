@@ -37,8 +37,8 @@ namespace MQTT {
 }
 namespace Log {
     constexpr std::chrono::seconds interval { 60 };
-    constexpr int max_geohash_length { 6 };
-    constexpr std::chrono::seconds rotate_period_default { 7 * 86400UL };
+    constexpr int max_geohash_length_default { 6 };
+    constexpr std::chrono::hours rotate_period_default { 7 * 24 };
 }
 namespace Hardware {
     namespace OLED {
@@ -75,7 +75,7 @@ namespace Hardware {
 
 namespace MuonPi::Settings {
 struct {
-    int max_geohash_length { Config::Log::max_geohash_length };
+    int max_geohash_length { Config::Log::max_geohash_length_default };
     std::chrono::seconds rotate_period { Config::Log::rotate_period_default };
 } log;
 
