@@ -28,8 +28,6 @@
 using namespace std;
 using namespace MuonPi;
 
-static unsigned int HW_VERSION = 0; // default value is set in calibration.h
-
 int64_t msecdiff(timespec& ts, timespec& st)
 {
     int64_t diff;
@@ -181,7 +179,8 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
     qRegisterMetaType<UbxTimeMarkStruct>("UbxTimeMarkStruct");
     qRegisterMetaType<I2cDeviceEntry>("I2cDeviceEntry");
-	qRegisterMetaType<ADC_SAMPLING_MODE>("ADC_SAMPLING_MODE");
+    qRegisterMetaType<ADC_SAMPLING_MODE>("ADC_SAMPLING_MODE");
+    qRegisterMetaType<MuonPi::Version::Version>("MuonPi::Version::Version");
 
     // signal handling
     setup_unix_signal_handlers();
@@ -272,35 +271,35 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     unsigned int version = 0;
     ShowerDetectorCalib::getValueFromString(verStruct.value, version);
     if (version > 0) {
-        HW_VERSION = version;
-        qInfo() << "Found HW version" << version << "in eeprom";
+        MuonPi::Version::hardware.major = version;
+        qInfo() << "Found HW version" << MuonPi::Version::hardware.major << "in eeprom";
     }
 
     // set up the pin definitions (hw version specific)
-    GPIO_PINMAP = GPIO_PINMAP_VERSIONS[HW_VERSION];
+    GPIO_PINMAP = GPIO_PINMAP_VERSIONS[MuonPi::Version::hardware.major];
 
     if (verbose > 1) {
         // print out the current gpio pin mapping
         // (function, gpio-pin, direction)
-        cout << "GPIO pin mapping:" << endl;
+        std::cout << "GPIO pin mapping:" << std::endl;
 
         for (auto signalIt = GPIO_PINMAP.begin(); signalIt != GPIO_PINMAP.end(); signalIt++) {
             const GPIO_SIGNAL signalId = signalIt->first;
-            cout << GPIO_SIGNAL_MAP[signalId].name << " \t: " << signalIt->second;
+            std::cout << GPIO_SIGNAL_MAP[signalId].name << " \t: " << signalIt->second;
             switch (GPIO_SIGNAL_MAP[signalId].direction) {
             case DIR_IN:
-                cout << " (in)";
+                std::cout << " (in)";
                 break;
             case DIR_OUT:
-                cout << " (out)";
+                std::cout << " (out)";
                 break;
             case DIR_IO:
-                cout << " (i/o)";
+                std::cout << " (i/o)";
                 break;
             default:
-                cout << " (undef)";
+                std::cout << " (undef)";
             }
-            cout << endl;
+            std::cout << std::endl;
         }
     }
 
@@ -767,7 +766,7 @@ void Daemon::connectToPigpiod()
     connect(&rateBufferReminder, &QTimer::timeout, this, &Daemon::onRateBufferReminder);
     rateBufferReminder.start();
     emit GpioSetOutput(GPIO_PINMAP[UBIAS_EN]);
-    emit GpioSetState(GPIO_PINMAP[UBIAS_EN], (HW_VERSION == 1) ? (config.bias_ON ? 1 : 0) : (config.bias_ON ? 0 : 1));
+    emit GpioSetState(GPIO_PINMAP[UBIAS_EN], (MuonPi::Version::hardware.major == 1) ? (config.bias_ON ? 1 : 0) : (config.bias_ON ? 0 : 1));
     emit GpioSetOutput(GPIO_PINMAP[PREAMP_1]);
     emit GpioSetOutput(GPIO_PINMAP[PREAMP_2]);
     emit GpioSetOutput(GPIO_PINMAP[GAIN_HL]);
@@ -781,7 +780,7 @@ void Daemon::connectToPigpiod()
     emit GpioSetPullUp(GPIO_PINMAP[ADC_READY]);
     emit GpioRegisterForCallback(GPIO_PINMAP[ADC_READY], 1);
 
-    if (HW_VERSION > 1) {
+    if (MuonPi::Version::hardware.major > 1) {
         emit GpioSetInput(GPIO_PINMAP[PREAMP_FAULT]);
         emit GpioRegisterForCallback(GPIO_PINMAP[PREAMP_FAULT], 0);
         emit GpioSetPullUp(GPIO_PINMAP[PREAMP_FAULT]);
@@ -790,7 +789,7 @@ void Daemon::connectToPigpiod()
         emit GpioSetInput(GPIO_PINMAP[TIME_MEAS_OUT]);
         emit GpioRegisterForCallback(GPIO_PINMAP[TIME_MEAS_OUT], 0);
     }
-    if (HW_VERSION >= 3) {
+    if (MuonPi::Version::hardware.major >= 3) {
         emit GpioSetOutput(GPIO_PINMAP[IN_POL1]);
         emit GpioSetOutput(GPIO_PINMAP[IN_POL2]);
         emit GpioSetState(GPIO_PINMAP[IN_POL1], config.polarity[0]);
@@ -1043,12 +1042,12 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
     if (msgID == TCP_MSG_KEY::MSG_POLARITY_SWITCH) {
         bool pol1, pol2;
         *(tcpMessage.dStream) >> pol1 >> pol2;
-        if (HW_VERSION >= 3 && pol1 != config.polarity[0]) {
+        if (MuonPi::Version::hardware.major >= 3 && pol1 != config.polarity[0]) {
             config.polarity[0] = pol1;
             emit GpioSetState(GPIO_PINMAP[IN_POL1], config.polarity[0]);
             emit logParameter(LogParameter("polaritySwitch1", QString::number((int)config.polarity[0]), LogParameter::LOG_EVERY));
         }
-        if (HW_VERSION >= 3 && pol2 != config.polarity[1]) {
+        if (MuonPi::Version::hardware.major >= 3 && pol2 != config.polarity[1]) {
             config.polarity[1] = pol2;
             emit GpioSetState(GPIO_PINMAP[IN_POL2], config.polarity[1]);
             emit logParameter(LogParameter("polaritySwitch2", QString::number((int)config.polarity[1]), LogParameter::LOG_EVERY));
@@ -1235,6 +1234,11 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         if (pigHandler != nullptr)
             pigHandler->setInhibited(inhibit);
     }
+    if (msgID == TCP_MSG_KEY::MSG_VERSION) {
+        // not evaluated
+        sendVersionInfo();
+    }
+    
 }
 
 void Daemon::setAdcSamplingMode(ADC_SAMPLING_MODE mode)
@@ -1446,6 +1450,13 @@ void Daemon::sendPcaChannel()
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_PCA_SWITCH);
     *(tcpMessage.dStream) << (quint8)config.pcaPortMask;
+    emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::sendVersionInfo()
+{
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_VERSION);
+    *(tcpMessage.dStream) << MuonPi::Version::hardware << MuonPi::Version::software;
     emit sendTcpMessage(tcpMessage);
 }
 
@@ -1686,7 +1697,7 @@ void Daemon::setPcaChannel(uint8_t channel)
     if (!io_extender_p || !io_extender_p->probeDevicePresence()) {
         return;
     }
-    if (channel > ((HW_VERSION == 1) ? 3 : 7)) {
+    if (channel > ((MuonPi::Version::hardware.major == 1) ? 3 : 7)) {
         qWarning() << "invalid PCA channel selection: ch" << (int)channel << "...ignoring";
         return;
     }
@@ -1719,9 +1730,9 @@ void Daemon::setBiasStatus(bool status)
     }
 
     if (status) {
-        emit GpioSetState(GPIO_PINMAP[UBIAS_EN], (HW_VERSION == 1) ? 1 : 0);
+        emit GpioSetState(GPIO_PINMAP[UBIAS_EN], (MuonPi::Version::hardware.major == 1) ? 1 : 0);
     } else {
-        emit GpioSetState(GPIO_PINMAP[UBIAS_EN], (HW_VERSION == 1) ? 0 : 1);
+        emit GpioSetState(GPIO_PINMAP[UBIAS_EN], (MuonPi::Version::hardware.major == 1) ? 0 : 1);
     }
     emit logParameter(LogParameter("biasSwitch", QString::number(status), LogParameter::LOG_EVERY));
     clearRates();
@@ -2169,6 +2180,7 @@ void Daemon::onMadeConnection(QString remotePeerAddress, quint16 remotePeerPort,
     emit sendPollUbxMsg(UBX_MSG::CFG_TP5);
     emit sendPollUbxMsg(UBX_MSG::CFG_NAVX5);
 
+    sendVersionInfo();
     sendBiasStatus();
     sendBiasVoltage();
     sendDacThresh(0);

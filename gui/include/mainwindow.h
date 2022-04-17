@@ -11,6 +11,8 @@
 // for sig handling:
 #include <sys/types.h>
 
+#include <config.h>
+
 struct I2cDeviceEntry;
 struct CalibStruct;
 struct GeodeticPos;
@@ -82,6 +84,7 @@ signals:
     void polaritySwitchReceived(bool pol1, bool pol2);
     void gpioInhibitReceived(bool inhibit);
     void mqttInhibitReceived(bool inhibit);
+    void daemonVersionReceived(MuonPi::Version::Version hw_ver, MuonPi::Version::Version sw_ver);
 
 public slots:
     void receivedTcpMessage(TcpMessage tcpMessage);
@@ -126,6 +129,7 @@ private slots:
     void onSetTP5Config(const UbxTimePulseStruct& tp);
     void on_biasVoltageDoubleSpinBox_valueChanged(double arg1);
     void on_saveDacButton_clicked();
+    void onDaemonVersionReceived(MuonPi::Version::Version hw_ver, MuonPi::Version::Version sw_ver);
 
 private:
     Ui::MainWindow* ui;

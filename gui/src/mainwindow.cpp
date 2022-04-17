@@ -1,7 +1,6 @@
 #include "mainwindow.h"
 #include "calibform.h"
 #include "calibscandialog.h"
-#include "config.h"
 #include "gpssatsform.h"
 #include "histogram.h"
 #include "histogramdataform.h"
@@ -100,6 +99,8 @@ MainWindow::MainWindow(QWidget* parent)
         connect(&ratePollTimer, &QTimer::timeout, this, &MainWindow::sendValueUpdateRequests);
         ratePollTimer.start();
     }
+
+    connect(this, &MainWindow::daemonVersionReceived, this, &MainWindow::onDaemonVersionReceived);
 
     // set all tabs
     ui->tabWidget->removeTab(0);
@@ -212,6 +213,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this, &MainWindow::gainSwitchReceived, paramTab, &ParameterMonitorForm::onGainSwitchReceived);
     connect(this, &MainWindow::calibReceived, paramTab, &ParameterMonitorForm::onCalibReceived);
     connect(this, &MainWindow::timeMarkReceived, paramTab, &ParameterMonitorForm::onTimeMarkReceived);
+    connect(this, &MainWindow::daemonVersionReceived, paramTab, &ParameterMonitorForm::onDaemonVersionReceived);
     connect(paramTab, &ParameterMonitorForm::adcModeChanged, this, &MainWindow::onAdcModeChanged);
     connect(paramTab, &ParameterMonitorForm::setDacVoltage, this, &MainWindow::sendSetThresh);
     connect(paramTab, &ParameterMonitorForm::preamp1EnableChanged, this, &MainWindow::sendPreamp1Switch);
@@ -714,6 +716,12 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
         *(tcpMessage.dStream) >> inhibit;
         emit mqttInhibitReceived(inhibit);
         updateUiProperties();
+        return;
+    }
+    if (msgID == TCP_MSG_KEY::MSG_VERSION) {
+        MuonPi::Version::Version hw_ver, sw_ver;
+        *(tcpMessage.dStream) >> hw_ver >> sw_ver;
+        emit daemonVersionReceived(hw_ver, sw_ver);
         return;
     }
 }
@@ -1227,4 +1235,8 @@ void MainWindow::onPolarityChanged(bool pol1, bool pol2)
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_POLARITY_SWITCH);
     *(tcpMessage.dStream) << pol1 << pol2;
     emit sendTcpMessage(tcpMessage);
+}
+
+void MainWindow::onDaemonVersionReceived(MuonPi::Version::Version /*hw_ver*/, MuonPi::Version::Version /*sw_ver*/)
+{
 }

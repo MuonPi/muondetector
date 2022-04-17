@@ -8,6 +8,7 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget* parent)
     , ui(new Ui::ParameterMonitorForm)
 {
     ui->setupUi(this);
+    qRegisterMetaType<MuonPi::Version::Version>("MuonPi::Version::Version");
     ui->adcTracePlot->setMinimumHeight(30);
     ui->adcTracePlot->setTitle("ADC trace");
     ui->adcTracePlot->setAxisTitle(QwtPlot::xBottom, "sample nr. since trigger");
@@ -72,8 +73,8 @@ void ParameterMonitorForm::onCalibReceived(bool /*valid*/, bool /*eepromValid*/,
         fCalibList.push_back(calibList[i]);
     }
 
-    int ver = getCalibParameter("VERSION").toInt();
-    ui->hwVersionLabel->setText(QString::number(ver));
+    //    int ver = getCalibParameter("VERSION").toInt();
+    //    ui->hwVersionLabel->setText(QString::number(ver));
 }
 
 void ParameterMonitorForm::onAdcSampleReceived(uint8_t channel, float value)
@@ -316,6 +317,19 @@ void ParameterMonitorForm::onUiEnabledStateChange(bool connected)
         ui->adcTracePlot->setEnabled(ui->adcTraceGroupBox->isChecked());
     } else {
         ui->adcTracePlot->setEnabled(false);
+        ui->hwVersionLabel->setText("N/A");
+        ui->swVersionLabel->setText("N/A");
+        ui->biasCurrentLabel->setText("N/A");
+        ui->biasVoltageLabel->setText("N/A");
+        ui->temperatureLabel->setText("N/A");
+        ui->ubloxCounterLabel->setText("N/A");
+        ui->timePrecLabel->setText("N/A");
     }
     this->setEnabled(connected);
+}
+
+void ParameterMonitorForm::onDaemonVersionReceived(MuonPi::Version::Version hw_ver, MuonPi::Version::Version sw_ver)
+{
+    ui->hwVersionLabel->setText(QString::fromStdString(hw_ver.string()));
+    ui->swVersionLabel->setText(QString::fromStdString(sw_ver.string()));
 }

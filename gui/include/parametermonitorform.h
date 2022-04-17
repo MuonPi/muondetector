@@ -52,6 +52,7 @@ public slots:
     void onTimeMarkReceived(const UbxTimeMarkStruct& tm);
     void onPolaritySwitchReceived(bool pol1, bool pol2);
     void onUiEnabledStateChange(bool connected);
+    void onDaemonVersionReceived(MuonPi::Version::Version hw_ver, MuonPi::Version::Version sw_ver);
 
 private slots:
     void on_dacSpinBox1_valueChanged(double arg1);

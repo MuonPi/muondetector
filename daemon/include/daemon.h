@@ -165,6 +165,7 @@ private:
         // 0: coincidence ; 1: xor ; 2: discr 1 ; 3: discr 2
     void setEventTriggerSelection(GPIO_SIGNAL signal);
     void sendPcaChannel();
+    void sendVersionInfo();
     void sendEventTriggerSelection();
     void setDacThresh(uint8_t channel, float threshold); // channel 0 or 1 ; threshold in volts
     void sendDacThresh(uint8_t channel);

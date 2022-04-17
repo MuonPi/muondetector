@@ -4,6 +4,7 @@
 #include "gpio_pin_definitions.h"
 #include "histogram.h"
 #include "muondetector_shared_global.h"
+#include <config.h>
 
 #include <QDataStream>
 #include <QList>
@@ -472,6 +473,22 @@ inline QDataStream& operator<<(QDataStream& out, const UbxTimeMarkStruct& tm)
     out << (qint64)tm.rising.tv_sec << (qint64)tm.rising.tv_nsec << (qint64)tm.falling.tv_sec << (qint64)tm.falling.tv_nsec
         << tm.risingValid << tm.fallingValid << tm.accuracy_ns << tm.valid
         << tm.timeBase << tm.utcAvailable << tm.flags << tm.evtCounter;
+    return out;
+}
+
+inline QDataStream& operator>>(QDataStream& in, MuonPi::Version::Version& ver)
+{
+    qint16 major, minor, patch;
+    in >> major >> minor >> patch;
+    QString additional, hash;
+    in >> additional >> hash;
+    ver = MuonPi::Version::Version { major, minor, patch, additional.toStdString(), hash.toStdString() };
+    return in;
+}
+
+inline QDataStream& operator<<(QDataStream& out, const MuonPi::Version::Version& ver)
+{
+    out << (qint16)ver.major << (qint16)ver.minor << (qint16)ver.patch << QString::fromStdString(ver.additional) << QString::fromStdString(ver.hash);
     return out;
 }
 
