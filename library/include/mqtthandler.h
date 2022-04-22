@@ -22,6 +22,7 @@ public:
         Connected,
         Disconnected,
         Connecting,
+        Disconnecting,
         Error
     };
 
@@ -30,7 +31,6 @@ public:
 
     //using QObject::QObject;
     void mqttStartConnection();
-    void mqttDisconnect();
 
 signals:
     void mqttConnectionStatus(bool connected);
@@ -40,9 +40,14 @@ signals:
     void request_timer_stop();
 
     void request_timer_start(int);
-    void request_timer_restart(int);
+    //void request_timer_restart(int);
 
     void giving_up();
+    
+    void connection_status(Status status);
+
+    void mqttConnect();
+    void mqttDisconnect();
 
 
 public slots:
@@ -55,7 +60,13 @@ public slots:
 
     void timer_restart(int timeout);
     void timer_start(int timeout);
+    void timer_stop();
 
+private slots:
+    void set_status(Status status);
+    void onMqttConnect();
+    void onMqttDisconnect();
+    void onTimer();
 
 private:
     [[nodiscard]] auto connected() -> bool;
@@ -83,11 +94,7 @@ private:
      */
     void callback_message(const mosquitto_message* message);
 
-    void set_status(Status status);
-
-    void mqttConnect();
-
-    QTimer m_reconnect_timer {};
+    QTimer m_reconnect_timer { };
 
     mosquitto* m_mqtt { nullptr };
 
@@ -95,7 +102,7 @@ private:
 
     std::size_t m_tries { 0 };
 
-    static constexpr std::size_t s_max_tries { 10 };
+    static constexpr std::size_t s_max_tries { Config::MQTT::max_retry_count };
 
     std::vector<std::string> m_topics {};
 
@@ -108,7 +115,10 @@ private:
     std::string m_data_topic { Config::MQTT::data_topic };
     std::string m_log_topic { Config::MQTT::log_topic };
     int m_verbose { 0 };
-
+    
+    std::size_t m_log_error_count { 0 };
+    std::size_t m_data_error_count { 0 };
+    static constexpr std::size_t s_max_publish_errors { 3 };
 
     friend void wrapper_callback_connected(mosquitto* mqtt, void* object, int result);
     friend void wrapper_callback_disconnected(mosquitto* mqtt, void* object, int result);

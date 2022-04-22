@@ -35,37 +35,32 @@ void wrapper_callback_message(mosquitto* /*mqtt*/, void* object, const mosquitto
 
 void MqttHandler::callback_connected(int result)
 {
+//    qDebug() << "callback_connected() called, result code ="<<result;
     if (result == 1) {
-        qWarning() << "Mqtt connection failed: Wrong protocol version";
-        set_status(Status::Error);
+        qWarning() << "MQTT connection failed: Wrong protocol version";
     } else if (result == 2) {
-        qWarning() << "Mqtt connection failed: Credentials rejected";
-        set_status(Status::Error);
+        qWarning() << "MQTT connection failed: Credentials rejected";
     } else if (result == 3) {
-        qWarning() << "Mqtt connection failed: Broker unavailable";
-        set_status(Status::Error);
+        qWarning() << "MQTT connection failed: Broker unavailable";
     } else if (result > 3) {
-        qWarning() << "Mqtt connection failed: Other reason";
+        qWarning() << "MQTT connection failed: Other reason";
     } else if (result == 0) {
-        qInfo() << "Connected to mqtt.";
-        set_status(Status::Connected);
+        qInfo() << "Connected to MQTT.";
+        emit connection_status(Status::Connected);
         m_tries = 0;
-        emit request_timer_stop();
         return;
     }
-    emit request_timer_start(Config::MQTT::timeout * m_tries);
+    emit connection_status(Status::Error);
 }
 
 void MqttHandler::callback_disconnected(int result)
 {
     if (result != 0) {
-        qWarning() << "Mqtt disconnected unexpectedly: " + QString::number(result);
-        set_status(Status::Error);
-        emit request_timer_start(Config::MQTT::timeout * m_tries);
+        qWarning() << "MQTT disconnected unexpectedly:" + QString::number(result);
+        emit connection_status(Status::Error);
     } else {
-        set_status(Status::Disconnected);
+        emit connection_status(Status::Disconnected);
     }
-
 }
 
 void MqttHandler::callback_message(const mosquitto_message* message)
@@ -75,37 +70,77 @@ void MqttHandler::callback_message(const mosquitto_message* message)
 
 void MqttHandler::set_status(Status status)
 {
-    if (status == Status::Error) {
-	m_tries++;
-	qWarning() << "Tried: "<<m_tries;
-	if (m_tries > s_max_tries) {
-		exit(0);
-	    emit giving_up();
-	}
+    if (status == Status::Connected) {
+        m_tries = 0;
     }
-    if (m_status != status) {
-        if (status == Status::Connected) {
-            emit mqttConnectionStatus(true);
-        } else if ((status == Status::Disconnected) || (status == Status::Error)) {
-            emit mqttConnectionStatus(false);
-        }
+    if (status != m_status) {
+        m_status = status;        
+        onTimer();
     }
-    m_status = status;
 }
 
 MqttHandler::MqttHandler(const QString& station_id, const int verbosity)
-    : m_station_id { station_id.toStdString() }
+    : QObject(nullptr)
+    , m_station_id { station_id.toStdString() }
     , m_verbose { verbosity }
 {
-    m_reconnect_timer.setInterval(Config::MQTT::timeout);
-    connect(&m_reconnect_timer, &QTimer::timeout, this, [this](){mqttConnect();});
-}
+    qRegisterMetaType<Status>("Status");
 
+    m_reconnect_timer.setSingleShot(false);
+    m_reconnect_timer.setInterval(3000);
+//    connect(&m_reconnect_timer, &QTimer::timeout, this, [this](){mqttConnect();});
+/*
+    if (!connect(&m_reconnect_timer, &QTimer::timeout, this, &MqttHandler::onTimer)) {
+        qDebug() << "failed connection QTimer::timeout";
+    }
+    if (!connect(this, &MqttHandler::request_timer_start, this, &MqttHandler::timer_start)) {
+        qDebug() << "failed connecting MqttHandler::request_timer_start";
+    }
+    if (!connect(this, &MqttHandler::request_timer_stop, this, &MqttHandler::timer_stop)) {
+        qDebug() << "failed connecting MqttHandler::request_timer_stop";
+    }
+    */
+    if (!connect(this, &MqttHandler::connection_status, this, &MqttHandler::set_status)) {
+        qDebug() << "failed connecting MqttHandler::set_status";
+    }
+    if (!connect(this, &MqttHandler::mqttConnect, this, &MqttHandler::onMqttConnect)) {
+        qDebug() << "failed connecting MqttHandler::mqttConnect";
+    }
+    if (!connect(this, &MqttHandler::mqttDisconnect, this, &MqttHandler::onMqttDisconnect)) {
+        qDebug() << "failed connecting MqttHandler::mqttDisconnect";
+    }
+    //m_reconnect_timer.start();
+}
 
 MqttHandler::~MqttHandler()
 {
     mqttDisconnect();
     cleanup();
+}
+
+void MqttHandler::onTimer()
+{
+    if (m_status == Status::Error) {
+        //emit mqttDisconnect();
+        m_tries++;
+        qDebug() << "Tried: "<<m_tries;
+        if (m_tries > s_max_tries) {
+            emit giving_up();
+            exit(0);
+        }
+        qWarning() << "Could not connect to MQTT. Trying again in " + QString::number(std::chrono::duration_cast<std::chrono::seconds>(Config::MQTT::retry_period).count() * (1<<(m_tries-1))) + "s";
+        emit connection_status(Status::Invalid);
+/*
+        QTimer::singleShot(std::chrono::seconds(Config::MQTT::retry_period.count() * (1<<(m_tries-1))), [this]() {
+//            emit mqttDisconnect();
+            emit mqttConnect();
+        });
+        return;
+*/
+        std::this_thread::sleep_for(std::chrono::seconds(Config::MQTT::retry_period.count() * (1<<(m_tries-1))) );
+        emit mqttDisconnect();
+        emit mqttConnect();
+    }
 }
 
 void MqttHandler::timer_restart(int timeout)
@@ -116,7 +151,14 @@ void MqttHandler::timer_restart(int timeout)
 
 void MqttHandler::timer_start(int timeout)
 {
+    qDebug()<<"starting timer with"<<timeout/1000<<"s";
     m_reconnect_timer.start(timeout);
+}
+
+void MqttHandler::timer_stop()
+{
+    qDebug() << "stopping timer";
+    m_reconnect_timer.stop();
 }
 
 void MqttHandler::start(const QString& username, const QString& password){
@@ -133,12 +175,12 @@ void MqttHandler::start(const QString& username, const QString& password){
 
     initialise(m_client_id);
 
-
-    mqttConnect();
+    emit mqttConnect();
 }
 
-void MqttHandler::mqttConnect(){
+void MqttHandler::onMqttConnect(){
     if (connected()) {
+        qDebug() << "already connected";
         return;
     }
     qDebug() << "Trying to connect to MQTT.";
@@ -147,38 +189,30 @@ void MqttHandler::mqttConnect(){
         initialise(m_client_id);
     }
 
-    m_tries++;
-    set_status(Status::Connecting);
-
-    if (m_tries > s_max_tries) {
-        set_status(Status::Error);
-        qCritical() << "Giving up trying to connect to MQTT after too many tries";
-        return;
-    }
+    emit connection_status(Status::Connecting);
 
     auto result { mosquitto_username_pw_set(m_mqtt, m_username.c_str(), m_password.c_str()) };
     if (result != MOSQ_ERR_SUCCESS) {
-        qWarning() << "Error when setting username and password: " + QString{ strerror(result) };
+        qWarning() << "Error setting username and password:" + QString{ strerror(result) };
         return;
     }
-    result = mosquitto_connect(m_mqtt, Config::MQTT::host, Config::MQTT::port, 60);
+    result = mosquitto_connect(m_mqtt, Config::MQTT::host, Config::MQTT::port, Config::MQTT::keepalive_interval.count());
     if (result == MOSQ_ERR_SUCCESS) {
         return;
     }
-    qWarning() << "Could not connect to MQTT: " + QString { strerror(result) } + ". Trying again in " + QString::number(Config::MQTT::timeout * m_tries) + "ms";
-    emit request_timer_start(Config::MQTT::timeout * m_tries);
+    qDebug() << "Error establishing connection";
+    
+    //emit request_timer_start(std::chrono::duration_cast<std::chrono::milliseconds>(Config::MQTT::retry_period).count() * (1<<(m_tries)) + 2000UL);
+//emit request_timer_start(Config::MQTT::timeout * m_tries);
 }
 
-void MqttHandler::mqttDisconnect(){
-    if (!connected()) {
-        return;
-    }
-
+void MqttHandler::onMqttDisconnect(){
+    emit connection_status(Status::Disconnecting);
     auto result { mosquitto_disconnect(m_mqtt) };
     if (result == MOSQ_ERR_SUCCESS) {
         return;
     }
-    qWarning() << "Could not disconnect from Mqtt: " + QString{ strerror(result) };
+    qDebug() << "Could not disconnect from Mqtt:" + QString{ strerror(result) };
 }
 
 auto MqttHandler::connected() -> bool{
@@ -286,14 +320,28 @@ void MqttHandler::unsubscribe(const QString& topic)
 
 void MqttHandler::sendData(const QString &message){
     if (!publish(m_data_topic, message.toStdString())) {
-        qWarning() << "Couldn't publish data";
+        m_data_error_count++;
+        if ( m_data_error_count < s_max_publish_errors ) {
+            qWarning() << "Couldn't publish data";
+        } else if ( m_data_error_count == s_max_publish_errors ) {
+            qWarning() << "Couldn't publish data (message repeated" << s_max_publish_errors << "times)";
+        }
+        return;
     }
+    m_data_error_count = 0;
 }
 
 void MqttHandler::sendLog(const QString &message){
     if (!publish(m_log_topic, message.toStdString())) {
-        qWarning() << "Couldn't publish log";
+        m_log_error_count++;
+        if ( m_log_error_count < s_max_publish_errors ) {
+            qWarning() << "Couldn't publish log";
+        } else if ( m_log_error_count == s_max_publish_errors ) {
+            qWarning() << "Couldn't publish log (message repeated" << s_max_publish_errors << "times)";
+        }
+        return;
     }
+    m_log_error_count = 0;
 }
 
 auto MqttHandler::publish(const std::string& topic, const std::string& content) -> bool {
@@ -310,6 +358,8 @@ auto MqttHandler::publish(const std::string& topic, const std::string& content) 
 }
 
 void MqttHandler::onRequestConnectionStatus(){
-    emit mqttConnectionStatus(m_status == Status::Connected);
+    qDebug() << "connection status = "<<QString::number(static_cast<int>(m_status));
+    //emit mqttConnectionStatus(m_status == Status::Connected);
+    emit connection_status(m_status);
 }
 } // namespace MuonPi

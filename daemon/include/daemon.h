@@ -17,16 +17,17 @@
 // clang-format on
 
 #include "utility/custom_io_operators.h"
-#include "histogram.h"
 #include "logengine.h"
 #include "logparameter.h"
-#include "mqtthandler.h"
 #include "pigpiodhandler.h"
-#include "tcpconnection.h"
 #include "hardware/spidevices.h"
 #include "hardware/device_types.h"
 
+// from library
 #include <muondetector_structs.h>
+#include <histogram.h>
+#include <mqtthandler.h>
+#include <tcpconnection.h>
 
 // for sig handling:
 #include <signal.h>
@@ -118,6 +119,7 @@ public slots:
     void onUBXReceivedTimeTM2(const UbxTimeMarkStruct& tm);
     void onLogParameterPolled();
     void sendMqttStatus(bool connected);
+    void sendExtendedMqttStatus(MuonPi::MqttHandler::Status status);
 
 signals:
     void sendTcpMessage(TcpMessage tcpMessage);

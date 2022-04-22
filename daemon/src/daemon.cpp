@@ -315,9 +315,11 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 
     mqttHandler = new MqttHandler(config.station_ID, verbose - 1);
     mqttHandler->moveToThread(mqttHandlerThread);
-    connect(mqttHandler, &MqttHandler::mqttConnectionStatus, this, &Daemon::sendMqttStatus);
-    connect(mqttHandler, &MqttHandler::giving_up, this, &Daemon::handleSigTerm);
-    connect(fileHandlerThread, &QThread::finished, mqttHandler, &MqttHandler::deleteLater);
+    //connect(mqttHandler, &MqttHandler::mqttConnectionStatus, this, &Daemon::sendMqttStatus);
+    connect(mqttHandler, &MqttHandler::connection_status, this, &Daemon::sendExtendedMqttStatus);
+    //connect(mqttHandler, &MqttHandler::giving_up, this, &Daemon::handleSigTerm);
+    //connect(mqttHandler, SIGNAL(giving_up()), this, SLOT(handleSigTerm()));
+    connect(mqttHandlerThread, &QThread::finished, mqttHandler, &MqttHandler::deleteLater);
     connect(this, &Daemon::requestMqttConnectionStatus, mqttHandler, &MqttHandler::onRequestConnectionStatus);
     mqttHandlerThread->start();
 
@@ -1485,6 +1487,7 @@ void Daemon::sendEventTriggerSelection()
 
 void Daemon::sendMqttStatus(bool connected)
 {
+    return;
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_MQTT_STATUS);
     *(tcpMessage.dStream) << connected;
     if (connected != mqttConnectionStatus) {
@@ -1497,6 +1500,24 @@ void Daemon::sendMqttStatus(bool connected)
         }
     }
     mqttConnectionStatus = connected;
+    emit sendTcpMessage(tcpMessage);
+}
+
+void Daemon::sendExtendedMqttStatus(MuonPi::MqttHandler::Status status)
+{
+    bool bStatus { (status==MuonPi::MqttHandler::Status::Connected) };
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_MQTT_STATUS);
+    *(tcpMessage.dStream) << bStatus << static_cast<int>(status);
+    if (bStatus != mqttConnectionStatus) {
+        if (bStatus) {
+            qDebug() << "MQTT (re)connected";
+            emit GpioSetState(GPIO_PINMAP[STATUS1], 1);
+        } else {
+            qDebug() << "MQTT connection lost";
+            emit GpioSetState(GPIO_PINMAP[STATUS1], 0);
+        }
+    }
+    mqttConnectionStatus = bStatus;
     emit sendTcpMessage(tcpMessage);
 }
 
