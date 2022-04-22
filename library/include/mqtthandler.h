@@ -29,38 +29,22 @@ public:
     MqttHandler(const QString& station_id, const int verbosity=0);
     ~MqttHandler() override;
 
-    //using QObject::QObject;
     void mqttStartConnection();
 
 signals:
     void mqttConnectionStatus(bool connected);
-
     void receivedMessage(const QString& topic, const QString& content);
-
-    void request_timer_stop();
-
-    void request_timer_start(int);
-    //void request_timer_restart(int);
-
     void giving_up();
-    
     void connection_status(Status status);
-
     void mqttConnect();
     void mqttDisconnect();
-
 
 public slots:
     void start(const QString& username, const QString& password);
     void subscribe(const QString& topic);
     void unsubscribe(const QString& topic);
-    void sendData(const QString &message);
-    void sendLog(const QString &message);
+    void publish(const QString& topic, const QString& content);
     void onRequestConnectionStatus();
-
-    void timer_restart(int timeout);
-    void timer_start(int timeout);
-    void timer_stop();
 
 private slots:
     void set_status(Status status);
@@ -112,12 +96,9 @@ private:
     std::string m_password {};
     std::string m_client_id {};
 
-    std::string m_data_topic { Config::MQTT::data_topic };
-    std::string m_log_topic { Config::MQTT::log_topic };
     int m_verbose { 0 };
     
-    std::size_t m_log_error_count { 0 };
-    std::size_t m_data_error_count { 0 };
+    std::size_t m_publish_error_count { 0 };
     static constexpr std::size_t s_max_publish_errors { 3 };
 
     friend void wrapper_callback_connected(mosquitto* mqtt, void* object, int result);

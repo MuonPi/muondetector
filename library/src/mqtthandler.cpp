@@ -35,7 +35,6 @@ void wrapper_callback_message(mosquitto* /*mqtt*/, void* object, const mosquitto
 
 void MqttHandler::callback_connected(int result)
 {
-//    qDebug() << "callback_connected() called, result code ="<<result;
     if (result == 1) {
         qWarning() << "MQTT connection failed: Wrong protocol version";
     } else if (result == 2) {
@@ -88,18 +87,7 @@ MqttHandler::MqttHandler(const QString& station_id, const int verbosity)
 
     m_reconnect_timer.setSingleShot(false);
     m_reconnect_timer.setInterval(3000);
-//    connect(&m_reconnect_timer, &QTimer::timeout, this, [this](){mqttConnect();});
-/*
-    if (!connect(&m_reconnect_timer, &QTimer::timeout, this, &MqttHandler::onTimer)) {
-        qDebug() << "failed connection QTimer::timeout";
-    }
-    if (!connect(this, &MqttHandler::request_timer_start, this, &MqttHandler::timer_start)) {
-        qDebug() << "failed connecting MqttHandler::request_timer_start";
-    }
-    if (!connect(this, &MqttHandler::request_timer_stop, this, &MqttHandler::timer_stop)) {
-        qDebug() << "failed connecting MqttHandler::request_timer_stop";
-    }
-    */
+
     if (!connect(this, &MqttHandler::connection_status, this, &MqttHandler::set_status)) {
         qDebug() << "failed connecting MqttHandler::set_status";
     }
@@ -109,7 +97,6 @@ MqttHandler::MqttHandler(const QString& station_id, const int verbosity)
     if (!connect(this, &MqttHandler::mqttDisconnect, this, &MqttHandler::onMqttDisconnect)) {
         qDebug() << "failed connecting MqttHandler::mqttDisconnect";
     }
-    //m_reconnect_timer.start();
 }
 
 MqttHandler::~MqttHandler()
@@ -135,7 +122,6 @@ void MqttHandler::onTimer()
 //            emit mqttDisconnect();
             emit mqttConnect();
         });
-        return;
 */
         std::this_thread::sleep_for(std::chrono::seconds(Config::MQTT::retry_period.count() * (1<<(m_tries-1))) );
         emit mqttDisconnect();
@@ -143,30 +129,9 @@ void MqttHandler::onTimer()
     }
 }
 
-void MqttHandler::timer_restart(int timeout)
-{
-    m_reconnect_timer.stop();
-    m_reconnect_timer.start(timeout);
-}
-
-void MqttHandler::timer_start(int timeout)
-{
-    qDebug()<<"starting timer with"<<timeout/1000<<"s";
-    m_reconnect_timer.start(timeout);
-}
-
-void MqttHandler::timer_stop()
-{
-    qDebug() << "stopping timer";
-    m_reconnect_timer.stop();
-}
-
 void MqttHandler::start(const QString& username, const QString& password){
     m_username = username.toStdString();
     m_password = password.toStdString();
-
-    m_data_topic = Config::MQTT::data_topic + m_username + "/" + m_station_id;
-    m_log_topic =  Config::MQTT::log_topic + m_username + "/" + m_station_id;
 
     CryptoPP::SHA1 sha1;
     std::string source = username.toStdString()+m_station_id;  //This will be randomly generated somehow
@@ -180,7 +145,6 @@ void MqttHandler::start(const QString& username, const QString& password){
 
 void MqttHandler::onMqttConnect(){
     if (connected()) {
-        qDebug() << "already connected";
         return;
     }
     qDebug() << "Trying to connect to MQTT.";
@@ -201,9 +165,7 @@ void MqttHandler::onMqttConnect(){
         return;
     }
     qDebug() << "Error establishing connection";
-    
-    //emit request_timer_start(std::chrono::duration_cast<std::chrono::milliseconds>(Config::MQTT::retry_period).count() * (1<<(m_tries)) + 2000UL);
-//emit request_timer_start(Config::MQTT::timeout * m_tries);
+    connection_status(Status::Error);
 }
 
 void MqttHandler::onMqttDisconnect(){
@@ -213,6 +175,7 @@ void MqttHandler::onMqttDisconnect(){
         return;
     }
     qDebug() << "Could not disconnect from Mqtt:" + QString{ strerror(result) };
+    connection_status(Status::Invalid);
 }
 
 auto MqttHandler::connected() -> bool{
@@ -318,30 +281,19 @@ void MqttHandler::unsubscribe(const QString& topic)
     qInfo() << "Unsubscribed from topic '" + topic + "'.";
 }
 
-void MqttHandler::sendData(const QString &message){
-    if (!publish(m_data_topic, message.toStdString())) {
-        m_data_error_count++;
-        if ( m_data_error_count < s_max_publish_errors ) {
-            qWarning() << "Couldn't publish data";
-        } else if ( m_data_error_count == s_max_publish_errors ) {
-            qWarning() << "Couldn't publish data (message repeated" << s_max_publish_errors << "times)";
+void MqttHandler::publish(const QString& topic, const QString& content){
+    std::string usertopic { topic.toStdString() };
+    usertopic +=  m_username + "/" + m_station_id;
+    if (!publish(usertopic, content.toStdString())) {
+        m_publish_error_count++;
+        if ( m_publish_error_count < s_max_publish_errors ) {
+            qWarning() << "Couldn't publish message for topic" << topic;
+        } else if ( m_publish_error_count == s_max_publish_errors ) {
+            qWarning() << "Couldn't publish message for topic" << topic<<"(message repeated" << s_max_publish_errors << "times)";
         }
         return;
     }
-    m_data_error_count = 0;
-}
-
-void MqttHandler::sendLog(const QString &message){
-    if (!publish(m_log_topic, message.toStdString())) {
-        m_log_error_count++;
-        if ( m_log_error_count < s_max_publish_errors ) {
-            qWarning() << "Couldn't publish log";
-        } else if ( m_log_error_count == s_max_publish_errors ) {
-            qWarning() << "Couldn't publish log (message repeated" << s_max_publish_errors << "times)";
-        }
-        return;
-    }
-    m_log_error_count = 0;
+    m_publish_error_count = 0;
 }
 
 auto MqttHandler::publish(const std::string& topic, const std::string& content) -> bool {
@@ -359,7 +311,6 @@ auto MqttHandler::publish(const std::string& topic, const std::string& content) 
 
 void MqttHandler::onRequestConnectionStatus(){
     qDebug() << "connection status = "<<QString::number(static_cast<int>(m_status));
-    //emit mqttConnectionStatus(m_status == Status::Connected);
     emit connection_status(m_status);
 }
 } // namespace MuonPi
