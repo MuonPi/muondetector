@@ -19,7 +19,7 @@ CustomMapForm {
     MapComponent{
         id: map
         property double lastLon: 8.673828
-        property double lastLat: 50.569212
+        property double lastLat: 0.569212
         plugin: plugin
         anchors.top: parent.top
         width: parent.width
@@ -32,6 +32,9 @@ CustomMapForm {
             circle.center.longitude = lon
             circle.center.latitude = lat
             circle.radius = hAcc
+            if (hAcc<1) {
+                circle.radius=1
+            }
             if (control.checked){
                 map.center = QtPositioning.coordinate(lat,lon)
             }
@@ -44,7 +47,9 @@ CustomMapForm {
             id: circle
             center: parent.center
             radius: 0.0
-            border.width: 2
+            border.width: 1
+            border.color: "blue"
+            color: Qt.rgba(0.0, 0.0, 0.5, 0.25)
         }
         ToolBar{
             id: buttonBar
@@ -73,6 +78,7 @@ CustomMapForm {
                         id: control
                         anchors.fill: parent
                         text: "follow"
+                        checked: true
                     }
                 }
             }
