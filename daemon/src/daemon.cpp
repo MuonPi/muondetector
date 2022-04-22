@@ -415,14 +415,14 @@ Daemon::Daemon(configuration cfg, QObject* parent)
             else
                 qWarning() << "error: failed setting threshold registers";
             qDebug() << "single ended channels:";
-            qDebug() << "ch0: " << ads1115_p->readADC(0) << " ch1: " << ads1115_p->readADC(1)
-                     << " ch2: " << ads1115_p->readADC(2) << " ch3: " << ads1115_p->readADC(3);
+            qDebug() << "ch0:" << ads1115_p->readADC(0) << "ch1:" << ads1115_p->readADC(1)
+                     << "ch2: " << ads1115_p->readADC(2) << "ch3:" << ads1115_p->readADC(3);
             ads1115_p->setDiffMode(true);
             qDebug() << "diff channels:";
-            qDebug() << "ch0-1: " << ads1115_p->readADC(0) << " ch0-3: " << ads1115_p->readADC(1)
-                     << " ch1-3: " << ads1115_p->readADC(2) << " ch2-3: " << ads1115_p->readADC(3);
+            qDebug() << "ch0-1:" << ads1115_p->readADC(0) << "ch0-3: " << ads1115_p->readADC(1)
+                     << "ch1-3:" << ads1115_p->readADC(2) << "ch2-3: " << ads1115_p->readADC(3);
             ads1115_p->setDiffMode(false);
-            qDebug() << "readout took " << ads1115_p->getLastTimeInterval() << " ms";
+            qDebug() << "readout took" << ads1115_p->getLastTimeInterval() << "ms";
         }
     }
     
@@ -452,9 +452,9 @@ Daemon::Daemon(configuration cfg, QObject* parent)
                 eepromChannel.eeprom = true;
                 mcp4728_p->readChannel(i, dacChannel);
                 mcp4728_p->readChannel(i, eepromChannel);
-                qDebug() << "  ch" << i << ": " << dacChannel.value << " = " << MCP4728::code2voltage(dacChannel) << " V" << "  (stored: " << eepromChannel.value << " = " << MCP4728::code2voltage(eepromChannel) << " V)";
+                qDebug() << " ch" << i << ": " << dacChannel.value << "=" << MCP4728::code2voltage(dacChannel) << "V" << "  (stored:" << eepromChannel.value << "=" << MCP4728::code2voltage(eepromChannel) << "V)";
             }
-            qDebug() << "readout took " << mcp4728_p->getLastTimeInterval() << " ms";
+            qDebug() << "readout took" << mcp4728_p->getLastTimeInterval() << "ms";
         }
     }
 
@@ -492,28 +492,28 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     }
 
     // PCA9536 4 bit I/O I2C device used for selecting the UBX timing input
-	std::shared_ptr<PCA9536> pca9536_p;
-	possible_addresses = { 0x41 };
-	found_dev_addresses = findI2cDeviceType<PCA9536>( possible_addresses );
-	if ( found_dev_addresses.size() > 0 ) {
-		pca9536_p = std::make_shared<PCA9536>( found_dev_addresses.front() );
-		io_extender_p = std::static_pointer_cast<DeviceFunction<DeviceType::IO_EXTENDER>>( pca9536_p );
-		std::cout << "PCA9536 identified at 0x" << std::hex << (int)pca9536_p->getAddress() << std::endl;
-	} else {
+    std::shared_ptr<PCA9536> pca9536_p;
+    possible_addresses = { 0x41 };
+    found_dev_addresses = findI2cDeviceType<PCA9536>( possible_addresses );
+    if ( found_dev_addresses.size() > 0 ) {
+        pca9536_p = std::make_shared<PCA9536>( found_dev_addresses.front() );
+        io_extender_p = std::static_pointer_cast<DeviceFunction<DeviceType::IO_EXTENDER>>( pca9536_p );
+        std::cout << "PCA9536 identified at 0x" << std::hex << (int)pca9536_p->getAddress() << std::endl;
+    } else {
         qWarning() << "PCA9536 device NOT found!";
-	}
-	
-//	pca = new PCA9536();
+    }
+
+
     if ( io_extender_p && io_extender_p->probeDevicePresence() ) {
         pca9536_p->identify();
-		if (verbose > 2) {
+        if (verbose > 2) {
             qInfo() << "PCA9536 device is present.";
 #if QT_VERSION < 0x051400
-            qDebug() << " inputs: 0x" << hex << (int)io_extender_p->getInputState();
-            qDebug() << "readout took " << dec << pca9536_p->getLastTimeInterval() << " ms";
+            qDebug().nospace() << " inputs: 0x" << hex << (int)io_extender_p->getInputState();
+            qDebug() << "readout took" << dec << pca9536_p->getLastTimeInterval() << "ms";
 #else
-            qDebug() << " inputs: 0x" << Qt::hex << (int)io_extender_p->getInputState();
-            qDebug() << "readout took " << Qt::dec << pca9536_p->getLastTimeInterval() << " ms";
+            qDebug().nospace() << " inputs: 0x" << Qt::hex << (int)io_extender_p->getInputState();
+            qDebug() << "readout took " << Qt::dec << pca9536_p->getLastTimeInterval() << "ms";
 #endif
         }
         io_extender_p->setOutputPorts(0b00000111);
@@ -538,7 +538,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 		qInfo() << "ublox I2C device interface is present.";
 		uint16_t bufcnt = 0;
 		bool ok = ublox_i2c_p->getTxBufCount(bufcnt);
-		if (ok) qDebug() << "bytes in TX buf: " << bufcnt;
+		if (ok) qDebug() << "bytes in TX buf:" << bufcnt;
 	}
 
     // check if also an Adafruit-SSD1306 compatible i2c OLED display is present
@@ -670,19 +670,19 @@ Daemon::~Daemon()
     pigHandler.clear();
     constexpr unsigned long timeout { 2000 };
     if (!mqttHandlerThread->wait(timeout)) {
-        qWarning() << "Timeout waiting for thread " + mqttHandlerThread->objectName();
+        qWarning() << "Timeout waiting for thread" + mqttHandlerThread->objectName();
     }
     if (!fileHandlerThread->wait(timeout)) {
-        qWarning() << "Timeout waiting for thread " + fileHandlerThread->objectName();
+        qWarning() << "Timeout waiting for thread" + fileHandlerThread->objectName();
     }
     if (!pigThread->wait(timeout)) {
-        qWarning() << "Timeout waiting for thread " + pigThread->objectName();
+        qWarning() << "Timeout waiting for thread" + pigThread->objectName();
     }
     if (!gpsThread->wait(timeout)) {
-        qWarning() << "Timeout waiting for thread " + gpsThread->objectName();
+        qWarning() << "Timeout waiting for thread" + gpsThread->objectName();
     }
     if (!tcpThread->wait(timeout)) {
-        qWarning() << "Timeout waiting for thread " + tcpThread->objectName();
+        qWarning() << "Timeout waiting for thread" + tcpThread->objectName();
     }
     while ( !i2cDevice::getGlobalDeviceList().empty() ) {
 		if ( i2cDevice::getGlobalDeviceList().front() != nullptr ) delete i2cDevice::getGlobalDeviceList().front();
@@ -762,7 +762,7 @@ void Daemon::connectToPigpiod()
     struct timespec ts_res;
     clock_getres(CLOCK_REALTIME, &ts_res);
     if (verbose > 3) {
-        qInfo() << "the timing resolution of the system clock is " << ts_res.tv_nsec << " ns";
+        qInfo() << "the timing resolution of the system clock is" << ts_res.tv_nsec << "ns";
     }
 
     timespec_get(&lastRateInterval, TIME_UTC);
@@ -1000,7 +1000,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         if (channel > 1) return;
         if (threshold < 0.001) {
             if (verbose > 2)
-                qWarning() << "setting DAC " << channel << " to 0!";
+                qWarning() << "setting DAC" << channel << "to 0!";
         } else
             setDacThresh(channel, threshold);
         sendDacThresh(Config::Hardware::DAC::Channel::threshold[channel]);
@@ -1720,7 +1720,7 @@ void Daemon::setEventTriggerSelection(GPIO_SIGNAL signal)
         return;
 
     if (verbose > 0) {
-        qInfo() << "changed event selection to signal " << (unsigned int)signal;
+        qInfo() << "changed event selection to signal" << (unsigned int)signal;
     }
     emit setSamplingTriggerSignal(signal);
     emit logParameter(LogParameter("gpioTriggerSelection", "0x" + QString::number((int)pigHandler->samplingTriggerSignal, 16), LogParameter::LOG_EVERY));
@@ -1737,7 +1737,7 @@ void Daemon::setPcaChannel(uint8_t channel)
         return;
     }
     if (verbose > 0) {
-        qInfo() << "changed pcaPortMask to " << channel;
+        qInfo() << "changed pcaPortMask to" << channel;
     }
     config.pcaPortMask = channel;
     io_extender_p->setOutputState(channel);
@@ -1747,7 +1747,7 @@ void Daemon::setPcaChannel(uint8_t channel)
 void Daemon::setBiasVoltage(float voltage)
 {
     if (verbose > 0) {
-        qInfo() << "change biasVoltage to " << voltage;
+        qInfo() << "change biasVoltage to" << voltage;
     }
     if ( dac_p && dac_p->probeDevicePresence() ) {
         dac_p->setVoltage(Config::Hardware::DAC::Channel::bias, voltage);
@@ -1761,7 +1761,7 @@ void Daemon::setBiasStatus(bool status)
 {
     config.bias_ON = status;
     if (verbose > 0) {
-        qInfo() << "change biasStatus to " << status;
+        qInfo() << "change biasStatus to" << status;
     }
 
     if (status) {
@@ -1788,7 +1788,7 @@ void Daemon::setDacThresh(uint8_t channel, float threshold)
         threshold = 4.095;
     }
     if (verbose > 0) {
-        qInfo() << "change dacThresh " << channel << " to " << threshold;
+        qInfo() << "change dacThresh" << channel << "to" << threshold;
     }
     config.thresholdVoltage[channel] = threshold;
     clearRates();
@@ -2032,8 +2032,8 @@ void Daemon::onUBXReceivedTxBuf(uint8_t txUsage, uint8_t txPeakUsage)
 {
     TcpMessage* tcpMessage;
     if (verbose > 3) {
-        qDebug() << "TX buf usage: " << (int)txUsage << " %";
-        qDebug() << "TX buf peak usage: " << (int)txPeakUsage << " %";
+        qDebug() << "TX buf usage:" << (int)txUsage << "%";
+        qDebug() << "TX buf peak usage:" << (int)txPeakUsage << "%";
     }
     tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_TXBUF);
     *(tcpMessage->dStream) << (quint8)txUsage << (quint8)txPeakUsage;
@@ -2047,8 +2047,8 @@ void Daemon::onUBXReceivedRxBuf(uint8_t rxUsage, uint8_t rxPeakUsage)
 {
     TcpMessage* tcpMessage;
     if (verbose > 3) {
-        qDebug() << "RX buf usage: " << (int)rxUsage << " %";
-        qDebug() << "RX buf peak usage: " << (int)rxPeakUsage << " %";
+        qDebug() << "RX buf usage:" << (int)rxUsage << "%";
+        qDebug() << "RX buf peak usage:" << (int)rxPeakUsage << "%";
     }
     tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_RXBUF);
     *(tcpMessage->dStream) << (quint8)rxUsage << (quint8)rxPeakUsage;
@@ -2184,7 +2184,7 @@ void Daemon::UBXReceivedVersion(const QString& swString, const QString& hwString
     emit logParameter(LogParameter("UBX_Prot_Version", protString, LogParameter::LOG_ONCE));
     if (initialVersionInfo) {
         configGpsForVersion();
-        qInfo() << "Ublox version: " << hwString << " (fw:" << swString << "prot:" << protString << ")";
+        qInfo() << "Ublox version:" << hwString << "(fw:" << swString << "prot:" << protString << ")";
     }
     initialVersionInfo = false;
 }
@@ -2228,14 +2228,14 @@ void Daemon::onStoppedConnection(QString remotePeerAddress, quint16 remotePeerPo
     quint32 timeoutTime, quint32 connectionDuration)
 {
     if (verbose > 3) {
-        qDebug() << "stopped connection with " << remotePeerAddress << ":" << remotePeerPort;
-        qDebug() << "connection timeout at " << timeoutTime << "  connection lasted " << connectionDuration << "s";
+        qDebug() << "stopped connection with" << remotePeerAddress << ":" << remotePeerPort;
+        qDebug() << "connection timeout at" << timeoutTime << " connection lasted" << connectionDuration << "s";
     }
 }
 
 void Daemon::displayError(QString message)
 {
-    qDebug() << "Daemon: " << message;
+    qDebug() << "Daemon:" << message;
 }
 
 void Daemon::displaySocketError(int socketError, QString message)
@@ -2405,8 +2405,8 @@ void Daemon::onLogParameterPolled()
 
     sendLogInfo();
     if (verbose > 2) {
-        qDebug() << "current data file: " << fileHandler->dataFileInfo().absoluteFilePath();
-        qDebug() << " file size: " << fileHandler->dataFileInfo().size() / (1024 * 1024) << "MiB";
+        qDebug() << "current data file:" << fileHandler->dataFileInfo().absoluteFilePath();
+        qDebug() << "file size: " << fileHandler->dataFileInfo().size() / (1024 * 1024) << "MiB";
     }
 
     // Since Linux 2.3.23 (i386) and Linux 2.3.48 (all architectures) the
@@ -2438,11 +2438,11 @@ void Daemon::onLogParameterPolled()
         double f_load = 1.0 / (1 << SI_LOAD_SHIFT);
         if (verbose > 2) {
             qDebug() << "*** Sysinfo Stats ***";
-            qDebug() << "nr of cpus      : " << get_nprocs();
-            qDebug() << "uptime (h)      : " << info.uptime / 3600.;
-            qDebug() << "load avg (1min) : " << info.loads[0] * f_load;
-            qDebug() << "free RAM        : " << (1.0e-6 * info.freeram / info.mem_unit) << " Mb";
-            qDebug() << "free swap       : " << (1.0e-6 * info.freeswap / info.mem_unit) << " Mb";
+            qDebug() << "nr of cpus      :" << get_nprocs();
+            qDebug() << "uptime (h)      :" << info.uptime / 3600.;
+            qDebug() << "load avg (1min) :" << info.loads[0] * f_load;
+            qDebug() << "free RAM        :" << (1.0e-6 * info.freeram / info.mem_unit) << "Mb";
+            qDebug() << "free swap       :" << (1.0e-6 * info.freeswap / info.mem_unit) << "Mb";
         }
         emit logParameter(LogParameter("systemNrCPUs", QString::number(get_nprocs()) + " ", LogParameter::LOG_ONCE));
         emit logParameter(LogParameter("systemUptime", QString::number(info.uptime / 3600.) + " h", LogParameter::LOG_LATEST));
