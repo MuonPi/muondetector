@@ -1,10 +1,10 @@
+#include "qtserialublox.h"
 #include <QDebug>
 #include <QEventLoop>
 #include <QThread>
 #include <iomanip>
 #include <iostream>
 #include <muondetector_structs.h>
-#include "qtserialublox.h"
 #include <sstream>
 #include <sys/syscall.h>
 #include <ublox_messages.h>

@@ -1,6 +1,6 @@
+#include "qtserialublox.h"
 #include "utility/custom_io_operators.h"
 #include "utility/unixtime_from_gps.h"
-#include "qtserialublox.h"
 
 #include <muondetector_structs.h>
 #include <ublox_messages.h>
@@ -259,7 +259,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
         break;
     case 0x0a: // UBX-MON
         switch (messageID) {
-            case (UBX_MSG::MON_RXBUF & 0xff):
+        case (UBX_MSG::MON_RXBUF & 0xff):
             if (verbose > 2) {
                 tempStream << "received UBX-MON-RXBUF message (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)classID
                            << " 0x" << std::hex << (int)messageID << ")\n";

@@ -1,9 +1,9 @@
+#include "logengine.h"
+#include "logparameter.h"
 #include <QDateTime>
 #include <QTimer>
 #include <QtGlobal>
 #include <config.h>
-#include "logengine.h"
-#include "logparameter.h"
 
 static QString dateStringNow()
 {

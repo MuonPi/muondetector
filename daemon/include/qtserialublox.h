@@ -1,7 +1,6 @@
 #ifndef QTSERIALUBLOX_H
 #define QTSERIALUBLOX_H
 
-#include <ublox_structs.h>
 #include <QLocale>
 #include <QObject>
 #include <QPointer>
@@ -9,6 +8,7 @@
 #include <QTimer>
 #include <queue>
 #include <string>
+#include <ublox_structs.h>
 
 struct GeodeticPos;
 struct GnssMonHwStruct;

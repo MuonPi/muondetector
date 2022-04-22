@@ -1,11 +1,11 @@
 #ifndef LOGENGINE_H
 #define LOGENGINE_H
+#include "logparameter.h"
 #include <QMap>
 #include <QObject>
 #include <QString>
 #include <QVector>
 #include <config.h>
-#include "logparameter.h"
 
 class LogEngine : public QObject {
     Q_OBJECT

@@ -1,5 +1,6 @@
 #ifndef FILEHANDLER_H
 #define FILEHANDLER_H
+#include "logparameter.h"
 #include <QDateTime>
 #include <QFile>
 #include <QFileInfo>
@@ -10,7 +11,6 @@
 #include <QVector>
 #include <config.h>
 #include <muondetector_structs.h>
-#include "logparameter.h"
 
 class FileHandler : public QObject {
     Q_OBJECT

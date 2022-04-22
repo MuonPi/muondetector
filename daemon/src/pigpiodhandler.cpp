@@ -1,9 +1,9 @@
+#include "utility/gpio_mapping.h"
 #include <QDebug>
 #include <QPointer>
 #include <cmath>
 #include <config.h>
 #include <exception>
-#include "utility/gpio_mapping.h"
 #include <iostream>
 #include <pigpiodhandler.h>
 #include <sys/time.h>
@@ -102,18 +102,15 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
     // look, if the last event occured just recently
     // if so, count the pileup counter up
     // count down if not
-    if (tick - lastTick < MuonPi::Config::event_count_deadtime_ticks) 
-    {
+    if (tick - lastTick < MuonPi::Config::event_count_deadtime_ticks) {
         pileupCounter++;
         // if more than a certain number of pileups happened in a short period of time, leave immediately
-        if (pileupCounter > MuonPi::Config::event_count_max_pileups) 
-        {
+        if (pileupCounter > MuonPi::Config::event_count_max_pileups) {
             pileupCounter = MuonPi::Config::event_count_max_pileups;
-			lastTick = tick;
+            lastTick = tick;
             return;
         }
-    } else if (pileupCounter > 0)
-    {
+    } else if (pileupCounter > 0) {
         pileupCounter--;
     }
 
@@ -169,9 +166,9 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
                 emit pigpioHandler->timePulseDiff(t_diff_us);
             }
         }
-        
+
         emit pigpioHandler->signal(user_gpio);
-         
+
         // level gives the information if it is up or down (only important if trigger is
         // at both: rising and falling edge)
     } catch (std::exception& e) {

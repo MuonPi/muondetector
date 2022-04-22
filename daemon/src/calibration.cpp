@@ -23,7 +23,7 @@ void ShowerDetectorCalib::init()
     for (int i = 0; i < n; i++)
         fEepBuffer[i] = 0;
     buildCalibList();
-    if ( fEeprom ) {
+    if (fEeprom) {
         fEepromValid = fEeprom->probeDevicePresence() && readFromEeprom();
     }
 }
@@ -102,13 +102,13 @@ void ShowerDetectorCalib::setCalibItem(const std::string& name, const CalibStruc
 
 bool ShowerDetectorCalib::readFromEeprom()
 {
-    if ( !fEeprom ) {
+    if (!fEeprom) {
         return false;
-	}
+    }
     const uint16_t n = 256;
     for (int i = 0; i < n; i++)
         fEepBuffer[i] = 0;
-    bool success = ( fEeprom->readBytes(0, n, fEepBuffer) == n );
+    bool success = (fEeprom->readBytes(0, n, fEepBuffer) == n);
     if (!success) {
         fEepromValid = false;
         return false;
@@ -159,7 +159,7 @@ bool ShowerDetectorCalib::readFromEeprom()
 
 bool ShowerDetectorCalib::writeToEeprom()
 {
-    if ( !fEepromValid )
+    if (!fEepromValid)
         return false;
     // before we write to eeprom, increase the write cycle counter
     CalibStruct item = getCalibItem("WRITE_CYCLES");

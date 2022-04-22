@@ -1,3 +1,4 @@
+#include "utility/filehandler.h"
 #include <QByteArray>
 #include <QCryptographicHash>
 #include <QDebug>
@@ -16,7 +17,6 @@
 #include <crypto++/modes.h>
 #include <crypto++/osrng.h>
 #include <crypto++/sha.h>
-#include "utility/filehandler.h"
 #include <sys/syscall.h>
 #include <unistd.h>
 
@@ -150,7 +150,7 @@ QFileInfo FileHandler::logFileInfo() const
 // return current log file age in s
 std::chrono::seconds FileHandler::currentLogAge()
 {
-    if (dataFile == nullptr || configFilePath == "") 
+    if (dataFile == nullptr || configFilePath == "")
         return std::chrono::seconds { -1 };
     QDateTime now = QDateTime::currentDateTime();
     QFileInfo fi(configFilePath);
@@ -303,13 +303,12 @@ bool FileHandler::removeOldFiles()
 
     for (auto& fileName : m_filename_list) {
         QString filePath = dataFolderPath + fileName;
-        if (filePath != currentWorkingFilePath 
-            && filePath != currentWorkingLogPath )
-        {
+        if (filePath != currentWorkingFilePath
+            && filePath != currentWorkingLogPath) {
             QFileInfo fileInfo(filePath);
             qint64 fileAgeSecs = QDateTime::currentSecsSinceEpoch() - fileInfo.lastModified().toSecsSinceEpoch();
             if (fileAgeSecs > m_logrotate_period.count()) {
-                qDebug()<<"trying to delete file"<<filePath<<"( file age = "<<fileAgeSecs<<"s)";
+                qDebug() << "trying to delete file" << filePath << "( file age = " << fileAgeSecs << "s)";
                 ok = ok && QFile::remove(filePath);
             }
         }

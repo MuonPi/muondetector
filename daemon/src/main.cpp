@@ -3,18 +3,18 @@
 
 #include <QCommandLineParser>
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDir>
 #include <QHostAddress>
 #include <QObject>
-#include <QDateTime>
 #include <iostream>
 #include <libconfig.h++>
 #include <termios.h>
 #include <unistd.h>
 
-#include <config.h>
-#include "utility/custom_io_operators.h"
 #include "daemon.h"
+#include "utility/custom_io_operators.h"
+#include <config.h>
 #include <gpio_pin_definitions.h>
 
 static const char* CONFIG_FILE = MuonPi::Config::file;
@@ -111,10 +111,10 @@ int main(int argc, char* argv[])
     // config file handling
     libconfig::Config cfg;
 
-	qInfo()	<< "MuonPi Muondetector Daemon "
-			<< "V"+QString::fromStdString(MuonPi::Version::software.string())
-			<< "(build "+ QString(__TIMESTAMP__) +")";
-			
+    qInfo() << "MuonPi Muondetector Daemon "
+            << "V" + QString::fromStdString(MuonPi::Version::software.string())
+            << "(build " + QString(__TIMESTAMP__) + ")";
+
     // Read the file. If there is an error, report it and exit.
     try {
         cfg.readFile(MuonPi::Config::file);
@@ -316,7 +316,7 @@ int main(int argc, char* argv[])
 
     try {
         int model = cfg.lookup("gnss_dynamic_model");
-        daemonConfig.gnss_dynamic_model = static_cast<UbxDynamicModel>( model );
+        daemonConfig.gnss_dynamic_model = static_cast<UbxDynamicModel>(model);
     } catch (const libconfig::SettingNotFoundException&) {
     }
 
@@ -346,7 +346,7 @@ int main(int argc, char* argv[])
                  << QString("0x%1").arg(reinterpret_cast<std::uint64_t>(QCoreApplication::instance()->thread()));
     }
     daemonConfig.gnss_dump_raw = parser.isSet(dumpRawOption);
-    
+
     if (parser.isSet(baudrateOption)) {
         daemonConfig.gnss_baudrate = parser.value(baudrateOption).toInt(&ok);
         if (!ok || daemonConfig.gnss_baudrate < 0) {
@@ -365,7 +365,7 @@ int main(int argc, char* argv[])
         }
 
     daemonConfig.gnss_config = parser.isSet(showGnssConfigOption);
-    
+
     if (parser.isSet(peerPortOption)) {
         daemonConfig.peerPort = parser.value(peerPortOption).toUInt(&ok);
         if (!ok) {
@@ -486,7 +486,8 @@ int main(int argc, char* argv[])
     } else {
         try {
             int gainCfg = cfg.lookup("gain_switch");
-            if (verbose > 2) qDebug() << "gain switch:" << gainCfg;
+            if (verbose > 2)
+                qDebug() << "gain switch:" << gainCfg;
             daemonConfig.hi_gain = gainCfg;
         } catch (const libconfig::SettingNotFoundException& nfex) {
             if (verbose > 0)
@@ -494,38 +495,40 @@ int main(int argc, char* argv[])
         }
     }
 
-	int eventTriggerCfg { -1 };
-	daemonConfig.eventTrigger = EVT_AND;
-    if ( parser.isSet( eventInputOption ) ) {
+    int eventTriggerCfg { -1 };
+    daemonConfig.eventTrigger = EVT_AND;
+    if (parser.isSet(eventInputOption)) {
         eventTriggerCfg = parser.value(eventInputOption).toInt(&ok);
-		if ( !ok || eventTriggerCfg > 3 ) {
+        if (!ok || eventTriggerCfg > 3) {
             qCritical() << "wrong trigger input signal (valid: 0..3)";
             return -1;
         }
-	} else try {
-		eventTriggerCfg = cfg.lookup("trigger_input");
-		if (verbose > 2) qDebug() << "event trigger : " << eventTriggerCfg;
-	} catch (const libconfig::SettingNotFoundException& nfex) {
-		qWarning() << "No 'trigger_input' setting in configuration file. Assuming signal" << GPIO_SIGNAL_MAP[daemonConfig.eventTrigger].name;
-	}
+    } else
+        try {
+            eventTriggerCfg = cfg.lookup("trigger_input");
+            if (verbose > 2)
+                qDebug() << "event trigger : " << eventTriggerCfg;
+        } catch (const libconfig::SettingNotFoundException& nfex) {
+            qWarning() << "No 'trigger_input' setting in configuration file. Assuming signal" << GPIO_SIGNAL_MAP[daemonConfig.eventTrigger].name;
+        }
 
-	switch (eventTriggerCfg) {
-		case 0:
-			daemonConfig.eventTrigger = EVT_XOR;
-			break;
-		case 1:
-			daemonConfig.eventTrigger = EVT_AND;
-			break;
-		case 2:
-			daemonConfig.eventTrigger = TIME_MEAS_OUT;
-			break;
-		case 3:
-			daemonConfig.eventTrigger = EXT_TRIGGER;
-			break;
-		default:
-			daemonConfig.eventTrigger = EVT_AND;
-			break;
-	}
+    switch (eventTriggerCfg) {
+    case 0:
+        daemonConfig.eventTrigger = EVT_XOR;
+        break;
+    case 1:
+        daemonConfig.eventTrigger = EVT_AND;
+        break;
+    case 2:
+        daemonConfig.eventTrigger = TIME_MEAS_OUT;
+        break;
+    case 3:
+        daemonConfig.eventTrigger = EXT_TRIGGER;
+        break;
+    default:
+        daemonConfig.eventTrigger = EVT_AND;
+        break;
+    }
 
     if (parser.isSet(pol1Option)) {
         unsigned int pol1int = parser.value(pol1Option).toUInt(&ok);

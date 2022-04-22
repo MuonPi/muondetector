@@ -7,6 +7,7 @@
 #include <QNetworkInterface>
 #include <QNetworkSession>
 #include <QtGlobal>
+#include <config.h>
 #include <crypto++/aes.h>
 #include <crypto++/filters.h>
 #include <crypto++/hex.h>
@@ -16,9 +17,8 @@
 #include <iostream>
 #include <string>
 #include <termios.h>
-#include <unistd.h>
-#include <config.h>
 #include <thread>
+#include <unistd.h>
 
 #include "mqtthandler.h"
 
@@ -198,7 +198,7 @@ int main()
             context.release();
         });
     mqttHandler.start(QString::fromStdString(username), QString::fromStdString(password));
-    std::this_thread::sleep_for( std::chrono::seconds( 3 ) );
+    std::this_thread::sleep_for(std::chrono::seconds(3));
     mqttHandler.mqttDisconnect();
     return 0;
 }

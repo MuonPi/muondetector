@@ -158,8 +158,8 @@ private slots:
     void onRateBufferReminder();
     void updateOledDisplay();
     void aquireMonitoringParameters();
-    void onStatusLed1Event( int onTimeMs );
-    void onStatusLed2Event( int onTimeMs );
+    void onStatusLed1Event(int onTimeMs);
+    void onStatusLed2Event(int onTimeMs);
 
 private:
     void incomingConnection(qintptr socketDescriptor) override;
@@ -197,19 +197,19 @@ private:
     void setAdcSamplingMode(ADC_SAMPLING_MODE mode);
     void printTimestamp();
     void delay(int millisecondsWait);
-	void onAdcSampleReady(ADS1115::Sample sample);
+    void onAdcSampleReady(ADS1115::Sample sample);
 
     void rateCounterIntervalActualisation();
     qreal getRateFromCounts(quint8 which_rate);
     void clearRates();
 
-	std::shared_ptr<DeviceFunction<DeviceType::TEMP>> temp_sensor_p;
-	std::shared_ptr<DeviceFunction<DeviceType::ADC>> adc_p;
-	std::shared_ptr<DeviceFunction<DeviceType::DAC>> dac_p;
-	std::shared_ptr<DeviceFunction<DeviceType::EEPROM>> eep_p;
-	std::shared_ptr<DeviceFunction<DeviceType::IO_EXTENDER>> io_extender_p;
-	std::shared_ptr<Adafruit_SSD1306> oled_p { };
-    std::shared_ptr<UbloxI2c> ublox_i2c_p { };
+    std::shared_ptr<DeviceFunction<DeviceType::TEMP>> temp_sensor_p;
+    std::shared_ptr<DeviceFunction<DeviceType::ADC>> adc_p;
+    std::shared_ptr<DeviceFunction<DeviceType::DAC>> dac_p;
+    std::shared_ptr<DeviceFunction<DeviceType::EEPROM>> eep_p;
+    std::shared_ptr<DeviceFunction<DeviceType::IO_EXTENDER>> io_extender_p;
+    std::shared_ptr<Adafruit_SSD1306> oled_p {};
+    std::shared_ptr<UbloxI2c> ublox_i2c_p {};
 
     QPointer<PigpiodHandler> pigHandler;
     QPointer<TDC7200> tdc7200;
