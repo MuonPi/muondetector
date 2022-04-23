@@ -311,7 +311,38 @@ void Status::onMqttStatusChanged(bool connected)
 {
     if (connected) {
         statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: lightGreen;}");
+        statusUi->mqttStatusLabel->setText("MQTT: Connected");
+    } else {
+        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: red;}");
+        statusUi->mqttStatusLabel->setText("MQTT: No Connection");
+    }
+}
+
+void Status::onMqttStatusChanged(MuonPi::MqttHandler::Status status)
+{
+    switch (status) {
+        case MuonPi::MqttHandler::Status::Connected:
+            statusUi->mqttStatusLabel->setText("MQTT: Connected");
+            statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: lightGreen;}");
+            break;
+        case MuonPi::MqttHandler::Status::Connecting:
+            statusUi->mqttStatusLabel->setText("MQTT: Connecting");
+            statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: lightBlue;}");
+            break;
+        case MuonPi::MqttHandler::Status::Disconnected:
+            statusUi->mqttStatusLabel->setText("MQTT: Disconnected");
+            statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: window;}");break;
+        case MuonPi::MqttHandler::Status::Error:
+        default:
+            statusUi->mqttStatusLabel->setText("MQTT: Error");
+            statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: red;}");    
+    };
+/*
+    if (status == MuonPi::MqttHandler::Status::Connected) {
+        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: lightGreen;}");
+        statusUi->mqttStatusLabel->setText("MQTT: Connected");
     } else {
         statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: red;}");
     }
+*/
 }

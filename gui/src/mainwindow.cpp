@@ -2,19 +2,20 @@
 #include "calibform.h"
 #include "calibscandialog.h"
 #include "gpssatsform.h"
-#include "histogram.h"
 #include "histogramdataform.h"
 #include "i2cform.h"
 #include "logplotswidget.h"
 #include "map.h"
-#include "muondetector_structs.h"
 #include "parametermonitorform.h"
 #include "scanform.h"
 #include "settings.h"
 #include "status.h"
-#include "tcpmessage_keys.h"
-#include "ublox_structs.h"
 #include "ui_mainwindow.h"
+
+#include <histogram.h>
+#include <muondetector_structs.h>
+#include <tcpmessage_keys.h>
+#include <ublox_structs.h>
 
 #include <QDebug>
 #include <QErrorMessage>
@@ -124,7 +125,9 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this, &MainWindow::triggerSelectionReceived, status, &Status::onTriggerSelectionReceived);
     connect(status, &Status::triggerSelectionChanged, this, &MainWindow::onTriggerSelectionChanged);
     connect(this, &MainWindow::timepulseReceived, status, &Status::onTimepulseReceived);
-    connect(this, &MainWindow::mqttStatusChanged, status, &Status::onMqttStatusChanged);
+//    connect(this, &MainWindow::mqttStatusChanged, status, &Status::onMqttStatusChanged);
+    connect(this, SIGNAL(mqttStatusChanged(bool)), status, SLOT(onMqttStatusChanged(bool)));
+    connect(this, SIGNAL(mqttStatusChanged(MuonPi::MqttHandler::Status)), status, SLOT(onMqttStatusChanged(MuonPi::MqttHandler::Status)));
 
     ui->tabWidget->addTab(status, "Overview");
 
@@ -693,7 +696,14 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
     if (msgID == TCP_MSG_KEY::MSG_MQTT_STATUS) {
         bool connected = false;
         *(tcpMessage.dStream) >> connected;
-        emit mqttStatusChanged(connected);
+        if (tcpMessage.dStream->atEnd()) {
+            emit mqttStatusChanged(connected);
+        } else {
+            int extStatus { -1 };
+            *(tcpMessage.dStream) >> extStatus;
+            MuonPi::MqttHandler::Status status { extStatus };
+            emit mqttStatusChanged(status);
+        }
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_POLARITY_SWITCH) {

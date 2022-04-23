@@ -5,13 +5,14 @@
 #include <QStandardItemModel>
 #include <QTime>
 #include <QVector>
-#include <gpio_pin_definitions.h>
-#include <tcpconnection.h>
 
 // for sig handling:
 #include <sys/types.h>
 
 #include <config.h>
+#include <tcpconnection.h>
+#include <mqtthandler.h>
+#include <gpio_pin_definitions.h>
 
 struct I2cDeviceEntry;
 struct CalibStruct;
@@ -80,6 +81,7 @@ signals:
     void adcModeReceived(quint8 mode);
     void logInfoReceived(const LogInfoStruct& lis);
     void mqttStatusChanged(bool connected);
+    void mqttStatusChanged(MuonPi::MqttHandler::Status status);
     void timeMarkReceived(const UbxTimeMarkStruct&);
     void polaritySwitchReceived(bool pol1, bool pol2);
     void gpioInhibitReceived(bool inhibit);

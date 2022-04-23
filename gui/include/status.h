@@ -8,6 +8,7 @@
 #include <QVector>
 #include <QWidget>
 #include <gpio_pin_definitions.h>
+#include <mqtthandler.h>
 
 namespace Ui {
 class Status;
@@ -46,6 +47,7 @@ public slots:
     void onTriggerSelectionReceived(GPIO_SIGNAL signal);
     void onTimepulseReceived();
     void onMqttStatusChanged(bool connected);
+    void onMqttStatusChanged(MuonPi::MqttHandler::Status status);
 
 private slots:
     void setRateSecondsBuffered(const QString& bufferTime);
