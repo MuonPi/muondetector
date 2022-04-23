@@ -327,7 +327,7 @@ void Status::onMqttStatusChanged(MuonPi::MqttHandler::Status status)
             break;
         case MuonPi::MqttHandler::Status::Connecting:
             statusUi->mqttStatusLabel->setText("MQTT: Connecting");
-            statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: lightBlue;}");
+            statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: yellow;}");
             break;
         case MuonPi::MqttHandler::Status::Disconnected:
             statusUi->mqttStatusLabel->setText("MQTT: Disconnected");
