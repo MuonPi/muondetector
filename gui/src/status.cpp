@@ -320,29 +320,25 @@ void Status::onMqttStatusChanged(bool connected)
 
 void Status::onMqttStatusChanged(MuonPi::MqttHandler::Status status)
 {
+    QString status_string { "N/A" };
     switch (status) {
         case MuonPi::MqttHandler::Status::Connected:
-            statusUi->mqttStatusLabel->setText("MQTT: Connected");
+            status_string = "Connected";
             statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: lightGreen;}");
             break;
+        case MuonPi::MqttHandler::Status::Disconnecting:
         case MuonPi::MqttHandler::Status::Connecting:
-            statusUi->mqttStatusLabel->setText("MQTT: Connecting");
             statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: yellow;}");
+            status_string = "Connecting/Disconnecting";
             break;
         case MuonPi::MqttHandler::Status::Disconnected:
-            statusUi->mqttStatusLabel->setText("MQTT: Disconnected");
-            statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: window;}");break;
+            status_string = "Disconnected";
+            statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: window;}");
+            break;
         case MuonPi::MqttHandler::Status::Error:
         default:
-            statusUi->mqttStatusLabel->setText("MQTT: Error");
+            status_string = "Error";
             statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: red;}");    
     };
-/*
-    if (status == MuonPi::MqttHandler::Status::Connected) {
-        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: lightGreen;}");
-        statusUi->mqttStatusLabel->setText("MQTT: Connected");
-    } else {
-        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: red;}");
-    }
-*/
+    statusUi->mqttStatusLabel->setText("MQTT: " + status_string);
 }
