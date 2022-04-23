@@ -50,7 +50,7 @@ private slots:
     void set_status(Status status);
     void onMqttConnect();
     void onMqttDisconnect();
-    void onTimer();
+    void error_handler();
 
 private:
     [[nodiscard]] auto connected() -> bool;
@@ -77,8 +77,6 @@ private:
      * @param message A const pointer to the received message
      */
     void callback_message(const mosquitto_message* message);
-
-    QTimer m_reconnect_timer { };
 
     mosquitto* m_mqtt { nullptr };
 

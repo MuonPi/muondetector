@@ -74,7 +74,9 @@ void MqttHandler::set_status(Status status)
     }
     if (status != m_status) {
         m_status = status;        
-        onTimer();
+        if ( status == Status::Error ) {
+            error_handler();
+        }
     }
 }
 
@@ -84,9 +86,6 @@ MqttHandler::MqttHandler(const QString& station_id, const int verbosity)
     , m_verbose { verbosity }
 {
     qRegisterMetaType<Status>("Status");
-
-    m_reconnect_timer.setSingleShot(false);
-    m_reconnect_timer.setInterval(3000);
 
     if (!connect(this, &MqttHandler::connection_status, this, &MqttHandler::set_status)) {
         qDebug() << "failed connecting MqttHandler::set_status";
@@ -105,28 +104,26 @@ MqttHandler::~MqttHandler()
     cleanup();
 }
 
-void MqttHandler::onTimer()
+void MqttHandler::error_handler()
 {
-    if (m_status == Status::Error) {
-        //emit mqttDisconnect();
-        m_tries++;
-        qDebug() << "Tried: "<<m_tries;
-        if (m_tries > s_max_tries) {
-            emit giving_up();
-            exit(0);
-        }
-        qWarning() << "Could not connect to MQTT. Trying again in " + QString::number(std::chrono::duration_cast<std::chrono::seconds>(Config::MQTT::retry_period).count() * (1<<(m_tries-1))) + "s";
-        emit connection_status(Status::Invalid);
-/*
-        QTimer::singleShot(std::chrono::seconds(Config::MQTT::retry_period.count() * (1<<(m_tries-1))), [this]() {
-//            emit mqttDisconnect();
-            emit mqttConnect();
-        });
-*/
-        std::this_thread::sleep_for(std::chrono::seconds(Config::MQTT::retry_period.count() * (1<<(m_tries-1))) );
-        emit mqttDisconnect();
-        emit mqttConnect();
+    //emit mqttDisconnect();
+    m_tries++;
+    qDebug() << "Tried: "<<m_tries;
+    if (m_tries > s_max_tries) {
+        emit giving_up();
+        exit(0);
     }
+    qWarning() << "Could not connect to MQTT. Trying again in " + QString::number(std::chrono::duration_cast<std::chrono::seconds>(Config::MQTT::retry_period).count() * (1<<(m_tries-1))) + "s";
+    emit connection_status(Status::Invalid);
+/*
+    QTimer::singleShot(std::chrono::seconds(Config::MQTT::retry_period.count() * (1<<(m_tries-1))), [this]() {
+//            emit mqttDisconnect();
+        emit mqttConnect();
+    });
+*/
+    std::this_thread::sleep_for(std::chrono::seconds(Config::MQTT::retry_period.count() * (1<<(m_tries-1))) );
+    emit mqttDisconnect();
+    emit mqttConnect();
 }
 
 void MqttHandler::start(const QString& username, const QString& password){
