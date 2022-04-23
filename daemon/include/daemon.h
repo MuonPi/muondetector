@@ -118,7 +118,6 @@ public slots:
     void scanI2cBus();
     void onUBXReceivedTimeTM2(const UbxTimeMarkStruct& tm);
     void onLogParameterPolled();
-    void sendMqttStatus(bool connected);
     void sendExtendedMqttStatus(MuonPi::MqttHandler::Status status);
 
 signals:

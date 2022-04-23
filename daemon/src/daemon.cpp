@@ -1492,24 +1492,6 @@ void Daemon::sendEventTriggerSelection()
     emit sendTcpMessage(tcpMessage);
 }
 
-void Daemon::sendMqttStatus(bool connected)
-{
-    return;
-    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_MQTT_STATUS);
-    *(tcpMessage.dStream) << connected;
-    if (connected != mqttConnectionStatus) {
-        if (connected) {
-            qInfo() << "MQTT (re)connected";
-            emit GpioSetState(GPIO_PINMAP[STATUS1], 1);
-        } else {
-            qWarning() << "MQTT connection lost";
-            emit GpioSetState(GPIO_PINMAP[STATUS1], 0);
-        }
-    }
-    mqttConnectionStatus = connected;
-    emit sendTcpMessage(tcpMessage);
-}
-
 void Daemon::sendExtendedMqttStatus(MuonPi::MqttHandler::Status status)
 {
     bool bStatus { (status == MuonPi::MqttHandler::Status::Connected) };
