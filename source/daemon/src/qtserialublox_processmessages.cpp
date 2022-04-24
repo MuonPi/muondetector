@@ -21,7 +21,7 @@ enum class endian : bool {
     little
 };
 
-template <typename T, typename It, endian Endian = endian::little
+template <typename T, endian Endian = endian::little, typename It
           ,std::enable_if_t<std::is_integral<T>::value, bool> = true
           ,std::enable_if_t<is_iterator<It>::value, bool> = true
           >
@@ -29,7 +29,7 @@ template <typename T, typename It, endian Endian = endian::little
 {
     const auto& end { start + sizeof(T) };
     T value { 0 };
-    std::size_t shift { (Endian == endian::little)?0:sizeof(T)*8 };
+    std::size_t shift { (Endian == endian::little)?0:(sizeof(T)-1)*8 };
     for (auto it = start; it != end; it++) {
         value += static_cast<T>(*it) << shift;
         if (Endian == endian::little) {
@@ -608,8 +608,11 @@ void QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
 
 void QtSerialUblox::UBXCfgMSG(const std::string &msg)
 {
-
-    auto msgID { get<uint16_t>(msg.begin()) };
+    // caution: the message id is stored in the first two bytes of the data array
+    // with message class in the first and message id in the second byte.
+    // So, reading the 16-bit message with one operation, the endianness is big
+    // and not little (as the default would be using get)
+    auto msgID { get<uint16_t,endian::big>(msg.begin()) };
     auto rate { get<uint8_t>(msg.begin() + 2 + usedPort) };
 
     emit UBXreceivedMsgRateCfg(msgID, rate);
