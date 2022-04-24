@@ -752,7 +752,6 @@ std::vector<GnssSatellite> QtSerialUblox::UBXNavSVinfo(const std::string& msg, b
     }
     uint8_t goodSats = 0;
     for (int i = 0; i < N; i++) {
-
         int n = 8 + i * 12;
         uint8_t satId = msg[n + 1];
         uint8_t flags = msg[n + 2];
@@ -883,7 +882,6 @@ void QtSerialUblox::UBXCfgGNSS(const string& msg)
 
 void QtSerialUblox::onSetGnssConfig(const std::vector<GnssConfigStruct>& gnssConfigs)
 {
-
     const std::size_t N = gnssConfigs.size();
     unsigned char* data { static_cast<unsigned char*>(calloc(sizeof(unsigned char), 4 + 8 * N)) };
     data[0] = 0;
