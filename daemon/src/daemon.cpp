@@ -249,7 +249,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     if (eep_p->probeDevicePresence()) {
         calib->readFromEeprom();
         if (verbose > 2) {
-
             // Caution, only for debugging. This code snippet writes a test sequence into the eeprom
             if (1 == 0) {
                 uint8_t buf[256];
@@ -891,7 +890,6 @@ void Daemon::connectToGps()
                 [this](const QString& content){
                     mqttHandler->publish(QString::fromStdString(Config::MQTT::data_topic), content);
                 });
-
     }
     // after thread start there will be a signal emitted which starts the qtGps makeConnection function
     gpsThread->start();
