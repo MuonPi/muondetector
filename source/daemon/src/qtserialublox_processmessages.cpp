@@ -31,7 +31,7 @@ template <typename T, typename It, endian Endian = endian::little
     T value { 0 };
     std::size_t shift { (Endian == endian::little)?0:sizeof(T)*8 };
     for (auto it = start; it != end; it++) {
-        value += static_cast<T>(*start) << shift;
+        value += static_cast<T>(*it) << shift;
         if (Endian == endian::little) {
             shift += 8;
         } else {
