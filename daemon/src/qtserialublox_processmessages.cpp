@@ -96,8 +96,8 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
     uint8_t classID = msg.class_id();
     uint8_t messageID = msg.message_id();
 
-    if (handler.count(msg.msgID) > 0) {
-        const auto& [handle, name] = handler.at(msg.msgID);
+    if (handler.count(msg.full_id) > 0) {
+        const auto& [handle, name] = handler.at(msg.full_id);
         handle();
         if (verbose > 2) {
             std::stringstream tempStream{};
@@ -143,7 +143,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
             return;
         }
         if (messageID == 0x00) {
-            emit UBXReceivedAckNak(msgWaitingForAck->msgID,
+            emit UBXReceivedAckNak(msgWaitingForAck->full_id,
                 (uint16_t)(msgWaitingForAck->data[0]) << 8U
                 | msgWaitingForAck->data[1]);
         }
@@ -206,10 +206,10 @@ void QtSerialUblox::UBXTimTP(const std::string& msg)
     if (verbose > 3) {
         std::stringstream tempStream;
         tempStream << "*** UBX-TIM-TP message:" << '\n';
-        tempStream << " tow s            : " << dec << towMS / 1000. << " s" << '\n';
-        tempStream << " tow sub s        : " << dec << towSubMS << " = " << (long int)(sr * 1e9 + towSubMS + 0.5) << " ns" << '\n';
-        tempStream << " quantization err : " << dec << qErr << " ps" << '\n';
-        tempStream << " week nr          : " << dec << week << '\n';
+        tempStream << " tow s            : " << std::dec << towMS / 1000. << " s" << '\n';
+        tempStream << " tow sub s        : " << std::dec << towSubMS << " = " << (long int)(sr * 1e9 + towSubMS + 0.5) << " ns" << '\n';
+        tempStream << " quantization err : " << std::dec << qErr << " ps" << '\n';
+        tempStream << " week nr          : " << std::dec << week << '\n';
         tempStream << " *flags            : ";
         for (int i = 7; i >= 0; i--) if (flags & 1 << i) tempStream << i; else tempStream << "-";
         tempStream << '\n';
@@ -303,17 +303,17 @@ void QtSerialUblox::UBXTimTM2(const std::string& msg)
     std::stringstream tempStream;
     if (verbose > 2) {
         tempStream << "*** UBX-TimTM2 message:" << '\n';
-        tempStream << " channel         : " << dec << (int)ch << '\n';
-        tempStream << " rising edge ctr : " << dec << count << '\n';
+        tempStream << " channel         : " << std::dec << (int)ch << '\n';
+        tempStream << " rising edge ctr : " << std::dec << count << '\n';
         tempStream << " * last rising edge:" << '\n';
-        tempStream << "    week nr        : " << dec << wnR << '\n';
-        tempStream << "    tow s          : " << dec << towMsR / 1000. << " s" << '\n';
-        tempStream << "    tow sub s     : " << dec << towSubMsR << " = " << (long int)(sr*1e9 + towSubMsR) << " ns" << '\n';
+        tempStream << "    week nr        : " << std::dec << wnR << '\n';
+        tempStream << "    tow s          : " << std::dec << towMsR / 1000. << " s" << '\n';
+        tempStream << "    tow sub s     : " << std::dec << towSubMsR << " = " << (long int)(sr*1e9 + towSubMsR) << " ns" << '\n';
         tempStream << " * last falling edge:" << '\n';
-        tempStream << "    week nr        : " << dec << wnF << '\n';
-        tempStream << "    tow s          : " << dec << towMsF / 1000. << " s" << '\n';
-        tempStream << "    tow sub s      : " << dec << towSubMsF << " = " << (long int)(sf*1e9 + towSubMsF) << " ns" << '\n';
-        tempStream << " accuracy est      : " << dec << accEst << " ns" << '\n';
+        tempStream << "    week nr        : " << std::dec << wnF << '\n';
+        tempStream << "    tow s          : " << std::dec << towMsF / 1000. << " s" << '\n';
+        tempStream << "    tow sub s      : " << std::dec << towSubMsF << " = " << (long int)(sf*1e9 + towSubMsF) << " ns" << '\n';
+        tempStream << " accuracy est      : " << std::dec << accEst << " ns" << '\n';
         tempStream << " flags             : ";
         for (int i = 7; i >= 0; i--) if (flags & 1 << i) tempStream << i; else tempStream << "-";
         tempStream << '\n';
@@ -736,7 +736,7 @@ void QtSerialUblox::setDynamicModel(uint8_t model)
     buf[1]=0x00;
     buf[2]=model; // dyn Model
     std::string str(buf,36);
-    enqueueMsg(UBX_CFG_NAV5, str);
+    enqueueMsg(UBX_MSG::CFG_NAV5, str);
 }
 
 void QtSerialUblox::UBXNavStatus(const std::string &msg)
