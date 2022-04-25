@@ -33,7 +33,10 @@
     <number>8</number>
    </property>
    <item row="0" column="0">
-    <widget class="QQuickWidget" name="quickWidget">
+    <widget class="QQuickWidget" name="mapWidget">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
        <horstretch>0</horstretch>

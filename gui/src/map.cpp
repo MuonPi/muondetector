@@ -4,7 +4,8 @@
 #include <QQuickItem>
 #include <QSsl>
 #include <map.h>
-#include <muondetector_structs.h>
+#include <cmath>
+
 #include <ui_map.h>
 
 Map::Map(QWidget* parent)
@@ -13,13 +14,13 @@ Map::Map(QWidget* parent)
 {
     QVariantMap parameters;
     mapUi->setupUi(this);
-    mapUi->quickWidget->setResizeMode(QQuickWidget::SizeRootObjectToView);
+    mapUi->mapWidget->setResizeMode(QQuickWidget::SizeRootObjectToView);
 
     QQmlEngine* engine = new QQmlEngine(this);
     QQmlComponent* component = new QQmlComponent(engine, "qrc:/qml/CustomMap.qml");
     mapComponent = component->create();
-    mapUi->quickWidget->setContent(component->url(), component, mapComponent);
-    mapUi->quickWidget->show();
+    mapUi->mapWidget->setContent(component->url(), component, mapComponent);
+    mapUi->mapWidget->show();
 }
 
 Map::~Map()
@@ -33,8 +34,19 @@ void Map::onGeodeticPosReceived(GeodeticPos pos)
     if (mapComponent == nullptr) {
         return;
     }
+    double pos_accuracy { std::sqrt(pos.hAcc*pos.hAcc + pos.vAcc*pos.vAcc) };
     QMetaObject::invokeMethod(mapComponent, "setCircle",
         Q_ARG(QVariant, ((double)pos.lon) * 1e-7),
         Q_ARG(QVariant, ((double)pos.lat) * 1e-7),
-        Q_ARG(QVariant, ((double)pos.hAcc) / 1000));
+        Q_ARG(QVariant, pos_accuracy * 1e-3));
+}
+
+void Map::onUiEnabledStateChange(bool connected)
+{
+    if (mapComponent == nullptr) {
+        return;
+    }
+    QMetaObject::invokeMethod(mapComponent, "setEnabled",
+        Q_ARG(QVariant, connected));
+    mapUi->mapWidget->setEnabled(connected);
 }

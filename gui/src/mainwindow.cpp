@@ -151,8 +151,9 @@ MainWindow::MainWindow(QWidget* parent)
     ui->tabWidget->addTab(settings, "Ublox Settings");
 
     Map* map = new Map(this);
-    ui->tabWidget->addTab(map, "Map");
+    connect(this, &MainWindow::setUiEnabledStates, map, &Map::onUiEnabledStateChange);
     connect(this, &MainWindow::geodeticPos, map, &Map::onGeodeticPosReceived);
+    ui->tabWidget->addTab(map, "Map");
 
     I2cForm* i2cTab = new I2cForm(this);
     connect(this, &MainWindow::setUiEnabledStates, i2cTab, &I2cForm::onUiEnabledStateChange);

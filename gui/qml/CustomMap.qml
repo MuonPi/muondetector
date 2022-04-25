@@ -16,6 +16,10 @@ CustomMapForm {
     {
         map.onCoordsReceived(lon,lat,hAcc)
     }
+    function setEnabled(enabled)
+    {
+        map.onEnable(enabled)
+    }
     MapComponent{
         id: map
         property double lastLon: 8.673828
@@ -29,20 +33,32 @@ CustomMapForm {
         {
             lastLon = lon
             lastLat = lat
-            circle.center.longitude = lon
-            circle.center.latitude = lat
+            circle.center = QtPositioning.coordinate(lat,lon)
+            marker.center = circle.center
+            marker.radius=1*(1<<map.maximumZoomLevel)/(1<<map.zoomLevel)
             circle.radius = hAcc
-            if (hAcc<1) {
-                circle.radius=1
-            }
             if (control.checked){
-                map.center = QtPositioning.coordinate(lat,lon)
+                map.center = circle.center
             }
+            var lon_str = "lon: %1"
+            var lat_str = "lat: %1"
+            var hacc_str = "acc: %1 m"
+            lonLabel.text=lon_str.arg(lon)
+            latLabel.text=lat_str.arg(lat)
+            horAccLabel.text=hacc_str.arg(hAcc)
         }
         function jumpToLocation(){
             map.center = QtPositioning.coordinate(lastLat,lastLon)
         }
-
+        function onEnable(enabled) {
+            if (enabled === false) {
+                circle.radius = 0
+                marker.radius = 0
+                lonLabel.text="lon: N/A"
+                latLabel.text="lat: N/A"
+                horAccLabel.text="acc: N/A"
+            }
+        }
         MapCircle {
             id: circle
             center: parent.center
@@ -51,34 +67,70 @@ CustomMapForm {
             border.color: "blue"
             color: Qt.rgba(0.0, 0.0, 0.5, 0.25)
         }
-        ToolBar{
-            id: buttonBar
+        MapCircle {
+            id: marker
+            center: parent.center
+            radius: 0.0
+            border.width: 1
+            border.color: "black"
+            color: Qt.rgba(1.0, 0.0, 0.5, 0.8)
+        }
+        ColumnLayout{
             anchors.top: parent.top
-            height: 30
-            RowLayout{
-                Rectangle{
-                    height: 30
-                    width: 60
-                    Layout.alignment: Qt.AlignTop
-                    color: "white"
-                    ToolButton{
-                        id: centerButton
-                        anchors.fill: parent
-                        text: "center"
-                        onClicked: map.jumpToLocation()
+            ToolBar{
+                id: buttonBar
+                //anchors.top: parent.top
+                height: 30
+                Layout.row: 0
+                RowLayout{
+                    Rectangle{
+                        Layout.column: 0
+                        height: 30
+                        width: 60
+                        Layout.alignment: Qt.AlignTop
+                        color: "white"
+                        ToolButton{
+                            id: centerButton
+                            anchors.fill: parent
+                            text: "center"
+                            onClicked: map.jumpToLocation()
+                        }
+                    }
+                    Rectangle{
+                        Layout.column: 1
+                        width: 90
+                        Layout.alignment: Qt.AlignTop
+                        height: 30
+                        color:"white"
+                        CheckBox{
+                            id: control
+                            anchors.fill: parent
+                            text: "follow"
+                            checked: true
+                        }
                     }
                 }
-                Rectangle{
-                    Layout.column: 1
-                    width: 90
-                    Layout.alignment: Qt.AlignTop
-                    height: 30
-                    color:"white"
-                    CheckBox{
-                        id: control
-                        anchors.fill: parent
-                        text: "follow"
-                        checked: true
+            }
+            Frame{
+                Layout.row: 1
+                width: 200
+                Layout.alignment: Qt.AlignTop
+                height: 50
+                ColumnLayout{
+                    Label {
+                        Layout.row: 0
+                        id: lonLabel
+                        text: "lon"
+                    }
+                    Label {
+                        Layout.row: 1
+                        id: latLabel
+                        text: "lat"
+                    }
+                    Label {
+                        Layout.row: 2
+                        id: horAccLabel
+                        text: "acc"
                     }
                 }
             }
