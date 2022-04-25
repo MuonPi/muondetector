@@ -57,9 +57,6 @@ void Settings::onItemChanged(QTableWidgetItem* item)
 void Settings::addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates)
 {
     if (ubxMsgRates.isEmpty()) return;
-    for ( auto item = ubxMsgRates.begin(); item != ubxMsgRates.end(); ++item ) {
-        qDebug()<<"msg"<<item.key()<<":"<<item.value();
-    }
     ui->ubloxSignalStates->clearContents();
     ui->ubloxSignalStates->setRowCount(0);
     ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(true);
