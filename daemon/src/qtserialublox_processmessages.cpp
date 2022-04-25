@@ -729,14 +729,14 @@ void QtSerialUblox::UBXCfgNav5(const std::string &msg)
     }
 }
 
-void QtSerialUblox::setDynamicModel(uint8_t model)
+void QtSerialUblox::setDynamicModel(UbxDynamicModel model)
 {
-    char buf[36];
+    unsigned char* buf { static_cast<unsigned char*>(calloc(sizeof(unsigned char), 36)) };
     buf[0]=0x01;
     buf[1]=0x00;
-    buf[2]=model; // dyn Model
-    std::string str(buf,36);
-    enqueueMsg(UBX_MSG::CFG_NAV5, str);
+    buf[2]=static_cast<std::uint8_t>(model); // dyn Model
+    enqueueMsg(UBX_MSG::CFG_NAV5, toStdString(buf, 36));
+    free(buf);
 }
 
 void QtSerialUblox::UBXNavStatus(const std::string &msg)

@@ -30,6 +30,19 @@ struct gpsTimestamp {
     int counter;
 };
 
+enum UbxDynamicModel {
+    portable = 0,
+    stationary = 2,
+    pedestrian = 3,
+    automotive = 4,
+    sea = 5,
+    airborne_1g = 6,
+    airborne_2g = 7,
+    airborne_4g = 8,
+    wrist = 9,
+    bike = 10
+};
+
 template <typename T>
 class gpsProperty {
 public:

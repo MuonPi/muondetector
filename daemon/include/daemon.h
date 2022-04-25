@@ -134,7 +134,7 @@ signals:
     void UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate);
     void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
     void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
-    void UBXSetDynModel(uint8_t model);
+    void UBXSetDynModel(UbxDynamicModel model);
     void resetUbxDevice(uint32_t flags);
     void setGnssConfig(const std::vector<GnssConfigStruct>& gnssConfigs);
     void UBXSetMinMaxSVs(uint8_t minSVs, uint8_t maxSVs);

@@ -96,7 +96,7 @@ public slots:
     void ackTimeout();
     // outPortMask is something like 1 for only UBX protocol or 0b11 for UBX and NMEA
 
-    void setDynamicModel(uint8_t model);
+    void setDynamicModel(UbxDynamicModel model);
     static const std::string& getProtVersionString() { return fProtVersionString; }
     static double getProtVersion();
 

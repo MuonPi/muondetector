@@ -228,19 +228,6 @@ struct GnssMonHw2Struct {
     quint8 cfgSrc = 0;
 };
 
-enum UbxDynamicModel {
-    portable = 0,
-    stationary = 2,
-    pedestrian = 3,
-    automotive = 4,
-    sea = 5,
-    airborne_1g = 6,
-    airborne_2g = 7,
-    airborne_4g = 8,
-    wrist = 9,
-    bike = 10
-};
-
 enum I2C_DEVICE_MODE { I2C_MODE_NONE = 0,
     I2C_MODE_NORMAL = 0x01,
     I2C_MODE_FORCE = 0x02,
