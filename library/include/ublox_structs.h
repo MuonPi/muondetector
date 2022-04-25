@@ -13,10 +13,15 @@ class GnssSatellite;
 struct UbxMessage {
 public:
     UbxMessage() = default;
+    explicit UbxMessage(std::uint16_t msg_id)
+    : full_id(msg_id)
+    {}
     std::uint16_t full_id { 0 };
     std::string data {};
     [[nodiscard]] auto class_id() const -> std::uint8_t { return (full_id >> 8) & 0xff; }
     [[nodiscard]] auto message_id() const -> std::uint8_t { return full_id & 0xff; }
+private:
+    //std::uint16_t m_full_id { 0 };
 };
 
 struct gpsTimestamp {

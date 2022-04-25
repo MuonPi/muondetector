@@ -8,6 +8,7 @@
 #include <QTimer>
 #include <queue>
 #include <string>
+#include <memory>
 #include <ublox_structs.h>
 
 struct GeodeticPos;
@@ -158,7 +159,7 @@ private:
     bool showout = false; // if true show the ubx messages sent to the gps board as hex
     bool showin = false;
     std::queue<UbxMessage> outMsgBuffer;
-    UbxMessage* msgWaitingForAck = nullptr;
+    std::unique_ptr<UbxMessage> msgWaitingForAck { nullptr };
     QPointer<QTimer> ackTimer;
     int sendRetryCounter = 0;
 

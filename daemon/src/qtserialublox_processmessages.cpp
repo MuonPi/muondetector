@@ -44,9 +44,12 @@ template <typename T, endian Endian = endian::little, typename It
 }
 
 
-const uint8_t usedPort = 1; // this is the uart port. (0 = i2c; 1 = uart; 2 = usb; 3 = isp;)
-    // see u-blox8-M8_Receiver... pdf documentation site 170
-// all about processing different ubx-messages:
+constexpr std::size_t nr_targets { 6 };
+constexpr std::size_t default_target { 1 }; 
+// this is the uart port. (0 = i2c; 1 = uart; 2 = usb; 3 = isp;)
+// see u-blox8-M8_Receiver... pdf documentation p. 170
+
+
 void QtSerialUblox::processMessage(const UbxMessage& msg)
 {
     static const std::map<std::uint8_t, const char*> ubx_class_names {
@@ -110,7 +113,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
             emit toConsole("received UBX-ACK message but data is corrupted\n");
             return;
         }
-        if (msgWaitingForAck == nullptr) {
+        if (!msgWaitingForAck) {
             if (verbose > 1) {
                 std::stringstream tempStream{};
                 tempStream << "received ACK message but no message is waiting for Ack (msgID: 0x";
@@ -120,7 +123,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
             }
             return;
         }
-        if (verbose > 2) {
+        if (verbose > 3) {
             std::stringstream tempStream{};
             if (messageID==1) {
                 tempStream << "received UBX-ACK-ACK message about msgID: 0x";
@@ -133,7 +136,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
         }
         auto ackedMsgID = (uint16_t)(msg.data[0]) << 8U | msg.data[1];
         if (ackedMsgID != msgWaitingForAck->full_id) {
-            if (verbose > 1) {
+            if (verbose > 2) {
                 std::stringstream tempStream{};
                 tempStream << "received unexpected UBX-ACK message about msgID: 0x";
                 tempStream << std::setfill('0') << std::setw(2) << std::hex << (int)msg.data[0] << " 0x"
@@ -142,20 +145,19 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
             }
             return;
         }
-        if (messageID == 0x00) {
+        if (messageID == 0x00 && msgWaitingForAck) {
             emit UBXReceivedAckNak(msgWaitingForAck->full_id,
                 (uint16_t)(msgWaitingForAck->data[0]) << 8U
                 | msgWaitingForAck->data[1]);
         }
         ackTimer->stop();
-        delete msgWaitingForAck;
-        msgWaitingForAck = nullptr;
-        if (verbose > 2) {
+        msgWaitingForAck.reset( nullptr );
+        if (verbose > 3) {
             emit toConsole("processMessage: deleted message after ACK/NACK\n");
         }
         sendQueuedMsg();
     } else if (classID == 0x06) {
-        if (verbose > 2) {
+        if (verbose > 3) {
             std::stringstream tempStream{};
             tempStream << "received unhandled UBX-CFG message:";
             for (std::string::size_type i = 0; i < msg.data.size(); i++) {
@@ -165,7 +167,7 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
             emit toConsole(QString::fromStdString(tempStream.str()));
         }
     } else {
-        if (verbose > 2) {
+        if (verbose > 3) {
             std::stringstream tempStream{};
             if (ubx_class_names.count(classID) > 0) {
                 tempStream << "received unhandled " << ubx_class_names.at(classID) << " message"
@@ -615,7 +617,7 @@ void QtSerialUblox::UBXCfgMSG(const std::string &msg)
     // So, reading the 16-bit message with one operation, the endianness is big
     // and not little (as the default would be using get)
     auto msgID { get<uint16_t,endian::big>(msg.begin()) };
-    auto rate { get<uint8_t>(msg.begin() + 2 + usedPort) };
+    auto rate { get<uint8_t>(msg.begin() + 2 + default_target) };
 
     emit UBXreceivedMsgRateCfg(msgID, rate);
 }
@@ -1022,21 +1024,14 @@ void QtSerialUblox::UBXMonHW2(const std::string& msg)
 {
     // parse all fields
     // I/Q offset and magnitude information of front-end
-    int8_t ofsI = (int8_t)msg[0];
-    uint8_t magI = msg[1];
-    int8_t ofsQ = (int8_t)msg[2];
-    uint8_t magQ = msg[3];
-
-    uint8_t cfgSrc = msg[4];
-    uint32_t lowLevCfg = msg[8];
-    lowLevCfg |= msg[9] << 8;
-    lowLevCfg |= msg[10] << 16;
-    lowLevCfg |= msg[11] << 24;
-
-    uint32_t postStatus = msg[20];
-    postStatus |= msg[21] << 8;
-    postStatus |= msg[22] << 16;
-    postStatus |= msg[23] << 24;
+    auto ofsI { get<int8_t>(msg.begin()) };
+    auto magI { get<uint8_t>(msg.begin() + 1) };
+    auto ofsQ { get<int8_t>(msg.begin() + 2) };
+    auto magQ { get<uint8_t>(msg.begin() + 3) };
+    
+    auto cfgSrc { get<uint8_t>(msg.begin() + 4) };
+    auto lowLevCfg { get<uint32_t>(msg.begin() + 8) };
+    auto postStatus { get<uint32_t>(msg.begin() + 20) };
 
     if (verbose > 3) {
         std::stringstream tempStream;
@@ -1066,7 +1061,7 @@ void QtSerialUblox::UBXMonVer(const std::string& msg)
         hwString += (char)msg[i];
     }
 
-    if (verbose > 2) {
+    if (verbose > 3) {
         std::stringstream tempStream;
         tempStream << "*** UBX-MON-VER message:" << '\n';
         tempStream << " sw version  : " << swString << '\n';
@@ -1091,13 +1086,13 @@ void QtSerialUblox::UBXMonVer(const std::string& msg)
                 while (str.size() && (str[str.size() - 1] == ' ' || !std::isgraph(static_cast<unsigned char>(str[str.size() - 1]))))
                     str.erase(str.size() - 1, 1);
                 fProtVersionString = str;
-                if (verbose > 3)
+                if (verbose > 4)
                     emit toConsole("caught PROTVER string: '" + QString::fromStdString(fProtVersionString) + "'\n");
                 float nr = QtSerialUblox::getProtVersion();
-                if (verbose > 3)
+                if (verbose > 4)
                     emit toConsole("ver: " + QString::number(nr) + "\n");
             }
-            if (verbose > 2) {
+            if (verbose > 3) {
                 emit toConsole(QString::fromStdString(s) + "\n");
             }
         }
@@ -1110,21 +1105,18 @@ void QtSerialUblox::UBXMonTx(const std::string& msg)
 {
     // parse all fields
     // nr bytes pending
-    uint16_t pending[6];
-    uint8_t usage[6];
-    uint8_t peakUsage[6];
-    uint8_t tUsage;
-    uint8_t tPeakUsage;
+    uint16_t pending[nr_targets];
+    uint8_t usage[nr_targets];
+    uint8_t peakUsage[nr_targets];
 
-    for (int i = 0; i < 6; i++) {
-        pending[i] = msg[2 * i];
-        pending[i] |= (uint16_t)msg[2 * i + 1] << 8;
-        usage[i] = msg[i + 12];
-        peakUsage[i] = msg[i + 18];
+    for (std::size_t target = 0; target < nr_targets; target++) {
+        pending[target] = get<uint16_t>(msg.begin() + 2*target);
+        usage[target] = get<uint8_t>(msg.begin() + target + 12);
+        peakUsage[target] = get<uint8_t>(msg.begin() + target + 18);
     }
 
-    tUsage = msg[24];
-    tPeakUsage = msg[25];
+    auto tUsage = get<uint8_t>(msg.begin() + 24);
+    auto tPeakUsage = get<uint8_t>(msg.begin() + 25);
 
     // meaning of columns:
     // 01 21 - signature of NAV-TIMEUTC message
@@ -1141,17 +1133,17 @@ void QtSerialUblox::UBXMonTx(const std::string& msg)
         tempStream << " global TX buf usage      : " << (int)tUsage << " %" << '\n';
         tempStream << " global TX buf peak usage : " << (int)tPeakUsage << " %" << '\n';
         tempStream << " TX buf usage for target      : ";
-        for (int i = 0; i < 6; i++) {
+        for (std::size_t i = 0; i < nr_targets; i++) {
             tempStream << "    (" << i << ") " << std::setw(3) << (int)usage[i];
         }
         tempStream << '\n';
         tempStream << " TX buf peak usage for target : ";
-        for (int i = 0; i < 6; i++) {
+        for (std::size_t i = 0; i < nr_targets; i++) {
             tempStream << "    (" << i << ") " << std::setw(3) << (int)peakUsage[i];
         }
         tempStream << '\n';
         tempStream << " TX bytes pending for target  : ";
-        for (int i = 0; i < 6; i++) {
+        for (std::size_t i = 0; i < nr_targets; i++) {
             tempStream << "    (" << i << ") " << std::setw(3) << pending[i];
         }
         tempStream << "\n";
@@ -1163,19 +1155,18 @@ void QtSerialUblox::UBXMonRx(const std::string& msg)
 {
     // parse all fields
     // nr bytes pending
-    uint16_t pending[6];
-    uint8_t usage[6];
-    uint8_t peakUsage[6];
-    uint8_t tUsage = 0;
-    uint8_t tPeakUsage = 0;
+    uint16_t pending[nr_targets];
+    uint8_t usage[nr_targets];
+    uint8_t peakUsage[nr_targets];
+    uint8_t tUsage { 0 };
+    uint8_t tPeakUsage { 0 };
 
-    for (int i = 0; i < 6; i++) {
-        pending[i] = msg[2 * i];
-        pending[i] |= (uint16_t)msg[2 * i + 1] << 8;
-        usage[i] = msg[i + 12];
-        peakUsage[i] = msg[i + 18];
-        tUsage += usage[i];
-        tPeakUsage += peakUsage[i];
+    for (std::size_t target = 0; target < nr_targets; target++) {
+        pending[target] = get<uint16_t>(msg.begin() + 2*target);
+        usage[target] = get<uint8_t>(msg.begin() + target + 12);
+        peakUsage[target] = get<uint8_t>(msg.begin() + target + 18);
+        tUsage += usage[target];
+        tPeakUsage += peakUsage[target];
     }
 
     emit UBXReceivedRxBuf(tUsage, tPeakUsage);
@@ -1187,17 +1178,17 @@ void QtSerialUblox::UBXMonRx(const std::string& msg)
         tempStream << " global RX buf usage      : " << (int)tUsage << " %" << '\n';
         tempStream << " global RX buf peak usage : " << (int)tPeakUsage << " %" << '\n';
         tempStream << " RX buf usage for target      : ";
-        for (int i = 0; i < 6; i++) {
+        for (std::size_t i = 0; i < nr_targets; i++) {
             tempStream << "    (" << i << ") " << std::setw(3) << (int)usage[i];
         }
         tempStream << '\n';
         tempStream << " RX buf peak usage for target : ";
-        for (int i = 0; i < 6; i++) {
+        for (std::size_t i = 0; i < nr_targets; i++) {
             tempStream << "    (" << i << ") " << std::setw(3) << (int)peakUsage[i];
         }
         tempStream << '\n';
         tempStream << " RX bytes pending for target  : ";
-        for (int i = 0; i < 6; i++) {
+        for (std::size_t i = 0; i < nr_targets; i++) {
             tempStream << "    (" << i << ") " << std::setw(3) << pending[i];
         }
         tempStream << "\n";
@@ -1208,18 +1199,16 @@ void QtSerialUblox::UBXMonRx(const std::string& msg)
 void QtSerialUblox::UBXCfgNavX5(const std::string& msg)
 {
     // parse all fields
-    uint8_t version = msg[0];
-    uint16_t mask1 = msg[1];
-    mask1 |= msg[2] << 8;
-    uint8_t minSVs = msg[10];
-    uint8_t maxSVs = msg[11];
-    uint8_t minCNO = msg[12];
-    uint8_t iniFix3D = msg[14];
-    uint16_t wknRollover = msg[18];
-    wknRollover |= msg[19] << 8;
-    uint8_t aopCfg = msg[27];
-    uint16_t aopOrbMaxErr = msg[30];
-    aopOrbMaxErr |= msg[31] << 8;
+    auto version { get<uint8_t>(msg.begin()) };
+    auto mask1 { get<uint16_t>(msg.begin() + 1) };
+    auto minSVs { get<uint8_t>(msg.begin() + 10) };
+    auto maxSVs { get<uint8_t>(msg.begin() + 11) };
+    auto minCNO { get<uint8_t>(msg.begin() + 12) };
+    auto iniFix3D { get<uint8_t>(msg.begin() + 14) };
+    auto wknRollover { get<uint16_t>(msg.begin() + 18) };
+    auto aopCfg { get<uint8_t>(msg.begin() + 27) };
+    auto aopOrbMaxErr { get<uint16_t>(msg.begin() + 30) };
+
     if (verbose > 2) {
         std::stringstream tempStream;
         tempStream << "*** UBX-MON-NAVX5 message:" << '\n';
@@ -1238,10 +1227,9 @@ void QtSerialUblox::UBXCfgNavX5(const std::string& msg)
 void QtSerialUblox::UBXCfgAnt(const std::string& msg)
 {
     // parse all fields
-    uint16_t flags = msg[0];
-    flags |= msg[1] << 8;
-    uint16_t pins = msg[2];
-    pins |= msg[3] << 8;
+    auto flags { get<uint16_t>(msg.begin()) };
+    auto pins { get<uint16_t>(msg.begin() + 2) };
+
     if (verbose > 2) {
         std::stringstream tempStream;
         tempStream << "*** UBX-CFG-ANT message:" << '\n';
@@ -1263,47 +1251,28 @@ void QtSerialUblox::UBXCfgTP5(const std::string& msg)
 {
     UbxTimePulseStruct tp;
     // parse all fields
-    tp.tpIndex = msg[0];
-    tp.version = msg[1];
-    tp.antCableDelay = msg[4];
-    tp.antCableDelay |= msg[5] << 8;
-    tp.rfGroupDelay = msg[6];
-    tp.rfGroupDelay |= msg[7] << 8;
-    tp.freqPeriod = msg[8];
-    tp.freqPeriod |= msg[9] << 8;
-    tp.freqPeriod |= msg[10] << 16;
-    tp.freqPeriod |= msg[11] << 24;
-    tp.freqPeriodLock = msg[12];
-    tp.freqPeriodLock |= msg[13] << 8;
-    tp.freqPeriodLock |= msg[14] << 16;
-    tp.freqPeriodLock |= msg[15] << 24;
-    tp.pulseLenRatio = msg[16];
-    tp.pulseLenRatio |= msg[17] << 8;
-    tp.pulseLenRatio |= msg[18] << 16;
-    tp.pulseLenRatio |= msg[19] << 24;
-    tp.pulseLenRatioLock = msg[20];
-    tp.pulseLenRatioLock |= msg[21] << 8;
-    tp.pulseLenRatioLock |= msg[22] << 16;
-    tp.pulseLenRatioLock |= msg[23] << 24;
-    tp.userConfigDelay = msg[24];
-    tp.userConfigDelay |= msg[25] << 8;
-    tp.userConfigDelay |= msg[26] << 16;
-    tp.userConfigDelay |= msg[27] << 24;
-    tp.flags = msg[28];
-    tp.flags |= msg[29] << 8;
-    tp.flags |= msg[30] << 16;
-    tp.flags |= msg[31] << 24;
+    tp.tpIndex = get<uint8_t>(msg.begin());
+    tp.version = get<uint8_t>(msg.begin() + 1);
+    tp.antCableDelay = get<int16_t>(msg.begin() + 4);
+    tp.rfGroupDelay = get<int16_t>(msg.begin() + 6);
+    tp.freqPeriod = get<uint32_t>(msg.begin() + 8);
+    tp.freqPeriodLock = get<uint32_t>(msg.begin() + 12);
+    tp.pulseLenRatio = get<uint32_t>(msg.begin() + 16);
+    tp.pulseLenRatioLock = get<uint32_t>(msg.begin() + 20);
+    tp.userConfigDelay = get<int32_t>(msg.begin() + 24);
+    tp.flags = get<uint32_t>(msg.begin() + 28);
+
     bool isFreq = tp.flags & 0x08;
     bool isLength = tp.flags & 0x10;
 
     if (verbose > 2) {
         std::stringstream tempStream;
         tempStream << "*** UBX-CFG-TP5 message:" << '\n';
-        tempStream << " message version           : " << (int)tp.version << '\n';
-        tempStream << " time pulse index          : " << (int)tp.tpIndex << '\n';
-        tempStream << " ant cable delay           : " << (int)tp.antCableDelay << " ns" << '\n';
-        tempStream << " rf group delay            : " << (int)tp.rfGroupDelay << " ns" << '\n';
-        tempStream << " user config delay         : " << (int)tp.userConfigDelay << " ns" << '\n';
+        tempStream << " message version           : " << std::dec << (int)tp.version << '\n';
+        tempStream << " time pulse index          : " << std::dec << (int)tp.tpIndex << '\n';
+        tempStream << " ant cable delay           : " << std::dec << (int)tp.antCableDelay << " ns" << '\n';
+        tempStream << " rf group delay            : " << std::dec << (int)tp.rfGroupDelay << " ns" << '\n';
+        tempStream << " user config delay         : " << std::dec << (int)tp.userConfigDelay << " ns" << '\n';
         if (isFreq) {
         tempStream << " pulse frequency           : " << std::dec << (int)tp.freqPeriod << " Hz" << '\n';
         tempStream << " locked pulse frequency    : " << std::dec << (int)tp.freqPeriodLock << " Hz" << '\n';
@@ -1353,40 +1322,40 @@ void QtSerialUblox::UBXCfgTP5(const std::string& msg)
 
 void QtSerialUblox::UBXSetCfgTP5(const UbxTimePulseStruct& tp)
 {
-    unsigned char msg[32];
+    unsigned char* buf { static_cast<unsigned char*>(calloc(sizeof(unsigned char), 32)) };
+    buf[0] = tp.tpIndex;
+    buf[1] = 0;
+    buf[4] = tp.antCableDelay & 0xff;
+    buf[5] = (tp.antCableDelay >> 8) & 0xff;
+    buf[6] = tp.rfGroupDelay & 0xff;
+    buf[7] = (tp.rfGroupDelay >> 8) & 0xff;
+    buf[8] = tp.freqPeriod & 0xff;
+    buf[9] = (tp.freqPeriod >> 8) & 0xff;
+    buf[10] = (tp.freqPeriod >> 16) & 0xff;
+    buf[11] = (tp.freqPeriod >> 24) & 0xff;
+    buf[12] = tp.freqPeriodLock & 0xff;
+    buf[13] = (tp.freqPeriodLock >> 8) & 0xff;
+    buf[14] = (tp.freqPeriodLock >> 16) & 0xff;
+    buf[15] = (tp.freqPeriodLock >> 24) & 0xff;
+    buf[16] = tp.pulseLenRatio & 0xff;
+    buf[17] = (tp.pulseLenRatio >> 8) & 0xff;
+    buf[18] = (tp.pulseLenRatio >> 16) & 0xff;
+    buf[19] = (tp.pulseLenRatio >> 24) & 0xff;
+    buf[20] = tp.pulseLenRatioLock & 0xff;
+    buf[21] = (tp.pulseLenRatioLock >> 8) & 0xff;
+    buf[22] = (tp.pulseLenRatioLock >> 16) & 0xff;
+    buf[23] = (tp.pulseLenRatioLock >> 24) & 0xff;
+    buf[24] = tp.userConfigDelay & 0xff;
+    buf[25] = (tp.userConfigDelay >> 8) & 0xff;
+    buf[26] = (tp.userConfigDelay >> 16) & 0xff;
+    buf[27] = (tp.userConfigDelay >> 24) & 0xff;
+    buf[28] = tp.flags & 0xff;
+    buf[29] = (tp.flags >> 8) & 0xff;
+    buf[30] = (tp.flags >> 16) & 0xff;
+    buf[31] = (tp.flags >> 24) & 0xff;
 
-    msg[0] = tp.tpIndex;
-    msg[1] = 0;
-    msg[4] = tp.antCableDelay & 0xff;
-    msg[5] = (tp.antCableDelay >> 8) & 0xff;
-    msg[6] = tp.rfGroupDelay & 0xff;
-    msg[7] = (tp.rfGroupDelay >> 8) & 0xff;
-    msg[8] = tp.freqPeriod & 0xff;
-    msg[9] = (tp.freqPeriod >> 8) & 0xff;
-    msg[10] = (tp.freqPeriod >> 16) & 0xff;
-    msg[11] = (tp.freqPeriod >> 24) & 0xff;
-    msg[12] = tp.freqPeriodLock & 0xff;
-    msg[13] = (tp.freqPeriodLock >> 8) & 0xff;
-    msg[14] = (tp.freqPeriodLock >> 16) & 0xff;
-    msg[15] = (tp.freqPeriodLock >> 24) & 0xff;
-    msg[16] = tp.pulseLenRatio & 0xff;
-    msg[17] = (tp.pulseLenRatio >> 8) & 0xff;
-    msg[18] = (tp.pulseLenRatio >> 16) & 0xff;
-    msg[19] = (tp.pulseLenRatio >> 24) & 0xff;
-    msg[20] = tp.pulseLenRatioLock & 0xff;
-    msg[21] = (tp.pulseLenRatioLock >> 8) & 0xff;
-    msg[22] = (tp.pulseLenRatioLock >> 16) & 0xff;
-    msg[23] = (tp.pulseLenRatioLock >> 24) & 0xff;
-    msg[24] = tp.userConfigDelay & 0xff;
-    msg[25] = (tp.userConfigDelay >> 8) & 0xff;
-    msg[26] = (tp.userConfigDelay >> 16) & 0xff;
-    msg[27] = (tp.userConfigDelay >> 24) & 0xff;
-    msg[28] = tp.flags & 0xff;
-    msg[29] = (tp.flags >> 8) & 0xff;
-    msg[30] = (tp.flags >> 16) & 0xff;
-    msg[31] = (tp.flags >> 24) & 0xff;
-
-    enqueueMsg(UBX_MSG::CFG_TP5, toStdString(msg, 32));
+    enqueueMsg(UBX_MSG::CFG_TP5, toStdString(buf, 32));
+    free(buf);
 }
 
 void QtSerialUblox::UBXNavDOP(const std::string &msg)
@@ -1395,32 +1364,21 @@ void QtSerialUblox::UBXNavDOP(const std::string &msg)
     UbxDopStruct d;
 
     // parse all fields
-    uint32_t iTOW = (int)msg[0];
-    iTOW += ((int)msg[1]) << 8;
-    iTOW += ((int)msg[2]) << 16;
-    iTOW += ((int)msg[3]) << 24;
-
+    auto iTOW { get<uint32_t>(msg.begin()) };
     // geometric DOP
-    d.gDOP = msg[4];
-    d.gDOP |= msg[5] << 8;
+    d.gDOP = get<uint16_t>(msg.begin() + 4);
     // position DOP
-    d.pDOP = msg[6];
-    d.pDOP |= msg[7] << 8;
+    d.pDOP = get<uint16_t>(msg.begin() + 6);
     // time DOP
-    d.tDOP = msg[8];
-    d.tDOP |= msg[9] << 8;
+    d.tDOP = get<uint16_t>(msg.begin() + 8);
     // vertical DOP
-    d.vDOP = msg[10];
-    d.vDOP |= msg[11] << 8;
+    d.vDOP = get<uint16_t>(msg.begin() + 10);
     // horizontal DOP
-    d.hDOP = msg[12];
-    d.hDOP |= msg[13] << 8;
+    d.hDOP = get<uint16_t>(msg.begin() + 12);
     // northing DOP
-    d.nDOP = msg[14];
-    d.nDOP |= msg[15] << 8;
+    d.nDOP = get<uint16_t>(msg.begin() + 14);
     // easting DOP
-    d.eDOP = msg[16];
-    d.eDOP |= msg[17] << 8;
+    d.eDOP = get<uint16_t>(msg.begin() + 16);
 
     emit UBXReceivedDops(d);
 

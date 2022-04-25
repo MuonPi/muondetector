@@ -71,10 +71,11 @@ void QtSerialUblox::makeConnection()
         return;
     }
     ackTimer = new QTimer();
+    ackTimer->setSingleShot(true);
     connect(ackTimer, &QTimer::timeout, this, &QtSerialUblox::ackTimeout);
     connect(serialPort, &QSerialPort::readyRead, this, &QtSerialUblox::onReadyRead);
     serialPort->clear(QSerialPort::AllDirections);
-    if (verbose > 1) {
+    if (verbose > 2) {
         emit toConsole("rising               falling               accEst valid timebase utc\n");
     }
 }
@@ -82,22 +83,21 @@ void QtSerialUblox::makeConnection()
 void QtSerialUblox::sendQueuedMsg(bool afterTimeout)
 {
     if (afterTimeout) {
-        if (msgWaitingForAck == nullptr) {
+        if (!msgWaitingForAck) {
             return;
         }
         if (++sendRetryCounter >= MAX_SEND_RETRIES) {
             sendRetryCounter = 0;
             ackTimer->stop();
-            delete msgWaitingForAck;
-            msgWaitingForAck = nullptr;
-            if (verbose > 1)
+            msgWaitingForAck.reset(nullptr);
+            if (verbose > 2)
                 emit toConsole("sendQueuedMsg: deleted message after 5 timeouts\n");
             sendQueuedMsg();
             return;
         }
         ackTimer->start(timeout);
         sendUBX(*msgWaitingForAck);
-        if (verbose > 1)
+        if (verbose > 2)
             emit toConsole("sendQueuedMsg: repeated resend after timeout\n");
         return;
     }
@@ -105,27 +105,26 @@ void QtSerialUblox::sendQueuedMsg(bool afterTimeout)
         return;
     }
     if (msgWaitingForAck) {
-        if (verbose > 1) {
+        if (verbose > 2) {
             emit toConsole("tried to send queued message but ack for previous message not yet received\n");
         }
         return;
     }
-    msgWaitingForAck = new UbxMessage;
-    *msgWaitingForAck = outMsgBuffer.front();
-    ackTimer->setSingleShot(true);
+    msgWaitingForAck = std::make_unique<UbxMessage>( outMsgBuffer.front() );
+    outMsgBuffer.pop();
     ackTimer->start(timeout);
     sendUBX(*msgWaitingForAck);
-    if (verbose > 2)
+    if (verbose > 3)
         emit toConsole("sendQueuedMsg: sent fresh message\n");
-    outMsgBuffer.pop();
+    
 }
 
 void QtSerialUblox::ackTimeout()
 {
-    if (msgWaitingForAck == nullptr) {
+    if (!msgWaitingForAck) {
         return;
     }
-    if (verbose > 1) {
+    if (verbose > 2) {
         std::stringstream tempStream;
         tempStream << "ack timeout, trying to resend message 0x" << std::setfill('0') << std::setw(2) << hex
                    << static_cast<int>(msgWaitingForAck->class_id()) << " 0x" << std::setfill('0') << std::setw(2) << hex << static_cast<int>(msgWaitingForAck->message_id());

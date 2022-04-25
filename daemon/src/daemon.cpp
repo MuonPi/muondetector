@@ -186,6 +186,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     qRegisterMetaType<I2cDeviceEntry>("I2cDeviceEntry");
     qRegisterMetaType<ADC_SAMPLING_MODE>("ADC_SAMPLING_MODE");
     qRegisterMetaType<MuonPi::Version::Version>("MuonPi::Version::Version");
+    qRegisterMetaType<UbxDynamicModel>("UbxDynamicModel");
 
     // signal handling
     setup_unix_signal_handlers();
