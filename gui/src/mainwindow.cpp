@@ -387,7 +387,7 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_MSG_RATE) {
-        QMap<uint16_t, int> msgRateCfgs;
+        QMap<uint16_t, int> msgRateCfgs {};
         *(tcpMessage.dStream) >> msgRateCfgs;
         emit addUbxMsgRates(msgRateCfgs);
         return;
