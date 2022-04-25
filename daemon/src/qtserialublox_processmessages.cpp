@@ -67,30 +67,30 @@ void QtSerialUblox::processMessage(const UbxMessage& msg)
     };
 
     const std::map<uint16_t, std::pair<std::function<void()>, std::string>> handler{
-         {0x0103, std::make_pair([&]{UBXNavStatus(msg.data);}, "UBX-NAV-STATUS")}
-        ,{0x0104, std::make_pair([&]{UBXNavDOP(msg.data);}, "UBX-NAV-DOP")}
-        ,{0x0120, std::make_pair([&]{UBXNavTimeGPS(msg.data);}, "UBX-NAV-TIMEGPS")}
-        ,{0x0121, std::make_pair([&]{UBXNavTimeUTC(msg.data);}, "UBX-NAV-TIMEUTC")}
-        ,{0x0122, std::make_pair([&]{UBXNavClock(msg.data);}, "UBX-NAV-CLOCK")}
-        ,{0x0130, std::make_pair([&]{UBXNavSVinfo(msg.data, true);}, "UBX-NAV-SVINFO")}
-        ,{0x0135, std::make_pair([&]{UBXNavSat(msg.data, true);}, "UBX-NAV-SAT")}
-        ,{0x0102, std::make_pair([&]{UBXNavPosLLH(msg.data);}, "UBX-NAV-POSLLH")}
+         {UBX_MSG::NAV_STATUS, std::make_pair([&]{UBXNavStatus(msg.data);}, "UBX-NAV-STATUS")}
+        ,{UBX_MSG::NAV_DOP, std::make_pair([&]{UBXNavDOP(msg.data);}, "UBX-NAV-DOP")}
+        ,{UBX_MSG::NAV_TIMEGPS, std::make_pair([&]{UBXNavTimeGPS(msg.data);}, "UBX-NAV-TIMEGPS")}
+        ,{UBX_MSG::NAV_TIMEUTC, std::make_pair([&]{UBXNavTimeUTC(msg.data);}, "UBX-NAV-TIMEUTC")}
+        ,{UBX_MSG::NAV_CLOCK, std::make_pair([&]{UBXNavClock(msg.data);}, "UBX-NAV-CLOCK")}
+        ,{UBX_MSG::NAV_SVINFO, std::make_pair([&]{UBXNavSVinfo(msg.data, true);}, "UBX-NAV-SVINFO")}
+        ,{UBX_MSG::NAV_SAT, std::make_pair([&]{UBXNavSat(msg.data, true);}, "UBX-NAV-SAT")}
+        ,{UBX_MSG::NAV_POSLLH, std::make_pair([&]{UBXNavPosLLH(msg.data);}, "UBX-NAV-POSLLH")}
 
-        ,{0x0613, std::make_pair([&]{UBXCfgAnt(msg.data);}, "UBX-CFG-ANT")}
-        ,{0x0623, std::make_pair([&]{UBXCfgNavX5(msg.data);}, "UBX-CFG-NAVX5")}
-        ,{0x0624, std::make_pair([&]{UBXCfgNav5(msg.data);}, "UBX-CFG-NAV5")}
-        ,{0x0631, std::make_pair([&]{UBXCfgTP5(msg.data);}, "UBX-CFG-TP5")}
-        ,{0x063e, std::make_pair([&]{UBXCfgGNSS(msg.data);}, "UBX-CFG-GNSS")}
-        ,{0x0601, std::make_pair([&]{UBXCfgMSG(msg.data);}, "UBX-CFG-MSG")}
+        ,{UBX_MSG::CFG_ANT, std::make_pair([&]{UBXCfgAnt(msg.data);}, "UBX-CFG-ANT")}
+        ,{UBX_MSG::CFG_NAVX5, std::make_pair([&]{UBXCfgNavX5(msg.data);}, "UBX-CFG-NAVX5")}
+        ,{UBX_MSG::CFG_NAV5, std::make_pair([&]{UBXCfgNav5(msg.data);}, "UBX-CFG-NAV5")}
+        ,{UBX_MSG::CFG_TP5, std::make_pair([&]{UBXCfgTP5(msg.data);}, "UBX-CFG-TP5")}
+        ,{UBX_MSG::CFG_GNSS, std::make_pair([&]{UBXCfgGNSS(msg.data);}, "UBX-CFG-GNSS")}
+        ,{UBX_MSG::CFG_MSG, std::make_pair([&]{UBXCfgMSG(msg.data);}, "UBX-CFG-MSG")}
 
-        ,{0x0a07, std::make_pair([&]{UBXMonRx(msg.data);}, "UBX-MON-RXBUF")}
-        ,{0x0a08, std::make_pair([&]{UBXMonTx(msg.data);}, "UBX-MON-TXBUF")}
-        ,{0x0a09, std::make_pair([&]{UBXMonHW(msg.data);}, "UBX-MON-HW")}
-        ,{0x0a0b, std::make_pair([&]{UBXMonHW2(msg.data);}, "UBX-MON-HW2")}
-        ,{0x0a04, std::make_pair([&]{UBXMonVer(msg.data);}, "UBX-MON-VER")}
+        ,{UBX_MSG::MON_RXBUF, std::make_pair([&]{UBXMonRx(msg.data);}, "UBX-MON-RXBUF")}
+        ,{UBX_MSG::MON_TXBUF, std::make_pair([&]{UBXMonTx(msg.data);}, "UBX-MON-TXBUF")}
+        ,{UBX_MSG::MON_HW, std::make_pair([&]{UBXMonHW(msg.data);}, "UBX-MON-HW")}
+        ,{UBX_MSG::MON_HW2, std::make_pair([&]{UBXMonHW2(msg.data);}, "UBX-MON-HW2")}
+        ,{UBX_MSG::MON_VER, std::make_pair([&]{UBXMonVer(msg.data);}, "UBX-MON-VER")}
 
-        ,{0x0d01, std::make_pair([&]{UBXTimTP(msg.data);}, "UBX-TIM-TP")}
-        ,{0x0d03, std::make_pair([&]{UBXTimTM2(msg.data);}, "UBX-TIM-TM2")}
+        ,{UBX_MSG::TIM_TP, std::make_pair([&]{UBXTimTP(msg.data);}, "UBX-TIM-TP")}
+        ,{UBX_MSG::TIM_TM2, std::make_pair([&]{UBXTimTM2(msg.data);}, "UBX-TIM-TM2")}
     };
 
     uint8_t classID = msg.class_id();
