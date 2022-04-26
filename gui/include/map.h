@@ -13,8 +13,11 @@ class Map : public QWidget {
 
 public:
     explicit Map(QWidget* parent = nullptr);
-    void onGeodeticPosReceived(GeodeticPos pos);
     ~Map();
+
+public slots:
+    void onGeodeticPosReceived(GeodeticPos pos);
+    void onUiEnabledStateChange(bool connected);
 
 private:
     QObject* mapComponent = nullptr;

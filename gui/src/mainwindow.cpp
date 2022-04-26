@@ -125,7 +125,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this, &MainWindow::triggerSelectionReceived, status, &Status::onTriggerSelectionReceived);
     connect(status, &Status::triggerSelectionChanged, this, &MainWindow::onTriggerSelectionChanged);
     connect(this, &MainWindow::timepulseReceived, status, &Status::onTimepulseReceived);
-//    connect(this, &MainWindow::mqttStatusChanged, status, &Status::onMqttStatusChanged);
+    //    connect(this, &MainWindow::mqttStatusChanged, status, &Status::onMqttStatusChanged);
     connect(this, SIGNAL(mqttStatusChanged(bool)), status, SLOT(onMqttStatusChanged(bool)));
     connect(this, SIGNAL(mqttStatusChanged(MuonPi::MqttHandler::Status)), status, SLOT(onMqttStatusChanged(MuonPi::MqttHandler::Status)));
 
@@ -151,8 +151,9 @@ MainWindow::MainWindow(QWidget* parent)
     ui->tabWidget->addTab(settings, "Ublox Settings");
 
     Map* map = new Map(this);
-    ui->tabWidget->addTab(map, "Map");
+    connect(this, &MainWindow::setUiEnabledStates, map, &Map::onUiEnabledStateChange);
     connect(this, &MainWindow::geodeticPos, map, &Map::onGeodeticPosReceived);
+    ui->tabWidget->addTab(map, "Map");
 
     I2cForm* i2cTab = new I2cForm(this);
     connect(this, &MainWindow::setUiEnabledStates, i2cTab, &I2cForm::onUiEnabledStateChange);
@@ -387,7 +388,7 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
         return;
     }
     if (msgID == TCP_MSG_KEY::MSG_UBX_MSG_RATE) {
-        QMap<uint16_t, int> msgRateCfgs;
+        QMap<uint16_t, int> msgRateCfgs {};
         *(tcpMessage.dStream) >> msgRateCfgs;
         emit addUbxMsgRates(msgRateCfgs);
         return;

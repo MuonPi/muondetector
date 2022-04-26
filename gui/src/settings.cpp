@@ -55,20 +55,27 @@ void Settings::onItemChanged(QTableWidgetItem* item)
 
 void Settings::addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates)
 {
+    if (ubxMsgRates.isEmpty())
+        return;
     ui->ubloxSignalStates->clearContents();
     ui->ubloxSignalStates->setRowCount(0);
     ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(true);
     ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(true);
     ui->ubloxSignalStates->blockSignals(true);
     oldSettings = ubxMsgRates;
-    for (QMap<uint16_t, int>::iterator it = ubxMsgRates.begin(); it != ubxMsgRates.end(); it++) {
+    for (auto it = ubxMsgRates.begin(); it != ubxMsgRates.end(); ++it) {
         UbxMsgRateTableItem* item = new UbxMsgRateTableItem();
         UbxMsgRateTableItem* value = new UbxMsgRateTableItem();
         item->setCheckState(Qt::CheckState::Checked);
         item->setFlags(item->flags() & (~Qt::ItemIsUserCheckable)); // disables checkbox edit from user
         item->setFlags(item->flags() & (~Qt::ItemIsEditable));
         item->key = it.key();
-        item->name = QString::fromStdString(UBX_MSG::msg_string.at(static_cast<UBX_MSG::msg_id>(it.key())));
+        try {
+            item->name = QString::fromStdString(UBX_MSG::msg_string.at(static_cast<UBX_MSG::msg_id>(it.key())));
+        } catch (...) {
+            item->name = "0x" + QString::number(it.key(), 16);
+        }
+
         item->setText(item->name);
         item->setSizeHint(QSize(120, 24));
         value->key = it.key();
