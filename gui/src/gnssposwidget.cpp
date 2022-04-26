@@ -10,7 +10,7 @@
 #include <QTextStream>
 #include <QTransform>
 #include <cmath>
-#include <muondetector_structs.h>
+#include <ublox_structs.h>
 #define _USE_MATH_DEFINES
 #include <math.h>
 

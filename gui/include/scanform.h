@@ -6,7 +6,7 @@
 #include <QVector>
 #include <QWidget>
 #include <gpio_pin_definitions.h>
-#include <muondetector_structs.h>
+#include <ublox_structs.h>
 
 // list of possible scan parameters
 const static QVector<QString> SP_NAMES = { "VOID", "THR1", "THR2", "BIAS", "DAC4", "TIME" };

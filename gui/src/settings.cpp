@@ -1,4 +1,3 @@
-#include <muondetector_structs.h>
 #include <settings.h>
 #include <ublox_messages.h>
 #include <ui_settings.h>

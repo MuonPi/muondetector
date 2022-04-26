@@ -2,8 +2,7 @@
 #define MAP_H
 
 #include <QWidget>
-
-struct GeodeticPos;
+#include <ublox_structs.h>
 
 namespace Ui {
 class Map;
