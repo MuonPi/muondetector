@@ -10,9 +10,9 @@
 #include <sys/types.h>
 
 #include <config.h>
-#include <tcpconnection.h>
-#include <mqtthandler.h>
 #include <gpio_pin_definitions.h>
+#include <mqtthandler.h>
+#include <tcpconnection.h>
 
 struct I2cDeviceEntry;
 struct CalibStruct;

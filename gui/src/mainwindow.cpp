@@ -125,7 +125,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this, &MainWindow::triggerSelectionReceived, status, &Status::onTriggerSelectionReceived);
     connect(status, &Status::triggerSelectionChanged, this, &MainWindow::onTriggerSelectionChanged);
     connect(this, &MainWindow::timepulseReceived, status, &Status::onTimepulseReceived);
-//    connect(this, &MainWindow::mqttStatusChanged, status, &Status::onMqttStatusChanged);
+    //    connect(this, &MainWindow::mqttStatusChanged, status, &Status::onMqttStatusChanged);
     connect(this, SIGNAL(mqttStatusChanged(bool)), status, SLOT(onMqttStatusChanged(bool)));
     connect(this, SIGNAL(mqttStatusChanged(MuonPi::MqttHandler::Status)), status, SLOT(onMqttStatusChanged(MuonPi::MqttHandler::Status)));
 

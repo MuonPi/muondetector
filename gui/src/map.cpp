@@ -3,8 +3,8 @@
 #include <QQmlEngine>
 #include <QQuickItem>
 #include <QSsl>
-#include <map.h>
 #include <cmath>
+#include <map.h>
 
 #include <ui_map.h>
 
@@ -34,7 +34,7 @@ void Map::onGeodeticPosReceived(GeodeticPos pos)
     if (mapComponent == nullptr) {
         return;
     }
-    double pos_accuracy { std::sqrt(pos.hAcc*pos.hAcc + pos.vAcc*pos.vAcc) };
+    double pos_accuracy { std::sqrt(pos.hAcc * pos.hAcc + pos.vAcc * pos.vAcc) };
     QMetaObject::invokeMethod(mapComponent, "setCircle",
         Q_ARG(QVariant, ((double)pos.lon) * 1e-7),
         Q_ARG(QVariant, ((double)pos.lat) * 1e-7),

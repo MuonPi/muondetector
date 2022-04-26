@@ -95,7 +95,7 @@ void GpsSatsForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
         newItem1->setData(Qt::DisplayRole, newlist[i].fSatId);
         newItem1->setSizeHint(QSize(30, 24));
         newItem1->setTextAlignment(Qt::AlignHCenter);
-        ui->satsTableWidget->setItem(ui->satsTableWidget->rowCount()-1, 0, newItem1);
+        ui->satsTableWidget->setItem(ui->satsTableWidget->rowCount() - 1, 0, newItem1);
 
         QTableWidgetItem* newItem2 = new QTableWidgetItem(GNSS_ID_STRING[newlist[i].fGnssId]);
         newItem2->setSizeHint(QSize(50, 24));
