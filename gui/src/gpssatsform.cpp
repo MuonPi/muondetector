@@ -56,7 +56,6 @@ GpsSatsForm::GpsSatsForm(QWidget* parent)
     , ui(new Ui::GpsSatsForm)
 {
     ui->setupUi(this);
-    ui->satsTableWidget->resizeColumnsToContents();
 }
 
 GpsSatsForm::~GpsSatsForm()
@@ -88,27 +87,47 @@ void GpsSatsForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
     }
 
     int N = newlist.size();
-    ui->satsTableWidget->setRowCount(N);
+    ui->satsTableWidget->clearContents();
+    ui->satsTableWidget->setRowCount(0);
     for (int i = 0; i < N; i++) {
-        QTableWidgetItem* newItem1 = new QTableWidgetItem(QString::number(newlist[i].fSatId));
-        newItem1->setSizeHint(QSize(25, 24));
-        ui->satsTableWidget->setItem(i, 0, newItem1);
+        ui->satsTableWidget->insertRow(ui->satsTableWidget->rowCount());
+        QTableWidgetItem* newItem1 = new QTableWidgetItem;
+        newItem1->setData(Qt::DisplayRole, newlist[i].fSatId);
+        newItem1->setSizeHint(QSize(30, 24));
+        newItem1->setTextAlignment(Qt::AlignHCenter);
+        ui->satsTableWidget->setItem(ui->satsTableWidget->rowCount()-1, 0, newItem1);
+
         QTableWidgetItem* newItem2 = new QTableWidgetItem(GNSS_ID_STRING[newlist[i].fGnssId]);
         newItem2->setSizeHint(QSize(50, 24));
-        ui->satsTableWidget->setItem(i, 1, newItem2);
-        QTableWidgetItem* newItem3 = new QTableWidgetItem(QString::number(newlist[i].fCnr));
-        newItem3->setSizeHint(QSize(70, 24));
-        ui->satsTableWidget->setItem(i, 2, newItem3);
-        QTableWidgetItem* newItem4 = new QTableWidgetItem(QString::number(newlist[i].fAzim));
-        newItem4->setSizeHint(QSize(100, 24));
-        ui->satsTableWidget->setItem(i, 3, newItem4);
-        QTableWidgetItem* newItem5 = new QTableWidgetItem(QString::number(newlist[i].fElev));
-        newItem5->setSizeHint(QSize(100, 24));
-        ui->satsTableWidget->setItem(i, 4, newItem5);
-        QTableWidgetItem* newItem6 = new QTableWidgetItem(printReadableFloat(newlist[i].fPrRes, 2, 0));
+        newItem2->setTextAlignment(Qt::AlignHCenter);
+        ui->satsTableWidget->setItem(newItem1->row(), 1, newItem2);
+
+        QTableWidgetItem* newItem3 = new QTableWidgetItem;
+        newItem3->setData(Qt::DisplayRole, newlist[i].fCnr);
+        newItem3->setSizeHint(QSize(50, 24));
+        newItem3->setTextAlignment(Qt::AlignHCenter);
+        ui->satsTableWidget->setItem(newItem1->row(), 2, newItem3);
+
+        QTableWidgetItem* newItem4 = new QTableWidgetItem;
+        newItem4->setData(Qt::DisplayRole, newlist[i].fAzim);
+        newItem4->setSizeHint(QSize(60, 24));
+        newItem4->setTextAlignment(Qt::AlignHCenter);
+        ui->satsTableWidget->setItem(newItem1->row(), 3, newItem4);
+
+        QTableWidgetItem* newItem5 = new QTableWidgetItem;
+        newItem5->setData(Qt::DisplayRole, newlist[i].fElev);
+        newItem5->setSizeHint(QSize(60, 24));
+        newItem5->setTextAlignment(Qt::AlignHCenter);
+        ui->satsTableWidget->setItem(newItem1->row(), 4, newItem5);
+
+        QTableWidgetItem* newItem6 = new QTableWidgetItem;
+        newItem6->setData(Qt::DisplayRole, newlist[i].fPrRes);
         newItem6->setSizeHint(QSize(60, 24));
-        ui->satsTableWidget->setItem(i, 5, newItem6);
-        QTableWidgetItem* newItem7 = new QTableWidgetItem(QString::number(newlist[i].fQuality));
+        newItem6->setTextAlignment(Qt::AlignHCenter);
+        ui->satsTableWidget->setItem(newItem1->row(), 5, newItem6);
+
+        QTableWidgetItem* newItem7 = new QTableWidgetItem;
+        newItem7->setData(Qt::DisplayRole, newlist[i].fQuality);
         color = Qt::green;
         float transp = 0.166 * (newlist[i].fQuality - 1);
         if (transp < 0.)
@@ -117,9 +136,10 @@ void GpsSatsForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
             transp = 1.;
         color.setAlphaF(transp);
         newItem7->setBackground(color);
-
         newItem7->setSizeHint(QSize(25, 24));
-        ui->satsTableWidget->setItem(i, 6, newItem7);
+        newItem7->setTextAlignment(Qt::AlignHCenter);
+        ui->satsTableWidget->setItem(newItem1->row(), 6, newItem7);
+
         str = "n/a";
         if (newlist[i].fHealth < GNSS_HEALTH_STRINGS.size())
             str = GNSS_HEALTH_STRINGS[newlist[i].fHealth];
@@ -132,15 +152,20 @@ void GpsSatsForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
         }
         QTableWidgetItem* newItem8 = new QTableWidgetItem(str);
         newItem8->setSizeHint(QSize(25, 24));
-        ui->satsTableWidget->setItem(i, 7, newItem8);
+        newItem8->setTextAlignment(Qt::AlignHCenter);
+        ui->satsTableWidget->setItem(newItem1->row(), 7, newItem8);
+
         int orbSrc = newlist[i].fOrbitSource;
-        if (orbSrc < 0)
+        if (orbSrc < 0) {
             orbSrc = 0;
-        if (orbSrc > 7)
+        } else if (orbSrc > 7) {
             orbSrc = 7;
+        }
         QTableWidgetItem* newItem9 = new QTableWidgetItem(GNSS_ORBIT_SRC_STRING[orbSrc]);
-        newItem9->setSizeHint(QSize(50, 24));
-        ui->satsTableWidget->setItem(i, 8, newItem9);
+        newItem9->setSizeHint(QSize(40, 24));
+        newItem9->setTextAlignment(Qt::AlignHCenter);
+        ui->satsTableWidget->setItem(newItem1->row(), 8, newItem9);
+
         QTableWidgetItem* newItem10 = new QTableWidgetItem();
         newItem10->setCheckState(Qt::CheckState::Unchecked);
         if (newlist[i].fUsed)
@@ -148,7 +173,9 @@ void GpsSatsForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
         newItem10->setFlags(newItem10->flags() & (~Qt::ItemIsUserCheckable)); // disables checkbox edit from user
         newItem10->setFlags(newItem10->flags() & (~Qt::ItemIsEditable));
         newItem10->setSizeHint(QSize(20, 24));
-        ui->satsTableWidget->setItem(i, 9, newItem10);
+        newItem10->setTextAlignment(Qt::AlignHCenter);
+        ui->satsTableWidget->setItem(newItem1->row(), 9, newItem10);
+
         QTableWidgetItem* newItem11 = new QTableWidgetItem();
         newItem11->setCheckState(Qt::CheckState::Unchecked);
         if (newlist[i].fDiffCorr)
@@ -156,7 +183,8 @@ void GpsSatsForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
         newItem11->setFlags(newItem11->flags() & (~Qt::ItemIsUserCheckable)); // disables checkbox edit from user
         newItem11->setFlags(newItem11->flags() & (~Qt::ItemIsEditable));
         newItem11->setSizeHint(QSize(20, 24));
-        ui->satsTableWidget->setItem(i, 10, newItem11);
+        newItem11->setTextAlignment(Qt::AlignHCenter);
+        ui->satsTableWidget->setItem(newItem1->row(), 10, newItem11);
     }
 }
 
