@@ -116,7 +116,6 @@ void QtSerialUblox::sendQueuedMsg(bool afterTimeout)
     sendUBX(*msgWaitingForAck);
     if (verbose > 3)
         emit toConsole("sendQueuedMsg: sent fresh message\n");
-    
 }
 
 void QtSerialUblox::ackTimeout()
