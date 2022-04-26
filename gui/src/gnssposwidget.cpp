@@ -244,8 +244,11 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm)
 
             float satsize = ui->satSizeSpinBox->value();
             satPosPainter.drawEllipse(currPoint, satsize / 2., satsize / 2.);
-            if (fCurrentSatlist[i].fUsed)
-                satPosPainter.drawEllipse(currPoint, 1.05 * satsize / 2., 1.05 * satsize / 2.);
+            if (fCurrentSatlist[i].fUsed) {
+                satPosPainter.setPen(Qt::black);
+                satPosPainter.drawEllipse(currPoint, 1.2 * satsize / 2., 1.2 * satsize / 2.);
+                satPosPainter.setPen(satColor);
+            }
             currPoint.rx() += satsize / 2 + 4;
             if (ui->satLabelsCheckBox->isChecked())
                 satPosPainter.drawText(currPoint, QString::number(fCurrentSatlist[i].fSatId));
@@ -354,8 +357,11 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm)
 
             float satsize = ui->satSizeSpinBox->value();
             satPosPainter.drawEllipse(currPos, satsize / 2., satsize / 2.);
-            if (fCurrentSatlist[i].fUsed)
-                satPosPainter.drawEllipse(currPos, satsize / 2. + 0.5, satsize / 2. + 0.5);
+            if (fCurrentSatlist[i].fUsed) {
+                satPosPainter.setPen(Qt::black);
+                satPosPainter.drawEllipse(currPos, 1.2 * satsize / 2., 1.2 * satsize / 2.);
+                satPosPainter.setPen(satColor);
+            }
             currPos.rx() += satsize / 2 + 4;
             if (ui->satLabelsCheckBox->isChecked())
                 satPosPainter.drawText(currPos, QString::number(fCurrentSatlist[i].fSatId));
