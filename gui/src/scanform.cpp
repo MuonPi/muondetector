@@ -6,7 +6,6 @@
 #include <QVector>
 #include <cmath>
 #include <limits>
-#include <muondetector_structs.h>
 #include <qtextstream.h>
 #include <qwt_symbol.h>
 

@@ -8,6 +8,7 @@
 #include <QTimer>
 #include <queue>
 #include <string>
+#include <memory>
 #include <ublox_structs.h>
 
 struct GeodeticPos;
@@ -96,7 +97,7 @@ public slots:
     void ackTimeout();
     // outPortMask is something like 1 for only UBX protocol or 0b11 for UBX and NMEA
 
-    void setDynamicModel(uint8_t model);
+    void setDynamicModel(UbxDynamicModel model);
     static const std::string& getProtVersionString() { return fProtVersionString; }
     static double getProtVersion();
 
@@ -113,30 +114,35 @@ private:
 
     // all functions only used for processing and showing "UbxMessage"
     void processMessage(const UbxMessage& msg);
-    bool UBXNavClock(uint32_t& itow, int32_t& bias, int32_t& drift,
-        uint32_t& tAccuracy, uint32_t& fAccuracy);
+
     bool UBXTimTP(uint32_t& itow, int32_t& quantErr, uint16_t& weekNr);
-    bool UBXTimTP(const std::string& msg);
-    bool UBXTimTM2(const std::string& msg);
-    std::vector<GnssSatellite> UBXNavSat(const std::string& msg, bool allSats);
-    std::vector<GnssSatellite> UBXNavSVinfo(const std::string& msg, bool allSats);
-    GeodeticPos UBXNavPosLLH(const std::string& msg);
-    void UBXCfgGNSS(const std::string& msg);
-    void UBXCfgNav5(const std::string& msg);
-    std::vector<std::string> UBXMonVer();
+    void UBXTimTP(const std::string& msg);
+    void UBXTimTM2(const std::string& msg);
+
+    auto UBXNavClock(uint32_t& itow, int32_t& bias, int32_t& drift,
+            uint32_t& tAccuracy, uint32_t& fAccuracy) -> bool;
+    void UBXNavSat(const std::string& msg, bool allSats);
+    void UBXNavSVinfo(const std::string& msg, bool allSats);
+    void UBXNavPosLLH(const std::string& msg);
     void UBXNavClock(const std::string& msg);
     void UBXNavTimeGPS(const std::string& msg);
     void UBXNavTimeUTC(const std::string& msg);
-    void UBXNavStatus(const std::string& msg);
+    void UBXNavStatus(const std::string &msg);
+    void UBXNavDOP(const std::string &msg);
+
+    void UBXCfgGNSS(const std::string &msg);
+    void UBXCfgMSG(const std::string &msg);
+    void UBXCfgNav5(const std::string &msg);
+    void UBXCfgNavX5(const std::string& msg);
+    void UBXCfgAnt(const std::string& msg);
+    void UBXCfgTP5(const std::string& msg);
+
+    auto UBXMonVer() -> std::vector<std::string>;
     void UBXMonHW(const std::string& msg);
     void UBXMonHW2(const std::string& msg);
     void UBXMonTx(const std::string& msg);
     void UBXMonRx(const std::string& msg);
     void UBXMonVer(const std::string& msg);
-    void UBXCfgNavX5(const std::string& msg);
-    void UBXCfgAnt(const std::string& msg);
-    void UBXCfgTP5(const std::string& msg);
-    void UBXNavDOP(const std::string& msg);
 
     static std::string toStdString(unsigned char* data, int dataSize);
 
@@ -153,7 +159,7 @@ private:
     bool showout = false; // if true show the ubx messages sent to the gps board as hex
     bool showin = false;
     std::queue<UbxMessage> outMsgBuffer;
-    UbxMessage* msgWaitingForAck = nullptr;
+    std::unique_ptr<UbxMessage> msgWaitingForAck { nullptr };
     QPointer<QTimer> ackTimer;
     int sendRetryCounter = 0;
 

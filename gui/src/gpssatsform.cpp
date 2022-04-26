@@ -3,7 +3,7 @@
 #include <QPainter>
 #include <QPixmap>
 #include <cmath>
-#include <muondetector_structs.h>
+#include <ublox_structs.h>
 
 const int MAX_IQTRACK_BUFFER = 250;
 

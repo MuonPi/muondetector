@@ -2,7 +2,7 @@
 #define MAP_H
 
 #include <QWidget>
-#include <muondetector_structs.h>
+#include <ublox_structs.h>
 
 namespace Ui {
 class Map;

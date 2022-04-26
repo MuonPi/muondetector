@@ -6,8 +6,6 @@
 #include <QtWidgets>
 #include <ublox_structs.h>
 
-class GnssSatellite;
-
 class UbxMsgRateTableItem : public QTableWidgetItem {
 public:
     using QTableWidgetItem::QTableWidgetItem;

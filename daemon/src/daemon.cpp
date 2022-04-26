@@ -186,6 +186,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     qRegisterMetaType<I2cDeviceEntry>("I2cDeviceEntry");
     qRegisterMetaType<ADC_SAMPLING_MODE>("ADC_SAMPLING_MODE");
     qRegisterMetaType<MuonPi::Version::Version>("MuonPi::Version::Version");
+    qRegisterMetaType<UbxDynamicModel>("UbxDynamicModel");
 
     // signal handling
     setup_unix_signal_handlers();
@@ -1905,6 +1906,7 @@ void Daemon::UBXReceivedAckNak(uint16_t ackedMsgID, uint16_t ackedCfgMsgID)
 void Daemon::UBXReceivedMsgRateCfg(uint16_t msgID, uint8_t rate)
 {
     msgRateCfgs.insert(msgID, rate);
+    if (verbose>2) qDebug()<<"received msg rate: id="<<QString::number(msgID, 16)<<" rate="<<(int)rate;
     waitingForAppliedMsgRate--;
     if (waitingForAppliedMsgRate < 0) {
         waitingForAppliedMsgRate = 0;
