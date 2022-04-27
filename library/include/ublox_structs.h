@@ -1,14 +1,14 @@
 #ifndef UBLOX_STRUCTS_H
 #define UBLOX_STRUCTS_H
 
-#include <chrono>
-#include <sstream>
-#include <string>
-#include <iostream>
-#include <iomanip>
 #include <QDataStream>
 #include <QList>
 #include <QString>
+#include <chrono>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 static const QList<QString> GNSS_ID_STRING = { " GPS", "SBAS", " GAL", "BEID", "IMES", "QZSS", "GLNS", " N/A" };
 static const QList<QString> FIX_TYPE_STRINGS = { "No Fix", "Dead Reck.", "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix" };
@@ -20,12 +20,14 @@ struct UbxMessage {
 public:
     UbxMessage() = default;
     explicit UbxMessage(std::uint16_t msg_id)
-    : full_id(msg_id)
-    {}
+        : full_id(msg_id)
+    {
+    }
     std::uint16_t full_id { 0 };
     std::string data {};
     [[nodiscard]] auto class_id() const -> std::uint8_t { return (full_id >> 8) & 0xff; }
     [[nodiscard]] auto message_id() const -> std::uint8_t { return full_id & 0xff; }
+
 private:
     //std::uint16_t m_full_id { 0 };
 };
@@ -240,7 +242,6 @@ private:
 struct UbxDopStruct {
     uint16_t gDOP = 0, pDOP = 0, tDOP = 0, vDOP = 0, hDOP = 0, nDOP = 0, eDOP = 0;
 };
-
 
 inline void GnssSatellite::PrintHeader(bool wIndex)
 {

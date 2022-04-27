@@ -80,7 +80,6 @@ public:
     std::string value = "";
 };
 
-
 enum I2C_DEVICE_MODE { I2C_MODE_NONE = 0,
     I2C_MODE_NORMAL = 0x01,
     I2C_MODE_FORCE = 0x02,
@@ -126,7 +125,6 @@ static const QMap<quint8, QString> I2C_MODE_STRINGMAP = { { 0x00, "None" },
     { 0x08, "Failed" },
     { 0x10, "Locked" } };
 
-
 inline QDataStream& operator<<(QDataStream& out, const CalibStruct& calib)
 {
     out << QString::fromStdString(calib.name) << QString::fromStdString(calib.type)
@@ -147,7 +145,6 @@ inline QDataStream& operator>>(QDataStream& in, CalibStruct& calib)
     calib.value = s3.toStdString();
     return in;
 }
-
 
 inline QDataStream& operator>>(QDataStream& in, Histogram& h)
 {

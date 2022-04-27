@@ -1,8 +1,8 @@
 #include "parametermonitorform.h"
 #include "ui_parametermonitorform.h"
 #include <muondetector_structs.h>
-#include <ublox_structs.h>
 #include <qwt_symbol.h>
+#include <ublox_structs.h>
 
 ParameterMonitorForm::ParameterMonitorForm(QWidget* parent)
     : QWidget(parent)
