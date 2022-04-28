@@ -1,5 +1,5 @@
-#ifndef GPSSATSFORM_H
-#define GPSSATSFORM_H
+#ifndef GNSSINFOFORM_H
+#define GNSSINFOFORM_H
 
 #include <QMap>
 #include <QVector>
@@ -11,15 +11,15 @@ struct GnssMonHwStruct;
 struct GnssMonHw2Struct;
 
 namespace Ui {
-class GpsSatsForm;
+class GnssInfoForm;
 }
 
-class GpsSatsForm : public QWidget {
+class GnssInfoForm : public QWidget {
     Q_OBJECT
 
 public:
-    explicit GpsSatsForm(QWidget* parent = 0);
-    ~GpsSatsForm();
+    explicit GnssInfoForm(QWidget* parent = 0);
+    ~GnssInfoForm();
 
 public slots:
     void onSatsReceived(const QVector<GnssSatellite>& satlist);
@@ -35,8 +35,8 @@ public slots:
     void onUbxUptimeReceived(quint32 val);
 
 private:
-    Ui::GpsSatsForm* ui;
+    Ui::GnssInfoForm* ui;
     QVector<QPointF> iqTrack;
 };
 
-#endif // GPSSATSFORM_H
+#endif // GNSSINFOFORM_H

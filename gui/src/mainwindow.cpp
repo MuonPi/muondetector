@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include "calibform.h"
 #include "calibscandialog.h"
-#include "gpssatsform.h"
+#include "gnssinfoform.h"
 #include "histogramdataform.h"
 #include "i2cform.h"
 #include "logplotswidget.h"
@@ -180,18 +180,18 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this, &MainWindow::calibReceived, calibscandialog, &CalibScanDialog::onCalibReceived);
     connect(this, &MainWindow::adcSampleReceived, calibscandialog, &CalibScanDialog::onAdcSampleReceived);
 
-    GpsSatsForm* satsTab = new GpsSatsForm(this);
-    connect(this, &MainWindow::setUiEnabledStates, satsTab, &GpsSatsForm::onUiEnabledStateChange);
-    connect(this, &MainWindow::satsReceived, satsTab, &GpsSatsForm::onSatsReceived);
-    connect(this, &MainWindow::timeAccReceived, satsTab, &GpsSatsForm::onTimeAccReceived);
-    connect(this, &MainWindow::freqAccReceived, satsTab, &GpsSatsForm::onFreqAccReceived);
-    connect(this, &MainWindow::intCounterReceived, satsTab, &GpsSatsForm::onIntCounterReceived);
-    connect(this, &MainWindow::gpsMonHWReceived, satsTab, &GpsSatsForm::onGpsMonHWReceived);
-    connect(this, &MainWindow::gpsMonHW2Received, satsTab, &GpsSatsForm::onGpsMonHW2Received);
-    connect(this, &MainWindow::gpsVersionReceived, satsTab, &GpsSatsForm::onGpsVersionReceived);
-    connect(this, &MainWindow::gpsFixReceived, satsTab, &GpsSatsForm::onGpsFixReceived);
-    connect(this, &MainWindow::geodeticPos, satsTab, &GpsSatsForm::onGeodeticPosReceived);
-    connect(this, &MainWindow::ubxUptimeReceived, satsTab, &GpsSatsForm::onUbxUptimeReceived);
+    GnssInfoForm* satsTab = new GnssInfoForm(this);
+    connect(this, &MainWindow::setUiEnabledStates, satsTab, &GnssInfoForm::onUiEnabledStateChange);
+    connect(this, &MainWindow::satsReceived, satsTab, &GnssInfoForm::onSatsReceived);
+    connect(this, &MainWindow::timeAccReceived, satsTab, &GnssInfoForm::onTimeAccReceived);
+    connect(this, &MainWindow::freqAccReceived, satsTab, &GnssInfoForm::onFreqAccReceived);
+    connect(this, &MainWindow::intCounterReceived, satsTab, &GnssInfoForm::onIntCounterReceived);
+    connect(this, &MainWindow::gpsMonHWReceived, satsTab, &GnssInfoForm::onGpsMonHWReceived);
+    connect(this, &MainWindow::gpsMonHW2Received, satsTab, &GnssInfoForm::onGpsMonHW2Received);
+    connect(this, &MainWindow::gpsVersionReceived, satsTab, &GnssInfoForm::onGpsVersionReceived);
+    connect(this, &MainWindow::gpsFixReceived, satsTab, &GnssInfoForm::onGpsFixReceived);
+    connect(this, &MainWindow::geodeticPos, satsTab, &GnssInfoForm::onGeodeticPosReceived);
+    connect(this, &MainWindow::ubxUptimeReceived, satsTab, &GnssInfoForm::onUbxUptimeReceived);
 
     ui->tabWidget->addTab(satsTab, "GNSS Data");
 
