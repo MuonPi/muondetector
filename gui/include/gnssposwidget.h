@@ -55,7 +55,7 @@ private:
     QPolygonF getCartPolygonUnity(const QPointF& polarPos);
     void drawPolarPixMap(QPixmap& pm);
     void drawCartesianPixMap(QPixmap& pm);
-    int alphaFromCnr(int cnr);
+    static int alphaFromCnr(int cnr, int range);
 };
 
 inline uint qHash(const QPoint& p)
