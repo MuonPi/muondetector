@@ -70,10 +70,10 @@ void GnssInfoForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
     int nrGoodSats { 0 };
     ui->satsTableWidget->clearContents();
     ui->satsTableWidget->setRowCount(0);
-    for ( const auto& current_sat : satlist ) {
-        if ( current_sat.fCnr > 0 ) {
+    for (const auto& current_sat : satlist) {
+        if (current_sat.fCnr > 0) {
             nrGoodSats++;
-        } else if ( ui->visibleSatsCheckBox->isChecked() ) {
+        } else if (ui->visibleSatsCheckBox->isChecked()) {
             continue;
         }
         ui->satsTableWidget->insertRow(ui->satsTableWidget->rowCount());
@@ -138,13 +138,13 @@ void GnssInfoForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
         ui->satsTableWidget->setItem(newItem1->row(), 7, newItem8);
 
         int orbSrc { std::clamp(current_sat.fOrbitSource, 0, 7) };
-        QTableWidgetItem* newItem9 = new QTableWidgetItem(GNSS_ORBIT_SRC_STRING[std::clamp(orbSrc,0,GNSS_ORBIT_SRC_STRING.size())]);
+        QTableWidgetItem* newItem9 = new QTableWidgetItem(GNSS_ORBIT_SRC_STRING[std::clamp(orbSrc, 0, GNSS_ORBIT_SRC_STRING.size())]);
         newItem9->setSizeHint(QSize(40, 24));
         newItem9->setTextAlignment(Qt::AlignHCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 8, newItem9);
 
         QTableWidgetItem* newItem10 = new QTableWidgetItem();
-        newItem10->setCheckState( { (current_sat.fUsed)?Qt::CheckState::Checked:Qt::CheckState::Unchecked } );
+        newItem10->setCheckState({ (current_sat.fUsed) ? Qt::CheckState::Checked : Qt::CheckState::Unchecked });
         newItem10->setFlags(newItem10->flags() & (~Qt::ItemIsUserCheckable)); // disables checkbox edit from user
         newItem10->setFlags(newItem10->flags() & (~Qt::ItemIsEditable));
         newItem10->setSizeHint(QSize(20, 24));
@@ -152,7 +152,7 @@ void GnssInfoForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
         ui->satsTableWidget->setItem(newItem1->row(), 9, newItem10);
 
         QTableWidgetItem* newItem11 = new QTableWidgetItem();
-        newItem11->setCheckState( { (current_sat.fDiffCorr)?Qt::CheckState::Checked:Qt::CheckState::Unchecked } );
+        newItem11->setCheckState({ (current_sat.fDiffCorr) ? Qt::CheckState::Checked : Qt::CheckState::Unchecked });
         newItem11->setFlags(newItem11->flags() & (~Qt::ItemIsUserCheckable)); // disables checkbox edit from user
         newItem11->setFlags(newItem11->flags() & (~Qt::ItemIsEditable));
         newItem11->setSizeHint(QSize(20, 24));
@@ -164,12 +164,12 @@ void GnssInfoForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
 
 void GnssInfoForm::onTimeAccReceived(quint32 acc)
 {
-    ui->timePrecisionLabel->setText(printReadableFloat(acc*1e-9) + "s");
+    ui->timePrecisionLabel->setText(printReadableFloat(acc * 1e-9) + "s");
 }
 
 void GnssInfoForm::onFreqAccReceived(quint32 acc)
 {
-    ui->freqPrecisionLabel->setText(printReadableFloat(acc*1e-12) + "s/s");
+    ui->freqPrecisionLabel->setText(printReadableFloat(acc * 1e-12) + "s/s");
 }
 
 void GnssInfoForm::onIntCounterReceived(quint32 cnt)
