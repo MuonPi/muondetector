@@ -9,8 +9,8 @@
 #include <QResizeEvent>
 #include <QTextStream>
 #include <QTransform>
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 #include <numeric>
 #include <ublox_structs.h>
 #define _USE_MATH_DEFINES
@@ -38,7 +38,8 @@ static const QVector<QColor> GNSS_COLORS = { Qt::darkGreen, Qt::darkYellow, Qt::
 
 int GnssPosWidget::alphaFromCnr(int cnr, int range)
 {
-    if (range <= 0) return 0;
+    if (range <= 0)
+        return 0;
     int alpha = cnr * 255 / range;
     return std::clamp(alpha, 0, 255);
 }
@@ -177,11 +178,13 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm)
                 if (pointVector.isEmpty())
                     continue;
                 const double mean_cnr {
-                    std::accumulate(pointVector.constBegin(),pointVector.constEnd(), 0, [](int sum, const SatHistoryPoint& satpoint) {
+                    std::accumulate(pointVector.constBegin(), pointVector.constEnd(), 0, [](int sum, const SatHistoryPoint& satpoint) {
                         return sum + satpoint.cnr;
-                    }) / static_cast<double>(pointVector.size()) };
+                    })
+                    / static_cast<double>(pointVector.size())
+                };
                 const auto satPoint { pointVector.front() };
-                QColor satColor { GNSS_COLORS.at(std::clamp(static_cast<int>(satPoint.gnssId), 0, GNSS_COLORS.size()-1)) };
+                QColor satColor { GNSS_COLORS.at(std::clamp(static_cast<int>(satPoint.gnssId), 0, GNSS_COLORS.size() - 1)) };
                 satColor.setAlpha(alphaFromCnr(mean_cnr, ui->cnrRangeSpinBox->value()));
                 satPosPainter.setPen(QColor("transparent"));
                 satPosPainter.setBrush(satColor);
@@ -193,7 +196,7 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm)
     }
 
     // draw the current sat positions now
-    for ( const auto& currentSat: fCurrentSatlist ) {
+    for (const auto& currentSat : fCurrentSatlist) {
         if (ui->receivedSatsCheckBox->isChecked()) {
             if (currentSat.fCnr > 0)
                 newlist.push_back(currentSat);
@@ -205,7 +208,7 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm)
                 continue;
             QPointF currPos(currentSat.fAzim, currentSat.fElev);
             QPointF currPoint { polar2cartUnity(currPos) };
-            QColor satColor { GNSS_COLORS.at(std::clamp(static_cast<int>(currentSat.fGnssId), 0, GNSS_COLORS.size()-1)) };
+            QColor satColor { GNSS_COLORS.at(std::clamp(static_cast<int>(currentSat.fGnssId), 0, GNSS_COLORS.size() - 1)) };
             satPosPainter.setPen(satColor);
             QColor fillColor { satColor };
             int alpha = alphaFromCnr(currentSat.fCnr, ui->cnrRangeSpinBox->value());
@@ -281,11 +284,13 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm)
                 if (pointVector.isEmpty())
                     continue;
                 const double mean_cnr {
-                    std::accumulate(pointVector.constBegin(),pointVector.constEnd(), 0, [](int sum, const SatHistoryPoint& satpoint) {
+                    std::accumulate(pointVector.constBegin(), pointVector.constEnd(), 0, [](int sum, const SatHistoryPoint& satpoint) {
                         return sum + satpoint.cnr;
-                    }) / static_cast<double>(pointVector.size()) };
+                    })
+                    / static_cast<double>(pointVector.size())
+                };
                 const auto satPoint { pointVector.front() };
-                QColor satColor { GNSS_COLORS.at(std::clamp(static_cast<int>(satPoint.gnssId), 0, GNSS_COLORS.size()-1)) };
+                QColor satColor { GNSS_COLORS.at(std::clamp(static_cast<int>(satPoint.gnssId), 0, GNSS_COLORS.size() - 1)) };
                 satColor.setAlpha(alphaFromCnr(mean_cnr, ui->cnrRangeSpinBox->value()));
                 satPosPainter.setPen(QColor("transparent"));
                 satPosPainter.setBrush(satColor);
@@ -302,7 +307,7 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm)
     }
 
     // draw the current sat positions now
-    for ( const auto& currentSat: fCurrentSatlist ) {
+    for (const auto& currentSat : fCurrentSatlist) {
         if (ui->receivedSatsCheckBox->isChecked()) {
             if (currentSat.fCnr > 0)
                 newlist.push_back(currentSat);
@@ -314,7 +319,7 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm)
                 continue;
             QPointF currPos(currentSat.fAzim, currentSat.fElev);
             QPointF currPoint = polar2cartUnity(currPos);
-            QColor satColor { GNSS_COLORS.at(std::clamp(static_cast<int>(currentSat.fGnssId), 0, GNSS_COLORS.size()-1)) };
+            QColor satColor { GNSS_COLORS.at(std::clamp(static_cast<int>(currentSat.fGnssId), 0, GNSS_COLORS.size() - 1)) };
             satPosPainter.setPen(satColor);
             QColor fillColor { satColor };
             int alpha { alphaFromCnr(currentSat.fCnr, ui->cnrRangeSpinBox->value()) };
@@ -465,7 +470,9 @@ void GnssPosWidget::exportToFile()
                     const double mean_cnr {
                         std::accumulate(pointVector.constBegin(), pointVector.constEnd(), 0, [](int sum, const SatHistoryPoint& satpoint) {
                             return sum + satpoint.cnr;
-                        }) / static_cast<double>(pointVector.size()) };
+                        })
+                        / static_cast<double>(pointVector.size())
+                    };
 
                     SatHistoryPoint p { pointVector.front() };
                     out << p.time.toString(Qt::ISODate) << " "
