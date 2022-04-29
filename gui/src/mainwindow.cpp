@@ -8,7 +8,7 @@
 #include "map.h"
 #include "parametermonitorform.h"
 #include "scanform.h"
-#include "settings.h"
+#include "ubloxsettingsform.h"
 #include "status.h"
 #include "ui_mainwindow.h"
 
@@ -131,22 +131,22 @@ MainWindow::MainWindow(QWidget* parent)
 
     ui->tabWidget->addTab(status, "Overview");
 
-    Settings* settings = new Settings(this);
-    connect(this, &MainWindow::setUiEnabledStates, settings, &Settings::onUiEnabledStateChange);
-    connect(this, &MainWindow::txBufReceived, settings, &Settings::onTxBufReceived);
-    connect(this, &MainWindow::txBufPeakReceived, settings, &Settings::onTxBufPeakReceived);
-    connect(this, &MainWindow::rxBufReceived, settings, &Settings::onRxBufReceived);
-    connect(this, &MainWindow::rxBufPeakReceived, settings, &Settings::onRxBufPeakReceived);
-    connect(this, &MainWindow::addUbxMsgRates, settings, &Settings::addUbxMsgRates);
-    connect(settings, &Settings::sendRequestUbxMsgRates, this, &MainWindow::sendRequestUbxMsgRates);
-    connect(settings, &Settings::sendSetUbxMsgRateChanges, this, &MainWindow::sendSetUbxMsgRateChanges);
-    connect(settings, &Settings::sendUbxReset, this, &MainWindow::onSendUbxReset);
-    connect(settings, &Settings::sendUbxConfigDefault, this, [this]() { this->sendRequest(TCP_MSG_KEY::MSG_UBX_CONFIG_DEFAULT); });
-    connect(this, &MainWindow::gnssConfigsReceived, settings, &Settings::onGnssConfigsReceived);
-    connect(settings, &Settings::setGnssConfigs, this, &MainWindow::onSetGnssConfigs);
-    connect(this, &MainWindow::gpsTP5Received, settings, &Settings::onTP5Received);
-    connect(settings, &Settings::setTP5Config, this, &MainWindow::onSetTP5Config);
-    connect(settings, &Settings::sendUbxSaveCfg, this, [this]() { this->sendRequest(TCP_MSG_KEY::MSG_UBX_CFG_SAVE); });
+    UbloxSettingsForm* settings = new UbloxSettingsForm(this);
+    connect(this, &MainWindow::setUiEnabledStates, settings, &UbloxSettingsForm::onUiEnabledStateChange);
+    connect(this, &MainWindow::txBufReceived, settings, &UbloxSettingsForm::onTxBufReceived);
+    connect(this, &MainWindow::txBufPeakReceived, settings, &UbloxSettingsForm::onTxBufPeakReceived);
+    connect(this, &MainWindow::rxBufReceived, settings, &UbloxSettingsForm::onRxBufReceived);
+    connect(this, &MainWindow::rxBufPeakReceived, settings, &UbloxSettingsForm::onRxBufPeakReceived);
+    connect(this, &MainWindow::addUbxMsgRates, settings, &UbloxSettingsForm::addUbxMsgRates);
+    connect(settings, &UbloxSettingsForm::sendRequestUbxMsgRates, this, &MainWindow::sendRequestUbxMsgRates);
+    connect(settings, &UbloxSettingsForm::sendSetUbxMsgRateChanges, this, &MainWindow::sendSetUbxMsgRateChanges);
+    connect(settings, &UbloxSettingsForm::sendUbxReset, this, &MainWindow::onSendUbxReset);
+    connect(settings, &UbloxSettingsForm::sendUbxConfigDefault, this, [this]() { this->sendRequest(TCP_MSG_KEY::MSG_UBX_CONFIG_DEFAULT); });
+    connect(this, &MainWindow::gnssConfigsReceived, settings, &UbloxSettingsForm::onGnssConfigsReceived);
+    connect(settings, &UbloxSettingsForm::setGnssConfigs, this, &MainWindow::onSetGnssConfigs);
+    connect(this, &MainWindow::gpsTP5Received, settings, &UbloxSettingsForm::onTP5Received);
+    connect(settings, &UbloxSettingsForm::setTP5Config, this, &MainWindow::onSetTP5Config);
+    connect(settings, &UbloxSettingsForm::sendUbxSaveCfg, this, [this]() { this->sendRequest(TCP_MSG_KEY::MSG_UBX_CFG_SAVE); });
 
     ui->tabWidget->addTab(settings, "Ublox Settings");
 

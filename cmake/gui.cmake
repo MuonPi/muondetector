@@ -24,7 +24,7 @@ set(MUONDETECTOR_GUI_SOURCE_FILES
     "${MUONDETECTOR_GUI_SOURCE_DIR}/parametermonitorform.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/plotcustom.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/scanform.cpp"
-    "${MUONDETECTOR_GUI_SOURCE_DIR}/settings.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/ubloxsettingsform.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/spiform.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/status.cpp"
     )
@@ -44,7 +44,7 @@ set(MUONDETECTOR_GUI_HEADER_FILES
     "${MUONDETECTOR_GUI_HEADER_DIR}/parametermonitorform.h"
     "${MUONDETECTOR_GUI_HEADER_DIR}/plotcustom.h"
     "${MUONDETECTOR_GUI_HEADER_DIR}/scanform.h"
-    "${MUONDETECTOR_GUI_HEADER_DIR}/settings.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/ubloxsettingsform.h"
     "${MUONDETECTOR_GUI_HEADER_DIR}/spiform.h"
     "${MUONDETECTOR_GUI_HEADER_DIR}/status.h"
     )
@@ -60,7 +60,7 @@ set(MUONDETECTOR_GUI_UI_FILES
     "${MUONDETECTOR_GUI_UI_DIR}/map.ui"
     "${MUONDETECTOR_GUI_UI_DIR}/parametermonitorform.ui"
     "${MUONDETECTOR_GUI_UI_DIR}/scanform.ui"
-    "${MUONDETECTOR_GUI_UI_DIR}/settings.ui"
+    "${MUONDETECTOR_GUI_UI_DIR}/ubloxsettingsform.ui"
     "${MUONDETECTOR_GUI_UI_DIR}/spiform.ui"
     "${MUONDETECTOR_GUI_UI_DIR}/status.ui"
     )

@@ -15,13 +15,13 @@ public:
 };
 
 namespace Ui {
-class Settings;
+class UbloxSettingsForm;
 }
 
-class Settings : public QDialog {
+class UbloxSettingsForm : public QDialog {
     Q_OBJECT
 public:
-    explicit Settings(QWidget* parent = nullptr);
+    explicit UbloxSettingsForm(QWidget* parent = nullptr);
 
 signals:
     void sendSetUbxMsgRateChanges(QMap<uint16_t, int> ubxMsgRateChanges);
@@ -69,7 +69,7 @@ private slots:
     void on_saveConfigPushButton_clicked();
 
 private:
-    Ui::Settings* ui;
+    Ui::UbloxSettingsForm* ui;
     QMap<uint16_t, int> oldSettings;
     bool fGnssConfigChanged = false;
     bool fTpConfigChanged = false;

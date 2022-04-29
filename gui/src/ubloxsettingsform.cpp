@@ -1,10 +1,10 @@
-#include <settings.h>
+#include <ubloxsettingsform.h>
 #include <ublox_messages.h>
-#include <ui_settings.h>
+#include <ui_ubloxsettingsform.h>
 
-Settings::Settings(QWidget* parent)
+UbloxSettingsForm::UbloxSettingsForm(QWidget* parent)
     : QDialog(parent)
-    , ui(new Ui::Settings)
+    , ui(new Ui::UbloxSettingsForm)
 {
     ui->setupUi(this);
     ui->ubloxSignalStates->setColumnCount(2);
@@ -13,8 +13,8 @@ Settings::Settings(QWidget* parent)
     ui->ubloxSignalStates->setAlternatingRowColors(true);
     ui->ubloxSignalStates->setHorizontalHeaderLabels(QStringList({ "Signature", "Update Rate" }));
     ui->ubloxSignalStates->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
-    connect(ui->settingsButtonBox, &QDialogButtonBox::clicked, this, &Settings::onSettingsButtonBoxClicked);
-    connect(ui->ubloxSignalStates, &QTableWidget::itemChanged, this, &Settings::onItemChanged);
+    connect(ui->settingsButtonBox, &QDialogButtonBox::clicked, this, &UbloxSettingsForm::onSettingsButtonBoxClicked);
+    connect(ui->ubloxSignalStates, &QTableWidget::itemChanged, this, &UbloxSettingsForm::onItemChanged);
     ui->ubloxSignalStates->blockSignals(true);
     connect(ui->gnssConfigButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this, [this](int) {
         this->fGnssConfigChanged = true;
@@ -28,14 +28,14 @@ Settings::Settings(QWidget* parent)
     emit sendRequestUbxMsgRates();
 }
 
-void Settings::onConfigChanged()
+void UbloxSettingsForm::onConfigChanged()
 {
     this->fTpConfigChanged = true;
     this->ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setEnabled(true);
     this->ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setEnabled(true);
 }
 
-void Settings::onItemChanged(QTableWidgetItem* item)
+void UbloxSettingsForm::onItemChanged(QTableWidgetItem* item)
 {
     ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setEnabled(true);
     ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setEnabled(true);
@@ -53,7 +53,7 @@ void Settings::onItemChanged(QTableWidgetItem* item)
     }
 }
 
-void Settings::addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates)
+void UbloxSettingsForm::addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates)
 {
     if (ubxMsgRates.isEmpty())
         return;
@@ -95,7 +95,7 @@ void Settings::addUbxMsgRates(QMap<uint16_t, int> ubxMsgRates)
     ui->ubloxSignalStates->setColumnWidth(1, 100);
 }
 
-void Settings::onSettingsButtonBoxClicked(QAbstractButton* button)
+void UbloxSettingsForm::onSettingsButtonBoxClicked(QAbstractButton* button)
 {
     if (button == ui->settingsButtonBox->button(QDialogButtonBox::Apply)) {
         ui->ubloxSignalStates->blockSignals(true);
@@ -137,7 +137,7 @@ void Settings::onSettingsButtonBoxClicked(QAbstractButton* button)
     }
 }
 
-void Settings::onUiEnabledStateChange(bool connected)
+void UbloxSettingsForm::onUiEnabledStateChange(bool connected)
 {
     if (connected) {
         this->setEnabled(true);
@@ -173,27 +173,27 @@ void Settings::onUiEnabledStateChange(bool connected)
     }
 }
 
-void Settings::onTxBufReceived(quint8 val)
+void UbloxSettingsForm::onTxBufReceived(quint8 val)
 {
     ui->txBufProgressBar->setValue(val);
 }
 
-void Settings::onTxBufPeakReceived(quint8 val)
+void UbloxSettingsForm::onTxBufPeakReceived(quint8 val)
 {
     ui->txPeakLabel->setText("max: " + QString::number(val) + "%");
 }
 
-void Settings::onRxBufReceived(quint8 val)
+void UbloxSettingsForm::onRxBufReceived(quint8 val)
 {
     ui->rxBufProgressBar->setValue(val);
 }
 
-void Settings::onRxBufPeakReceived(quint8 val)
+void UbloxSettingsForm::onRxBufPeakReceived(quint8 val)
 {
     ui->rxPeakLabel->setText("max: " + QString::number(val) + "%");
 }
 
-void Settings::onGnssConfigsReceived(quint8 numTrkCh, const QVector<GnssConfigStruct>& configList)
+void UbloxSettingsForm::onGnssConfigsReceived(quint8 numTrkCh, const QVector<GnssConfigStruct>& configList)
 {
     ui->gnssConfigButtonGroup->blockSignals(true);
     ui->numTrkChannelsLabel->setText(QString::number(numTrkCh));
@@ -227,7 +227,7 @@ void Settings::onGnssConfigsReceived(quint8 numTrkCh, const QVector<GnssConfigSt
     ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(true);
 }
 
-void Settings::onTP5Received(const UbxTimePulseStruct& tp)
+void UbloxSettingsForm::onTP5Received(const UbxTimePulseStruct& tp)
 {
     fTpConfig = tp;
     ui->tpConfigButtonGroup->blockSignals(true);
@@ -254,13 +254,13 @@ void Settings::onTP5Received(const UbxTimePulseStruct& tp)
     ui->unsyncedPulseGroupBox->blockSignals(false);
 }
 
-void Settings::on_ubxResetPushButton_clicked()
+void UbloxSettingsForm::on_ubxResetPushButton_clicked()
 {
     // reset Ublox device
     emit sendUbxReset();
 }
 
-void Settings::writeGnssConfig()
+void UbloxSettingsForm::writeGnssConfig()
 {
     QVector<GnssConfigStruct> configList;
     if (ui->gnssGpsCheckBox->isEnabled()) { // GPS
@@ -323,7 +323,7 @@ void Settings::writeGnssConfig()
         emit setGnssConfigs(configList);
 }
 
-void Settings::writeTpConfig()
+void UbloxSettingsForm::writeTpConfig()
 {
     UbxTimePulseStruct tp;
     tp.tpIndex = 0;
@@ -367,14 +367,14 @@ void Settings::writeTpConfig()
     emit setTP5Config(tp);
 }
 
-void Settings::on_timeGridComboBox_currentIndexChanged(int /*index*/)
+void UbloxSettingsForm::on_timeGridComboBox_currentIndexChanged(int /*index*/)
 {
     fTpConfigChanged = true;
     ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(false);
     ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(false);
 }
 
-void Settings::on_freqPeriodLineEdit_editingFinished()
+void UbloxSettingsForm::on_freqPeriodLineEdit_editingFinished()
 {
     bool ok = false;
     ui->freqPeriodLineEdit->text().toLong(&ok);
@@ -386,7 +386,7 @@ void Settings::on_freqPeriodLineEdit_editingFinished()
     }
 }
 
-void Settings::on_freqPeriodLockLineEdit_editingFinished()
+void UbloxSettingsForm::on_freqPeriodLockLineEdit_editingFinished()
 {
     bool ok = false;
     ui->freqPeriodLockLineEdit->text().toLong(&ok);
@@ -398,7 +398,7 @@ void Settings::on_freqPeriodLockLineEdit_editingFinished()
     }
 }
 
-void Settings::on_pulseLenLineEdit_editingFinished()
+void UbloxSettingsForm::on_pulseLenLineEdit_editingFinished()
 {
     bool ok = false;
     ui->pulseLenLineEdit->text().toLong(&ok);
@@ -410,7 +410,7 @@ void Settings::on_pulseLenLineEdit_editingFinished()
     }
 }
 
-void Settings::on_pulseLenLockLineEdit_editingFinished()
+void UbloxSettingsForm::on_pulseLenLockLineEdit_editingFinished()
 {
     bool ok = false;
     ui->pulseLenLockLineEdit->text().toLong(&ok);
@@ -422,7 +422,7 @@ void Settings::on_pulseLenLockLineEdit_editingFinished()
     }
 }
 
-void Settings::on_antDelayLineEdit_editingFinished()
+void UbloxSettingsForm::on_antDelayLineEdit_editingFinished()
 {
     bool ok = false;
     ui->antDelayLineEdit->text().toInt(&ok);
@@ -434,7 +434,7 @@ void Settings::on_antDelayLineEdit_editingFinished()
     }
 }
 
-void Settings::on_groupDelayLineEdit_editingFinished()
+void UbloxSettingsForm::on_groupDelayLineEdit_editingFinished()
 {
     bool ok = false;
     ui->groupDelayLineEdit->text().toInt(&ok);
@@ -446,7 +446,7 @@ void Settings::on_groupDelayLineEdit_editingFinished()
     }
 }
 
-void Settings::on_userDelayLineEdit_editingFinished()
+void UbloxSettingsForm::on_userDelayLineEdit_editingFinished()
 {
     bool ok = false;
     ui->userDelayLineEdit->text().toLong(&ok);
@@ -458,7 +458,7 @@ void Settings::on_userDelayLineEdit_editingFinished()
     }
 }
 
-void Settings::on_saveConfigPushButton_clicked()
+void UbloxSettingsForm::on_saveConfigPushButton_clicked()
 {
     // save config
     emit sendUbxSaveCfg();
