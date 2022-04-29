@@ -4,9 +4,9 @@
 #include "gpio_pin_definitions.h"
 #include "histogram.h"
 #include "muondetector_shared_global.h"
-#include <config.h>
+#include "config.h"
+#include "custom_io_operators.h"
 
-#include <QDataStream>
 #include <QList>
 #include <QMap>
 #include <QString>
@@ -125,86 +125,6 @@ static const QMap<quint8, QString> I2C_MODE_STRINGMAP = { { 0x00, "None" },
     { 0x08, "Failed" },
     { 0x10, "Locked" } };
 
-inline QDataStream& operator<<(QDataStream& out, const CalibStruct& calib)
-{
-    out << QString::fromStdString(calib.name) << QString::fromStdString(calib.type)
-        << (quint16)calib.address << QString::fromStdString(calib.value);
-    return out;
-}
-
-inline QDataStream& operator>>(QDataStream& in, CalibStruct& calib)
-{
-    QString s1, s2, s3;
-    quint16 u;
-    in >> s1 >> s2;
-    in >> u;
-    in >> s3;
-    calib.name = s1.toStdString();
-    calib.type = s2.toStdString();
-    calib.address = (uint16_t)u;
-    calib.value = s3.toStdString();
-    return in;
-}
-
-inline QDataStream& operator>>(QDataStream& in, Histogram& h)
-{
-    h.clear();
-    QString name, unit;
-    in >> name >> h.fMin >> h.fMax >> h.fUnderflow >> h.fOverflow >> h.fNrBins;
-    h.setName(name.toStdString());
-    for (int i = 0; i < h.fNrBins; i++) {
-        in >> h.fHistogramMap[i];
-    }
-    in >> unit;
-    h.setUnit(unit.toStdString());
-    return in;
-}
-
-inline QDataStream& operator<<(QDataStream& out, const Histogram& h)
-{
-    out << QString::fromStdString(h.fName) << h.fMin << h.fMax << h.fUnderflow << h.fOverflow << h.fNrBins;
-    for (int i = 0; i < h.fNrBins; i++) {
-        out << h.getBinContent(i);
-    }
-    out << QString::fromStdString(h.fUnit);
-    return out;
-}
-
-inline QDataStream& operator>>(QDataStream& in, LogInfoStruct& lis)
-{
-    qint32 logRotation;
-    qint32 logAge;
-    quint8 status;
-    in >> lis.logFileName >> lis.dataFileName >> status >> lis.logFileSize
-        >> lis.dataFileSize >> logAge >> logRotation >> lis.logEnabled;
-    lis.logAge = std::chrono::seconds(logAge);
-    lis.logRotationDuration = std::chrono::seconds(logRotation);
-    lis.status = static_cast<LogInfoStruct::status_t>(status);
-    return in;
-}
-
-inline QDataStream& operator<<(QDataStream& out, const LogInfoStruct& lis)
-{
-    out << lis.logFileName << lis.dataFileName << static_cast<quint8>(lis.status) << lis.logFileSize
-        << lis.dataFileSize << static_cast<qint32>(lis.logAge.count()) << static_cast<qint32>(lis.logRotationDuration.count()) << lis.logEnabled;
-    return out;
-}
-
-inline QDataStream& operator>>(QDataStream& in, MuonPi::Version::Version& ver)
-{
-    qint16 major, minor, patch;
-    in >> major >> minor >> patch;
-    QString additional, hash;
-    in >> additional >> hash;
-    ver = MuonPi::Version::Version { major, minor, patch, additional.toStdString(), hash.toStdString() };
-    return in;
-}
-
-inline QDataStream& operator<<(QDataStream& out, const MuonPi::Version::Version& ver)
-{
-    out << (qint16)ver.major << (qint16)ver.minor << (qint16)ver.patch << QString::fromStdString(ver.additional) << QString::fromStdString(ver.hash);
-    return out;
-}
 
 class Property {
 public:

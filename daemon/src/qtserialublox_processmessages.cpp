@@ -1,5 +1,5 @@
 #include "qtserialublox.h"
-#include "utility/custom_io_operators.h"
+#include <custom_io_operators.h>
 #include "utility/unixtime_from_gps.h"
 
 #include <muondetector_structs.h>

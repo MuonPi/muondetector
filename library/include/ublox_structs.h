@@ -9,6 +9,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include "custom_io_operators.h"
 
 static const QList<QString> GNSS_ID_STRING = { " GPS", "SBAS", " GAL", "BEID", "IMES", "QZSS", "GLNS", " N/A" };
 static const QList<QString> FIX_TYPE_STRINGS = { "No Fix", "Dead Reck.", "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix" };
@@ -285,82 +286,5 @@ inline void GnssSatellite::Print(int index, bool wHeader) const
     std::cout << std::endl;
 }
 
-inline QDataStream& operator>>(QDataStream& in, GnssSatellite& sat)
-{
-    in >> sat.fGnssId >> sat.fSatId >> sat.fCnr >> sat.fElev >> sat.fAzim
-        >> sat.fPrRes >> sat.fQuality >> sat.fHealth >> sat.fOrbitSource
-        >> sat.fUsed >> sat.fDiffCorr >> sat.fSmoothed;
-    return in;
-}
-
-inline QDataStream& operator<<(QDataStream& out, const GnssSatellite& sat)
-{
-    out << sat.fGnssId << sat.fSatId << sat.fCnr << sat.fElev << sat.fAzim
-        << sat.fPrRes << sat.fQuality << sat.fHealth << sat.fOrbitSource
-        << sat.fUsed << sat.fDiffCorr << sat.fSmoothed;
-    return out;
-}
-
-inline QDataStream& operator>>(QDataStream& in, UbxTimePulseStruct& tp)
-{
-    in >> tp.tpIndex >> tp.version >> tp.antCableDelay >> tp.rfGroupDelay
-        >> tp.freqPeriod >> tp.freqPeriodLock >> tp.pulseLenRatio >> tp.pulseLenRatioLock
-        >> tp.userConfigDelay >> tp.flags;
-    return in;
-}
-
-inline QDataStream& operator<<(QDataStream& out, const UbxTimePulseStruct& tp)
-{
-    out << tp.tpIndex << tp.version << tp.antCableDelay << tp.rfGroupDelay
-        << tp.freqPeriod << tp.freqPeriodLock << tp.pulseLenRatio << tp.pulseLenRatioLock
-        << tp.userConfigDelay << tp.flags;
-    return out;
-}
-
-inline QDataStream& operator>>(QDataStream& in, GnssMonHwStruct& hw)
-{
-    in >> hw.noise >> hw.agc >> hw.antStatus >> hw.antPower >> hw.jamInd >> hw.flags;
-    return in;
-}
-
-inline QDataStream& operator<<(QDataStream& out, const GnssMonHwStruct& hw)
-{
-    out << hw.noise << hw.agc << hw.antStatus << hw.antPower << hw.jamInd << hw.flags;
-    return out;
-}
-
-inline QDataStream& operator>>(QDataStream& in, GnssMonHw2Struct& hw2)
-{
-    in >> hw2.ofsI >> hw2.magI >> hw2.ofsQ >> hw2.magQ >> hw2.cfgSrc;
-    return in;
-}
-
-inline QDataStream& operator<<(QDataStream& out, const GnssMonHw2Struct& hw2)
-{
-    out << hw2.ofsI << hw2.magI << hw2.ofsQ << hw2.magQ << hw2.cfgSrc;
-    return out;
-}
-
-inline QDataStream& operator>>(QDataStream& in, UbxTimeMarkStruct& tm)
-{
-    qint64 sec, nsec;
-    in >> sec >> nsec;
-    tm.rising.tv_sec = sec;
-    tm.rising.tv_nsec = nsec;
-    in >> sec >> nsec;
-    tm.falling.tv_sec = sec;
-    tm.falling.tv_nsec = nsec;
-    in >> tm.risingValid >> tm.fallingValid >> tm.accuracy_ns >> tm.valid
-        >> tm.timeBase >> tm.utcAvailable >> tm.flags >> tm.evtCounter;
-    return in;
-}
-
-inline QDataStream& operator<<(QDataStream& out, const UbxTimeMarkStruct& tm)
-{
-    out << (qint64)tm.rising.tv_sec << (qint64)tm.rising.tv_nsec << (qint64)tm.falling.tv_sec << (qint64)tm.falling.tv_nsec
-        << tm.risingValid << tm.fallingValid << tm.accuracy_ns << tm.valid
-        << tm.timeBase << tm.utcAvailable << tm.flags << tm.evtCounter;
-    return out;
-}
 
 #endif // UBLOX_STRUCTS_H

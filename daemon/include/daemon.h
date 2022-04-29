@@ -16,7 +16,7 @@
 #include "calibration.h"
 // clang-format on
 
-#include "utility/custom_io_operators.h"
+#include <custom_io_operators.h>
 #include "logengine.h"
 #include "logparameter.h"
 #include "pigpiodhandler.h"

@@ -2,7 +2,6 @@
 #define CALIBRATION_H
 
 // clang-format off
-#include "utility/custom_io_operators.h"
 #include <muondetector_structs.h>
 #include "hardware/i2cdevices.h"
 // clang-format on

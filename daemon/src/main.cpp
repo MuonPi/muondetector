@@ -13,7 +13,6 @@
 #include <unistd.h>
 
 #include "daemon.h"
-#include "utility/custom_io_operators.h"
 #include <config.h>
 #include <gpio_pin_definitions.h>
 
