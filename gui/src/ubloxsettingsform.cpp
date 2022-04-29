@@ -1,5 +1,5 @@
-#include <ubloxsettingsform.h>
 #include <ublox_messages.h>
+#include <ubloxsettingsform.h>
 #include <ui_ubloxsettingsform.h>
 
 UbloxSettingsForm::UbloxSettingsForm(QWidget* parent)

@@ -20,6 +20,7 @@ class UbloxSettingsForm;
 
 class UbloxSettingsForm : public QDialog {
     Q_OBJECT
+
 public:
     explicit UbloxSettingsForm(QWidget* parent = nullptr);
 

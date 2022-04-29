@@ -8,8 +8,8 @@
 #include "map.h"
 #include "parametermonitorform.h"
 #include "scanform.h"
-#include "ubloxsettingsform.h"
 #include "status.h"
+#include "ubloxsettingsform.h"
 #include "ui_mainwindow.h"
 
 #include <histogram.h>
