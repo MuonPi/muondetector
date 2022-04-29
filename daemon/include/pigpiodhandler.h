@@ -18,6 +18,7 @@ static QVector<unsigned int> DEFAULT_VECTOR;
 
 class PigpiodHandler : public QObject {
     Q_OBJECT
+
 public:
     explicit PigpiodHandler(QVector<unsigned int> gpioPins = DEFAULT_VECTOR, unsigned int spi_freq = 61035,
         uint32_t spi_flags = 0, QObject* parent = nullptr);

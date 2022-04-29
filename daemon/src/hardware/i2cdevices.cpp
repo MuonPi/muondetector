@@ -4,7 +4,6 @@
 
 i2cDevice* instantiateI2cDevice(uint8_t addr)
 {
-
     i2cDevice* device { nullptr };
     for (uint8_t i = 0; i < i2cDevice::getGlobalDeviceList().size(); i++) {
         if (addr == i2cDevice::getGlobalDeviceList()[i]->getAddress()) {

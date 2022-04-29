@@ -38,7 +38,6 @@ static const std::vector<std::tuple<std::string, std::string, std::string>> CALI
 };
 
 class ShowerDetectorCalib {
-
 public:
     static const CalibStruct InvalidCalibStruct;
 

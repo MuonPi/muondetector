@@ -157,7 +157,6 @@ bool HMC5883::getXYZMagneticFields(double& x, double& y, double& z)
 
 bool HMC5883::calibrate(int& x, int& y, int& z)
 {
-
     // addr config reg A (CRA)
     // 8 average, 15 Hz, positive self test measurement: 0x71
     uint8_t cmd = 0x71;

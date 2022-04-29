@@ -136,7 +136,6 @@ void CustomPlot::setLogY(bool logscale)
 
 void CustomPlot::setEnabled(bool enabled)
 {
-
     if (enabled) {
         for (auto& curve : fCurveMap) {
             curve->attach(this);

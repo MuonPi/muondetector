@@ -43,7 +43,6 @@ void Adafruit_GFX::constructor(int16_t w, int16_t h)
 // the printf function
 void Adafruit_GFX::printf(const char* format, ...)
 {
-
     char buffer[64];
     char* p = buffer;
     int n;
@@ -62,7 +61,6 @@ void Adafruit_GFX::printf(const char* format, ...)
 // the print function
 void Adafruit_GFX::print(const char* string)
 {
-
     const char* p = string;
     int n = strlen(string);
 
@@ -298,7 +296,6 @@ void Adafruit_GFX::fillScreen(uint16_t color)
 // draw a rounded rectangle!
 void Adafruit_GFX::drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint16_t color)
 {
-
     // smarter version
     drawFastHLine(x + r, y, w - 2 * r, color); // Top
     drawFastHLine(x + r, y + h - 1, w - 2 * r, color); // Bottom
@@ -334,7 +331,6 @@ void Adafruit_GFX::drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, 
 // fill a triangle!
 void Adafruit_GFX::fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color)
 {
-
     int16_t a, b, y, last;
 
     // Sort coordinates by Y order (y2 >= y1 >= y0)
@@ -416,7 +412,6 @@ void Adafruit_GFX::fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, 
 
 void Adafruit_GFX::drawBitmap(int16_t x, int16_t y, const uint8_t* bitmap, int16_t w, int16_t h, uint16_t color)
 {
-
     int16_t i, j, byteWidth = (w + 7) / 8;
 
     for (j = 0; j < h; j++) {
@@ -450,7 +445,6 @@ size_t Adafruit_GFX::write(uint8_t c)
 // draw a character
 void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c, uint16_t color, uint16_t bg, uint8_t size)
 {
-
     if ((x >= _width) || // Clip right
         (y >= _height) || // Clip bottom
         ((x + 5 * size - 1) < 0) || // Clip left

@@ -49,7 +49,6 @@ struct static_device_base {
 // For device specific implementations, classes can inherit this base class
 // virtual methods should be reimplemented in the child classes to make sense there, e.g. devicePresent()
 class i2cDevice {
-
 public:
     enum MODE { MODE_NONE = 0,
         MODE_NORMAL = 0x01,

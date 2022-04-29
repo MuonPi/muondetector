@@ -326,7 +326,6 @@ bool i2cDevice::writeByte(uint8_t regAddr, uint8_t data)
 */
 bool i2cDevice::writeBytes(uint8_t regAddr, uint16_t length, uint8_t* data)
 {
-
     int n = writeReg(regAddr, data, length);
     return (n == length);
 }

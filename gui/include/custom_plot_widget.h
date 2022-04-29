@@ -8,6 +8,7 @@
 
 class CustomPlot : public QwtPlot {
     Q_OBJECT
+
 public:
     CustomPlot(QWidget* parent = 0)
         : QwtPlot(parent)
