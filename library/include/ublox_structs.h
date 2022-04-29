@@ -1,6 +1,7 @@
 #ifndef UBLOX_STRUCTS_H
 #define UBLOX_STRUCTS_H
 
+#include "custom_io_operators.h"
 #include <QDataStream>
 #include <QList>
 #include <QString>
@@ -9,7 +10,6 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "custom_io_operators.h"
 
 static const QList<QString> GNSS_ID_STRING = { " GPS", "SBAS", " GAL", "BEID", "IMES", "QZSS", "GLNS", " N/A" };
 static const QList<QString> FIX_TYPE_STRINGS = { "No Fix", "Dead Reck.", "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix" };
@@ -285,6 +285,5 @@ inline void GnssSatellite::Print(int index, bool wHeader) const
     ;
     std::cout << std::endl;
 }
-
 
 #endif // UBLOX_STRUCTS_H

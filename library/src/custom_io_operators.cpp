@@ -1,7 +1,7 @@
-#include "config.h"
 #include "custom_io_operators.h"
-#include "ublox_structs.h"
+#include "config.h"
 #include "muondetector_structs.h"
+#include "ublox_structs.h"
 
 #include <iomanip>
 

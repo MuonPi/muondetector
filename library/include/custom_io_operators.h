@@ -1,9 +1,9 @@
 #ifndef CUSTOM_IO_OPERATORS_H
 #define CUSTOM_IO_OPERATORS_H
+#include <QDataStream>
 #include <QString>
 #include <chrono>
 #include <iostream>
-#include <QDataStream>
 
 class GnssSatellite;
 struct UbxTimeMarkStruct;
@@ -14,7 +14,7 @@ struct CalibStruct;
 class Histogram;
 struct LogInfoStruct;
 namespace MuonPi::Version {
-    struct Version;
+struct Version;
 }
 std::ostream& operator<<(std::ostream& os, const QString& someQString);
 std::ostream& operator<<(std::ostream& os, const std::chrono::time_point<std::chrono::system_clock>& timestamp);

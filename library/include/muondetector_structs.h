@@ -1,11 +1,11 @@
 #ifndef MUONDETECTOR_STRUCTS_H
 #define MUONDETECTOR_STRUCTS_H
 
+#include "config.h"
+#include "custom_io_operators.h"
 #include "gpio_pin_definitions.h"
 #include "histogram.h"
 #include "muondetector_shared_global.h"
-#include "config.h"
-#include "custom_io_operators.h"
 
 #include <QList>
 #include <QMap>
@@ -124,7 +124,6 @@ static const QMap<quint8, QString> I2C_MODE_STRINGMAP = { { 0x00, "None" },
     { 0x04, "Unreachable" },
     { 0x08, "Failed" },
     { 0x10, "Locked" } };
-
 
 class Property {
 public:
