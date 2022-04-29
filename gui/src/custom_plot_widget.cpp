@@ -102,15 +102,6 @@ void CustomPlot::rescale()
                 ymax = (*it)->maxYValue();
         }
     }
-
-    if (fLogY) {
-        if (this->axisInterval(QwtPlot::yLeft).minValue() <= 0.) {
-        }
-        if (this->axisAutoScale(QwtPlot::yLeft)) {
-        } else {
-        }
-    } else {
-    }
 }
 
 void CustomPlot::setLogY(bool logscale)
