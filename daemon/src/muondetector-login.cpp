@@ -23,7 +23,7 @@
 #include "mqtthandler.h"
 
 [[nodiscard]] auto getch() -> char;
-[[nodiscard]] auto getpass(const char* prompt, const bool show_asterisk)
+[[nodiscard]] auto getpasswd(const char* prompt, const bool show_asterisk)
     -> std::string;
 [[nodiscard]] auto SHA256HashString(const std::string& aString) -> std::string;
 [[nodiscard]] auto getMacAddress() -> QString;
@@ -48,7 +48,7 @@ auto getch() -> char
     return ch;
 }
 
-auto getpass(const char* prompt, const bool show_asterisk) -> std::string
+auto getpasswd(const char* prompt, const bool show_asterisk) -> std::string
 {
     const char BACKSPACE = 127;
     const char RETURN = 10;
@@ -176,7 +176,7 @@ int main()
     std::cout << "To set the login for the mqtt-server, please enter your credentials.\nusername: ";
     std::string username {};
     std::cin >> username;
-    std::string password { getpass("password: ", true) };
+    std::string password { getpasswd("password: ", true) };
     QDir temp;
     QString saveDirPath { MuonPi::Config::data_path };
     if (!temp.exists(saveDirPath)) {

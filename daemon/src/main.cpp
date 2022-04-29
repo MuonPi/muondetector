@@ -21,7 +21,6 @@ static const char* CONFIG_FILE = MuonPi::Config::file;
 static int verbose = 0;
 
 [[nodiscard]] auto getch() -> int;
-[[nodiscard]] auto getpass(const char* prompt, bool show_asterisk) -> std::string;
 
 auto getch() -> int
 {
@@ -37,34 +36,6 @@ auto getch() -> int
 
     tcsetattr(STDIN_FILENO, TCSANOW, &t_old);
     return ch;
-}
-
-auto getpass(const char* prompt, bool show_asterisk) -> std::string
-{
-    const char BACKSPACE = 127;
-    const char RETURN = 10;
-
-    std::string password;
-    unsigned char ch = 0;
-    ch = getch();
-    std::cout << prompt << '\n'
-              << std::flush;
-    while ((ch = getch()) != RETURN) {
-        if (ch == BACKSPACE) {
-            if (password.length() != 0) {
-                if (show_asterisk)
-                    std::cout << "\b \b";
-                password.resize(password.length() - 1);
-            }
-        } else {
-            password += ch;
-            if (show_asterisk)
-                std::cout << '*';
-        }
-    }
-    std::cout << '\n'
-              << std::flush;
-    return password;
 }
 
 // The application's custom message handler
