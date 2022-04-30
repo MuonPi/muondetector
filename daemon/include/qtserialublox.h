@@ -161,7 +161,7 @@ private:
     std::queue<UbxMessage> outMsgBuffer;
     std::unique_ptr<UbxMessage> msgWaitingForAck { nullptr };
     QPointer<QTimer> ackTimer;
-    int sendRetryCounter = 0;
+    std::size_t sendRetryCounter { 0 };
 
     // all global variables used for keeping track of satellites and statistics (gpsProperty)
     gpsProperty<int> leapSeconds;

@@ -10,11 +10,9 @@
 #include <ublox_messages.h>
 #include <unistd.h>
 
-using namespace std;
+constexpr std::size_t MAX_SEND_RETRIES { 5 };
 
-#define MAX_SEND_RETRIES 5
-
-string QtSerialUblox::fProtVersionString = "";
+std::string QtSerialUblox::fProtVersionString = "";
 
 void QtSerialUblox::closeAll()
 {
@@ -125,12 +123,12 @@ void QtSerialUblox::ackTimeout()
     }
     if (verbose > 2) {
         std::stringstream tempStream;
-        tempStream << "ack timeout, trying to resend message 0x" << std::setfill('0') << std::setw(2) << hex
-                   << static_cast<int>(msgWaitingForAck->class_id()) << " 0x" << std::setfill('0') << std::setw(2) << hex << static_cast<int>(msgWaitingForAck->message_id());
+        tempStream << "ack timeout, trying to resend message 0x" << std::setfill('0') << std::setw(2) << std::hex
+                   << static_cast<int>(msgWaitingForAck->class_id()) << " 0x" << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(msgWaitingForAck->message_id());
         for (unsigned int i = 0; i < msgWaitingForAck->data.length(); i++) {
-            tempStream << " 0x" << std::setfill('0') << std::setw(2) << hex << (int)(msgWaitingForAck->data[i]);
+            tempStream << " 0x" << std::setfill('0') << std::setw(2) << std::hex << (int)(msgWaitingForAck->data[i]);
         }
-        tempStream << endl;
+        tempStream << std::endl;
         emit toConsole(QString::fromStdString(tempStream.str()));
     }
     sendQueuedMsg(true);
@@ -169,7 +167,7 @@ void QtSerialUblox::onReadyRead()
     }
 }
 
-bool QtSerialUblox::scanUnknownMessage(string& buffer, UbxMessage& message)
+bool QtSerialUblox::scanUnknownMessage(std::string& buffer, UbxMessage& message)
 { // gets the (maybe not finished) buffer and checks for messages in it that make sense
     if (buffer.size() < 9)
         return false;
@@ -179,7 +177,7 @@ bool QtSerialUblox::scanUnknownMessage(string& buffer, UbxMessage& message)
     refstr += 0x62;
     std::size_t found = buffer.find(refstr);
     std::string mess = "";
-    if (found != string::npos) {
+    if (found != std::string::npos) {
         mess = buffer.substr(found, buffer.size());
         // discard everything before start of the message
         buffer.erase(0, found);
@@ -189,9 +187,9 @@ bool QtSerialUblox::scanUnknownMessage(string& buffer, UbxMessage& message)
         if (discardAllNMEA) {
             std::string beginNMEA = "$";
             found = 0;
-            while (found != string::npos) {
+            while (found != std::string::npos) {
                 found = buffer.find(beginNMEA);
-                if (found == string::npos) {
+                if (found == std::string::npos) {
                     break;
                 }
                 buffer.erase(0, found + 1);
@@ -207,14 +205,14 @@ bool QtSerialUblox::scanUnknownMessage(string& buffer, UbxMessage& message)
     len += ((int)(mess[5])) << 8;
     if (((long int)mess.size() - 8) < len) {
         found = buffer.find(refstr, 2);
-        if (found != string::npos) {
+        if (found != std::string::npos) {
             if (verbose > 1) {
                 std::stringstream tempStream;
-                tempStream << "received faulty UBX string:\n " << dec;
+                tempStream << "received faulty UBX string:\n " << std::dec;
                 for (std::string::size_type i = 0; i < found; i++)
                     tempStream
-                        << setw(2) << hex << "0x" << (int)buffer[i] << " ";
-                tempStream << endl;
+                        << std::setw(2) << std::hex << "0x" << (int)buffer[i] << " ";
+                tempStream << std::endl;
                 emit toConsole(QString::fromStdString(tempStream.str()));
             }
             buffer.erase(0, found);
