@@ -1,11 +1,10 @@
-//#include <QDataStream>
 #include <cmath>
 #include <map>
 #include <string>
 
 #include "histogram.h"
 
-Histogram::Histogram(const std::string& name, int nrBins, double min, double max)
+Histogram::Histogram(const std::string& name, int nrBins, double min, double max) noexcept
     : fName(name)
     , fNrBins(nrBins)
     , fMin(min)
@@ -185,7 +184,7 @@ double Histogram::getOverflow() const
 
 double Histogram::getEntries()
 {
-    double sum = fUnderflow + fOverflow;
+    double sum { fUnderflow + fOverflow };
     for (const auto& entry : fHistogramMap) {
         sum += entry.second;
     }
@@ -194,19 +193,19 @@ double Histogram::getEntries()
 
 int Histogram::value2Bin(double value) const
 {
-    double range = fMax - fMin;
+    double range { fMax - fMin };
     if (range <= 0.)
         return -1;
-    int bin = (value - fMin) / range * (fNrBins - 1) + 0.5;
+    int bin { (value - fMin) / range * (fNrBins - 1) + 0.5 };
     return bin;
 }
 
 double Histogram::bin2Value(int bin) const
 {
-    double range = fMax - fMin;
+    double range { fMax - fMin };
     if (range <= 0.)
         return -1;
-    double value = range * bin / (fNrBins - 1) + fMin;
+    double value { range * bin / (fNrBins - 1) + fMin };
     return value;
 }
 
@@ -219,7 +218,7 @@ void Histogram::rescale(double center, double width)
 
 void Histogram::rescale(double center)
 {
-    double width = getMax() - getMin();
+    double width { getMax() - getMin() };
     rescale(center, width);
 }
 
@@ -232,19 +231,19 @@ void Histogram::rescale()
     // set new center to old center, adjust range by 20%
     // set center to newValue if histo empty or only underflow/overflow filled
     // histo will not be filled with supplied value, it has to be done externally
-    double entries = getEntries();
+    double entries { getEntries() };
     // do nothing if histo is empty
     if (entries < 3.) {
         return;
     }
-    double ufl = getUnderflow();
-    double ofl = getOverflow();
+    const double ufl { getUnderflow() };
+    const double ofl { getOverflow() };
     entries -= ufl + ofl;
-    double range = getMax() - getMin();
-    int lowest = getLowestOccupiedBin();
-    int highest = getHighestOccupiedBin();
-    double lowestEntry = getBinCenter(lowest);
-    double highestEntry = getBinCenter(highest);
+    const double range { getMax() - getMin() };
+    const int lowest { getLowestOccupiedBin() };
+    const int highest { getHighestOccupiedBin() };
+    const double lowestEntry { getBinCenter(lowest) };
+    const double highestEntry { getBinCenter(highest) };
     if (ufl > 0. && ofl > 0. && (ufl + ofl) > 0.01 * entries) {
         // range is too small, underflow and overflow have more than 1% of all entries
         rescale(0.5 * (highestEntry - lowestEntry) + lowestEntry, 1.2 * range);
