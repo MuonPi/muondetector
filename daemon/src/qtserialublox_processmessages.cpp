@@ -425,7 +425,7 @@ void QtSerialUblox::UBXNavSat(const std::string& msg, bool allSats)
     auto version { get<uint8_t>(msg.begin() + 4) };
     auto numSvs { get<uint8_t>(msg.begin() + 5) };
 
-    const int N { (msg.size() - 8) / 12 };
+    const std::size_t N { (msg.size() - 8) / 12 };
 
     if (verbose > 3) {
         std::stringstream tempStream;
@@ -438,8 +438,8 @@ void QtSerialUblox::UBXNavSat(const std::string& msg, bool allSats)
         emit toConsole(QString::fromStdString(tempStream.str()));
     }
     uint8_t goodSats = 0;
-    for (int i = 0; i < N; i++) {
-        const int n { 8 + i * 12 };
+    for (std::size_t i = 0; i < N; i++) {
+        const std::size_t n { 8 + i * 12 };
 
         auto gnssId { std::min(static_cast<uint8_t>(7), get<uint8_t>(msg.begin() + n)) };
         auto satId { get<uint8_t>(msg.begin() + n + 1) };
@@ -493,7 +493,7 @@ void QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
     auto numSvs { get<uint8_t>(msg.begin() + 4) };
     auto globFlags { get<uint8_t>(msg.begin() + 5) };
 
-    const int N { (msg.size() - 8) / 12 };
+    const std::size_t N { (msg.size() - 8) / 12 };
 
     if (verbose > 3) {
         std::stringstream tempStream;
@@ -506,8 +506,8 @@ void QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
         emit toConsole(QString::fromStdString(tempStream.str()));
     }
     uint8_t goodSats = 0;
-    for (int i = 0; i < N; i++) {
-        const int n { 8 + i * 12 };
+    for (std::size_t i = 0; i < N; i++) {
+        const std::size_t n { 8 + i * 12 };
 
         auto satId { get<uint8_t>(msg.begin() + n + 1) };
         auto flags { get<uint8_t>(msg.begin() + n + 2) };
@@ -612,7 +612,7 @@ void QtSerialUblox::UBXCfgGNSS(const std::string& msg)
     auto numTrkChUse { get<uint8_t>(msg.begin() + 2) };
     auto numConfigBlocks { get<uint8_t>(msg.begin() + 3) };
 
-    const int N { (msg.size() - 4) / 8 };
+    const std::size_t N { (msg.size() - 4) / 8 };
 
     if (verbose > 2) {
         std::stringstream tempStream;
@@ -627,7 +627,7 @@ void QtSerialUblox::UBXCfgGNSS(const std::string& msg)
     }
     std::vector<GnssConfigStruct> configs;
 
-    for (int i = 0; i < N; i++) {
+    for (std::size_t i = 0; i < N; i++) {
         GnssConfigStruct config;
         const auto n { 8 * i };
         config.gnssId = get<decltype(config.gnssId)>(msg.begin() + n + 4);
