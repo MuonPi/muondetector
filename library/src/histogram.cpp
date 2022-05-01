@@ -196,8 +196,7 @@ int Histogram::value2Bin(double value) const
     double range { fMax - fMin };
     if (range <= 0.)
         return -1;
-    int bin { (value - fMin) / range * (fNrBins - 1) + 0.5 };
-    return bin;
+    return static_cast<int>(std::lround((value - fMin) / range * (fNrBins - 1)));
 }
 
 double Histogram::bin2Value(int bin) const

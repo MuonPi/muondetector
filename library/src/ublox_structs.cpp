@@ -29,22 +29,22 @@ auto UbxMessage::message_id() const -> std::uint8_t
 
 auto UbxMessage::raw_message_string() const -> std::string
 {
-    std::string raw_data_string { 0xb5, 0x62,
-        class_id(), message_id(),
+    std::string raw_data_string { static_cast<char>(0xb5), static_cast<char>(0x62),
+        static_cast<char>(class_id()), static_cast<char>(message_id()),
         static_cast<char>(m_payload.size() & 0xff),
-        static_cast<char>((m_payload.size() >> 8) & 0xff) };
+        static_cast<char>((static_cast<std::uint16_t>(m_payload.size() & 0xff00)>>8)) };
     raw_data_string += m_payload;
     // calc Fletcher checksum, ignore the message header (b5 62)
     auto chksum { check_sum(raw_data_string.substr(2)) };
     raw_data_string += static_cast<unsigned char>(chksum & 0xff);
     raw_data_string += static_cast<unsigned char>(chksum >> 8);
-    return std::move(raw_data_string);
+    return raw_data_string;
 }
 
 auto UbxMessage::check_sum() const -> std::uint16_t
 {
     std::string raw_data_string {
-        class_id(), message_id(),
+        static_cast<char>(class_id()), static_cast<char>(message_id()),
         static_cast<char>(m_payload.size() & 0xff),
         static_cast<char>((m_payload.size() >> 8) & 0xff)
     };
