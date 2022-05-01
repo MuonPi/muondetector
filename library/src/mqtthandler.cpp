@@ -1,6 +1,5 @@
 #include "mqtthandler.h"
 
-
 #include <QDebug>
 #include <QTimer>
 #include <QThread>

@@ -336,10 +336,10 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     fileHandlerThread->start();
 
     // connect log signals to and from log engine, file handler and mqtt handler
-    connect(&logEngine, &LogEngine::sendLogString, mqttHandler, 
-            [this](const QString& content){
-                mqttHandler->publish(QString::fromStdString(Config::MQTT::log_topic), content);
-            });
+    connect(&logEngine, &LogEngine::sendLogString, mqttHandler,
+        [this](const QString& content) {
+            mqttHandler->publish(QString::fromStdString(Config::MQTT::log_topic), content);
+        });
     connect(&logEngine, &LogEngine::sendLogString, fileHandler, &FileHandler::writeToLogFile);
     // connect to the regular log timer signal to log several non-regularly polled parameters
     connect(&logEngine, &LogEngine::logIntervalSignal, this, &Daemon::onLogParameterPolled);
@@ -888,9 +888,9 @@ void Daemon::connectToGps()
             connect(this, &Daemon::eventMessage, fileHandler, &FileHandler::writeToDataFile);
         }
         connect(this, &Daemon::eventMessage, mqttHandler,
-                [this](const QString& content){
-                    mqttHandler->publish(QString::fromStdString(Config::MQTT::data_topic), content);
-                });
+            [this](const QString& content) {
+                mqttHandler->publish(QString::fromStdString(Config::MQTT::data_topic), content);
+            });
     }
     // after thread start there will be a signal emitted which starts the qtGps makeConnection function
     gpsThread->start();
@@ -1906,7 +1906,8 @@ void Daemon::UBXReceivedAckNak(uint16_t ackedMsgID, uint16_t ackedCfgMsgID)
 void Daemon::UBXReceivedMsgRateCfg(uint16_t msgID, uint8_t rate)
 {
     msgRateCfgs.insert(msgID, rate);
-    if (verbose>2) qDebug()<<"received msg rate: id="<<QString::number(msgID, 16)<<" rate="<<(int)rate;
+    if (verbose > 2)
+        qDebug() << "received msg rate: id=" << QString::number(msgID, 16) << " rate=" << (int)rate;
     waitingForAppliedMsgRate--;
     if (waitingForAppliedMsgRate < 0) {
         waitingForAppliedMsgRate = 0;

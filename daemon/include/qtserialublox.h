@@ -6,9 +6,9 @@
 #include <QPointer>
 #include <QSerialPort>
 #include <QTimer>
+#include <memory>
 #include <queue>
 #include <string>
-#include <memory>
 #include <ublox_structs.h>
 
 struct GeodeticPos;
@@ -119,19 +119,19 @@ private:
     void UBXTimTM2(const std::string& msg);
 
     auto UBXNavClock(uint32_t& itow, int32_t& bias, int32_t& drift,
-            uint32_t& tAccuracy, uint32_t& fAccuracy) -> bool;
+        uint32_t& tAccuracy, uint32_t& fAccuracy) -> bool;
     void UBXNavSat(const std::string& msg, bool allSats);
     void UBXNavSVinfo(const std::string& msg, bool allSats);
     void UBXNavPosLLH(const std::string& msg);
     void UBXNavClock(const std::string& msg);
     void UBXNavTimeGPS(const std::string& msg);
     void UBXNavTimeUTC(const std::string& msg);
-    void UBXNavStatus(const std::string &msg);
-    void UBXNavDOP(const std::string &msg);
+    void UBXNavStatus(const std::string& msg);
+    void UBXNavDOP(const std::string& msg);
 
-    void UBXCfgGNSS(const std::string &msg);
-    void UBXCfgMSG(const std::string &msg);
-    void UBXCfgNav5(const std::string &msg);
+    void UBXCfgGNSS(const std::string& msg);
+    void UBXCfgMSG(const std::string& msg);
+    void UBXCfgNav5(const std::string& msg);
     void UBXCfgNavX5(const std::string& msg);
     void UBXCfgAnt(const std::string& msg);
     void UBXCfgTP5(const std::string& msg);

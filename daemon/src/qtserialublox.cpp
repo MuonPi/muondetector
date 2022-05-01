@@ -108,7 +108,7 @@ void QtSerialUblox::sendQueuedMsg(bool afterTimeout)
         }
         return;
     }
-    msgWaitingForAck = std::make_unique<UbxMessage>( outMsgBuffer.front() );
+    msgWaitingForAck = std::make_unique<UbxMessage>(outMsgBuffer.front());
     outMsgBuffer.pop();
     ackTimer->start(timeout);
     sendUBX(*msgWaitingForAck);
