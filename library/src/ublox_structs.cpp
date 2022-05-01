@@ -32,7 +32,7 @@ auto UbxMessage::raw_message_string() const -> std::string
     std::string raw_data_string { static_cast<char>(0xb5), static_cast<char>(0x62),
         static_cast<char>(class_id()), static_cast<char>(message_id()),
         static_cast<char>(m_payload.size() & 0xff),
-        static_cast<char>((static_cast<std::uint16_t>(m_payload.size() & 0xff00)>>8)) };
+        static_cast<char>((static_cast<std::uint16_t>(m_payload.size() & 0xff00) >> 8)) };
     raw_data_string += m_payload;
     // calc Fletcher checksum, ignore the message header (b5 62)
     auto chksum { check_sum(raw_data_string.substr(2)) };
