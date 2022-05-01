@@ -216,7 +216,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     }
 
     if (verbose > 3) {
-        qDebug() << "QT version is " << QString::number(QT_VERSION, 10);
+        qDebug() << "QT version is " << QString::number(QT_VERSION, 16);
     }
     if (verbose > 3) {
         this->thread()->setObjectName("muondetector-daemon");
