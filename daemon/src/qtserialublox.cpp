@@ -305,7 +305,8 @@ void QtSerialUblox::UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask)
         data[i] = 0;
     }
     if (port > 6) {
-        emit UBXCfgError("port > 5 is not possible");
+        emit UBXCfgError("port > 6 is not possible");
+        return;
     }
     if (port == 1) {
         // port 1 is UART port, payload for other ports may differ
