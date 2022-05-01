@@ -40,11 +40,6 @@ template <typename T, endian Endian = endian::little, typename It, std::enable_i
     return value;
 }
 
-constexpr std::size_t nr_targets { 6 };
-constexpr std::size_t default_target { 1 };
-// this is the uart port. (0 = i2c; 1 = uart; 2 = usb; 3 = isp;)
-// see u-blox8-M8_Receiver... pdf documentation p. 170
-
 void QtSerialUblox::processMessage(const UbxMessage& msg)
 {
     static const std::map<std::uint8_t, const char*> ubx_class_names {
@@ -595,7 +590,7 @@ void QtSerialUblox::UBXCfgMSG(const std::string& msg)
     // So, reading the 16-bit message with one operation, the endianness is big
     // and not little (as the default would be using get)
     auto msgID { get<uint16_t, endian::big>(msg.begin()) };
-    auto rate { get<uint8_t>(msg.begin() + 2 + default_target) };
+    auto rate { get<uint8_t>(msg.begin() + 2 + s_default_target) };
 
     emit UBXreceivedMsgRateCfg(msgID, rate);
 }
@@ -1094,11 +1089,11 @@ void QtSerialUblox::UBXMonTx(const std::string& msg)
 {
     // parse all fields
     // nr bytes pending
-    uint16_t pending[nr_targets];
-    uint8_t usage[nr_targets];
-    uint8_t peakUsage[nr_targets];
+    uint16_t pending[s_nr_targets];
+    uint8_t usage[s_nr_targets];
+    uint8_t peakUsage[s_nr_targets];
 
-    for (std::size_t target = 0; target < nr_targets; target++) {
+    for (std::size_t target = 0; target < s_nr_targets; target++) {
         pending[target] = get<uint16_t>(msg.begin() + 2 * target);
         usage[target] = get<uint8_t>(msg.begin() + target + 12);
         peakUsage[target] = get<uint8_t>(msg.begin() + target + 18);
@@ -1122,17 +1117,17 @@ void QtSerialUblox::UBXMonTx(const std::string& msg)
         tempStream << " global TX buf usage      : " << (int)tUsage << " %" << '\n';
         tempStream << " global TX buf peak usage : " << (int)tPeakUsage << " %" << '\n';
         tempStream << " TX buf usage for target      : ";
-        for (std::size_t i = 0; i < nr_targets; i++) {
+        for (std::size_t i = 0; i < s_nr_targets; i++) {
             tempStream << "    (" << i << ") " << std::setw(3) << (int)usage[i];
         }
         tempStream << '\n';
         tempStream << " TX buf peak usage for target : ";
-        for (std::size_t i = 0; i < nr_targets; i++) {
+        for (std::size_t i = 0; i < s_nr_targets; i++) {
             tempStream << "    (" << i << ") " << std::setw(3) << (int)peakUsage[i];
         }
         tempStream << '\n';
         tempStream << " TX bytes pending for target  : ";
-        for (std::size_t i = 0; i < nr_targets; i++) {
+        for (std::size_t i = 0; i < s_nr_targets; i++) {
             tempStream << "    (" << i << ") " << std::setw(3) << pending[i];
         }
         tempStream << "\n";
@@ -1144,13 +1139,13 @@ void QtSerialUblox::UBXMonRx(const std::string& msg)
 {
     // parse all fields
     // nr bytes pending
-    uint16_t pending[nr_targets];
-    uint8_t usage[nr_targets];
-    uint8_t peakUsage[nr_targets];
+    uint16_t pending[s_nr_targets];
+    uint8_t usage[s_nr_targets];
+    uint8_t peakUsage[s_nr_targets];
     uint8_t tUsage { 0 };
     uint8_t tPeakUsage { 0 };
 
-    for (std::size_t target = 0; target < nr_targets; target++) {
+    for (std::size_t target = 0; target < s_nr_targets; target++) {
         pending[target] = get<uint16_t>(msg.begin() + 2 * target);
         usage[target] = get<uint8_t>(msg.begin() + target + 12);
         peakUsage[target] = get<uint8_t>(msg.begin() + target + 18);
@@ -1167,17 +1162,17 @@ void QtSerialUblox::UBXMonRx(const std::string& msg)
         tempStream << " global RX buf usage      : " << (int)tUsage << " %" << '\n';
         tempStream << " global RX buf peak usage : " << (int)tPeakUsage << " %" << '\n';
         tempStream << " RX buf usage for target      : ";
-        for (std::size_t i = 0; i < nr_targets; i++) {
+        for (std::size_t i = 0; i < s_nr_targets; i++) {
             tempStream << "    (" << i << ") " << std::setw(3) << (int)usage[i];
         }
         tempStream << '\n';
         tempStream << " RX buf peak usage for target : ";
-        for (std::size_t i = 0; i < nr_targets; i++) {
+        for (std::size_t i = 0; i < s_nr_targets; i++) {
             tempStream << "    (" << i << ") " << std::setw(3) << (int)peakUsage[i];
         }
         tempStream << '\n';
         tempStream << " RX bytes pending for target  : ";
-        for (std::size_t i = 0; i < nr_targets; i++) {
+        for (std::size_t i = 0; i < s_nr_targets; i++) {
             tempStream << "    (" << i << ") " << std::setw(3) << pending[i];
         }
         tempStream << "\n";

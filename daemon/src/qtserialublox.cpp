@@ -304,8 +304,8 @@ void QtSerialUblox::UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask)
     for (int i = 0; i < 20; i++) {
         data[i] = 0;
     }
-    if (port > 6) {
-        emit UBXCfgError("port > 6 is not possible");
+    if (port >= s_nr_targets) {
+        emit UBXCfgError("port > " + QString::number(s_nr_targets - 1) + " is not possible");
         return;
     }
     if (port == 1) {

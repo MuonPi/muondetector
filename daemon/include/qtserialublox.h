@@ -181,6 +181,11 @@ private:
     const int MSGTIMEOUT = 1500;
     std::queue<gpsTimestamp> fTimestamps;
     static std::string fProtVersionString;
+
+    static constexpr std::size_t s_nr_targets { 6 };
+    static constexpr std::size_t s_default_target { 1 };
+    // this is the uart port. (0 = i2c; 1 = uart; 3 = usb; 4 = isp;)
+    // see u-blox8-M8_Receiver... pdf documentation p. 170
 };
 
 #endif // QTSERIALUBLOX_H
