@@ -18,19 +18,20 @@ static const QList<QString> GNSS_ANT_STATUS_STRINGS = { "init", "unknown", "ok",
 static const QList<QString> GNSS_HEALTH_STRINGS = { "N/A", "good", "bad", "bad+" };
 
 struct UbxMessage {
-public:
     UbxMessage() = default;
-    explicit UbxMessage(std::uint16_t msg_id)
-        : full_id(msg_id)
-    {
-    }
-    std::uint16_t full_id { 0 };
-    std::string data {};
-    [[nodiscard]] auto class_id() const -> std::uint8_t { return (full_id >> 8) & 0xff; }
-    [[nodiscard]] auto message_id() const -> std::uint8_t { return full_id & 0xff; }
+    UbxMessage(std::uint16_t msg_id, const std::string a_payload) noexcept;
+
+    [[nodiscard]] auto full_id() const -> std::uint16_t;
+    [[nodiscard]] auto payload() const -> const std::string&;
+    [[nodiscard]] auto class_id() const -> std::uint8_t;
+    [[nodiscard]] auto message_id() const -> std::uint8_t;
+    [[nodiscard]] auto raw_message_string() const -> std::string;
+    [[nodiscard]] auto check_sum() const -> std::uint16_t;
+    [[nodiscard]] static auto check_sum(const std::string& data) -> std::uint16_t;
 
 private:
-    //std::uint16_t m_full_id { 0 };
+    std::uint16_t m_full_id { 0 };
+    std::string m_payload {};
 };
 
 struct GeodeticPos {

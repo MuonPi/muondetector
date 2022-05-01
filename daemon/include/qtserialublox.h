@@ -105,10 +105,9 @@ private:
     // all functions for sending and receiving raw data used by other functions in "public slots" section
     // and scanning raw data up to the point where "UbxMessage" object is generated
     bool scanUnknownMessage(std::string& buffer, UbxMessage& message);
-    void calcChkSum(const std::string& buf, unsigned char* chkA, unsigned char* chkB);
     bool sendUBX(uint16_t msgID, const std::string& payload, uint16_t nBytes);
     bool sendUBX(uint16_t msgID, unsigned char* payload, uint16_t nBytes);
-    bool sendUBX(UbxMessage& msg);
+    bool sendUBX(const UbxMessage& msg);
     void sendQueuedMsg(bool afterTimeout = false);
     void delay(int millisecondsWait);
 
