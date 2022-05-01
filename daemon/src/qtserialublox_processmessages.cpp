@@ -1014,7 +1014,7 @@ void QtSerialUblox::UBXMonHW2(const std::string& msg)
     auto magQ { get<uint8_t>(msg.begin() + 3) };
 
     auto cfgSrc { get<uint8_t>(msg.begin() + 4) };
-    auto lowLevCfg { get<uint32_t>(msg.begin() + 8) };
+    /* auto lowLevCfg { get<uint32_t>(msg.begin() + 8) }; */
     auto postStatus { get<uint32_t>(msg.begin() + 20) };
 
     if (verbose > 3) {
@@ -1184,7 +1184,7 @@ void QtSerialUblox::UBXCfgNavX5(const std::string& msg)
 {
     // parse all fields
     auto version { get<uint8_t>(msg.begin()) };
-    auto mask1 { get<uint16_t>(msg.begin() + 1) };
+    /* auto mask1 { get<uint16_t>(msg.begin() + 1) }; */
     auto minSVs { get<uint8_t>(msg.begin() + 10) };
     auto maxSVs { get<uint8_t>(msg.begin() + 11) };
     auto minCNO { get<uint8_t>(msg.begin() + 12) };
