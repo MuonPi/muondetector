@@ -6,6 +6,7 @@
 #include <QNetworkInterface>
 #include <QThread>
 #include <Qt>
+#include <QtGlobal>
 #include <QtNetwork>
 #include <chrono>
 #include <config.h>
@@ -137,7 +138,7 @@ void Daemon::handleSigInt()
         qDebug() << allMsgCfgID.size();
         qDebug() << msgRateCfgs.size();
         for (QMap<uint16_t, int>::iterator it = msgRateCfgs.begin(); it != msgRateCfgs.end(); it++) {
-#if QT_VERSION < 0x051400
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
             qDebug().nospace() << "0x" << hex << (uint8_t)(it.key() >> 8) << " 0x" << hex << (uint8_t)(it.key() & 0xff) << " " << dec << it.value();
 #else
             qDebug().nospace() << "0x" << Qt::hex << (uint8_t)(it.key() >> 8) << " 0x" << Qt::hex << (uint8_t)(it.key() & 0xff) << " " << Qt::dec << it.value();
@@ -215,7 +216,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     }
 
     if (verbose > 3) {
-        qDebug() << "QT version is " << QString::number(QT_VERSION, 16);
+        qDebug() << "QT version is " << QString::number(QT_VERSION, 10);
     }
     if (verbose > 3) {
         this->thread()->setObjectName("muondetector-daemon");
@@ -508,7 +509,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         pca9536_p->identify();
         if (verbose > 2) {
             qInfo() << "PCA9536 device is present.";
-#if QT_VERSION < 0x051400
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
             qDebug().nospace() << " inputs: 0x" << hex << (int)io_extender_p->getInputState();
             qDebug() << "readout took" << dec << pca9536_p->getLastTimeInterval() << "ms";
 #else
@@ -550,7 +551,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     }
     if (oled_p->devicePresent()) {
         if (verbose > -1) {
-#if QT_VERSION < 0x051400
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
             qInfo() << "I2C SSD1306-type OLED display found at address 0x" << hex << oled_p->getAddress();
 #else
             qInfo() << "I2C SSD1306-type OLED display found at address 0x" << Qt::hex << oled_p->getAddress();
@@ -2336,7 +2337,7 @@ void Daemon::aquireMonitoringParameters()
             istr.str(flagItem.value);
             istr >> calFlags;
             if (verbose > 2) {
-#if QT_VERSION < 0x051400
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
                 qDebug() << "cal flags:" << QString::fromStdString(flagItem.value) << " (" << (int)calFlags << dec << ")";
 #else
                 qDebug() << "cal flags:" << QString::fromStdString(flagItem.value) << " (" << (int)calFlags << Qt::dec << ")";
