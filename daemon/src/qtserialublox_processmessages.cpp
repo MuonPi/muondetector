@@ -461,7 +461,7 @@ void QtSerialUblox::UBXNavSat(const std::string& msg, bool allSats)
     }
     uint8_t goodSats = 0;
     for (int i = 0; i < N; i++) {
-        int n=8+i*12;
+        const int n { 8 + i * 12 };
 
         auto gnssId { std::min(static_cast<uint8_t>(7), get<uint8_t>(msg.begin() + n)) };
         auto satId { get<uint8_t>(msg.begin() + n + 1)};
@@ -515,7 +515,7 @@ void QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
     auto numSvs { get<uint8_t>(msg.begin() + 4)};
     auto globFlags { get<uint8_t>(msg.begin() + 5)};
 
-    int N = (msg.size() - 8) / 12;
+    const int N { (msg.size() - 8) / 12 };
 
     if (verbose > 3) {
         std::stringstream tempStream;
@@ -529,14 +529,14 @@ void QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
     }
     uint8_t goodSats = 0;
     for (int i = 0; i < N; i++) {
-        int n=8+i*12;
+        const int n { 8 + i * 12 };
 
-        auto satId { get<uint8_t>(msg.begin() + n + 1)};
-        auto flags { get<uint8_t>(msg.begin() + n + 2)};
-        auto quality { get<uint8_t>(msg.begin() + n + 3)};
-        auto cnr { get<uint8_t>(msg.begin() + n + 4)};
-        auto elev { get<int8_t>(msg.begin() + n + 5)};
-        auto azim { get<int16_t>(msg.begin() + n + 6)};
+        auto satId { get<uint8_t>(msg.begin() + n + 1) };
+        auto flags { get<uint8_t>(msg.begin() + n + 2) };
+        auto quality { get<uint8_t>(msg.begin() + n + 3) };
+        auto cnr { get<uint8_t>(msg.begin() + n + 4) };
+        auto elev { get<int8_t>(msg.begin() + n + 5) };
+        auto azim { get<int16_t>(msg.begin() + n + 6) };
         auto prRes { get<int32_t>(msg.begin() + n + 8) };
 
         bool used = false;
@@ -634,7 +634,7 @@ void QtSerialUblox::UBXCfgGNSS(const std::string &msg)
     auto numTrkChUse { get<uint8_t>(msg.begin() + 2)};
     auto numConfigBlocks { get<uint8_t>(msg.begin() + 3)};
 
-    int N = (msg.size() - 4) / 8;
+    const int N { (msg.size() - 4) / 8 };
 
     if (verbose > 2) {
         std::stringstream tempStream;
