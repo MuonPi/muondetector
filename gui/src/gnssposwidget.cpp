@@ -145,7 +145,7 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm)
     const int satPosPixmapSize { pm.width() };
     const QPointF originOffset(satPosPixmapSize / 2., satPosPixmapSize / 2.);
 
-    pm.fill( QApplication::palette().color(QPalette::Base) );
+    pm.fill(QApplication::palette().color(QPalette::Base));
     QPainter satPosPainter(&pm);
     satPosPainter.setPen(QPen(QApplication::palette().color(QPalette::WindowText)));
     satPosPainter.drawEllipse(QPoint(satPosPixmapSize / 2, satPosPixmapSize / 2), satPosPixmapSize / 6, satPosPixmapSize / 6);
@@ -256,7 +256,7 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm)
 
     const QPointF originOffset(0., pm.height() * 0.9);
 
-    pm.fill( QApplication::palette().color(QPalette::Base) );
+    pm.fill(QApplication::palette().color(QPalette::Base));
     QPainter satPosPainter(&pm);
     satPosPainter.setPen(QPen(QApplication::palette().color(QPalette::WindowText)));
     satPosPainter.drawLine(originOffset, originOffset + QPointF(pm.width(), 0));
