@@ -62,7 +62,7 @@ Status::Status(QWidget* parent)
     timepulseTimer.setSingleShot(true);
     timepulseTimer.setInterval(3000);
     connect(&timepulseTimer, &QTimer::timeout, this, [this]() {
-        statusUi->timePulseLabel->setStyleSheet("QLabel {background-color: red;}");
+        statusUi->timePulseLabel->setStyleSheet("QLabel {background-color: red; color: black;}");
     });
 }
 
@@ -186,7 +186,7 @@ void Status::onTriggerSelectionReceived(GPIO_SIGNAL signal)
 
 void Status::onTimepulseReceived()
 {
-    statusUi->timePulseLabel->setStyleSheet("QLabel {background-color: lightGreen;}");
+    statusUi->timePulseLabel->setStyleSheet("QLabel {background-color: lightGreen; color: black;}");
     timepulseTimer.start();
 }
 
@@ -310,10 +310,10 @@ void Status::on_triggerSelectionComboBox_currentIndexChanged(const QString& arg1
 void Status::onMqttStatusChanged(bool connected)
 {
     if (connected) {
-        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: lightGreen;}");
+        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: lightGreen; color: black;}");
         statusUi->mqttStatusLabel->setText("MQTT: Connected");
     } else {
-        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: red;}");
+        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: red; color: black;}");
         statusUi->mqttStatusLabel->setText("MQTT: No Connection");
     }
 }
@@ -324,11 +324,11 @@ void Status::onMqttStatusChanged(MuonPi::MqttHandler::Status status)
     switch (status) {
     case MuonPi::MqttHandler::Status::Connected:
         status_string = "Connected";
-        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: lightGreen;}");
+        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: lightGreen; color: black;}");
         break;
     case MuonPi::MqttHandler::Status::Disconnecting:
     case MuonPi::MqttHandler::Status::Connecting:
-        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: yellow;}");
+        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: yellow; color: black;}");
         status_string = "Connecting/Disconnecting";
         break;
     case MuonPi::MqttHandler::Status::Disconnected:
@@ -338,7 +338,7 @@ void Status::onMqttStatusChanged(MuonPi::MqttHandler::Status status)
     case MuonPi::MqttHandler::Status::Error:
     default:
         status_string = "Error";
-        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: red;}");
+        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: red; color: black;}");
     };
     statusUi->mqttStatusLabel->setText("MQTT: " + status_string);
 }

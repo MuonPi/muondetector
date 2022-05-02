@@ -30,7 +30,7 @@ CustomHistogram::~CustomHistogram()
 void CustomHistogram::initialize()
 {
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    setStyleSheet("background-color: white; border: 0px;");
+    setStyleSheet("background-color: white; color: black; border: 0px;");
     setAutoReplot(true);
     enableAxis(QwtPlot::yLeft, true);
     enableAxis(QwtPlot::yRight, false);
