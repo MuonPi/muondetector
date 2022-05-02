@@ -1254,8 +1254,22 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
     if (msgID == TCP_MSG_KEY::MSG_GPIO_INHIBIT) {
         bool inhibit = true;
         *(tcpMessage.dStream) >> inhibit;
-        if (pigHandler != nullptr)
+        if (pigHandler != nullptr) {
             pigHandler->setInhibited(inhibit);
+            TcpMessage answer(TCP_MSG_KEY::MSG_GPIO_INHIBIT);
+            *(answer.dStream) << pigHandler->isInhibited();
+            emit sendTcpMessage(answer);
+        }
+    }
+    if (msgID == TCP_MSG_KEY::MSG_MQTT_INHIBIT) {
+        bool inhibit { false };
+        *(tcpMessage.dStream) >> inhibit;
+        if (mqttHandler != nullptr) {
+            mqttHandler->setInhibited(inhibit);
+            TcpMessage answer(TCP_MSG_KEY::MSG_MQTT_INHIBIT);
+            *(answer.dStream) << mqttHandler->isInhibited();
+            emit sendTcpMessage(answer);
+        }
     }
     if (msgID == TCP_MSG_KEY::MSG_VERSION) {
         // not evaluated

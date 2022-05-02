@@ -23,13 +23,15 @@ public:
         Disconnected,
         Connecting,
         Disconnecting,
-        Error
+        Error,
+        Inhibited
     };
 
     MqttHandler(const QString& station_id, const int verbosity=0);
     ~MqttHandler() override;
 
     void mqttStartConnection();
+    bool isInhibited();
 
 signals:
     void mqttConnectionStatus(bool connected);
@@ -45,6 +47,7 @@ public slots:
     void unsubscribe(const QString& topic);
     void publish(const QString& topic, const QString& content);
     void onRequestConnectionStatus();
+    void setInhibited(bool inhibited = true);
 
 private slots:
     void set_status(Status status);

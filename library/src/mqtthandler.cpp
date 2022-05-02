@@ -79,6 +79,20 @@ void MqttHandler::set_status(Status status)
     }
 }
 
+bool MqttHandler::isInhibited() {
+    return (m_status == Status::Inhibited);
+}
+
+void MqttHandler::setInhibited(bool inhibited) {
+    if (inhibited) {
+        if (m_status == Status::Connected) {
+            set_status(Status::Inhibited);
+        }
+    } else {
+        set_status(Status::Connected);
+    }
+}
+
 MqttHandler::MqttHandler(const QString& station_id, const int verbosity)
     : QObject(nullptr)
     , m_station_id { station_id.toStdString() }
@@ -278,6 +292,9 @@ void MqttHandler::unsubscribe(const QString& topic)
 }
 
 void MqttHandler::publish(const QString& topic, const QString& content){
+    if (!connected()) {
+        return;
+    }
     std::string usertopic { topic.toStdString() };
     usertopic +=  m_username + "/" + m_station_id;
     if (!publish(usertopic, content.toStdString())) {
