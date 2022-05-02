@@ -145,9 +145,9 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm)
     const int satPosPixmapSize { pm.width() };
     const QPointF originOffset(satPosPixmapSize / 2., satPosPixmapSize / 2.);
 
-    pm.fill(Qt::white);
+    pm.fill( QApplication::palette().color(QPalette::Base) );
     QPainter satPosPainter(&pm);
-    satPosPainter.setPen(QPen(Qt::black));
+    satPosPainter.setPen(QPen(QApplication::palette().color(QPalette::WindowText)));
     satPosPainter.drawEllipse(QPoint(satPosPixmapSize / 2, satPosPixmapSize / 2), satPosPixmapSize / 6, satPosPixmapSize / 6);
     satPosPainter.drawEllipse(QPoint(satPosPixmapSize / 2, satPosPixmapSize / 2), satPosPixmapSize / 3, satPosPixmapSize / 3);
     satPosPainter.drawEllipse(QPoint(satPosPixmapSize / 2, satPosPixmapSize / 2), satPosPixmapSize / 2, satPosPixmapSize / 2);
@@ -239,7 +239,7 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm)
             int satsize { ui->satSizeSpinBox->value() };
             satPosPainter.drawEllipse(currPoint, satsize / 2., satsize / 2.);
             if (currentSat.fUsed) {
-                satPosPainter.setPen(Qt::black);
+                satPosPainter.setPen(QApplication::palette().color(QPalette::WindowText));
                 satPosPainter.drawEllipse(currPoint, 1.2 * satsize / 2., 1.2 * satsize / 2.);
                 satPosPainter.setPen(satColor);
             }
@@ -256,9 +256,9 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm)
 
     const QPointF originOffset(0., pm.height() * 0.9);
 
-    pm.fill(Qt::white);
+    pm.fill( QApplication::palette().color(QPalette::Base) );
     QPainter satPosPainter(&pm);
-    satPosPainter.setPen(QPen(Qt::black));
+    satPosPainter.setPen(QPen(QApplication::palette().color(QPalette::WindowText)));
     satPosPainter.drawLine(originOffset, originOffset + QPointF(pm.width(), 0));
     satPosPainter.drawLine(0.33 * originOffset, 0.33 * originOffset + QPointF(pm.width(), 0));
     satPosPainter.drawLine(0.67 * originOffset, 0.67 * originOffset + QPointF(pm.width(), 0));
@@ -347,7 +347,7 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm)
             int satsize { ui->satSizeSpinBox->value() };
             satPosPainter.drawEllipse(currPos, satsize / 2., satsize / 2.);
             if (currentSat.fUsed) {
-                satPosPainter.setPen(Qt::black);
+                satPosPainter.setPen(QApplication::palette().color(QPalette::WindowText));
                 satPosPainter.drawEllipse(currPos, 1.2 * satsize / 2., 1.2 * satsize / 2.);
                 satPosPainter.setPen(satColor);
             }

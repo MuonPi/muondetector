@@ -221,9 +221,9 @@ void GnssInfoForm::onGpsMonHW2Received(const GnssMonHw2Struct& hw2struct)
 {
     constexpr int iqPixmapSize { 65 };
     QPixmap iqPixmap(iqPixmapSize, iqPixmapSize);
-    iqPixmap.fill(Qt::white);
+    iqPixmap.fill( QApplication::palette().color(QPalette::Base) );
     QPainter iqPainter(&iqPixmap);
-    iqPainter.setPen(QPen(Qt::black));
+    iqPainter.setPen(QPen(QApplication::palette().color(QPalette::WindowText)));
     iqPainter.drawLine(QPoint(iqPixmapSize / 2, 0), QPoint(iqPixmapSize / 2, iqPixmapSize));
     iqPainter.drawLine(QPoint(0, iqPixmapSize / 2), QPoint(iqPixmapSize, iqPixmapSize / 2));
     QColor col { Qt::blue };
