@@ -32,7 +32,7 @@ private:
 void PlotCustom::initialize()
 {
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    setStyleSheet("background-color: white; border: 0px;");
+    setStyleSheet("background-color: white; color: black; border: 0px;");
     setAutoReplot(false);
     enableAxis(QwtPlot::yLeft, false);
     enableAxis(QwtPlot::yRight, true);
