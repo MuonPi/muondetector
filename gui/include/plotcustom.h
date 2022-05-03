@@ -27,7 +27,7 @@ public:
 public slots:
     void setPreset(QString preset = "");
     void setStatusEnabled(bool status);
-    void changeEvent( QEvent* e );
+    void changeEvent(QEvent* e);
 
 private:
     void initialize();

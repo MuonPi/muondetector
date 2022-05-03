@@ -9,10 +9,10 @@
 #include <qtextstream.h>
 #include <qwt.h>
 #include <qwt_legend.h>
+#include <qwt_plot_canvas.h>
 #include <qwt_plot_renderer.h>
 #include <qwt_scale_engine.h>
 #include <qwt_text.h>
-#include <qwt_plot_canvas.h>
 
 #include "custom_histogram_widget.h"
 
@@ -35,7 +35,7 @@ void CustomHistogram::initialize()
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     this->setAutoFillBackground(true);
     QwtPlotCanvas* canvas = dynamic_cast<QwtPlotCanvas*>(this->canvas());
-    canvas->setFrameStyle( QFrame::NoFrame );
+    canvas->setFrameStyle(QFrame::NoFrame);
     QPalette pal = palette();
     pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::Base));
     setPalette(pal);
@@ -61,10 +61,9 @@ void CustomHistogram::initialize()
     show();
 }
 
-void CustomHistogram::changeEvent( QEvent* e )
+void CustomHistogram::changeEvent(QEvent* e)
 {
-    if ( e->type() == QEvent::PaletteChange )
-    {
+    if (e->type() == QEvent::PaletteChange) {
         // update canvas background to appropriate theme
         QPalette pal = palette();
         pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::Base));
@@ -72,7 +71,7 @@ void CustomHistogram::changeEvent( QEvent* e )
         setCanvasBackground(QApplication::palette().color(QPalette::Base));
         replot();
     }
-    QwtPlot::changeEvent( e );
+    QwtPlot::changeEvent(e);
 }
 
 void CustomHistogram::setData(const Histogram& hist)

@@ -2,13 +2,13 @@
 #define GNSSPOSWIDGET_H
 
 #include <QDateTime>
+#include <QEvent>
 #include <QHash>
 #include <QMap>
 #include <QPainterPath>
 #include <QPixmap>
 #include <QVector>
 #include <QWidget>
-#include <QEvent>
 
 class GnssSatellite;
 
@@ -40,7 +40,7 @@ public slots:
     void onSatsReceived(const QVector<GnssSatellite>& satlist);
     void replot();
     void onUiEnabledStateChange(bool connected);
-    void changeEvent( QEvent* e );
+    void changeEvent(QEvent* e);
 
 private slots:
     void on_satSizeSpinBox_valueChanged(int arg1);

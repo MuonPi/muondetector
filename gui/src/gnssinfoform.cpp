@@ -62,14 +62,13 @@ GnssInfoForm::~GnssInfoForm()
     delete ui;
 }
 
-void GnssInfoForm::changeEvent( QEvent* e )
+void GnssInfoForm::changeEvent(QEvent* e)
 {
-    if ( e->type() == QEvent::PaletteChange )
-    {
+    if (e->type() == QEvent::PaletteChange) {
         // update canvas background to appropriate theme
         replotIqWidget();
     }
-    QWidget::changeEvent( e );
+    QWidget::changeEvent(e);
 }
 
 void GnssInfoForm::onSatsReceived(const QVector<GnssSatellite>& satlist)

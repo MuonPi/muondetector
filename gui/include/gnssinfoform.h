@@ -1,10 +1,10 @@
 #ifndef GNSSINFOFORM_H
 #define GNSSINFOFORM_H
 
+#include <QEvent>
 #include <QMap>
 #include <QVector>
 #include <QWidget>
-#include <QEvent>
 
 #include <ublox_structs.h>
 
@@ -35,7 +35,7 @@ public slots:
     void onGeodeticPosReceived(const GeodeticPos& pos);
     void onUiEnabledStateChange(bool connected);
     void onUbxUptimeReceived(quint32 val);
-    void changeEvent( QEvent* e );
+    void changeEvent(QEvent* e);
 
 private slots:
     void replotIqWidget();
@@ -43,7 +43,7 @@ private slots:
 private:
     Ui::GnssInfoForm* ui;
     QVector<QPointF> iqTrack;
-    GnssMonHw2Struct fIqData { };
+    GnssMonHw2Struct fIqData {};
 };
 
 #endif // GNSSINFOFORM_H
