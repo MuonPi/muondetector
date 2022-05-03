@@ -253,6 +253,7 @@ void GnssInfoForm::replotIqWidget()
 void GnssInfoForm::onGpsMonHW2Received(const GnssMonHw2Struct& hw2struct)
 {
     fIqData = hw2struct;
+    replotIqWidget();
 }
 
 void GnssInfoForm::onGpsVersionReceived(const QString& swString, const QString& hwString, const QString& protString)
