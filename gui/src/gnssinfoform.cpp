@@ -3,7 +3,6 @@
 #include <QPainter>
 #include <QPixmap>
 #include <cmath>
-#include <ublox_structs.h>
 
 constexpr int MAX_IQTRACK_BUFFER { 250 };
 
@@ -61,6 +60,16 @@ GnssInfoForm::GnssInfoForm(QWidget* parent)
 GnssInfoForm::~GnssInfoForm()
 {
     delete ui;
+}
+
+void GnssInfoForm::changeEvent( QEvent* e )
+{
+    if ( e->type() == QEvent::PaletteChange )
+    {
+        // update canvas background to appropriate theme
+        replotIqWidget();
+    }
+    QWidget::changeEvent( e );
 }
 
 void GnssInfoForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
@@ -217,7 +226,7 @@ void GnssInfoForm::onGpsMonHWReceived(const GnssMonHwStruct& hwstruct)
     ui->jammingProgressBar->setValue(hwstruct.jamInd / 2.55);
 }
 
-void GnssInfoForm::onGpsMonHW2Received(const GnssMonHw2Struct& hw2struct)
+void GnssInfoForm::replotIqWidget()
 {
     constexpr int iqPixmapSize { 65 };
     QPixmap iqPixmap(iqPixmapSize, iqPixmapSize);
@@ -231,15 +240,20 @@ void GnssInfoForm::onGpsMonHW2Received(const GnssMonHw2Struct& hw2struct)
     for (const auto& iqPoint : iqTrack) {
         iqPainter.drawPoint(iqPoint);
     }
-    double x { hw2struct.ofsI * iqPixmapSize / (2 * 127) + iqPixmapSize / 2. };
-    double y { -hw2struct.ofsQ * iqPixmapSize / (2 * 127) + iqPixmapSize / 2. };
+    double x { fIqData.ofsI * iqPixmapSize / (2 * 127) + iqPixmapSize / 2. };
+    double y { -fIqData.ofsQ * iqPixmapSize / (2 * 127) + iqPixmapSize / 2. };
     col.setAlpha(100);
     iqPainter.setBrush(col);
-    iqPainter.drawEllipse(QPointF(x, y), hw2struct.magI * iqPixmapSize / 512., hw2struct.magQ * iqPixmapSize / 512.);
+    iqPainter.drawEllipse(QPointF(x, y), fIqData.magI * iqPixmapSize / 512., fIqData.magQ * iqPixmapSize / 512.);
     ui->iqAlignmentLabel->setPixmap(iqPixmap);
     iqTrack.push_back(QPointF(x, y));
     if (iqTrack.size() > MAX_IQTRACK_BUFFER)
         iqTrack.pop_front();
+}
+
+void GnssInfoForm::onGpsMonHW2Received(const GnssMonHw2Struct& hw2struct)
+{
+    fIqData = hw2struct;
 }
 
 void GnssInfoForm::onGpsVersionReceived(const QString& swString, const QString& hwString, const QString& protString)

@@ -1,3 +1,5 @@
+#include <QApplication>
+#include <QEvent>
 #include <QFileDialog>
 #include <QMenu>
 #include <numeric>
@@ -8,6 +10,7 @@
 #include <qwt_plot_renderer.h>
 #include <qwt_scale_engine.h>
 #include <qwt_text.h>
+#include <qwt_plot_canvas.h>
 
 #include <custom_plot_widget.h>
 
@@ -30,7 +33,13 @@ CustomPlot::~CustomPlot()
 void CustomPlot::initialize()
 {
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    setStyleSheet("background-color: white; color: black; border: 0px;");
+    this->setAutoFillBackground(true);
+    QwtPlotCanvas* canvas = dynamic_cast<QwtPlotCanvas*>(this->canvas());
+    canvas->setFrameStyle( QFrame::NoFrame );
+    QPalette pal = palette();
+    pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::Base));
+    setPalette(pal);
+    setCanvasBackground(QApplication::palette().color(QPalette::Base));
     setAutoReplot(false);
     enableAxis(QwtPlot::yLeft, true);
     setAxisAutoScale(QwtPlot::xBottom, true);
@@ -45,6 +54,20 @@ void CustomPlot::initialize()
     connect(this, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(popUpMenu(const QPoint&)));
 
     show();
+}
+
+void CustomPlot::changeEvent( QEvent* e )
+{
+    if ( e->type() == QEvent::PaletteChange )
+    {
+        // update canvas background to appropriate theme
+        QPalette pal = palette();
+        pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::Base));
+        setPalette(pal);
+        setCanvasBackground(QApplication::palette().color(QPalette::Base));
+        replot();
+    }
+    QwtPlot::changeEvent( e );
 }
 
 QwtPlotCurve& CustomPlot::curve(const QString& curveName)

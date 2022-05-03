@@ -64,6 +64,16 @@ GnssPosWidget::~GnssPosWidget()
     delete ui;
 }
 
+void GnssPosWidget::changeEvent( QEvent* e )
+{
+    if ( e->type() == QEvent::PaletteChange )
+    {
+        // update canvas background to appropriate theme
+        replot();
+    }
+    QWidget::changeEvent( e );
+}
+
 void GnssPosWidget::resizeEvent(QResizeEvent* /*event*/)
 {
     int w { ui->hostWidget->width() };

@@ -1,3 +1,5 @@
+#include <QApplication>
+#include <QEvent>
 #include <QTime>
 #include <plotcustom.h>
 #include <qpen.h>
@@ -5,6 +7,7 @@
 #include <qwt_legend.h>
 #include <qwt_scale_draw.h>
 #include <qwt_text.h>
+#include <qwt_plot_canvas.h>
 
 class TimeScaleDraw : public QwtScaleDraw {
 public:
@@ -32,7 +35,13 @@ private:
 void PlotCustom::initialize()
 {
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    setStyleSheet("background-color: white; color: black; border: 0px;");
+    this->setAutoFillBackground(true);
+    QwtPlotCanvas* canvas = dynamic_cast<QwtPlotCanvas*>(this->canvas());
+    canvas->setFrameStyle( QFrame::NoFrame );
+    QPalette pal = palette();
+    pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::Base));
+    setPalette(pal);
+    setCanvasBackground(QApplication::palette().color(QPalette::Base));
     setAutoReplot(false);
     enableAxis(QwtPlot::yLeft, false);
     enableAxis(QwtPlot::yRight, true);
@@ -87,6 +96,20 @@ void PlotCustom::initialize()
     legend->checked(QString(""), true, 1);
     replot();
     show();
+}
+
+void PlotCustom::changeEvent( QEvent* e )
+{
+    if ( e->type() == QEvent::PaletteChange )
+    {
+        // update canvas background to appropriate theme
+        QPalette pal = palette();
+        pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::Base));
+        setPalette(pal);
+        setCanvasBackground(QApplication::palette().color(QPalette::Base));
+        replot();
+    }
+    QwtPlot::changeEvent( e );
 }
 
 void PlotCustom::plotSamples(QVector<QPointF>& samples, QwtPlotCurve& curve)

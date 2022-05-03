@@ -44,6 +44,7 @@ public slots:
     void setLogY(bool);
     bool getLogY() const { return fLogY; }
     void rescalePlot();
+    void changeEvent( QEvent* e );
 
     QwtPlotHistogram* getHistogramPlot() { return fBarChart; }
 

@@ -4,11 +4,13 @@
 #include <QMap>
 #include <QVector>
 #include <QWidget>
+#include <QEvent>
+
+#include <ublox_structs.h>
 
 struct GeodeticPos;
 class GnssSatellite;
 struct GnssMonHwStruct;
-struct GnssMonHw2Struct;
 
 namespace Ui {
 class GnssInfoForm;
@@ -33,10 +35,15 @@ public slots:
     void onGeodeticPosReceived(const GeodeticPos& pos);
     void onUiEnabledStateChange(bool connected);
     void onUbxUptimeReceived(quint32 val);
+    void changeEvent( QEvent* e );
+
+private slots:
+    void replotIqWidget();
 
 private:
     Ui::GnssInfoForm* ui;
     QVector<QPointF> iqTrack;
+    GnssMonHw2Struct fIqData { };
 };
 
 #endif // GNSSINFOFORM_H
