@@ -1011,37 +1011,28 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         } else
             setDacThresh(channel, threshold);
         sendDacThresh(Config::Hardware::DAC::Channel::threshold[channel]);
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_THRESHOLD_REQUEST) {
+    } else if (msgID == TCP_MSG_KEY::MSG_THRESHOLD_REQUEST) {
         sendDacThresh(Config::Hardware::DAC::Channel::threshold[0]);
         sendDacThresh(Config::Hardware::DAC::Channel::threshold[1]);
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE) {
+    } else if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE) {
         float voltage;
         *(tcpMessage.dStream) >> voltage;
         setBiasVoltage(voltage);
         if (histoMap.find("pulseHeight") != histoMap.end())
             histoMap["pulseHeight"].clear();
         sendBiasVoltage();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST) {
+    } else if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST) {
         sendBiasVoltage();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_BIAS_SWITCH) {
+    } else if (msgID == TCP_MSG_KEY::MSG_BIAS_SWITCH) {
         bool status;
         *(tcpMessage.dStream) >> status;
         setBiasStatus(status);
         sendBiasStatus();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST) {
+    } else if (msgID == TCP_MSG_KEY::MSG_BIAS_SWITCH_REQUEST) {
         sendBiasStatus();
-    }
-    if (msgID == TCP_MSG_KEY::MSG_PREAMP_SWITCH) {
+    } else if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST) {
+        sendBiasVoltage();
+    } else if (msgID == TCP_MSG_KEY::MSG_PREAMP_SWITCH) {
         quint8 channel;
         bool status;
         *(tcpMessage.dStream) >> channel >> status;
@@ -1056,13 +1047,10 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         }
         sendPreampStatus(0);
         sendPreampStatus(1);
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_PREAMP_SWITCH_REQUEST) {
+    } else if (msgID == TCP_MSG_KEY::MSG_PREAMP_SWITCH_REQUEST) {
         sendPreampStatus(0);
         sendPreampStatus(1);
-    }
-    if (msgID == TCP_MSG_KEY::MSG_POLARITY_SWITCH) {
+    } else if (msgID == TCP_MSG_KEY::MSG_POLARITY_SWITCH) {
         bool pol1, pol2;
         *(tcpMessage.dStream) >> pol1 >> pol2;
         if (MuonPi::Version::hardware.major >= 3 && pol1 != config.polarity[0]) {
@@ -1076,11 +1064,9 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
             emit logParameter(LogParameter("polaritySwitch2", QString::number((int)config.polarity[1]), LogParameter::LOG_EVERY));
         }
         sendPolarityStatus();
-    }
-    if (msgID == TCP_MSG_KEY::MSG_POLARITY_SWITCH_REQUEST) {
+    } else if (msgID == TCP_MSG_KEY::MSG_POLARITY_SWITCH_REQUEST) {
         sendPolarityStatus();
-    }
-    if (msgID == TCP_MSG_KEY::MSG_GAIN_SWITCH) {
+    } else if (msgID == TCP_MSG_KEY::MSG_GAIN_SWITCH) {
         bool status;
         *(tcpMessage.dStream) >> status;
         config.hi_gain = status;
@@ -1090,66 +1076,48 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         emit logParameter(LogParameter("gainSwitch", QString::number((int)config.hi_gain), LogParameter::LOG_EVERY));
         sendGainSwitchStatus();
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_GAIN_SWITCH_REQUEST) {
+    } else if (msgID == TCP_MSG_KEY::MSG_GAIN_SWITCH_REQUEST) {
         sendGainSwitchStatus();
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_MSG_RATE_REQUEST) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_MSG_RATE_REQUEST) {
         sendUbxMsgRates();
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_RESET) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_RESET) {
         uint32_t resetFlags = QtSerialUblox::RESET_WARM | QtSerialUblox::RESET_SW;
         emit resetUbxDevice(resetFlags);
         pollAllUbxMsgRate();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_CONFIG_DEFAULT) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_CONFIG_DEFAULT) {
         configGps();
         pollAllUbxMsgRate();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_MSG_RATE) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_MSG_RATE) {
         QMap<uint16_t, int> ubxMsgRates;
         *(tcpMessage.dStream) >> ubxMsgRates;
         setUbxMsgRates(ubxMsgRates);
-    }
-    if (msgID == TCP_MSG_KEY::MSG_PCA_SWITCH) {
+    } else if (msgID == TCP_MSG_KEY::MSG_PCA_SWITCH) {
         quint8 portMask;
         *(tcpMessage.dStream) >> portMask;
         setPcaChannel((uint8_t)portMask);
         sendPcaChannel();
         if (histoMap.find("UbxEventLength") != histoMap.end())
             histoMap["UbxEventLength"].clear();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_PCA_SWITCH_REQUEST) {
+    } else if (msgID == TCP_MSG_KEY::MSG_PCA_SWITCH_REQUEST) {
         sendPcaChannel();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_EVENTTRIGGER) {
+    } else if (msgID == TCP_MSG_KEY::MSG_EVENTTRIGGER) {
         unsigned int signal;
         *(tcpMessage.dStream) >> signal;
         setEventTriggerSelection((GPIO_SIGNAL)signal);
         usleep(1000);
         sendEventTriggerSelection();
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_EVENTTRIGGER_REQUEST) {
+    } else if (msgID == TCP_MSG_KEY::MSG_EVENTTRIGGER_REQUEST) {
         sendEventTriggerSelection();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_GPIO_RATE_REQUEST) {
+    } else if (msgID == TCP_MSG_KEY::MSG_GPIO_RATE_REQUEST) {
         quint8 whichRate;
         quint16 number;
         *(tcpMessage.dStream) >> number >> whichRate;
         sendGpioRates(number, whichRate);
-    }
-    if (msgID == TCP_MSG_KEY::MSG_GPIO_RATE_RESET) {
+    } else if (msgID == TCP_MSG_KEY::MSG_GPIO_RATE_RESET) {
         clearRates();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_DAC_REQUEST) {
+    } else if (msgID == TCP_MSG_KEY::MSG_DAC_REQUEST) {
         quint8 channel;
         *(tcpMessage.dStream) >> channel;
         MCP4728::DacChannel channelData;
@@ -1158,34 +1126,26 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         dynamic_cast<MCP4728*>(dac_p.get())->readChannel(channel, channelData);
         float voltage = MCP4728::code2voltage(channelData);
         sendDacReadbackValue(channel, voltage);
-    }
-    if (msgID == TCP_MSG_KEY::MSG_ADC_SAMPLE_REQUEST) {
+    } else if (msgID == TCP_MSG_KEY::MSG_ADC_SAMPLE_REQUEST) {
         quint8 channel;
         *(tcpMessage.dStream) >> channel;
         sampleAdcEvent(channel);
-    }
-    if (msgID == TCP_MSG_KEY::MSG_TEMPERATURE_REQUEST) {
+    } else if (msgID == TCP_MSG_KEY::MSG_TEMPERATURE_REQUEST) {
         getTemperature();
-    }
-    if (msgID == TCP_MSG_KEY::MSG_I2C_STATS_REQUEST) {
+    } else if (msgID == TCP_MSG_KEY::MSG_I2C_STATS_REQUEST) {
         sendI2cStats();
-    }
-    if (msgID == TCP_MSG_KEY::MSG_I2C_SCAN_BUS) {
+    } else if (msgID == TCP_MSG_KEY::MSG_I2C_SCAN_BUS) {
         scanI2cBus();
         sendI2cStats();
-    }
-    if (msgID == TCP_MSG_KEY::MSG_SPI_STATS_REQUEST) {
+    } else if (msgID == TCP_MSG_KEY::MSG_SPI_STATS_REQUEST) {
         sendSpiStats();
-    }
-    if (msgID == TCP_MSG_KEY::MSG_CALIB_REQUEST) {
+    } else if (msgID == TCP_MSG_KEY::MSG_CALIB_REQUEST) {
         sendCalib();
-    }
-    if (msgID == TCP_MSG_KEY::MSG_CALIB_SAVE) {
+    } else if (msgID == TCP_MSG_KEY::MSG_CALIB_SAVE) {
         if (calib != nullptr)
             calib->writeToEeprom();
         sendCalib();
-    }
-    if (msgID == TCP_MSG_KEY::MSG_CALIB_SET) {
+    } else if (msgID == TCP_MSG_KEY::MSG_CALIB_SET) {
         std::vector<CalibStruct> calibs;
         quint8 nrEntries = 0;
         *(tcpMessage.dStream) >> nrEntries;
@@ -1195,8 +1155,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
             calibs.push_back(item);
         }
         receivedCalibItems(calibs);
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_GNSS_CONFIG) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_GNSS_CONFIG) {
         std::vector<GnssConfigStruct> gnss_configs;
         int nrEntries = 0;
         *(tcpMessage.dStream) >> nrEntries;
@@ -1208,50 +1167,39 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         emit setGnssConfig(gnss_configs);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         emit sendPollUbxMsg(UBX_MSG::CFG_GNSS);
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_CFG_TP5) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_CFG_TP5) {
         UbxTimePulseStruct tp;
         *(tcpMessage.dStream) >> tp;
         emit UBXSetCfgTP5(tp);
         emit sendPollUbxMsg(UBX_MSG::CFG_TP5);
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_CFG_SAVE) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_CFG_SAVE) {
         emit UBXSaveCfg();
         emit sendPollUbxMsg(UBX_MSG::CFG_TP5);
         emit sendPollUbxMsg(UBX_MSG::CFG_GNSS);
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_QUIT_CONNECTION) {
+    } else if (msgID == TCP_MSG_KEY::MSG_QUIT_CONNECTION) {
         QString closeAddress;
         *(tcpMessage.dStream) >> closeAddress;
         emit closeConnection(closeAddress);
-    }
-    if (msgID == TCP_MSG_KEY::MSG_DAC_EEPROM_SET) {
+    } else if (msgID == TCP_MSG_KEY::MSG_DAC_EEPROM_SET) {
         saveDacValuesToEeprom();
-    }
-    if (msgID == TCP_MSG_KEY::MSG_HISTOGRAM_CLEAR) {
+    } else if (msgID == TCP_MSG_KEY::MSG_HISTOGRAM_CLEAR) {
         QString histoName;
         *(tcpMessage.dStream) >> histoName;
         clearHisto(histoName);
-    }
-    if (msgID == TCP_MSG_KEY::MSG_ADC_MODE_REQUEST) {
+    } else if (msgID == TCP_MSG_KEY::MSG_ADC_MODE_REQUEST) {
         TcpMessage answer(TCP_MSG_KEY::MSG_ADC_MODE);
         *(answer.dStream) << static_cast<quint8>(adcSamplingMode);
         emit sendTcpMessage(answer);
-    }
-    if (msgID == TCP_MSG_KEY::MSG_ADC_MODE) {
+    } else if (msgID == TCP_MSG_KEY::MSG_ADC_MODE) {
         quint8 mode { 0 };
         *(tcpMessage.dStream) >> mode;
         setAdcSamplingMode(static_cast<ADC_SAMPLING_MODE>(mode));
         TcpMessage answer(TCP_MSG_KEY::MSG_ADC_MODE);
         *(answer.dStream) << static_cast<quint8>(adcSamplingMode);
         emit sendTcpMessage(answer);
-    }
-    if (msgID == TCP_MSG_KEY::MSG_LOG_INFO) {
+    } else if (msgID == TCP_MSG_KEY::MSG_LOG_INFO) {
         sendLogInfo();
-    }
-    if (msgID == TCP_MSG_KEY::MSG_GPIO_INHIBIT) {
+    } else if (msgID == TCP_MSG_KEY::MSG_GPIO_INHIBIT) {
         bool inhibit = true;
         *(tcpMessage.dStream) >> inhibit;
         if (pigHandler != nullptr) {
@@ -1260,8 +1208,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
             *(answer.dStream) << pigHandler->isInhibited();
             emit sendTcpMessage(answer);
         }
-    }
-    if (msgID == TCP_MSG_KEY::MSG_MQTT_INHIBIT) {
+    } else if (msgID == TCP_MSG_KEY::MSG_MQTT_INHIBIT) {
         bool inhibit { false };
         *(tcpMessage.dStream) >> inhibit;
         if (mqttHandler != nullptr) {
@@ -1270,10 +1217,10 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
             *(answer.dStream) << mqttHandler->isInhibited();
             emit sendTcpMessage(answer);
         }
-    }
-    if (msgID == TCP_MSG_KEY::MSG_VERSION) {
-        // not evaluated
+    } else if (msgID == TCP_MSG_KEY::MSG_VERSION) {
         sendVersionInfo();
+    } else {
+        qDebug() << "received unknown TCP message: msgID =" << QString::number(static_cast<int>(msgID));
     }
 }
 
