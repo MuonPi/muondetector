@@ -319,7 +319,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     //connect(mqttHandler, &MqttHandler::giving_up, this, &Daemon::handleSigTerm);
     //connect(mqttHandler, SIGNAL(giving_up()), this, SLOT(handleSigTerm()));
     connect(mqttHandlerThread, &QThread::finished, mqttHandler, &MqttHandler::deleteLater);
-    connect(this, &Daemon::requestMqttConnectionStatus, mqttHandler, &MqttHandler::onRequestConnectionStatus);
+    connect(this, &Daemon::requestMqttConnectionStatus, mqttHandler, &MqttHandler::requestConnectionStatus);
     mqttHandlerThread->start();
 
     // create fileHandler
@@ -1216,6 +1216,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
             TcpMessage answer(TCP_MSG_KEY::MSG_MQTT_INHIBIT);
             *(answer.dStream) << mqttHandler->isInhibited();
             emit sendTcpMessage(answer);
+            emit requestMqttConnectionStatus();
         }
     } else if (msgID == TCP_MSG_KEY::MSG_VERSION) {
         sendVersionInfo();

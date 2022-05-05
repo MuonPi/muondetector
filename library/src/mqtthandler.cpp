@@ -87,9 +87,11 @@ void MqttHandler::setInhibited(bool inhibited) {
     if (inhibited) {
         if (m_status == Status::Connected) {
             set_status(Status::Inhibited);
+            emit connection_status(m_status);
         }
     } else {
         set_status(Status::Connected);
+        emit connection_status(m_status);
     }
 }
 
@@ -175,7 +177,7 @@ void MqttHandler::onMqttConnect(){
         return;
     }
     qDebug() << "Error establishing connection";
-    connection_status(Status::Error);
+    emit connection_status(Status::Error);
 }
 
 void MqttHandler::onMqttDisconnect(){
@@ -322,7 +324,7 @@ auto MqttHandler::publish(const std::string& topic, const std::string& content) 
     return false;
 }
 
-void MqttHandler::onRequestConnectionStatus(){
+void MqttHandler::requestConnectionStatus(){
     qDebug() << "connection status = "<<QString::number(static_cast<int>(m_status));
     emit connection_status(m_status);
 }

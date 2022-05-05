@@ -46,7 +46,7 @@ public slots:
     void subscribe(const QString& topic);
     void unsubscribe(const QString& topic);
     void publish(const QString& topic, const QString& content);
-    void onRequestConnectionStatus();
+    void requestConnectionStatus();
     void setInhibited(bool inhibited = true);
 
 private slots:
