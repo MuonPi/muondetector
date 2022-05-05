@@ -64,6 +64,7 @@ private slots:
     void on_dacSlider3_valueChanged(int value);
     void on_dacSlider4_valueChanged(int value);
     void on_gpioInhibitCheckBox_clicked(bool checked);
+    void on_mqttInhibitCheckBox_clicked(bool checked);
     void onPolarityCheckBoxClicked(bool checked);
     void on_timingSelectionComboBox_currentIndexChanged(int index);
     void on_adcTriggerSelectionComboBox_currentIndexChanged(int index);

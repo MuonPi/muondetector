@@ -302,6 +302,11 @@ void ParameterMonitorForm::on_gpioInhibitCheckBox_clicked(bool checked)
     emit gpioInhibitChanged(checked);
 }
 
+void ParameterMonitorForm::on_mqttInhibitCheckBox_clicked(bool checked)
+{
+    emit mqttInhibitChanged(checked);
+}
+
 void ParameterMonitorForm::onPolarityCheckBoxClicked(bool /*checked*/)
 {
     bool pol1 = ui->pol1CheckBox->isChecked();

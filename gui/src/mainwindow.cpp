@@ -229,6 +229,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(paramTab, &ParameterMonitorForm::timingSelectionChanged, this, &MainWindow::sendInputSwitch);
     connect(paramTab, &ParameterMonitorForm::triggerSelectionChanged, this, &MainWindow::onTriggerSelectionChanged);
     connect(paramTab, &ParameterMonitorForm::gpioInhibitChanged, this, &MainWindow::gpioInhibit);
+    connect(paramTab, &ParameterMonitorForm::mqttInhibitChanged, this, &MainWindow::mqttInhibit);
     ui->tabWidget->addTab(paramTab, "Parameters");
 
     ScanForm* scanTab = new ScanForm(this);
