@@ -102,6 +102,7 @@ MainWindow::MainWindow(QWidget* parent)
     }
 
     connect(this, &MainWindow::daemonVersionReceived, this, &MainWindow::onDaemonVersionReceived);
+    connect(this, &MainWindow::biasSwitchReceived, this, &MainWindow::onBiasSwitchReceived);
 
     // set all tabs
     ui->tabWidget->removeTab(0);
@@ -977,7 +978,12 @@ void MainWindow::updateUiProperties()
     ui->rate2->setEnabled(true);
     ui->biasPowerButton->setEnabled(true);
     ui->biasPowerLabel->setEnabled(true);
-    if (biasON) {
+    mouseHold = false;
+}
+
+void MainWindow::onBiasSwitchReceived(bool biasEnabled)
+{
+    if (biasEnabled) {
         ui->biasPowerButton->setText("Disable");
         ui->biasPowerLabel->setText("Bias ON");
         ui->biasPowerLabel->setStyleSheet("QLabel {background-color: darkGreen; color: white;}");
@@ -986,7 +992,6 @@ void MainWindow::updateUiProperties()
         ui->biasPowerLabel->setText("Bias OFF");
         ui->biasPowerLabel->setStyleSheet("QLabel {background-color: red; color: white;}");
     }
-    mouseHold = false;
 }
 
 void MainWindow::connected()
