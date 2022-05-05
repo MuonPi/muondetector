@@ -27,7 +27,12 @@
 
 using namespace std;
 
-constexpr std::chrono::milliseconds CONNECTION_TIMEOUT { 20'000UL };
+/// flash duration of and/xor label after hit
+constexpr std::chrono::milliseconds gpioRateHoldInterval { 50 };
+/// automatic rate poll interval
+constexpr std::chrono::seconds gpioRatePollInterval { 3 };
+/// TCP socket connection timeout
+constexpr std::chrono::seconds CONNECTION_TIMEOUT { 10 };
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -81,11 +86,10 @@ MainWindow::MainWindow(QWidget* parent)
     connect(ui->ipButton, &QPushButton::pressed, this, &MainWindow::onIpButtonClicked);
 
     // set timer for and/xor label color change after hit
-    int timerInterval = 100; // in msec
     andTimer.setSingleShot(true);
     xorTimer.setSingleShot(true);
-    andTimer.setInterval(timerInterval);
-    xorTimer.setInterval(timerInterval);
+    andTimer.setInterval(gpioRateHoldInterval);
+    xorTimer.setInterval(gpioRateHoldInterval);
     connect(&andTimer, &QTimer::timeout, this, &MainWindow::resetAndHit);
     connect(&xorTimer, &QTimer::timeout, this, &MainWindow::resetXorHit);
 
@@ -94,7 +98,7 @@ MainWindow::MainWindow(QWidget* parent)
 
     // set timer for automatic rate poll
     if (automaticRatePoll) {
-        ratePollTimer.setInterval(5000);
+        ratePollTimer.setInterval(gpioRatePollInterval);
         ratePollTimer.setSingleShot(false);
         connect(&ratePollTimer, &QTimer::timeout, this, &MainWindow::sendRequestGpioRates);
         connect(&ratePollTimer, &QTimer::timeout, this, &MainWindow::sendValueUpdateRequests);
@@ -126,9 +130,10 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this, &MainWindow::triggerSelectionReceived, status, &Status::onTriggerSelectionReceived);
     connect(status, &Status::triggerSelectionChanged, this, &MainWindow::onTriggerSelectionChanged);
     connect(this, &MainWindow::timepulseReceived, status, &Status::onTimepulseReceived);
-    //    connect(this, &MainWindow::mqttStatusChanged, status, &Status::onMqttStatusChanged);
-    connect(this, SIGNAL(mqttStatusChanged(bool)), status, SLOT(onMqttStatusChanged(bool)));
-    connect(this, SIGNAL(mqttStatusChanged(MuonPi::MqttHandler::Status)), status, SLOT(onMqttStatusChanged(MuonPi::MqttHandler::Status)));
+    connect(this, static_cast<void (MainWindow::*)(bool)>(&MainWindow::mqttStatusChanged),
+            status, static_cast<void (Status::*)(bool)>(&Status::onMqttStatusChanged));
+    connect(this, static_cast<void (MainWindow::*)(MuonPi::MqttHandler::Status)>(&MainWindow::mqttStatusChanged),
+            status, static_cast<void (Status::*)(MuonPi::MqttHandler::Status)>(&Status::onMqttStatusChanged));
 
     ui->tabWidget->addTab(status, "Overview");
 
@@ -388,14 +393,12 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
         *(tcpMessage.dStream) >> gpioPin;
         receivedGpioRisingEdge((GPIO_SIGNAL)gpioPin);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_MSG_RATE) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_MSG_RATE) {
         QMap<uint16_t, int> msgRateCfgs {};
         *(tcpMessage.dStream) >> msgRateCfgs;
         emit addUbxMsgRates(msgRateCfgs);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_THRESHOLD) {
+    } else if (msgID == TCP_MSG_KEY::MSG_THRESHOLD) {
         quint8 channel;
         float threshold;
         *(tcpMessage.dStream) >> channel >> threshold;
@@ -407,48 +410,28 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
             sliderValuesDirty = true;
         }
         sliderValues.at(channel) = 1e3 * threshold;
-        updateUiProperties();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE) {
+    } else if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE) {
         *(tcpMessage.dStream) >> biasDacVoltage;
-        updateUiProperties();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_BIAS_SWITCH) {
+    } else if (msgID == TCP_MSG_KEY::MSG_BIAS_SWITCH) {
         *(tcpMessage.dStream) >> biasON;
         emit biasSwitchReceived(biasON);
-        updateUiProperties();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_PREAMP_SWITCH) {
+    } else if (msgID == TCP_MSG_KEY::MSG_PREAMP_SWITCH) {
         quint8 channel;
         bool state;
         *(tcpMessage.dStream) >> channel >> state;
         emit preampSwitchReceived(channel, state);
-        updateUiProperties();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_GAIN_SWITCH) {
-        bool gainSwitch;
+    } else if (msgID == TCP_MSG_KEY::MSG_GAIN_SWITCH) {
+        bool gainSwitch { false };
         *(tcpMessage.dStream) >> gainSwitch;
         emit gainSwitchReceived(gainSwitch);
-        updateUiProperties();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_PCA_SWITCH) {
+    } else if (msgID == TCP_MSG_KEY::MSG_PCA_SWITCH) {
         *(tcpMessage.dStream) >> pcaPortMask;
         emit inputSwitchReceived(pcaPortMask);
-        updateUiProperties();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_EVENTTRIGGER) {
+    } else if (msgID == TCP_MSG_KEY::MSG_EVENTTRIGGER) {
         unsigned int signal;
         *(tcpMessage.dStream) >> signal;
         emit triggerSelectionReceived((GPIO_SIGNAL)signal);
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_GPIO_RATE) {
+    } else if (msgID == TCP_MSG_KEY::MSG_GPIO_RATE) {
         quint8 whichRate;
         QVector<QPointF> rate;
         *(tcpMessage.dStream) >> whichRate >> rate;
@@ -465,28 +448,22 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
             ui->rate2->setText(QString::number(rateYValue, 'g', 3) + "/s");
         }
         emit gpioRates(whichRate, rate);
-        updateUiProperties();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_QUIT_CONNECTION) {
+    } else if (msgID == TCP_MSG_KEY::MSG_QUIT_CONNECTION) {
         connectedToDemon = false;
-        uiSetDisconnectedState();
-    }
-    if (msgID == TCP_MSG_KEY::MSG_GEO_POS) {
-        GeodeticPos pos;
+        return;
+    } else if (msgID == TCP_MSG_KEY::MSG_GEO_POS) {
+        GeodeticPos pos {};
         *(tcpMessage.dStream) >> pos.iTOW >> pos.lon >> pos.lat
             >> pos.height >> pos.hMSL >> pos.hAcc >> pos.vAcc;
         emit geodeticPos(pos);
-    }
-    if (msgID == TCP_MSG_KEY::MSG_ADC_SAMPLE) {
+        return;
+    } else if (msgID == TCP_MSG_KEY::MSG_ADC_SAMPLE) {
         quint8 channel;
         float value;
         *(tcpMessage.dStream) >> channel >> value;
         emit adcSampleReceived(channel, value);
-        updateUiProperties();
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_ADC_TRACE) {
+    } else if (msgID == TCP_MSG_KEY::MSG_ADC_TRACE) {
         quint16 size;
         QVector<float> sampleBuffer;
         *(tcpMessage.dStream) >> size;
@@ -497,23 +474,16 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
         }
         emit adcTraceReceived(sampleBuffer);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_DAC_READBACK) {
+    } else if (msgID == TCP_MSG_KEY::MSG_DAC_READBACK) {
         quint8 channel;
         float value;
         *(tcpMessage.dStream) >> channel >> value;
         emit dacReadbackReceived(channel, value);
-        updateUiProperties();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_TEMPERATURE) {
+    } else if (msgID == TCP_MSG_KEY::MSG_TEMPERATURE) {
         float value;
         *(tcpMessage.dStream) >> value;
         emit temperatureReceived(value);
-        updateUiProperties();
-        return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_I2C_STATS) {
+    } else if (msgID == TCP_MSG_KEY::MSG_I2C_STATS) {
         quint8 nrDevices = 0;
         quint32 bytesRead = 0;
         quint32 bytesWritten = 0;
@@ -533,13 +503,12 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
         }
         emit i2cStatsReceived(bytesRead, bytesWritten, deviceList);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_SPI_STATS) {
+    } else if (msgID == TCP_MSG_KEY::MSG_SPI_STATS) {
         bool spiPresent;
         *(tcpMessage.dStream) >> spiPresent;
         emit spiStatsReceived(spiPresent);
-    }
-    if (msgID == TCP_MSG_KEY::MSG_CALIB_SET) {
+        return;
+    } else if (msgID == TCP_MSG_KEY::MSG_CALIB_SET) {
         quint16 nrPars = 0;
         quint64 id = 0;
         bool valid = false;
@@ -554,8 +523,7 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
         }
         emit calibReceived(valid, eepromValid, id, calibList);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_GNSS_SATS) {
+    } else if (msgID == TCP_MSG_KEY::MSG_GNSS_SATS) {
         int nrSats = 0;
         *(tcpMessage.dStream) >> nrSats;
 
@@ -567,8 +535,7 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
         }
         emit satsReceived(satList);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_GNSS_CONFIG) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_GNSS_CONFIG) {
         int numTrkCh = 0;
         int nrConfigs = 0;
 
@@ -582,33 +549,28 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
         }
         emit gnssConfigsReceived(numTrkCh, configList);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_TIME_ACCURACY) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_TIME_ACCURACY) {
         quint32 acc = 0;
         *(tcpMessage.dStream) >> acc;
         emit timeAccReceived(acc);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_FREQ_ACCURACY) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_FREQ_ACCURACY) {
         quint32 acc = 0;
         *(tcpMessage.dStream) >> acc;
         emit freqAccReceived(acc);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_EVENTCOUNTER) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_EVENTCOUNTER) {
         quint32 cnt = 0;
         *(tcpMessage.dStream) >> cnt;
         emit intCounterReceived(cnt);
         ui->eventCounter->setText(QString::number(cnt));
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_UPTIME) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_UPTIME) {
         quint32 val = 0;
         *(tcpMessage.dStream) >> val;
         emit ubxUptimeReceived(val);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_TXBUF) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_TXBUF) {
         quint8 val = 0;
         *(tcpMessage.dStream) >> val;
         emit txBufReceived(val);
@@ -617,8 +579,7 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
             emit txBufPeakReceived(val);
         }
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_RXBUF) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_RXBUF) {
         quint8 val = 0;
         *(tcpMessage.dStream) >> val;
         emit rxBufReceived(val);
@@ -627,76 +588,64 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
             emit rxBufPeakReceived(val);
         }
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_TXBUF_PEAK) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_TXBUF_PEAK) {
         quint8 val = 0;
         *(tcpMessage.dStream) >> val;
         emit txBufPeakReceived(val);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_RXBUF_PEAK) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_RXBUF_PEAK) {
         quint8 val = 0;
         *(tcpMessage.dStream) >> val;
         emit rxBufPeakReceived(val);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_MONHW) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_MONHW) {
         GnssMonHwStruct hw;
         *(tcpMessage.dStream) >> hw;
         emit gpsMonHWReceived(hw);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_MONHW2) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_MONHW2) {
         GnssMonHw2Struct hw2;
         *(tcpMessage.dStream) >> hw2;
         emit gpsMonHW2Received(hw2);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_VERSION) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_VERSION) {
         QString sw = "";
         QString hw = "";
         QString pv = "";
         *(tcpMessage.dStream) >> sw >> hw >> pv;
         emit gpsVersionReceived(sw, hw, pv);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_FIXSTATUS) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_FIXSTATUS) {
         quint8 val = 0;
         *(tcpMessage.dStream) >> val;
         emit gpsFixReceived(val);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_CFG_TP5) {
-        UbxTimePulseStruct tp;
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_CFG_TP5) {
+        UbxTimePulseStruct tp {};
         *(tcpMessage.dStream) >> tp;
         emit gpsTP5Received(tp);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_HISTOGRAM) {
-        Histogram h;
+    } else if (msgID == TCP_MSG_KEY::MSG_HISTOGRAM) {
+        Histogram h {};
         *(tcpMessage.dStream) >> h;
         emit histogramReceived(h);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_ADC_MODE) {
+    } else if (msgID == TCP_MSG_KEY::MSG_ADC_MODE) {
         quint8 mode;
         *(tcpMessage.dStream) >> mode;
         emit adcModeReceived(mode);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_LOG_INFO) {
+    } else if (msgID == TCP_MSG_KEY::MSG_LOG_INFO) {
         LogInfoStruct lis;
         *(tcpMessage.dStream) >> lis;
         emit logInfoReceived(lis);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_UBX_TIMEMARK) {
+    } else if (msgID == TCP_MSG_KEY::MSG_UBX_TIMEMARK) {
         UbxTimeMarkStruct tm;
         *(tcpMessage.dStream) >> tm;
         emit timeMarkReceived(tm);
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_MQTT_STATUS) {
+    } else if (msgID == TCP_MSG_KEY::MSG_MQTT_STATUS) {
         bool connected = false;
         *(tcpMessage.dStream) >> connected;
         if (tcpMessage.dStream->atEnd()) {
@@ -708,35 +657,32 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
             emit mqttStatusChanged(status);
         }
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_POLARITY_SWITCH) {
+    } else if (msgID == TCP_MSG_KEY::MSG_POLARITY_SWITCH) {
         bool pol1;
         bool pol2;
         *(tcpMessage.dStream) >> pol1 >> pol2;
         emit polaritySwitchReceived(pol1, pol2);
-        updateUiProperties();
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_GPIO_INHIBIT) {
+    } else if (msgID == TCP_MSG_KEY::MSG_GPIO_INHIBIT) {
         bool inhibit;
         *(tcpMessage.dStream) >> inhibit;
         emit gpioInhibitReceived(inhibit);
-        updateUiProperties();
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_MQTT_INHIBIT) {
+    } else if (msgID == TCP_MSG_KEY::MSG_MQTT_INHIBIT) {
         bool inhibit;
         *(tcpMessage.dStream) >> inhibit;
         emit mqttInhibitReceived(inhibit);
-        updateUiProperties();
         return;
-    }
-    if (msgID == TCP_MSG_KEY::MSG_VERSION) {
+    } else if (msgID == TCP_MSG_KEY::MSG_VERSION) {
         MuonPi::Version::Version hw_ver, sw_ver;
         *(tcpMessage.dStream) >> hw_ver >> sw_ver;
         emit daemonVersionReceived(hw_ver, sw_ver);
         return;
+    } else {
+        qDebug() << "received unknown TCP message, msgID =" << QString::number(static_cast<int>(msgID));
+        return;
     }
+    updateUiProperties();
 }
 
 void MainWindow::sendRequest(quint16 requestSig)
