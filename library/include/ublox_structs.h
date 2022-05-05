@@ -11,6 +11,25 @@
 #include <sstream>
 #include <string>
 
+namespace Gnss {
+struct Id {
+    static constexpr int GPS { 0 };
+    static constexpr int SBAS { 1 };
+    static constexpr int GAL { 2 };
+    static constexpr int BEID { 3 };
+    static constexpr int IMES { 4 };
+    static constexpr int QZSS { 5 };
+    static constexpr int GLNS { 6 };
+    static constexpr int Undefined { 7 };
+    static constexpr int first { GPS };
+    static constexpr int last { Undefined };
+    static constexpr int count { last+1 };
+
+    static constexpr std::array<const char*, Undefined+1> name { " GPS", "SBAS", " GAL", "BEID", "IMES", "QZSS", "GLNS", " N/A" };
+};
+} // namespace GNSS
+
+
 static const QList<QString> GNSS_ID_STRING = { " GPS", "SBAS", " GAL", "BEID", "IMES", "QZSS", "GLNS", " N/A" };
 static const QList<QString> FIX_TYPE_STRINGS = { "No Fix", "Dead Reck.", "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix" };
 static const QList<QString> GNSS_ORBIT_SRC_STRING = { "N/A", "Ephem", "Alm", "AOP", "AOP+", "Alt", "Alt", "Alt" };

@@ -486,8 +486,7 @@ void GnssPosWidget::exportToFile()
                     SatHistoryPoint p { pointVector.front() };
                     out << p.time.toString(Qt::ISODate) << " "
                         << p.gnssId << " "
-                        << GNSS_ID_STRING[std::clamp(static_cast<int>(p.gnssId), 0, GNSS_ID_STRING.size())] << " "
-                        << p.satId << " "
+                        << QString::fromLocal8Bit(Gnss::Id::name[std::clamp(static_cast<int>(p.gnssId), Gnss::Id::first, Gnss::Id::last)]) << p.satId << " "
                         << p.posPolar.x() << " "
                         << p.posPolar.y() << " "
                         << mean_cnr << "\n";
