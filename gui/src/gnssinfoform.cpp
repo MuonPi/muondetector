@@ -265,9 +265,9 @@ void GnssInfoForm::onGpsVersionReceived(const QString& swString, const QString& 
 
 void GnssInfoForm::onGpsFixReceived(quint8 val)
 {
-    QString fixType { "N/A" };
-    if (val < FIX_TYPE_STRINGS.size())
-        fixType = FIX_TYPE_STRINGS[val];
+    QString fixType { Gnss::FixType::name[Gnss::FixType::None] };
+    if (val < Gnss::FixType::count)
+        fixType = QString::fromLocal8Bit(Gnss::FixType::name[val]);
     if (val < 2)
         ui->fixTypeLabel->setStyleSheet("QLabel { background-color : red }");
     else if (val == 2)

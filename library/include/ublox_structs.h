@@ -12,6 +12,7 @@
 #include <string>
 
 namespace Gnss {
+
 struct Id {
     static constexpr int GPS { 0 };
     static constexpr int SBAS { 1 };
@@ -25,13 +26,27 @@ struct Id {
     static constexpr int last { Undefined };
     static constexpr int count { last+1 };
 
-    static constexpr std::array<const char*, Undefined+1> name { " GPS", "SBAS", " GAL", "BEID", "IMES", "QZSS", "GLNS", " N/A" };
+    static constexpr std::array<const char*, count> name { " GPS", "SBAS", " GAL", "BEID", "IMES", "QZSS", "GLNS", " N/A" };
 };
-} // namespace GNSS
+
+struct FixType {
+    static constexpr int None { 0 };
+    static constexpr int DeadReckoning { 1 };
+    static constexpr int Fix2d { 2 };
+    static constexpr int Fix3d { 3 };
+    static constexpr int GpsDeadReckoning { 4 };
+    static constexpr int TimeFix { 5 };
+    static constexpr int Undefined { 6 };
+    static constexpr int first { None };
+    static constexpr int last { Undefined };
+    static constexpr int count { last+1 };
+
+    static constexpr std::array<const char*, count> name { "No Fix", "Dead Reck.", "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix", " N/A" };
+};
+
+} // namespace Gnss
 
 
-static const QList<QString> GNSS_ID_STRING = { " GPS", "SBAS", " GAL", "BEID", "IMES", "QZSS", "GLNS", " N/A" };
-static const QList<QString> FIX_TYPE_STRINGS = { "No Fix", "Dead Reck.", "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix" };
 static const QList<QString> GNSS_ORBIT_SRC_STRING = { "N/A", "Ephem", "Alm", "AOP", "AOP+", "Alt", "Alt", "Alt" };
 static const QList<QString> GNSS_ANT_STATUS_STRINGS = { "init", "unknown", "ok", "short", "open", "unknown", "unknown" };
 static const QList<QString> GNSS_HEALTH_STRINGS = { "N/A", "good", "bad", "bad+" };
@@ -284,7 +299,7 @@ inline void GnssSatellite::Print(bool wHeader) const
         std::cout << "    Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth DiffCorr" << std::endl;
         std::cout << "   ------------------------------------------------------------------------------" << std::endl;
     }
-    std::cout << "   " << std::dec << "  " << GNSS_ID_STRING[(int)fGnssId].toStdString() << "   " << std::setw(3) << (int)fSatId << "    ";
+    std::cout << "   " << std::dec << "  " << Gnss::Id::name[static_cast<int>(fGnssId)] << "   " << std::setw(3) << (int)fSatId << "    ";
     std::cout << std::setw(3) << (int)fCnr << "      " << std::setw(3) << (int)fElev << "       " << std::setw(3) << (int)fAzim;
     std::cout << "   " << std::setw(6) << fPrRes << "    " << fQuality << "   " << std::string((fUsed) ? "Y" : "N");
     std::cout << "    " << fHealth << "   " << fOrbitSource << "   " << (int)fSmoothed << "    " << (int)fDiffCorr;
@@ -298,7 +313,7 @@ inline void GnssSatellite::Print(int index, bool wHeader) const
         std::cout << "   Nr   Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth DiffCorr" << std::endl;
         std::cout << "   ----------------------------------------------------------------------------------" << std::endl;
     }
-    std::cout << "   " << std::dec << std::setw(2) << index + 1 << "  " << GNSS_ID_STRING[(int)fGnssId].toStdString() << "   " << std::setw(3) << (int)fSatId << "    ";
+    std::cout << "   " << std::dec << std::setw(2) << index + 1 << "  " << Gnss::Id::name[static_cast<int>(fGnssId)] << "   " << std::setw(3) << (int)fSatId << "    ";
     std::cout << std::setw(3) << (int)fCnr << "      " << std::setw(3) << (int)fElev << "       " << std::setw(3) << (int)fAzim;
     std::cout << "   " << std::setw(6) << fPrRes << "    " << fQuality << "   " << std::string((fUsed) ? "Y" : "N");
     std::cout << "    " << fHealth << "   " << fOrbitSource << "   " << (int)fSmoothed << "    " << (int)fDiffCorr;
