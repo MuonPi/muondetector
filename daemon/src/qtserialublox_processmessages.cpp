@@ -436,12 +436,12 @@ void QtSerialUblox::UBXNavSat(const std::string& msg, bool allSats)
     for (std::size_t i = 0; i < N; i++) {
         const std::size_t n { 8 + i * 12 };
 
-        auto gnssId { std::min(static_cast<uint8_t>(7), get<uint8_t>(msg.begin() + n)) };
+        auto gnssId { get<uint8_t>(msg.begin() + n) };
         auto satId { get<uint8_t>(msg.begin() + n + 1) };
         auto cnr { get<uint8_t>(msg.begin() + n + 2) };
-        auto elev { get<uint8_t>(msg.begin() + n + 3) };
-        auto azim { get<uint16_t>(msg.begin() + n + 4) };
-        auto prRes { static_cast<float>(get<uint16_t>(msg.begin() + n + 6)) / 10.0F };
+        auto elev { get<int8_t>(msg.begin() + n + 3) };
+        auto azim { get<int16_t>(msg.begin() + n + 4) };
+        auto prRes { static_cast<float>(get<int16_t>(msg.begin() + n + 6)) / 10.0F };
         auto flags { get<uint32_t>(msg.begin() + n + 8) };
 
         GnssSatellite sat(gnssId, satId, cnr, elev, azim, prRes, flags);
