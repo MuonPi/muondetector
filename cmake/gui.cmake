@@ -97,6 +97,13 @@ if(APPLE)
         message(STATUS "QWT found: ${QWT}")
     endif()
 elseif(WIN32)
+    find_library(MOSQUITTO
+        NAMES mosquitto
+        HINTS ${MOSQUITTO_DIR}
+        REQUIRED)
+        if(MOSQUITTO)
+            message(STATUS "Mosquitto found: ${MOSQUITTO}")
+        endif()
     find_library(QWT
         NAMES qwt
         HINTS ${QWT_DIR}/lib
@@ -150,6 +157,7 @@ set_target_properties(muondetector-gui PROPERTIES POSITION_INDEPENDENT_CODE 1)
 target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:${MUONDETECTOR_GUI_HEADER_DIR}>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
+    $<BUILD_INTERFACE:${MOSQUITTO_DIR}>
     $<BUILD_INTERFACE:/usr/include/qwt>
     )
 
@@ -161,6 +169,7 @@ target_link_libraries(muondetector-gui
     muondetector-shared
     pthread
     ${QWT}
+    ${MOSQUITTO}
     )
 
 elseif(APPLE)
