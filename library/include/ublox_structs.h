@@ -14,42 +14,82 @@
 namespace Gnss {
 
 struct Id {
-    static constexpr int GPS { 0 };
-    static constexpr int SBAS { 1 };
-    static constexpr int GAL { 2 };
-    static constexpr int BEID { 3 };
-    static constexpr int IMES { 4 };
-    static constexpr int QZSS { 5 };
-    static constexpr int GLNS { 6 };
-    static constexpr int Undefined { 7 };
-    static constexpr int first { GPS };
-    static constexpr int last { Undefined };
-    static constexpr int count { last+1 };
-
-    static constexpr std::array<const char*, count> name { " GPS", "SBAS", " GAL", "BEID", "IMES", "QZSS", "GLNS", " N/A" };
+    enum {
+        GPS = 0,
+        SBAS = 1,
+        GAL = 2,
+        BEID = 3,
+        IMES = 4,
+        QZSS = 5,
+        GLNS = 6,
+        Undefined = 7,
+        first = GPS,
+        last = Undefined
+    };
+    static constexpr std::array<const char*, last + 1> name { " GPS", "SBAS", " GAL", "BEID", "IMES", "QZSS", "GLNS", " N/A" };
 };
 
 struct FixType {
-    static constexpr int None { 0 };
-    static constexpr int DeadReckoning { 1 };
-    static constexpr int Fix2d { 2 };
-    static constexpr int Fix3d { 3 };
-    static constexpr int GpsDeadReckoning { 4 };
-    static constexpr int TimeFix { 5 };
-    static constexpr int Undefined { 6 };
-    static constexpr int first { None };
-    static constexpr int last { Undefined };
-    static constexpr int count { last+1 };
+    enum {
+        None = 0,
+        DeadReckoning = 1,
+        Fix2d = 2,
+        Fix3d = 3,
+        GpsDeadReckoning = 4,
+        TimeFix = 5,
+        Undefined = 6,
+        first = None,
+        last = Undefined
+    };
+    static constexpr std::array<const char*, last + 1> name { "No Fix", "Dead Reck.", "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix", " N/A" };
+};
 
-    static constexpr std::array<const char*, count> name { "No Fix", "Dead Reck.", "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix", " N/A" };
+struct OrbitSource {
+    enum {
+        None = 0,
+        Ephem = 1,
+        Almanac = 2,
+        Aop = 3,
+        Aop2 = 4,
+        Alt1 = 5,
+        Alt2 = 6,
+        Alt3 = 7,
+        Undefined = 8,
+        first = None,
+        last = Undefined
+    };
+    static constexpr std::array<const char*, last + 1> name { "N/A", "Ephem", "Alm", "AOP", "AOP+", "Alt", "Alt", "Alt", "Undef" };
+};
+
+struct AntennaStatus {
+    enum {
+        Init = 0,
+        Unknown1 = 1,
+        Ok = 2,
+        ShortCircuit = 3,
+        Open = 4,
+        Unknown2 = 5,
+        Unknown3 = 6,
+        Undefined = 7,
+        first = Init,
+        last = Undefined
+    };
+    static constexpr std::array<const char*, last + 1> name { "init", "unknown", "ok", "short", "open", "unknown", "unknown", "N/A" };
+};
+
+struct SvHealth {
+    enum {
+        Undefined = 0,
+        Good = 1,
+        Bad = 2,
+        VeryBad = 3,
+        first = Undefined,
+        last = VeryBad
+    };
+    static constexpr std::array<const char*, last + 1> name { "N/A", "good", "bad", "bad+" };
 };
 
 } // namespace Gnss
-
-
-static const QList<QString> GNSS_ORBIT_SRC_STRING = { "N/A", "Ephem", "Alm", "AOP", "AOP+", "Alt", "Alt", "Alt" };
-static const QList<QString> GNSS_ANT_STATUS_STRINGS = { "init", "unknown", "ok", "short", "open", "unknown", "unknown" };
-static const QList<QString> GNSS_HEALTH_STRINGS = { "N/A", "good", "bad", "bad+" };
 
 struct UbxMessage {
     UbxMessage() = default;

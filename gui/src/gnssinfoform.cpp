@@ -91,7 +91,7 @@ void GnssInfoForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
         newItem1->setTextAlignment(Qt::AlignHCenter);
         ui->satsTableWidget->setItem(ui->satsTableWidget->rowCount() - 1, 0, newItem1);
 
-        QTableWidgetItem* newItem2 = new QTableWidgetItem(QString::fromLocal8Bit(Gnss::Id::name[std::clamp(static_cast<int>(current_sat.fGnssId), Gnss::Id::first, Gnss::Id::last)]));
+        QTableWidgetItem* newItem2 = new QTableWidgetItem(QString::fromLocal8Bit(Gnss::Id::name[std::clamp(static_cast<int>(current_sat.fGnssId), static_cast<int>(Gnss::Id::first), static_cast<int>(Gnss::Id::last))]));
         newItem2->setSizeHint(QSize(50, 24));
         newItem2->setTextAlignment(Qt::AlignHCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 1, newItem2);
@@ -131,13 +131,13 @@ void GnssInfoForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
         ui->satsTableWidget->setItem(newItem1->row(), 6, newItem7);
 
         QString str { "n/a" };
-        if (current_sat.fHealth < GNSS_HEALTH_STRINGS.size())
-            str = GNSS_HEALTH_STRINGS[current_sat.fHealth];
-        if (current_sat.fHealth == 0) {
+        if (current_sat.fHealth < Gnss::SvHealth::name.size())
+            str = QString::fromLocal8Bit(Gnss::SvHealth::name[static_cast<int>(current_sat.fHealth)]);
+        if (current_sat.fHealth == Gnss::SvHealth::Undefined) {
             color = Qt::lightGray;
-        } else if (current_sat.fHealth == 1) {
+        } else if (current_sat.fHealth == Gnss::SvHealth::Good) {
             color = Qt::green;
-        } else if (current_sat.fHealth >= 2) {
+        } else if (current_sat.fHealth >= Gnss::SvHealth::Bad) {
             color = Qt::red;
         }
         QTableWidgetItem* newItem8 = new QTableWidgetItem(str);
@@ -145,8 +145,8 @@ void GnssInfoForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
         newItem8->setTextAlignment(Qt::AlignHCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 7, newItem8);
 
-        int orbSrc { std::clamp(current_sat.fOrbitSource, 0, 7) };
-        QTableWidgetItem* newItem9 = new QTableWidgetItem(GNSS_ORBIT_SRC_STRING[std::clamp(orbSrc, 0, GNSS_ORBIT_SRC_STRING.size())]);
+        int orbSrc { std::clamp(static_cast<int>(current_sat.fOrbitSource), static_cast<int>(Gnss::OrbitSource::first), static_cast<int>(Gnss::OrbitSource::last)) };
+        QTableWidgetItem* newItem9 = new QTableWidgetItem(QString::fromLocal8Bit(Gnss::OrbitSource::name[orbSrc]));
         newItem9->setSizeHint(QSize(40, 24));
         newItem9->setTextAlignment(Qt::AlignHCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 8, newItem9);
@@ -190,22 +190,21 @@ void GnssInfoForm::onGpsMonHWReceived(const GnssMonHwStruct& hwstruct)
     ui->lnaNoiseLabel->setText(QString::number(-hwstruct.noise) + " dBHz");
     ui->lnaAgcLabel->setText(QString::number(hwstruct.agc));
     QString str { "n/a" };
-    if (hwstruct.antStatus < GNSS_ANT_STATUS_STRINGS.size())
-        str = GNSS_ANT_STATUS_STRINGS[hwstruct.antStatus];
-    switch (hwstruct.antStatus) {
-    case 0:
+    if (hwstruct.antStatus < Gnss::AntennaStatus::name.size())
+        str = QString::fromLocal8Bit(Gnss::AntennaStatus::name[static_cast<int>(hwstruct.antStatus)]);
+    switch (static_cast<int>(hwstruct.antStatus)) {
+    case Gnss::AntennaStatus::Init:
         ui->antStatusLabel->setStyleSheet("QLabel { background-color : yellow }");
         break;
-    case 2:
+    case Gnss::AntennaStatus::Ok:
         ui->antStatusLabel->setStyleSheet("QLabel { background-color : Window }");
         break;
-    case 3:
+    case Gnss::AntennaStatus::ShortCircuit:
         ui->antStatusLabel->setStyleSheet("QLabel { background-color : red }");
         break;
-    case 4:
+    case Gnss::AntennaStatus::Open:
         ui->antStatusLabel->setStyleSheet("QLabel { background-color : red }");
         break;
-    case 1:
     default:
         ui->antStatusLabel->setStyleSheet("QLabel { background-color : yellow }");
     }
@@ -266,13 +265,13 @@ void GnssInfoForm::onGpsVersionReceived(const QString& swString, const QString& 
 void GnssInfoForm::onGpsFixReceived(quint8 val)
 {
     QString fixType { Gnss::FixType::name[Gnss::FixType::None] };
-    if (val < Gnss::FixType::count)
+    if (val < Gnss::FixType::name.size())
         fixType = QString::fromLocal8Bit(Gnss::FixType::name[val]);
-    if (val < 2)
+    if (val < Gnss::FixType::Fix2d)
         ui->fixTypeLabel->setStyleSheet("QLabel { background-color : red }");
-    else if (val == 2)
+    else if (val == Gnss::FixType::Fix2d)
         ui->fixTypeLabel->setStyleSheet("QLabel { background-color : lightgreen }");
-    else if (val > 2)
+    else if (val > Gnss::FixType::Fix3d)
         ui->fixTypeLabel->setStyleSheet("QLabel { background-color : green }");
     else
         ui->fixTypeLabel->setStyleSheet("QLabel { background-color : Window }");

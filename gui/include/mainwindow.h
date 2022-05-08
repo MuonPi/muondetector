@@ -133,6 +133,7 @@ private slots:
     void on_saveDacButton_clicked();
     void onDaemonVersionReceived(MuonPi::Version::Version hw_ver, MuonPi::Version::Version sw_ver);
     void onBiasSwitchReceived(bool biasEnabled);
+
 private:
     Ui::MainWindow* ui;
     void uiSetConnectedState();

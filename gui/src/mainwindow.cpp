@@ -131,9 +131,9 @@ MainWindow::MainWindow(QWidget* parent)
     connect(status, &Status::triggerSelectionChanged, this, &MainWindow::onTriggerSelectionChanged);
     connect(this, &MainWindow::timepulseReceived, status, &Status::onTimepulseReceived);
     connect(this, static_cast<void (MainWindow::*)(bool)>(&MainWindow::mqttStatusChanged),
-            status, static_cast<void (Status::*)(bool)>(&Status::onMqttStatusChanged));
+        status, static_cast<void (Status::*)(bool)>(&Status::onMqttStatusChanged));
     connect(this, static_cast<void (MainWindow::*)(MuonPi::MqttHandler::Status)>(&MainWindow::mqttStatusChanged),
-            status, static_cast<void (Status::*)(MuonPi::MqttHandler::Status)>(&Status::onMqttStatusChanged));
+        status, static_cast<void (Status::*)(MuonPi::MqttHandler::Status)>(&Status::onMqttStatusChanged));
 
     ui->tabWidget->addTab(status, "Overview");
 
