@@ -446,14 +446,14 @@ void QtSerialUblox::UBXNavSat(const std::string& msg, bool allSats)
 
         GnssSatellite sat(gnssId, satId, cnr, elev, azim, prRes, flags);
 
-        if (sat.getCnr() > 0) {
+        if (sat.Cnr > 0) {
             goodSats++;
         }
         satList.push_back(sat);
     }
     if (!allSats) {
         sort(satList.begin(), satList.end(), GnssSatellite::sortByCnr);
-        while (!satList.empty() && (satList.back().getCnr() == 0)) {
+        while (!satList.empty() && (satList.back().Cnr == 0)) {
             satList.pop_back();
         }
     }
@@ -551,14 +551,14 @@ void QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
 
         GnssSatellite sat(gnssId, satId, cnr, elev, azim, prRes,
             quality, health, orbitSource, used, diffCorr, smoothed);
-        if (sat.getCnr() > 0) {
+        if (sat.Cnr > 0) {
             goodSats++;
         }
         satList.push_back(sat);
     }
     if (!allSats) {
         sort(satList.begin(), satList.end(), GnssSatellite::sortByCnr);
-        while (!satList.empty() && (satList.back().getCnr() == 0)) {
+        while (!satList.empty() && (satList.back().Cnr == 0)) {
             satList.pop_back();
         }
     }

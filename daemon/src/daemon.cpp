@@ -1903,7 +1903,7 @@ void Daemon::onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
 {
     vector<GnssSatellite> visibleSats = sats;
     std::sort(visibleSats.begin(), visibleSats.end(), GnssSatellite::sortByCnr);
-    while (visibleSats.size() > 0 && visibleSats.back().getCnr() == 0)
+    while (visibleSats.size() > 0 && visibleSats.back().Cnr == 0)
         visibleSats.pop_back();
 
     if (verbose > 3) {
@@ -1933,10 +1933,10 @@ void Daemon::onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
     int usedSats = 0, maxCnr = 0;
     if (visibleSats.size()) {
         for (auto sat : visibleSats) {
-            if (sat.fUsed)
+            if (sat.Used)
                 usedSats++;
-            if (sat.fCnr > maxCnr)
-                maxCnr = sat.fCnr;
+            if (sat.Cnr > maxCnr)
+                maxCnr = sat.Cnr;
         }
     }
     propertyMap["usedSats"] = Property("usedSats", usedSats);

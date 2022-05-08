@@ -207,30 +207,30 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm)
     // draw the current sat positions now
     for (const auto& currentSat : fCurrentSatlist) {
         if (ui->receivedSatsCheckBox->isChecked()) {
-            if (currentSat.fCnr > 0)
+            if (currentSat.Cnr > 0)
                 newlist.push_back(currentSat);
         } else {
             newlist.push_back(currentSat);
         }
-        if (currentSat.fElev <= 90. && currentSat.fElev >= -90.) {
-            if (ui->receivedSatsCheckBox->isChecked() && currentSat.fCnr == 0)
+        if (currentSat.Elev <= 90. && currentSat.Elev >= -90.) {
+            if (ui->receivedSatsCheckBox->isChecked() && currentSat.Cnr == 0)
                 continue;
-            QPointF currPos(currentSat.fAzim, currentSat.fElev);
+            QPointF currPos(currentSat.Azim, currentSat.Elev);
             QPointF currPoint { polar2cartUnity(currPos) };
-            QColor satColor { GNSS_COLORS.at(std::clamp(static_cast<int>(currentSat.fGnssId), 0, GNSS_COLORS.size() - 1)) };
+            QColor satColor { GNSS_COLORS.at(std::clamp(static_cast<int>(currentSat.GnssId), 0, GNSS_COLORS.size() - 1)) };
             satPosPainter.setPen(satColor);
             QColor fillColor { satColor };
-            int alpha = alphaFromCnr(currentSat.fCnr, ui->cnrRangeSpinBox->value());
+            int alpha = alphaFromCnr(currentSat.Cnr, ui->cnrRangeSpinBox->value());
             fillColor.setAlpha(alpha);
-            int satId { currentSat.fGnssId * 1000 + currentSat.fSatId };
-            if (currentSat.fCnr > 0) {
+            int satId { currentSat.GnssId * 1000 + currentSat.SatId };
+            if (currentSat.Cnr > 0) {
                 SatHistoryPoint p {};
                 p.posCart = currPoint;
                 p.color = fillColor;
                 p.posPolar = QPoint(currPos.x(), currPos.y());
-                p.gnssId = currentSat.fGnssId;
-                p.satId = currentSat.fSatId;
-                p.cnr = currentSat.fCnr;
+                p.gnssId = currentSat.GnssId;
+                p.satId = currentSat.SatId;
+                p.cnr = currentSat.Cnr;
                 p.time = QDateTime::currentDateTimeUtc();
                 satTracks[satId][p.posPolar].push_back(p);
                 if (satTracks[satId][p.posPolar].size() > MAX_SAT_TRACK_ENTRIES)
@@ -247,14 +247,14 @@ void GnssPosWidget::drawPolarPixMap(QPixmap& pm)
 
             int satsize { ui->satSizeSpinBox->value() };
             satPosPainter.drawEllipse(currPoint, satsize / 2., satsize / 2.);
-            if (currentSat.fUsed) {
+            if (currentSat.Used) {
                 satPosPainter.setPen(QApplication::palette().color(QPalette::WindowText));
                 satPosPainter.drawEllipse(currPoint, 1.2 * satsize / 2., 1.2 * satsize / 2.);
                 satPosPainter.setPen(satColor);
             }
             currPoint.rx() += satsize / 2 + 4;
             if (ui->satLabelsCheckBox->isChecked())
-                satPosPainter.drawText(currPoint, QString::number(currentSat.fSatId));
+                satPosPainter.drawText(currPoint, QString::number(currentSat.SatId));
         }
     }
 }
@@ -318,31 +318,31 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm)
     // draw the current sat positions now
     for (const auto& currentSat : fCurrentSatlist) {
         if (ui->receivedSatsCheckBox->isChecked()) {
-            if (currentSat.fCnr > 0)
+            if (currentSat.Cnr > 0)
                 newlist.push_back(currentSat);
         } else {
             newlist.push_back(currentSat);
         }
-        if (currentSat.fElev <= 90. && currentSat.fElev >= -90.) {
-            if (ui->receivedSatsCheckBox->isChecked() && currentSat.fCnr == 0)
+        if (currentSat.Elev <= 90. && currentSat.Elev >= -90.) {
+            if (ui->receivedSatsCheckBox->isChecked() && currentSat.Cnr == 0)
                 continue;
-            QPointF currPos(currentSat.fAzim, currentSat.fElev);
+            QPointF currPos(currentSat.Azim, currentSat.Elev);
             QPointF currPoint = polar2cartUnity(currPos);
-            QColor satColor { GNSS_COLORS.at(std::clamp(static_cast<int>(currentSat.fGnssId), 0, GNSS_COLORS.size() - 1)) };
+            QColor satColor { GNSS_COLORS.at(std::clamp(static_cast<int>(currentSat.GnssId), 0, GNSS_COLORS.size() - 1)) };
             satPosPainter.setPen(satColor);
             QColor fillColor { satColor };
-            int alpha { alphaFromCnr(currentSat.fCnr, ui->cnrRangeSpinBox->value()) };
+            int alpha { alphaFromCnr(currentSat.Cnr, ui->cnrRangeSpinBox->value()) };
             fillColor.setAlpha(alpha);
-            int satId { currentSat.fGnssId * 1000 + currentSat.fSatId };
+            int satId { currentSat.GnssId * 1000 + currentSat.SatId };
 
-            if (currentSat.fCnr > 0) {
+            if (currentSat.Cnr > 0) {
                 SatHistoryPoint p {};
                 p.posCart = currPoint;
                 p.color = fillColor;
                 p.posPolar = QPoint(currPos.x(), currPos.y());
-                p.gnssId = currentSat.fGnssId;
-                p.satId = currentSat.fSatId;
-                p.cnr = currentSat.fCnr;
+                p.gnssId = currentSat.GnssId;
+                p.satId = currentSat.SatId;
+                p.cnr = currentSat.Cnr;
                 p.time = QDateTime::currentDateTimeUtc();
                 satTracks[satId][p.posPolar].push_back(p);
                 if (satTracks[satId][p.posPolar].size() > MAX_SAT_TRACK_ENTRIES)
@@ -355,14 +355,14 @@ void GnssPosWidget::drawCartesianPixMap(QPixmap& pm)
 
             int satsize { ui->satSizeSpinBox->value() };
             satPosPainter.drawEllipse(currPos, satsize / 2., satsize / 2.);
-            if (currentSat.fUsed) {
+            if (currentSat.Used) {
                 satPosPainter.setPen(QApplication::palette().color(QPalette::WindowText));
                 satPosPainter.drawEllipse(currPos, 1.2 * satsize / 2., 1.2 * satsize / 2.);
                 satPosPainter.setPen(satColor);
             }
             currPos.rx() += satsize / 2 + 4;
             if (ui->satLabelsCheckBox->isChecked())
-                satPosPainter.drawText(currPos, QString::number(currentSat.fSatId));
+                satPosPainter.drawText(currPos, QString::number(currentSat.SatId));
         }
     }
 }
