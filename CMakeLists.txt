@@ -96,6 +96,7 @@ set(CMAKE_AUTORCC ON)
 
 if(WIN32)
     set(QWT_DIR "C:/Qwt-6.2.0")
+    set(MOSQUITTO_DIR "C:/mosquitto")
     set(OPENSSL_DIR "C:/Qt/Tools/OpenSSL/Win_x64")
     set(QTROOT "C:/Qt")
     set(QTTOOLS "${QTROOT}/Tools")
