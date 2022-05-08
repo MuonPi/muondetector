@@ -632,7 +632,7 @@ void QtSerialUblox::UBXCfgGNSS(const std::string& msg)
         if (verbose > 2) {
             std::stringstream tempStream;
             tempStream << "   " << i << ":   GNSS name : "
-                       << std::string(Gnss::Id::name[std::clamp(static_cast<int>(config.gnssId), Gnss::Id::first, Gnss::Id::last)]) << '\n';
+                       << std::string(Gnss::Id::name[std::clamp(static_cast<int>(config.gnssId), static_cast<int>(Gnss::Id::first), static_cast<int>(Gnss::Id::last))]) << '\n';
             tempStream << "      reserved (min) tracking channels  : "
                        << (int)config.resTrkCh << '\n';
             tempStream << "      max nr of tracking channels used : "
