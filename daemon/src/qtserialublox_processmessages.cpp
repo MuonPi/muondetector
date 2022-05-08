@@ -484,7 +484,6 @@ void QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
     // parse all fields
     // GPS time of week
     auto iTOW { get<uint32_t>(msg.begin()) };
-    // version
     auto numSvs { get<uint8_t>(msg.begin() + 4) };
     auto globFlags { get<uint8_t>(msg.begin() + 5) };
 
@@ -510,7 +509,7 @@ void QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
         auto cnr { get<uint8_t>(msg.begin() + n + 4) };
         auto elev { get<int8_t>(msg.begin() + n + 5) };
         auto azim { get<int16_t>(msg.begin() + n + 6) };
-        auto prRes { get<int32_t>(msg.begin() + n + 8) };
+        auto prRes { static_cast<float>(get<int32_t>(msg.begin() + n + 8)) / 100.0F };
 
         bool used = false;
         if (flags & 0x01)
@@ -550,7 +549,7 @@ void QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
             return 7;
         }() };
 
-        GnssSatellite sat(gnssId, satId, cnr, elev, azim, 0.01 * prRes,
+        GnssSatellite sat(gnssId, satId, cnr, elev, azim, prRes,
             quality, health, orbitSource, used, diffCorr, smoothed);
         if (sat.getCnr() > 0) {
             goodSats++;
