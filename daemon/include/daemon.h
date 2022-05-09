@@ -9,6 +9,7 @@
 #include <QTimer>
 #include <QVariant>
 #include <time.h>
+#include <memory>
 
 // clang-format off
 #include "qtserialublox.h"
@@ -24,6 +25,7 @@
 #include "hardware/device_types.h"
 
 // from library
+#include <containers/message_container.h>
 #include <muondetector_structs.h>
 #include <histogram.h>
 #include <mqtthandler.h>
@@ -81,6 +83,7 @@ public:
 
 public slots:
     // Qt signal handlers.
+    void onMessageReceived(std::shared_ptr<message_container> message_container);
     void handleSigHup();
     void handleSigTerm();
     void handleSigInt();
@@ -121,6 +124,7 @@ public slots:
     void sendExtendedMqttStatus(MuonPi::MqttHandler::Status status);
 
 signals:
+    void message(std::shared_ptr<message_container> message_container);
     void sendTcpMessage(TcpMessage tcpMessage);
     void closeConnection(QString closeAddress);
     void logParameter(const LogParameter& log);
@@ -139,11 +143,6 @@ signals:
     void setGnssConfig(const std::vector<GnssConfigStruct>& gnssConfigs);
     void UBXSetMinMaxSVs(uint8_t minSVs, uint8_t maxSVs);
     void UBXSetMinCNO(uint8_t minCNO);
-    void GpioSetInput(unsigned int gpio);
-    void GpioSetOutput(unsigned int gpio);
-    void GpioSetPullUp(unsigned int gpio);
-    void GpioSetPullDown(unsigned int gpio);
-    void GpioSetState(unsigned int gpio, bool state);
     void GpioRegisterForCallback(unsigned int gpio, bool edge); // false=falling, true=rising
     void UBXSetCfgTP5(const UbxTimePulseStruct& tp);
     void UBXSetAopCfg(bool enable = true, uint16_t maxOrbErr = 0);
@@ -169,11 +168,9 @@ private:
     void sendVersionInfo();
     void sendEventTriggerSelection();
     void setDacThresh(uint8_t channel, float threshold); // channel 0 or 1 ; threshold in volts
-    void sendDacThresh(uint8_t channel);
     void sendDacReadbackValue(uint8_t channel, float voltage);
     void setBiasVoltage(float voltage);
     void saveDacValuesToEeprom();
-    void sendBiasVoltage();
     void sendBiasStatus();
     void sendGainSwitchStatus();
     void setBiasStatus(bool status);

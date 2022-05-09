@@ -8,6 +8,11 @@
 #include <pigpiodhandler.h>
 #include <sys/time.h>
 #include <time.h>
+#include <memory>
+
+#include <containers/message_container.h>
+#include <containers/gpio_config.h>
+#include <containers/gpio_state.h>
 
 extern "C" {
 #include <pigpiod_if2.h>
@@ -210,35 +215,52 @@ PigpiodHandler::PigpiodHandler(QVector<unsigned int> gpioPins, unsigned int spi_
     gpioClockTimeMeasurementTimer.start();
 }
 
-void PigpiodHandler::setInput(unsigned int gpio)
+void PigpiodHandler::onMessageReceived(std::shared_ptr<message_container> message_container)
 {
-    if (isInitialised)
-        set_mode(pi, gpio, PI_INPUT);
-}
-
-void PigpiodHandler::setOutput(unsigned int gpio)
-{
-    if (isInitialised)
-        set_mode(pi, gpio, PI_OUTPUT);
-}
-
-void PigpiodHandler::setPullUp(unsigned int gpio)
-{
-    if (isInitialised)
-        set_pull_up_down(pi, gpio, PI_PUD_UP);
-}
-
-void PigpiodHandler::setPullDown(unsigned int gpio)
-{
-    if (isInitialised)
-        set_pull_up_down(pi, gpio, PI_PUD_DOWN);
-}
-
-void PigpiodHandler::setGpioState(unsigned int gpio, bool state)
-{
-    if (isInitialised) {
-        gpio_write(pi, gpio, (state) ? 1 : 0);
+    auto config = std::dynamic_pointer_cast<gpio_config>(message_container);
+    if (config != nullptr){
+        setConfig(config);
     }
+    auto state = std::dynamic_pointer_cast<gpio_state>(message_container);
+    if (state != nullptr){
+        setState(state);
+    }
+}
+
+void PigpiodHandler::setConfig(std::shared_ptr<gpio_config> config)
+{
+    if (!isInitialised){
+        return;
+    }
+    for (auto& [key, value] : config->get_map()){
+        if (value.first == gpio_config::gpio_direction::input){
+            set_mode(pi, key, PI_INPUT);
+            switch (value.second){
+            case gpio_config::gpio_additional::pullup:
+                set_pull_up_down(pi, key, PI_PUD_UP);
+                break;
+            case gpio_config::gpio_additional::pulldown:
+                set_pull_up_down(pi, key, PI_PUD_DOWN);
+                break;
+            case gpio_config::gpio_additional::none:
+                [[fallthrough]];
+            default:
+                break;
+            }
+        }
+        if(value.first == gpio_config::gpio_direction::output)
+        {
+            set_mode(pi, key, PI_OUTPUT);
+        }
+    }
+}
+
+void PigpiodHandler::setState(std::shared_ptr<gpio_state> state)
+{
+    if (!isInitialised){
+        return;
+    }
+    gpio_write(pi, state->gpio(), (state->high()) ? 1 : 0);
 }
 
 void PigpiodHandler::registerForCallback(unsigned int gpio, bool edge)

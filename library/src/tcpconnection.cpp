@@ -172,6 +172,21 @@ void TcpConnection::onReadyRead()
     }
 }
 
+// this is not tested
+bool TcpConnection::onMessageSignal(std::shared_ptr<message_container> message_container)
+{
+    auto str = message_container->byte_array();
+    QByteArray block(str.c_str(), str.length());
+    QDataStream stream(&block, QIODevice::ReadWrite);
+    stream.device()->seek(0);
+    stream << (quint16)(block.size() - (int)sizeof(quint16)); // size of payload
+    if (verbose > 4)
+    {
+        qDebug() << block;
+    }
+    return writeBlock(block);
+}
+
 bool TcpConnection::sendTcpMessage(TcpMessage tcpMessage)
 {
     QByteArray block;

@@ -19,6 +19,11 @@ set(MUONDETECTOR_LIBRARY_SOURCE_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/histogram.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/custom_io_operators.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/ublox_structs.cpp"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/containers/bias_voltage.cpp"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/containers/dac_threshold.cpp"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/containers/gpio_config.cpp"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/containers/gpio_state.cpp"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/containers/status.cpp"
     )
 
 set(MUONDETECTOR_LIBRARY_HEADER_FILES
@@ -33,6 +38,12 @@ set(MUONDETECTOR_LIBRARY_HEADER_FILES
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/muondetector_structs.h"
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/config.h"
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/custom_io_operators.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/containers/message_container.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/containers/bias_voltage.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/containers/dac_threshold.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/containers/gpio_config.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/containers/gpio_state.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/containers/status.h"
     )
 
 if (MUONDETECTOR_BUILD_DAEMON)
