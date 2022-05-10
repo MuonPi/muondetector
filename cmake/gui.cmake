@@ -159,6 +159,8 @@ target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
     $<BUILD_INTERFACE:${MOSQUITTO_DIR}>
     $<BUILD_INTERFACE:/usr/include/qwt>
+    #for OSX
+    $<BUILD_INTERFACE:/usr/local/include>
     )
 
 if(WIN32)
