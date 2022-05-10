@@ -29,15 +29,16 @@ std::ostream& operator<<(std::ostream& os, const timespec& ts)
 
 QDataStream& operator>>(QDataStream& in, GnssSatellite& sat)
 {
-    int gnssid {}, satid {}, cnr {}, elev {}, quality {}, health {}, orbitsource {};
+    int gnssid {}, satid {}, cnr {}, elev {}, azim {}, quality {}, health {}, orbitsource {};
 
-    in >> gnssid >> satid >> cnr >> elev >> sat.Azim
+    in >> gnssid >> satid >> cnr >> elev >> azim
         >> sat.PrRes >> quality >> health >> orbitsource
         >> sat.Used >> sat.DiffCorr >> sat.Smoothed;
     sat.GnssId = gnssid;
     sat.SatId = satid;
     sat.Cnr = cnr;
     sat.Elev = elev;
+    sat.Azim = azim;
     sat.Quality = quality;
     sat.Health = health;
     sat.OrbitSource = orbitsource;
@@ -50,7 +51,7 @@ QDataStream& operator<<(QDataStream& out, const GnssSatellite& sat)
         << static_cast<int>(sat.SatId)
         << static_cast<int>(sat.Cnr)
         << static_cast<int>(sat.Elev)
-        << sat.Azim
+        << static_cast<int>(sat.Azim)
         << sat.PrRes
         << static_cast<int>(sat.Quality)
         << static_cast<int>(sat.Health)
