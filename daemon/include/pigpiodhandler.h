@@ -6,6 +6,7 @@
 #include <QObject>
 #include <QTimer>
 #include <QVector>
+#include <memory>
 
 #include "utility/gpio_mapping.h"
 #include <gpio_pin_definitions.h>

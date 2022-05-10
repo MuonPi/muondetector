@@ -18,12 +18,12 @@ auto gpio_state::json() -> std::string
     return "";
 }
 
-auto gpio_state::gpio() -> unsigned const
+auto gpio_state::gpio() const -> unsigned
 {
     return m_gpio;
 }
 
-auto gpio_state::high() -> bool const
+auto gpio_state::high() const -> bool
 {
     return m_high;
 }

@@ -11,8 +11,8 @@ public:
     gpio_state(unsigned f_gpio, bool f_high);
     auto byte_array() -> std::string override;
     auto json() -> std::string override;
-    auto gpio() -> unsigned const;
-    auto high() -> bool const;
+    auto gpio() const -> unsigned;
+    auto high() const -> bool;
 private:
     unsigned m_gpio;
     unsigned m_high;

@@ -698,6 +698,10 @@ Daemon::~Daemon()
     }
 }
 
+void Daemon::onMessageReceived(std::shared_ptr<message_container>) {
+
+}
+
 void Daemon::connectToPigpiod()
 {
     const QVector<unsigned int> gpio_pins({ GPIO_PINMAP[EVT_AND], GPIO_PINMAP[EVT_XOR],
