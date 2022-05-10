@@ -16,6 +16,7 @@ UbloxSettingsForm::UbloxSettingsForm(QWidget* parent)
     connect(ui->settingsButtonBox, &QDialogButtonBox::clicked, this, &UbloxSettingsForm::onSettingsButtonBoxClicked);
     connect(ui->ubloxSignalStates, &QTableWidget::itemChanged, this, &UbloxSettingsForm::onItemChanged);
     ui->ubloxSignalStates->blockSignals(true);
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
     connect(ui->gnssConfigButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this, [this](int) {
         this->fGnssConfigChanged = true;
         this->onConfigChanged();
@@ -24,6 +25,16 @@ UbloxSettingsForm::UbloxSettingsForm(QWidget* parent)
         this->fTpConfigChanged = true;
         this->onConfigChanged();
     });
+#else
+    connect(ui->gnssConfigButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::idClicked), this, [this](int) {
+        this->fGnssConfigChanged = true;
+        this->onConfigChanged();
+    });
+    connect(ui->tpConfigButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::idClicked), this, [this](int) {
+        this->fTpConfigChanged = true;
+        this->onConfigChanged();
+    });
+#endif
     this->setDisabled(true);
     emit sendRequestUbxMsgRates();
 }
