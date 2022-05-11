@@ -29,17 +29,34 @@ std::ostream& operator<<(std::ostream& os, const timespec& ts)
 
 QDataStream& operator>>(QDataStream& in, GnssSatellite& sat)
 {
-    in >> sat.fGnssId >> sat.fSatId >> sat.fCnr >> sat.fElev >> sat.fAzim
-        >> sat.fPrRes >> sat.fQuality >> sat.fHealth >> sat.fOrbitSource
-        >> sat.fUsed >> sat.fDiffCorr >> sat.fSmoothed;
+    int gnssid {}, satid {}, cnr {}, elev {}, azim {}, quality {}, health {}, orbitsource {};
+
+    in >> gnssid >> satid >> cnr >> elev >> azim
+        >> sat.PrRes >> quality >> health >> orbitsource
+        >> sat.Used >> sat.DiffCorr >> sat.Smoothed;
+    sat.GnssId = gnssid;
+    sat.SatId = satid;
+    sat.Cnr = cnr;
+    sat.Elev = elev;
+    sat.Azim = azim;
+    sat.Quality = quality;
+    sat.Health = health;
+    sat.OrbitSource = orbitsource;
     return in;
 }
 
 QDataStream& operator<<(QDataStream& out, const GnssSatellite& sat)
 {
-    out << sat.fGnssId << sat.fSatId << sat.fCnr << sat.fElev << sat.fAzim
-        << sat.fPrRes << sat.fQuality << sat.fHealth << sat.fOrbitSource
-        << sat.fUsed << sat.fDiffCorr << sat.fSmoothed;
+    out << static_cast<int>(sat.GnssId)
+        << static_cast<int>(sat.SatId)
+        << static_cast<int>(sat.Cnr)
+        << static_cast<int>(sat.Elev)
+        << static_cast<int>(sat.Azim)
+        << sat.PrRes
+        << static_cast<int>(sat.Quality)
+        << static_cast<int>(sat.Health)
+        << static_cast<int>(sat.OrbitSource)
+        << sat.Used << sat.DiffCorr << sat.Smoothed;
     return out;
 }
 

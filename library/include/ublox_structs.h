@@ -10,6 +10,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <array>
 
 namespace Gnss {
 
@@ -129,38 +130,38 @@ class GnssSatellite {
 public:
     GnssSatellite() = default;
     GnssSatellite(int gnssId, int satId, int cnr, int elev, int azim, float prRes, uint32_t flags)
-        : fGnssId(gnssId)
-        , fSatId(satId)
-        , fCnr(cnr)
-        , fElev(elev)
-        , fAzim(azim)
-        , fPrRes(prRes)
+        : GnssId(gnssId)
+        , SatId(satId)
+        , Cnr(cnr)
+        , Elev(elev)
+        , Azim(azim)
+        , PrRes(prRes)
     {
-        fQuality = (int)(flags & 0x07);
+        Quality = (int)(flags & 0x07);
         if (flags & 0x08)
-            fUsed = true;
+            Used = true;
         else
-            fUsed = false;
-        fHealth = (int)(flags >> 4 & 0x03);
-        fOrbitSource = (flags >> 8 & 0x07);
-        fSmoothed = (flags & 0x80);
-        fDiffCorr = (flags & 0x40);
+            Used = false;
+        Health = (int)(flags >> 4 & 0x03);
+        OrbitSource = (flags >> 8 & 0x07);
+        Smoothed = (flags & 0x80);
+        DiffCorr = (flags & 0x40);
     }
 
     GnssSatellite(int gnssId, int satId, int cnr, int elev, int azim, float prRes,
         int quality, int health, int orbitSource, bool used, bool diffCorr, bool smoothed)
-        : fGnssId(gnssId)
-        , fSatId(satId)
-        , fCnr(cnr)
-        , fElev(elev)
-        , fAzim(azim)
-        , fPrRes(prRes)
-        , fQuality(quality)
-        , fHealth(health)
-        , fOrbitSource(orbitSource)
-        , fUsed(used)
-        , fDiffCorr(diffCorr)
-        , fSmoothed(smoothed)
+        : GnssId(gnssId)
+        , SatId(satId)
+        , Cnr(cnr)
+        , Elev(elev)
+        , Azim(azim)
+        , PrRes(prRes)
+        , Quality(quality)
+        , Health(health)
+        , OrbitSource(orbitSource)
+        , Used(used)
+        , DiffCorr(diffCorr)
+        , Smoothed(smoothed)
     {
     }
 
@@ -172,20 +173,25 @@ public:
 
     static bool sortByCnr(const GnssSatellite& sat1, const GnssSatellite& sat2)
     {
-        return sat1.getCnr() > sat2.getCnr();
+        return sat1.Cnr > sat2.Cnr;
     }
-
-    inline int getCnr() const { return fCnr; }
 
     friend QDataStream& operator<<(QDataStream& out, const GnssSatellite& sat);
     friend QDataStream& operator>>(QDataStream& in, GnssSatellite& sat);
 
 public:
-    int fGnssId = 0, fSatId = 0, fCnr = 0, fElev = 0, fAzim = 0;
-    float fPrRes = 0.;
-    int fQuality = 0, fHealth = 0;
-    int fOrbitSource = 0;
-    bool fUsed = false, fDiffCorr = false, fSmoothed = false;
+    uint8_t GnssId  { 0 };
+    uint8_t SatId { 0 };
+    uint8_t Cnr { 0 };
+    int8_t Elev { 0 };
+    int16_t Azim { 0 };
+    float PrRes { 0. };
+    uint8_t Quality { 0 };
+    uint8_t Health { 0 };
+    uint8_t OrbitSource { 0 };
+    bool Used { false };
+    bool DiffCorr { false };
+    bool Smoothed { false};
 };
 
 struct UbxTimePulseStruct {
@@ -326,10 +332,10 @@ inline void GnssSatellite::Print(bool wHeader) const
         std::cout << "    Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth DiffCorr" << std::endl;
         std::cout << "   ------------------------------------------------------------------------------" << std::endl;
     }
-    std::cout << "   " << std::dec << "  " << Gnss::Id::name[static_cast<int>(fGnssId)] << "   " << std::setw(3) << (int)fSatId << "    ";
-    std::cout << std::setw(3) << (int)fCnr << "      " << std::setw(3) << (int)fElev << "       " << std::setw(3) << (int)fAzim;
-    std::cout << "   " << std::setw(6) << fPrRes << "    " << fQuality << "   " << std::string((fUsed) ? "Y" : "N");
-    std::cout << "    " << fHealth << "   " << fOrbitSource << "   " << (int)fSmoothed << "    " << (int)fDiffCorr;
+    std::cout << "   " << std::dec << "  " << Gnss::Id::name[static_cast<int>(GnssId)] << "   " << std::setw(3) << (int)SatId << "    ";
+    std::cout << std::setw(3) << (int)Cnr << "      " << std::setw(3) << (int)Elev << "       " << std::setw(3) << (int)Azim;
+    std::cout << "   " << std::setw(6) << PrRes << "    " << Quality << "   " << std::string((Used) ? "Y" : "N");
+    std::cout << "    " << Health << "   " << OrbitSource << "   " << (int)Smoothed << "    " << (int)DiffCorr;
     std::cout << std::endl;
 }
 
@@ -340,10 +346,10 @@ inline void GnssSatellite::Print(int index, bool wHeader) const
         std::cout << "   Nr   Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth DiffCorr" << std::endl;
         std::cout << "   ----------------------------------------------------------------------------------" << std::endl;
     }
-    std::cout << "   " << std::dec << std::setw(2) << index + 1 << "  " << Gnss::Id::name[static_cast<int>(fGnssId)] << "   " << std::setw(3) << (int)fSatId << "    ";
-    std::cout << std::setw(3) << (int)fCnr << "      " << std::setw(3) << (int)fElev << "       " << std::setw(3) << (int)fAzim;
-    std::cout << "   " << std::setw(6) << fPrRes << "    " << fQuality << "   " << std::string((fUsed) ? "Y" : "N");
-    std::cout << "    " << fHealth << "   " << fOrbitSource << "   " << (int)fSmoothed << "    " << (int)fDiffCorr;
+    std::cout << "   " << std::dec << std::setw(2) << index + 1 << "  " << Gnss::Id::name[static_cast<int>(GnssId)] << "   " << std::setw(3) << (int)SatId << "    ";
+    std::cout << std::setw(3) << (int)Cnr << "      " << std::setw(3) << (int)Elev << "       " << std::setw(3) << (int)Azim;
+    std::cout << "   " << std::setw(6) << PrRes << "    " << Quality << "   " << std::string((Used) ? "Y" : "N");
+    std::cout << "    " << Health << "   " << OrbitSource << "   " << (int)Smoothed << "    " << (int)DiffCorr;
     ;
     std::cout << std::endl;
 }

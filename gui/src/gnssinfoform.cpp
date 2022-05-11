@@ -79,51 +79,51 @@ void GnssInfoForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
     ui->satsTableWidget->clearContents();
     ui->satsTableWidget->setRowCount(0);
     for (const auto& current_sat : satlist) {
-        if (current_sat.fCnr > 0) {
+        if (current_sat.Cnr > 0) {
             nrGoodSats++;
         } else if (ui->visibleSatsCheckBox->isChecked()) {
             continue;
         }
         ui->satsTableWidget->insertRow(ui->satsTableWidget->rowCount());
         QTableWidgetItem* newItem1 = new QTableWidgetItem;
-        newItem1->setData(Qt::DisplayRole, current_sat.fSatId);
+        newItem1->setData(Qt::DisplayRole, current_sat.SatId);
         newItem1->setSizeHint(QSize(30, 24));
         newItem1->setTextAlignment(Qt::AlignHCenter);
         ui->satsTableWidget->setItem(ui->satsTableWidget->rowCount() - 1, 0, newItem1);
 
-        QTableWidgetItem* newItem2 = new QTableWidgetItem(QString::fromLocal8Bit(Gnss::Id::name[std::clamp(static_cast<int>(current_sat.fGnssId), static_cast<int>(Gnss::Id::first), static_cast<int>(Gnss::Id::last))]));
+        QTableWidgetItem* newItem2 = new QTableWidgetItem(QString::fromLocal8Bit(Gnss::Id::name[std::clamp(static_cast<int>(current_sat.GnssId), static_cast<int>(Gnss::Id::first), static_cast<int>(Gnss::Id::last))]));
         newItem2->setSizeHint(QSize(50, 24));
         newItem2->setTextAlignment(Qt::AlignHCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 1, newItem2);
 
         QTableWidgetItem* newItem3 = new QTableWidgetItem;
-        newItem3->setData(Qt::DisplayRole, current_sat.fCnr);
+        newItem3->setData(Qt::DisplayRole, current_sat.Cnr);
         newItem3->setSizeHint(QSize(50, 24));
         newItem3->setTextAlignment(Qt::AlignHCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 2, newItem3);
 
         QTableWidgetItem* newItem4 = new QTableWidgetItem;
-        newItem4->setData(Qt::DisplayRole, current_sat.fAzim);
+        newItem4->setData(Qt::DisplayRole, current_sat.Azim);
         newItem4->setSizeHint(QSize(60, 24));
         newItem4->setTextAlignment(Qt::AlignHCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 3, newItem4);
 
         QTableWidgetItem* newItem5 = new QTableWidgetItem;
-        newItem5->setData(Qt::DisplayRole, current_sat.fElev);
+        newItem5->setData(Qt::DisplayRole, current_sat.Elev);
         newItem5->setSizeHint(QSize(60, 24));
         newItem5->setTextAlignment(Qt::AlignHCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 4, newItem5);
 
         QTableWidgetItem* newItem6 = new QTableWidgetItem;
-        newItem6->setData(Qt::DisplayRole, current_sat.fPrRes);
+        newItem6->setData(Qt::DisplayRole, current_sat.PrRes);
         newItem6->setSizeHint(QSize(60, 24));
         newItem6->setTextAlignment(Qt::AlignHCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 5, newItem6);
 
         QTableWidgetItem* newItem7 = new QTableWidgetItem;
-        newItem7->setData(Qt::DisplayRole, current_sat.fQuality);
+        newItem7->setData(Qt::DisplayRole, current_sat.Quality);
         QColor color { Qt::green };
-        double transp { std::clamp(0.166 * (current_sat.fQuality - 1), 0., 1.) };
+        double transp { std::clamp(0.166 * (current_sat.Quality - 1), 0., 1.) };
         color.setAlphaF(transp);
         newItem7->setBackground(color);
         newItem7->setSizeHint(QSize(25, 24));
@@ -131,13 +131,13 @@ void GnssInfoForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
         ui->satsTableWidget->setItem(newItem1->row(), 6, newItem7);
 
         QString str { "n/a" };
-        if (current_sat.fHealth < Gnss::SvHealth::name.size())
-            str = QString::fromLocal8Bit(Gnss::SvHealth::name[static_cast<int>(current_sat.fHealth)]);
-        if (current_sat.fHealth == Gnss::SvHealth::Undefined) {
+        if (current_sat.Health < Gnss::SvHealth::name.size())
+            str = QString::fromLocal8Bit(Gnss::SvHealth::name[static_cast<int>(current_sat.Health)]);
+        if (current_sat.Health == Gnss::SvHealth::Undefined) {
             color = Qt::lightGray;
-        } else if (current_sat.fHealth == Gnss::SvHealth::Good) {
+        } else if (current_sat.Health == Gnss::SvHealth::Good) {
             color = Qt::green;
-        } else if (current_sat.fHealth >= Gnss::SvHealth::Bad) {
+        } else if (current_sat.Health >= Gnss::SvHealth::Bad) {
             color = Qt::red;
         }
         QTableWidgetItem* newItem8 = new QTableWidgetItem(str);
@@ -145,14 +145,14 @@ void GnssInfoForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
         newItem8->setTextAlignment(Qt::AlignHCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 7, newItem8);
 
-        int orbSrc { std::clamp(static_cast<int>(current_sat.fOrbitSource), static_cast<int>(Gnss::OrbitSource::first), static_cast<int>(Gnss::OrbitSource::last)) };
+        int orbSrc { std::clamp(static_cast<int>(current_sat.OrbitSource), static_cast<int>(Gnss::OrbitSource::first), static_cast<int>(Gnss::OrbitSource::last)) };
         QTableWidgetItem* newItem9 = new QTableWidgetItem(QString::fromLocal8Bit(Gnss::OrbitSource::name[orbSrc]));
         newItem9->setSizeHint(QSize(40, 24));
         newItem9->setTextAlignment(Qt::AlignHCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 8, newItem9);
 
         QTableWidgetItem* newItem10 = new QTableWidgetItem();
-        newItem10->setCheckState({ (current_sat.fUsed) ? Qt::CheckState::Checked : Qt::CheckState::Unchecked });
+        newItem10->setCheckState({ (current_sat.Used) ? Qt::CheckState::Checked : Qt::CheckState::Unchecked });
         newItem10->setFlags(newItem10->flags() & (~Qt::ItemIsUserCheckable)); // disables checkbox edit from user
         newItem10->setFlags(newItem10->flags() & (~Qt::ItemIsEditable));
         newItem10->setSizeHint(QSize(20, 24));
@@ -160,7 +160,7 @@ void GnssInfoForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
         ui->satsTableWidget->setItem(newItem1->row(), 9, newItem10);
 
         QTableWidgetItem* newItem11 = new QTableWidgetItem();
-        newItem11->setCheckState({ (current_sat.fDiffCorr) ? Qt::CheckState::Checked : Qt::CheckState::Unchecked });
+        newItem11->setCheckState({ (current_sat.DiffCorr) ? Qt::CheckState::Checked : Qt::CheckState::Unchecked });
         newItem11->setFlags(newItem11->flags() & (~Qt::ItemIsUserCheckable)); // disables checkbox edit from user
         newItem11->setFlags(newItem11->flags() & (~Qt::ItemIsEditable));
         newItem11->setSizeHint(QSize(20, 24));

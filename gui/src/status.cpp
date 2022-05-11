@@ -53,8 +53,11 @@ Status::Status(QWidget* parent)
     fInputSwitchButtonGroup->addButton(statusUi->InputSelectRadioButton5, 5);
     fInputSwitchButtonGroup->addButton(statusUi->InputSelectRadioButton6, 6);
     fInputSwitchButtonGroup->addButton(statusUi->InputSelectRadioButton7, 7);
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
     connect(fInputSwitchButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), [=](int id) { emit inputSwitchChanged(id); });
-
+#else
+    connect(fInputSwitchButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::idClicked), [=](int id) { emit inputSwitchChanged(id); });
+#endif
     foreach (GpioSignalDescriptor item, GPIO_SIGNAL_MAP) {
         if (item.direction == DIR_IN)
             statusUi->triggerSelectionComboBox->addItem(item.name);

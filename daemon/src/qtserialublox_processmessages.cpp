@@ -40,6 +40,21 @@ template <typename T, endian Endian = endian::little, typename It, std::enable_i
     return value;
 }
 
+template <typename T, endian Endian = endian::little, typename It, std::enable_if_t<std::is_integral<T>::value, bool> = true, std::enable_if_t<is_iterator<It>::value, bool> = true>
+void put(const It& start, const T& value)
+{
+    const auto& end { start + sizeof(T) };
+    std::size_t shift { (Endian == endian::little) ? 0 : (sizeof(T) - 1) * 8 };
+    for (auto it = start; it != end; it++) {
+        *it = static_cast<std::uint8_t>(( value >> shift ) & 0xff);
+        if (Endian == endian::little) {
+            shift += 8;
+        } else {
+            shift -= 8;
+        }
+    }
+}
+
 void QtSerialUblox::processMessage(const UbxMessage& msg)
 {
     static const std::map<std::uint8_t, const char*> ubx_class_names {
@@ -446,14 +461,14 @@ void QtSerialUblox::UBXNavSat(const std::string& msg, bool allSats)
 
         GnssSatellite sat(gnssId, satId, cnr, elev, azim, prRes, flags);
 
-        if (sat.getCnr() > 0) {
+        if (sat.Cnr > 0) {
             goodSats++;
         }
         satList.push_back(sat);
     }
     if (!allSats) {
         sort(satList.begin(), satList.end(), GnssSatellite::sortByCnr);
-        while (!satList.empty() && (satList.back().getCnr() == 0)) {
+        while (!satList.empty() && (satList.back().Cnr == 0)) {
             satList.pop_back();
         }
     }
@@ -484,7 +499,6 @@ void QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
     // parse all fields
     // GPS time of week
     auto iTOW { get<uint32_t>(msg.begin()) };
-    // version
     auto numSvs { get<uint8_t>(msg.begin() + 4) };
     auto globFlags { get<uint8_t>(msg.begin() + 5) };
 
@@ -510,7 +524,7 @@ void QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
         auto cnr { get<uint8_t>(msg.begin() + n + 4) };
         auto elev { get<int8_t>(msg.begin() + n + 5) };
         auto azim { get<int16_t>(msg.begin() + n + 6) };
-        auto prRes { get<int32_t>(msg.begin() + n + 8) };
+        auto prRes { static_cast<float>(get<int32_t>(msg.begin() + n + 8)) / 100.0F };
 
         bool used = false;
         if (flags & 0x01)
@@ -550,16 +564,16 @@ void QtSerialUblox::UBXNavSVinfo(const std::string& msg, bool allSats)
             return 7;
         }() };
 
-        GnssSatellite sat(gnssId, satId, cnr, elev, azim, 0.01 * prRes,
+        GnssSatellite sat(gnssId, satId, cnr, elev, azim, prRes,
             quality, health, orbitSource, used, diffCorr, smoothed);
-        if (sat.getCnr() > 0) {
+        if (sat.Cnr > 0) {
             goodSats++;
         }
         satList.push_back(sat);
     }
     if (!allSats) {
         sort(satList.begin(), satList.end(), GnssSatellite::sortByCnr);
-        while (!satList.empty() && (satList.back().getCnr() == 0)) {
+        while (!satList.empty() && (satList.back().Cnr == 0)) {
             satList.pop_back();
         }
     }
@@ -966,12 +980,10 @@ void QtSerialUblox::UBXMonHW(const std::string& msg)
     auto agcCnt { get<uint16_t>(msg.begin() + 18) };
     agc = agcCnt;
 
-    uint8_t antStatus = msg[20];
-    uint8_t antPower = msg[21];
-
-    uint8_t flags = (int)msg[22];
-
-    uint8_t jamInd = msg[45];
+    auto antStatus { get<uint8_t>(msg.begin() + 20) };
+    auto antPower { get<uint8_t>(msg.begin() + 21) };
+    auto flags { get<uint8_t>(msg.begin() + 22) };
+    auto jamInd { get<uint8_t>(msg.begin() + 45) };
 
     // meaning of columns:
     // 01 21 - signature of NAV-TIMEUTC message
@@ -1311,40 +1323,18 @@ void QtSerialUblox::UBXCfgTP5(const std::string& msg)
 
 void QtSerialUblox::UBXSetCfgTP5(const UbxTimePulseStruct& tp)
 {
-    unsigned char* buf { static_cast<unsigned char*>(calloc(sizeof(unsigned char), 32)) };
-    buf[0] = tp.tpIndex;
-    buf[1] = 0;
-    buf[4] = tp.antCableDelay & 0xff;
-    buf[5] = (tp.antCableDelay >> 8) & 0xff;
-    buf[6] = tp.rfGroupDelay & 0xff;
-    buf[7] = (tp.rfGroupDelay >> 8) & 0xff;
-    buf[8] = tp.freqPeriod & 0xff;
-    buf[9] = (tp.freqPeriod >> 8) & 0xff;
-    buf[10] = (tp.freqPeriod >> 16) & 0xff;
-    buf[11] = (tp.freqPeriod >> 24) & 0xff;
-    buf[12] = tp.freqPeriodLock & 0xff;
-    buf[13] = (tp.freqPeriodLock >> 8) & 0xff;
-    buf[14] = (tp.freqPeriodLock >> 16) & 0xff;
-    buf[15] = (tp.freqPeriodLock >> 24) & 0xff;
-    buf[16] = tp.pulseLenRatio & 0xff;
-    buf[17] = (tp.pulseLenRatio >> 8) & 0xff;
-    buf[18] = (tp.pulseLenRatio >> 16) & 0xff;
-    buf[19] = (tp.pulseLenRatio >> 24) & 0xff;
-    buf[20] = tp.pulseLenRatioLock & 0xff;
-    buf[21] = (tp.pulseLenRatioLock >> 8) & 0xff;
-    buf[22] = (tp.pulseLenRatioLock >> 16) & 0xff;
-    buf[23] = (tp.pulseLenRatioLock >> 24) & 0xff;
-    buf[24] = tp.userConfigDelay & 0xff;
-    buf[25] = (tp.userConfigDelay >> 8) & 0xff;
-    buf[26] = (tp.userConfigDelay >> 16) & 0xff;
-    buf[27] = (tp.userConfigDelay >> 24) & 0xff;
-    buf[28] = tp.flags & 0xff;
-    buf[29] = (tp.flags >> 8) & 0xff;
-    buf[30] = (tp.flags >> 16) & 0xff;
-    buf[31] = (tp.flags >> 24) & 0xff;
-
-    enqueueMsg(UBX_MSG::CFG_TP5, toStdString(buf, 32));
-    free(buf);
+    std::array<unsigned char, 32> buf {0};
+    put<std::uint8_t>(buf.begin(), tp.tpIndex);
+    put<std::uint8_t>(buf.begin()+1, 0);
+    put<std::uint16_t>(buf.begin()+4, tp.antCableDelay);
+    put<std::uint16_t>(buf.begin()+6, tp.rfGroupDelay);
+    put<std::uint32_t>(buf.begin()+8, tp.freqPeriod);
+    put<std::uint32_t>(buf.begin()+12, tp.freqPeriodLock);
+    put<std::uint32_t>(buf.begin()+16, tp.pulseLenRatio);
+    put<std::uint32_t>(buf.begin()+20, tp.pulseLenRatioLock);
+    put<std::uint32_t>(buf.begin()+24, tp.userConfigDelay);
+    put<std::uint32_t>(buf.begin()+28, tp.flags);
+    enqueueMsg(UBX_MSG::CFG_TP5, toStdString(buf.data(), buf.size()));
 }
 
 void QtSerialUblox::UBXNavDOP(const std::string& msg)
