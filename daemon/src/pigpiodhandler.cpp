@@ -140,7 +140,7 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
                 emit pigpioHandler->samplingTrigger();
                 pigpioHandler->lastSamplingTime = now;
             }
-            quint64 nsecsElapsed = pigpioHandler->elapsedEventTimer.nsecsElapsed();
+            /* quint64 nsecsElapsed = pigpioHandler->elapsedEventTimer.nsecsElapsed(); */
             pigpioHandler->elapsedEventTimer.start();
             emit pigpioHandler->eventInterval((tick - lastTriggerTick) * 1000);
             lastTriggerTick = tick;
