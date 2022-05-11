@@ -1000,8 +1000,7 @@ void QtSerialUblox::UBXMonHW(const std::string& msg)
         tempStream << "\n";
         emit toConsole(QString::fromStdString(tempStream.str()));
     }
-    GnssMonHwStruct hw(noisePerMS, agcCnt, antStatus, antPower, jamInd, flags);
-    emit gpsMonHW(hw);
+    emit gpsMonHW(GnssMonHwStruct { noisePerMS, agcCnt, antStatus, antPower, jamInd, flags });
 }
 
 void QtSerialUblox::UBXMonHW2(const std::string& msg)
@@ -1028,8 +1027,7 @@ void QtSerialUblox::UBXMonHW2(const std::string& msg)
         tempStream << " POST status word : " << std::hex << postStatus << std::dec << '\n';
         emit toConsole(QString::fromStdString(tempStream.str()));
     }
-    GnssMonHw2Struct hw2(ofsI, ofsQ, magI, magQ, cfgSrc);
-    emit gpsMonHW2(hw2);
+    emit gpsMonHW2( GnssMonHw2Struct {ofsI, ofsQ, magI, magQ, cfgSrc} );
 }
 
 void QtSerialUblox::UBXMonVer(const std::string& msg)
