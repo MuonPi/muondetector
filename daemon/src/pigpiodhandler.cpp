@@ -279,16 +279,19 @@ void PigpiodHandler::writeSpi(uint8_t command, std::string data)
             return;
         }
     }
-    char txBuf[data.size() + 1];
+
+    char* txBuf { static_cast<char*>(calloc(sizeof(char), data.size() + 1)) };
     txBuf[0] = (char)command;
     for (unsigned int i = 1; i < data.size() + 1; i++) {
         txBuf[i] = data[i - 1];
     }
-    char rxBuf[data.size() + 1];
-    if (spi_xfer(pi, spiHandle, txBuf, rxBuf, data.size() + 1) != 1 + data.size()) {
+
+    char* rxBuf { static_cast<char*>(calloc(sizeof(char), data.size() + 1)) };
+    if (spi_xfer(pi, spiHandle, txBuf, rxBuf, data.size() + 1) != static_cast<int>(1 + data.size())) {
         qWarning() << "writeSpi(uint8_t, std::string): wrong number of bytes transfered";
-        return;
     }
+    free(txBuf);
+    free(rxBuf);
 }
 
 void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead)
@@ -299,14 +302,17 @@ void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead)
         }
     }
 
-    char rxBuf[bytesToRead + 1];
-    char txBuf[bytesToRead + 1];
+    char* rxBuf { static_cast<char*>(calloc(sizeof(char), bytesToRead + 1)) };
+    char* txBuf { static_cast<char*>(calloc(sizeof(char), bytesToRead + 1)) };
+
     txBuf[0] = (char)command;
     for (unsigned int i = 1; i < bytesToRead; i++) {
         txBuf[i] = 0;
     }
-    if (spi_xfer(pi, spiHandle, txBuf, rxBuf, bytesToRead + 1) != 1 + bytesToRead) {
+    if (spi_xfer(pi, spiHandle, txBuf, rxBuf, bytesToRead + 1) != static_cast<int>(1 + bytesToRead)) {
         qWarning() << "readSpi(uint8_t, unsigned int): wrong number of bytes transfered";
+        free(txBuf);
+        free(rxBuf);
         return;
     }
 
@@ -314,6 +320,10 @@ void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead)
     for (unsigned int i = 1; i < bytesToRead + 1; i++) {
         data += rxBuf[i];
     }
+
+    free(txBuf);
+    free(rxBuf);
+
     emit spiData(command, data);
 }
 
