@@ -1231,7 +1231,7 @@ void QtSerialUblox::UBXCfgAnt(const std::string& msg)
 
 void QtSerialUblox::UBXCfgTP5(const std::string& msg)
 {
-    UbxTimePulseStruct tp;
+    UbxTimePulseStruct tp {};
     // parse all fields
     tp.tpIndex = get<uint8_t>(msg.begin());
     tp.version = get<uint8_t>(msg.begin() + 1);
@@ -1244,8 +1244,8 @@ void QtSerialUblox::UBXCfgTP5(const std::string& msg)
     tp.userConfigDelay = get<int32_t>(msg.begin() + 24);
     tp.flags = get<uint32_t>(msg.begin() + 28);
 
-    bool isFreq = tp.flags & 0x08;
-    bool isLength = tp.flags & 0x10;
+    bool isFreq { tp.flags & 0x08 };
+    bool isLength { tp.flags & 0x10 };
 
     if (verbose > 2) {
         std::stringstream tempStream;
@@ -1350,7 +1350,7 @@ void QtSerialUblox::UBXSetCfgTP5(const UbxTimePulseStruct& tp)
 void QtSerialUblox::UBXNavDOP(const std::string& msg)
 {
     // UBX-NAV-DOP: dilution of precision values
-    UbxDopStruct d;
+    UbxDopStruct d {};
 
     // parse all fields
     auto iTOW { get<uint32_t>(msg.begin()) };
