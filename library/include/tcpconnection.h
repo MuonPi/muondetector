@@ -2,7 +2,6 @@
 #define TCPCONNECTION_H
 
 #include "muondetector_shared_global.h"
-#include "containers/message_container.h"
 #include "tcpmessage.h"
 
 #include <QFile>
@@ -11,7 +10,6 @@
 #include <QTimer>
 #include <time.h>
 #include <vector>
-#include <memory>
 
 class MUONDETECTORSHARED TcpConnection : public QObject {
     Q_OBJECT
@@ -46,7 +44,6 @@ public slots:
     void closeConnection(QString closedAddress);
     void closeThisConnection();
     void onReadyRead();
-    bool onMessageSignal(std::shared_ptr<message_container> message_container);
     bool sendTcpMessage(TcpMessage tcpMessage);
 
 private:

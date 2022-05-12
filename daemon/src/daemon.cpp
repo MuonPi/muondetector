@@ -25,11 +25,6 @@
 #include <ublox_messages.h>
 #include <unistd.h>
 
-#include <containers/gpio_config.h>
-#include <containers/gpio_state.h>
-#include <containers/bias_voltage.h>
-#include <containers/dac_threshold.h>
-
 #define DEGREE_CHARCODE 248
 
 using namespace std;
@@ -737,7 +732,11 @@ void Daemon::connectToPigpiod()
     //pigHandler <-> thread & daemon
     connect(this, &Daemon::aboutToQuit, pigHandler, &PigpiodHandler::stop);
     connect(pigThread, &QThread::finished, pigHandler, &PigpiodHandler::deleteLater);
-    connect(this, &Daemon::message, pigHandler, &PigpiodHandler::onMessageReceived);
+    connect(this, &Daemon::GpioSetOutput, pigHandler, &PigpiodHandler::setOutput);
+    connect(this, &Daemon::GpioSetInput, pigHandler, &PigpiodHandler::setInput);
+    connect(this, &Daemon::GpioSetPullUp, pigHandler, &PigpiodHandler::setPullUp);
+    connect(this, &Daemon::GpioSetPullDown, pigHandler, &PigpiodHandler::setPullDown);
+    connect(this, &Daemon::GpioSetState, pigHandler, &PigpiodHandler::setGpioState);
     connect(this, &Daemon::GpioRegisterForCallback, pigHandler, &PigpiodHandler::registerForCallback);
     connect(pigHandler, &PigpiodHandler::signal, this, &Daemon::sendGpioPinEvent);
 
@@ -789,43 +788,35 @@ void Daemon::connectToPigpiod()
     rateBufferReminder.setSingleShot(false);
     connect(&rateBufferReminder, &QTimer::timeout, this, &Daemon::onRateBufferReminder);
     rateBufferReminder.start();
-
-    gpio_config f_gpio_config{{
-        {GPIO_PINMAP[UBIAS_EN], gpio_config::output},
-        {GPIO_PINMAP[PREAMP_1], gpio_config::output},
-        {GPIO_PINMAP[PREAMP_2], gpio_config::output},
-        {GPIO_PINMAP[GAIN_HL], gpio_config::output},
-        {GPIO_PINMAP[STATUS1], gpio_config::output},
-        {GPIO_PINMAP[STATUS2], gpio_config::output},
-        {GPIO_PINMAP[ADC_READY], gpio_config::pullup}
-    }};
-    std::vector<std::shared_ptr<gpio_state>> gpio_states{};
-    gpio_states.push_back(std::make_shared<gpio_state>(GPIO_PINMAP[UBIAS_EN], (MuonPi::Version::hardware.major == 1) ? config.bias_ON : !config.bias_ON));
-
-    gpio_states.push_back(std::make_shared<gpio_state>(GPIO_PINMAP[PREAMP_1], config.preamp_enable[0]));
-    gpio_states.push_back(std::make_shared<gpio_state>(GPIO_PINMAP[PREAMP_2], config.preamp_enable[1]));
-    gpio_states.push_back(std::make_shared<gpio_state>(GPIO_PINMAP[GAIN_HL], config.hi_gain));
-    gpio_states.push_back(std::make_shared<gpio_state>(GPIO_PINMAP[STATUS1], 0));
-    gpio_states.push_back(std::make_shared<gpio_state>(GPIO_PINMAP[STATUS2], 0));
+    emit GpioSetOutput(GPIO_PINMAP[UBIAS_EN]);
+    emit GpioSetState(GPIO_PINMAP[UBIAS_EN], (MuonPi::Version::hardware.major == 1) ? (config.bias_ON ? 1 : 0) : (config.bias_ON ? 0 : 1));
+    emit GpioSetOutput(GPIO_PINMAP[PREAMP_1]);
+    emit GpioSetOutput(GPIO_PINMAP[PREAMP_2]);
+    emit GpioSetOutput(GPIO_PINMAP[GAIN_HL]);
+    emit GpioSetState(GPIO_PINMAP[PREAMP_1], config.preamp_enable[0]);
+    emit GpioSetState(GPIO_PINMAP[PREAMP_2], config.preamp_enable[1]);
+    emit GpioSetState(GPIO_PINMAP[GAIN_HL], config.hi_gain);
+    emit GpioSetOutput(GPIO_PINMAP[STATUS1]);
+    emit GpioSetOutput(GPIO_PINMAP[STATUS2]);
+    emit GpioSetState(GPIO_PINMAP[STATUS1], 0);
+    emit GpioSetState(GPIO_PINMAP[STATUS2], 0);
+    emit GpioSetPullUp(GPIO_PINMAP[ADC_READY]);
     emit GpioRegisterForCallback(GPIO_PINMAP[ADC_READY], 1);
 
     if (MuonPi::Version::hardware.major > 1) {
-        f_gpio_config.emplace(GPIO_PINMAP[PREAMP_FAULT], gpio_config::pullup);
-        f_gpio_config.emplace(GPIO_PINMAP[TDC_INTB], gpio_config::input);
-        f_gpio_config.emplace(GPIO_PINMAP[TIME_MEAS_OUT], gpio_config::input);
+        emit GpioSetInput(GPIO_PINMAP[PREAMP_FAULT]);
         emit GpioRegisterForCallback(GPIO_PINMAP[PREAMP_FAULT], 0);
+        emit GpioSetPullUp(GPIO_PINMAP[PREAMP_FAULT]);
+        emit GpioSetInput(GPIO_PINMAP[TDC_INTB]);
         emit GpioRegisterForCallback(GPIO_PINMAP[TDC_INTB], 0);
+        emit GpioSetInput(GPIO_PINMAP[TIME_MEAS_OUT]);
         emit GpioRegisterForCallback(GPIO_PINMAP[TIME_MEAS_OUT], 0);
     }
     if (MuonPi::Version::hardware.major >= 3) {
-        f_gpio_config.emplace(GPIO_PINMAP[IN_POL1], gpio_config::output);
-        f_gpio_config.emplace(GPIO_PINMAP[IN_POL2], gpio_config::output);
-        gpio_states.push_back(std::make_shared<gpio_state>(GPIO_PINMAP[IN_POL1], config.polarity[0]));
-        gpio_states.push_back(std::make_shared<gpio_state>(GPIO_PINMAP[IN_POL2], config.polarity[1]));
-    }
-    emit message(std::make_shared<gpio_config>(f_gpio_config));
-    for (auto state : gpio_states){
-        emit message(state);
+        emit GpioSetOutput(GPIO_PINMAP[IN_POL1]);
+        emit GpioSetOutput(GPIO_PINMAP[IN_POL2]);
+        emit GpioSetState(GPIO_PINMAP[IN_POL1], config.polarity[0]);
+        emit GpioSetState(GPIO_PINMAP[IN_POL2], config.polarity[1]);
     }
 }
 
@@ -927,7 +918,6 @@ void Daemon::incomingConnection(qintptr socketDescriptor)
     connect(tcpThread, &QThread::finished, tcpConnection, &TcpConnection::deleteLater);
     // connect all other signals
     connect(tcpThread, &QThread::started, tcpConnection, &TcpConnection::receiveConnection);
-    connect(this, &Daemon::message, tcpConnection, &TcpConnection::onMessageSignal);
     connect(this, &Daemon::sendTcpMessage, tcpConnection, &TcpConnection::sendTcpMessage);
     connect(tcpConnection, &TcpConnection::receivedTcpMessage, this, &Daemon::receivedTcpMessage);
     connect(tcpConnection, &TcpConnection::toConsole, this, &Daemon::toConsole);
@@ -1024,39 +1014,39 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
                 qWarning() << "setting DAC" << channel << "to 0!";
         } else
             setDacThresh(channel, threshold);
-        emit message(std::make_shared<dac_threshold>(channel, Config::Hardware::DAC::Channel::threshold[channel]));
+        sendDacThresh(Config::Hardware::DAC::Channel::threshold[channel]);
     } else if (msgID == TCP_MSG_KEY::MSG_THRESHOLD_REQUEST) {
-        emit message(std::make_shared<dac_threshold>(0, Config::Hardware::DAC::Channel::threshold[0]));
-        emit message(std::make_shared<dac_threshold>(1, Config::Hardware::DAC::Channel::threshold[1]));
+        sendDacThresh(Config::Hardware::DAC::Channel::threshold[0]);
+        sendDacThresh(Config::Hardware::DAC::Channel::threshold[1]);
     } else if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE) {
         float voltage;
         *(tcpMessage.dStream) >> voltage;
         setBiasVoltage(voltage);
         if (histoMap.find("pulseHeight") != histoMap.end())
             histoMap["pulseHeight"].clear();
-        emit message(std::make_shared<bias_voltage>(config.biasVoltage));
+        sendBiasVoltage();
     } else if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST) {
-        emit message(std::make_shared<bias_voltage>(config.biasVoltage));
+        sendBiasVoltage();
     } else if (msgID == TCP_MSG_KEY::MSG_BIAS_SWITCH) {
         bool status;
         *(tcpMessage.dStream) >> status;
         setBiasStatus(status);
-        emit message(std::make_shared<bias_voltage>(config.biasVoltage));
+        sendBiasStatus();
     } else if (msgID == TCP_MSG_KEY::MSG_BIAS_SWITCH_REQUEST) {
-        emit message(std::make_shared<bias_voltage>(config.biasVoltage));
+        sendBiasStatus();
     } else if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST) {
-        emit message(std::make_shared<bias_voltage>(config.biasVoltage));
+        sendBiasVoltage();
     } else if (msgID == TCP_MSG_KEY::MSG_PREAMP_SWITCH) {
         quint8 channel;
         bool status;
         *(tcpMessage.dStream) >> channel >> status;
         if (channel == 0) {
             config.preamp_enable[0] = status;
-            emit message(std::make_shared<gpio_state>(GPIO_PINMAP[PREAMP_1], status));
+            emit GpioSetState(GPIO_PINMAP[PREAMP_1], status);
             emit logParameter(LogParameter("preampSwitch1", QString::number((int)config.preamp_enable[0]), LogParameter::LOG_EVERY));
         } else if (channel == 1) {
             config.preamp_enable[1] = status;
-            emit message(std::make_shared<gpio_state>(GPIO_PINMAP[PREAMP_2], status));
+            emit GpioSetState(GPIO_PINMAP[PREAMP_2], status);
             emit logParameter(LogParameter("preampSwitch2", QString::number((int)config.preamp_enable[1]), LogParameter::LOG_EVERY));
         }
         sendPreampStatus(0);
@@ -1069,12 +1059,12 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         *(tcpMessage.dStream) >> pol1 >> pol2;
         if (MuonPi::Version::hardware.major >= 3 && pol1 != config.polarity[0]) {
             config.polarity[0] = pol1;
-            emit message(std::make_shared<gpio_state>(GPIO_PINMAP[IN_POL1], config.polarity[0]));
+            emit GpioSetState(GPIO_PINMAP[IN_POL1], config.polarity[0]);
             emit logParameter(LogParameter("polaritySwitch1", QString::number((int)config.polarity[0]), LogParameter::LOG_EVERY));
         }
         if (MuonPi::Version::hardware.major >= 3 && pol2 != config.polarity[1]) {
             config.polarity[1] = pol2;
-            emit message(std::make_shared<gpio_state>(GPIO_PINMAP[IN_POL2], config.polarity[1]));
+            emit GpioSetState(GPIO_PINMAP[IN_POL2], config.polarity[1]);
             emit logParameter(LogParameter("polaritySwitch2", QString::number((int)config.polarity[1]), LogParameter::LOG_EVERY));
         }
         sendPolarityStatus();
@@ -1084,7 +1074,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         bool status;
         *(tcpMessage.dStream) >> status;
         config.hi_gain = status;
-        emit message(std::make_shared<gpio_state>(GPIO_PINMAP[GAIN_HL], status));
+        emit GpioSetState(GPIO_PINMAP[GAIN_HL], status);
         if (histoMap.find("pulseHeight") != histoMap.end())
             histoMap["pulseHeight"].clear();
         emit logParameter(LogParameter("gainSwitch", QString::number((int)config.hi_gain), LogParameter::LOG_EVERY));
@@ -1375,6 +1365,16 @@ void Daemon::sendUbxMsgRates()
     emit sendTcpMessage(tcpMessage);
 }
 
+void Daemon::sendDacThresh(uint8_t channel)
+{
+    if (channel > 1) {
+        return;
+    }
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_THRESHOLD);
+    *(tcpMessage.dStream) << (quint8)channel << config.thresholdVoltage[(int)channel];
+    emit sendTcpMessage(tcpMessage);
+}
+
 void Daemon::sendDacReadbackValue(uint8_t channel, float voltage)
 {
     if (channel > 3) {
@@ -1395,6 +1395,13 @@ void Daemon::sendGpioPinEvent(uint8_t gpio_pin)
         *(tcpMessage.dStream) << (GPIO_SIGNAL)result->first;
         emit sendTcpMessage(tcpMessage);
     }
+}
+
+void Daemon::sendBiasVoltage()
+{
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_BIAS_VOLTAGE);
+    *(tcpMessage.dStream) << config.biasVoltage;
+    emit sendTcpMessage(tcpMessage);
 }
 
 void Daemon::sendBiasStatus()
@@ -1459,10 +1466,10 @@ void Daemon::sendExtendedMqttStatus(MuonPi::MqttHandler::Status status)
     if (bStatus != mqttConnectionStatus) {
         if (bStatus) {
             qDebug() << "MQTT (re)connected";
-            emit message(std::make_shared<gpio_state>(GPIO_PINMAP[STATUS1], 1));
+            emit GpioSetState(GPIO_PINMAP[STATUS1], 1);
         } else {
             qDebug() << "MQTT connection lost";
-            emit message(std::make_shared<gpio_state>(GPIO_PINMAP[STATUS1], 0));
+            emit GpioSetState(GPIO_PINMAP[STATUS1], 0);
         }
     }
     mqttConnectionStatus = bStatus;
@@ -1713,9 +1720,9 @@ void Daemon::setBiasStatus(bool status)
     }
 
     if (status) {
-        emit message(std::make_shared<gpio_state>(GPIO_PINMAP[UBIAS_EN], (MuonPi::Version::hardware.major == 1) ? 1 : 0));
+        emit GpioSetState(GPIO_PINMAP[UBIAS_EN], (MuonPi::Version::hardware.major == 1) ? 1 : 0);
     } else {
-        emit message(std::make_shared<gpio_state>(GPIO_PINMAP[UBIAS_EN], (MuonPi::Version::hardware.major == 1) ? 0 : 1));
+        emit GpioSetState(GPIO_PINMAP[UBIAS_EN], (MuonPi::Version::hardware.major == 1) ? 0 : 1);
     }
     emit logParameter(LogParameter("biasSwitch", QString::number(status), LogParameter::LOG_EVERY));
     clearRates();
@@ -2169,9 +2176,9 @@ void Daemon::onMadeConnection(QString remotePeerAddress, quint16 remotePeerPort,
 
     sendVersionInfo();
     sendBiasStatus();
-    emit message(std::make_shared<bias_voltage>(config.biasVoltage));
-    emit message(std::make_shared<dac_threshold>(0, config.thresholdVoltage[0]));
-    emit message(std::make_shared<dac_threshold>(1, config.thresholdVoltage[1]));
+    sendBiasVoltage();
+    sendDacThresh(0);
+    sendDacThresh(1);
     sendPcaChannel();
     sendEventTriggerSelection();
 }
@@ -2457,20 +2464,20 @@ void Daemon::updateOledDisplay()
 
 void Daemon::onStatusLed1Event(int onTimeMs)
 {
-    emit message(std::make_shared<gpio_state>(GPIO_PINMAP[STATUS1], true));
+    emit GpioSetState(GPIO_PINMAP[STATUS1], true);
     if (onTimeMs) {
         QTimer::singleShot(onTimeMs, [&]() {
-            emit message(std::make_shared<gpio_state>(GPIO_PINMAP[STATUS1], false));
+            emit GpioSetState(GPIO_PINMAP[STATUS1], false);
         });
     }
 }
 
 void Daemon::onStatusLed2Event(int onTimeMs)
 {
-    emit message(std::make_shared<gpio_state>(GPIO_PINMAP[STATUS2], true));
+    emit GpioSetState(GPIO_PINMAP[STATUS2], true);
     if (onTimeMs) {
         QTimer::singleShot(onTimeMs, [&]() {
-            emit message(std::make_shared<gpio_state>(GPIO_PINMAP[STATUS2], false));
+            emit GpioSetState(GPIO_PINMAP[STATUS2], false);
         });
     }
 }

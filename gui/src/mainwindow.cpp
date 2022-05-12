@@ -11,7 +11,6 @@
 #include "status.h"
 #include "ubloxsettingsform.h"
 #include "ui_mainwindow.h"
-#include "muondetector_shared_global.h"
 
 #include <histogram.h>
 #include <muondetector_structs.h>

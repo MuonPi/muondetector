@@ -10,9 +10,6 @@
 
 #include "utility/gpio_mapping.h"
 #include <gpio_pin_definitions.h>
-#include <containers/message_container.h>
-#include <containers/gpio_config.h>
-#include <containers/gpio_state.h>
 
 #define XOR_RATE 0
 #define AND_RATE 1
@@ -51,9 +48,11 @@ signals:
 public slots:
     void stop();
     bool initialised();
-    void onMessageReceived(std::shared_ptr<message_container> message_container);
-    void setConfig(std::shared_ptr<gpio_config> config);
-    void setState(std::shared_ptr<gpio_state> state);
+    void setInput(unsigned int gpio);
+    void setOutput(unsigned int gpio);
+    void setPullUp(unsigned int gpio);
+    void setPullDown(unsigned int gpio);
+    void setGpioState(unsigned int gpio, bool state);
     void setSamplingTriggerSignal(GPIO_SIGNAL signalName) { samplingTriggerSignal = signalName; }
     void registerForCallback(unsigned int gpio, bool edge); // false=falling, true=rising
 
