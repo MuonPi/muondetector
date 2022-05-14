@@ -1,6 +1,7 @@
 #include <cmath>
 #include <map>
 #include <string>
+#include <limits>
 
 #include "histogram.h"
 
@@ -83,10 +84,10 @@ int Histogram::getLowestOccupiedBin() const
 {
     if (fHistogramMap.empty())
         return -1;
-    auto it = fHistogramMap.begin();
-    while (it != fHistogramMap.end() && it->second < 1e-3)
-        ++it;
-    if (it == fHistogramMap.end())
+
+    auto it { std::find_if(fHistogramMap.cbegin(), fHistogramMap.cend(), [](std::pair<const int, double> element){ return std::fabs(element.second) > std::numeric_limits<double>::epsilon(); } ) };
+
+    if (it == fHistogramMap.cend())
         return -1;
     return it->first;
 }
@@ -95,11 +96,11 @@ int Histogram::getHighestOccupiedBin() const
 {
     if (fHistogramMap.empty())
         return -1;
-    auto it = --fHistogramMap.end();
-    while (it != fHistogramMap.begin() && it->second < 1e-3)
-        --it;
-    if (it == fHistogramMap.begin())
-        return 0;
+
+    auto it { std::find_if(fHistogramMap.crbegin(), fHistogramMap.crend(), [](std::pair<const int, double> element){ return std::fabs(element.second) > std::numeric_limits<double>::epsilon(); } ) };
+
+    if (it == fHistogramMap.crend())
+        return -1;
     return it->first;
 }
 
@@ -136,17 +137,18 @@ double Histogram::getBinContent(int bin) const
             if (it != fHistogramMap.end())
                 return fHistogramMap.at(bin);
             else
-                return double();
+                return double {};
         } catch (...) {
-            return double();
+            return double {};
         }
     } else
-        return double();
+        return double {};
 }
 
 double Histogram::getMean()
 {
-    double sum = 0., entries = 0.;
+    double sum { 0. };
+    double entries { 0. };
     for (const auto& entry : fHistogramMap) {
         entries += entry.second;
         sum += bin2Value(entry.first) * entry.second;
@@ -154,13 +156,14 @@ double Histogram::getMean()
     if (entries > 0.)
         return sum / entries;
     else
-        return 0.;
+        return double {};
 }
 
 double Histogram::getRMS()
 {
-    double mean = getMean();
-    double sum = 0., entries = 0.;
+    double mean { getMean() };
+    double sum { 0. };
+    double entries { 0. };
     for (const auto& entry : fHistogramMap) {
         entries += entry.second;
         double dx = bin2Value(entry.first) - mean;
@@ -169,7 +172,7 @@ double Histogram::getRMS()
     if (entries > 1.)
         return sqrt(sum / (entries - 1.));
     else
-        return 0.;
+        return double {};
 }
 
 double Histogram::getUnderflow() const

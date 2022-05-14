@@ -233,33 +233,20 @@ struct UbxTimeMarkStruct {
 };
 
 struct GnssMonHwStruct {
-    GnssMonHwStruct() = default;
-    GnssMonHwStruct(quint16 a_noise, quint16 a_agc, quint8 a_antStatus, quint8 a_antPower, quint8 a_jamInd, quint8 a_flags)
-        : noise(a_noise)
-        , agc(a_agc)
-        , antStatus(a_antStatus)
-        , antPower(a_antPower)
-        , jamInd(a_jamInd)
-        , flags(a_flags)
-    {
-    }
-    quint16 noise = 0, agc = 0;
-    quint8 antStatus = 0, antPower = 0, jamInd = 0, flags = 0;
+    uint16_t noise { 0 };
+    uint16_t agc { 0 };
+    uint8_t antStatus { 0 };
+    uint8_t antPower { 0 };
+    uint8_t jamInd { 0 };
+    uint8_t flags { 0 };
 };
 
 struct GnssMonHw2Struct {
-    GnssMonHw2Struct() = default;
-    GnssMonHw2Struct(qint8 a_ofsI, qint8 a_ofsQ, quint8 a_magI, quint8 a_magQ, quint8 a_cfgSrc)
-        : ofsI(a_ofsI)
-        , ofsQ(a_ofsQ)
-        , magI(a_magI)
-        , magQ(a_magQ)
-        , cfgSrc(a_cfgSrc)
-    {
-    }
-    qint8 ofsI = 0, ofsQ = 0;
-    quint8 magI = 0, magQ = 0;
-    quint8 cfgSrc = 0;
+    int8_t ofsI { 0 };
+    int8_t ofsQ { 0 };
+    uint8_t magI { 0 };
+    uint8_t magQ { 0 };
+    uint8_t cfgSrc { 0 };
 };
 
 struct gpsTimestamp {

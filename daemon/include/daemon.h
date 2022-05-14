@@ -9,6 +9,7 @@
 #include <QTimer>
 #include <QVariant>
 #include <time.h>
+#include <memory>
 
 // clang-format off
 #include "qtserialublox.h"
