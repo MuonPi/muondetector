@@ -26,10 +26,12 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget* parent)
     ui->adcTracePlot->replot();
     ui->adcTracePlot->setEnabled(false);
 
-    foreach (GpioSignalDescriptor item, GPIO_SIGNAL_MAP) {
-        if (item.direction == DIR_IN)
-            ui->adcTriggerSelectionComboBox->addItem(item.name);
+    for ( const auto& [ pin, descriptor ] : GPIO_SIGNAL_MAP ) {
+        if (descriptor.direction == DIR_IN) {
+            ui->adcTriggerSelectionComboBox->addItem(QString::fromStdString(descriptor.name));
+        }
     }
+
     ui->timingSelectionComboBox->clear();
     foreach (QString item, TIMING_MUX_SIGNAL_NAMES) {
         ui->timingSelectionComboBox->addItem(item);
@@ -54,8 +56,8 @@ void ParameterMonitorForm::on_timingSelectionComboBox_currentIndexChanged(int in
 void ParameterMonitorForm::on_adcTriggerSelectionComboBox_currentIndexChanged(int index)
 {
     for (auto signalIt = GPIO_SIGNAL_MAP.begin(); signalIt != GPIO_SIGNAL_MAP.end(); ++signalIt) {
-        const GPIO_SIGNAL signalId = signalIt.key();
-        if (GPIO_SIGNAL_MAP[signalId].name == ui->adcTriggerSelectionComboBox->itemText(index)) {
+        const GPIO_SIGNAL signalId = signalIt->first;
+        if (QString::fromStdString(GPIO_SIGNAL_MAP.at(signalId).name) == ui->adcTriggerSelectionComboBox->itemText(index)) {
             emit triggerSelectionChanged(signalId);
             return;
         }
@@ -166,7 +168,7 @@ void ParameterMonitorForm::onTriggerSelectionReceived(GPIO_SIGNAL signal)
 {
     int i = 0;
     while (i < ui->adcTriggerSelectionComboBox->count()) {
-        if (ui->adcTriggerSelectionComboBox->itemText(i).compare(GPIO_SIGNAL_MAP[signal].name) == 0)
+        if (ui->adcTriggerSelectionComboBox->itemText(i).compare(QString::fromStdString(GPIO_SIGNAL_MAP.at(signal).name)) == 0)
             break;
         i++;
     }

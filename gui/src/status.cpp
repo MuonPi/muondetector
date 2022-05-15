@@ -58,10 +58,13 @@ Status::Status(QWidget* parent)
 #else
     connect(fInputSwitchButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::idClicked), [=](int id) { emit inputSwitchChanged(id); });
 #endif
-    foreach (GpioSignalDescriptor item, GPIO_SIGNAL_MAP) {
-        if (item.direction == DIR_IN)
-            statusUi->triggerSelectionComboBox->addItem(item.name);
+
+    for ( const auto& [ pin, descriptor ] : GPIO_SIGNAL_MAP ) {
+        if (descriptor.direction == DIR_IN) {
+            statusUi->triggerSelectionComboBox->addItem(QString::fromStdString(descriptor.name));
+        }
     }
+
     timepulseTimer.setSingleShot(true);
     timepulseTimer.setInterval(3000);
     connect(&timepulseTimer, &QTimer::timeout, this, [this]() {
@@ -175,7 +178,7 @@ void Status::onTriggerSelectionReceived(GPIO_SIGNAL signal)
 {
     int i = 0;
     while (i < statusUi->triggerSelectionComboBox->count()) {
-        if (statusUi->triggerSelectionComboBox->itemText(i).compare(GPIO_SIGNAL_MAP[signal].name) == 0)
+        if (statusUi->triggerSelectionComboBox->itemText(i).compare(QString::fromStdString(GPIO_SIGNAL_MAP.at(signal).name)) == 0)
             break;
         i++;
     }
@@ -302,8 +305,8 @@ Status::~Status()
 void Status::on_triggerSelectionComboBox_currentIndexChanged(const QString& arg1)
 {
     for (auto signalIt = GPIO_SIGNAL_MAP.begin(); signalIt != GPIO_SIGNAL_MAP.end(); ++signalIt) {
-        const GPIO_SIGNAL signalId = signalIt.key();
-        if (GPIO_SIGNAL_MAP[signalId].name == arg1) {
+        const GPIO_SIGNAL signalId = signalIt->first;
+        if (QString::fromStdString(GPIO_SIGNAL_MAP.at(signalId).name) == arg1) {
             emit triggerSelectionChanged(signalId);
             return;
         }
