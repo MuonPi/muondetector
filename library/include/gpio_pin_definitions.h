@@ -43,11 +43,11 @@ enum SIGNAL_DIRECTION { DIR_UNDEFINED,
     DIR_IO };
 
 struct GpioSignalDescriptor {
-    QString name;
+    std::string name;
     SIGNAL_DIRECTION direction;
 };
 
-static const QMap<GPIO_SIGNAL, GpioSignalDescriptor> GPIO_SIGNAL_MAP = { { UBIAS_EN, { "UBIAS_EN", DIR_OUT } },
+static const std::map<GPIO_SIGNAL, GpioSignalDescriptor> GPIO_SIGNAL_MAP = { { UBIAS_EN, { "UBIAS_EN", DIR_OUT } },
     { PREAMP_1, { "PREAMP_1", DIR_OUT } },
     { PREAMP_2, { "PREAMP_2", DIR_OUT } },
     { EVT_AND, { "EVT_AND", DIR_IN } },

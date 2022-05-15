@@ -290,8 +290,8 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 
         for (auto signalIt = GPIO_PINMAP.begin(); signalIt != GPIO_PINMAP.end(); signalIt++) {
             const GPIO_SIGNAL signalId = signalIt->first;
-            std::cout << GPIO_SIGNAL_MAP[signalId].name << " \t: " << std::dec << signalIt->second;
-            switch (GPIO_SIGNAL_MAP[signalId].direction) {
+            std::cout << GPIO_SIGNAL_MAP.at(signalId).name << " \t: " << std::dec << signalIt->second;
+            switch (GPIO_SIGNAL_MAP.at(signalId).direction) {
             case DIR_IN:
                 std::cout << " (in)";
                 break;

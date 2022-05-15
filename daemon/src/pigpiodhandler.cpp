@@ -246,7 +246,7 @@ void PigpiodHandler::registerForCallback(unsigned int gpio, bool edge)
     int result = callback(pi, gpio, edge ? FALLING_EDGE : RISING_EDGE, cbFunction);
     if (result < 0) {
         GPIO_SIGNAL pin = bcmToGpioSignal(gpio);
-        qCritical() << "error registering gpio callback for BCM pin" << GPIO_SIGNAL_MAP[pin].name;
+        qCritical() << "error registering gpio callback for BCM pin" << QString::fromStdString(GPIO_SIGNAL_MAP.at(pin).name);
     }
 }
 
