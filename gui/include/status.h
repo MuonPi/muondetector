@@ -60,6 +60,8 @@ private:
     QVector<QPointF> andSamples;
     QButtonGroup* fInputSwitchButtonGroup;
     QTimer timepulseTimer;
+    static constexpr quint64 rateSecondsBufferedDefault { 60 * 120 }; // 120 min
+    quint64 rateSecondsBuffered { rateSecondsBufferedDefault };
 };
 
 #endif // STATUS_H
