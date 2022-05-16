@@ -55,10 +55,9 @@ void ParameterMonitorForm::on_timingSelectionComboBox_currentIndexChanged(int in
 
 void ParameterMonitorForm::on_adcTriggerSelectionComboBox_currentIndexChanged(int index)
 {
-    for (auto signalIt = GPIO_SIGNAL_MAP.begin(); signalIt != GPIO_SIGNAL_MAP.end(); ++signalIt) {
-        const GPIO_SIGNAL signalId = signalIt->first;
-        if (QString::fromStdString(GPIO_SIGNAL_MAP.at(signalId).name) == ui->adcTriggerSelectionComboBox->itemText(index)) {
-            emit triggerSelectionChanged(signalId);
+    for ( const auto& [ pin, descriptor ] : GPIO_SIGNAL_MAP ) {
+        if (QString::fromStdString(descriptor.name) == ui->adcTriggerSelectionComboBox->itemText(index)) {
+            emit triggerSelectionChanged(pin);
             return;
         }
     }

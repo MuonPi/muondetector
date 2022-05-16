@@ -304,10 +304,9 @@ Status::~Status()
 
 void Status::on_triggerSelectionComboBox_currentIndexChanged(const QString& arg1)
 {
-    for (auto signalIt = GPIO_SIGNAL_MAP.begin(); signalIt != GPIO_SIGNAL_MAP.end(); ++signalIt) {
-        const GPIO_SIGNAL signalId = signalIt->first;
-        if (QString::fromStdString(GPIO_SIGNAL_MAP.at(signalId).name) == arg1) {
-            emit triggerSelectionChanged(signalId);
+    for ( const auto& [ pin, descriptor ] : GPIO_SIGNAL_MAP ) {
+        if (QString::fromStdString(descriptor.name) == arg1) {
+            emit triggerSelectionChanged(pin);
             return;
         }
     }
