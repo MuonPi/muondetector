@@ -167,7 +167,8 @@ void Status::clearRatePlot()
 
 void Status::onTriggerSelectionReceived(GPIO_SIGNAL signal)
 {
-    if (!statusUi->triggerSelectionComboBox->isEnabled()) statusUi->triggerSelectionComboBox->setEnabled(true);
+    if (!statusUi->triggerSelectionComboBox->isEnabled())
+        statusUi->triggerSelectionComboBox->setEnabled(true);
     int i { 0 };
     while (i < statusUi->triggerSelectionComboBox->count()) {
         if (statusUi->triggerSelectionComboBox->itemText(i).compare(GPIO_SIGNAL_MAP[signal].name) == 0)
@@ -197,7 +198,8 @@ void Status::clearPulseHeightHisto()
 void Status::onAdcSampleReceived(uint8_t channel, float value)
 {
     if (channel == 0) {
-        if (!statusUi->ADCLabel1->isEnabled()) statusUi->ADCLabel1->setEnabled(true);
+        if (!statusUi->ADCLabel1->isEnabled())
+            statusUi->ADCLabel1->setEnabled(true);
         statusUi->ADCLabel1->setText("Ch1: " + QString::number(value, 'f', 3) + " V");
         if (statusUi->pulseHeightHistogram->enabled()) {
             statusUi->pulseHeightHistogram->fill(value);
@@ -205,13 +207,16 @@ void Status::onAdcSampleReceived(uint8_t channel, float value)
         }
 
     } else if (channel == 1) {
-        if (!statusUi->ADCLabel2->isEnabled()) statusUi->ADCLabel2->setEnabled(true);
+        if (!statusUi->ADCLabel2->isEnabled())
+            statusUi->ADCLabel2->setEnabled(true);
         statusUi->ADCLabel2->setText("Ch2: " + QString::number(value, 'f', 3) + " V");
     } else if (channel == 2) {
-        if (!statusUi->ADCLabel3->isEnabled()) statusUi->ADCLabel3->setEnabled(true);
+        if (!statusUi->ADCLabel3->isEnabled())
+            statusUi->ADCLabel3->setEnabled(true);
         statusUi->ADCLabel3->setText("Ch3: " + QString::number(value, 'f', 3) + " V");
     } else if (channel == 3) {
-        if (!statusUi->ADCLabel4->isEnabled()) statusUi->ADCLabel4->setEnabled(true);
+        if (!statusUi->ADCLabel4->isEnabled())
+            statusUi->ADCLabel4->setEnabled(true);
         statusUi->ADCLabel4->setText("Ch4: " + QString::number(value, 'f', 3) + " V");
     }
 }
@@ -287,23 +292,27 @@ void Status::onInputSwitchReceived(uint8_t id)
 
 void Status::onBiasSwitchReceived(bool state)
 {
-    if (!statusUi->biasEnableCheckBox->isEnabled()) statusUi->biasEnableCheckBox->setEnabled(true);
+    if (!statusUi->biasEnableCheckBox->isEnabled())
+        statusUi->biasEnableCheckBox->setEnabled(true);
     statusUi->biasEnableCheckBox->setChecked(state);
 }
 
 void Status::onGainSwitchReceived(bool state)
 {
-    if (!statusUi->highGainCheckBox->isEnabled()) statusUi->highGainCheckBox->setEnabled(true);
+    if (!statusUi->highGainCheckBox->isEnabled())
+        statusUi->highGainCheckBox->setEnabled(true);
     statusUi->highGainCheckBox->setChecked(state);
 }
 
 void Status::onPreampSwitchReceived(uint8_t channel, bool state)
 {
     if (channel == 0) {
-        if (!statusUi->preamp1CheckBox->isEnabled()) statusUi->preamp1CheckBox->setEnabled(true);
+        if (!statusUi->preamp1CheckBox->isEnabled())
+            statusUi->preamp1CheckBox->setEnabled(true);
         statusUi->preamp1CheckBox->setChecked(state);
     } else if (channel == 1) {
-        if (!statusUi->preamp2CheckBox->isEnabled()) statusUi->preamp2CheckBox->setEnabled(true);
+        if (!statusUi->preamp2CheckBox->isEnabled())
+            statusUi->preamp2CheckBox->setEnabled(true);
         statusUi->preamp2CheckBox->setChecked(state);
     }
 }
@@ -311,23 +320,28 @@ void Status::onPreampSwitchReceived(uint8_t channel, bool state)
 void Status::onDacReadbackReceived(uint8_t channel, float value)
 {
     if (channel == 0) {
-        if (!statusUi->DACLabel1->isEnabled()) statusUi->DACLabel1->setEnabled(true);
+        if (!statusUi->DACLabel1->isEnabled())
+            statusUi->DACLabel1->setEnabled(true);
         statusUi->DACLabel1->setText("Ch1: " + QString::number(value, 'f', 3) + " V");
     } else if (channel == 1) {
-        if (!statusUi->DACLabel2->isEnabled()) statusUi->DACLabel2->setEnabled(true);
+        if (!statusUi->DACLabel2->isEnabled())
+            statusUi->DACLabel2->setEnabled(true);
         statusUi->DACLabel2->setText("Ch2: " + QString::number(value, 'f', 3) + " V");
     } else if (channel == 2) {
-        if (!statusUi->DACLabel3->isEnabled()) statusUi->DACLabel3->setEnabled(true);
+        if (!statusUi->DACLabel3->isEnabled())
+            statusUi->DACLabel3->setEnabled(true);
         statusUi->DACLabel3->setText("Ch3: " + QString::number(value, 'f', 3) + " V");
     } else if (channel == 3) {
-        if (!statusUi->DACLabel4->isEnabled()) statusUi->DACLabel4->setEnabled(true);
+        if (!statusUi->DACLabel4->isEnabled())
+            statusUi->DACLabel4->setEnabled(true);
         statusUi->DACLabel4->setText("Ch4: " + QString::number(value, 'f', 3) + " V");
     }
 }
 
 void Status::onTemperatureReceived(float value)
 {
-    if (!statusUi->temperatureLabel->isEnabled()) statusUi->temperatureLabel->setEnabled(true);
+    if (!statusUi->temperatureLabel->isEnabled())
+        statusUi->temperatureLabel->setEnabled(true);
     statusUi->temperatureLabel->setText("Temperature: " + QString::number(value, 'f', 2) + " °C");
 }
 

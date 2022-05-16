@@ -1,7 +1,7 @@
 #include <cmath>
+#include <limits>
 #include <map>
 #include <string>
-#include <limits>
 
 #include "histogram.h"
 
@@ -85,7 +85,7 @@ int Histogram::getLowestOccupiedBin() const
     if (fHistogramMap.empty())
         return -1;
 
-    auto it { std::find_if(fHistogramMap.cbegin(), fHistogramMap.cend(), [](std::pair<const int, double> element){ return std::fabs(element.second) > std::numeric_limits<double>::epsilon(); } ) };
+    auto it { std::find_if(fHistogramMap.cbegin(), fHistogramMap.cend(), [](std::pair<const int, double> element) { return std::fabs(element.second) > std::numeric_limits<double>::epsilon(); }) };
 
     if (it == fHistogramMap.cend())
         return -1;
@@ -97,7 +97,7 @@ int Histogram::getHighestOccupiedBin() const
     if (fHistogramMap.empty())
         return -1;
 
-    auto it { std::find_if(fHistogramMap.crbegin(), fHistogramMap.crend(), [](std::pair<const int, double> element){ return std::fabs(element.second) > std::numeric_limits<double>::epsilon(); } ) };
+    auto it { std::find_if(fHistogramMap.crbegin(), fHistogramMap.crend(), [](std::pair<const int, double> element) { return std::fabs(element.second) > std::numeric_limits<double>::epsilon(); }) };
 
     if (it == fHistogramMap.crend())
         return -1;
