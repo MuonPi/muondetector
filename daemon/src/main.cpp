@@ -479,7 +479,7 @@ int main(int argc, char* argv[])
             if (verbose > 2)
                 qDebug() << "event trigger : " << eventTriggerCfg;
         } catch (const libconfig::SettingNotFoundException& nfex) {
-            qWarning() << "No 'trigger_input' setting in configuration file. Assuming signal" << GPIO_SIGNAL_MAP[daemonConfig.eventTrigger].name;
+            qWarning() << "No 'trigger_input' setting in configuration file. Assuming signal" << QString::fromStdString(GPIO_SIGNAL_MAP.at(daemonConfig.eventTrigger).name);
         }
 
     switch (eventTriggerCfg) {

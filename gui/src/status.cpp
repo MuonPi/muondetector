@@ -43,24 +43,18 @@ Status::Status(QWidget* parent)
     connect(statusUi->preamp1CheckBox, &QCheckBox::clicked, this, &Status::preamp1SwitchChanged);
     connect(statusUi->preamp2CheckBox, &QCheckBox::clicked, this, &Status::preamp2SwitchChanged);
 
-    fInputSwitchButtonGroup = new QButtonGroup(this);
-    fInputSwitchButtonGroup->addButton(statusUi->InputSelectRadioButton0, 0);
-    fInputSwitchButtonGroup->addButton(statusUi->InputSelectRadioButton1, 1);
-    fInputSwitchButtonGroup->addButton(statusUi->InputSelectRadioButton2, 2);
-    fInputSwitchButtonGroup->addButton(statusUi->InputSelectRadioButton3, 3);
-    fInputSwitchButtonGroup->addButton(statusUi->InputSelectRadioButton4, 4);
-    fInputSwitchButtonGroup->addButton(statusUi->InputSelectRadioButton5, 5);
-    fInputSwitchButtonGroup->addButton(statusUi->InputSelectRadioButton6, 6);
-    fInputSwitchButtonGroup->addButton(statusUi->InputSelectRadioButton7, 7);
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-    connect(fInputSwitchButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), [=](int id) { emit inputSwitchChanged(id); });
-#else
-    connect(fInputSwitchButtonGroup, static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::idClicked), [=](int id) { emit inputSwitchChanged(id); });
-#endif
-    foreach (GpioSignalDescriptor item, GPIO_SIGNAL_MAP) {
-        if (item.direction == DIR_IN)
-            statusUi->triggerSelectionComboBox->addItem(item.name);
+    for (const auto& [mux_signal, mux_name] : TIMING_MUX_SIGNAL_NAMES) {
+        if (mux_signal != TIMING_MUX_SELECTION::UNDEFINED) {
+            statusUi->timingSelectionComboBox->addItem(QString::fromStdString(mux_name));
+        }
     }
+
+    for (const auto& [pin, descriptor] : GPIO_SIGNAL_MAP) {
+        if (descriptor.direction == DIR_IN) {
+            statusUi->triggerSelectionComboBox->addItem(QString::fromStdString(descriptor.name));
+        }
+    }
+
     timepulseTimer.setSingleShot(true);
     timepulseTimer.setInterval(3000);
     connect(&timepulseTimer, &QTimer::timeout, this, [this]() {
@@ -171,7 +165,7 @@ void Status::onTriggerSelectionReceived(GPIO_SIGNAL signal)
         statusUi->triggerSelectionComboBox->setEnabled(true);
     int i { 0 };
     while (i < statusUi->triggerSelectionComboBox->count()) {
-        if (statusUi->triggerSelectionComboBox->itemText(i).compare(GPIO_SIGNAL_MAP[signal].name) == 0)
+        if (statusUi->triggerSelectionComboBox->itemText(i).compare(QString::fromStdString(GPIO_SIGNAL_MAP.at(signal).name)) == 0)
             break;
         i++;
     }
@@ -246,6 +240,7 @@ void Status::onUiEnabledStateChange(bool connected)
         statusUi->pulseHeightHistogram->clear();
         statusUi->pulseHeightHistogram->setEnabled(false);
         statusUi->triggerSelectionComboBox->setEnabled(false);
+        statusUi->timingSelectionComboBox->setEnabled(false);
         timepulseTimer.stop();
         statusUi->timePulseLabel->setStyleSheet("QLabel {background-color: Window;}");
         statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: Window;}");
@@ -285,9 +280,22 @@ void Status::on_histoLogYCheckBox_clicked()
     statusUi->pulseHeightHistogram->setLogY(statusUi->histoLogYCheckBox->isChecked());
 }
 
-void Status::onInputSwitchReceived(uint8_t id)
+void Status::onInputSwitchReceived(TIMING_MUX_SELECTION sel)
 {
-    fInputSwitchButtonGroup->button(id)->setChecked(true);
+    if (TIMING_MUX_SIGNAL_NAMES.find(sel) == TIMING_MUX_SIGNAL_NAMES.end())
+        return;
+    int i = 0;
+    while (i < statusUi->timingSelectionComboBox->count()) {
+        if (statusUi->timingSelectionComboBox->itemText(i).compare(QString::fromStdString(TIMING_MUX_SIGNAL_NAMES.at(sel))) == 0)
+            break;
+        i++;
+    }
+    if (i >= statusUi->timingSelectionComboBox->count())
+        return;
+    statusUi->timingSelectionComboBox->blockSignals(true);
+    statusUi->timingSelectionComboBox->setEnabled(true);
+    statusUi->timingSelectionComboBox->setCurrentIndex(i);
+    statusUi->timingSelectionComboBox->blockSignals(false);
 }
 
 void Status::onBiasSwitchReceived(bool state)
@@ -348,15 +356,23 @@ void Status::onTemperatureReceived(float value)
 Status::~Status()
 {
     delete statusUi;
-    delete fInputSwitchButtonGroup;
 }
 
 void Status::on_triggerSelectionComboBox_currentIndexChanged(const QString& arg1)
 {
-    for (auto signalIt = GPIO_SIGNAL_MAP.begin(); signalIt != GPIO_SIGNAL_MAP.end(); ++signalIt) {
-        const GPIO_SIGNAL signalId = signalIt.key();
-        if (GPIO_SIGNAL_MAP[signalId].name == arg1) {
-            emit triggerSelectionChanged(signalId);
+    for (const auto& [pin, descriptor] : GPIO_SIGNAL_MAP) {
+        if (QString::fromStdString(descriptor.name) == arg1) {
+            emit triggerSelectionChanged(pin);
+            return;
+        }
+    }
+}
+
+void Status::on_timingSelectionComboBox_currentIndexChanged(const QString& arg)
+{
+    for (const auto& [mux_signal, mux_name] : TIMING_MUX_SIGNAL_NAMES) {
+        if (QString::fromStdString(mux_name) == arg) {
+            emit inputSwitchChanged(mux_signal);
             return;
         }
     }
