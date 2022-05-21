@@ -5,6 +5,8 @@ muondetector-gui (2.1.0) ; urgency=low
   * Added time as scan parameter in "Scans" tab.
   * Added display of log rotation interval and event log enable flag in "Log" tab.
   * Fixed bug which prevented auto update of histograms and plots.
+  * Optimized color schemes to give better appearance for dark themes
+  * changed timing input selection from radio button group to drop down menu
 
  -- MuonPi.org <developer@muonpi.org>  Mon, 26 Apr 2022 01:03:00 +0200
 

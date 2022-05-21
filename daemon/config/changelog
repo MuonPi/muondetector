@@ -1,7 +1,8 @@
 muondetector-daemon (2.1.0) ; urgency=low
 
   * Bugfixes:
-  
+  - removed wrong QT connect call which resulted in a warning in log messages after daemon startup
+
   * Updates:
   - restructured data logging system: 
    - introduced log rotation and possibility to enable/disable data logging
