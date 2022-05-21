@@ -30,7 +30,7 @@ signals:
     void preamp1EnableChanged(bool state);
     void preamp2EnableChanged(bool state);
     void polarityChanged(bool pol1, bool pol2);
-    void timingSelectionChanged(uint8_t sel);
+    void timingSelectionChanged(TIMING_MUX_SELECTION sel);
     void triggerSelectionChanged(GPIO_SIGNAL signal);
     void gainSwitchChanged(bool state);
 
@@ -38,7 +38,7 @@ public slots:
     void onCalibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct>& calibList);
     void onAdcSampleReceived(uint8_t channel, float value);
     void onDacReadbackReceived(uint8_t channel, float value);
-    void onInputSwitchReceived(uint8_t index);
+    void onInputSwitchReceived(TIMING_MUX_SELECTION sel);
     void onBiasSwitchReceived(bool state);
     void onPreampSwitchReceived(uint8_t channel, bool state);
     void onTriggerSelectionReceived(GPIO_SIGNAL signal);

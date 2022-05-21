@@ -426,7 +426,9 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
         emit gainSwitchReceived(gainSwitch);
     } else if (msgID == TCP_MSG_KEY::MSG_PCA_SWITCH) {
         *(tcpMessage.dStream) >> pcaPortMask;
-        emit inputSwitchReceived(pcaPortMask);
+        if (pcaPortMask != static_cast<int>(TIMING_MUX_SELECTION::UNDEFINED)) {
+            emit inputSwitchReceived(static_cast<TIMING_MUX_SELECTION>(pcaPortMask));
+        }
     } else if (msgID == TCP_MSG_KEY::MSG_EVENTTRIGGER) {
         unsigned int signal;
         *(tcpMessage.dStream) >> signal;
@@ -1073,10 +1075,11 @@ void MainWindow::on_biasPowerButton_clicked()
     sendSetBiasStatus(!biasON);
 }
 
-void MainWindow::sendInputSwitch(uint8_t id)
+void MainWindow::sendInputSwitch(TIMING_MUX_SELECTION sel)
 {
+    if (sel == TIMING_MUX_SELECTION::UNDEFINED) return;
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_PCA_SWITCH);
-    *(tcpMessage.dStream) << (quint8)id;
+    *(tcpMessage.dStream) << static_cast<quint8>(sel);
     emit sendTcpMessage(tcpMessage);
     sendRequest(TCP_MSG_KEY::MSG_PCA_SWITCH_REQUEST);
 }

@@ -33,9 +33,12 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget* parent)
     }
 
     ui->timingSelectionComboBox->clear();
-    foreach (QString item, TIMING_MUX_SIGNAL_NAMES) {
-        ui->timingSelectionComboBox->addItem(item);
+    for ( const auto& [mux_signal, mux_signal_name]: TIMING_MUX_SIGNAL_NAMES ) {
+        if ( mux_signal != TIMING_MUX_SELECTION::UNDEFINED ) {
+            ui->timingSelectionComboBox->addItem(QString::fromStdString(mux_signal_name));
+        }
     }
+
     connect(ui->adcTraceGroupBox, &QGroupBox::clicked, this, [this](bool checked) {
         emit adcModeChanged((checked) ? ADC_SAMPLING_MODE::TRACE : ADC_SAMPLING_MODE::PEAK);
         ui->adcTracePlot->setEnabled(checked);
@@ -50,7 +53,12 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget* parent)
 
 void ParameterMonitorForm::on_timingSelectionComboBox_currentIndexChanged(int index)
 {
-    emit timingSelectionChanged(index);
+    for ( const auto& [ mux_signal, mux_name ] : TIMING_MUX_SIGNAL_NAMES ) {
+        if (QString::fromStdString(mux_name) == ui->timingSelectionComboBox->itemText(index)) {
+            emit timingSelectionChanged(mux_signal);
+            return;
+        }
+    }
 }
 
 void ParameterMonitorForm::on_adcTriggerSelectionComboBox_currentIndexChanged(int index)
@@ -145,9 +153,21 @@ void ParameterMonitorForm::onDacReadbackReceived(uint8_t channel, float value)
     ui->dacSlider4->blockSignals(false);
 }
 
-void ParameterMonitorForm::onInputSwitchReceived(uint8_t index)
+void ParameterMonitorForm::onInputSwitchReceived(TIMING_MUX_SELECTION sel)
 {
-    ui->timingSelectionComboBox->setCurrentIndex(index);
+    if (TIMING_MUX_SIGNAL_NAMES.find(sel) == TIMING_MUX_SIGNAL_NAMES.end()) return;
+    int i = 0;
+    while (i < ui->timingSelectionComboBox->count()) {
+        if (ui->timingSelectionComboBox->itemText(i).compare(QString::fromStdString(TIMING_MUX_SIGNAL_NAMES.at(sel))) == 0)
+            break;
+        i++;
+    }
+    if (i >= ui->timingSelectionComboBox->count())
+        return;
+    ui->timingSelectionComboBox->blockSignals(true);
+    ui->timingSelectionComboBox->setEnabled(true);
+    ui->timingSelectionComboBox->setCurrentIndex(i);
+    ui->timingSelectionComboBox->blockSignals(false);
 }
 
 void ParameterMonitorForm::onBiasSwitchReceived(bool state)

@@ -51,7 +51,7 @@ signals:
     void geodeticPos(const GeodeticPos& pos);
     void adcSampleReceived(uint8_t channel, float value);
     void adcTraceReceived(const QVector<float>& sampleBuffer);
-    void inputSwitchReceived(uint8_t);
+    void inputSwitchReceived(TIMING_MUX_SELECTION);
     void dacReadbackReceived(uint8_t channel, float value);
     void biasSwitchReceived(bool state);
     void preampSwitchReceived(uint8_t channel, bool state);
@@ -116,7 +116,7 @@ private slots:
     void onIpButtonClicked();
     void connected();
     void connection_error(int error_code, const QString message);
-    void sendInputSwitch(uint8_t id);
+    void sendInputSwitch(TIMING_MUX_SELECTION sel);
 
     void on_discr1Save_clicked();
     void on_discr2Save_clicked();

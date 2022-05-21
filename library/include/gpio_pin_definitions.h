@@ -67,18 +67,28 @@ static const std::map<GPIO_SIGNAL, GpioSignalDescriptor> GPIO_SIGNAL_MAP = { { U
     { IN_POL2, { "IN_POL2", DIR_OUT } },
     { UNDEFINED_PIN, { "UNDEFINED_PIN", DIR_UNDEFINED } } };
 
-static const QVector<QString> TIMING_MUX_SIGNAL_NAMES = {
-    "AND", "XOR", "DISCR1", "DISCR2", "N/A", "TIMEPULSE", "N/A", "EXT"
-};
-
 enum class TIMING_MUX_SELECTION : uint8_t {
     AND = 0,
     XOR = 1,
     DISCR1 = 2,
     DISCR2 = 3,
+    VCC = 4,
     TIMEPULSE = 5,
+    IN6 = 6,
     EXT = 7,
     UNDEFINED = 255
+};
+
+static const std::map<TIMING_MUX_SELECTION, std::string> TIMING_MUX_SIGNAL_NAMES = {
+    { TIMING_MUX_SELECTION::AND, "AND" },
+    { TIMING_MUX_SELECTION::XOR, "XOR" },
+    { TIMING_MUX_SELECTION::DISCR1, "DISCR1" },
+    { TIMING_MUX_SELECTION::DISCR2, "DISCR2" },
+    { TIMING_MUX_SELECTION::VCC, "VCC" },
+    { TIMING_MUX_SELECTION::TIMEPULSE, "TIMEPULSE" },
+    //{ TIMING_MUX_SELECTION::IN6, "IN6" },
+    { TIMING_MUX_SELECTION::EXT, "EXT" },
+    { TIMING_MUX_SELECTION::UNDEFINED, "UNDEFINED" }
 };
 
 #endif // GPIO_PIN_DEFINITIONS_H
