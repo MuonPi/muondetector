@@ -1077,7 +1077,8 @@ void MainWindow::on_biasPowerButton_clicked()
 
 void MainWindow::sendInputSwitch(TIMING_MUX_SELECTION sel)
 {
-    if (sel == TIMING_MUX_SELECTION::UNDEFINED) return;
+    if (sel == TIMING_MUX_SELECTION::UNDEFINED)
+        return;
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_PCA_SWITCH);
     *(tcpMessage.dStream) << static_cast<quint8>(sel);
     emit sendTcpMessage(tcpMessage);

@@ -44,13 +44,13 @@ Status::Status(QWidget* parent)
     connect(statusUi->preamp1CheckBox, &QCheckBox::clicked, this, &Status::preamp1SwitchChanged);
     connect(statusUi->preamp2CheckBox, &QCheckBox::clicked, this, &Status::preamp2SwitchChanged);
 
-    for ( const auto& [ mux_signal, mux_name ] : TIMING_MUX_SIGNAL_NAMES ) {
+    for (const auto& [mux_signal, mux_name] : TIMING_MUX_SIGNAL_NAMES) {
         if (mux_signal != TIMING_MUX_SELECTION::UNDEFINED) {
             statusUi->timingSelectionComboBox->addItem(QString::fromStdString(mux_name));
         }
     }
 
-    for ( const auto& [ pin, descriptor ] : GPIO_SIGNAL_MAP ) {
+    for (const auto& [pin, descriptor] : GPIO_SIGNAL_MAP) {
         if (descriptor.direction == DIR_IN) {
             statusUi->triggerSelectionComboBox->addItem(QString::fromStdString(descriptor.name));
         }
@@ -250,7 +250,8 @@ void Status::on_histoLogYCheckBox_clicked()
 
 void Status::onInputSwitchReceived(TIMING_MUX_SELECTION sel)
 {
-    if (TIMING_MUX_SIGNAL_NAMES.find(sel) == TIMING_MUX_SIGNAL_NAMES.end()) return;
+    if (TIMING_MUX_SIGNAL_NAMES.find(sel) == TIMING_MUX_SIGNAL_NAMES.end())
+        return;
     int i = 0;
     while (i < statusUi->timingSelectionComboBox->count()) {
         if (statusUi->timingSelectionComboBox->itemText(i).compare(QString::fromStdString(TIMING_MUX_SIGNAL_NAMES.at(sel))) == 0)
@@ -307,7 +308,7 @@ Status::~Status()
 
 void Status::on_triggerSelectionComboBox_currentIndexChanged(const QString& arg1)
 {
-    for ( const auto& [ pin, descriptor ] : GPIO_SIGNAL_MAP ) {
+    for (const auto& [pin, descriptor] : GPIO_SIGNAL_MAP) {
         if (QString::fromStdString(descriptor.name) == arg1) {
             emit triggerSelectionChanged(pin);
             return;
@@ -317,7 +318,7 @@ void Status::on_triggerSelectionComboBox_currentIndexChanged(const QString& arg1
 
 void Status::on_timingSelectionComboBox_currentIndexChanged(const QString& arg)
 {
-    for ( const auto& [ mux_signal, mux_name ] : TIMING_MUX_SIGNAL_NAMES ) {
+    for (const auto& [mux_signal, mux_name] : TIMING_MUX_SIGNAL_NAMES) {
         if (QString::fromStdString(mux_name) == arg) {
             emit inputSwitchChanged(mux_signal);
             return;

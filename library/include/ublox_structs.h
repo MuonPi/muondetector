@@ -5,12 +5,12 @@
 #include <QDataStream>
 #include <QList>
 #include <QString>
+#include <array>
 #include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <array>
 
 namespace Gnss {
 
@@ -180,7 +180,7 @@ public:
     friend QDataStream& operator>>(QDataStream& in, GnssSatellite& sat);
 
 public:
-    uint8_t GnssId  { 0 };
+    uint8_t GnssId { 0 };
     uint8_t SatId { 0 };
     uint8_t Cnr { 0 };
     int8_t Elev { 0 };
@@ -191,7 +191,7 @@ public:
     uint8_t OrbitSource { 0 };
     bool Used { false };
     bool DiffCorr { false };
-    bool Smoothed { false};
+    bool Smoothed { false };
 };
 
 struct UbxTimePulseStruct {

@@ -26,15 +26,15 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget* parent)
     ui->adcTracePlot->replot();
     ui->adcTracePlot->setEnabled(false);
 
-    for ( const auto& [ pin, descriptor ] : GPIO_SIGNAL_MAP ) {
+    for (const auto& [pin, descriptor] : GPIO_SIGNAL_MAP) {
         if (descriptor.direction == DIR_IN) {
             ui->adcTriggerSelectionComboBox->addItem(QString::fromStdString(descriptor.name));
         }
     }
 
     ui->timingSelectionComboBox->clear();
-    for ( const auto& [mux_signal, mux_signal_name]: TIMING_MUX_SIGNAL_NAMES ) {
-        if ( mux_signal != TIMING_MUX_SELECTION::UNDEFINED ) {
+    for (const auto& [mux_signal, mux_signal_name] : TIMING_MUX_SIGNAL_NAMES) {
+        if (mux_signal != TIMING_MUX_SELECTION::UNDEFINED) {
             ui->timingSelectionComboBox->addItem(QString::fromStdString(mux_signal_name));
         }
     }
@@ -53,7 +53,7 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget* parent)
 
 void ParameterMonitorForm::on_timingSelectionComboBox_currentIndexChanged(int index)
 {
-    for ( const auto& [ mux_signal, mux_name ] : TIMING_MUX_SIGNAL_NAMES ) {
+    for (const auto& [mux_signal, mux_name] : TIMING_MUX_SIGNAL_NAMES) {
         if (QString::fromStdString(mux_name) == ui->timingSelectionComboBox->itemText(index)) {
             emit timingSelectionChanged(mux_signal);
             return;
@@ -63,7 +63,7 @@ void ParameterMonitorForm::on_timingSelectionComboBox_currentIndexChanged(int in
 
 void ParameterMonitorForm::on_adcTriggerSelectionComboBox_currentIndexChanged(int index)
 {
-    for ( const auto& [ pin, descriptor ] : GPIO_SIGNAL_MAP ) {
+    for (const auto& [pin, descriptor] : GPIO_SIGNAL_MAP) {
         if (QString::fromStdString(descriptor.name) == ui->adcTriggerSelectionComboBox->itemText(index)) {
             emit triggerSelectionChanged(pin);
             return;
@@ -155,7 +155,8 @@ void ParameterMonitorForm::onDacReadbackReceived(uint8_t channel, float value)
 
 void ParameterMonitorForm::onInputSwitchReceived(TIMING_MUX_SELECTION sel)
 {
-    if (TIMING_MUX_SIGNAL_NAMES.find(sel) == TIMING_MUX_SIGNAL_NAMES.end()) return;
+    if (TIMING_MUX_SIGNAL_NAMES.find(sel) == TIMING_MUX_SIGNAL_NAMES.end())
+        return;
     int i = 0;
     while (i < ui->timingSelectionComboBox->count()) {
         if (ui->timingSelectionComboBox->itemText(i).compare(QString::fromStdString(TIMING_MUX_SIGNAL_NAMES.at(sel))) == 0)
