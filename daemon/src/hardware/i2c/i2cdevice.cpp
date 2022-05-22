@@ -144,7 +144,7 @@ bool i2cDevice::identify()
 int i2cDevice::read(uint8_t* buf, int nBytes)
 { //defines a function with a pointer buf as buffer and the number of bytes which
     //we want to read.
-    if (fHandle <= 0 || (fMode & MODE_LOCKED)) {
+    if (fHandle <= 0 || (fMode & MODE_LOCKED))
         return 0;
     //std::lock_guard<std::mutex> lock(fMutex);
     int nread = ::read(fHandle, buf, nBytes); //"::" declares that the functions does not call itself again, but instead uses the system call
