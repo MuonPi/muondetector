@@ -222,11 +222,10 @@ private:
     QString peerAddress;
     QHostAddress daemonAddress = QHostAddress::Null;
     quint16 peerPort, daemonPort;
-    QString gpsdevname;
     int verbose, baudrate;
     int gpsTimeout = 5000;
-    bool dumpRaw, configGnss, showout, showin;
-    bool mqttConnectionStatus = false;
+    bool dumpRaw, configGnss;
+    MuonPi::MqttHandler::Status mqttConnectionStatus { MuonPi::MqttHandler::Status::Invalid };
 
     // file handling
     QPointer<FileHandler> fileHandler;
@@ -262,8 +261,8 @@ private:
     Property nrSats, nrVisibleSats, fixStatus;
     QVector<QTcpSocket*> peerList;
     QList<float> adcSamplesBuffer;
-    ADC_SAMPLING_MODE adcSamplingMode = ADC_SAMPLING_MODE::PEAK;
-    qint16 currentAdcSampleIndex = -1;
+    ADC_SAMPLING_MODE adcSamplingMode { ADC_SAMPLING_MODE::PEAK };
+    int currentAdcSampleIndex { -1 };
     QTimer samplingTimer;
     QTimer parameterMonitorTimer;
     QTimer rateScanTimer;
