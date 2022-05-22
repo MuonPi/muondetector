@@ -14,6 +14,7 @@
 // clang-format off
 #include "qtserialublox.h"
 #include "utility/filehandler.h"
+#include "utility/kalman_gnss_filter.h"
 #include "calibration.h"
 // clang-format on
 
@@ -278,6 +279,7 @@ private:
     QPointer<QThread> tcpThread;
 
     configuration config;
+	KalmanGnssFilter kalmanGnssFilter { 0.01 };
 };
 
 #endif // DAEMON_H

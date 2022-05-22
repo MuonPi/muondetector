@@ -1345,6 +1345,14 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos)
         name = "geoLatitude";
         histoMap[name].fill(1e-7 * pos.lat);
     }
+    double totalPosAccuracy = 1e-3 * std::sqrt( pos.hAcc * pos.hAcc + pos.vAcc * pos.vAcc );
+    if ( currentDOP.pDOP > 0. && currentDOP.pDOP / 100. < MuonPi::Config::max_lock_in_dop ) {
+		kalmanGnssFilter.process(1e-7 * pos.lat, 1e-7 * pos.lon, 1e-3 * pos.hMSL, totalPosAccuracy);
+		qDebug() << "Kalman: lat=" << kalmanGnssFilter.get_latitude() << "lon=" << kalmanGnssFilter.get_longitude()
+		<< "alt=" << kalmanGnssFilter.get_altitude() << "acc=" << kalmanGnssFilter.get_accuracy() << "pDOP=" << currentDOP.pDOP / 100.;
+	}
+	
+	
 }
 
 void Daemon::sendHistogram(const Histogram& hist)
