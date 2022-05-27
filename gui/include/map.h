@@ -16,7 +16,7 @@ public:
     ~Map();
 
 public slots:
-    void onGeodeticPosReceived(GeodeticPos pos);
+    void onGeodeticPosReceived(const GnssPosStruct& pos);
     void onUiEnabledStateChange(bool connected);
 
 private:

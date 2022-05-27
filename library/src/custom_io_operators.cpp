@@ -60,6 +60,14 @@ QDataStream& operator<<(QDataStream& out, const GnssSatellite& sat)
     return out;
 }
 
+QDataStream& operator<<(QDataStream& out, const GnssPosStruct& pos)
+{
+    out << pos.iTOW << pos.lon << pos.lat
+        << pos.height << pos.hMSL << pos.hAcc
+        << pos.vAcc;
+    return out;
+}
+
 QDataStream& operator>>(QDataStream& in, UbxTimePulseStruct& tp)
 {
     in >> tp.tpIndex >> tp.version >> tp.antCableDelay >> tp.rfGroupDelay

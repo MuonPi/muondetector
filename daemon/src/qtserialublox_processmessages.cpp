@@ -757,7 +757,7 @@ void QtSerialUblox::UBXNavStatus(const std::string& msg)
 
 void QtSerialUblox::UBXNavPosLLH(const std::string& msg)
 {
-    GeodeticPos pos {};
+    GnssPosStruct pos {};
     // GPS time of week
     pos.iTOW = get<decltype(pos.iTOW)>(msg.begin());
     // longitude in 1e-7 precision

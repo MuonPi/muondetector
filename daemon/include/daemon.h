@@ -43,6 +43,11 @@ class Daemon : public QTcpServer {
 
 public:
     struct configuration {
+        enum class gnss_position_model_t {
+            Static = 0,
+            LockIn = 1,
+            Auto = 2
+        };
         QString username;
         QString password;
         QString gpsdevname { "" };
@@ -69,6 +74,7 @@ public:
         int gnss_baudrate { 9600 };
         bool gnss_config { false };
         UbxDynamicModel gnss_dynamic_model { UbxDynamicModel::stationary };
+        gnss_position_model_t gnss_position_model { gnss_position_model_t::Auto };
     };
 
     Daemon(configuration cfg, QObject* parent = nullptr);
@@ -111,7 +117,7 @@ public slots:
     void receivedTcpMessage(TcpMessage tcpMessage);
     void pollAllUbxMsgRate();
     void sendGpioPinEvent(uint8_t gpio_pin);
-    void onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos);
+    void onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos);
     void UBXReceivedVersion(const QString& swString, const QString& hwString, const QString& protString);
     void sampleAdc0Event();
     void sampleAdc0TraceEvent();
@@ -189,6 +195,7 @@ private:
     void sendCalib();
     void sendHistogram(const Histogram& hist);
     void sendLogInfo();
+    void sendGeodeticPos(const GnssPosStruct& pos);
     bool readEeprom();
     void receivedCalibItems(const std::vector<CalibStruct>& newCalibs);
     void setupHistos();
@@ -259,8 +266,8 @@ private:
     QTimer rateBufferReminder;
     QTimer oledUpdateTimer;
     QList<quint64> andCounts, xorCounts;
-    UbxDopStruct currentDOP;
-    Property nrSats, nrVisibleSats, fixStatus;
+    //UbxDopStruct currentDOP;
+    Property nrSats, nrVisibleSats, fixStatus, currentDOP;
     QVector<QTcpSocket*> peerList;
     QList<float> adcSamplesBuffer;
     ADC_SAMPLING_MODE adcSamplingMode = ADC_SAMPLING_MODE::PEAK;
@@ -279,7 +286,9 @@ private:
     QPointer<QThread> tcpThread;
 
     configuration config;
-	KalmanGnssFilter kalmanGnssFilter { 0.01 };
+//    KalmanGnssFilter kalmanGnssFilter { 0.01 };
+    KalmanGnssFilter m_gnss_pos_kalman { 0.01 };
+    GeoPosition m_geo_position {};
 };
 
 #endif // DAEMON_H

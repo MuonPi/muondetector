@@ -164,7 +164,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     std::locale::global(std::locale::classic());
 
     qRegisterMetaType<TcpMessage>("TcpMessage");
-    qRegisterMetaType<GeodeticPos>("GeodeticPos");
+    qRegisterMetaType<GnssPosStruct>("GnssPosStruct");
     qRegisterMetaType<int32_t>("int32_t");
     qRegisterMetaType<uint32_t>("uint32_t");
     qRegisterMetaType<uint16_t>("uint16_t");
@@ -1309,14 +1309,38 @@ void Daemon::receivedCalibItems(const std::vector<CalibStruct>& newCalibs)
     }
 }
 
-void Daemon::onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos)
+void Daemon::sendGeodeticPos(const GnssPosStruct& pos)
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GEO_POS);
-    (*tcpMessage.dStream) << pos.iTOW << pos.lon << pos.lat
-                          << pos.height << pos.hMSL << pos.hAcc
-                          << pos.vAcc;
+    (*tcpMessage.dStream) << pos;
     emit sendTcpMessage(tcpMessage);
+}
 
+void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
+{
+    double totalPosAccuracy = 1e-3 * std::sqrt( pos.hAcc * pos.hAcc + pos.vAcc * pos.vAcc );
+    if ( currentDOP.get<UbxDopStruct>().pDOP > 0. && currentDOP.get<UbxDopStruct>().pDOP / 100. < MuonPi::Config::max_lock_in_dop ) {
+        m_gnss_pos_kalman.process(1e-7 * pos.lat, 1e-7 * pos.lon, 1e-3 * pos.hMSL, totalPosAccuracy);
+        qDebug() << "Kalman: lat=" << m_gnss_pos_kalman.get_latitude() << "lon=" << m_gnss_pos_kalman.get_longitude() << "alt=" << m_gnss_pos_kalman.get_altitude() << "acc=" << m_gnss_pos_kalman.get_accuracy() << "pDOP=" << currentDOP.get<UbxDopStruct>().pDOP / 100.;
+    }
+
+    switch ( config.gnss_position_model ) {
+        case configuration::gnss_position_model_t::Auto:
+            sendGeodeticPos(pos);
+            break;
+        case configuration::gnss_position_model_t::Static:
+            sendGeodeticPos(m_geo_position.getPosStruct());
+            break;
+        case configuration::gnss_position_model_t::LockIn:
+            if ( currentDOP.get<UbxDopStruct>().pDOP > 0. && currentDOP.get<UbxDopStruct>().pDOP / 100. < MuonPi::Config::max_lock_in_dop )
+            {
+                
+            }
+            break;
+        default:
+            break;
+    }
+    
     QString geohash = GeoHash::hashFromCoordinates(1e-7 * pos.lon, 1e-7 * pos.lat, 10);
 
     emit logParameter(LogParameter("geoLongitude", QString::number(1e-7 * pos.lon, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
@@ -1332,9 +1356,9 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos)
         QString name = "geoHeight";
         if (histoMap.find(name) != histoMap.end()) {
             histoMap[name].fill(1e-3 * pos.hMSL);
-            if (currentDOP.vDOP > 0) {
+            if (currentDOP.get<UbxDopStruct>().vDOP > 0) {
                 name = "weightedGeoHeight";
-                double heightWeight = 100. / currentDOP.vDOP;
+                double heightWeight = 100. / currentDOP.get<UbxDopStruct>().vDOP;
                 histoMap[name].fill(1e-3 * pos.hMSL, heightWeight);
             }
         }
@@ -1346,13 +1370,10 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos)
         histoMap[name].fill(1e-7 * pos.lat);
     }
     double totalPosAccuracy = 1e-3 * std::sqrt( pos.hAcc * pos.hAcc + pos.vAcc * pos.vAcc );
-    if ( currentDOP.pDOP > 0. && currentDOP.pDOP / 100. < MuonPi::Config::max_lock_in_dop ) {
-		kalmanGnssFilter.process(1e-7 * pos.lat, 1e-7 * pos.lon, 1e-3 * pos.hMSL, totalPosAccuracy);
-		qDebug() << "Kalman: lat=" << kalmanGnssFilter.get_latitude() << "lon=" << kalmanGnssFilter.get_longitude()
-		<< "alt=" << kalmanGnssFilter.get_altitude() << "acc=" << kalmanGnssFilter.get_accuracy() << "pDOP=" << currentDOP.pDOP / 100.;
-	}
-	
-	
+    if ( currentDOP.get<UbxDopStruct>().pDOP > 0. && currentDOP.get<UbxDopStruct>().pDOP / 100. < MuonPi::Config::max_lock_in_dop ) {
+        m_gnss_pos_kalman.process(1e-7 * pos.lat, 1e-7 * pos.lon, 1e-3 * pos.hMSL, totalPosAccuracy);
+        qDebug() << "Kalman: lat=" << m_gnss_pos_kalman.get_latitude() << "lon=" << m_gnss_pos_kalman.get_longitude() << "alt=" << m_gnss_pos_kalman.get_altitude() << "acc=" << m_gnss_pos_kalman.get_accuracy() << "pDOP=" << currentDOP.get<UbxDopStruct>().pDOP / 100.;
+    }
 }
 
 void Daemon::sendHistogram(const Histogram& hist)
@@ -1934,10 +1955,10 @@ void Daemon::onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
     emit sendTcpMessage(tcpMessage);
     nrSats = Property("nrSats", N);
     nrVisibleSats = QVariant { static_cast<qulonglong>(visibleSats.size()) };
-
+/*
     propertyMap["nrSats"] = Property("nrSats", N);
     propertyMap["visSats"] = Property("visSats", visibleSats.size());
-
+*/
     int usedSats = 0, maxCnr = 0;
     if (visibleSats.size()) {
         for (auto sat : visibleSats) {
@@ -1947,9 +1968,10 @@ void Daemon::onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
                 maxCnr = sat.Cnr;
         }
     }
+/*
     propertyMap["usedSats"] = Property("usedSats", usedSats);
     propertyMap["maxCNR"] = Property("maxCNR", maxCnr);
-
+*/
     emit logParameter(LogParameter("sats", QString("%1").arg(visibleSats.size()), LogParameter::LOG_AVERAGE));
     emit logParameter(LogParameter("usedSats", QString("%1").arg(usedSats), LogParameter::LOG_AVERAGE));
     emit logParameter(LogParameter("maxCNR", QString("%1").arg(maxCnr) + " dB", LogParameter::LOG_AVERAGE));
@@ -2050,7 +2072,7 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
         emit logParameter(LogParameter("fixStatus", QString::number(data), LogParameter::LOG_LATEST));
         emit logParameter(LogParameter("fixStatusString", QString::fromLocal8Bit(Gnss::FixType::name[data]), LogParameter::LOG_LATEST));
         fixStatus = QVariant(data);
-        propertyMap["fixStatus"] = Property("fixStatus", QString::fromLocal8Bit(Gnss::FixType::name[data]));
+        //propertyMap["fixStatus"] = Property("fixStatus", QString::fromLocal8Bit(Gnss::FixType::name[data]));
         break;
     default:
         break;
@@ -2100,7 +2122,7 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
             std::cout << std::chrono::system_clock::now()
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
                       << "rising edge counter: " << data << std::endl;
-        propertyMap["events"] = Property("events", (quint16)data);
+        //propertyMap["events"] = Property("events", (quint16)data);
         tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_EVENTCOUNTER);
         *(tcpMessage->dStream) << (quint32)data;
         emit sendTcpMessage(*tcpMessage);
@@ -2121,7 +2143,7 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
                       << "clock drift: " << data << " ns/s" << std::endl;
         logParameter(LogParameter("clockDrift", QString::number(data) + " ns/s", LogParameter::LOG_AVERAGE));
-        propertyMap["clkDrift"] = Property("clkDrift", (qint32)data);
+        //propertyMap["clkDrift"] = Property("clkDrift", (qint32)data);
         break;
     case 'b':
         if (verbose > 3)
@@ -2129,7 +2151,7 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
                       << "clock bias: " << data << " ns" << std::endl;
         emit logParameter(LogParameter("clockBias", QString::number(data) + " ns", LogParameter::LOG_AVERAGE));
-        propertyMap["clkBias"] = Property("clkBias", (qint32)data);
+        //propertyMap["clkBias"] = Property("clkBias", (qint32)data);
         break;
     default:
         break;
@@ -2461,8 +2483,8 @@ void Daemon::updateOledDisplay()
     if (temp_sensor_p && temp_sensor_p->probeDevicePresence()) {
         oled_p->printf("temp %4.2f %cC\n", temp_sensor_p->getTemperature(), DEGREE_CHARCODE);
     }
-    oled_p->printf("%d(%d) Sats ", nrVisibleSats().toInt(), nrSats().toInt(), DEGREE_CHARCODE);
-    oled_p->printf("%s\n", Gnss::FixType::name[fixStatus().toInt()]);
+    oled_p->printf("%d(%d) Sats ", nrVisibleSats.get<int>(), nrSats.get<int>(), DEGREE_CHARCODE);
+    oled_p->printf("%s\n", Gnss::FixType::name[fixStatus.get<int>()]);
     oled_p->display();
 }
 

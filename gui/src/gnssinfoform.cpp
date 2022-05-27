@@ -278,7 +278,7 @@ void GnssInfoForm::onGpsFixReceived(quint8 val)
     ui->fixTypeLabel->setText(fixType);
 }
 
-void GnssInfoForm::onGeodeticPosReceived(const GeodeticPos& pos)
+void GnssInfoForm::onGeodeticPosReceived(const GnssPosStruct& pos)
 {
     QString str { printReadableFloat(pos.hAcc / 1000., 2, 4) + "m / " + printReadableFloat(pos.vAcc / 1000., 2, 4) + "m" };
     ui->xyzResLabel->setText(str);

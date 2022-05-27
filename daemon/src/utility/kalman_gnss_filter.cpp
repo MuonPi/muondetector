@@ -5,16 +5,16 @@
  * Kalman GNSS Filter
  */
 KalmanGnssFilter::KalmanGnssFilter(double accuracy_decay)
-	: m_accuracy_decay( accuracy_decay ), m_variance { -1. }
+    : m_accuracy_decay( accuracy_decay ), m_variance { -1. }
 { 
 }
 
 void KalmanGnssFilter::set_state(double lat, double lng, double alt, double accuracy) {
-	m_lat = lat;
-	m_lng = lng;
-	m_alt = alt;
-	m_variance = accuracy * accuracy;
-	m_timestamp = std::chrono::steady_clock::now();
+    m_lat = lat;
+    m_lng = lng;
+    m_alt = alt;
+    m_variance = accuracy * accuracy;
+    m_timestamp = std::chrono::steady_clock::now();
 }
 
 void KalmanGnssFilter::process(double lat_measurement, double lng_measurement, double alt_measurement, double accuracy) {
@@ -41,7 +41,7 @@ void KalmanGnssFilter::process(double lat_measurement, double lng_measurement, d
 		m_lat += K * (lat_measurement - m_lat);
 		m_lng += K * (lng_measurement - m_lng);
 		m_alt += K * (alt_measurement - m_alt);
-		// new Covariance  matrix is (IdentityMatrix - K) * Covariance 
+		// new Covariance  matrix is (IdentityMatrix - K) * Covariance
 		m_variance = (1. - K) * m_variance;
 	}
 }

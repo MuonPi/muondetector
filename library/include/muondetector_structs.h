@@ -16,6 +16,11 @@
 #include <iostream>
 #include <string>
 #include <sys/types.h>
+#include <cmath>
+#include "ublox_structs.h"
+#include <any>
+
+//struct GnssPosStruct;
 
 enum class ADC_SAMPLING_MODE {
     DISABLED = 0,
@@ -31,6 +36,38 @@ public slots:
 
 protected:
     std::function<void()> fFn;
+};
+
+struct GeoPosition {
+    GeoPosition() = default;
+    GeoPosition(const GnssPosStruct& pos_struct) 
+    : longitude(pos_struct.lon*1e-7)
+    , latitude(pos_struct.lat*1e-7)
+    , altitude(pos_struct.hMSL)
+    , hor_error(pos_struct.hAcc)
+    , vert_error(pos_struct.vAcc)
+    , valid(true)
+    { }
+    double longitude { 0. };
+    double latitude { 0. };
+    double altitude { 0. };
+    double hor_error { 0. };
+    double vert_error { 0. };
+    bool valid { false };
+    
+    [[nodiscard]] auto pos_error() const -> double { return std::sqrt(hor_error*hor_error + vert_error*vert_error); }
+    [[nodiscard]] auto getPosStruct() const -> GnssPosStruct {
+        GnssPosStruct pos_struct { 
+            0, 
+            static_cast<int32_t>(longitude*1e7),
+            static_cast<int32_t>(latitude*1e7),
+            static_cast<int32_t>(altitude*1e3),
+            static_cast<int32_t>(altitude*1e3),
+            static_cast<uint32_t>(hor_error*1e3),
+            static_cast<uint32_t>(vert_error*1e3)
+        };
+        return pos_struct;
+    }
 };
 
 struct IoConfiguration {
@@ -124,7 +161,7 @@ static const QMap<quint8, QString> I2C_MODE_STRINGMAP = { { 0x00, "None" },
     { 0x04, "Unreachable" },
     { 0x08, "Failed" },
     { 0x10, "Locked" } };
-
+/*
 class Property {
 public:
     Property() = default;
@@ -190,6 +227,80 @@ private:
     QVariant value;
     bool updated = false;
     int typeId = 0;
+};
+*/
+
+
+class Property {
+public:
+    Property() = default;
+
+    template <class T>
+    Property(const T& val)
+        : name("")
+        , unit("")
+    {
+        m_value = val;
+        m_updated = true;
+        m_update_time = std::chrono::steady_clock::now();
+    }
+
+    template <class T>
+    Property(const std::string& a_name, const T& val, const std::string& a_unit = "")
+        : name(a_name)
+        , unit(a_unit)
+    {
+        m_value = val;
+        m_updated = true;
+        m_update_time = std::chrono::steady_clock::now();
+    }
+
+    Property(const Property& prop) = default;
+    Property& operator=(const Property& prop)
+    {
+        name = prop.name;
+        unit = prop.unit;
+        m_value = prop.m_value;
+        m_updated = prop.m_updated;
+        m_update_time = std::chrono::steady_clock::now();
+        return *this;
+    }
+
+    template <class T>
+    Property& operator=(const T& val)
+    {
+        m_value = val;
+        m_updated = true;
+        m_update_time = std::chrono::steady_clock::now();
+        return *this;
+    }
+
+    template <class T>
+    const T operator()()
+    {
+        m_updated = false;
+        return std::any_cast<T>(m_value);
+    }
+
+    template <class T>
+    const T get()
+    {
+        m_updated = false;
+        return std::any_cast<T>(m_value);
+    }
+
+    bool updated() const { return m_updated; }
+    [[nodiscard]] auto age() const -> std::chrono::microseconds {
+        return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_update_time);
+    }
+
+    std::string name { };
+    std::string unit { };
+
+private:
+    std::any m_value {};
+    bool m_updated { false };
+    std::chrono::time_point<std::chrono::steady_clock> m_update_time { };
 };
 
 #endif // MUONDETECTOR_STRUCTS_H

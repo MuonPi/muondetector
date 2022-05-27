@@ -29,7 +29,7 @@ Map::~Map()
     delete mapUi;
 }
 
-void Map::onGeodeticPosReceived(GeodeticPos pos)
+void Map::onGeodeticPosReceived(const GnssPosStruct& pos)
 {
     if (mapComponent == nullptr) {
         return;

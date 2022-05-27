@@ -109,7 +109,7 @@ private:
     std::string m_payload {};
 };
 
-struct GeodeticPos {
+struct GnssPosStruct {
     uint32_t iTOW;
     int32_t lon; // longitude 1e-7 scaling (increase by 1 means 100 nano degrees)
     int32_t lat; // latitude 1e-7 scaling (increase by 1 means 100 nano degrees)

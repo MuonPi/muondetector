@@ -39,7 +39,7 @@ MainWindow::MainWindow(QWidget* parent)
     , ui(new Ui::MainWindow)
 {
     qRegisterMetaType<TcpMessage>("TcpMessage");
-    qRegisterMetaType<GeodeticPos>("GeodeticPos");
+    qRegisterMetaType<GnssPosStruct>("GnssPosStruct");
     qRegisterMetaType<bool>("bool");
     qRegisterMetaType<I2cDeviceEntry>("I2cDeviceEntry");
     qRegisterMetaType<CalibStruct>("CalibStruct");
@@ -454,7 +454,7 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
         connectedToDemon = false;
         return;
     } else if (msgID == TCP_MSG_KEY::MSG_GEO_POS) {
-        GeodeticPos pos {};
+        GnssPosStruct pos {};
         *(tcpMessage.dStream) >> pos.iTOW >> pos.lon >> pos.lat
             >> pos.height >> pos.hMSL >> pos.hAcc >> pos.vAcc;
         emit geodeticPos(pos);
