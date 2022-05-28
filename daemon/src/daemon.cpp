@@ -1329,12 +1329,27 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
             sendGeodeticPos(pos);
             break;
         case configuration::gnss_position_model_t::Static:
-            sendGeodeticPos(m_geo_position.getPosStruct());
+            if ( m_geo_position.valid ) {
+                sendGeodeticPos(m_geo_position.getPosStruct());
+            }
             break;
         case configuration::gnss_position_model_t::LockIn:
             if ( currentDOP.get<UbxDopStruct>().pDOP > 0. && currentDOP.get<UbxDopStruct>().pDOP / 100. < MuonPi::Config::max_lock_in_dop )
             {
-                
+                m_gnss_pos_kalman.process(1e-7 * pos.lat, 1e-7 * pos.lon, 1e-3 * pos.hMSL, totalPosAccuracy);
+                qDebug() << "Kalman: lat=" << m_gnss_pos_kalman.get_latitude() << "lon=" << m_gnss_pos_kalman.get_longitude() << "alt=" << m_gnss_pos_kalman.get_altitude() << "acc=" << m_gnss_pos_kalman.get_accuracy() << "pDOP=" << currentDOP.get<UbxDopStruct>().pDOP / 100.;
+                if ( m_gnss_pos_kalman.get_accuracy() < MuonPi::Config::lock_in_target_precision_meters )
+                {
+                    config.gnss_position_model = configuration::gnss_position_model_t::Static;
+                    GeoPosition geopos { 
+                        m_gnss_pos_kalman.get_longitude(),
+                        m_gnss_pos_kalman.get_latitude(),
+                        m_gnss_pos_kalman.get_altitude(),
+                        m_gnss_pos_kalman.get_accuracy(), m_gnss_pos_kalman.get_accuracy(),
+                        true
+                    };
+                    m_geo_position = geopos;
+                }
             }
             break;
         default:
@@ -1368,11 +1383,6 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
         histoMap[name].fill(1e-7 * pos.lon);
         name = "geoLatitude";
         histoMap[name].fill(1e-7 * pos.lat);
-    }
-    double totalPosAccuracy = 1e-3 * std::sqrt( pos.hAcc * pos.hAcc + pos.vAcc * pos.vAcc );
-    if ( currentDOP.get<UbxDopStruct>().pDOP > 0. && currentDOP.get<UbxDopStruct>().pDOP / 100. < MuonPi::Config::max_lock_in_dop ) {
-        m_gnss_pos_kalman.process(1e-7 * pos.lat, 1e-7 * pos.lon, 1e-3 * pos.hMSL, totalPosAccuracy);
-        qDebug() << "Kalman: lat=" << m_gnss_pos_kalman.get_latitude() << "lon=" << m_gnss_pos_kalman.get_longitude() << "alt=" << m_gnss_pos_kalman.get_altitude() << "acc=" << m_gnss_pos_kalman.get_accuracy() << "pDOP=" << currentDOP.get<UbxDopStruct>().pDOP / 100.;
     }
 }
 
