@@ -27,6 +27,9 @@
 
 #define DEGREE_CHARCODE 248
 
+constexpr double pi() { return std::acos(-1); }
+static double sqr(double x) { return x*x; }
+
 using namespace std;
 using namespace MuonPi;
 
@@ -1318,26 +1321,82 @@ void Daemon::sendGeodeticPos(const GnssPosStruct& pos)
 
 void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
 {
-    double totalPosAccuracy = 1e-3 * std::sqrt( pos.hAcc * pos.hAcc + pos.vAcc * pos.vAcc );
-    if ( currentDOP.get<UbxDopStruct>().pDOP > 0. && currentDOP.get<UbxDopStruct>().pDOP / 100. < MuonPi::Config::max_lock_in_dop ) {
-        m_gnss_pos_kalman.process(1e-7 * pos.lat, 1e-7 * pos.lon, 1e-3 * pos.hMSL, totalPosAccuracy);
-        qDebug() << "Kalman: lat=" << m_gnss_pos_kalman.get_latitude() << "lon=" << m_gnss_pos_kalman.get_longitude() << "alt=" << m_gnss_pos_kalman.get_altitude() << "acc=" << m_gnss_pos_kalman.get_accuracy() << "pDOP=" << currentDOP.get<UbxDopStruct>().pDOP / 100.;
-    }
+    constexpr double earth_radius_meters { 6367444.5 };
+    constexpr double surface_meter_to_degrees {
+        360. / (pi() * 2 * earth_radius_meters)
+    };
+    constexpr double degree_to_surface_meters {
+        (pi() * 2 * earth_radius_meters) / 360.
+    };
+    constexpr double lock_in_target_precision_degrees {
+        MuonPi::Config::lock_in_target_precision_meters * surface_meter_to_degrees
+    };
 
-    switch ( config.gnss_position_model ) {
-        case configuration::gnss_position_model_t::Auto:
+    double totalPosAccuracy = 1e-3 * std::sqrt( pos.hAcc * pos.hAcc + pos.vAcc * pos.vAcc );
+
+    if ( config.gnss_position_model == configuration::gnss_position_model_t::Auto ) {
             sendGeodeticPos(pos);
-            break;
-        case configuration::gnss_position_model_t::Static:
-            if ( m_geo_position.valid ) {
-                sendGeodeticPos(m_geo_position.getPosStruct());
+    } else if ( config.gnss_position_model == configuration::gnss_position_model_t::LockIn ) {
+            std::size_t lock_target_reached { 0 };
+            GeoPosition geopos {};
+            auto hist = histoMap.find("geoHeight");
+            if (hist != histoMap.end()) {
+                if ( (hist.value().getEntries() > MuonPi::Config::lock_in_min_histogram_entries) && (hist.value().getRMS() < MuonPi::Config::lock_in_target_precision_meters) ) {
+                    lock_target_reached++;
+                    geopos.altitude = hist.value().getMean();
+                    geopos.vert_error = hist.value().getRMS();
+                    qDebug() << "geo position lock candidate: alt=" << geopos.altitude
+                        << "(err=" << geopos.vert_error << "m)";
+                }
+                if ( hist.value().getEntries() > MuonPi::Config::lock_in_max_histogram_entries ) {
+                    hist.value().clear();
+                }
             }
-            break;
-        case configuration::gnss_position_model_t::LockIn:
-            if ( currentDOP.get<UbxDopStruct>().pDOP > 0. && currentDOP.get<UbxDopStruct>().pDOP / 100. < MuonPi::Config::max_lock_in_dop )
+            hist = histoMap.find("geoLongitude");
+            if (hist != histoMap.end()) {
+                if ( (hist.value().getEntries() > MuonPi::Config::lock_in_min_histogram_entries) && (hist.value().getRMS() < lock_in_target_precision_degrees) ) {
+                    lock_target_reached++;
+                    geopos.longitude = hist.value().getMean();
+                    const double lon_error_sqr { sqr(hist.value().getRMS()) };
+                    geopos.hor_error = lon_error_sqr;
+                    qDebug() << "geo position lock candidate: lon=" << geopos.longitude
+                        << "(err=" << std::sqrt(lon_error_sqr) << "deg)";
+                }
+                if ( hist.value().getEntries() > MuonPi::Config::lock_in_max_histogram_entries ) {
+                    hist.value().clear();
+                }
+            }
+            hist = histoMap.find("geoLatitude");
+            if (hist != histoMap.end()) {
+                if ( (hist.value().getEntries() > MuonPi::Config::lock_in_min_histogram_entries) && (hist.value().getRMS() < lock_in_target_precision_degrees) ) {
+                    lock_target_reached++;
+                    geopos.latitude = hist.value().getMean();
+                    const double lat_error_sqr { sqr(hist.value().getRMS()) };
+                    geopos.hor_error += lat_error_sqr;
+                    geopos.hor_error = std::sqrt(geopos.hor_error) * degree_to_surface_meters;
+                    qDebug() << "geo position lock candidate: lat=" << geopos.latitude
+                        << "(err=" << std::sqrt(lat_error_sqr) << "deg)";
+                }
+                if ( hist.value().getEntries() > MuonPi::Config::lock_in_max_histogram_entries ) {
+                    hist.value().clear();
+                }
+            }
+            if ( lock_target_reached == 3 ) {
+                config.gnss_position_model = configuration::gnss_position_model_t::Static;
+                geopos.valid = true;
+                config.static_geo_position = geopos;
+                sendGeodeticPos(config.static_geo_position.getPosStruct());
+                qDebug() << "fixed geo position: lat=" << geopos.latitude
+                    << "lon=" << geopos.longitude
+                    << "(err=" << geopos.hor_error << "m)"
+                    << "alt=" << geopos.altitude
+                    << "(err=" << geopos.vert_error << "m)";
+            }
+/*            
+            if ( currentDOP().pDOP > 0. && currentDOP().pDOP / 100. < MuonPi::Config::max_lock_in_dop )
             {
                 m_gnss_pos_kalman.process(1e-7 * pos.lat, 1e-7 * pos.lon, 1e-3 * pos.hMSL, totalPosAccuracy);
-                qDebug() << "Kalman: lat=" << m_gnss_pos_kalman.get_latitude() << "lon=" << m_gnss_pos_kalman.get_longitude() << "alt=" << m_gnss_pos_kalman.get_altitude() << "acc=" << m_gnss_pos_kalman.get_accuracy() << "pDOP=" << currentDOP.get<UbxDopStruct>().pDOP / 100.;
+                qDebug() << "Kalman: lat=" << m_gnss_pos_kalman.get_latitude() << "lon=" << m_gnss_pos_kalman.get_longitude() << "alt=" << m_gnss_pos_kalman.get_altitude() << "acc=" << m_gnss_pos_kalman.get_accuracy() << "pDOP=" << currentDOP().pDOP / 100.;
                 if ( m_gnss_pos_kalman.get_accuracy() < MuonPi::Config::lock_in_target_precision_meters )
                 {
                     config.gnss_position_model = configuration::gnss_position_model_t::Static;
@@ -1345,15 +1404,14 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
                         m_gnss_pos_kalman.get_longitude(),
                         m_gnss_pos_kalman.get_latitude(),
                         m_gnss_pos_kalman.get_altitude(),
-                        m_gnss_pos_kalman.get_accuracy(), m_gnss_pos_kalman.get_accuracy(),
+                        std::sqrt(m_gnss_pos_kalman.get_accuracy()), std::sqrt(m_gnss_pos_kalman.get_accuracy()),
                         true
                     };
-                    m_geo_position = geopos;
+                    config.static_geo_position = geopos;
+                    sendGeodeticPos(config.static_geo_position.getPosStruct());
                 }
             }
-            break;
-        default:
-            break;
+*/
     }
     
     QString geohash = GeoHash::hashFromCoordinates(1e-7 * pos.lon, 1e-7 * pos.lat, 10);
@@ -1368,21 +1426,22 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
     emit logParameter(LogParameter("geoVertAccuracy", QString::number(1e-3 * pos.vAcc, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
 
     if (1e-3 * pos.vAcc < 100.) {
-        QString name = "geoHeight";
-        if (histoMap.find(name) != histoMap.end()) {
-            histoMap[name].fill(1e-3 * pos.hMSL);
-            if (currentDOP.get<UbxDopStruct>().vDOP > 0) {
-                name = "weightedGeoHeight";
-                double heightWeight = 100. / currentDOP.get<UbxDopStruct>().vDOP;
-                histoMap[name].fill(1e-3 * pos.hMSL, heightWeight);
+        if ( config.gnss_position_model != configuration::gnss_position_model_t::LockIn || currentDOP().vDOP / 100. < MuonPi::Config::max_lock_in_dop ) {
+            if (histoMap.find("geoHeight") != histoMap.end()) {
+                histoMap["geoHeight"].fill(1e-3 * pos.hMSL);
+                if (currentDOP().vDOP > 0) {
+                    const double heightWeight = 100. / currentDOP().vDOP;
+                    histoMap["weightedGeoHeight"].fill(1e-3 * pos.hMSL, heightWeight);
+                }
             }
         }
     }
+
     if (1e-3 * pos.hAcc < 100.) {
-        QString name = "geoLongitude";
-        histoMap[name].fill(1e-7 * pos.lon);
-        name = "geoLatitude";
-        histoMap[name].fill(1e-7 * pos.lat);
+        if ( config.gnss_position_model != configuration::gnss_position_model_t::LockIn || currentDOP().hDOP / 100. < MuonPi::Config::max_lock_in_dop ) {
+            histoMap["geoLongitude"].fill(1e-7 * pos.lon);
+            histoMap["geoLatitude"].fill(1e-7 * pos.lat);
+        }
     }
 }
 
@@ -1963,8 +2022,8 @@ void Daemon::onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
         (*tcpMessage.dStream) << sats[i];
     }
     emit sendTcpMessage(tcpMessage);
-    nrSats = Property("nrSats", N);
-    nrVisibleSats = QVariant { static_cast<qulonglong>(visibleSats.size()) };
+    nrSats = Property<size_t>("nrSats", N);
+    nrVisibleSats = Property<size_t>("visSats", visibleSats.size());;
 /*
     propertyMap["nrSats"] = Property("nrSats", N);
     propertyMap["visSats"] = Property("visSats", visibleSats.size());
@@ -2081,7 +2140,7 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
         delete tcpMessage;
         emit logParameter(LogParameter("fixStatus", QString::number(data), LogParameter::LOG_LATEST));
         emit logParameter(LogParameter("fixStatusString", QString::fromLocal8Bit(Gnss::FixType::name[data]), LogParameter::LOG_LATEST));
-        fixStatus = QVariant(data);
+        fixStatus = Property<std::string>("fixStatus", std::string(Gnss::FixType::name[data]));
         //propertyMap["fixStatus"] = Property("fixStatus", QString::fromLocal8Bit(Gnss::FixType::name[data]));
         break;
     default:
@@ -2367,6 +2426,26 @@ void Daemon::aquireMonitoringParameters()
             logParameter(LogParameter("vadc4", QString::number(v2) + " V", LogParameter::LOG_AVERAGE));
         }
     }
+    
+    switch ( config.gnss_position_model ) {
+        case configuration::gnss_position_model_t::Static:
+            if ( config.static_geo_position.valid ) {
+                sendGeodeticPos(config.static_geo_position.getPosStruct());
+                
+                const QString geohash { GeoHash::hashFromCoordinates(config.static_geo_position.longitude, config.static_geo_position.latitude, 10) };
+
+                emit logParameter(LogParameter("geoLongitude", QString::number(config.static_geo_position.longitude, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
+                emit logParameter(LogParameter("geoLatitude", QString::number(config.static_geo_position.latitude, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
+                emit logParameter(LogParameter("geoHash", geohash + " ", LogParameter::LOG_LATEST));
+                emit logParameter(LogParameter("geoHeightMSL", QString::number(config.static_geo_position.altitude, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+                emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(config.static_geo_position.altitude, 'f', 2) + " m", LogParameter::LOG_LATEST));
+                emit logParameter(LogParameter("geoHorAccuracy", QString::number(config.static_geo_position.hor_error, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+                emit logParameter(LogParameter("geoVertAccuracy", QString::number(config.static_geo_position.vert_error, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+            }
+            break;
+        default:
+            break;
+    }
 }
 
 void Daemon::onLogParameterPolled()
@@ -2493,8 +2572,8 @@ void Daemon::updateOledDisplay()
     if (temp_sensor_p && temp_sensor_p->probeDevicePresence()) {
         oled_p->printf("temp %4.2f %cC\n", temp_sensor_p->getTemperature(), DEGREE_CHARCODE);
     }
-    oled_p->printf("%d(%d) Sats ", nrVisibleSats.get<int>(), nrSats.get<int>(), DEGREE_CHARCODE);
-    oled_p->printf("%s\n", Gnss::FixType::name[fixStatus.get<int>()]);
+    oled_p->printf("%d(%d) Sats ", nrVisibleSats(), nrSats(), DEGREE_CHARCODE);
+    oled_p->printf("%s\n", fixStatus().c_str());
     oled_p->display();
 }
 

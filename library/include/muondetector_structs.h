@@ -235,7 +235,7 @@ private:
 };
 */
 
-
+/*
 class Property {
 public:
     Property() = default;
@@ -307,5 +307,55 @@ private:
     bool m_updated { false };
     std::chrono::time_point<std::chrono::steady_clock> m_update_time { };
 };
+*/
+
+template <typename T>
+class Property {
+public:
+    Property() = default;
+
+    Property(const std::string& a_name, const T& val)
+        : name(a_name)
+    {
+        m_value = val;
+        m_updated = true;
+        m_update_time = std::chrono::steady_clock::now();
+    }
+
+    Property(const Property& prop) = default;
+
+    Property<T>& operator=(const T& val)
+    {
+        m_value = val;
+        m_updated = true;
+        m_update_time = std::chrono::steady_clock::now();
+        return *this;
+    }
+
+    const T& operator()()
+    {
+        m_updated = false;
+        return m_value;
+    }
+
+    const T& get()
+    {
+        m_updated = false;
+        return m_value;
+    }
+
+    bool updated() const { return m_updated; }
+    [[nodiscard]] auto age() const -> std::chrono::microseconds {
+        return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_update_time);
+    }
+
+    std::string name { };
+
+protected:
+    T m_value {};
+    bool m_updated { false };
+    std::chrono::time_point<std::chrono::steady_clock> m_update_time { };
+};
+
 
 #endif // MUONDETECTOR_STRUCTS_H

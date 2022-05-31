@@ -75,6 +75,7 @@ public:
         bool gnss_config { false };
         UbxDynamicModel gnss_dynamic_model { UbxDynamicModel::stationary };
         gnss_position_model_t gnss_position_model { gnss_position_model_t::Auto };
+        GeoPosition static_geo_position {};
     };
 
     Daemon(configuration cfg, QObject* parent = nullptr);
@@ -266,8 +267,10 @@ private:
     QTimer rateBufferReminder;
     QTimer oledUpdateTimer;
     QList<quint64> andCounts, xorCounts;
-    //UbxDopStruct currentDOP;
-    Property nrSats, nrVisibleSats, fixStatus, currentDOP;
+    Property<size_t> nrSats {};
+    Property<size_t> nrVisibleSats {};
+    Property<std::string> fixStatus {};
+    Property<UbxDopStruct> currentDOP {};
     QVector<QTcpSocket*> peerList;
     QList<float> adcSamplesBuffer;
     ADC_SAMPLING_MODE adcSamplingMode = ADC_SAMPLING_MODE::PEAK;
@@ -275,7 +278,7 @@ private:
     QTimer samplingTimer;
     QTimer parameterMonitorTimer;
     QTimer rateScanTimer;
-    QMap<QString, Property> propertyMap;
+//    QMap<QString, Property> propertyMap;
     LogEngine logEngine;
 
     // threads
@@ -286,9 +289,7 @@ private:
     QPointer<QThread> tcpThread;
 
     configuration config;
-//    KalmanGnssFilter kalmanGnssFilter { 0.01 };
-    KalmanGnssFilter m_gnss_pos_kalman { 0.01 };
-    GeoPosition m_geo_position {};
+    KalmanGnssFilter m_gnss_pos_kalman { 0.02 };
 };
 
 #endif // DAEMON_H
