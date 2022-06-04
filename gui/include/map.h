@@ -4,6 +4,8 @@
 #include <QWidget>
 #include <ublox_structs.h>
 
+struct PositionModeConfig;
+
 namespace Ui {
 class Map;
 }
@@ -17,6 +19,7 @@ public:
 
 public slots:
     void onGeodeticPosReceived(const GnssPosStruct& pos);
+    void onPosConfigReceived(const PositionModeConfig& pos);
     void onUiEnabledStateChange(bool connected);
 
 private:

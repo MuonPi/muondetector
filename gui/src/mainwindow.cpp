@@ -60,6 +60,7 @@ MainWindow::MainWindow(QWidget* parent)
     qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
     qRegisterMetaType<timespec>("timespec");
     qRegisterMetaType<ADC_SAMPLING_MODE>("ADC_SAMPLING_MODE");
+    qRegisterMetaType<PositionModeConfig>("PositionModeConfig");
 
     ui->setupUi(this);
     this->setWindowTitle(QString("muondetector-gui  " + QString::fromStdString(MuonPi::Version::software.string())));
@@ -159,6 +160,7 @@ MainWindow::MainWindow(QWidget* parent)
     Map* map = new Map(this);
     connect(this, &MainWindow::setUiEnabledStates, map, &Map::onUiEnabledStateChange);
     connect(this, &MainWindow::geodeticPos, map, &Map::onGeodeticPosReceived);
+    connect(this, &MainWindow::positionModeConfigReceived, map, &Map::onPosConfigReceived);
     ui->tabWidget->addTab(map, "Map");
 
     I2cForm* i2cTab = new I2cForm(this);
@@ -679,6 +681,11 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
         MuonPi::Version::Version hw_ver, sw_ver;
         *(tcpMessage.dStream) >> hw_ver >> sw_ver;
         emit daemonVersionReceived(hw_ver, sw_ver);
+        return;
+    } else if (msgID == TCP_MSG_KEY::MSG_POSITION_MODEL) {
+        PositionModeConfig posconfig {};
+        *(tcpMessage.dStream) >> posconfig;
+        emit positionModeConfigReceived(posconfig);
         return;
     } else {
         qDebug() << "received unknown TCP message, msgID =" << QString::number(static_cast<int>(msgID));

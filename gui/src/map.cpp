@@ -5,6 +5,7 @@
 #include <QSsl>
 #include <cmath>
 #include <map.h>
+#include <muondetector_structs.h>
 
 #include <ui_map.h>
 
@@ -14,6 +15,11 @@ Map::Map(QWidget* parent)
 {
     QVariantMap parameters;
     mapUi->setupUi(this);
+
+    for ( const auto& item: PositionModeConfig::name ) {
+        mapUi->modeComboBox->addItem(QString::fromLocal8Bit(item));
+    }
+
     mapUi->mapWidget->setResizeMode(QQuickWidget::SizeRootObjectToView);
 
     QQmlEngine* engine = new QQmlEngine(this);
@@ -41,6 +47,14 @@ void Map::onGeodeticPosReceived(const GnssPosStruct& pos)
         Q_ARG(QVariant, pos_accuracy * 1e-3));
 }
 
+void Map::onPosConfigReceived(const PositionModeConfig &pos)
+{
+    mapUi->modeComboBox->setCurrentIndex(pos.mode);
+    mapUi->longitudeLineEdit->setText(QString::number(pos.static_position.longitude));
+    mapUi->latitudeLineEdit->setText(QString::number(pos.static_position.latitude));
+    mapUi->altitudeLineEdit->setText(QString::number(pos.static_position.altitude));
+}
+
 void Map::onUiEnabledStateChange(bool connected)
 {
     if (mapComponent == nullptr) {
@@ -49,4 +63,5 @@ void Map::onUiEnabledStateChange(bool connected)
     QMetaObject::invokeMethod(mapComponent, "setEnabled",
         Q_ARG(QVariant, connected));
     mapUi->mapWidget->setEnabled(connected);
+    mapUi->modeComboBox->setEnabled(connected);
 }

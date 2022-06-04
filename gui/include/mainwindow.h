@@ -17,6 +17,7 @@
 struct I2cDeviceEntry;
 struct CalibStruct;
 struct GnssPosStruct;
+struct PositionModeConfig;
 struct GnssConfigStruct;
 class GnssSatellite;
 class CalibForm;
@@ -49,6 +50,7 @@ signals:
     void tcpDisconnected();
     void setUiEnabledStates(bool enabled);
     void geodeticPos(const GnssPosStruct& pos);
+    void positionModeConfigReceived(const PositionModeConfig& posconfig);
     void adcSampleReceived(uint8_t channel, float value);
     void adcTraceReceived(const QVector<float>& sampleBuffer);
     void inputSwitchReceived(TIMING_MUX_SELECTION);
