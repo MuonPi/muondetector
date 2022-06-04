@@ -68,6 +68,20 @@ QDataStream& operator<<(QDataStream& out, const GnssPosStruct& pos)
     return out;
 }
 
+QDataStream& operator<<(QDataStream& out, const PositionModeConfig& pos)
+{
+    out << static_cast<int>(pos.mode) << pos.static_position.longitude << pos.static_position.latitude;
+    return out;
+}
+
+QDataStream& operator>>(QDataStream& in, PositionModeConfig& pos)
+{
+    int mode { 0 };
+    in >> mode >> pos.static_position.longitude << pos.static_position.latitude;
+    pos.mode = static_cast<PositionModeConfig::Mode>(mode);
+    return in;
+}
+
 QDataStream& operator>>(QDataStream& in, UbxTimePulseStruct& tp)
 {
     in >> tp.tpIndex >> tp.version >> tp.antCableDelay >> tp.rfGroupDelay

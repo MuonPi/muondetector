@@ -75,6 +75,17 @@ struct GeoPosition {
     }
 };
 
+struct PositionModeConfig {
+    enum Mode {
+        Static = 0,
+        LockIn = 1,
+        Auto = 2,
+        last = Auto
+    } mode;
+    GeoPosition static_position {};
+    static constexpr std::array<const char*, last + 1> name { "static", "lock-in", "auto" };
+};
+
 struct IoConfiguration {
     TIMING_MUX_SELECTION timing_input { TIMING_MUX_SELECTION::UNDEFINED };
     GPIO_SIGNAL event_trigger { GPIO_SIGNAL::UNDEFINED_PIN };

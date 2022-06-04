@@ -14,6 +14,7 @@ struct CalibStruct;
 class Histogram;
 struct LogInfoStruct;
 struct GnssPosStruct;
+struct PositionModeConfig;
 namespace MuonPi::Version {
 struct Version;
 }
@@ -26,6 +27,8 @@ QDataStream& operator>>(QDataStream& in, GnssSatellite& sat);
 QDataStream& operator<<(QDataStream& out, const GnssSatellite& sat);
 
 QDataStream& operator<<(QDataStream& out, const GnssPosStruct& pos);
+QDataStream& operator>>(QDataStream& in, PositionModeConfig& pos);
+QDataStream& operator<<(QDataStream& out, const PositionModeConfig& pos);
 
 QDataStream& operator>>(QDataStream& in, UbxTimePulseStruct& tp);
 QDataStream& operator<<(QDataStream& out, const UbxTimePulseStruct& tp);

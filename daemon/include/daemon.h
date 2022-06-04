@@ -43,11 +43,6 @@ class Daemon : public QTcpServer {
 
 public:
     struct configuration {
-        enum class gnss_position_model_t {
-            Static = 0,
-            LockIn = 1,
-            Auto = 2
-        };
         QString username;
         QString password;
         QString gpsdevname { "" };
@@ -74,8 +69,7 @@ public:
         int gnss_baudrate { 9600 };
         bool gnss_config { false };
         UbxDynamicModel gnss_dynamic_model { UbxDynamicModel::stationary };
-        gnss_position_model_t gnss_position_model { gnss_position_model_t::Auto };
-        GeoPosition static_geo_position {};
+        PositionModeConfig position_mode_config { PositionModeConfig::Mode::LockIn, {} };
     };
 
     Daemon(configuration cfg, QObject* parent = nullptr);
@@ -197,6 +191,7 @@ private:
     void sendHistogram(const Histogram& hist);
     void sendLogInfo();
     void sendGeodeticPos(const GnssPosStruct& pos);
+    void sendPositionModel(const PositionModeConfig& pos);
     bool readEeprom();
     void receivedCalibItems(const std::vector<CalibStruct>& newCalibs);
     void setupHistos();
