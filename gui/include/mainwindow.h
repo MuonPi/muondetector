@@ -104,6 +104,7 @@ public slots:
     void gpioInhibit(bool inhibit);
     void mqttInhibit(bool inhibit);
     void onPolarityChanged(bool pol1, bool pol2);
+    void onPosModeConfigChanged(const PositionModeConfig& posconfig);
 
 private slots:
     void resetAndHit();

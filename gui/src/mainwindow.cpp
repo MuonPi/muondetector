@@ -161,6 +161,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this, &MainWindow::setUiEnabledStates, map, &Map::onUiEnabledStateChange);
     connect(this, &MainWindow::geodeticPos, map, &Map::onGeodeticPosReceived);
     connect(this, &MainWindow::positionModeConfigReceived, map, &Map::onPosConfigReceived);
+    connect(map, &Map::posModeConfigChanged, this, &MainWindow::onPosModeConfigChanged);
     ui->tabWidget->addTab(map, "Map");
 
     I2cForm* i2cTab = new I2cForm(this);
@@ -1208,6 +1209,13 @@ void MainWindow::onPolarityChanged(bool pol1, bool pol2)
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_POLARITY_SWITCH);
     *(tcpMessage.dStream) << pol1 << pol2;
+    emit sendTcpMessage(tcpMessage);
+}
+
+void MainWindow::onPosModeConfigChanged(const PositionModeConfig &posconfig)
+{
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_POSITION_MODEL);
+    *(tcpMessage.dStream) << posconfig;
     emit sendTcpMessage(tcpMessage);
 }
 

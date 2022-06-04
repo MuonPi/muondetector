@@ -53,6 +53,8 @@ void Map::onPosConfigReceived(const PositionModeConfig &pos)
     mapUi->longitudeLineEdit->setText(QString::number(pos.static_position.longitude));
     mapUi->latitudeLineEdit->setText(QString::number(pos.static_position.latitude));
     mapUi->altitudeLineEdit->setText(QString::number(pos.static_position.altitude));
+    mapUi->horErrorLineEdit->setText(QString::number(pos.static_position.hor_error));
+    mapUi->vertErrorLineEdit->setText(QString::number(pos.static_position.vert_error));
 }
 
 void Map::onUiEnabledStateChange(bool connected)
@@ -64,4 +66,32 @@ void Map::onUiEnabledStateChange(bool connected)
         Q_ARG(QVariant, connected));
     mapUi->mapWidget->setEnabled(connected);
     mapUi->modeComboBox->setEnabled(connected);
+}
+
+void Map::on_setConfigPushButton_clicked()
+{
+    PositionModeConfig posconfig {};
+    posconfig.mode = static_cast<PositionModeConfig::Mode>(mapUi->modeComboBox->currentIndex());
+    bool ok { false };
+    posconfig.static_position.longitude = mapUi->longitudeLineEdit->text().toDouble(&ok);
+    if (!ok) {
+        return;
+    }
+    posconfig.static_position.latitude = mapUi->latitudeLineEdit->text().toDouble(&ok);
+    if (!ok) {
+        return;
+    }
+    posconfig.static_position.altitude = mapUi->altitudeLineEdit->text().toDouble(&ok);
+    if (!ok) {
+        return;
+    }
+    posconfig.static_position.hor_error = mapUi->horErrorLineEdit->text().toDouble(&ok);
+    if (!ok) {
+        return;
+    }
+    posconfig.static_position.vert_error = mapUi->vertErrorLineEdit->text().toDouble(&ok);
+    if (!ok) {
+        return;
+    }
+    emit posModeConfigChanged(posconfig);
 }
