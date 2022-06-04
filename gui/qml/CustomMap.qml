@@ -14,7 +14,11 @@ CustomMapForm {
     }
     function setCircle(lon,lat,hAcc)
     {
-        map.onCoordsReceived(lon,lat,hAcc)
+        map.onCoordsReceived(lon,lat,0,hAcc,0,hAcc)
+    }
+    function setCoordinates(lon,lat,alt,hor_err,vert_err,tot_err)
+    {
+        map.onCoordsReceived(lon,lat,alt,hor_err,vert_err,tot_err)
     }
     function setEnabled(enabled)
     {
@@ -24,28 +28,32 @@ CustomMapForm {
         id: map
         property double lastLon: 8.673828
         property double lastLat: 0.569212
+        property double lastAlt: 0.
         plugin: plugin
         anchors.top: parent.top
         width: parent.width
         height: parent.height
         zoomLevel: (map.maximumZoomLevel - map.minimumZoomLevel)/2
-        function onCoordsReceived(lon,lat,hAcc)
+        function onCoordsReceived(lon,lat,alt,hor_err,vert_err,tot_err)
         {
             lastLon = lon
             lastLat = lat
+            lastAlt = alt
             circle.center = QtPositioning.coordinate(lat,lon)
             marker.center = circle.center
             marker.radius=1*(1<<map.maximumZoomLevel)/(1<<map.zoomLevel)
-            circle.radius = hAcc
+            circle.radius = tot_err
             if (control.checked){
                 map.center = circle.center
             }
             var lon_str = "lon: %1"
             var lat_str = "lat: %1"
-            var hacc_str = "acc: %1 m"
+            var alt_str = "alt: %1"
+            var pos_err_str = "err: %1 m"
             lonLabel.text=lon_str.arg(lon)
             latLabel.text=lat_str.arg(lat)
-            horAccLabel.text=hacc_str.arg(hAcc)
+            altLabel.text=alt_str.arg(alt)
+            posErrLabel.text=pos_err_str.arg(tot_err)
         }
         function jumpToLocation(){
             map.center = QtPositioning.coordinate(lastLat,lastLon)
@@ -56,7 +64,8 @@ CustomMapForm {
                 marker.radius = 0
                 lonLabel.text="lon: N/A"
                 latLabel.text="lat: N/A"
-                horAccLabel.text="acc: N/A"
+                altLabel.text="alt: N/A"
+                posErrLabel.text="err: N/A"
             }
         }
         MapCircle {
@@ -129,8 +138,13 @@ CustomMapForm {
                     }
                     Label {
                         Layout.row: 2
-                        id: horAccLabel
-                        text: "acc"
+                        id: altLabel
+                        text: "alt"
+                    }
+                    Label {
+                        Layout.row: 3
+                        id: posErrLabel
+                        text: "err"
                     }
                 }
             }
