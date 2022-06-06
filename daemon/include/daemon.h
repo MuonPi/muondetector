@@ -8,8 +8,8 @@
 #include <QTcpServer>
 #include <QTimer>
 #include <QVariant>
-#include <time.h>
 #include <memory>
+#include <time.h>
 
 // clang-format off
 #include "qtserialublox.h"
@@ -69,9 +69,9 @@ public:
         int gnss_baudrate { 9600 };
         bool gnss_config { false };
         UbxDynamicModel gnss_dynamic_model { UbxDynamicModel::stationary };
-        PositionModeConfig position_mode_config { 
-            PositionModeConfig::Mode::LockIn, 
-            { },
+        PositionModeConfig position_mode_config {
+            PositionModeConfig::Mode::LockIn,
+            {},
             MuonPi::Config::max_lock_in_dop,
             MuonPi::Config::lock_in_target_precision_meters
         };
@@ -278,7 +278,7 @@ private:
     QTimer samplingTimer;
     QTimer parameterMonitorTimer;
     QTimer rateScanTimer;
-//    QMap<QString, Property> propertyMap;
+    //    QMap<QString, Property> propertyMap;
     LogEngine logEngine;
 
     // threads

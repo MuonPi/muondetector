@@ -46,7 +46,7 @@ void put(const It& start, const T& value)
     const auto& end { start + sizeof(T) };
     std::size_t shift { (Endian == endian::little) ? 0 : (sizeof(T) - 1) * 8 };
     for (auto it = start; it != end; it++) {
-        *it = static_cast<std::uint8_t>(( value >> shift ) & 0xff);
+        *it = static_cast<std::uint8_t>((value >> shift) & 0xff);
         if (Endian == endian::little) {
             shift += 8;
         } else {
@@ -1039,7 +1039,7 @@ void QtSerialUblox::UBXMonHW2(const std::string& msg)
         tempStream << " POST status word : " << std::hex << postStatus << std::dec << '\n';
         emit toConsole(QString::fromStdString(tempStream.str()));
     }
-    emit gpsMonHW2( GnssMonHw2Struct {ofsI, ofsQ, magI, magQ, cfgSrc} );
+    emit gpsMonHW2(GnssMonHw2Struct { ofsI, ofsQ, magI, magQ, cfgSrc });
 }
 
 void QtSerialUblox::UBXMonVer(const std::string& msg)
@@ -1323,17 +1323,17 @@ void QtSerialUblox::UBXCfgTP5(const std::string& msg)
 
 void QtSerialUblox::UBXSetCfgTP5(const UbxTimePulseStruct& tp)
 {
-    std::array<unsigned char, 32> buf {0};
+    std::array<unsigned char, 32> buf { 0 };
     put<std::uint8_t>(buf.begin(), tp.tpIndex);
-    put<std::uint8_t>(buf.begin()+1, 0);
-    put<std::uint16_t>(buf.begin()+4, tp.antCableDelay);
-    put<std::uint16_t>(buf.begin()+6, tp.rfGroupDelay);
-    put<std::uint32_t>(buf.begin()+8, tp.freqPeriod);
-    put<std::uint32_t>(buf.begin()+12, tp.freqPeriodLock);
-    put<std::uint32_t>(buf.begin()+16, tp.pulseLenRatio);
-    put<std::uint32_t>(buf.begin()+20, tp.pulseLenRatioLock);
-    put<std::uint32_t>(buf.begin()+24, tp.userConfigDelay);
-    put<std::uint32_t>(buf.begin()+28, tp.flags);
+    put<std::uint8_t>(buf.begin() + 1, 0);
+    put<std::uint16_t>(buf.begin() + 4, tp.antCableDelay);
+    put<std::uint16_t>(buf.begin() + 6, tp.rfGroupDelay);
+    put<std::uint32_t>(buf.begin() + 8, tp.freqPeriod);
+    put<std::uint32_t>(buf.begin() + 12, tp.freqPeriodLock);
+    put<std::uint32_t>(buf.begin() + 16, tp.pulseLenRatio);
+    put<std::uint32_t>(buf.begin() + 20, tp.pulseLenRatioLock);
+    put<std::uint32_t>(buf.begin() + 24, tp.userConfigDelay);
+    put<std::uint32_t>(buf.begin() + 28, tp.flags);
     enqueueMsg(UBX_MSG::CFG_TP5, toStdString(buf.data(), buf.size()));
 }
 

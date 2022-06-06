@@ -24,20 +24,20 @@ public:
     [[nodiscard]] auto get_latitude() const -> double { return m_lat; }
     [[nodiscard]] auto get_longitude() const -> double { return m_lng; }
     [[nodiscard]] auto get_altitude() const -> double { return m_alt; }
-    [[nodiscard]] auto get_accuracy() const -> double { return std::sqrt( m_variance ); }
+    [[nodiscard]] auto get_accuracy() const -> double { return std::sqrt(m_variance); }
     [[nodiscard]] auto valid() const -> bool { return (m_variance >= 0.); }
 
 private:
     static constexpr double c_min_accuracy { 1. };
     double m_accuracy_decay { 1. }; ///< free parameter describing the decay of accuracy over time, unit: meters per second
-    
-    std::chrono::time_point<std::chrono::steady_clock> m_timestamp { };
+
+    std::chrono::time_point<std::chrono::steady_clock> m_timestamp {};
     double m_lat { 0. };
     double m_lng { 0. };
     double m_alt { 0. };
 
     double m_variance; // P matrix.  Negative means object uninitialised.  NB: units irrelevant, as long as same units used throughout
-    
+
     void set_state(double lat, double lng, double alt, double accuracy);
 };
 

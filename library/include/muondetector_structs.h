@@ -7,18 +7,18 @@
 #include "histogram.h"
 #include "muondetector_shared_global.h"
 
+#include "ublox_structs.h"
 #include <QList>
 #include <QMap>
 #include <QString>
 #include <QVariant>
+#include <any>
+#include <cmath>
 #include <functional>
 #include <iomanip>
 #include <iostream>
 #include <string>
 #include <sys/types.h>
-#include <cmath>
-#include "ublox_structs.h"
-#include <any>
 
 //struct GnssPosStruct;
 
@@ -59,17 +59,18 @@ struct GeoPosition {
     double hor_error { 0. };
     double vert_error { 0. };
     bool valid { false };
-    
-    [[nodiscard]] auto pos_error() const -> double { return std::sqrt(hor_error*hor_error + vert_error*vert_error); }
-    [[nodiscard]] auto getPosStruct() const -> GnssPosStruct {
-        GnssPosStruct pos_struct { 
-            0, 
-            static_cast<int32_t>(longitude*1e7),
-            static_cast<int32_t>(latitude*1e7),
-            static_cast<int32_t>(altitude*1e3),
-            static_cast<int32_t>(altitude*1e3),
-            static_cast<uint32_t>(hor_error*1e3),
-            static_cast<uint32_t>(vert_error*1e3)
+
+    [[nodiscard]] auto pos_error() const -> double { return std::sqrt(hor_error * hor_error + vert_error * vert_error); }
+    [[nodiscard]] auto getPosStruct() const -> GnssPosStruct
+    {
+        GnssPosStruct pos_struct {
+            0,
+            static_cast<int32_t>(longitude * 1e7),
+            static_cast<int32_t>(latitude * 1e7),
+            static_cast<int32_t>(altitude * 1e3),
+            static_cast<int32_t>(altitude * 1e3),
+            static_cast<uint32_t>(hor_error * 1e3),
+            static_cast<uint32_t>(vert_error * 1e3)
         };
         return pos_struct;
     }
@@ -358,17 +359,17 @@ public:
     }
 
     bool updated() const { return m_updated; }
-    [[nodiscard]] auto age() const -> std::chrono::microseconds {
+    [[nodiscard]] auto age() const -> std::chrono::microseconds
+    {
         return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_update_time);
     }
 
-    std::string name { };
+    std::string name {};
 
 protected:
     T m_value {};
     bool m_updated { false };
-    std::chrono::time_point<std::chrono::steady_clock> m_update_time { };
+    std::chrono::time_point<std::chrono::steady_clock> m_update_time {};
 };
-
 
 #endif // MUONDETECTOR_STRUCTS_H
