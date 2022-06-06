@@ -70,14 +70,14 @@ QDataStream& operator<<(QDataStream& out, const GnssPosStruct& pos)
 
 QDataStream& operator<<(QDataStream& out, const PositionModeConfig& pos)
 {
-    out << static_cast<int>(pos.mode) << pos.static_position.longitude << pos.static_position.latitude << pos.static_position.altitude << pos.static_position.hor_error << pos.static_position.vert_error;
+    out << static_cast<int>(pos.mode) << pos.static_position.longitude << pos.static_position.latitude << pos.static_position.altitude << pos.static_position.hor_error << pos.static_position.vert_error << pos.lock_in_max_dop << pos.lock_in_min_error_meters;
     return out;
 }
 
 QDataStream& operator>>(QDataStream& in, PositionModeConfig& pos)
 {
     int mode { 0 };
-    in >> mode >> pos.static_position.longitude >> pos.static_position.latitude >> pos.static_position.altitude >> pos.static_position.hor_error >> pos.static_position.vert_error;
+    in >> mode >> pos.static_position.longitude >> pos.static_position.latitude >> pos.static_position.altitude >> pos.static_position.hor_error >> pos.static_position.vert_error >> pos.lock_in_max_dop >> pos.lock_in_min_error_meters;
     pos.mode = static_cast<PositionModeConfig::Mode>(mode);
     return in;
 }

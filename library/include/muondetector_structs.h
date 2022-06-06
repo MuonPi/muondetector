@@ -83,6 +83,8 @@ struct PositionModeConfig {
         last = Auto
     } mode;
     GeoPosition static_position {};
+    double lock_in_max_dop { 3. };
+    double lock_in_min_error_meters { 7.5 };
     static constexpr std::array<const char*, last + 1> name { "static", "lock-in", "auto" };
 };
 

@@ -1332,14 +1332,14 @@ void Daemon::sendPositionModel(const PositionModeConfig& pos)
 void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
 {
     constexpr double earth_radius_meters { 6367444.5 };
-    constexpr double surface_meter_to_degrees {
+    constexpr double surface_meter_to_degrees_equator {
         360. / (pi() * 2 * earth_radius_meters)
     };
     constexpr double degree_to_surface_meters {
         (pi() * 2 * earth_radius_meters) / 360.
     };
-    constexpr double lock_in_target_precision_degrees {
-        MuonPi::Config::lock_in_target_precision_meters * surface_meter_to_degrees
+    const double lock_in_target_precision_degrees {
+        config.position_mode_config.lock_in_min_error_meters * surface_meter_to_degrees_equator
     };
 
     double totalPosAccuracy = 1e-3 * std::sqrt( pos.hAcc * pos.hAcc + pos.vAcc * pos.vAcc );
@@ -1351,7 +1351,7 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
             GeoPosition geopos {};
             auto hist = histoMap.find("geoHeight");
             if (hist != histoMap.end()) {
-                if ( (hist.value().getEntries() > MuonPi::Config::lock_in_min_histogram_entries) && (hist.value().getRMS() < MuonPi::Config::lock_in_target_precision_meters) ) {
+                if ( (hist.value().getEntries() > MuonPi::Config::lock_in_min_histogram_entries) && (hist.value().getRMS() < config.position_mode_config.lock_in_min_error_meters) ) {
                     lock_target_reached++;
                     geopos.altitude = hist.value().getMean();
                     geopos.vert_error = hist.value().getRMS();
@@ -1378,7 +1378,7 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
             }
             hist = histoMap.find("geoLatitude");
             if (hist != histoMap.end()) {
-                if ( (hist.value().getEntries() > MuonPi::Config::lock_in_min_histogram_entries) && (hist.value().getRMS() < lock_in_target_precision_degrees) ) {
+                if ( (hist.value().getEntries() > MuonPi::Config::lock_in_min_histogram_entries) && (hist.value().getRMS() < lock_in_target_precision_degrees * std::cos(pi() * 1e-7 * pos.lat / 180.)) ) {
                     lock_target_reached++;
                     geopos.latitude = hist.value().getMean();
                     const double lat_error_sqr { sqr(hist.value().getRMS()) };
