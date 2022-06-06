@@ -1342,7 +1342,7 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
         config.position_mode_config.lock_in_min_error_meters * surface_meter_to_degrees_equator
     };
 
-    double totalPosAccuracy = 1e-3 * std::sqrt(pos.hAcc * pos.hAcc + pos.vAcc * pos.vAcc);
+//    double totalPosAccuracy = 1e-3 * std::sqrt(pos.hAcc * pos.hAcc + pos.vAcc * pos.vAcc);
 
     if (config.position_mode_config.mode == PositionModeConfig::Mode::Auto) {
         sendGeodeticPos(pos);
@@ -1396,13 +1396,13 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
             geopos.valid = true;
             config.position_mode_config.static_position = geopos;
             sendGeodeticPos(config.position_mode_config.static_position.getPosStruct());
-            qDebug() << "fixed geo position: lat=" << geopos.latitude
+            qInfo() << "concluded geo pos lock-in and fixed position: lat=" << geopos.latitude
                      << "lon=" << geopos.longitude
                      << "(err=" << geopos.hor_error << "m)"
                      << "alt=" << geopos.altitude
                      << "(err=" << geopos.vert_error << "m)";
         }
-        /*            
+        /*
             if ( currentDOP().pDOP > 0. && currentDOP().pDOP / 100. < MuonPi::Config::max_lock_in_dop )
             {
                 m_gnss_pos_kalman.process(1e-7 * pos.lat, 1e-7 * pos.lon, 1e-3 * pos.hMSL, totalPosAccuracy);
