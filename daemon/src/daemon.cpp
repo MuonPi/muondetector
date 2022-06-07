@@ -1436,7 +1436,7 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
     emit logParameter(LogParameter("geoVertAccuracy", QString::number(1e-3 * pos.vAcc, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
 
     if (1e-3 * pos.vAcc < 100.) {
-        if (config.position_mode_config.mode != PositionModeConfig::Mode::LockIn || currentDOP().vDOP / 100. < MuonPi::Config::max_lock_in_dop) {
+        if (config.position_mode_config.mode != PositionModeConfig::Mode::LockIn || currentDOP().vDOP / 100. < config.position_mode_config.lock_in_max_dop) {
             if (histoMap.find("geoHeight") != histoMap.end()) {
                 histoMap["geoHeight"].fill(1e-3 * pos.hMSL);
                 if (currentDOP().vDOP > 0) {
@@ -1448,7 +1448,7 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
     }
 
     if (1e-3 * pos.hAcc < 100.) {
-        if (config.position_mode_config.mode != PositionModeConfig::Mode::LockIn || currentDOP().hDOP / 100. < MuonPi::Config::max_lock_in_dop) {
+        if (config.position_mode_config.mode != PositionModeConfig::Mode::LockIn || currentDOP().hDOP / 100. < config.position_mode_config.lock_in_max_dop) {
             histoMap["geoLongitude"].fill(1e-7 * pos.lon);
             histoMap["geoLatitude"].fill(1e-7 * pos.lat);
         }
