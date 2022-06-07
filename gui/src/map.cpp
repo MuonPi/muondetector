@@ -77,6 +77,13 @@ void Map::onUiEnabledStateChange(bool connected)
         mapUi->positionModelGroupBox->setEnabled(false);
         mapUi->staticPositionGroupBox->setEnabled(false);
         mapUi->setConfigPushButton->setEnabled(false);
+        mapUi->longitudeLineEdit->setText("N/A");
+        mapUi->latitudeLineEdit->setText("N/A");
+        mapUi->altitudeLineEdit->setText("N/A");
+        mapUi->horErrorLineEdit->setText("N/A");
+        mapUi->vertErrorLineEdit->setText("N/A");
+        mapUi->maxDopLineEdit->setText("N/A");
+        mapUi->minPosErrorLineEdit->setText("N/A");
     }
 }
 
