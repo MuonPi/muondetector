@@ -46,7 +46,7 @@
     </widget>
    </item>
    <item row="1" column="0">
-    <widget class="QGroupBox" name="groupBox_2">
+    <widget class="QGroupBox" name="positionModelGroupBox">
      <property name="title">
       <string>Position Model</string>
      </property>
@@ -65,11 +65,39 @@
         </item>
        </layout>
       </item>
+      <item row="1" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout_8">
+        <item>
+         <widget class="QLabel" name="label_13">
+          <property name="text">
+           <string>max lock-in DOP</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="maxDopLineEdit"/>
+        </item>
+       </layout>
+      </item>
+      <item row="2" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout_9">
+        <item>
+         <widget class="QLabel" name="label_14">
+          <property name="text">
+           <string>min lock-in error</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="minPosErrorLineEdit"/>
+        </item>
+       </layout>
+      </item>
      </layout>
     </widget>
    </item>
    <item row="1" column="1" rowspan="2">
-    <widget class="QGroupBox" name="groupBox_3">
+    <widget class="QGroupBox" name="staticPositionGroupBox">
      <property name="title">
       <string>Static Position</string>
      </property>

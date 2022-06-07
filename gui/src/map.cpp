@@ -52,12 +52,17 @@ void Map::onGeodeticPosReceived(const GnssPosStruct& pos)
 
 void Map::onPosConfigReceived(const PositionModeConfig &pos)
 {
+    mapUi->positionModelGroupBox->setEnabled(true);
+    mapUi->staticPositionGroupBox->setEnabled(true);
+    mapUi->setConfigPushButton->setEnabled(true);
     mapUi->modeComboBox->setCurrentIndex(pos.mode);
     mapUi->longitudeLineEdit->setText(QString::number(pos.static_position.longitude));
     mapUi->latitudeLineEdit->setText(QString::number(pos.static_position.latitude));
     mapUi->altitudeLineEdit->setText(QString::number(pos.static_position.altitude));
     mapUi->horErrorLineEdit->setText(QString::number(pos.static_position.hor_error));
     mapUi->vertErrorLineEdit->setText(QString::number(pos.static_position.vert_error));
+    mapUi->maxDopLineEdit->setText(QString::number(pos.lock_in_max_dop));
+    mapUi->minPosErrorLineEdit->setText(QString::number(pos.lock_in_min_error_meters));
 }
 
 void Map::onUiEnabledStateChange(bool connected)
@@ -68,7 +73,11 @@ void Map::onUiEnabledStateChange(bool connected)
     QMetaObject::invokeMethod(mapComponent, "setEnabled",
         Q_ARG(QVariant, connected));
     mapUi->mapWidget->setEnabled(connected);
-    mapUi->modeComboBox->setEnabled(connected);
+    if (!connected) {
+        mapUi->positionModelGroupBox->setEnabled(false);
+        mapUi->staticPositionGroupBox->setEnabled(false);
+        mapUi->setConfigPushButton->setEnabled(false);
+    }
 }
 
 void Map::on_setConfigPushButton_clicked()
@@ -93,6 +102,14 @@ void Map::on_setConfigPushButton_clicked()
         return;
     }
     posconfig.static_position.vert_error = mapUi->vertErrorLineEdit->text().toDouble(&ok);
+    if (!ok) {
+        return;
+    }
+    posconfig.lock_in_max_dop = mapUi->maxDopLineEdit->text().toDouble(&ok);
+    if (!ok) {
+        return;
+    }
+    posconfig.lock_in_min_error_meters = mapUi->minPosErrorLineEdit->text().toDouble(&ok);
     if (!ok) {
         return;
     }
