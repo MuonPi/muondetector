@@ -16,7 +16,7 @@ Map::Map(QWidget* parent)
     QVariantMap parameters;
     mapUi->setupUi(this);
 
-    for ( const auto& item: PositionModeConfig::name ) {
+    for ( const auto& item: PositionModeConfig::mode_name ) {
         mapUi->modeComboBox->addItem(QString::fromLocal8Bit(item));
     }
 
@@ -55,7 +55,7 @@ void Map::onPosConfigReceived(const PositionModeConfig &pos)
     mapUi->positionModelGroupBox->setEnabled(true);
     mapUi->staticPositionGroupBox->setEnabled(true);
     mapUi->setConfigPushButton->setEnabled(true);
-    mapUi->modeComboBox->setCurrentIndex(pos.mode);
+    mapUi->modeComboBox->setCurrentIndex(static_cast<size_t>(pos.mode));
     mapUi->longitudeLineEdit->setText(QString::number(pos.static_position.longitude));
     mapUi->latitudeLineEdit->setText(QString::number(pos.static_position.latitude));
     mapUi->altitudeLineEdit->setText(QString::number(pos.static_position.altitude));

@@ -73,7 +73,8 @@ public:
             PositionModeConfig::Mode::LockIn,
             {},
             MuonPi::Config::max_lock_in_dop,
-            MuonPi::Config::lock_in_target_precision_meters
+            MuonPi::Config::lock_in_target_precision_meters,
+            PositionModeConfig::FilterType::None
         };
     };
 

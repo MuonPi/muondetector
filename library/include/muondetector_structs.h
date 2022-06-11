@@ -77,16 +77,27 @@ struct GeoPosition {
 };
 
 struct PositionModeConfig {
-    enum Mode {
+    enum class Mode {
         Static = 0,
         LockIn = 1,
         Auto = 2,
+        first = Static,
         last = Auto
     } mode;
     GeoPosition static_position {};
     double lock_in_max_dop { 3. };
     double lock_in_min_error_meters { 7.5 };
-    static constexpr std::array<const char*, last + 1> name { "static", "lock-in", "auto" };
+    enum class FilterType {
+        None = 0,
+        Kalman = 1,
+        HistoMean = 2,
+        HistoMedian = 3,
+        HistoMpv = 4,
+        first = None,
+        last = HistoMpv
+    } filter_config;
+    static constexpr std::array<const char*, static_cast<size_t>(Mode::last) + 1> mode_name { "static", "lock-in", "auto" };
+    static constexpr std::array<const char*, static_cast<size_t>(FilterType::last) + 1> filter_name { "none", "kalman", "histo_mean", "histo_median", "histo_mpv" };
 };
 
 struct IoConfiguration {
