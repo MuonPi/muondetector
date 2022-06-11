@@ -2453,8 +2453,6 @@ void Daemon::aquireMonitoringParameters()
         }
     }
 
-    sendPositionModel(config.position_mode_config);
-
     switch (config.position_mode_config.mode) {
     case PositionModeConfig::Mode::Static:
         if (config.position_mode_config.static_position.valid) {
