@@ -1345,7 +1345,19 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
 //    double totalPosAccuracy = 1e-3 * std::sqrt(pos.hAcc * pos.hAcc + pos.vAcc * pos.vAcc);
 
     if (config.position_mode_config.mode == PositionModeConfig::Mode::Auto) {
-        sendGeodeticPos(pos);
+        if (m_fix_status().value < Gnss::FixType::Fix2d && m_time_precision.age() < std::chrono::seconds(60)) {
+            constexpr double c_vacuum { 0.3 };
+            GnssPosStruct nofix_pos;
+            nofix_pos.iTOW = pos.iTOW;
+            nofix_pos.lon = pos.lon;
+            nofix_pos.lat = pos.lat;
+            nofix_pos.height = pos.height;
+            nofix_pos.hMSL = pos.hMSL;
+            nofix_pos.hAcc = nofix_pos.vAcc = c_vacuum * m_time_precision().count();
+            sendGeodeticPos(nofix_pos);
+        } else {
+            sendGeodeticPos(pos);
+        }
     } else if (config.position_mode_config.mode == PositionModeConfig::Mode::LockIn) {
         std::size_t lock_target_reached { 0 };
         GeoPosition geopos {};
@@ -2151,7 +2163,8 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
         delete tcpMessage;
         emit logParameter(LogParameter("fixStatus", QString::number(data), LogParameter::LOG_LATEST));
         emit logParameter(LogParameter("fixStatusString", QString::fromLocal8Bit(Gnss::FixType::name[data]), LogParameter::LOG_LATEST));
-        fixStatus = Property<std::string>("fixStatus", std::string(Gnss::FixType::name[data]));
+//        fixStatus = Property<std::string>("fixStatus", std::string(Gnss::FixType::name[data]));
+        m_fix_status = Property<Gnss::FixType>("fixStatus", { data });
         //propertyMap["fixStatus"] = Property("fixStatus", QString::fromLocal8Bit(Gnss::FixType::name[data]));
         break;
     default:
@@ -2174,6 +2187,7 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
         emit sendTcpMessage(*tcpMessage);
         delete tcpMessage;
         emit logParameter(LogParameter("timeAccuracy", QString::number(data) + " ns", LogParameter::LOG_AVERAGE));
+        m_time_precision = Property<std::chrono::nanoseconds>("timeAccuracy", std::chrono::nanoseconds(data));
         break;
     case 'f':
         if (verbose > 3)
@@ -2587,7 +2601,7 @@ void Daemon::updateOledDisplay()
         oled_p->printf("temp %4.2f %cC\n", temp_sensor_p->getTemperature(), DEGREE_CHARCODE);
     }
     oled_p->printf("%d(%d) Sats ", nrVisibleSats(), nrSats(), DEGREE_CHARCODE);
-    oled_p->printf("%s\n", fixStatus().c_str());
+    oled_p->printf("%s\n", Gnss::FixType::name[m_fix_status().value]);
     oled_p->display();
 }
 

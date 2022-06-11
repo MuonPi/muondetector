@@ -267,10 +267,13 @@ private:
     QTimer rateBufferReminder;
     QTimer oledUpdateTimer;
     QList<quint64> andCounts, xorCounts;
+
     Property<size_t> nrSats {};
     Property<size_t> nrVisibleSats {};
-    Property<std::string> fixStatus {};
     Property<UbxDopStruct> currentDOP {};
+    Property<std::chrono::nanoseconds> m_time_precision {};
+    Property<Gnss::FixType> m_fix_status {};
+
     QVector<QTcpSocket*> peerList;
     QList<float> adcSamplesBuffer;
     ADC_SAMPLING_MODE adcSamplingMode = ADC_SAMPLING_MODE::PEAK;
