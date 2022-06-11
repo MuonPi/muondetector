@@ -27,7 +27,7 @@ struct Id {
         first = GPS,
         last = Undefined
     };
-    static constexpr std::array<const char*, last + 1> name { " GPS", "SBAS", " GAL", "BEID", "IMES", "QZSS", "GLNS", " N/A" };
+    static constexpr std::array<const char*, last + 1> name { "GPS", "SBAS", "GAL", "BEID", "IMES", "QZSS", "GLNS", "N/A" };
 };
 
 struct FixType {
