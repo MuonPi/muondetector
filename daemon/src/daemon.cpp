@@ -137,7 +137,7 @@ void Daemon::handleSigInt()
     if (verbose > 1) {
         std::cout << "\nSIGINT received" << std::endl;
     }
-    if (showin || showout) {
+    if (config.showin || config.showout) {
         qDebug() << allMsgCfgID.size();
         qDebug() << msgRateCfgs.size();
         for (QMap<uint16_t, int>::iterator it = msgRateCfgs.begin(); it != msgRateCfgs.end(); it++) {
@@ -599,11 +599,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
             dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getCapabilities();
     }
 
-    // for ublox gnss module
-    gpsdevname = config.gpsdevname;
-    showout = config.showout;
-    showin = config.showin;
-
     // for tcp connection with fileServer
     peerPort = config.peerPort;
     if (peerPort == 0) {
@@ -823,7 +818,7 @@ void Daemon::connectToGps()
 {
     // before connecting to gps we have to make sure all other programs are closed
     // and serial echo is off
-    if (gpsdevname.isEmpty()) {
+    if (config.gpsdevname.isEmpty()) {
         return;
     }
     QProcess prepareSerial;
@@ -833,7 +828,7 @@ void Daemon::connectToGps()
     prepareSerial.waitForFinished();
 
     // here is where the magic threading happens look closely
-    qtGps = new QtSerialUblox(gpsdevname, gpsTimeout, config.gnss_baudrate, config.gnss_dump_raw, verbose - 1, showout, showin);
+    qtGps = new QtSerialUblox(config.gpsdevname, gpsTimeout, config.gnss_baudrate, config.gnss_dump_raw, verbose - 1, config.showout, config.showin);
     gpsThread = new QThread();
     gpsThread->setObjectName("muondetector-daemon-gnss");
     qtGps->moveToThread(gpsThread);
@@ -1580,7 +1575,7 @@ void Daemon::sendExtendedMqttStatus(MuonPi::MqttHandler::Status status)
     bool bStatus { (status == MuonPi::MqttHandler::Status::Connected) };
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_MQTT_STATUS);
     *(tcpMessage.dStream) << bStatus << static_cast<int>(status);
-    if (bStatus != mqttConnectionStatus) {
+    if (status != mqttConnectionStatus) {
         if (bStatus) {
             qDebug() << "MQTT (re)connected";
             emit GpioSetState(GPIO_PINMAP[STATUS1], 1);
@@ -1589,7 +1584,7 @@ void Daemon::sendExtendedMqttStatus(MuonPi::MqttHandler::Status status)
             emit GpioSetState(GPIO_PINMAP[STATUS1], 0);
         }
     }
-    mqttConnectionStatus = bStatus;
+    mqttConnectionStatus = status;
     emit sendTcpMessage(tcpMessage);
 }
 
