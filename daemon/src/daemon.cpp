@@ -1408,6 +1408,7 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
             geopos.valid = true;
             config.position_mode_config.static_position = geopos;
             sendGeodeticPos(config.position_mode_config.static_position.getPosStruct());
+            sendPositionModel(config.position_mode_config);
             qInfo() << "concluded geo pos lock-in and fixed position: lat=" << geopos.latitude
                      << "lon=" << geopos.longitude
                      << "(err=" << geopos.hor_error << "m)"
