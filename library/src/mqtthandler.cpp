@@ -121,7 +121,6 @@ MqttHandler::~MqttHandler()
 
 void MqttHandler::error_handler()
 {
-    //emit mqttDisconnect();
     m_tries++;
     qDebug() << "Tried: "<<m_tries;
     if (m_tries > s_max_tries) {
@@ -130,14 +129,8 @@ void MqttHandler::error_handler()
     }
     qWarning() << "Could not connect to MQTT. Trying again in " + QString::number(std::chrono::duration_cast<std::chrono::seconds>(Config::MQTT::retry_period).count() * (1<<(m_tries-1))) + "s";
     emit connection_status(Status::Invalid);
-/*
-    QTimer::singleShot(std::chrono::seconds(Config::MQTT::retry_period.count() * (1<<(m_tries-1))), [this]() {
-//            emit mqttDisconnect();
-        emit mqttConnect();
-    });
-*/
-    std::this_thread::sleep_for(std::chrono::seconds(Config::MQTT::retry_period.count() * (1<<(m_tries-1))) );
     emit mqttDisconnect();
+    std::this_thread::sleep_for(std::chrono::seconds(Config::MQTT::retry_period.count() * (1<<(m_tries-1))) );
     emit mqttConnect();
 }
 
@@ -187,7 +180,7 @@ void MqttHandler::onMqttDisconnect(){
         return;
     }
     qDebug() << "Could not disconnect from Mqtt:" + QString{ strerror(result) };
-    connection_status(Status::Invalid);
+    connection_status(Status::Error);
 }
 
 auto MqttHandler::connected() -> bool{
