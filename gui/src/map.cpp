@@ -19,6 +19,9 @@ Map::Map(QWidget* parent)
     for ( const auto& item: PositionModeConfig::mode_name ) {
         mapUi->modeComboBox->addItem(QString::fromLocal8Bit(item));
     }
+    for ( const auto& item: PositionModeConfig::filter_name ) {
+        mapUi->filterTypeComboBox->addItem(QString::fromLocal8Bit(item));
+    }
 
     mapUi->mapWidget->setResizeMode(QQuickWidget::SizeRootObjectToView);
 
@@ -63,6 +66,7 @@ void Map::onPosConfigReceived(const PositionModeConfig &pos)
     mapUi->vertErrorLineEdit->setText(QString::number(pos.static_position.vert_error));
     mapUi->maxDopLineEdit->setText(QString::number(pos.lock_in_max_dop));
     mapUi->minPosErrorLineEdit->setText(QString::number(pos.lock_in_min_error_meters));
+    mapUi->filterTypeComboBox->setCurrentIndex(static_cast<size_t>(pos.filter_config));
 }
 
 void Map::onUiEnabledStateChange(bool connected)
@@ -91,6 +95,7 @@ void Map::on_setConfigPushButton_clicked()
 {
     PositionModeConfig posconfig {};
     posconfig.mode = static_cast<PositionModeConfig::Mode>(mapUi->modeComboBox->currentIndex());
+    posconfig.filter_config = static_cast<PositionModeConfig::FilterType>(mapUi->filterTypeComboBox->currentIndex());
     bool ok { false };
     posconfig.static_position.longitude = mapUi->longitudeLineEdit->text().toDouble(&ok);
     if (!ok) {
