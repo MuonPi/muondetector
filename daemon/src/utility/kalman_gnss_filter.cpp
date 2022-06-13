@@ -19,6 +19,12 @@ void KalmanGnssFilter::set_state(double lat, double lng, double alt, double accu
     m_timestamp = std::chrono::steady_clock::now();
 }
 
+void KalmanGnssFilter::reset()
+{
+    m_lat = m_lng = m_alt = 0.;
+    m_variance = -1.;
+}
+
 void KalmanGnssFilter::process(double lat_measurement, double lng_measurement, double alt_measurement, double accuracy)
 {
     double local_accuracy { accuracy };

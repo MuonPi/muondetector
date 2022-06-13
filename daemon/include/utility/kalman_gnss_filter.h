@@ -26,6 +26,7 @@ public:
     [[nodiscard]] auto get_altitude() const -> double { return m_alt; }
     [[nodiscard]] auto get_accuracy() const -> double { return std::sqrt(m_variance); }
     [[nodiscard]] auto valid() const -> bool { return (m_variance >= 0.); }
+    void reset();
 
 private:
     static constexpr double c_min_accuracy { 1. };
