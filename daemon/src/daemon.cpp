@@ -1235,6 +1235,9 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         }
         config.position_mode_config = { pos_mode_config };
         sendPositionModel(config.position_mode_config);
+        if (config.position_mode_config.mode == PositionModeConfig::Mode::Static) {
+            sendGeodeticPos(config.position_mode_config.static_position.getPosStruct());
+        }
     } else {
         qDebug() << "received unknown TCP message: msgID =" << QString::number(static_cast<int>(msgID));
     }
