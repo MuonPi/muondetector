@@ -24,6 +24,7 @@ CustomMapForm {
     {
         map.onEnable(enabled)
     }
+    signal coordinateSignal(double lat, double lon)
     MapComponent{
         id: map
         property double lastLon: 8.673828
@@ -58,6 +59,18 @@ CustomMapForm {
         function jumpToLocation(){
             map.center = QtPositioning.coordinate(lastLat,lastLon)
         }
+        MouseArea {
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            anchors.fill: parent
+            onPressed: {
+                if (mouse.button === Qt.RightButton) { // 'mouse' is a MouseEvent argument passed into the onClicked signal handler
+                    var coordinates = map.toCoordinate(Qt.point(mouse.x,mouse.y));
+                    circle.center = coordinates;
+                    marker.center = coordinates;
+                    page.coordinateSignal(coordinates.latitude, coordinates.longitude);
+                }
+            }
+        }
         function onEnable(enabled) {
             if (enabled === false) {
                 circle.radius = 0
@@ -86,10 +99,11 @@ CustomMapForm {
         }
         ColumnLayout{
             anchors.top: parent.top
-            ToolBar{
+            Frame{
                 id: buttonBar
                 //anchors.top: parent.top
                 height: 30
+                spacing: 0
                 Layout.row: 0
                 RowLayout{
                     Rectangle{
@@ -103,6 +117,10 @@ CustomMapForm {
                             anchors.fill: parent
                             text: "center"
                             onClicked: map.jumpToLocation()
+                            background: Rectangle {
+                                    color: parent.down ? "#bbbbbb" :
+                                            (parent.hovered ? "#d6d6d6" : "#f6f6f6")
+                            }
                         }
                     }
                     Rectangle{
@@ -116,6 +134,10 @@ CustomMapForm {
                             anchors.fill: parent
                             text: "follow"
                             checked: true
+                            background: Rectangle {
+                                    color: parent.down ? "#bbbbbb" :
+                                            (parent.hovered ? "#d6d6d6" : "#f6f6f6")
+                            }
                         }
                     }
                 }

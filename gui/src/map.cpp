@@ -30,6 +30,7 @@ Map::Map(QWidget* parent)
     mapComponent = component->create();
     mapUi->mapWidget->setContent(component->url(), component, mapComponent);
     mapUi->mapWidget->show();
+    QObject::connect(mapComponent, SIGNAL(coordinateSignal(double,double)), this, SLOT(coordinateQmlSignal(double,double)));
 }
 
 Map::~Map()
@@ -37,6 +38,10 @@ Map::~Map()
     delete mapComponent;
     delete mapUi;
 }
+
+void Map::coordinateQmlSignal(double lat, double lon){
+    qDebug() << "Called the C++ slot with message " << lat << " " << lon;
+};
 
 void Map::onGeodeticPosReceived(const GnssPosStruct& pos)
 {
