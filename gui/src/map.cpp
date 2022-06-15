@@ -41,7 +41,9 @@ Map::~Map()
 
 void Map::coordinateQmlSignal(double lat, double lon){
     qDebug() << "Called the C++ slot with message " << lat << " " << lon;
-};
+    mapUi->longitudeLineEdit->setText(QString::number(lon));
+    mapUi->latitudeLineEdit->setText(QString::number(lat));
+}
 
 void Map::onGeodeticPosReceived(const GnssPosStruct& pos)
 {
