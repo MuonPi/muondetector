@@ -10,6 +10,7 @@
 #include <QVariant>
 #include <memory>
 #include <time.h>
+#include <libconfig.h++>
 
 // clang-format off
 #include "qtserialublox.h"
@@ -76,6 +77,7 @@ public:
             MuonPi::Config::lock_in_target_precision_meters,
             PositionModeConfig::FilterType::None
         };
+        std::shared_ptr<libconfig::Config> config_file_data {};
     };
 
     Daemon(configuration cfg, QObject* parent = nullptr);
