@@ -1507,17 +1507,18 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
         }
     }
 
+    if (config.position_mode_config.mode != PositionModeConfig::Mode::Static) {
+        QString geohash = GeoHash::hashFromCoordinates(new_position.longitude, new_position.latitude, 10);
 
-    QString geohash = GeoHash::hashFromCoordinates(new_position.longitude, new_position.latitude, 10);
-
-    emit logParameter(LogParameter("geoLongitude", QString::number(new_position.longitude, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
-    emit logParameter(LogParameter("geoLatitude", QString::number(new_position.latitude, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
-    emit logParameter(LogParameter("geoHash", geohash + " ", LogParameter::LOG_LATEST));
-    emit logParameter(LogParameter("geoHeightMSL", QString::number(new_position.altitude, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
-    if (histoMap.find("geoHeight") != histoMap.end())
-        emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(histoMap["geoHeight"].getMean(), 'f', 2) + " m", LogParameter::LOG_LATEST));
-    emit logParameter(LogParameter("geoHorAccuracy", QString::number(new_position.hor_error, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
-    emit logParameter(LogParameter("geoVertAccuracy", QString::number(new_position.vert_error, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+        emit logParameter(LogParameter("geoLongitude", QString::number(new_position.longitude, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
+        emit logParameter(LogParameter("geoLatitude", QString::number(new_position.latitude, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
+        emit logParameter(LogParameter("geoHash", geohash + " ", LogParameter::LOG_LATEST));
+        emit logParameter(LogParameter("geoHeightMSL", QString::number(new_position.altitude, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+        if (histoMap.find("geoHeight") != histoMap.end())
+            emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(histoMap["geoHeight"].getMean(), 'f', 2) + " m", LogParameter::LOG_LATEST));
+        emit logParameter(LogParameter("geoHorAccuracy", QString::number(new_position.hor_error, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+        emit logParameter(LogParameter("geoVertAccuracy", QString::number(new_position.vert_error, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+    }
 
     if (1e-3 * pos.vAcc < 100.) {
         if (config.position_mode_config.mode != PositionModeConfig::Mode::LockIn || currentDOP().vDOP / 100. < config.position_mode_config.lock_in_max_dop) {
@@ -2374,6 +2375,9 @@ void Daemon::onMadeConnection(QString remotePeerAddress, quint16 remotePeerPort,
     sendPcaChannel();
     sendEventTriggerSelection();
     sendPositionModel(config.position_mode_config);
+    if (config.position_mode_config.mode == PositionModeConfig::Mode::Static) {
+        sendGeodeticPos(config.position_mode_config.static_position.getPosStruct());
+    }
 }
 
 void Daemon::onStoppedConnection(QString remotePeerAddress, quint16 remotePeerPort, QString /*localAddress*/, quint16 /*localPort*/,
@@ -2528,17 +2532,17 @@ void Daemon::aquireMonitoringParameters()
     switch (config.position_mode_config.mode) {
     case PositionModeConfig::Mode::Static:
         if (config.position_mode_config.static_position.valid) {
-            sendGeodeticPos(config.position_mode_config.static_position.getPosStruct());
+            //sendGeodeticPos(config.position_mode_config.static_position.getPosStruct());
 
             const QString geohash { GeoHash::hashFromCoordinates(config.position_mode_config.static_position.longitude, config.position_mode_config.static_position.latitude, 10) };
 
-            emit logParameter(LogParameter("geoLongitude", QString::number(config.position_mode_config.static_position.longitude, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
+            emit logParameter(LogParameter("geoLongitude", QString::number(config.position_mode_config.static_position.longitude, 'f', 7) + " deg", LogParameter::LOG_LATEST));
             emit logParameter(LogParameter("geoLatitude", QString::number(config.position_mode_config.static_position.latitude, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
             emit logParameter(LogParameter("geoHash", geohash + " ", LogParameter::LOG_LATEST));
             emit logParameter(LogParameter("geoHeightMSL", QString::number(config.position_mode_config.static_position.altitude, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
             emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(config.position_mode_config.static_position.altitude, 'f', 2) + " m", LogParameter::LOG_LATEST));
-            emit logParameter(LogParameter("geoHorAccuracy", QString::number(config.position_mode_config.static_position.hor_error, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
-            emit logParameter(LogParameter("geoVertAccuracy", QString::number(config.position_mode_config.static_position.vert_error, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+            emit logParameter(LogParameter("geoHorAccuracy", QString::number(config.position_mode_config.static_position.hor_error, 'f', 2) + " m", LogParameter::LOG_LATEST));
+            emit logParameter(LogParameter("geoVertAccuracy", QString::number(config.position_mode_config.static_position.vert_error, 'f', 2) + " m", LogParameter::LOG_LATEST));
         }
         break;
     default:
