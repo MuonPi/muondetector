@@ -881,6 +881,9 @@ void Daemon::connectToGps()
         if (histoMap.find("pDOP") != histoMap.end()) {
             histoMap["pDOP"].fill(1e-2 * dops.pDOP);
         }
+        if (histoMap.find("tDOP") != histoMap.end()) {
+            histoMap["tDOP"].fill(1e-2 * dops.tDOP);
+        }
     });
 
     // connect fileHandler related stuff
@@ -986,10 +989,14 @@ void Daemon::setupHistos()
     hist.setUnit("uA");
     hist.setAutoscale();
     histoMap["Bias Current"] = hist;
-    hist = Histogram("position DOP", 200, 0., 20.);
+    hist = Histogram("position DOP", 200, 0., 10.);
     hist.setUnit("");
     hist.setAutoscale();
     histoMap["pDOP"] = hist;
+    hist = Histogram("time DOP", 200, 0., 10.);
+    hist.setUnit("");
+    hist.setAutoscale();
+    histoMap["tDOP"] = hist;
 }
 
 void Daemon::clearHisto(const QString& histoName)
