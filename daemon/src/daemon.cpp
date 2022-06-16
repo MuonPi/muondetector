@@ -1495,7 +1495,7 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
             
             if (lock_target_reached == 2) {
                 config.position_mode_config.mode = PositionModeConfig::Mode::Static;
-                config.position_mode_config.static_position = new_position;
+                config.position_mode_config.static_position = { new_position };
                 sendGeodeticPos(config.position_mode_config.static_position.getPosStruct());
                 sendPositionModel(config.position_mode_config);
                 qInfo() << "concluded geo pos lock-in and fixed position: lat=" << new_position.latitude
@@ -2537,12 +2537,14 @@ void Daemon::aquireMonitoringParameters()
             const QString geohash { GeoHash::hashFromCoordinates(config.position_mode_config.static_position.longitude, config.position_mode_config.static_position.latitude, 10) };
 
             emit logParameter(LogParameter("geoLongitude", QString::number(config.position_mode_config.static_position.longitude, 'f', 7) + " deg", LogParameter::LOG_LATEST));
-            emit logParameter(LogParameter("geoLatitude", QString::number(config.position_mode_config.static_position.latitude, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
+            emit logParameter(LogParameter("geoLatitude", QString::number(config.position_mode_config.static_position.latitude, 'f', 7) + " deg", LogParameter::LOG_LATEST));
             emit logParameter(LogParameter("geoHash", geohash + " ", LogParameter::LOG_LATEST));
-            emit logParameter(LogParameter("geoHeightMSL", QString::number(config.position_mode_config.static_position.altitude, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+            emit logParameter(LogParameter("geoHeightMSL", QString::number(config.position_mode_config.static_position.altitude, 'f', 2) + " m", LogParameter::LOG_LATEST));
             emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(config.position_mode_config.static_position.altitude, 'f', 2) + " m", LogParameter::LOG_LATEST));
             emit logParameter(LogParameter("geoHorAccuracy", QString::number(config.position_mode_config.static_position.hor_error, 'f', 2) + " m", LogParameter::LOG_LATEST));
             emit logParameter(LogParameter("geoVertAccuracy", QString::number(config.position_mode_config.static_position.vert_error, 'f', 2) + " m", LogParameter::LOG_LATEST));
+        } else {
+            qWarning() << "static geo position is not valid! This should never happen...";
         }
         break;
     default:
