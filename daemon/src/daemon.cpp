@@ -1373,7 +1373,11 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
     auto hist { histoMap.end() };
     bool valid_lock_in_candidate { true };
 
-    switch (config.position_mode_config.filter_config) {
+    if ( config.position_mode_config.mode == PositionModeConfig::Mode::LockIn
+        && (currentDOP().pDOP < 0. || currentDOP().pDOP / 100. > config.position_mode_config.lock_in_max_dop) ) 
+    {
+        valid_lock_in_candidate = false;
+    } else switch (config.position_mode_config.filter_config) {
         case PositionModeConfig::FilterType::None:
             new_position = { 
                 new_pos_struct.lon * 1e-7,
