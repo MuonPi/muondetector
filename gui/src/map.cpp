@@ -131,5 +131,6 @@ void Map::on_setConfigPushButton_clicked()
     if (!ok) {
         return;
     }
+    posconfig.static_position.valid=true;
     emit posModeConfigChanged(posconfig);
 }
