@@ -1396,27 +1396,6 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
                 m_gnss_pos_kalman.get_accuracy() / sqrt2, m_gnss_pos_kalman.get_accuracy() / sqrt2
             };
             qDebug() << "Kalman: lat=" << m_gnss_pos_kalman.get_latitude() << "lon=" << m_gnss_pos_kalman.get_longitude() << "alt=" << m_gnss_pos_kalman.get_altitude() << "acc=" << m_gnss_pos_kalman.get_accuracy() << "pDOP=" << currentDOP().pDOP / 100.;
-/*
-            if ( currentDOP().pDOP > 0. && currentDOP().pDOP / 100. < MuonPi::Config::max_lock_in_dop )
-            {
-                m_gnss_pos_kalman.process(1e-7 * pos.lat, 1e-7 * pos.lon, 1e-3 * pos.hMSL, totalPosAccuracy);
-                qDebug() << "Kalman: lat=" << m_gnss_pos_kalman.get_latitude() << "lon=" << m_gnss_pos_kalman.get_longitude() << "alt=" << m_gnss_pos_kalman.get_altitude() << "acc=" << m_gnss_pos_kalman.get_accuracy() << "pDOP=" << currentDOP().pDOP / 100.;
-
-                if ( m_gnss_pos_kalman.get_accuracy() < MuonPi::Config::lock_in_target_precision_meters )
-                {
-                    config.gnss_position_model = configuration::gnss_position_model_t::Static;
-                    GeoPosition geopos { 
-                        m_gnss_pos_kalman.get_longitude(),
-                        m_gnss_pos_kalman.get_latitude(),
-                        m_gnss_pos_kalman.get_altitude(),
-                        std::sqrt(m_gnss_pos_kalman.get_accuracy()), std::sqrt(m_gnss_pos_kalman.get_accuracy()),
-                        true
-                    };
-                    config.static_geo_position = geopos;
-                    sendGeodeticPos(config.static_geo_position.getPosStruct());
-                }
-            }
-*/
             break;
         case PositionModeConfig::FilterType::HistoMean:
             hist = histoMap.find("geoHeight");
