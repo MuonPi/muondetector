@@ -58,7 +58,7 @@ struct GeoPosition {
     double altitude { 0. };
     double hor_error { 0. };
     double vert_error { 0. };
-    bool valid { false };
+    bool valid() const { return !(longitude==0. && latitude==0. && altitude==0. && hor_error==0. && vert_error==0.); }
 
     [[nodiscard]] auto pos_error() const -> double { return std::sqrt(hor_error * hor_error + vert_error * vert_error); }
     [[nodiscard]] auto getPosStruct() const -> GnssPosStruct

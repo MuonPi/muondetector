@@ -1364,6 +1364,7 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
     
     // hist is declared here since it cannot be declared inside switch block
     auto hist { histoMap.end() };
+    bool valid_lock_in_candidate { true };
 
     switch (config.position_mode_config.filter_config) {
         case PositionModeConfig::FilterType::None:
@@ -1372,8 +1373,7 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
                 new_pos_struct.lat * 1e-7,
                 1e-3 * new_pos_struct.hMSL,
                 1e-3 * new_pos_struct.hAcc,
-                1e-3 * new_pos_struct.vAcc,
-                true
+                1e-3 * new_pos_struct.vAcc
             };
             break;
         case PositionModeConfig::FilterType::Kalman:
@@ -1382,8 +1382,7 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
                 m_gnss_pos_kalman.get_longitude(),
                 m_gnss_pos_kalman.get_latitude(),
                 m_gnss_pos_kalman.get_altitude(),
-                m_gnss_pos_kalman.get_accuracy() / sqrt2, m_gnss_pos_kalman.get_accuracy() / sqrt2,
-                true
+                m_gnss_pos_kalman.get_accuracy() / sqrt2, m_gnss_pos_kalman.get_accuracy() / sqrt2
             };
             qDebug() << "Kalman: lat=" << m_gnss_pos_kalman.get_latitude() << "lon=" << m_gnss_pos_kalman.get_longitude() << "alt=" << m_gnss_pos_kalman.get_altitude() << "acc=" << m_gnss_pos_kalman.get_accuracy() << "pDOP=" << currentDOP().pDOP / 100.;
 /*
@@ -1409,7 +1408,6 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
 */
             break;
         case PositionModeConfig::FilterType::HistoMean:
-            new_position.valid = true;
             hist = histoMap.find("geoHeight");
             if (hist != histoMap.end() && hist.value().getEntries() > 10U) {
                 new_position.altitude = hist.value().getMean();
@@ -1417,13 +1415,13 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
                 if ( config.position_mode_config.mode == PositionModeConfig::Mode::LockIn ) {
                     if ( hist.value().getEntries() < MuonPi::Config::lock_in_min_histogram_entries )
                     {
-                        new_position.valid = false;
+                        valid_lock_in_candidate = false;
                     } else if (hist.value().getEntries() > MuonPi::Config::lock_in_max_histogram_entries) {
                             hist.value().clear();
                     }
                 }
             } else {
-                new_position.valid = false;
+                valid_lock_in_candidate = false;
             }
 
             hist = histoMap.find("geoLatitude");
@@ -1433,19 +1431,19 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
                 if ( config.position_mode_config.mode == PositionModeConfig::Mode::LockIn ) {
                     if ( hist.value().getEntries() < MuonPi::Config::lock_in_min_histogram_entries )
                     {
-                        new_position.valid = false;
+                        valid_lock_in_candidate = false;
                     } else if (hist.value().getEntries() > MuonPi::Config::lock_in_max_histogram_entries) {
                             hist.value().clear();
                     }
                 }
             } else {
-                new_position.valid = false;
+                valid_lock_in_candidate = false;
             }
 
             hist = histoMap.find("geoLongitude");
             if (hist != histoMap.end() && hist.value().getEntries() > 10U) {
                 new_position.longitude = hist.value().getMean();
-                if (new_position.valid) {
+                if (valid_lock_in_candidate) {
                     // calculate the squared error including the component from the previously determined latitude error, if available
                     new_position.hor_error *= new_position.hor_error;
                     new_position.hor_error += sqr(hist.value().getRMS() * degree_to_surface_meters / std::cos(pi() * new_position.latitude / 180.));
@@ -1456,13 +1454,13 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
                 if ( config.position_mode_config.mode == PositionModeConfig::Mode::LockIn ) {
                     if ( hist.value().getEntries() < MuonPi::Config::lock_in_min_histogram_entries )
                     {
-                        new_position.valid = false;
+                        valid_lock_in_candidate = false;
                     } else if (hist.value().getEntries() > MuonPi::Config::lock_in_max_histogram_entries) {
                             hist.value().clear();
                     }
                 }
             } else {
-                new_position.valid = false;
+                valid_lock_in_candidate = false;
             }
 
             break;
@@ -1474,11 +1472,11 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
             break;
     }
     
-    if (new_position.valid) {
+    if (new_position.valid()) {
         // send new position only if it was found valid, depending on filter
         if (config.position_mode_config.mode == PositionModeConfig::Mode::Auto) {
             sendGeodeticPos(new_position.getPosStruct());
-        } else if (config.position_mode_config.mode == PositionModeConfig::Mode::LockIn) {
+        } else if (config.position_mode_config.mode == PositionModeConfig::Mode::LockIn && valid_lock_in_candidate) {
             std::size_t lock_target_reached { 0 };
             if (new_position.vert_error < config.position_mode_config.lock_in_min_error_meters) {
                 lock_target_reached++;
@@ -2531,7 +2529,7 @@ void Daemon::aquireMonitoringParameters()
 
     switch (config.position_mode_config.mode) {
     case PositionModeConfig::Mode::Static:
-        if (config.position_mode_config.static_position.valid) {
+        if (config.position_mode_config.static_position.valid()) {
             //sendGeodeticPos(config.position_mode_config.static_position.getPosStruct());
 
             const QString geohash { GeoHash::hashFromCoordinates(config.position_mode_config.static_position.longitude, config.position_mode_config.static_position.latitude, 10) };
