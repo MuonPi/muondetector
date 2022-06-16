@@ -40,8 +40,9 @@ Map::~Map()
 }
 
 void Map::coordinateQmlSignal(double lat, double lon){
-    qDebug() << "Called the C++ slot with message " << lat << " " << lon;
-};
+    mapUi->longitudeLineEdit->setText(QString::number(lon,'g',8));
+    mapUi->latitudeLineEdit->setText(QString::number(lat,'g',8));
+}
 
 void Map::onGeodeticPosReceived(const GnssPosStruct& pos)
 {
@@ -64,8 +65,8 @@ void Map::onPosConfigReceived(const PositionModeConfig &pos)
     mapUi->staticPositionGroupBox->setEnabled(true);
     mapUi->setConfigPushButton->setEnabled(true);
     mapUi->modeComboBox->setCurrentIndex(static_cast<size_t>(pos.mode));
-    mapUi->longitudeLineEdit->setText(QString::number(pos.static_position.longitude));
-    mapUi->latitudeLineEdit->setText(QString::number(pos.static_position.latitude));
+    mapUi->longitudeLineEdit->setText(QString::number(pos.static_position.longitude,'g',8));
+    mapUi->latitudeLineEdit->setText(QString::number(pos.static_position.latitude,'g',8));
     mapUi->altitudeLineEdit->setText(QString::number(pos.static_position.altitude));
     mapUi->horErrorLineEdit->setText(QString::number(pos.static_position.hor_error));
     mapUi->vertErrorLineEdit->setText(QString::number(pos.static_position.vert_error));
@@ -130,5 +131,6 @@ void Map::on_setConfigPushButton_clicked()
     if (!ok) {
         return;
     }
+    posconfig.static_position.valid=true;
     emit posModeConfigChanged(posconfig);
 }
