@@ -1238,13 +1238,13 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         *(tcpMessage.dStream) >> pos_mode_config;
         if (pos_mode_config.filter_config != config.position_mode_config.filter_config) {
             switch (pos_mode_config.filter_config) {
-                case PositionModeConfig::FilterType::Kalman:
-                    m_gnss_pos_kalman.reset();
-                    break;
-                case PositionModeConfig::FilterType::HistoMean:
-                    break;
-                default:
-                    break;
+            case PositionModeConfig::FilterType::Kalman:
+                m_gnss_pos_kalman.reset();
+                break;
+            case PositionModeConfig::FilterType::HistoMean:
+                break;
+            default:
+                break;
             }
         }
         config.position_mode_config = { pos_mode_config };
@@ -1359,7 +1359,7 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
 {
     GeoPosition new_position {};
     GnssPosStruct new_pos_struct { pos };
-    
+
     constexpr double earth_radius_meters { 6367444.5 };
     constexpr double surface_meter_to_degrees_equator {
         360. / (pi() * 2 * earth_radius_meters)
@@ -1375,18 +1375,18 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
     }
 
     const double totalPosAccuracy = 1e-3 * std::sqrt(new_pos_struct.hAcc * new_pos_struct.hAcc + new_pos_struct.vAcc * new_pos_struct.vAcc);
-    
+
     // hist is declared here since it cannot be declared inside switch block
     auto hist { histoMap.end() };
     bool valid_lock_in_candidate { true };
 
-    if ( config.position_mode_config.mode == PositionModeConfig::Mode::LockIn
-        && (currentDOP().pDOP < 0. || currentDOP().pDOP / 100. > config.position_mode_config.lock_in_max_dop) ) 
-    {
+    if (config.position_mode_config.mode == PositionModeConfig::Mode::LockIn
+        && (currentDOP().pDOP < 0. || currentDOP().pDOP / 100. > config.position_mode_config.lock_in_max_dop)) {
         valid_lock_in_candidate = false;
-    } else switch (config.position_mode_config.filter_config) {
+    } else
+        switch (config.position_mode_config.filter_config) {
         case PositionModeConfig::FilterType::None:
-            new_position = { 
+            new_position = {
                 new_pos_struct.lon * 1e-7,
                 new_pos_struct.lat * 1e-7,
                 1e-3 * new_pos_struct.hMSL,
@@ -1396,7 +1396,7 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
             break;
         case PositionModeConfig::FilterType::Kalman:
             m_gnss_pos_kalman.process(1e-7 * new_pos_struct.lat, 1e-7 * new_pos_struct.lon, 1e-3 * new_pos_struct.hMSL, totalPosAccuracy);
-            new_position = { 
+            new_position = {
                 m_gnss_pos_kalman.get_longitude(),
                 m_gnss_pos_kalman.get_latitude(),
                 m_gnss_pos_kalman.get_altitude(),
@@ -1409,20 +1409,19 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
         case PositionModeConfig::FilterType::HistoMean:
             hist = histoMap.find("geoHeight");
             if (hist != histoMap.end() && hist.value().getEntries() > 10U) {
-                if ( config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMean ) {
+                if (config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMean) {
                     new_position.altitude = hist.value().getMean();
-                } else if ( config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMedian ) {
+                } else if (config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMedian) {
                     new_position.altitude = hist.value().getMedian();
                 } else {
                     new_position.altitude = hist.value().getMpv();
                 }
                 new_position.vert_error = hist.value().getRMS();
-                if ( config.position_mode_config.mode == PositionModeConfig::Mode::LockIn ) {
-                    if ( hist.value().getEntries() < MuonPi::Config::lock_in_min_histogram_entries )
-                    {
+                if (config.position_mode_config.mode == PositionModeConfig::Mode::LockIn) {
+                    if (hist.value().getEntries() < MuonPi::Config::lock_in_min_histogram_entries) {
                         valid_lock_in_candidate = false;
                     } else if (hist.value().getEntries() > MuonPi::Config::lock_in_max_histogram_entries) {
-                            hist.value().clear();
+                        hist.value().clear();
                     }
                 }
             } else {
@@ -1431,20 +1430,19 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
 
             hist = histoMap.find("geoLatitude");
             if (hist != histoMap.end() && hist.value().getEntries() > 10U) {
-                if ( config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMean ) {
+                if (config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMean) {
                     new_position.latitude = hist.value().getMean();
-                } else if ( config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMedian ) {
+                } else if (config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMedian) {
                     new_position.latitude = hist.value().getMedian();
                 } else {
                     new_position.latitude = hist.value().getMpv();
                 }
                 new_position.hor_error = hist.value().getRMS() * degree_to_surface_meters;
-                if ( config.position_mode_config.mode == PositionModeConfig::Mode::LockIn ) {
-                    if ( hist.value().getEntries() < MuonPi::Config::lock_in_min_histogram_entries )
-                    {
+                if (config.position_mode_config.mode == PositionModeConfig::Mode::LockIn) {
+                    if (hist.value().getEntries() < MuonPi::Config::lock_in_min_histogram_entries) {
                         valid_lock_in_candidate = false;
                     } else if (hist.value().getEntries() > MuonPi::Config::lock_in_max_histogram_entries) {
-                            hist.value().clear();
+                        hist.value().clear();
                     }
                 }
             } else {
@@ -1453,9 +1451,9 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
 
             hist = histoMap.find("geoLongitude");
             if (hist != histoMap.end() && hist.value().getEntries() > 10U) {
-                if ( config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMean ) {
+                if (config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMean) {
                     new_position.longitude = hist.value().getMean();
-                } else if ( config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMedian ) {
+                } else if (config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMedian) {
                     new_position.longitude = hist.value().getMedian();
                 } else {
                     new_position.longitude = hist.value().getMpv();
@@ -1468,12 +1466,11 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
                 } else {
                     new_position.hor_error = hist.value().getRMS() * degree_to_surface_meters / std::cos(pi() * new_position.latitude / 180.);
                 }
-                if ( config.position_mode_config.mode == PositionModeConfig::Mode::LockIn ) {
-                    if ( hist.value().getEntries() < MuonPi::Config::lock_in_min_histogram_entries )
-                    {
+                if (config.position_mode_config.mode == PositionModeConfig::Mode::LockIn) {
+                    if (hist.value().getEntries() < MuonPi::Config::lock_in_min_histogram_entries) {
                         valid_lock_in_candidate = false;
                     } else if (hist.value().getEntries() > MuonPi::Config::lock_in_max_histogram_entries) {
-                            hist.value().clear();
+                        hist.value().clear();
                     }
                 }
             } else {
@@ -1483,8 +1480,8 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
             break;
         default:
             break;
-    }
-    
+        }
+
     if (new_position.valid()) {
         // send new position only if it was found valid, depending on filter
         if (config.position_mode_config.mode == PositionModeConfig::Mode::Auto) {
@@ -1499,21 +1496,21 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
 
             if (new_position.hor_error < config.position_mode_config.lock_in_min_error_meters) {
                 lock_target_reached++;
-                    qDebug() << "geo position lock candidate: lon=" << new_position.longitude
-                        << "lat=" << new_position.latitude
-                        << "(err=" << new_position.hor_error << "m)";
+                qDebug() << "geo position lock candidate: lon=" << new_position.longitude
+                         << "lat=" << new_position.latitude
+                         << "(err=" << new_position.hor_error << "m)";
             }
-            
+
             if (lock_target_reached == 2) {
                 config.position_mode_config.mode = PositionModeConfig::Mode::Static;
                 config.position_mode_config.static_position = { new_position };
                 sendGeodeticPos(config.position_mode_config.static_position.getPosStruct());
                 sendPositionModel(config.position_mode_config);
                 qInfo() << "concluded geo pos lock-in and fixed position: lat=" << new_position.latitude
-                     << "lon=" << new_position.longitude
-                     << "(err=" << new_position.hor_error << "m)"
-                     << "alt=" << new_position.altitude
-                     << "(err=" << new_position.vert_error << "m)";
+                        << "lon=" << new_position.longitude
+                        << "(err=" << new_position.hor_error << "m)"
+                        << "alt=" << new_position.altitude
+                        << "(err=" << new_position.vert_error << "m)";
             }
         }
     }
@@ -2247,7 +2244,7 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
         delete tcpMessage;
         emit logParameter(LogParameter("fixStatus", QString::number(data), LogParameter::LOG_LATEST));
         emit logParameter(LogParameter("fixStatusString", QString::fromLocal8Bit(Gnss::FixType::name[data]), LogParameter::LOG_LATEST));
-//        fixStatus = Property<std::string>("fixStatus", std::string(Gnss::FixType::name[data]));
+        //        fixStatus = Property<std::string>("fixStatus", std::string(Gnss::FixType::name[data]));
         m_fix_status = Property<Gnss::FixType>("fixStatus", { data });
         //propertyMap["fixStatus"] = Property("fixStatus", QString::fromLocal8Bit(Gnss::FixType::name[data]));
         break;

@@ -1212,7 +1212,7 @@ void MainWindow::onPolarityChanged(bool pol1, bool pol2)
     emit sendTcpMessage(tcpMessage);
 }
 
-void MainWindow::onPosModeConfigChanged(const PositionModeConfig &posconfig)
+void MainWindow::onPosModeConfigChanged(const PositionModeConfig& posconfig)
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_POSITION_MODEL);
     *(tcpMessage.dStream) << posconfig;

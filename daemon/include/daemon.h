@@ -8,9 +8,9 @@
 #include <QTcpServer>
 #include <QTimer>
 #include <QVariant>
+#include <libconfig.h++>
 #include <memory>
 #include <time.h>
-#include <libconfig.h++>
 
 // clang-format off
 #include "qtserialublox.h"

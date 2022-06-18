@@ -16,10 +16,10 @@ Map::Map(QWidget* parent)
     QVariantMap parameters;
     mapUi->setupUi(this);
 
-    for ( const auto& item: PositionModeConfig::mode_name ) {
+    for (const auto& item : PositionModeConfig::mode_name) {
         mapUi->modeComboBox->addItem(QString::fromLocal8Bit(item));
     }
-    for ( const auto& item: PositionModeConfig::filter_name ) {
+    for (const auto& item : PositionModeConfig::filter_name) {
         mapUi->filterTypeComboBox->addItem(QString::fromLocal8Bit(item));
     }
 
@@ -30,7 +30,7 @@ Map::Map(QWidget* parent)
     mapComponent = component->create();
     mapUi->mapWidget->setContent(component->url(), component, mapComponent);
     mapUi->mapWidget->show();
-    QObject::connect(mapComponent, SIGNAL(coordinateSignal(double,double)), this, SLOT(coordinateQmlSignal(double,double)));
+    QObject::connect(mapComponent, SIGNAL(coordinateSignal(double, double)), this, SLOT(coordinateQmlSignal(double, double)));
 }
 
 Map::~Map()
@@ -39,9 +39,10 @@ Map::~Map()
     delete mapUi;
 }
 
-void Map::coordinateQmlSignal(double lat, double lon){
-    mapUi->longitudeLineEdit->setText(QString::number(lon,'g',8));
-    mapUi->latitudeLineEdit->setText(QString::number(lat,'g',8));
+void Map::coordinateQmlSignal(double lat, double lon)
+{
+    mapUi->longitudeLineEdit->setText(QString::number(lon, 'g', 8));
+    mapUi->latitudeLineEdit->setText(QString::number(lat, 'g', 8));
 }
 
 void Map::onGeodeticPosReceived(const GnssPosStruct& pos)
@@ -59,14 +60,14 @@ void Map::onGeodeticPosReceived(const GnssPosStruct& pos)
         Q_ARG(QVariant, pos_error * 1e-3));
 }
 
-void Map::onPosConfigReceived(const PositionModeConfig &pos)
+void Map::onPosConfigReceived(const PositionModeConfig& pos)
 {
     mapUi->positionModelGroupBox->setEnabled(true);
     mapUi->staticPositionGroupBox->setEnabled(true);
     mapUi->setConfigPushButton->setEnabled(true);
     mapUi->modeComboBox->setCurrentIndex(static_cast<size_t>(pos.mode));
-    mapUi->longitudeLineEdit->setText(QString::number(pos.static_position.longitude,'g',8));
-    mapUi->latitudeLineEdit->setText(QString::number(pos.static_position.latitude,'g',8));
+    mapUi->longitudeLineEdit->setText(QString::number(pos.static_position.longitude, 'g', 8));
+    mapUi->latitudeLineEdit->setText(QString::number(pos.static_position.latitude, 'g', 8));
     mapUi->altitudeLineEdit->setText(QString::number(pos.static_position.altitude));
     mapUi->horErrorLineEdit->setText(QString::number(pos.static_position.hor_error));
     mapUi->vertErrorLineEdit->setText(QString::number(pos.static_position.vert_error));
