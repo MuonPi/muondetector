@@ -1404,10 +1404,18 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
             };
             qDebug() << "Kalman: lat=" << m_gnss_pos_kalman.get_latitude() << "lon=" << m_gnss_pos_kalman.get_longitude() << "alt=" << m_gnss_pos_kalman.get_altitude() << "acc=" << m_gnss_pos_kalman.get_accuracy() << "pDOP=" << currentDOP().pDOP / 100.;
             break;
+        case PositionModeConfig::FilterType::HistoMpv:
+        case PositionModeConfig::FilterType::HistoMedian:
         case PositionModeConfig::FilterType::HistoMean:
             hist = histoMap.find("geoHeight");
             if (hist != histoMap.end() && hist.value().getEntries() > 10U) {
-                new_position.altitude = hist.value().getMean();
+                if ( config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMean ) {
+                    new_position.altitude = hist.value().getMean();
+                } else if ( config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMedian ) {
+                    new_position.altitude = hist.value().getMedian();
+                } else {
+                    new_position.altitude = hist.value().getMpv();
+                }
                 new_position.vert_error = hist.value().getRMS();
                 if ( config.position_mode_config.mode == PositionModeConfig::Mode::LockIn ) {
                     if ( hist.value().getEntries() < MuonPi::Config::lock_in_min_histogram_entries )
@@ -1423,7 +1431,13 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
 
             hist = histoMap.find("geoLatitude");
             if (hist != histoMap.end() && hist.value().getEntries() > 10U) {
-                new_position.latitude = hist.value().getMean();
+                if ( config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMean ) {
+                    new_position.latitude = hist.value().getMean();
+                } else if ( config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMedian ) {
+                    new_position.latitude = hist.value().getMedian();
+                } else {
+                    new_position.latitude = hist.value().getMpv();
+                }
                 new_position.hor_error = hist.value().getRMS() * degree_to_surface_meters;
                 if ( config.position_mode_config.mode == PositionModeConfig::Mode::LockIn ) {
                     if ( hist.value().getEntries() < MuonPi::Config::lock_in_min_histogram_entries )
@@ -1439,7 +1453,13 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
 
             hist = histoMap.find("geoLongitude");
             if (hist != histoMap.end() && hist.value().getEntries() > 10U) {
-                new_position.longitude = hist.value().getMean();
+                if ( config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMean ) {
+                    new_position.longitude = hist.value().getMean();
+                } else if ( config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMedian ) {
+                    new_position.longitude = hist.value().getMedian();
+                } else {
+                    new_position.longitude = hist.value().getMpv();
+                }
                 if (valid_lock_in_candidate) {
                     // calculate the squared error including the component from the previously determined latitude error, if available
                     new_position.hor_error *= new_position.hor_error;
@@ -1460,10 +1480,6 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
                 valid_lock_in_candidate = false;
             }
 
-            break;
-        case PositionModeConfig::FilterType::HistoMedian:
-            break;
-        case PositionModeConfig::FilterType::HistoMpv:
             break;
         default:
             break;
