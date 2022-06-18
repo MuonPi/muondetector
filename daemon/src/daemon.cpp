@@ -1361,9 +1361,6 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
     GnssPosStruct new_pos_struct { pos };
 
     constexpr double earth_radius_meters { 6367444.5 };
-    constexpr double surface_meter_to_degrees_equator {
-        360. / (pi() * 2 * earth_radius_meters)
-    };
     constexpr double degree_to_surface_meters {
         (pi() * 2 * earth_radius_meters) / 360.
     };
