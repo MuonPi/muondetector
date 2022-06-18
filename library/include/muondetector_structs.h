@@ -39,20 +39,6 @@ protected:
 };
 
 struct GeoPosition {
-    /*
-    GeoPosition() = default;
-    GeoPosition(const GeoPosition&) = default;
-    GeoPosition& operator=(const GeoPosition&) = default;
-    
-    GeoPosition(const GnssPosStruct& pos_struct) 
-    : longitude(pos_struct.lon*1e-7)
-    , latitude(pos_struct.lat*1e-7)
-    , altitude(pos_struct.hMSL)
-    , hor_error(pos_struct.hAcc)
-    , vert_error(pos_struct.vAcc)
-    , valid(true)
-    { }
-    */
     double longitude { 0. };
     double latitude { 0. };
     double altitude { 0. };
