@@ -159,6 +159,32 @@ double Histogram::getMean()
         return double {};
 }
 
+double Histogram::getMedian()
+{
+    const double half_entries { getEntries() / 2. };
+    double binsum { 0. };
+    for (const auto& [bin, content] : fHistogramMap) {
+        binsum += content;
+        if (binsum > half_entries) {
+            return bin2Value(bin);
+        }
+    }
+    return double {};
+}
+
+double Histogram::getMpv()
+{
+    int highest_bin { 0 };
+    double highest { 1e-12 };
+    for (const auto& [bin, content] : fHistogramMap) {
+        if (content > highest) {
+            highest = content;
+            highest_bin = bin;
+        }
+    }
+    return bin2Value(highest_bin);
+}
+
 double Histogram::getRMS()
 {
     double mean { getMean() };
