@@ -274,7 +274,7 @@ void Histogram::rescale()
     const double highestEntry { getBinCenter(highest) };
     if (ufl > 0. && ofl > 0. && (ufl + ofl) > 0.01 * entries) {
         // range is too small, underflow and overflow have more than 1% of all entries
-        rescale(0.5 * range + getMin(), 1.2 * range);
+        rescale(0.5 * range + getMin(), 1.1 * range);
     } else if (ufl > 0.005 * entries) {
         setMin(getMax() - range * 1.2);
         clear();
