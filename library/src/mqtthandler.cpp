@@ -68,15 +68,14 @@ void MqttHandler::callback_message(const mosquitto_message* message)
 
 void MqttHandler::set_status(Status status)
 {
+    m_status = status;
     if (status == Status::Connected) {
         m_tries = 0;
     }
-    if (status != m_status) {
-        m_status = status;        
-        if ( status == Status::Error ) {
-            error_handler();
-        }
+    if ( status == Status::Error ) {
+        error_handler();
     }
+}
 }
 
 bool MqttHandler::isInhibited() {
