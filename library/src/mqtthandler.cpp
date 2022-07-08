@@ -76,7 +76,6 @@ void MqttHandler::set_status(Status status)
         error_handler();
     }
 }
-}
 
 bool MqttHandler::isInhibited() {
     return (m_status == Status::Inhibited);
