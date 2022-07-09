@@ -213,13 +213,10 @@ int main()
                          if (status == MuonPi::MqttHandler::Status::Connected)
                          {
                              std::cout << "Login data is correct!\n";
-                             wakeup.notify_all();
+                         }else{
+                         std::cout << "There was a problem with the login, please try again.\n";
                          }
-                         else if (status == MuonPi::MqttHandler::Status::Error)
-                         {
-                             std::cout << "There was a problem with the login, please try again.\n";
-                             wakeup.notify_all();
-                         }
+                         wakeup.notify_all();
                      });
     mqttHandler.start(QString::fromStdString(username), QString::fromStdString(password));
 

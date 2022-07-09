@@ -62,6 +62,7 @@ namespace MuonPi
         {
             m_tries++;
         }
+        emit connection_status(Status::Connecting);
         qDebug() << "Tried to connect " << m_tries << " times. Next try after " << (first_retry_period << m_tries) << "s.";
     }
 
