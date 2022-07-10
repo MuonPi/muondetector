@@ -1256,8 +1256,8 @@ void QtSerialUblox::UBXCfgTP5(const std::string& msg)
     tp.userConfigDelay = get<int32_t>(msg.begin() + 24);
     tp.flags = get<uint32_t>(msg.begin() + 28);
 
-    bool isFreq { tp.flags & 0x08 };
-    bool isLength { tp.flags & 0x10 };
+    bool isFreq { (tp.flags & 0x08u) != 0x00u };
+    bool isLength { (tp.flags & 0x10) != 0x00u };
 
     if (verbose > 2) {
         std::stringstream tempStream;
