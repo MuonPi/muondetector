@@ -71,7 +71,7 @@ public:
         bool gnss_config { false };
         UbxDynamicModel gnss_dynamic_model { UbxDynamicModel::stationary };
         PositionModeConfig position_mode_config {
-            PositionModeConfig::Mode::LockIn,
+            PositionModeConfig::Mode::Auto,
             {},
             MuonPi::Config::max_lock_in_dop,
             MuonPi::Config::lock_in_target_precision_meters,
