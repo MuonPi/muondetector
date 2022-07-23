@@ -1,10 +1,10 @@
+#include "map.h"
 #include <QQmlComponent>
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickItem>
 #include <QSsl>
 #include <cmath>
-#include "map.h"
 #include <muondetector_structs.h>
 
 #include <ui_map.h>

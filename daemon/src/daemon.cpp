@@ -1363,9 +1363,9 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
         new_pos_struct.hAcc = new_pos_struct.vAcc = c_vacuum * m_time_precision().count() * 1e3;
     }
 
-    // determine an updated estimate of geo position depending on the current position model 
+    // determine an updated estimate of geo position depending on the current position model
     GeoPosition new_position { updateGeoPosition(new_pos_struct) };
-    
+
     if (new_position.valid()) {
         // send new position only if it was found valid, depending on filter
         if (config.position_mode_config.mode == PositionModeConfig::Mode::Auto) {
@@ -1527,8 +1527,8 @@ auto Daemon::updateGeoPosition(const GnssPosStruct& pos) -> GeoPosition
     if (new_position.valid()
         && config.position_mode_config.mode == PositionModeConfig::Mode::LockIn
         && valid_lock_in_candidate) {
-            // try to lock current position
-            tryPositionLock(new_position);
+        // try to lock current position
+        tryPositionLock(new_position);
     }
     return new_position;
 }

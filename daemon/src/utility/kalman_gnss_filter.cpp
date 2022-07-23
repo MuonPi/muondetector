@@ -21,7 +21,7 @@ void KalmanGnssFilter::set_state(double lat, double lng, double alt, double accu
 
 auto KalmanGnssFilter::get_timestamp() const -> std::chrono::time_point<std::chrono::steady_clock>
 {
-    return m_timestamp; 
+    return m_timestamp;
 }
 
 auto KalmanGnssFilter::get_latitude() const -> double
