@@ -27,7 +27,7 @@ struct Id {
         first = GPS,
         last = Undefined
     };
-    static constexpr std::array<const char*, last + 1> name { "GPS", "SBAS", "GAL", "BEID", "IMES", "QZSS", "GLNS", "N/A" };
+    static constexpr std::array<const char*, last + 1> name { " GPS", "SBAS", " GAL", "BEID", "IMES", "QZSS", "GLNS", " N/A" };
 };
 
 struct FixType {
@@ -42,7 +42,6 @@ struct FixType {
         first = None,
         last = Undefined
     };
-    size_t value { None };
     static constexpr std::array<const char*, last + 1> name { "No Fix", "Dead Reck.", "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix", " N/A" };
 };
 
@@ -110,7 +109,7 @@ private:
     std::string m_payload {};
 };
 
-struct GnssPosStruct {
+struct GeodeticPos {
     uint32_t iTOW;
     int32_t lon; // longitude 1e-7 scaling (increase by 1 means 100 nano degrees)
     int32_t lat; // latitude 1e-7 scaling (increase by 1 means 100 nano degrees)
