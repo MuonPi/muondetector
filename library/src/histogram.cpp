@@ -159,32 +159,6 @@ double Histogram::getMean()
         return double {};
 }
 
-double Histogram::getMedian()
-{
-    const double half_entries { getEntries() / 2. };
-    double binsum { 0. };
-    for (const auto& [bin, content] : fHistogramMap) {
-        binsum += content;
-        if (binsum > half_entries) {
-            return bin2Value(bin);
-        }
-    }
-    return double {};
-}
-
-double Histogram::getMpv()
-{
-    int highest_bin { 0 };
-    double highest { 1e-12 };
-    for (const auto& [bin, content] : fHistogramMap) {
-        if (content > highest) {
-            highest = content;
-            highest_bin = bin;
-        }
-    }
-    return bin2Value(highest_bin);
-}
-
 double Histogram::getRMS()
 {
     double mean { getMean() };
@@ -274,7 +248,7 @@ void Histogram::rescale()
     const double highestEntry { getBinCenter(highest) };
     if (ufl > 0. && ofl > 0. && (ufl + ofl) > 0.01 * entries) {
         // range is too small, underflow and overflow have more than 1% of all entries
-        rescale(0.5 * range + getMin(), 1.1 * range);
+        rescale(0.5 * (highestEntry - lowestEntry) + lowestEntry, 1.2 * range);
     } else if (ufl > 0.005 * entries) {
         setMin(getMax() - range * 1.2);
         clear();
@@ -283,7 +257,7 @@ void Histogram::rescale()
         clear();
     } else if (ufl < 1e-3 && ofl < 1e-3) {
         // check if range is too wide
-        if (entries > 100. && static_cast<double>(highest - lowest) / fNrBins < 0.05) {
+        if (entries > 1000. && static_cast<double>(highest - lowest) / fNrBins < 0.05) {
             rescale(0.5 * (highestEntry - lowestEntry) + lowestEntry, 0.8 * range);
         }
     }

@@ -8,7 +8,7 @@
 
 #include <ublox_structs.h>
 
-struct GnssPosStruct;
+struct GeodeticPos;
 class GnssSatellite;
 struct GnssMonHwStruct;
 
@@ -32,7 +32,7 @@ public slots:
     void onGpsMonHW2Received(const GnssMonHw2Struct& hw2struct);
     void onGpsVersionReceived(const QString& swString, const QString& hwString, const QString& protString);
     void onGpsFixReceived(quint8 val);
-    void onGeodeticPosReceived(const GnssPosStruct& pos);
+    void onGeodeticPosReceived(const GeodeticPos& pos);
     void onUiEnabledStateChange(bool connected);
     void onUbxUptimeReceived(quint32 val);
     void changeEvent(QEvent* e);

@@ -39,7 +39,7 @@ MainWindow::MainWindow(QWidget* parent)
     , ui(new Ui::MainWindow)
 {
     qRegisterMetaType<TcpMessage>("TcpMessage");
-    qRegisterMetaType<GnssPosStruct>("GnssPosStruct");
+    qRegisterMetaType<GeodeticPos>("GeodeticPos");
     qRegisterMetaType<bool>("bool");
     qRegisterMetaType<I2cDeviceEntry>("I2cDeviceEntry");
     qRegisterMetaType<CalibStruct>("CalibStruct");
@@ -60,7 +60,6 @@ MainWindow::MainWindow(QWidget* parent)
     qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
     qRegisterMetaType<timespec>("timespec");
     qRegisterMetaType<ADC_SAMPLING_MODE>("ADC_SAMPLING_MODE");
-    qRegisterMetaType<PositionModeConfig>("PositionModeConfig");
 
     ui->setupUi(this);
     this->setWindowTitle(QString("muondetector-gui  " + QString::fromStdString(MuonPi::Version::software.string())));
@@ -160,8 +159,6 @@ MainWindow::MainWindow(QWidget* parent)
     Map* map = new Map(this);
     connect(this, &MainWindow::setUiEnabledStates, map, &Map::onUiEnabledStateChange);
     connect(this, &MainWindow::geodeticPos, map, &Map::onGeodeticPosReceived);
-    connect(this, &MainWindow::positionModeConfigReceived, map, &Map::onPosConfigReceived);
-    connect(map, &Map::posModeConfigChanged, this, &MainWindow::onPosModeConfigChanged);
     ui->tabWidget->addTab(map, "Map");
 
     I2cForm* i2cTab = new I2cForm(this);
@@ -457,7 +454,7 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
         connectedToDemon = false;
         return;
     } else if (msgID == TCP_MSG_KEY::MSG_GEO_POS) {
-        GnssPosStruct pos {};
+        GeodeticPos pos {};
         *(tcpMessage.dStream) >> pos.iTOW >> pos.lon >> pos.lat
             >> pos.height >> pos.hMSL >> pos.hAcc >> pos.vAcc;
         emit geodeticPos(pos);
@@ -682,11 +679,6 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
         MuonPi::Version::Version hw_ver, sw_ver;
         *(tcpMessage.dStream) >> hw_ver >> sw_ver;
         emit daemonVersionReceived(hw_ver, sw_ver);
-        return;
-    } else if (msgID == TCP_MSG_KEY::MSG_POSITION_MODEL) {
-        PositionModeConfig posconfig {};
-        *(tcpMessage.dStream) >> posconfig;
-        emit positionModeConfigReceived(posconfig);
         return;
     } else {
         qDebug() << "received unknown TCP message, msgID =" << QString::number(static_cast<int>(msgID));
@@ -1209,13 +1201,6 @@ void MainWindow::onPolarityChanged(bool pol1, bool pol2)
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_POLARITY_SWITCH);
     *(tcpMessage.dStream) << pol1 << pol2;
-    emit sendTcpMessage(tcpMessage);
-}
-
-void MainWindow::onPosModeConfigChanged(const PositionModeConfig& posconfig)
-{
-    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_POSITION_MODEL);
-    *(tcpMessage.dStream) << posconfig;
     emit sendTcpMessage(tcpMessage);
 }
 
