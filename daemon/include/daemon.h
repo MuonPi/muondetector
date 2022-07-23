@@ -215,6 +215,9 @@ private:
     qreal getRateFromCounts(quint8 which_rate);
     void clearRates();
 
+    auto tryPositionLock(const GeoPosition& new_position) -> bool;
+    auto updateGeoPosition(const GnssPosStruct& pos) -> GeoPosition;
+
     std::shared_ptr<DeviceFunction<DeviceType::TEMP>> temp_sensor_p;
     std::shared_ptr<DeviceFunction<DeviceType::ADC>> adc_p;
     std::shared_ptr<DeviceFunction<DeviceType::DAC>> dac_p;

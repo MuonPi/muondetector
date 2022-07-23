@@ -1355,6 +1355,59 @@ void Daemon::sendPositionModel(const PositionModeConfig& pos)
 
 void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
 {
+    GnssPosStruct new_pos_struct { pos };
+
+    // set correct position errors in case no fix is available (ublox bug?)
+    if (m_fix_status().value < Gnss::FixType::Fix2d && m_time_precision.age() < std::chrono::seconds(60)) {
+        constexpr double c_vacuum { 0.3 };
+        new_pos_struct.hAcc = new_pos_struct.vAcc = c_vacuum * m_time_precision().count() * 1e3;
+    }
+
+    // determine an updated estimate of geo position depending on the current position model 
+    GeoPosition new_position { updateGeoPosition(new_pos_struct) };
+    
+    if (new_position.valid()) {
+        // send new position only if it was found valid, depending on filter
+        if (config.position_mode_config.mode == PositionModeConfig::Mode::Auto) {
+            sendGeodeticPos(new_position.getPosStruct());
+        }
+    }
+
+    if (config.position_mode_config.mode != PositionModeConfig::Mode::Static) {
+        QString geohash = GeoHash::hashFromCoordinates(new_position.longitude, new_position.latitude, 10);
+
+        emit logParameter(LogParameter("geoLongitude", QString::number(new_position.longitude, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
+        emit logParameter(LogParameter("geoLatitude", QString::number(new_position.latitude, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
+        emit logParameter(LogParameter("geoHash", geohash + " ", LogParameter::LOG_LATEST));
+        emit logParameter(LogParameter("geoHeightMSL", QString::number(new_position.altitude, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+        if (histoMap.find("geoHeight") != histoMap.end())
+            emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(histoMap["geoHeight"].getMean(), 'f', 2) + " m", LogParameter::LOG_LATEST));
+        emit logParameter(LogParameter("geoHorAccuracy", QString::number(new_position.hor_error, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+        emit logParameter(LogParameter("geoVertAccuracy", QString::number(new_position.vert_error, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+    }
+
+    if (1e-3 * pos.vAcc < 100.) {
+        if (config.position_mode_config.mode != PositionModeConfig::Mode::LockIn || m_current_dop().vDOP / 100. < config.position_mode_config.lock_in_max_dop) {
+            if (histoMap.find("geoHeight") != histoMap.end()) {
+                histoMap["geoHeight"].fill(1e-3 * pos.hMSL);
+                if (m_current_dop().vDOP > 0) {
+                    const double heightWeight = 100. / m_current_dop().vDOP;
+                    histoMap["weightedGeoHeight"].fill(1e-3 * pos.hMSL, heightWeight);
+                }
+            }
+        }
+    }
+
+    if (1e-3 * pos.hAcc < 100.) {
+        if (config.position_mode_config.mode != PositionModeConfig::Mode::LockIn || m_current_dop().hDOP / 100. < config.position_mode_config.lock_in_max_dop) {
+            histoMap["geoLongitude"].fill(1e-7 * pos.lon);
+            histoMap["geoLatitude"].fill(1e-7 * pos.lat);
+        }
+    }
+}
+
+auto Daemon::updateGeoPosition(const GnssPosStruct& pos) -> GeoPosition
+{
     GeoPosition new_position {};
     GnssPosStruct new_pos_struct { pos };
 
@@ -1362,12 +1415,6 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
     constexpr double degree_to_surface_meters {
         (pi() * 2 * earth_radius_meters) / 360.
     };
-
-    // set correct position errors in case no fix is available (ublox bug?)
-    if (m_fix_status().value < Gnss::FixType::Fix2d && m_time_precision.age() < std::chrono::seconds(60)) {
-        constexpr double c_vacuum { 0.3 };
-        new_pos_struct.hAcc = new_pos_struct.vAcc = c_vacuum * m_time_precision().count() * 1e3;
-    }
 
     const double totalPosAccuracy = 1e-3 * std::sqrt(new_pos_struct.hAcc * new_pos_struct.hAcc + new_pos_struct.vAcc * new_pos_struct.vAcc);
 
@@ -1477,70 +1524,41 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
             break;
         }
 
-    if (new_position.valid()) {
-        // send new position only if it was found valid, depending on filter
-        if (config.position_mode_config.mode == PositionModeConfig::Mode::Auto) {
-            sendGeodeticPos(new_position.getPosStruct());
-        } else if (config.position_mode_config.mode == PositionModeConfig::Mode::LockIn && valid_lock_in_candidate) {
-            std::size_t lock_target_reached { 0 };
-            if (new_position.vert_error < config.position_mode_config.lock_in_min_error_meters) {
-                lock_target_reached++;
-                qDebug() << "geo position lock candidate: alt=" << new_position.altitude
-                         << "(err=" << new_position.vert_error << "m)";
-            }
+    if (new_position.valid()
+        && config.position_mode_config.mode == PositionModeConfig::Mode::LockIn
+        && valid_lock_in_candidate) {
+            // try to lock current position
+            tryPositionLock(new_position);
+    }
+    return new_position;
+}
 
-            if (new_position.hor_error < config.position_mode_config.lock_in_min_error_meters) {
-                lock_target_reached++;
-                qDebug() << "geo position lock candidate: lon=" << new_position.longitude
-                         << "lat=" << new_position.latitude
-                         << "(err=" << new_position.hor_error << "m)";
-            }
-
-            if (lock_target_reached == 2) {
-                config.position_mode_config.mode = PositionModeConfig::Mode::Static;
-                config.position_mode_config.static_position = { new_position };
-                sendGeodeticPos(config.position_mode_config.static_position.getPosStruct());
-                sendPositionModel(config.position_mode_config);
-                qInfo() << "concluded geo pos lock-in and fixed position: lat=" << new_position.latitude
-                        << "lon=" << new_position.longitude
-                        << "(err=" << new_position.hor_error << "m)"
-                        << "alt=" << new_position.altitude
-                        << "(err=" << new_position.vert_error << "m)";
-            }
-        }
+auto Daemon::tryPositionLock(const GeoPosition& new_position) -> bool
+{
+    std::size_t lock_target_reached { 0 };
+    if (new_position.vert_error < config.position_mode_config.lock_in_min_error_meters) {
+        lock_target_reached++;
+        qDebug() << "geo position lock candidate: alt=" << new_position.altitude << "(err=" << new_position.vert_error << "m)";
     }
 
-    if (config.position_mode_config.mode != PositionModeConfig::Mode::Static) {
-        QString geohash = GeoHash::hashFromCoordinates(new_position.longitude, new_position.latitude, 10);
-
-        emit logParameter(LogParameter("geoLongitude", QString::number(new_position.longitude, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
-        emit logParameter(LogParameter("geoLatitude", QString::number(new_position.latitude, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
-        emit logParameter(LogParameter("geoHash", geohash + " ", LogParameter::LOG_LATEST));
-        emit logParameter(LogParameter("geoHeightMSL", QString::number(new_position.altitude, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
-        if (histoMap.find("geoHeight") != histoMap.end())
-            emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(histoMap["geoHeight"].getMean(), 'f', 2) + " m", LogParameter::LOG_LATEST));
-        emit logParameter(LogParameter("geoHorAccuracy", QString::number(new_position.hor_error, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
-        emit logParameter(LogParameter("geoVertAccuracy", QString::number(new_position.vert_error, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+    if (new_position.hor_error < config.position_mode_config.lock_in_min_error_meters) {
+        lock_target_reached++;
+        qDebug() << "geo position lock candidate: lon=" << new_position.longitude << "lat=" << new_position.latitude << "(err=" << new_position.hor_error << "m)";
     }
 
-    if (1e-3 * pos.vAcc < 100.) {
-        if (config.position_mode_config.mode != PositionModeConfig::Mode::LockIn || m_current_dop().vDOP / 100. < config.position_mode_config.lock_in_max_dop) {
-            if (histoMap.find("geoHeight") != histoMap.end()) {
-                histoMap["geoHeight"].fill(1e-3 * pos.hMSL);
-                if (m_current_dop().vDOP > 0) {
-                    const double heightWeight = 100. / m_current_dop().vDOP;
-                    histoMap["weightedGeoHeight"].fill(1e-3 * pos.hMSL, heightWeight);
-                }
-            }
-        }
+    if (lock_target_reached == 2) {
+        config.position_mode_config.mode = PositionModeConfig::Mode::Static;
+        config.position_mode_config.static_position = { new_position };
+        sendGeodeticPos(config.position_mode_config.static_position.getPosStruct());
+        sendPositionModel(config.position_mode_config);
+        qInfo() << "concluded geo pos lock-in and fixed position: lat=" << new_position.latitude
+                << "lon=" << new_position.longitude
+                << "(err=" << new_position.hor_error << "m)"
+                << "alt=" << new_position.altitude
+                << "(err=" << new_position.vert_error << "m)";
+        return true;
     }
-
-    if (1e-3 * pos.hAcc < 100.) {
-        if (config.position_mode_config.mode != PositionModeConfig::Mode::LockIn || m_current_dop().hDOP / 100. < config.position_mode_config.lock_in_max_dop) {
-            histoMap["geoLongitude"].fill(1e-7 * pos.lon);
-            histoMap["geoLatitude"].fill(1e-7 * pos.lat);
-        }
-    }
+    return false;
 }
 
 void Daemon::sendHistogram(const Histogram& hist)
