@@ -39,7 +39,7 @@ Map::~Map()
     delete mapUi;
 }
 
-void Map::coordinateQmlSignal(double lat, double lon)
+void Map::coordinateQmlSignal(double lon, double lat)
 {
     mapUi->longitudeLineEdit->setText(QString::number(lon, 'g', 8));
     mapUi->latitudeLineEdit->setText(QString::number(lat, 'g', 8));

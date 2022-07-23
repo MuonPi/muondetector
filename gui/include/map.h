@@ -24,7 +24,7 @@ public slots:
     void onGeodeticPosReceived(const GnssPosStruct& pos);
     void onPosConfigReceived(const PositionModeConfig& pos);
     void onUiEnabledStateChange(bool connected);
-    void coordinateQmlSignal(double lat, double lon);
+    void coordinateQmlSignal(double lon, double lat);
 
 private slots:
     void on_setConfigPushButton_clicked();

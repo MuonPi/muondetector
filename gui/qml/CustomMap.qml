@@ -24,7 +24,7 @@ CustomMapForm {
     {
         map.onEnable(enabled)
     }
-    signal coordinateSignal(double lat, double lon)
+    signal coordinateSignal(double lon, double lat)
     MapComponent{
         id: map
         property double lastLon: 8.673828
@@ -67,7 +67,7 @@ CustomMapForm {
                     var coordinates = map.toCoordinate(Qt.point(mouse.x,mouse.y));
                     circle.center = coordinates;
                     marker.center = coordinates;
-                    page.coordinateSignal(coordinates.latitude, coordinates.longitude);
+                    page.coordinateSignal(coordinates.longitude, coordinates.latitude);
                 }
             }
         }
