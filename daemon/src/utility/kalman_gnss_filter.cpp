@@ -19,6 +19,36 @@ void KalmanGnssFilter::set_state(double lat, double lng, double alt, double accu
     m_timestamp = std::chrono::steady_clock::now();
 }
 
+auto KalmanGnssFilter::get_timestamp() const -> std::chrono::time_point<std::chrono::steady_clock>
+{
+    return m_timestamp; 
+}
+
+auto KalmanGnssFilter::get_latitude() const -> double
+{
+    return m_lat;
+}
+
+auto KalmanGnssFilter::get_longitude() const -> double
+{
+    return m_lng;
+}
+
+auto KalmanGnssFilter::get_altitude() const -> double
+{
+    return m_alt;
+}
+
+auto KalmanGnssFilter::get_accuracy() const -> double
+{
+    return std::sqrt(m_variance);
+}
+
+auto KalmanGnssFilter::valid() const -> bool
+{
+    return (m_variance >= 0.);
+}
+
 void KalmanGnssFilter::reset()
 {
     m_lat = m_lng = m_alt = 0.;
@@ -27,9 +57,7 @@ void KalmanGnssFilter::reset()
 
 void KalmanGnssFilter::process(double lat_measurement, double lng_measurement, double alt_measurement, double accuracy)
 {
-    double local_accuracy { accuracy };
-    if (accuracy < c_min_accuracy)
-        local_accuracy = c_min_accuracy;
+    double local_accuracy { std::max(accuracy, c_min_accuracy) };
     if (m_variance < 0) {
         // if variance < 0, object is unitialised, so initialise with current values
         set_state(lat_measurement, lng_measurement, alt_measurement, local_accuracy);

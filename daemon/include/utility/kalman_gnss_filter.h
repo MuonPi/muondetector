@@ -20,12 +20,12 @@ public:
     /// <param name="accuracy">measurement of 1 standard deviation error in metres</param>
     /// <returns>new state</returns>
     void process(double lat_measurement, double lng_measurement, double alt_measurement, double accuracy);
-    [[nodiscard]] auto get_timestamp() const -> std::chrono::time_point<std::chrono::steady_clock> { return m_timestamp; }
-    [[nodiscard]] auto get_latitude() const -> double { return m_lat; }
-    [[nodiscard]] auto get_longitude() const -> double { return m_lng; }
-    [[nodiscard]] auto get_altitude() const -> double { return m_alt; }
-    [[nodiscard]] auto get_accuracy() const -> double { return std::sqrt(m_variance); }
-    [[nodiscard]] auto valid() const -> bool { return (m_variance >= 0.); }
+    [[nodiscard]] auto get_timestamp() const -> std::chrono::time_point<std::chrono::steady_clock>;
+    [[nodiscard]] auto get_latitude() const -> double;
+    [[nodiscard]] auto get_longitude() const -> double;
+    [[nodiscard]] auto get_altitude() const -> double;
+    [[nodiscard]] auto get_accuracy() const -> double;
+    [[nodiscard]] auto valid() const -> bool;
     void reset();
 
 private:

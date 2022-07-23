@@ -4,7 +4,7 @@
 #include <QQuickItem>
 #include <QSsl>
 #include <cmath>
-#include <map.h>
+#include "map.h"
 #include <muondetector_structs.h>
 
 #include <ui_map.h>
@@ -50,7 +50,7 @@ void Map::onGeodeticPosReceived(const GnssPosStruct& pos)
     if (mapComponent == nullptr) {
         return;
     }
-    double pos_error { std::sqrt(pos.hAcc * pos.hAcc + pos.vAcc * pos.vAcc) };
+    const double pos_error { std::sqrt(pos.hAcc * pos.hAcc + pos.vAcc * pos.vAcc) };
     QMetaObject::invokeMethod(mapComponent, "setCoordinates",
         Q_ARG(QVariant, ((double)pos.lon) * 1e-7),
         Q_ARG(QVariant, ((double)pos.lat) * 1e-7),

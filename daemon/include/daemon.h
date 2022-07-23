@@ -270,9 +270,9 @@ private:
     QTimer oledUpdateTimer;
     QList<quint64> andCounts, xorCounts;
 
-    Property<size_t> nrSats {};
-    Property<size_t> nrVisibleSats {};
-    Property<UbxDopStruct> currentDOP {};
+    Property<size_t> m_total_sat_count {};
+    Property<size_t> m_visible_sat_count {};
+    Property<UbxDopStruct> m_current_dop {};
     Property<std::chrono::nanoseconds> m_time_precision {};
     Property<Gnss::FixType> m_fix_status {};
 
@@ -283,7 +283,6 @@ private:
     QTimer samplingTimer;
     QTimer parameterMonitorTimer;
     QTimer rateScanTimer;
-    //    QMap<QString, Property> propertyMap;
     LogEngine logEngine;
 
     // threads
