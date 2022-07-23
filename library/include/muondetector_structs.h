@@ -7,10 +7,13 @@
 #include "histogram.h"
 #include "muondetector_shared_global.h"
 
+#include "ublox_structs.h"
 #include <QList>
 #include <QMap>
 #include <QString>
 #include <QVariant>
+#include <any>
+#include <cmath>
 #include <functional>
 #include <iomanip>
 #include <iostream>
@@ -31,6 +34,54 @@ public slots:
 
 protected:
     std::function<void()> fFn;
+};
+
+struct GeoPosition {
+    double longitude { 0. };
+    double latitude { 0. };
+    double altitude { 0. };
+    double hor_error { 0. };
+    double vert_error { 0. };
+    bool valid() const { return !(longitude == 0. && latitude == 0. && altitude == 0. && hor_error == 0. && vert_error == 0.); }
+
+    [[nodiscard]] auto pos_error() const -> double { return std::sqrt(hor_error * hor_error + vert_error * vert_error); }
+    [[nodiscard]] auto getPosStruct() const -> GnssPosStruct
+    {
+        GnssPosStruct pos_struct {
+            0,
+            static_cast<int32_t>(longitude * 1e7),
+            static_cast<int32_t>(latitude * 1e7),
+            static_cast<int32_t>(altitude * 1e3),
+            static_cast<int32_t>(altitude * 1e3),
+            static_cast<uint32_t>(hor_error * 1e3),
+            static_cast<uint32_t>(vert_error * 1e3)
+        };
+        return pos_struct;
+    }
+};
+
+struct PositionModeConfig {
+    enum class Mode {
+        Static = 0,
+        LockIn = 1,
+        Auto = 2,
+        first = Static,
+        last = Auto
+    } mode;
+    GeoPosition static_position {};
+    double lock_in_max_dop { 3. };
+    double lock_in_min_error_meters { 7.5 };
+    enum class FilterType {
+        None = 0,
+        Kalman = 1,
+        HistoMean = 2,
+        HistoMedian = 3,
+        HistoMpv = 4,
+        first = None,
+        last = HistoMpv
+    } filter_config;
+    static constexpr std::array<const char*, static_cast<size_t>(Mode::last) + 1> mode_name { "static", "lock-in", "auto" };
+    static constexpr std::array<const char*, static_cast<size_t>(FilterType::last) + 1> filter_name { "none", "kalman", "histo_mean", "histo_median", "histo_mpv" };
 };
 
 struct IoConfiguration {
@@ -125,71 +176,53 @@ static const QMap<quint8, QString> I2C_MODE_STRINGMAP = { { 0x00, "None" },
     { 0x08, "Failed" },
     { 0x10, "Locked" } };
 
+template <typename T>
 class Property {
 public:
     Property() = default;
 
-    template <typename T>
-    Property(const T& val)
-        : name("")
-        , unit("")
-    {
-        typeId = qMetaTypeId<T>();
-        if (typeId == QMetaType::UnknownType) {
-            typeId = qRegisterMetaType<T>();
-        }
-        value = QVariant(val);
-        updated = true;
-    }
-
-    template <typename T>
-    Property(const QString& a_name, const T& val, const QString& a_unit = "")
+    Property(const std::string& a_name, const T& val)
         : name(a_name)
-        , unit(a_unit)
     {
-        typeId = qMetaTypeId<T>();
-        if (typeId == QMetaType::UnknownType) {
-            typeId = qRegisterMetaType<T>();
-        }
-        value = QVariant(val);
-        updated = true;
+        m_value = val;
+        m_updated = true;
+        m_update_time = std::chrono::steady_clock::now();
     }
 
     Property(const Property& prop) = default;
-    Property& operator=(const Property& prop)
+
+    Property<T>& operator=(const T& val)
     {
-        name = prop.name;
-        unit = prop.unit;
-        value = prop.value;
-        typeId = prop.typeId;
-        updated = prop.updated;
+        m_value = val;
+        m_updated = true;
+        m_update_time = std::chrono::steady_clock::now();
         return *this;
     }
 
-    Property& operator=(const QVariant& val)
+    const T& operator()()
     {
-        value = val;
-        //lastUpdate = std::chrono::system_clock::now();
-        updated = true;
-        return *this;
+        m_updated = false;
+        return m_value;
     }
 
-    const QVariant& operator()()
+    const T& get()
     {
-        updated = false;
-        return value;
+        m_updated = false;
+        return m_value;
     }
 
-    bool isUpdated() const { return updated; }
-    int type() const { return typeId; }
+    bool updated() const { return m_updated; }
+    [[nodiscard]] auto age() const -> std::chrono::microseconds
+    {
+        return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_update_time);
+    }
 
-    QString name = "";
-    QString unit = "";
+    std::string name {};
 
-private:
-    QVariant value;
-    bool updated = false;
-    int typeId = 0;
+protected:
+    T m_value {};
+    bool m_updated { false };
+    std::chrono::time_point<std::chrono::steady_clock> m_update_time {};
 };
 
 #endif // MUONDETECTOR_STRUCTS_H
