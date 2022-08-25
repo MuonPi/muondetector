@@ -33,16 +33,16 @@ namespace MQTT {
     constexpr const char* host { "data.muonpi.org" };
     constexpr int port { 1883 };
     constexpr int qos { 1 };
-    constexpr std::chrono::seconds retry_period { 2 };
+    constexpr std::chrono::seconds retry_period { 30 };
     constexpr std::size_t max_retry_count { 14 };
     constexpr std::chrono::seconds keepalive_interval { 45 };
     constexpr const char* data_topic { "muonpi/data/" };
     constexpr const char* log_topic { "muonpi/log/" };
 }
 namespace Log {
-    constexpr std::chrono::seconds interval { 60 };
+    constexpr std::chrono::seconds interval { 8 };
     constexpr int max_geohash_length_default { 6 };
-    constexpr std::chrono::hours rotate_period_default { 7 * 24 };
+    constexpr std::chrono::hours rotate_period_default { 90 * 24 };
 }
 namespace Hardware {
     namespace OLED {
