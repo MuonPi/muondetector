@@ -2404,6 +2404,12 @@ void Daemon::onUBXReceivedTimeTM2(const UbxTimeMarkStruct& tm)
         return;
     }
     static UbxTimeMarkStruct lastTimeMark {};
+	using namespace std::chrono;
+    auto systime { system_clock::now().time_since_epoch() };
+    auto gpstime { duration_cast<nanoseconds>(nanoseconds(tm.rising.tv_nsec) + seconds(tm.rising.tv_sec)) };
+    auto difftime { systime - gpstime };
+    //std::cout<<std::dec<<"Tdiff: "<<difftime.count()*1e-9<<" s\n";
+    emit logParameter(LogParameter("gnssTimeOffset", QString::number(difftime.count()*1e-9,'f',3) + " s", LogParameter::LOG_LATEST));
 
     long double dts = (tm.falling.tv_sec - tm.rising.tv_sec) * 1.0e9L;
     dts += (tm.falling.tv_nsec - tm.rising.tv_nsec);
