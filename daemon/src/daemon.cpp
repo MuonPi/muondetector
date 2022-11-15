@@ -348,7 +348,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     // instantiate, detect and initialize all other i2c devices
 
     // MIC184 or LM75 temp sensor
-    possible_addresses = { 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f };
+    possible_addresses = { 0x4b, 0x4c, 0x4d, 0x4e, 0x4f };
     found_dev_addresses = findI2cDeviceType<MIC184>(possible_addresses);
     if (found_dev_addresses.size() > 0) {
         temp_sensor_p = std::make_shared<MIC184>(found_dev_addresses.front());
@@ -376,7 +376,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 
     // detect and instantiate the I2C ADC ADS1015/1115
     std::shared_ptr<ADS1115> ads1115_p;
-    possible_addresses = { 0x48, 0x49, 0x4a, 0x4b };
+    possible_addresses = { 0x48, 0x49, 0x4a };
     found_dev_addresses = findI2cDeviceType<ADS1115>(possible_addresses);
     if (found_dev_addresses.size() > 0) {
         ads1115_p = std::make_shared<ADS1115>(found_dev_addresses.front());
@@ -2430,6 +2430,8 @@ void Daemon::onUBXReceivedTimeTM2(const UbxTimeMarkStruct& tm)
                << static_cast<short>(tm.valid) << " " << static_cast<short>(tm.timeBase) << " "
                << static_cast<short>(tm.utcAvailable);
     emit eventMessage(QString::fromStdString(tempStream.str()));
+
+    emit logParameter(LogParameter("ubloxCounter", QString::number(tm.evtCounter) + " ", LogParameter::LOG_LATEST));
 
     if (!tm.risingValid || !tm.fallingValid) {
         qDebug() << "detected timemark message with reconstructed edge time (" << QString((tm.risingValid) ? "falling" : "rising") << ")";
