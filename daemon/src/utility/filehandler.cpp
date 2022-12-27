@@ -257,9 +257,9 @@ bool FileHandler::openFiles(bool writeHeader)
     // write header
     if (writeHeader) {
         QTextStream dataOut(dataFile);
-        dataOut << "#unix_timestamp_rising(s)  unix_timestamp_trailing(s)  time_accuracy(ns)  valid  timebase(0=gps,2=utc)  utc_available\n";
+        dataOut << "#unix_timestamp_rising(s) unix_timestamp_trailing(s) time_accuracy(ns) valid timebase(0=gps,2=utc) utc_available\n";
         QTextStream logOut(logFile);
-        logOut << "#log parameters: time<YYYY-MM-DD_hh-mm-ss>  parname   value  unit\n";
+        logOut << "#time<YYYY-MM-DD_hh-mm-ss> parname value unit\n";
     }
     emit logRotateSignal();
     return true;
