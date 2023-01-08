@@ -2033,9 +2033,9 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
         emit sendTcpMessage(*tcpMessage);
         delete tcpMessage;
         emit logParameter(LogParameter("fixStatus", QString::number(data), LogParameter::LOG_LATEST));
-        emit logParameter(LogParameter("fixStatusString", QString::fromLocal8Bit(Gnss::FixType::name_log_safe[data]), LogParameter::LOG_LATEST));
+        emit logParameter(LogParameter("fixStatusString", QString::fromLocal8Bit(Gnss::FixType::name[data]), LogParameter::LOG_LATEST));
         fixStatus = QVariant(data);
-        propertyMap["fixStatus"] = Property("fixStatus", QString::fromLocal8Bit(Gnss::FixType::name_log_safe[data]));
+        propertyMap["fixStatus"] = Property("fixStatus", QString::fromLocal8Bit(Gnss::FixType::name[data]));
         break;
     default:
         break;
