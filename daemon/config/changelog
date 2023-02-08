@@ -2,6 +2,13 @@ muondetector-daemon (2.1.0) ; urgency=low
 
   * Bugfixes:
   - removed wrong QT connect call which resulted in a warning in log messages after daemon startup
+    <!-- Branches named:
+    fix-mqtt-reconnect,
+    fix_log_formatting,
+    position_models,
+    gpio-system-to-std,
+    refactor-ublox,
+    rework-logging -->
 
   * Updates:
   - restructured data logging system: 
