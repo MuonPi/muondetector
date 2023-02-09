@@ -14,8 +14,7 @@ public:
         DAEMON
     };
 
-    explicit NetworkDiscovery(DeviceType f_device_type, quint16 f_bind_port, quint16 f_search_port, QObject *parent = nullptr);
-
+    explicit NetworkDiscovery(DeviceType f_device_type, quint16 f_port, QObject *parent = nullptr);
 
 public slots:
     void searchDevices();
@@ -24,9 +23,9 @@ signals:
     void foundDevices(const QList<QPair<quint16, QHostAddress>> &devices);
 private:
     DeviceType m_device_type;
-    quint16 m_bind_port;
-    quint16 m_search_port;
+    quint16 m_port;
     QHostAddress m_broadcast_address;
+    QHostAddress m_own_ipv4;
     QUdpSocket *socket;
     QList<QPair<quint16, QHostAddress>> discovered_devices{};
 };
