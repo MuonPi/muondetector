@@ -8,7 +8,7 @@ NetworkDiscovery::NetworkDiscovery(DeviceType f_device_type, quint16 f_port, QOb
     : QObject{parent}, m_device_type{f_device_type}, m_port{f_port}, socket{new QUdpSocket(this)}
 {
     const QHostAddress &localhost = QHostAddress(QHostAddress::LocalHost);
-    qDebug() << QNetworkInterface::allAddresses();
+    // qDebug() << QNetworkInterface::allAddresses();
     for (auto address : QNetworkInterface::allAddresses())
     {
         if (address.protocol() == QAbstractSocket::IPv4Protocol && address != localhost && address != QHostAddress::AnyIPv4)
