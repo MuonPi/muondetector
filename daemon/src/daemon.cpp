@@ -3,6 +3,7 @@
 #include "hardware/i2cdevices.h"
 #include "utility/geohash.h"
 #include "utility/gpio_mapping.h"
+#include "networkdiscovery.h"
 #include <QNetworkInterface>
 #include <QThread>
 #include <Qt>
@@ -626,6 +627,9 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         }
     }
     std::flush(std::cout);
+
+    // create network discovery service
+    networkDiscovery = new NetworkDiscovery(NetworkDiscovery::DeviceType::DAEMON, peerPort, this);
 
     // connect to the pigpio daemon interface for gpio control
     connectToPigpiod();
