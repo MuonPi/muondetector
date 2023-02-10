@@ -23,6 +23,7 @@
 #include "pigpiodhandler.h"
 #include "hardware/spidevices.h"
 #include "hardware/device_types.h"
+#include "networkdiscovery.h"
 
 // from library
 #include <muondetector_structs.h>
