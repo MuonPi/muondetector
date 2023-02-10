@@ -56,6 +56,7 @@ void NetworkDiscovery::readPendingDatagrams()
         QDataStream inStream{&data, QIODevice::ReadOnly};
         quint16 device_type;
         inStream >> device_type;
+        // qDebug() << "found device: " << sender_address << " type: " << device_type;
         if ( sender_address == m_own_ipv4 && device_type == static_cast<quint16>(m_device_type)){
             continue; // do not answer or discover self
         }

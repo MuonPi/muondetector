@@ -629,7 +629,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     std::flush(std::cout);
 
     // create network discovery service
-    auto networkDiscovery = NetworkDiscovery(NetworkDiscovery::DeviceType::DAEMON, peerPort, this);
+    networkDiscovery = new NetworkDiscovery(NetworkDiscovery::DeviceType::DAEMON, peerPort, this);
 
     // connect to the pigpio daemon interface for gpio control
     connectToPigpiod();

@@ -268,6 +268,7 @@ private:
     QTimer rateScanTimer;
     QMap<QString, Property> propertyMap;
     LogEngine logEngine;
+    NetworkDiscovery* networkDiscovery{nullptr};
 
     // threads
     QPointer<QThread> mqttHandlerThread;
