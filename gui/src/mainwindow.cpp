@@ -10,6 +10,7 @@
 #include "scanform.h"
 #include "status.h"
 #include "ubloxsettingsform.h"
+#include "networkdiscovery.h"
 #include "ui_mainwindow.h"
 
 #include <histogram.h>
@@ -74,6 +75,27 @@ MainWindow::MainWindow(QWidget* parent)
     ui->ipBox->setModel(addresses);
     ui->ipBox->setCompleter(new QCompleter {});
     ui->ipBox->setEditable(true);
+
+    // setup network discovery service
+    auto networkDiscovery = new NetworkDiscovery(NetworkDiscovery::DeviceType::GUI, MuonPi::Settings::gui.port, this);
+    connect(networkDiscovery, &NetworkDiscovery::foundDevices, [this](const QList<QPair<quint16, QHostAddress>> & devices){
+        if (addresses==nullptr){
+            return;
+        }
+        for (auto device : devices){
+            // check if device is not a GUI (might show other GUIs later on)
+            if (device.first == static_cast<quint16>(NetworkDiscovery::DeviceType::GUI)){
+                continue;
+            }
+            // append to addresses if not already there
+            if (addresses->findItems(device.second.toString()).isEmpty()){
+                auto row = new QStandardItem(device.second.toString());
+                addresses->appendRow(row);
+            }
+        }
+    });
+
+    connect(ui->networkSearchButton, &QPushButton::clicked, networkDiscovery, &NetworkDiscovery::searchDevices);
 
     // setup colors
     ui->ipStatusLabel->setStyleSheet("QLabel {color : darkGray;}");

@@ -152,7 +152,7 @@ void GnssInfoForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
         ui->satsTableWidget->setItem(newItem1->row(), 8, newItem9);
 
         QTableWidgetItem* newItem10 = new QTableWidgetItem();
-        newItem10->setCheckState({ (current_sat.Used) ? Qt::CheckState::Checked : Qt::CheckState::Unchecked });
+        newItem10->setCheckState((current_sat.Used) ? Qt::CheckState::Checked : Qt::CheckState::Unchecked);
         newItem10->setFlags(newItem10->flags() & (~Qt::ItemIsUserCheckable)); // disables checkbox edit from user
         newItem10->setFlags(newItem10->flags() & (~Qt::ItemIsEditable));
         newItem10->setSizeHint(QSize(20, 24));
@@ -160,7 +160,7 @@ void GnssInfoForm::onSatsReceived(const QVector<GnssSatellite>& satlist)
         ui->satsTableWidget->setItem(newItem1->row(), 9, newItem10);
 
         QTableWidgetItem* newItem11 = new QTableWidgetItem();
-        newItem11->setCheckState({ (current_sat.DiffCorr) ? Qt::CheckState::Checked : Qt::CheckState::Unchecked });
+        newItem11->setCheckState((current_sat.DiffCorr) ? Qt::CheckState::Checked : Qt::CheckState::Unchecked);
         newItem11->setFlags(newItem11->flags() & (~Qt::ItemIsUserCheckable)); // disables checkbox edit from user
         newItem11->setFlags(newItem11->flags() & (~Qt::ItemIsEditable));
         newItem11->setSizeHint(QSize(20, 24));
