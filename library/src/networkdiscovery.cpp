@@ -26,8 +26,8 @@ NetworkDiscovery::NetworkDiscovery(DeviceType f_device_type, quint16 f_port, QOb
 
     connect(socket, &QUdpSocket::readyRead, this, &NetworkDiscovery::readPendingDatagrams);
     socket->bind(QHostAddress::Any, m_port, QUdpSocket::ShareAddress); // ShareAddress is important so both daemon and gui can be on same device
-    qDebug() << "broadcast address: " << m_broadcast_address.toString();
-    qDebug() << "listening on port: " << m_port;
+    // qDebug() << "broadcast address: " << m_broadcast_address.toString();
+    // qDebug() << "listening on port: " << m_port;
 }
 
 void NetworkDiscovery::searchDevices()
@@ -39,7 +39,7 @@ void NetworkDiscovery::searchDevices()
 
     if (socket != nullptr)
     {
-        qDebug() << "sending " << data;
+        // qDebug() << "sending " << data;
         // auto datagram = QNetworkDatagram{data,m_broadcast_address, m_port};
         // datagram.setHopLimit(255); // probably overkill
         socket->writeDatagram(data, m_broadcast_address, m_port);
