@@ -43,7 +43,7 @@ struct FixType {
         last = Undefined
     };
     size_t value { None };
-    static constexpr std::array<const char*, last + 1> name { "No Fix", "Dead Reck.", "2D-Fix", "3D-Fix", "GPS+Dead Reck.", "Time Fix", " N/A" };
+    static constexpr std::array<const char*, last + 1> name { "NoFix", "DeadReck", "2D", "3D", "GPS+DeadReck", "TimeFix", "N/A" };
 };
 
 struct OrbitSource {

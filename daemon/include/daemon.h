@@ -25,6 +25,7 @@
 #include "pigpiodhandler.h"
 #include "hardware/spidevices.h"
 #include "hardware/device_types.h"
+#include "networkdiscovery.h"
 
 // from library
 #include <muondetector_structs.h>
@@ -285,6 +286,7 @@ private:
     QTimer rateScanTimer;
     //    QMap<QString, Property> propertyMap;
     LogEngine logEngine;
+    NetworkDiscovery* networkDiscovery{nullptr};
 
     // threads
     QPointer<QThread> mqttHandlerThread;

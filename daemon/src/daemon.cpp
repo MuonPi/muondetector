@@ -3,6 +3,7 @@
 #include "hardware/i2cdevices.h"
 #include "utility/geohash.h"
 #include "utility/gpio_mapping.h"
+#include "networkdiscovery.h"
 #include <QNetworkInterface>
 #include <QThread>
 #include <Qt>
@@ -630,6 +631,9 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         }
     }
     std::flush(std::cout);
+
+    // create network discovery service
+    networkDiscovery = new NetworkDiscovery(NetworkDiscovery::DeviceType::DAEMON, peerPort, this);
 
     // connect to the pigpio daemon interface for gpio control
     connectToPigpiod();
@@ -2334,7 +2338,7 @@ void Daemon::UBXReceivedVersion(const QString& swString, const QString& hwString
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_VERSION);
     (*tcpMessage.dStream) << swString << hwString << protString;
     emit sendTcpMessage(tcpMessage);
-    emit logParameter(LogParameter("UBX_SW_Version", swString, LogParameter::LOG_ONCE));
+    emit logParameter(LogParameter("UBX_SW_Version", QString("\"%1\"").arg(swString), LogParameter::LOG_ONCE));
     emit logParameter(LogParameter("UBX_HW_Version", hwString, LogParameter::LOG_ONCE));
     emit logParameter(LogParameter("UBX_Prot_Version", protString, LogParameter::LOG_ONCE));
     if (initialVersionInfo) {

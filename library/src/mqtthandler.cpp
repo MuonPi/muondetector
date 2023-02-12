@@ -38,18 +38,22 @@ namespace MuonPi
         if (result == 1)
         {
             qWarning() << "MQTT connection failed: Wrong protocol version";
+            emit connection_status(Status::Error);
         }
         else if (result == 2)
         {
             qWarning() << "MQTT connection failed: Credentials rejected";
+            emit connection_status(Status::Error);
         }
         else if (result == 3)
         {
             qWarning() << "MQTT connection failed: Broker unavailable";
+            emit connection_status(Status::Error);
         }
         else if (result > 3)
         {
             qWarning() << "MQTT connection failed: Other reason";
+            emit connection_status(Status::Error);
         }
         else if (result == 0)
         {
