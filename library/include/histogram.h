@@ -30,6 +30,8 @@ public:
     void setBinContent(int bin, double value);
     double getBinContent(int bin) const;
     double getMean();
+    double getMedian();
+    double getMpv();
     double getRMS();
     double getUnderflow() const;
     double getOverflow() const;

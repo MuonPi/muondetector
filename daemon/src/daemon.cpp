@@ -28,6 +28,10 @@
 
 #define DEGREE_CHARCODE 248
 
+constexpr double pi() { return std::acos(-1); }
+constexpr double sqrt2 { std::sqrt(2.) };
+static double sqr(double x) { return x * x; }
+
 using namespace std;
 using namespace MuonPi;
 
@@ -165,7 +169,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     std::locale::global(std::locale::classic());
 
     qRegisterMetaType<TcpMessage>("TcpMessage");
-    qRegisterMetaType<GeodeticPos>("GeodeticPos");
+    qRegisterMetaType<GnssPosStruct>("GnssPosStruct");
     qRegisterMetaType<int32_t>("int32_t");
     qRegisterMetaType<uint32_t>("uint32_t");
     qRegisterMetaType<uint16_t>("uint16_t");
@@ -876,6 +880,12 @@ void Daemon::connectToGps()
         currentDOP = dops;
         emit logParameter(LogParameter("positionDOP", QString::number(dops.pDOP / 100.), LogParameter::LOG_AVERAGE));
         emit logParameter(LogParameter("timeDOP", QString::number(dops.tDOP / 100.), LogParameter::LOG_AVERAGE));
+        if (histoMap.find("pDOP") != histoMap.end()) {
+            histoMap["pDOP"].fill(1e-2 * dops.pDOP);
+        }
+        if (histoMap.find("tDOP") != histoMap.end()) {
+            histoMap["tDOP"].fill(1e-2 * dops.tDOP);
+        }
     });
 
     // connect fileHandler related stuff
@@ -981,6 +991,14 @@ void Daemon::setupHistos()
     hist.setUnit("uA");
     hist.setAutoscale();
     histoMap["Bias Current"] = hist;
+    hist = Histogram("position DOP", 200, 0., 10.);
+    hist.setUnit("");
+    hist.setAutoscale();
+    histoMap["pDOP"] = hist;
+    hist = Histogram("time DOP", 200, 0., 10.);
+    hist.setUnit("");
+    hist.setAutoscale();
+    histoMap["tDOP"] = hist;
 }
 
 void Daemon::clearHisto(const QString& histoName)
@@ -1217,6 +1235,25 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         }
     } else if (msgID == TCP_MSG_KEY::MSG_VERSION) {
         sendVersionInfo();
+    } else if (msgID == TCP_MSG_KEY::MSG_POSITION_MODEL) {
+        PositionModeConfig pos_mode_config {};
+        *(tcpMessage.dStream) >> pos_mode_config;
+        if (pos_mode_config.filter_config != config.position_mode_config.filter_config) {
+            switch (pos_mode_config.filter_config) {
+            case PositionModeConfig::FilterType::Kalman:
+                m_gnss_pos_kalman.reset();
+                break;
+            case PositionModeConfig::FilterType::HistoMean:
+                break;
+            default:
+                break;
+            }
+        }
+        config.position_mode_config = { pos_mode_config };
+        sendPositionModel(config.position_mode_config);
+        if (config.position_mode_config.mode == PositionModeConfig::Mode::Static) {
+            sendGeodeticPos(config.position_mode_config.static_position.getPosStruct());
+        }
     } else {
         qDebug() << "received unknown TCP message: msgID =" << QString::number(static_cast<int>(msgID));
     }
@@ -1306,41 +1343,207 @@ void Daemon::receivedCalibItems(const std::vector<CalibStruct>& newCalibs)
     }
 }
 
-void Daemon::onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos)
+void Daemon::sendGeodeticPos(const GnssPosStruct& pos)
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GEO_POS);
-    (*tcpMessage.dStream) << pos.iTOW << pos.lon << pos.lat
-                          << pos.height << pos.hMSL << pos.hAcc
-                          << pos.vAcc;
+    (*tcpMessage.dStream) << pos;
     emit sendTcpMessage(tcpMessage);
+}
 
-    QString geohash = GeoHash::hashFromCoordinates(1e-7 * pos.lon, 1e-7 * pos.lat, 10);
+void Daemon::sendPositionModel(const PositionModeConfig& pos)
+{
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_POSITION_MODEL);
+    (*tcpMessage.dStream) << pos;
+    emit sendTcpMessage(tcpMessage);
+}
 
-    emit logParameter(LogParameter("geoLongitude", QString::number(1e-7 * pos.lon, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
-    emit logParameter(LogParameter("geoLatitude", QString::number(1e-7 * pos.lat, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
-    emit logParameter(LogParameter("geoHash", geohash + " ", LogParameter::LOG_LATEST));
-    emit logParameter(LogParameter("geoHeightMSL", QString::number(1e-3 * pos.hMSL, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
-    if (histoMap.find("geoHeight") != histoMap.end())
-        emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(histoMap["geoHeight"].getMean(), 'f', 2) + " m", LogParameter::LOG_LATEST));
-    emit logParameter(LogParameter("geoHorAccuracy", QString::number(1e-3 * pos.hAcc, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
-    emit logParameter(LogParameter("geoVertAccuracy", QString::number(1e-3 * pos.vAcc, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
+{
+    GeoPosition new_position {};
+    GnssPosStruct new_pos_struct { pos };
 
-    if (1e-3 * pos.vAcc < 100.) {
-        QString name = "geoHeight";
-        if (histoMap.find(name) != histoMap.end()) {
-            histoMap[name].fill(1e-3 * pos.hMSL);
-            if (currentDOP.vDOP > 0) {
-                name = "weightedGeoHeight";
-                double heightWeight = 100. / currentDOP.vDOP;
-                histoMap[name].fill(1e-3 * pos.hMSL, heightWeight);
+    constexpr double earth_radius_meters { 6367444.5 };
+    constexpr double degree_to_surface_meters {
+        (pi() * 2 * earth_radius_meters) / 360.
+    };
+
+    // set correct position errors in case no fix is available (ublox bug?)
+    if (m_fix_status().value < Gnss::FixType::Fix2d && m_time_precision.age() < std::chrono::seconds(60)) {
+        constexpr double c_vacuum { 0.3 };
+        new_pos_struct.hAcc = new_pos_struct.vAcc = c_vacuum * m_time_precision().count() * 1e3;
+    }
+
+    const double totalPosAccuracy = 1e-3 * std::sqrt(new_pos_struct.hAcc * new_pos_struct.hAcc + new_pos_struct.vAcc * new_pos_struct.vAcc);
+
+    // hist is declared here since it cannot be declared inside switch block
+    auto hist { histoMap.end() };
+    bool valid_lock_in_candidate { true };
+
+    if (config.position_mode_config.mode == PositionModeConfig::Mode::LockIn
+        && (currentDOP().pDOP < 0. || currentDOP().pDOP / 100. > config.position_mode_config.lock_in_max_dop)) {
+        valid_lock_in_candidate = false;
+    } else
+        switch (config.position_mode_config.filter_config) {
+        case PositionModeConfig::FilterType::None:
+            new_position = {
+                new_pos_struct.lon * 1e-7,
+                new_pos_struct.lat * 1e-7,
+                1e-3 * new_pos_struct.hMSL,
+                1e-3 * new_pos_struct.hAcc,
+                1e-3 * new_pos_struct.vAcc
+            };
+            break;
+        case PositionModeConfig::FilterType::Kalman:
+            m_gnss_pos_kalman.process(1e-7 * new_pos_struct.lat, 1e-7 * new_pos_struct.lon, 1e-3 * new_pos_struct.hMSL, totalPosAccuracy);
+            new_position = {
+                m_gnss_pos_kalman.get_longitude(),
+                m_gnss_pos_kalman.get_latitude(),
+                m_gnss_pos_kalman.get_altitude(),
+                m_gnss_pos_kalman.get_accuracy() / sqrt2, m_gnss_pos_kalman.get_accuracy() / sqrt2
+            };
+            qDebug() << "Kalman: lat=" << m_gnss_pos_kalman.get_latitude() << "lon=" << m_gnss_pos_kalman.get_longitude() << "alt=" << m_gnss_pos_kalman.get_altitude() << "acc=" << m_gnss_pos_kalman.get_accuracy() << "pDOP=" << currentDOP().pDOP / 100.;
+            break;
+        case PositionModeConfig::FilterType::HistoMpv:
+        case PositionModeConfig::FilterType::HistoMedian:
+        case PositionModeConfig::FilterType::HistoMean:
+            hist = histoMap.find("geoHeight");
+            if (hist != histoMap.end() && hist.value().getEntries() > 10U) {
+                if (config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMean) {
+                    new_position.altitude = hist.value().getMean();
+                } else if (config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMedian) {
+                    new_position.altitude = hist.value().getMedian();
+                } else {
+                    new_position.altitude = hist.value().getMpv();
+                }
+                new_position.vert_error = hist.value().getRMS();
+                if (config.position_mode_config.mode == PositionModeConfig::Mode::LockIn) {
+                    if (hist.value().getEntries() < MuonPi::Config::lock_in_min_histogram_entries) {
+                        valid_lock_in_candidate = false;
+                    } else if (hist.value().getEntries() > MuonPi::Config::lock_in_max_histogram_entries) {
+                        hist.value().clear();
+                    }
+                }
+            } else {
+                valid_lock_in_candidate = false;
+            }
+
+            hist = histoMap.find("geoLatitude");
+            if (hist != histoMap.end() && hist.value().getEntries() > 10U) {
+                if (config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMean) {
+                    new_position.latitude = hist.value().getMean();
+                } else if (config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMedian) {
+                    new_position.latitude = hist.value().getMedian();
+                } else {
+                    new_position.latitude = hist.value().getMpv();
+                }
+                new_position.hor_error = hist.value().getRMS() * degree_to_surface_meters;
+                if (config.position_mode_config.mode == PositionModeConfig::Mode::LockIn) {
+                    if (hist.value().getEntries() < MuonPi::Config::lock_in_min_histogram_entries) {
+                        valid_lock_in_candidate = false;
+                    } else if (hist.value().getEntries() > MuonPi::Config::lock_in_max_histogram_entries) {
+                        hist.value().clear();
+                    }
+                }
+            } else {
+                valid_lock_in_candidate = false;
+            }
+
+            hist = histoMap.find("geoLongitude");
+            if (hist != histoMap.end() && hist.value().getEntries() > 10U) {
+                if (config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMean) {
+                    new_position.longitude = hist.value().getMean();
+                } else if (config.position_mode_config.filter_config == PositionModeConfig::FilterType::HistoMedian) {
+                    new_position.longitude = hist.value().getMedian();
+                } else {
+                    new_position.longitude = hist.value().getMpv();
+                }
+                if (valid_lock_in_candidate) {
+                    // calculate the squared error including the component from the previously determined latitude error, if available
+                    new_position.hor_error *= new_position.hor_error;
+                    new_position.hor_error += sqr(hist.value().getRMS() * degree_to_surface_meters / std::cos(pi() * new_position.latitude / 180.));
+                    new_position.hor_error = std::sqrt(new_position.hor_error);
+                } else {
+                    new_position.hor_error = hist.value().getRMS() * degree_to_surface_meters / std::cos(pi() * new_position.latitude / 180.);
+                }
+                if (config.position_mode_config.mode == PositionModeConfig::Mode::LockIn) {
+                    if (hist.value().getEntries() < MuonPi::Config::lock_in_min_histogram_entries) {
+                        valid_lock_in_candidate = false;
+                    } else if (hist.value().getEntries() > MuonPi::Config::lock_in_max_histogram_entries) {
+                        hist.value().clear();
+                    }
+                }
+            } else {
+                valid_lock_in_candidate = false;
+            }
+
+            break;
+        default:
+            break;
+        }
+
+    if (new_position.valid()) {
+        // send new position only if it was found valid, depending on filter
+        if (config.position_mode_config.mode == PositionModeConfig::Mode::Auto) {
+            sendGeodeticPos(new_position.getPosStruct());
+        } else if (config.position_mode_config.mode == PositionModeConfig::Mode::LockIn && valid_lock_in_candidate) {
+            std::size_t lock_target_reached { 0 };
+            if (new_position.vert_error < config.position_mode_config.lock_in_min_error_meters) {
+                lock_target_reached++;
+                qDebug() << "geo position lock candidate: alt=" << new_position.altitude
+                         << "(err=" << new_position.vert_error << "m)";
+            }
+
+            if (new_position.hor_error < config.position_mode_config.lock_in_min_error_meters) {
+                lock_target_reached++;
+                qDebug() << "geo position lock candidate: lon=" << new_position.longitude
+                         << "lat=" << new_position.latitude
+                         << "(err=" << new_position.hor_error << "m)";
+            }
+
+            if (lock_target_reached == 2) {
+                config.position_mode_config.mode = PositionModeConfig::Mode::Static;
+                config.position_mode_config.static_position = { new_position };
+                sendGeodeticPos(config.position_mode_config.static_position.getPosStruct());
+                sendPositionModel(config.position_mode_config);
+                qInfo() << "concluded geo pos lock-in and fixed position: lat=" << new_position.latitude
+                        << "lon=" << new_position.longitude
+                        << "(err=" << new_position.hor_error << "m)"
+                        << "alt=" << new_position.altitude
+                        << "(err=" << new_position.vert_error << "m)";
             }
         }
     }
+
+    if (config.position_mode_config.mode != PositionModeConfig::Mode::Static) {
+        QString geohash = GeoHash::hashFromCoordinates(new_position.longitude, new_position.latitude, 10);
+
+        emit logParameter(LogParameter("geoLongitude", QString::number(new_position.longitude, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
+        emit logParameter(LogParameter("geoLatitude", QString::number(new_position.latitude, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
+        emit logParameter(LogParameter("geoHash", geohash + " ", LogParameter::LOG_LATEST));
+        emit logParameter(LogParameter("geoHeightMSL", QString::number(new_position.altitude, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+        if (histoMap.find("geoHeight") != histoMap.end())
+            emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(histoMap["geoHeight"].getMean(), 'f', 2) + " m", LogParameter::LOG_LATEST));
+        emit logParameter(LogParameter("geoHorAccuracy", QString::number(new_position.hor_error, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+        emit logParameter(LogParameter("geoVertAccuracy", QString::number(new_position.vert_error, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+    }
+
+    if (1e-3 * pos.vAcc < 100.) {
+        if (config.position_mode_config.mode != PositionModeConfig::Mode::LockIn || currentDOP().vDOP / 100. < config.position_mode_config.lock_in_max_dop) {
+            if (histoMap.find("geoHeight") != histoMap.end()) {
+                histoMap["geoHeight"].fill(1e-3 * pos.hMSL);
+                if (currentDOP().vDOP > 0) {
+                    const double heightWeight = 100. / currentDOP().vDOP;
+                    histoMap["weightedGeoHeight"].fill(1e-3 * pos.hMSL, heightWeight);
+                }
+            }
+        }
+    }
+
     if (1e-3 * pos.hAcc < 100.) {
-        QString name = "geoLongitude";
-        histoMap[name].fill(1e-7 * pos.lon);
-        name = "geoLatitude";
-        histoMap[name].fill(1e-7 * pos.lat);
+        if (config.position_mode_config.mode != PositionModeConfig::Mode::LockIn || currentDOP().hDOP / 100. < config.position_mode_config.lock_in_max_dop) {
+            histoMap["geoLongitude"].fill(1e-7 * pos.lon);
+            histoMap["geoLatitude"].fill(1e-7 * pos.lat);
+        }
     }
 }
 
@@ -1921,12 +2124,13 @@ void Daemon::onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
         (*tcpMessage.dStream) << sats[i];
     }
     emit sendTcpMessage(tcpMessage);
-    nrSats = Property("nrSats", N);
-    nrVisibleSats = QVariant { static_cast<qulonglong>(visibleSats.size()) };
-
+    nrSats = Property<size_t>("nrSats", N);
+    nrVisibleSats = Property<size_t>("visSats", visibleSats.size());
+    ;
+    /*
     propertyMap["nrSats"] = Property("nrSats", N);
     propertyMap["visSats"] = Property("visSats", visibleSats.size());
-
+*/
     int usedSats = 0, maxCnr = 0;
     if (visibleSats.size()) {
         for (auto sat : visibleSats) {
@@ -1936,9 +2140,10 @@ void Daemon::onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
                 maxCnr = sat.Cnr;
         }
     }
+    /*
     propertyMap["usedSats"] = Property("usedSats", usedSats);
     propertyMap["maxCNR"] = Property("maxCNR", maxCnr);
-
+*/
     emit logParameter(LogParameter("sats", QString("%1").arg(visibleSats.size()), LogParameter::LOG_AVERAGE));
     emit logParameter(LogParameter("usedSats", QString("%1").arg(usedSats), LogParameter::LOG_AVERAGE));
     emit logParameter(LogParameter("maxCNR", QString("%1").arg(maxCnr) + " dB", LogParameter::LOG_AVERAGE));
@@ -2038,8 +2243,9 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
         delete tcpMessage;
         emit logParameter(LogParameter("fixStatus", QString::number(data), LogParameter::LOG_LATEST));
         emit logParameter(LogParameter("fixStatusString", QString::fromLocal8Bit(Gnss::FixType::name[data]), LogParameter::LOG_LATEST));
-        fixStatus = QVariant(data);
-        propertyMap["fixStatus"] = Property("fixStatus", QString::fromLocal8Bit(Gnss::FixType::name[data]));
+        //        fixStatus = Property<std::string>("fixStatus", std::string(Gnss::FixType::name[data]));
+        m_fix_status = Property<Gnss::FixType>("fixStatus", { data });
+        //propertyMap["fixStatus"] = Property("fixStatus", QString::fromLocal8Bit(Gnss::FixType::name[data]));
         break;
     default:
         break;
@@ -2061,6 +2267,7 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
         emit sendTcpMessage(*tcpMessage);
         delete tcpMessage;
         emit logParameter(LogParameter("timeAccuracy", QString::number(data) + " ns", LogParameter::LOG_AVERAGE));
+        m_time_precision = Property<std::chrono::nanoseconds>("timeAccuracy", std::chrono::nanoseconds(data));
         break;
     case 'f':
         if (verbose > 3)
@@ -2089,7 +2296,7 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
             std::cout << std::chrono::system_clock::now()
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
                       << "rising edge counter: " << data << std::endl;
-        propertyMap["events"] = Property("events", (quint16)data);
+        //propertyMap["events"] = Property("events", (quint16)data);
         tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_EVENTCOUNTER);
         *(tcpMessage->dStream) << (quint32)data;
         emit sendTcpMessage(*tcpMessage);
@@ -2110,7 +2317,7 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
                       << "clock drift: " << data << " ns/s" << std::endl;
         logParameter(LogParameter("clockDrift", QString::number(data) + " ns/s", LogParameter::LOG_AVERAGE));
-        propertyMap["clkDrift"] = Property("clkDrift", (qint32)data);
+        //propertyMap["clkDrift"] = Property("clkDrift", (qint32)data);
         break;
     case 'b':
         if (verbose > 3)
@@ -2118,7 +2325,7 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
                       << "clock bias: " << data << " ns" << std::endl;
         emit logParameter(LogParameter("clockBias", QString::number(data) + " ns", LogParameter::LOG_AVERAGE));
-        propertyMap["clkBias"] = Property("clkBias", (qint32)data);
+        //propertyMap["clkBias"] = Property("clkBias", (qint32)data);
         break;
     default:
         break;
@@ -2174,6 +2381,10 @@ void Daemon::onMadeConnection(QString remotePeerAddress, quint16 remotePeerPort,
     sendDacThresh(1);
     sendPcaChannel();
     sendEventTriggerSelection();
+    sendPositionModel(config.position_mode_config);
+    if (config.position_mode_config.mode == PositionModeConfig::Mode::Static) {
+        sendGeodeticPos(config.position_mode_config.static_position.getPosStruct());
+    }
 }
 
 void Daemon::onStoppedConnection(QString remotePeerAddress, quint16 remotePeerPort, QString /*localAddress*/, quint16 /*localPort*/,
@@ -2324,6 +2535,28 @@ void Daemon::aquireMonitoringParameters()
             logParameter(LogParameter("vadc4", QString::number(v2) + " V", LogParameter::LOG_AVERAGE));
         }
     }
+
+    switch (config.position_mode_config.mode) {
+    case PositionModeConfig::Mode::Static:
+        if (config.position_mode_config.static_position.valid()) {
+            //sendGeodeticPos(config.position_mode_config.static_position.getPosStruct());
+
+            const QString geohash { GeoHash::hashFromCoordinates(config.position_mode_config.static_position.longitude, config.position_mode_config.static_position.latitude, 10) };
+
+            emit logParameter(LogParameter("geoLongitude", QString::number(config.position_mode_config.static_position.longitude, 'f', 7) + " deg", LogParameter::LOG_LATEST));
+            emit logParameter(LogParameter("geoLatitude", QString::number(config.position_mode_config.static_position.latitude, 'f', 7) + " deg", LogParameter::LOG_LATEST));
+            emit logParameter(LogParameter("geoHash", geohash + " ", LogParameter::LOG_LATEST));
+            emit logParameter(LogParameter("geoHeightMSL", QString::number(config.position_mode_config.static_position.altitude, 'f', 2) + " m", LogParameter::LOG_LATEST));
+            emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(config.position_mode_config.static_position.altitude, 'f', 2) + " m", LogParameter::LOG_LATEST));
+            emit logParameter(LogParameter("geoHorAccuracy", QString::number(config.position_mode_config.static_position.hor_error, 'f', 2) + " m", LogParameter::LOG_LATEST));
+            emit logParameter(LogParameter("geoVertAccuracy", QString::number(config.position_mode_config.static_position.vert_error, 'f', 2) + " m", LogParameter::LOG_LATEST));
+        } else {
+            qWarning() << "static geo position is not valid! This should never happen...";
+        }
+        break;
+    default:
+        break;
+    }
 }
 
 void Daemon::onLogParameterPolled()
@@ -2450,8 +2683,8 @@ void Daemon::updateOledDisplay()
     if (temp_sensor_p && temp_sensor_p->probeDevicePresence()) {
         oled_p->printf("temp %4.2f %cC\n", temp_sensor_p->getTemperature(), DEGREE_CHARCODE);
     }
-    oled_p->printf("%d(%d) Sats ", nrVisibleSats().toInt(), nrSats().toInt(), DEGREE_CHARCODE);
-    oled_p->printf("%s\n", Gnss::FixType::name[fixStatus().toInt()]);
+    oled_p->printf("%d(%d) Sats ", nrVisibleSats(), nrSats(), DEGREE_CHARCODE);
+    oled_p->printf("%s\n", Gnss::FixType::name[m_fix_status().value]);
     oled_p->display();
 }
 

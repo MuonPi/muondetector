@@ -567,6 +567,7 @@ int main(int argc, char* argv[])
         }
     }
 
+    daemonConfig.config_file_data.reset(&cfg);
     Daemon daemon { daemonConfig };
 
     return a.exec();
