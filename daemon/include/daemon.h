@@ -79,6 +79,7 @@ public:
             PositionModeConfig::FilterType::None
         };
         std::shared_ptr<libconfig::Config> config_file_data {};
+        std::shared_ptr<libconfig::Config> settings_file_data {};
     };
 
     Daemon(configuration cfg, QObject* parent = nullptr);
@@ -215,6 +216,7 @@ private:
     void rateCounterIntervalActualisation();
     qreal getRateFromCounts(quint8 which_rate);
     void clearRates();
+    void writeSettingsToFile();
 
     std::shared_ptr<DeviceFunction<DeviceType::TEMP>> temp_sensor_p;
     std::shared_ptr<DeviceFunction<DeviceType::ADC>> adc_p;

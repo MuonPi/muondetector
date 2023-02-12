@@ -1254,6 +1254,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         if (config.position_mode_config.mode == PositionModeConfig::Mode::Static) {
             sendGeodeticPos(config.position_mode_config.static_position.getPosStruct());
         }
+        writeSettingsToFile();
     } else {
         qDebug() << "received unknown TCP message: msgID =" << QString::number(static_cast<int>(msgID));
     }
@@ -1510,6 +1511,7 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
                         << "(err=" << new_position.hor_error << "m)"
                         << "alt=" << new_position.altitude
                         << "(err=" << new_position.vert_error << "m)";
+                writeSettingsToFile();
             }
         }
     }
@@ -2705,5 +2707,35 @@ void Daemon::onStatusLed2Event(int onTimeMs)
         QTimer::singleShot(onTimeMs, [&]() {
             emit GpioSetState(GPIO_PINMAP[STATUS2], false);
         });
+    }
+}
+
+void Daemon::writeSettingsToFile() {
+    switch ( config.position_mode_config.mode ) {
+        case PositionModeConfig::Mode::Static:
+            config.settings_file_data->lookup("geo_handling.mode") = "Static";
+            break;
+        case PositionModeConfig::Mode::LockIn:
+            config.settings_file_data->lookup("geo_handling.mode") = "LockIn";
+            break;
+        case PositionModeConfig::Mode::Auto:
+        default:
+            config.settings_file_data->lookup("geo_handling.mode") = "Auto";
+    }
+       
+    config.settings_file_data->lookup("geo_handling.static_coordinates.lon") = config.position_mode_config.static_position.longitude;
+    config.settings_file_data->lookup("geo_handling.static_coordinates.lat") = config.position_mode_config.static_position.latitude;
+    config.settings_file_data->lookup("geo_handling.static_coordinates.alt") = config.position_mode_config.static_position.altitude;
+    config.settings_file_data->lookup("geo_handling.static_coordinates.hor_error") = config.position_mode_config.static_position.hor_error;
+    config.settings_file_data->lookup("geo_handling.static_coordinates.vert_error") = config.position_mode_config.static_position.vert_error;
+    const std::string SETTINGS_FILE = std::string(MuonPi::Config::data_path)+std::string(MuonPi::Config::persistant_settings_file);
+    try
+    {
+        config.settings_file_data->writeFile(SETTINGS_FILE.c_str());
+        qDebug() << "settings written to: " << QString::fromStdString(SETTINGS_FILE);
+    }
+    catch(const libconfig::FileIOException &fioex_new)
+    {
+        qWarning() << "I/O error while writing settings file: " << QString::fromStdString(SETTINGS_FILE);
     }
 }
