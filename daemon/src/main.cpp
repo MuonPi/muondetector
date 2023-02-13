@@ -97,11 +97,12 @@ int main(int argc, char* argv[])
         return (EXIT_FAILURE);
     }
     
-    // Read in the settings file. If there is an error, proceed anyway
+    // Read in the settings file. If there is an error, create the settings
+    // tree and proceed anyway
     try {
         settings.readFile(SETTINGS_FILE.c_str());
     } catch (const libconfig::FileIOException& fioex) {
-        // Find the stored settings in settings file. Add intermediate entries if they don't yet
+        // Find the stored settings in settings file. Add all entries if they don't yet
         // exist.
         libconfig::Setting &root = settings.getRoot();
         // create setting fields
@@ -119,12 +120,11 @@ int main(int argc, char* argv[])
         try
         {
             settings.writeFile(SETTINGS_FILE.c_str());
-            std::cerr << "Initialized settings successfully written to: " << SETTINGS_FILE << std::endl;
+            qInfo() << "Initialized settings successfully written to: " << QString::fromStdString(SETTINGS_FILE);
         }
         catch(const libconfig::FileIOException &fioex_new)
         {
-            std::cerr << "I/O error while writing settings file: " << SETTINGS_FILE << std::endl;
-            //return(EXIT_FAILURE);
+            qCritical() << "I/O error while writing settings file: " << QString::fromStdString(SETTINGS_FILE);
         }
 
     } catch (const libconfig::ParseException& pex) {
@@ -608,14 +608,16 @@ int main(int argc, char* argv[])
     // Find the stored settings in settings file. Add intermediate entries if they don't yet
     // exist.
     libconfig::Setting &root = settings.getRoot();
-    
+
+#define ENUM_CAST static_cast<size_t>
+
     if(root.exists("geo_handling")) {
        // try to read in the stored geo handling fields
-       std::string mode_str = settings.lookup("geo_handling.mode").c_str();
+       std::string mode_str = settings.lookup("geo_handling.mode");
        qDebug() << "mode = " << QString::fromStdString(mode_str);
-       if ( mode_str == "Static" ) {
+       if ( mode_str == PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::Static)] ) {
            daemonConfig.position_mode_config.mode = PositionModeConfig::Mode::Static;
-       } else if ( mode_str == "LockIn" ) {
+       } else if ( mode_str == PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::LockIn)] ) {
            daemonConfig.position_mode_config.mode = PositionModeConfig::Mode::LockIn;
        } else {
            daemonConfig.position_mode_config.mode = PositionModeConfig::Mode::Auto;
@@ -626,7 +628,8 @@ int main(int argc, char* argv[])
        daemonConfig.position_mode_config.static_position.hor_error = settings.lookup("geo_handling.static_coordinates.hor_error");
        daemonConfig.position_mode_config.static_position.vert_error = settings.lookup("geo_handling.static_coordinates.vert_error");
     } else {
-        qCritical() << "error accessing settings. Aborting...";
+        qFatal("error accessing settings. Aborting...");
+        exit(EXIT_FAILURE);
     }
     
     daemonConfig.config_file_data.reset(&cfg);

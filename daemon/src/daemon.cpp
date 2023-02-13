@@ -2711,16 +2711,18 @@ void Daemon::onStatusLed2Event(int onTimeMs)
 }
 
 void Daemon::writeSettingsToFile() {
+#define ENUM_CAST static_cast<size_t>
+
     switch ( config.position_mode_config.mode ) {
         case PositionModeConfig::Mode::Static:
-            config.settings_file_data->lookup("geo_handling.mode") = "Static";
+            config.settings_file_data->lookup("geo_handling.mode") = PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::Static)];
             break;
         case PositionModeConfig::Mode::LockIn:
-            config.settings_file_data->lookup("geo_handling.mode") = "LockIn";
+            config.settings_file_data->lookup("geo_handling.mode") = PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::LockIn)];
             break;
         case PositionModeConfig::Mode::Auto:
         default:
-            config.settings_file_data->lookup("geo_handling.mode") = "Auto";
+            config.settings_file_data->lookup("geo_handling.mode") = PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::Auto)];
     }
        
     config.settings_file_data->lookup("geo_handling.static_coordinates.lon") = config.position_mode_config.static_position.longitude;
@@ -2728,7 +2730,8 @@ void Daemon::writeSettingsToFile() {
     config.settings_file_data->lookup("geo_handling.static_coordinates.alt") = config.position_mode_config.static_position.altitude;
     config.settings_file_data->lookup("geo_handling.static_coordinates.hor_error") = config.position_mode_config.static_position.hor_error;
     config.settings_file_data->lookup("geo_handling.static_coordinates.vert_error") = config.position_mode_config.static_position.vert_error;
-    const std::string SETTINGS_FILE = std::string(MuonPi::Config::data_path)+std::string(MuonPi::Config::persistant_settings_file);
+
+    static const std::string SETTINGS_FILE { std::string(MuonPi::Config::data_path)+std::string(MuonPi::Config::persistant_settings_file) };
     try
     {
         config.settings_file_data->writeFile(SETTINGS_FILE.c_str());
