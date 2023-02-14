@@ -105,14 +105,6 @@ bool MIC184::identify()
     // the 7 MSBs should always read zero
     if ((tos_save & 0x7f) != 0)
         return false;
-    /*
-	std::cout << "MIC184::identify() : found LM75 base device at 0x"<<std::setw(2) << std::setfill('0')<<std::hex<<(int)fAddress<<"\n"; 
-	std::cout << " Regs: \n";
-	std::cout << "  conf  = 0x"<<std::setw(2) << std::setfill('0')<<(int)conf_reg_save<<"\n";
-	std::cout << "  thyst = 0x"<<std::setw(4) << std::setfill('0')<<thyst_save<<"\n";
-	std::cout << "  tos   = 0x"<<std::setw(4) << std::setfill('0')<<tos_save<<"\n";
-	std::cout << "  temp  = 0x"<<std::setw(4) << std::setfill('0')<<dataword<<"\n";
-*/
 
     // determine, whether we have a MIC184 or just a plain LM75
     // datasheet: test, if the STS (status) bit in config register toggles when a alarm condition is provoked

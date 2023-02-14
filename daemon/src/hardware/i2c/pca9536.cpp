@@ -51,25 +51,14 @@ bool PCA9536::identify()
     if (!devicePresent())
         return false;
     uint8_t bytereg { 0 };
-    /*	
-	for (int i=0; i<256; i++) {
-		if ( !readByte( static_cast<uint8_t>(i), &bytereg ) ) break;
-		std::cout << "reg 0x"<<std::hex<<std::setfill('0')<<std::setw(2)<<i<<" : 0x"<<(int)bytereg<<std::endl;
-	}
-*/
+
     if (!readByte(static_cast<uint8_t>(REG::INPUT), &bytereg)) {
         // there was an error
         return false;
     }
     if ((bytereg & 0xf0) != 0xf0)
         return false;
-    /*
-	if ( !readByte( static_cast<uint8_t>(REG::OUTPUT), &bytereg ) ) {
-		// there was an error
-		return false;
-	}
-	if ( ( bytereg & 0xf0 ) != 0xf0 ) return false;
-*/
+
     if (!readByte(static_cast<uint8_t>(REG::POLARITY), &bytereg)) {
         // there was an error
         return false;
