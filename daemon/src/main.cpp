@@ -503,7 +503,7 @@ int main(int argc, char* argv[])
     if (parser.isSet(pol1Option)) {
         unsigned int pol1int = parser.value(pol1Option).toUInt(&ok);
         if (!ok || pol1int > 1) {
-            qCritical() << "wrong input polarity setting ch1 (valid: 0..3)";
+            qCritical() << "wrong input polarity setting ch1 (valid: 0,1)";
             return -1;
         } else {
             daemonConfig.polarity[0] = (bool)pol1int;
