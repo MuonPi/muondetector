@@ -703,7 +703,7 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
         emit daemonVersionReceived(hw_ver, sw_ver);
         return;
     } else {
-        qDebug() << "received unknown TCP message, msgID =" << QString::number(static_cast<int>(msgID));
+        qWarning() << "received unknown TCP message, msgID =" << QString::number(static_cast<int>(msgID));
         return;
     }
     updateUiProperties();
