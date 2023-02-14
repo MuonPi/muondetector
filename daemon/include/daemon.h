@@ -224,7 +224,6 @@ private:
     QHostAddress daemonAddress = QHostAddress::Null;
     quint16 peerPort, daemonPort;
     int verbose, baudrate;
-    int gpsTimeout = 5000;
     bool dumpRaw, configGnss;
     MuonPi::MqttHandler::Status mqttConnectionStatus { MuonPi::MqttHandler::Status::Invalid };
 

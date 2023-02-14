@@ -45,6 +45,9 @@ namespace Log {
     constexpr std::chrono::hours rotate_period_default { 7 * 24 };
 }
 namespace Hardware {
+    namespace GNSS {
+        constexpr size_t uart_timeout { 5000 };
+    }
     namespace OLED {
         constexpr int update_interval { 2000 };
     }

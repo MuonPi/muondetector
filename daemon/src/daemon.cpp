@@ -827,7 +827,7 @@ void Daemon::connectToGps()
     prepareSerial.waitForFinished();
 
     // here is where the magic threading happens look closely
-    qtGps = new QtSerialUblox(config.gpsdevname, gpsTimeout, config.gnss_baudrate, config.gnss_dump_raw, verbose - 1, config.showout, config.showin);
+    qtGps = new QtSerialUblox(config.gpsdevname, MuonPi::Config::Hardware::GNSS::uart_timeout, config.gnss_baudrate, config.gnss_dump_raw, verbose - 1, config.showout, config.showin);
     gpsThread = new QThread();
     gpsThread->setObjectName("muondetector-daemon-gnss");
     qtGps->moveToThread(gpsThread);
