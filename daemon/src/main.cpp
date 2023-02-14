@@ -126,7 +126,6 @@ int main(int argc, char* argv[])
         {
             qCritical() << "I/O error while writing settings file: " << QString::fromStdString(SETTINGS_FILE);
         }
-
     } catch (const libconfig::ParseException& pex) {
         qFatal(qPrintable("Parse error at " + QString(pex.getFile()) + " : line " + QString(pex.getLine()) + " - " + QString(pex.getError())));
         return (EXIT_FAILURE);
