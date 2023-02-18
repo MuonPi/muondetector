@@ -30,7 +30,6 @@
 
 constexpr double pi() { return std::acos(-1); }
 constexpr double sqrt2 { std::sqrt(2.) };
-static double sqr(double x) { return x * x; }
 
 using namespace std;
 using namespace MuonPi;
