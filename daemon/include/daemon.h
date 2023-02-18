@@ -26,6 +26,7 @@
 #include "hardware/spidevices.h"
 #include "hardware/device_types.h"
 #include "networkdiscovery.h"
+#include "geoposmanager.h"
 
 // from library
 #include <muondetector_structs.h>
@@ -299,6 +300,7 @@ private:
 
     configuration config;
     KalmanGnssFilter m_gnss_pos_kalman { 0.02 };
+    GeoPosManager m_geopos_manager;
 };
 
 #endif // DAEMON_H

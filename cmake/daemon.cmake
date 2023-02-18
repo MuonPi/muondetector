@@ -58,6 +58,7 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/logengine.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/geohash.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/kalman_gnss_filter.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/geoposmanager.cpp"
 
     "${MUONDETECTOR_I2C_SOURCE_FILES}"
     "${MUONDETECTOR_SPI_SOURCE_FILES}"
