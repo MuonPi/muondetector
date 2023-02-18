@@ -1,9 +1,9 @@
 #include "hardware/device_types.h"
 #include "hardware/i2c/i2cutil.h"
 #include "hardware/i2cdevices.h"
+#include "networkdiscovery.h"
 #include "utility/geohash.h"
 #include "utility/gpio_mapping.h"
-#include "networkdiscovery.h"
 #include <QNetworkInterface>
 #include <QThread>
 #include <Qt>
@@ -660,12 +660,13 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     emit logParameter(LogParameter("softwareVersionString", QString::fromStdString(MuonPi::Version::software.string()), LogParameter::LOG_ONCE));
     emit logParameter(LogParameter("hardwareVersionString", QString::fromStdString(MuonPi::Version::hardware.string()), LogParameter::LOG_ONCE));
 
-    m_geopos_manager.set_lockin_ready_callback(std::bind( &Daemon::onGeoPosLockInReady, this, std::placeholders::_1 ));
-    m_geopos_manager.set_valid_pos_callback(std::bind( &Daemon::onGeoPosValid, this, std::placeholders::_1 ));
+    m_geopos_manager.set_lockin_ready_callback(std::bind(&Daemon::onGeoPosLockInReady, this, std::placeholders::_1));
+    m_geopos_manager.set_valid_pos_callback(std::bind(&Daemon::onGeoPosValid, this, std::placeholders::_1));
     m_geopos_manager.set_mode_config(config.position_mode_config);
 }
 
-void Daemon::onGeoPosLockInReady(GeoPosition pos) {
+void Daemon::onGeoPosLockInReady(GeoPosition pos)
+{
     qDebug() << "GeoPosition lock-in finished";
     sendGeodeticPos(pos.getPosStruct());
     sendPositionModel(m_geopos_manager.get_mode_config());
@@ -679,7 +680,8 @@ void Daemon::onGeoPosLockInReady(GeoPosition pos) {
     writeSettingsToFile();
 }
 
-void Daemon::onGeoPosValid(GeoPosition pos) {
+void Daemon::onGeoPosValid(GeoPosition pos)
+{
     if (m_geopos_manager.get_mode() != PositionModeConfig::Mode::Static) {
         sendGeodeticPos(pos.getPosStruct());
         QString geohash = GeoHash::hashFromCoordinates(pos.longitude, pos.latitude, 10);
@@ -694,10 +696,10 @@ void Daemon::onGeoPosValid(GeoPosition pos) {
         emit logParameter(LogParameter("geoVertAccuracy", QString::number(pos.vert_error, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
 
         qDebug() << "position: lat=" << pos.latitude
-            << "lon=" << pos.longitude
-            << "(err=" << pos.hor_error << "m)"
-            << "alt=" << pos.altitude
-            << "(err=" << pos.vert_error << "m)";
+                 << "lon=" << pos.longitude
+                 << "(err=" << pos.hor_error << "m)"
+                 << "alt=" << pos.altitude
+                 << "(err=" << pos.vert_error << "m)";
     }
 }
 
@@ -994,8 +996,7 @@ void Daemon::setupHistos()
     m_geopos_manager.set_histos(
         m_histo_map["geoLongitude"],
         m_histo_map["geoLatitude"],
-        m_histo_map["geoHeight"]
-    );
+        m_histo_map["geoHeight"]);
 }
 
 void Daemon::clearHisto(const QString& histoName)
@@ -1351,13 +1352,12 @@ void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
         new_pos_struct.hAcc = new_pos_struct.vAcc = c_vacuum * m_time_precision().count() * 1e3;
     }
 
-    m_geopos_manager.new_position( 
-        {   new_pos_struct.lon * 1e-7,
+    m_geopos_manager.new_position(
+        { new_pos_struct.lon * 1e-7,
             new_pos_struct.lat * 1e-7,
             1e-3 * new_pos_struct.hMSL,
             1e-3 * new_pos_struct.hAcc,
-            1e-3 * new_pos_struct.vAcc
-        });
+            1e-3 * new_pos_struct.vAcc });
 
     if (1e-3 * pos.vAcc < 100.) {
         if (m_geopos_manager.get_mode() != PositionModeConfig::Mode::LockIn || currentDOP().vDOP / 100. < m_geopos_manager.get_mode_config().lock_in_max_dop) {
@@ -2401,7 +2401,7 @@ void Daemon::onLogParameterPolled()
     if (pigHandler != nullptr)
         emit logParameter(LogParameter("gpioTriggerSelection", "0x" + QString::number((int)pigHandler->samplingTriggerSignal, 16), LogParameter::LOG_ON_CHANGE));
 
-    for (auto&[name, hist] : m_histo_map) {
+    for (auto& [name, hist] : m_histo_map) {
         sendHistogram(*hist);
         hist->rescale();
     }
@@ -2529,35 +2529,33 @@ void Daemon::onStatusLed2Event(int onTimeMs)
     }
 }
 
-void Daemon::writeSettingsToFile() {
+void Daemon::writeSettingsToFile()
+{
 #define ENUM_CAST static_cast<size_t>
 
-    switch ( m_geopos_manager.get_mode() ) {
-        case PositionModeConfig::Mode::Static:
-            config.settings_file_data->lookup("geo_handling.mode") = PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::Static)];
-            break;
-        case PositionModeConfig::Mode::LockIn:
-            config.settings_file_data->lookup("geo_handling.mode") = PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::LockIn)];
-            break;
-        case PositionModeConfig::Mode::Auto:
-        default:
-            config.settings_file_data->lookup("geo_handling.mode") = PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::Auto)];
+    switch (m_geopos_manager.get_mode()) {
+    case PositionModeConfig::Mode::Static:
+        config.settings_file_data->lookup("geo_handling.mode") = PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::Static)];
+        break;
+    case PositionModeConfig::Mode::LockIn:
+        config.settings_file_data->lookup("geo_handling.mode") = PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::LockIn)];
+        break;
+    case PositionModeConfig::Mode::Auto:
+    default:
+        config.settings_file_data->lookup("geo_handling.mode") = PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::Auto)];
     }
-       
+
     config.settings_file_data->lookup("geo_handling.static_coordinates.lon") = m_geopos_manager.get_static_position().longitude;
     config.settings_file_data->lookup("geo_handling.static_coordinates.lat") = m_geopos_manager.get_static_position().latitude;
     config.settings_file_data->lookup("geo_handling.static_coordinates.alt") = m_geopos_manager.get_static_position().altitude;
     config.settings_file_data->lookup("geo_handling.static_coordinates.hor_error") = m_geopos_manager.get_static_position().hor_error;
     config.settings_file_data->lookup("geo_handling.static_coordinates.vert_error") = m_geopos_manager.get_static_position().vert_error;
 
-    static const std::string SETTINGS_FILE { std::string(MuonPi::Config::data_path)+std::string(MuonPi::Config::persistant_settings_file) };
-    try
-    {
+    static const std::string SETTINGS_FILE { std::string(MuonPi::Config::data_path) + std::string(MuonPi::Config::persistant_settings_file) };
+    try {
         config.settings_file_data->writeFile(SETTINGS_FILE.c_str());
         qDebug() << "settings written to: " << QString::fromStdString(SETTINGS_FILE);
-    }
-    catch(const libconfig::FileIOException &fioex_new)
-    {
+    } catch (const libconfig::FileIOException& fioex_new) {
         qWarning() << "I/O error while writing settings file: " << QString::fromStdString(SETTINGS_FILE);
     }
 }

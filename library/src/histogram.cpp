@@ -11,7 +11,7 @@ Histogram::Histogram(const std::string& name, int nrBins, double min, double max
     , fNrBins(nrBins)
     , fMin(min)
     , fMax(max)
-    , fAutoscale(autoscale)    
+    , fAutoscale(autoscale)
 {
 }
 
