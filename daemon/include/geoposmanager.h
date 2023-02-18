@@ -32,6 +32,9 @@ public:
     void set_valid_pos_callback(std::function<void(GeoPosition)> func);
     
 private:
+    GeoPosition get_pos_from_histos() const;
+    void check_for_lockin_reached(const GeoPosition& preliminary_pos);
+
     GeoPosition m_position {};
     PositionModeConfig m_mode_config {};
     std::function<void(GeoPosition)> m_lockin_ready_fn;

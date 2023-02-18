@@ -45,11 +45,6 @@ void GeoPosManager::set_histos(
 
 void GeoPosManager::new_position(const GeoPosition& new_pos)
 {
-    constexpr double earth_radius_meters { 6367444.5 };
-    const double degree_to_surface_meters {
-        (pi() * 2 * earth_radius_meters) / 360.
-    };
-
     bool valid_lock_in_candidate { true };
     const double totalPosAccuracy = new_pos.pos_error();
     GeoPosition preliminary_pos {};
@@ -69,108 +64,101 @@ void GeoPosManager::new_position(const GeoPosition& new_pos)
     case PositionModeConfig::FilterType::HistoMpv:
     case PositionModeConfig::FilterType::HistoMedian:
     case PositionModeConfig::FilterType::HistoMean:
-        if (m_height_histo && m_height_histo->getEntries() > MIN_HISTO_ENTRIES) {
-            if (m_mode_config.filter_config == PositionModeConfig::FilterType::HistoMean) {
-                preliminary_pos.altitude = m_height_histo->getMean();
-            } else if (m_mode_config.filter_config == PositionModeConfig::FilterType::HistoMedian) {
-                preliminary_pos.altitude = m_height_histo->getMedian();
-            } else {
-                preliminary_pos.altitude = m_height_histo->getMpv();
+        preliminary_pos = get_pos_from_histos();
+        if (m_mode_config.mode == PositionModeConfig::Mode::LockIn) {
+            if (m_height_histo->getEntries() < MuonPi::Config::lock_in_min_histogram_entries
+                || m_lat_histo->getEntries() < MuonPi::Config::lock_in_min_histogram_entries
+                || m_lon_histo->getEntries() < MuonPi::Config::lock_in_min_histogram_entries) {
+                valid_lock_in_candidate = false;
             }
-            preliminary_pos.vert_error = m_height_histo->getRMS();
-            if (m_mode_config.mode == PositionModeConfig::Mode::LockIn) {
-                if (m_height_histo->getEntries() < MuonPi::Config::lock_in_min_histogram_entries) {
-                    valid_lock_in_candidate = false;
-                } else if (m_height_histo->getEntries() > MuonPi::Config::lock_in_max_histogram_entries) {
-                    m_height_histo->clear();
-                }
+            if (m_height_histo->getEntries() > MuonPi::Config::lock_in_max_histogram_entries) {
+                m_height_histo->clear();
             }
-        } else {
-            valid_lock_in_candidate = false;
+            if (m_lat_histo->getEntries() > MuonPi::Config::lock_in_max_histogram_entries) {
+                m_lat_histo->clear();
+            }
+            if (m_lon_histo->getEntries() > MuonPi::Config::lock_in_max_histogram_entries) {
+                m_lon_histo->clear();
+            }
         }
-        if (m_lat_histo && m_lat_histo->getEntries() > MIN_HISTO_ENTRIES) {
-            if (m_mode_config.filter_config == PositionModeConfig::FilterType::HistoMean) {
-                preliminary_pos.latitude = m_lat_histo->getMean();
-            } else if (m_mode_config.filter_config == PositionModeConfig::FilterType::HistoMedian) {
-                preliminary_pos.latitude = m_lat_histo->getMedian();
-            } else {
-                preliminary_pos.latitude = m_lat_histo->getMpv();
-            }
-            preliminary_pos.hor_error = m_lat_histo->getRMS() * degree_to_surface_meters;
-            if (m_mode_config.mode == PositionModeConfig::Mode::LockIn) {
-                if (m_lat_histo->getEntries() < MuonPi::Config::lock_in_min_histogram_entries) {
-                    valid_lock_in_candidate = false;
-                } else if (m_lat_histo->getEntries() > MuonPi::Config::lock_in_max_histogram_entries) {
-                    m_lat_histo->clear();
-                }
-            }
-        } else {
-            valid_lock_in_candidate = false;
-        }
-        if (m_lon_histo && m_lon_histo->getEntries() > MIN_HISTO_ENTRIES) {
-            if (m_mode_config.filter_config == PositionModeConfig::FilterType::HistoMean) {
-                preliminary_pos.longitude = m_lon_histo->getMean();
-            } else if (m_mode_config.filter_config == PositionModeConfig::FilterType::HistoMedian) {
-                preliminary_pos.longitude = m_lon_histo->getMedian();
-            } else {
-                preliminary_pos.longitude = m_lon_histo->getMpv();
-            }
-            if (valid_lock_in_candidate) {
-                // calculate the squared error including the component from the previously determined latitude error, if available
-                preliminary_pos.hor_error *= preliminary_pos.hor_error;
-                preliminary_pos.hor_error += sqr(m_lon_histo->getRMS() * degree_to_surface_meters / std::cos(pi() * preliminary_pos.latitude / 180.));
-                preliminary_pos.hor_error = std::sqrt(preliminary_pos.hor_error);
-            } else {
-                preliminary_pos.hor_error = m_lon_histo->getRMS() * degree_to_surface_meters / std::cos(pi() * preliminary_pos.latitude / 180.);
-            }
-            if (m_mode_config.mode == PositionModeConfig::Mode::LockIn) {
-                if (m_lon_histo->getEntries() < MuonPi::Config::lock_in_min_histogram_entries) {
-                    valid_lock_in_candidate = false;
-                } else if (m_lon_histo->getEntries() > MuonPi::Config::lock_in_max_histogram_entries) {
-                    m_lon_histo->clear();
-                }
-            }
-        } else {
-            valid_lock_in_candidate = false;
-        }
-        break;
     default:
         break;
     }
 
-    if (preliminary_pos.valid()) {
-        // send new position only if it was found valid, depending on filter
-        if (m_mode_config.mode == PositionModeConfig::Mode::Auto) {
-            m_position = preliminary_pos;
-            if (m_valid_pos_fn)
-                m_valid_pos_fn(m_position);
-        } else if (m_mode_config.mode == PositionModeConfig::Mode::LockIn && valid_lock_in_candidate) {
-            std::size_t lock_target_reached { 0 };
-            if (preliminary_pos.vert_error < m_mode_config.lock_in_min_error_meters) {
-                lock_target_reached++;
-                qDebug() << "geo position lock candidate: alt=" << preliminary_pos.altitude
-                         << "(err=" << preliminary_pos.vert_error << "m)";
-            }
-
-            if (preliminary_pos.hor_error < m_mode_config.lock_in_min_error_meters) {
-                lock_target_reached++;
-                qDebug() << "geo position lock candidate: lon=" << preliminary_pos.longitude
-                         << "lat=" << preliminary_pos.latitude
-                         << "(err=" << preliminary_pos.hor_error << "m)";
-            }
-
-            if (lock_target_reached == 2) {
-                m_mode_config.mode = PositionModeConfig::Mode::Static;
-                m_mode_config.static_position = { preliminary_pos };
-                if (m_lockin_ready_fn)
-                    m_lockin_ready_fn(preliminary_pos);
-                qInfo() << "concluded geo pos lock-in and fixed position: lat=" << preliminary_pos.latitude
-                        << "lon=" << preliminary_pos.longitude
-                        << "(err=" << preliminary_pos.hor_error << "m)"
-                        << "alt=" << preliminary_pos.altitude
-                        << "(err=" << preliminary_pos.vert_error << "m)";
-            }
+    if (!preliminary_pos.valid()) {
+        return;
+    }
+    // send new position only if it was found valid, depending on filter
+    if (m_mode_config.mode == PositionModeConfig::Mode::Auto) {
+        m_position = preliminary_pos;
+        if (m_valid_pos_fn) {
+            m_valid_pos_fn(m_position);
         }
+        return;
+    }
+
+    if (valid_lock_in_candidate) {
+        check_for_lockin_reached(preliminary_pos);
+    }
+}
+
+GeoPosition GeoPosManager::get_pos_from_histos() const
+{
+    constexpr double earth_radius_meters { 6367444.5 };
+    const double degree_to_surface_meters {
+        (pi() * 2 * earth_radius_meters) / 360.
+    };
+
+    if ((m_height_histo && m_height_histo->getEntries() < MIN_HISTO_ENTRIES)
+        || (m_lon_histo && m_lon_histo->getEntries() < MIN_HISTO_ENTRIES)
+        || (m_lat_histo && m_lat_histo->getEntries() < MIN_HISTO_ENTRIES)) {
+        return GeoPosition {};
+    }
+
+    GeoPosition preliminary_pos {};
+    switch (m_mode_config.filter_config) {
+    case PositionModeConfig::FilterType::HistoMean:
+        preliminary_pos.altitude = m_height_histo->getMean();
+        preliminary_pos.latitude = m_lat_histo->getMean();
+        preliminary_pos.longitude = m_lon_histo->getMean();
+        break;
+    case PositionModeConfig::FilterType::HistoMedian:
+        preliminary_pos.altitude = m_height_histo->getMedian();
+        preliminary_pos.latitude = m_lat_histo->getMedian();
+        preliminary_pos.longitude = m_lon_histo->getMedian();
+        break;
+    case PositionModeConfig::FilterType::HistoMpv:
+        preliminary_pos.altitude = m_height_histo->getMpv();
+        preliminary_pos.latitude = m_lat_histo->getMpv();
+        preliminary_pos.longitude = m_lon_histo->getMpv();
+        break;
+    default:
+        return GeoPosition {};
+    }
+    preliminary_pos.vert_error = m_height_histo->getRMS();
+    preliminary_pos.hor_error = m_lat_histo->getRMS() * degree_to_surface_meters;
+    preliminary_pos.hor_error *= preliminary_pos.hor_error;
+    preliminary_pos.hor_error += sqr(m_lon_histo->getRMS() * degree_to_surface_meters / std::cos(pi() * preliminary_pos.latitude / 180.));
+    preliminary_pos.hor_error = std::sqrt(preliminary_pos.hor_error);
+    return preliminary_pos;
+}
+
+void GeoPosManager::check_for_lockin_reached(const GeoPosition& preliminary_pos)
+{
+    if (m_mode_config.mode != PositionModeConfig::Mode::LockIn)
+        return;
+    if (preliminary_pos.vert_error < m_mode_config.lock_in_min_error_meters
+        && preliminary_pos.hor_error < m_mode_config.lock_in_min_error_meters) {
+        m_mode_config.mode = PositionModeConfig::Mode::Static;
+        m_mode_config.static_position = { preliminary_pos };
+        if (m_lockin_ready_fn) {
+            m_lockin_ready_fn(preliminary_pos);
+        }
+        qInfo() << "concluded geo pos lock-in and fixed position: lat=" << preliminary_pos.latitude
+                << "lon=" << preliminary_pos.longitude
+                << "(err=" << preliminary_pos.hor_error << "m)"
+                << "alt=" << preliminary_pos.altitude
+                << "(err=" << preliminary_pos.vert_error << "m)";
     }
 }
 
