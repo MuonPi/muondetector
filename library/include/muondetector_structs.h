@@ -60,6 +60,14 @@ struct GeoPosition {
         };
         return pos_struct;
     }
+    friend bool operator==(const GeoPosition& a, const GeoPosition& b) 
+    { 
+        return (a.longitude==b.longitude && a.latitude==b.latitude && a.altitude==b.altitude && a.hor_error==b.hor_error && a.vert_error==b.vert_error);
+    }
+    friend bool operator!=(const GeoPosition& a, const GeoPosition& b) 
+    {
+        return !(a == b);
+    }
 };
 
 struct PositionModeConfig {
@@ -82,6 +90,14 @@ struct PositionModeConfig {
         first = None,
         last = HistoMpv
     } filter_config;
+    friend bool operator==(const PositionModeConfig& a, const PositionModeConfig& b) 
+    { 
+        return (a.mode==b.mode && a.filter_config==b.filter_config && a.lock_in_max_dop==b.lock_in_max_dop && a.lock_in_min_error_meters==b.lock_in_min_error_meters && a.static_position==b.static_position);
+    }
+    friend bool operator!=(const PositionModeConfig& a, const PositionModeConfig& b) 
+    {
+        return !(a == b);
+    }
     static constexpr std::array<const char*, static_cast<size_t>(Mode::last) + 1> mode_name { "static", "lock-in", "auto" };
     static constexpr std::array<const char*, static_cast<size_t>(FilterType::last) + 1> filter_name { "none", "kalman", "histo_mean", "histo_median", "histo_mpv" };
 };
