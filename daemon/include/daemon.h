@@ -173,6 +173,8 @@ private slots:
     void aquireMonitoringParameters();
     void onStatusLed1Event(int onTimeMs);
     void onStatusLed2Event(int onTimeMs);
+    void onGeoPosLockInReady(GeoPosition pos);
+    void onGeoPosValid(GeoPosition pos);
 
 private:
     void incomingConnection(qintptr socketDescriptor) override;
@@ -262,7 +264,7 @@ private:
     ShowerDetectorCalib* calib = nullptr;
 
     // histograms
-    QMap<QString, Histogram> histoMap;
+    std::map<std::string, std::shared_ptr<Histogram>> m_histo_map {};
 
     // others
     QVector<QPointF> xorRatePoints, andRatePoints;
