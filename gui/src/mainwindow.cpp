@@ -6,11 +6,11 @@
 #include "i2cform.h"
 #include "logplotswidget.h"
 #include "map.h"
+#include "networkdiscovery.h"
 #include "parametermonitorform.h"
 #include "scanform.h"
 #include "status.h"
 #include "ubloxsettingsform.h"
-#include "networkdiscovery.h"
 #include "ui_mainwindow.h"
 
 #include <histogram.h>
@@ -40,7 +40,7 @@ MainWindow::MainWindow(QWidget* parent)
     , ui(new Ui::MainWindow)
 {
     qRegisterMetaType<TcpMessage>("TcpMessage");
-    qRegisterMetaType<GeodeticPos>("GeodeticPos");
+    qRegisterMetaType<GnssPosStruct>("GnssPosStruct");
     qRegisterMetaType<bool>("bool");
     qRegisterMetaType<I2cDeviceEntry>("I2cDeviceEntry");
     qRegisterMetaType<CalibStruct>("CalibStruct");
@@ -61,6 +61,7 @@ MainWindow::MainWindow(QWidget* parent)
     qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
     qRegisterMetaType<timespec>("timespec");
     qRegisterMetaType<ADC_SAMPLING_MODE>("ADC_SAMPLING_MODE");
+    qRegisterMetaType<PositionModeConfig>("PositionModeConfig");
 
     ui->setupUi(this);
     this->setWindowTitle(QString("muondetector-gui  " + QString::fromStdString(MuonPi::Version::software.string())));
@@ -78,17 +79,17 @@ MainWindow::MainWindow(QWidget* parent)
 
     // setup network discovery service
     auto networkDiscovery = new NetworkDiscovery(NetworkDiscovery::DeviceType::GUI, MuonPi::Settings::gui.port, this);
-    connect(networkDiscovery, &NetworkDiscovery::foundDevices, [this](const QList<QPair<quint16, QHostAddress>> & devices){
-        if (addresses==nullptr){
+    connect(networkDiscovery, &NetworkDiscovery::foundDevices, [this](const QList<QPair<quint16, QHostAddress>>& devices) {
+        if (addresses == nullptr) {
             return;
         }
-        for (auto device : devices){
+        for (auto device : devices) {
             // check if device is not a GUI (might show other GUIs later on)
-            if (device.first == static_cast<quint16>(NetworkDiscovery::DeviceType::GUI)){
+            if (device.first == static_cast<quint16>(NetworkDiscovery::DeviceType::GUI)) {
                 continue;
             }
             // append to addresses if not already there
-            if (addresses->findItems(device.second.toString()).isEmpty()){
+            if (addresses->findItems(device.second.toString()).isEmpty()) {
                 auto row = new QStandardItem(device.second.toString());
                 addresses->appendRow(row);
             }
@@ -181,6 +182,8 @@ MainWindow::MainWindow(QWidget* parent)
     Map* map = new Map(this);
     connect(this, &MainWindow::setUiEnabledStates, map, &Map::onUiEnabledStateChange);
     connect(this, &MainWindow::geodeticPos, map, &Map::onGeodeticPosReceived);
+    connect(this, &MainWindow::positionModeConfigReceived, map, &Map::onPosConfigReceived);
+    connect(map, &Map::posModeConfigChanged, this, &MainWindow::onPosModeConfigChanged);
     ui->tabWidget->addTab(map, "Map");
 
     I2cForm* i2cTab = new I2cForm(this);
@@ -476,7 +479,7 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
         connectedToDemon = false;
         return;
     } else if (msgID == TCP_MSG_KEY::MSG_GEO_POS) {
-        GeodeticPos pos {};
+        GnssPosStruct pos {};
         *(tcpMessage.dStream) >> pos.iTOW >> pos.lon >> pos.lat
             >> pos.height >> pos.hMSL >> pos.hAcc >> pos.vAcc;
         emit geodeticPos(pos);
@@ -701,6 +704,11 @@ void MainWindow::receivedTcpMessage(TcpMessage tcpMessage)
         MuonPi::Version::Version hw_ver, sw_ver;
         *(tcpMessage.dStream) >> hw_ver >> sw_ver;
         emit daemonVersionReceived(hw_ver, sw_ver);
+        return;
+    } else if (msgID == TCP_MSG_KEY::MSG_POSITION_MODEL) {
+        PositionModeConfig posconfig {};
+        *(tcpMessage.dStream) >> posconfig;
+        emit positionModeConfigReceived(posconfig);
         return;
     } else {
         qWarning() << "received unknown TCP message, msgID =" << QString::number(static_cast<int>(msgID));
@@ -1223,6 +1231,13 @@ void MainWindow::onPolarityChanged(bool pol1, bool pol2)
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_POLARITY_SWITCH);
     *(tcpMessage.dStream) << pol1 << pol2;
+    emit sendTcpMessage(tcpMessage);
+}
+
+void MainWindow::onPosModeConfigChanged(const PositionModeConfig& posconfig)
+{
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_POSITION_MODEL);
+    *(tcpMessage.dStream) << posconfig;
     emit sendTcpMessage(tcpMessage);
 }
 

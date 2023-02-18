@@ -16,7 +16,8 @@
 
 struct I2cDeviceEntry;
 struct CalibStruct;
-struct GeodeticPos;
+struct GnssPosStruct;
+struct PositionModeConfig;
 struct GnssConfigStruct;
 class GnssSatellite;
 class CalibForm;
@@ -48,7 +49,8 @@ signals:
     void gpioRates(quint8 whichrate, QVector<QPointF> rate);
     void tcpDisconnected();
     void setUiEnabledStates(bool enabled);
-    void geodeticPos(const GeodeticPos& pos);
+    void geodeticPos(const GnssPosStruct& pos);
+    void positionModeConfigReceived(const PositionModeConfig& posconfig);
     void adcSampleReceived(uint8_t channel, float value);
     void adcTraceReceived(const QVector<float>& sampleBuffer);
     void inputSwitchReceived(TIMING_MUX_SELECTION);
@@ -102,6 +104,7 @@ public slots:
     void gpioInhibit(bool inhibit);
     void mqttInhibit(bool inhibit);
     void onPolarityChanged(bool pol1, bool pol2);
+    void onPosModeConfigChanged(const PositionModeConfig& posconfig);
 
 private slots:
     void resetAndHit();

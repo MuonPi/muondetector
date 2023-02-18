@@ -13,15 +13,22 @@ struct GnssMonHw2Struct;
 struct CalibStruct;
 class Histogram;
 struct LogInfoStruct;
+struct GnssPosStruct;
+struct PositionModeConfig;
 namespace MuonPi::Version {
 struct Version;
 }
+
 std::ostream& operator<<(std::ostream& os, const QString& someQString);
 std::ostream& operator<<(std::ostream& os, const std::chrono::time_point<std::chrono::system_clock>& timestamp);
 std::ostream& operator<<(std::ostream& os, const timespec& ts);
 
 QDataStream& operator>>(QDataStream& in, GnssSatellite& sat);
 QDataStream& operator<<(QDataStream& out, const GnssSatellite& sat);
+
+QDataStream& operator<<(QDataStream& out, const GnssPosStruct& pos);
+QDataStream& operator>>(QDataStream& in, PositionModeConfig& pos);
+QDataStream& operator<<(QDataStream& out, const PositionModeConfig& pos);
 
 QDataStream& operator>>(QDataStream& in, UbxTimePulseStruct& tp);
 QDataStream& operator<<(QDataStream& out, const UbxTimePulseStruct& tp);
