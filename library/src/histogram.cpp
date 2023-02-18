@@ -5,11 +5,13 @@
 
 #include "histogram.h"
 
-Histogram::Histogram(const std::string& name, int nrBins, double min, double max) noexcept
+Histogram::Histogram(const std::string& name, int nrBins, double min, double max, bool autoscale, const std::string& unit) noexcept
     : fName(name)
+    , fUnit(unit)
     , fNrBins(nrBins)
     , fMin(min)
     , fMax(max)
+    , fAutoscale(autoscale)    
 {
 }
 

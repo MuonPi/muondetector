@@ -10,7 +10,7 @@
 class Histogram {
 public:
     Histogram() = default;
-    Histogram(const std::string& name, int nrBins, double min, double max) noexcept;
+    Histogram(const std::string& name, int nrBins, double min, double max, bool autoscale = false, const std::string& unit = "") noexcept;
     ~Histogram();
     void clear();
     void setName(const std::string& name);
