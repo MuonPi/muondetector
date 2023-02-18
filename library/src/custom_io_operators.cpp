@@ -60,6 +60,30 @@ QDataStream& operator<<(QDataStream& out, const GnssSatellite& sat)
     return out;
 }
 
+QDataStream& operator<<(QDataStream& out, const GnssPosStruct& pos)
+{
+    out << pos.iTOW << pos.lon << pos.lat
+        << pos.height << pos.hMSL << pos.hAcc
+        << pos.vAcc;
+    return out;
+}
+
+QDataStream& operator<<(QDataStream& out, const PositionModeConfig& pos)
+{
+    out << static_cast<int>(pos.mode) << pos.static_position.longitude << pos.static_position.latitude << pos.static_position.altitude << pos.static_position.hor_error << pos.static_position.vert_error << pos.lock_in_max_dop << pos.lock_in_min_error_meters << static_cast<int>(pos.filter_config);
+    return out;
+}
+
+QDataStream& operator>>(QDataStream& in, PositionModeConfig& pos)
+{
+    int mode { 0 };
+    int filter_config { 0 };
+    in >> mode >> pos.static_position.longitude >> pos.static_position.latitude >> pos.static_position.altitude >> pos.static_position.hor_error >> pos.static_position.vert_error >> pos.lock_in_max_dop >> pos.lock_in_min_error_meters >> filter_config;
+    pos.mode = static_cast<PositionModeConfig::Mode>(mode);
+    pos.filter_config = static_cast<PositionModeConfig::FilterType>(filter_config);
+    return in;
+}
+
 QDataStream& operator>>(QDataStream& in, UbxTimePulseStruct& tp)
 {
     in >> tp.tpIndex >> tp.version >> tp.antCableDelay >> tp.rfGroupDelay

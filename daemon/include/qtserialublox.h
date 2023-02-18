@@ -11,7 +11,7 @@
 #include <string>
 #include <ublox_structs.h>
 
-struct GeodeticPos;
+struct GnssPosStruct;
 struct GnssMonHwStruct;
 struct GnssMonHw2Struct;
 struct UbxTimeMarkStruct;
@@ -60,7 +60,7 @@ signals:
         char propertyName);
     void gpsPropertyUpdatedGnss(std::vector<GnssSatellite>,
         std::chrono::duration<double> updateAge);
-    void gpsPropertyUpdatedGeodeticPos(GeodeticPos pos);
+    void gpsPropertyUpdatedGeodeticPos(GnssPosStruct pos);
     void timTM2(QString timTM2String);
     void UBXReceivedTimeTM2(const UbxTimeMarkStruct& tm);
     void gpsVersion(const QString& swVersion, const QString& hwVersion, const QString& protVersion);
@@ -177,7 +177,7 @@ private:
     gpsProperty<int32_t> clkBias;
     gpsProperty<int32_t> clkDrift;
     gpsProperty<std::vector<GnssSatellite>> m_satList;
-    gpsProperty<GeodeticPos> geodeticPos;
+    gpsProperty<GnssPosStruct> geodeticPos;
     const int MSGTIMEOUT = 1500;
     std::queue<gpsTimestamp> fTimestamps;
     static std::string fProtVersionString;

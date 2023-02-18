@@ -16,7 +16,8 @@
 #include <config.h>
 #include <gpio_pin_definitions.h>
 
-static const char* CONFIG_FILE = MuonPi::Config::file;
+static const std::string CONFIG_FILE = std::string(MuonPi::Config::file);
+static const std::string SETTINGS_FILE = std::string(MuonPi::Config::data_path) + std::string(MuonPi::Config::persistant_settings_file);
 static int verbose = 0;
 
 [[nodiscard]] auto getch() -> int;
@@ -80,6 +81,7 @@ int main(int argc, char* argv[])
     QCoreApplication::setApplicationVersion(QString::fromStdString(MuonPi::Version::software.string()));
     // config file handling
     libconfig::Config cfg;
+    libconfig::Config settings;
 
     qInfo() << "MuonPi Muondetector Daemon "
             << "V" + QString::fromStdString(MuonPi::Version::software.string())
@@ -87,9 +89,40 @@ int main(int argc, char* argv[])
 
     // Read the file. If there is an error, report it and exit.
     try {
-        cfg.readFile(MuonPi::Config::file);
+        cfg.readFile(CONFIG_FILE.c_str());
     } catch (const libconfig::FileIOException& fioex) {
-        qWarning() << "Error while reading config file" << QString(CONFIG_FILE);
+        qWarning() << "Error while reading config file" << QString::fromStdString(CONFIG_FILE);
+    } catch (const libconfig::ParseException& pex) {
+        qFatal(qPrintable("Parse error at " + QString(pex.getFile()) + " : line " + QString(pex.getLine()) + " - " + QString(pex.getError())));
+        return (EXIT_FAILURE);
+    }
+
+    // Read in the settings file. If there is an error, create the settings
+    // tree and proceed anyway
+    try {
+        settings.readFile(SETTINGS_FILE.c_str());
+    } catch (const libconfig::FileIOException& fioex) {
+        // Find the stored settings in settings file. Add all entries if they don't yet
+        // exist.
+        libconfig::Setting& root = settings.getRoot();
+        // create setting fields
+        root.add("geo_handling", libconfig::Setting::TypeGroup);
+        libconfig::Setting& geo_handling = root["geo_handling"];
+        geo_handling.add("mode", libconfig::Setting::TypeString) = "Auto";
+        geo_handling.add("static_coordinates", libconfig::Setting::TypeGroup);
+        libconfig::Setting& static_coords = geo_handling["static_coordinates"];
+        static_coords.add("lon", libconfig::Setting::TypeFloat) = 0.;
+        static_coords.add("lat", libconfig::Setting::TypeFloat) = 0.;
+        static_coords.add("alt", libconfig::Setting::TypeFloat) = 0.;
+        static_coords.add("hor_error", libconfig::Setting::TypeFloat) = 0.;
+        static_coords.add("vert_error", libconfig::Setting::TypeFloat) = 0.;
+        // Write out the updated configuration.
+        try {
+            settings.writeFile(SETTINGS_FILE.c_str());
+            qInfo() << "Initialized settings successfully written to: " << QString::fromStdString(SETTINGS_FILE);
+        } catch (const libconfig::FileIOException& fioex_new) {
+            qCritical() << "I/O error while writing settings file: " << QString::fromStdString(SETTINGS_FILE);
+        }
     } catch (const libconfig::ParseException& pex) {
         qFatal(qPrintable("Parse error at " + QString(pex.getFile()) + " : line " + QString(pex.getLine()) + " - " + QString(pex.getError())));
         return (EXIT_FAILURE);
@@ -503,7 +536,7 @@ int main(int argc, char* argv[])
     if (parser.isSet(pol1Option)) {
         unsigned int pol1int = parser.value(pol1Option).toUInt(&ok);
         if (!ok || pol1int > 1) {
-            qCritical() << "wrong input polarity setting ch1 (valid: 0..3)";
+            qCritical() << "wrong input polarity setting ch1 (valid: 0,1)";
             return -1;
         } else {
             daemonConfig.polarity[0] = (bool)pol1int;
@@ -567,6 +600,35 @@ int main(int argc, char* argv[])
         }
     }
 
+    // Find the stored settings in settings file. Add intermediate entries if they don't yet
+    // exist.
+    libconfig::Setting& root = settings.getRoot();
+
+#define ENUM_CAST static_cast<size_t>
+
+    if (root.exists("geo_handling")) {
+        // try to read in the stored geo handling fields
+        std::string mode_str = settings.lookup("geo_handling.mode");
+        qDebug() << "mode = " << QString::fromStdString(mode_str);
+        if (mode_str == PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::Static)]) {
+            daemonConfig.position_mode_config.mode = PositionModeConfig::Mode::Static;
+        } else if (mode_str == PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::LockIn)]) {
+            daemonConfig.position_mode_config.mode = PositionModeConfig::Mode::LockIn;
+        } else {
+            daemonConfig.position_mode_config.mode = PositionModeConfig::Mode::Auto;
+        }
+        daemonConfig.position_mode_config.static_position.longitude = settings.lookup("geo_handling.static_coordinates.lon");
+        daemonConfig.position_mode_config.static_position.latitude = settings.lookup("geo_handling.static_coordinates.lat");
+        daemonConfig.position_mode_config.static_position.altitude = settings.lookup("geo_handling.static_coordinates.alt");
+        daemonConfig.position_mode_config.static_position.hor_error = settings.lookup("geo_handling.static_coordinates.hor_error");
+        daemonConfig.position_mode_config.static_position.vert_error = settings.lookup("geo_handling.static_coordinates.vert_error");
+    } else {
+        qFatal("error accessing settings. Aborting...");
+        exit(EXIT_FAILURE);
+    }
+
+    daemonConfig.config_file_data.reset(&cfg);
+    daemonConfig.settings_file_data.reset(&settings);
     Daemon daemon { daemonConfig };
 
     return a.exec();
