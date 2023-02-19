@@ -46,7 +46,7 @@ void RateBuffer::onEvent(unsigned int gpio, EventTime event_time)
         if (event_time - last_event_time < MAX_DEADTIME) {
             //			std::cout << "now-last:"<<(now-last_event_time)/1us<<" dt="<<buffermap[gpio].current_deadtime.count()<<std::endl;
             if (buffermap[gpio].current_deadtime < MAX_DEADTIME) {
-                buffermap[gpio].current_deadtime += std::chrono::microseconds(20);
+                buffermap[gpio].current_deadtime += DEADTIME_INCREMENT;
                 //				std::cout << std::dec << "adjusting deadtime for gpio " << gpio << " to " << buffermap[gpio].current_deadtime/1us << "us" << std::endl;
             }
             if (event_time - last_event_time < buffermap[gpio].current_deadtime) {
@@ -54,10 +54,10 @@ void RateBuffer::onEvent(unsigned int gpio, EventTime event_time)
                 return;
             }
         } else {
-            unsigned long deadtime = buffermap[gpio].current_deadtime.count();
-            if (deadtime > 10) {
-                buffermap[gpio].current_deadtime -= std::chrono::microseconds(10);
-            } else if (deadtime > 0) {
+            auto deadtime = buffermap[gpio].current_deadtime;
+            if (deadtime > DEADTIME_INCREMENT) {
+                buffermap[gpio].current_deadtime -= DEADTIME_INCREMENT;
+            } else if (deadtime > 0s) {
                 buffermap[gpio].current_deadtime -= std::chrono::microseconds(1);
             }
         }

@@ -19,6 +19,8 @@ constexpr double MAX_AVG_RATE { 100. };
 constexpr unsigned long MAX_BURST_MULTIPLICITY { 10 };
 constexpr std::chrono::microseconds MAX_BUFFER_TIME { 60s };
 constexpr std::chrono::microseconds MAX_DEADTIME { static_cast<unsigned long>(1e+6 / MAX_AVG_RATE) };
+constexpr std::chrono::microseconds DEADTIME_INCREMENT { 50 };
+
 
 class RateBuffer : public QObject {
     Q_OBJECT
