@@ -231,7 +231,7 @@ private:
     std::shared_ptr<DeviceFunction<DeviceType::IO_EXTENDER>> io_extender_p;
     std::shared_ptr<Adafruit_SSD1306> oled_p {};
     std::shared_ptr<UbloxI2c> ublox_i2c_p {};
-/*
+    /*
 	float biasVoltage = 0.;
     bool biasON = false;
     GPIO_SIGNAL eventTrigger { UNDEFINED_SIGNAL };
@@ -262,10 +262,10 @@ private:
     // mqtt
     QPointer<MuonPi::MqttHandler> mqttHandler;
 
-	// rate buffer
-	RateBuffer rateBuffer;
-	
-	// signal handling
+    // rate buffer
+    RateBuffer rateBuffer;
+
+    // signal handling
     static int sighupFd[2];
     static int sigtermFd[2];
     static int sigintFd[2];

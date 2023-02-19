@@ -13,13 +13,13 @@
 #include <QString>
 #include <QVariant>
 #include <any>
+#include <chrono>
 #include <cmath>
 #include <functional>
 #include <iomanip>
 #include <iostream>
 #include <string>
 #include <sys/types.h>
-#include <chrono>
 
 using EventTime = std::chrono::time_point<std::chrono::system_clock>;
 
