@@ -14,7 +14,7 @@ set(MUONDETECTOR_GUI_SOURCE_FILES
     "${MUONDETECTOR_GUI_SOURCE_DIR}/custom_histogram_widget.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/custom_plot_widget.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/gnssposwidget.cpp"
-    "${MUONDETECTOR_GUI_SOURCE_DIR}/gpssatsform.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/gnssinfoform.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/histogramdataform.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/i2cform.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/logplotswidget.cpp"
@@ -24,7 +24,7 @@ set(MUONDETECTOR_GUI_SOURCE_FILES
     "${MUONDETECTOR_GUI_SOURCE_DIR}/parametermonitorform.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/plotcustom.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/scanform.cpp"
-    "${MUONDETECTOR_GUI_SOURCE_DIR}/settings.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/ubloxsettingsform.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/spiform.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/status.cpp"
     )
@@ -35,7 +35,7 @@ set(MUONDETECTOR_GUI_HEADER_FILES
     "${MUONDETECTOR_GUI_HEADER_DIR}/custom_histogram_widget.h"
     "${MUONDETECTOR_GUI_HEADER_DIR}/custom_plot_widget.h"
     "${MUONDETECTOR_GUI_HEADER_DIR}/gnssposwidget.h"
-    "${MUONDETECTOR_GUI_HEADER_DIR}/gpssatsform.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/gnssinfoform.h"
     "${MUONDETECTOR_GUI_HEADER_DIR}/histogramdataform.h"
     "${MUONDETECTOR_GUI_HEADER_DIR}/i2cform.h"
     "${MUONDETECTOR_GUI_HEADER_DIR}/logplotswidget.h"
@@ -44,7 +44,7 @@ set(MUONDETECTOR_GUI_HEADER_FILES
     "${MUONDETECTOR_GUI_HEADER_DIR}/parametermonitorform.h"
     "${MUONDETECTOR_GUI_HEADER_DIR}/plotcustom.h"
     "${MUONDETECTOR_GUI_HEADER_DIR}/scanform.h"
-    "${MUONDETECTOR_GUI_HEADER_DIR}/settings.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/ubloxsettingsform.h"
     "${MUONDETECTOR_GUI_HEADER_DIR}/spiform.h"
     "${MUONDETECTOR_GUI_HEADER_DIR}/status.h"
     )
@@ -52,7 +52,7 @@ set(MUONDETECTOR_GUI_UI_FILES
     "${MUONDETECTOR_GUI_UI_DIR}/calibform.ui"
     "${MUONDETECTOR_GUI_UI_DIR}/calibscandialog.ui"
     "${MUONDETECTOR_GUI_UI_DIR}/gnssposwidget.ui"
-    "${MUONDETECTOR_GUI_UI_DIR}/gpssatsform.ui"
+    "${MUONDETECTOR_GUI_UI_DIR}/gnssinfoform.ui"
     "${MUONDETECTOR_GUI_UI_DIR}/histogramdataform.ui"
     "${MUONDETECTOR_GUI_UI_DIR}/i2cform.ui"
     "${MUONDETECTOR_GUI_UI_DIR}/logplotswidget.ui"
@@ -60,7 +60,7 @@ set(MUONDETECTOR_GUI_UI_FILES
     "${MUONDETECTOR_GUI_UI_DIR}/map.ui"
     "${MUONDETECTOR_GUI_UI_DIR}/parametermonitorform.ui"
     "${MUONDETECTOR_GUI_UI_DIR}/scanform.ui"
-    "${MUONDETECTOR_GUI_UI_DIR}/settings.ui"
+    "${MUONDETECTOR_GUI_UI_DIR}/ubloxsettingsform.ui"
     "${MUONDETECTOR_GUI_UI_DIR}/spiform.ui"
     "${MUONDETECTOR_GUI_UI_DIR}/status.ui"
     )
@@ -97,6 +97,13 @@ if(APPLE)
         message(STATUS "QWT found: ${QWT}")
     endif()
 elseif(WIN32)
+    find_library(MOSQUITTO
+        NAMES mosquitto
+        HINTS ${MOSQUITTO_DIR}
+        REQUIRED)
+        if(MOSQUITTO)
+            message(STATUS "Mosquitto found: ${MOSQUITTO}")
+        endif()
     find_library(QWT
         NAMES qwt
         HINTS ${QWT_DIR}/lib
@@ -150,7 +157,10 @@ set_target_properties(muondetector-gui PROPERTIES POSITION_INDEPENDENT_CODE 1)
 target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:${MUONDETECTOR_GUI_HEADER_DIR}>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
+    $<BUILD_INTERFACE:${MOSQUITTO_DIR}>
     $<BUILD_INTERFACE:/usr/include/qwt>
+    #for OSX
+    $<BUILD_INTERFACE:/usr/local/include>
     )
 
 if(WIN32)
@@ -161,6 +171,7 @@ target_link_libraries(muondetector-gui
     muondetector-shared
     pthread
     ${QWT}
+    ${MOSQUITTO}
     )
 
 elseif(APPLE)

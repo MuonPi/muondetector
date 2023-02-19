@@ -2,12 +2,14 @@
 #include "ui_parametermonitorform.h"
 #include <muondetector_structs.h>
 #include <qwt_symbol.h>
+#include <ublox_structs.h>
 
 ParameterMonitorForm::ParameterMonitorForm(QWidget* parent)
     : QWidget(parent)
     , ui(new Ui::ParameterMonitorForm)
 {
     ui->setupUi(this);
+    qRegisterMetaType<MuonPi::Version::Version>("MuonPi::Version::Version");
     ui->adcTracePlot->setMinimumHeight(30);
     ui->adcTracePlot->setTitle("ADC trace");
     ui->adcTracePlot->setAxisTitle(QwtPlot::xBottom, "sample nr. since trigger");
@@ -24,14 +26,19 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget* parent)
     ui->adcTracePlot->replot();
     ui->adcTracePlot->setEnabled(false);
 
-    foreach (GpioSignalDescriptor item, GPIO_SIGNAL_MAP) {
-        if (item.direction == DIR_IN)
-            ui->adcTriggerSelectionComboBox->addItem(item.name);
+    for (const auto& [pin, descriptor] : GPIO_SIGNAL_MAP) {
+        if (descriptor.direction == DIR_IN) {
+            ui->adcTriggerSelectionComboBox->addItem(QString::fromStdString(descriptor.name));
+        }
     }
+
     ui->timingSelectionComboBox->clear();
-    foreach (QString item, TIMING_MUX_SIGNAL_NAMES) {
-        ui->timingSelectionComboBox->addItem(item);
+    for (const auto& [mux_signal, mux_signal_name] : TIMING_MUX_SIGNAL_NAMES) {
+        if (mux_signal != TIMING_MUX_SELECTION::UNDEFINED) {
+            ui->timingSelectionComboBox->addItem(QString::fromStdString(mux_signal_name));
+        }
     }
+
     connect(ui->adcTraceGroupBox, &QGroupBox::clicked, this, [this](bool checked) {
         emit adcModeChanged((checked) ? ADC_SAMPLING_MODE::TRACE : ADC_SAMPLING_MODE::PEAK);
         ui->adcTracePlot->setEnabled(checked);
@@ -46,15 +53,19 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget* parent)
 
 void ParameterMonitorForm::on_timingSelectionComboBox_currentIndexChanged(int index)
 {
-    emit timingSelectionChanged(index);
+    for (const auto& [mux_signal, mux_name] : TIMING_MUX_SIGNAL_NAMES) {
+        if (QString::fromStdString(mux_name) == ui->timingSelectionComboBox->itemText(index)) {
+            emit timingSelectionChanged(mux_signal);
+            return;
+        }
+    }
 }
 
 void ParameterMonitorForm::on_adcTriggerSelectionComboBox_currentIndexChanged(int index)
 {
-    for (auto signalIt = GPIO_SIGNAL_MAP.begin(); signalIt != GPIO_SIGNAL_MAP.end(); ++signalIt) {
-        const GPIO_SIGNAL signalId = signalIt.key();
-        if (GPIO_SIGNAL_MAP[signalId].name == ui->adcTriggerSelectionComboBox->itemText(index)) {
-            emit triggerSelectionChanged(signalId);
+    for (const auto& [pin, descriptor] : GPIO_SIGNAL_MAP) {
+        if (QString::fromStdString(descriptor.name) == ui->adcTriggerSelectionComboBox->itemText(index)) {
+            emit triggerSelectionChanged(pin);
             return;
         }
     }
@@ -71,9 +82,6 @@ void ParameterMonitorForm::onCalibReceived(bool /*valid*/, bool /*eepromValid*/,
     for (int i = 0; i < calibList.size(); i++) {
         fCalibList.push_back(calibList[i]);
     }
-
-    int ver = getCalibParameter("VERSION").toInt();
-    ui->hwVersionLabel->setText(QString::number(ver));
 }
 
 void ParameterMonitorForm::onAdcSampleReceived(uint8_t channel, float value)
@@ -145,9 +153,22 @@ void ParameterMonitorForm::onDacReadbackReceived(uint8_t channel, float value)
     ui->dacSlider4->blockSignals(false);
 }
 
-void ParameterMonitorForm::onInputSwitchReceived(uint8_t index)
+void ParameterMonitorForm::onInputSwitchReceived(TIMING_MUX_SELECTION sel)
 {
-    ui->timingSelectionComboBox->setCurrentIndex(index);
+    if (TIMING_MUX_SIGNAL_NAMES.find(sel) == TIMING_MUX_SIGNAL_NAMES.end())
+        return;
+    int i = 0;
+    while (i < ui->timingSelectionComboBox->count()) {
+        if (ui->timingSelectionComboBox->itemText(i).compare(QString::fromStdString(TIMING_MUX_SIGNAL_NAMES.at(sel))) == 0)
+            break;
+        i++;
+    }
+    if (i >= ui->timingSelectionComboBox->count())
+        return;
+    ui->timingSelectionComboBox->blockSignals(true);
+    ui->timingSelectionComboBox->setEnabled(true);
+    ui->timingSelectionComboBox->setCurrentIndex(i);
+    ui->timingSelectionComboBox->blockSignals(false);
 }
 
 void ParameterMonitorForm::onBiasSwitchReceived(bool state)
@@ -167,7 +188,7 @@ void ParameterMonitorForm::onTriggerSelectionReceived(GPIO_SIGNAL signal)
 {
     int i = 0;
     while (i < ui->adcTriggerSelectionComboBox->count()) {
-        if (ui->adcTriggerSelectionComboBox->itemText(i).compare(GPIO_SIGNAL_MAP[signal].name) == 0)
+        if (ui->adcTriggerSelectionComboBox->itemText(i).compare(QString::fromStdString(GPIO_SIGNAL_MAP.at(signal).name)) == 0)
             break;
         i++;
     }
@@ -303,6 +324,11 @@ void ParameterMonitorForm::on_gpioInhibitCheckBox_clicked(bool checked)
     emit gpioInhibitChanged(checked);
 }
 
+void ParameterMonitorForm::on_mqttInhibitCheckBox_clicked(bool checked)
+{
+    emit mqttInhibitChanged(checked);
+}
+
 void ParameterMonitorForm::onPolarityCheckBoxClicked(bool /*checked*/)
 {
     bool pol1 = ui->pol1CheckBox->isChecked();
@@ -316,6 +342,19 @@ void ParameterMonitorForm::onUiEnabledStateChange(bool connected)
         ui->adcTracePlot->setEnabled(ui->adcTraceGroupBox->isChecked());
     } else {
         ui->adcTracePlot->setEnabled(false);
+        ui->hwVersionLabel->setText("N/A");
+        ui->swVersionLabel->setText("N/A");
+        ui->biasCurrentLabel->setText("N/A");
+        ui->biasVoltageLabel->setText("N/A");
+        ui->temperatureLabel->setText("N/A");
+        ui->ubloxCounterLabel->setText("N/A");
+        ui->timePrecLabel->setText("N/A");
     }
     this->setEnabled(connected);
+}
+
+void ParameterMonitorForm::onDaemonVersionReceived(MuonPi::Version::Version hw_ver, MuonPi::Version::Version sw_ver)
+{
+    ui->hwVersionLabel->setText(QString::fromStdString(hw_ver.string()));
+    ui->swVersionLabel->setText(QString::fromStdString(sw_ver.string()));
 }

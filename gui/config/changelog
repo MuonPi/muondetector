@@ -1,3 +1,17 @@
+muondetector-gui (2.1.0) ; urgency=low
+
+  * Intensively improved the geographic map feature with position marker (zoom level independent), semitransparent accuracy indicator and info box with current coordinates and position accuracy.
+  * Added daemon hardware and software info under "Parameters" tab.
+  * Added time as scan parameter in "Scans" tab.
+  * Added display of log rotation interval and event log enable flag in "Log" tab.
+  * Fixed bug which prevented auto update of histograms and plots.
+  * Optimized color schemes to give better appearance for dark themes
+  * changed timing input selection from radio button group to drop down menu
+
+ -- MuonPi.org <developer@muonpi.org>  Mon, 26 Apr 2022 01:03:00 +0200
+
+muondetector-gui (2.0.2) ; urgency=low
+
 muondetector-gui (2.0.1) ; urgency=low
 
   * Improved window resize functionality.

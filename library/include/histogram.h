@@ -4,14 +4,13 @@
 #include "muondetector_shared_global.h"
 
 #include <QDataStream>
-//#include <cmath>
 #include <map>
 #include <string>
 
 class Histogram {
 public:
     Histogram() = default;
-    Histogram(const std::string& name, int nrBins, double min, double max);
+    Histogram(const std::string& name, int nrBins, double min, double max, bool autoscale = false, const std::string& unit = "") noexcept;
     ~Histogram();
     void clear();
     void setName(const std::string& name);
@@ -31,6 +30,8 @@ public:
     void setBinContent(int bin, double value);
     double getBinContent(int bin) const;
     double getMean();
+    double getMedian();
+    double getMpv();
     double getRMS();
     double getUnderflow() const;
     double getOverflow() const;
@@ -38,7 +39,7 @@ public:
     void rescale(double center, double width);
     void rescale(double center);
     void rescale();
-	void setAutoscale( bool autoscale = true );
+    void setAutoscale(bool autoscale = true);
 
     friend QDataStream& operator<<(QDataStream& out, const Histogram& h);
     friend QDataStream& operator>>(QDataStream& in, Histogram& h);
@@ -50,15 +51,15 @@ protected:
     int value2Bin(double value) const;
     double bin2Value(int bin) const;
 
-    std::string fName = "defaultHisto";
-    std::string fUnit = "A.U.";
-    int fNrBins = 100;
-    double fMin = 0.0;
-    double fMax = 1.0;
-    double fOverflow = 0;
-    double fUnderflow = 0;
-    std::map<int, double> fHistogramMap;
-	bool fAutoscale { false };
+    std::string fName { "defaultHisto" };
+    std::string fUnit { "A.U." };
+    int fNrBins { 100 };
+    double fMin { 0.0 };
+    double fMax { 1.0 };
+    double fOverflow { 0 };
+    double fUnderflow { 0 };
+    std::map<int, double> fHistogramMap {};
+    bool fAutoscale { false };
 };
 
 #endif // HISTOGRAM_H

@@ -7,6 +7,8 @@
 #include <QNetworkInterface>
 #include <QNetworkSession>
 #include <QtGlobal>
+#include <condition_variable>
+#include <config.h>
 #include <crypto++/aes.h>
 #include <crypto++/filters.h>
 #include <crypto++/hex.h>
@@ -14,14 +16,16 @@
 #include <crypto++/osrng.h>
 #include <crypto++/sha.h>
 #include <iostream>
+#include <mutex>
 #include <string>
 #include <termios.h>
+#include <thread>
 #include <unistd.h>
 
 #include "mqtthandler.h"
 
 [[nodiscard]] auto getch() -> char;
-[[nodiscard]] auto getpass(const char* prompt, const bool show_asterisk)
+[[nodiscard]] auto getpasswd(const char* prompt, const bool show_asterisk)
     -> std::string;
 [[nodiscard]] auto SHA256HashString(const std::string& aString) -> std::string;
 [[nodiscard]] auto getMacAddress() -> QString;
@@ -46,7 +50,7 @@ auto getch() -> char
     return ch;
 }
 
-auto getpass(const char* prompt, const bool show_asterisk) -> std::string
+auto getpasswd(const char* prompt, const bool show_asterisk) -> std::string
 {
     const char BACKSPACE = 127;
     const char RETURN = 10;
@@ -174,10 +178,9 @@ int main()
     std::cout << "To set the login for the mqtt-server, please enter your credentials.\nusername: ";
     std::string username {};
     std::cin >> username;
-    std::string password { getpass("password: ", true) };
-    QString hashedMacAddress { QString { QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex() } };
+    std::string password { getpasswd("password: ", true) };
     QDir temp;
-    QString saveDirPath { "/var/muondetector/" + hashedMacAddress };
+    QString saveDirPath { MuonPi::Config::data_path };
     if (!temp.exists(saveDirPath)) {
         temp.mkpath(saveDirPath);
         if (!temp.exists(saveDirPath)) {
@@ -188,15 +191,24 @@ int main()
         return 1;
     }
     MuonPi::MqttHandler mqttHandler { "" };
-    std::unique_ptr<QObject> context { new QObject };
-    QObject::connect(&mqttHandler, &MuonPi::MqttHandler::mqttConnectionStatus,
-        [context = std::move(context)](bool connected) mutable {
-            if (connected) {
-                std::cout << "login data is correct!\n";
+    std::condition_variable wakeup {};
+    QObject::connect(&mqttHandler, &MuonPi::MqttHandler::connection_status,
+        [&wakeup](MuonPi::MqttHandler::Status status) {
+            if (status == MuonPi::MqttHandler::Status::Connecting) {
+                return;
             }
-            context.release();
+            if (status == MuonPi::MqttHandler::Status::Connected) {
+                std::cout << "Login data is correct!\n";
+            }
+            if (status == MuonPi::MqttHandler::Status::Error) {
+                std::cout << "There was a problem with the login, please try again.\n";
+            }
+            wakeup.notify_all();
         });
     mqttHandler.start(QString::fromStdString(username), QString::fromStdString(password));
-    mqttHandler.mqttDisconnect();
+
+    std::mutex mx;
+    std::unique_lock<std::mutex> lock { mx };
+    wakeup.wait(lock);
     return 0;
 }

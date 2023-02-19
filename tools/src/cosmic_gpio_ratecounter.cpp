@@ -127,7 +127,6 @@ bool caseInsCompare(const string& s1, const string& s2) {
 }
 
 int main(int argc, char** argv) {
-	
 	int meas_interval_sec = MEAS_INTERVAL_DEFAULT;
 	double thr1 = THR1_DEFAULT;
 	double thr2 = THR2_DEFAULT;
@@ -207,7 +206,6 @@ int main(int argc, char** argv) {
 					scanpar = (scanpar_t)i;
 				}
 				//cout<<"SP: "<<scanpar_strings[i]<<endl;
-			
 			} 
 			break;
 		case 't':
@@ -457,5 +455,4 @@ int main(int argc, char** argv) {
 	
 	gpioTerminate();
 	return 0;
-	
 }

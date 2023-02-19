@@ -81,10 +81,10 @@ i2cDevice::i2cDevice(const char* busAddress, uint8_t slaveAddress)
 i2cDevice::~i2cDevice()
 {
     //destructor of the opening part from above
-	if (fHandle > 0) {
-		fNrDevices--;
-		close(fHandle);
-	}
+    if (fHandle > 0) {
+        fNrDevices--;
+        close(fHandle);
+    }
     std::vector<i2cDevice*>::iterator it;
     it = std::find(fGlobalDeviceList.begin(), fGlobalDeviceList.end(), this);
     if (it != fGlobalDeviceList.end())
@@ -124,30 +124,30 @@ void i2cDevice::setAddress(uint8_t address)
     }
 }
 
-void i2cDevice::lock( bool locked )
+void i2cDevice::lock(bool locked)
 {
-	if (locked)
-		fMode |= MODE_LOCKED;
-	else
-		fMode &= ~MODE_LOCKED;
+    if (locked)
+        fMode |= MODE_LOCKED;
+    else
+        fMode &= ~MODE_LOCKED;
 }
 
 bool i2cDevice::identify()
 {
-	// this function should be reimplemented in derived classes
-	// if it is not reimplemented it returns false, i.e. the abstract i2cDevice can never be identified positively
-	// reimplement this method for specific devices and use whatever is needed to get an unanimous identification
-	// return true if device is identified correctly
-	return false;
+    // this function should be reimplemented in derived classes
+    // if it is not reimplemented it returns false, i.e. the abstract i2cDevice can never be identified positively
+    // reimplement this method for specific devices and use whatever is needed to get an unanimous identification
+    // return true if device is identified correctly
+    return false;
 }
 
 int i2cDevice::read(uint8_t* buf, int nBytes)
 { //defines a function with a pointer buf as buffer and the number of bytes which
     //we want to read.
-	if (fHandle <= 0 || (fMode & MODE_LOCKED))
+    if (fHandle <= 0 || (fMode & MODE_LOCKED))
         return 0;
-	//std::lock_guard<std::mutex> lock(fMutex);
-	int nread = ::read(fHandle, buf, nBytes); //"::" declares that the functions does not call itself again, but instead uses the system call
+    //std::lock_guard<std::mutex> lock(fMutex);
+    int nread = ::read(fHandle, buf, nBytes); //"::" declares that the functions does not call itself again, but instead uses the system call
     if (nread > 0) {
         fNrBytesRead += nread;
         fGlobalNrBytesRead += nread;
@@ -164,7 +164,7 @@ int i2cDevice::write(uint8_t* buf, int nBytes)
     if (fHandle <= 0 || (fMode & MODE_LOCKED))
         return 0;
     //std::lock_guard<std::mutex> lock(fMutex);
-	int nwritten = ::write(fHandle, buf, nBytes);
+    int nwritten = ::write(fHandle, buf, nBytes);
     if (nwritten > 0) {
         fNrBytesWritten += nwritten;
         fGlobalNrBytesWritten += nwritten;
@@ -194,7 +194,7 @@ int i2cDevice::writeReg(uint8_t reg, uint8_t* buf, int nBytes)
 int i2cDevice::readReg(uint8_t reg, uint8_t* buf, int nBytes)
 {
     std::lock_guard<std::mutex> lock(fMutex);
-	int n = write(&reg, 1);
+    int n = write(&reg, 1);
     if (n != 1)
         return -1;
     n = read(buf, nBytes);
@@ -270,7 +270,7 @@ bool i2cDevice::writeBit(uint8_t regAddr, uint8_t bitNum, uint8_t data)
 {
     uint8_t b;
     std::lock_guard<std::mutex> lock(fMutex);
-	int n = readByte(regAddr, &b);
+    int n = readByte(regAddr, &b);
     if (n != 1)
         return false;
     b = (data != 0) ? (b | (1 << bitNum)) : (b & ~(1 << bitNum));
@@ -294,8 +294,8 @@ bool i2cDevice::writeBits(uint8_t regAddr, uint8_t bitStart, uint8_t length, uin
     // 10100011 original & ~mask
     // 10101011 masked | value
     uint8_t b;
-	std::lock_guard<std::mutex> lock(fMutex);
-	if (readByte(regAddr, &b) != 0) {
+    std::lock_guard<std::mutex> lock(fMutex);
+    if (readByte(regAddr, &b) != 0) {
         uint8_t mask = ((1 << length) - 1) << (bitStart - length + 1);
         data <<= (bitStart - length + 1); // shift data into correct position
         data &= mask; // zero all non-important bits in data
@@ -326,7 +326,6 @@ bool i2cDevice::writeByte(uint8_t regAddr, uint8_t data)
 */
 bool i2cDevice::writeBytes(uint8_t regAddr, uint16_t length, uint8_t* data)
 {
-
     int n = writeReg(regAddr, data, length);
     return (n == length);
 }
@@ -407,7 +406,7 @@ int16_t i2cDevice::readWords(uint8_t regAddr, uint16_t length, uint16_t* data)
         return -1;
     } else if (count != length * 2) {
         fprintf(stderr, "Short read from device, expected %d, got %d\n", length * 2, count);
-        return count/2;
+        return count / 2;
     }
 
     for (int i = 0; i < length; i++) {
@@ -415,7 +414,7 @@ int16_t i2cDevice::readWords(uint8_t regAddr, uint16_t length, uint16_t* data)
         data[i] |= buf[i * 2 + 1];
     }
 
-    return count/2;
+    return count / 2;
 }
 
 /** Read multiple words.
@@ -434,7 +433,7 @@ int16_t i2cDevice::readWords(uint16_t length, uint16_t* data)
         return -1;
     } else if (count != length * 2) {
         fprintf(stderr, "Short read from device, expected %d, got %d\n", length * 2, count);
-        return count/2;
+        return count / 2;
     }
 
     for (int i = 0; i < length; i++) {
@@ -442,9 +441,8 @@ int16_t i2cDevice::readWords(uint16_t length, uint16_t* data)
         data[i] |= buf[i * 2 + 1];
     }
 
-    return count/2;
+    return count / 2;
 }
-
 
 void i2cDevice::startTimer()
 {

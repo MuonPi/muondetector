@@ -3,45 +3,51 @@
 
 #include "version.h"
 
+#include <chrono>
 #include <cstdint>
 #include <string>
 
 namespace MuonPi::Version {
-constexpr struct Version {
+
+struct Version {
     int major;
     int minor;
     int patch;
-    const char* additional { "" };
-    const char* hash { "" };
+    std::string additional { "" };
+    std::string hash { "" };
 
     [[nodiscard]] auto string() const -> std::string;
-} hardware { 3, 0, 0 },
-    software { CMake::Version::major, CMake::Version::minor, CMake::Version::patch, CMake::Version::additional, CMake::Version::hash };
+};
+
+[[maybe_unused]] static Version hardware { 3, 0, 0 };
+[[maybe_unused]] static const Version software { CMake::Version::major, CMake::Version::minor, CMake::Version::patch, CMake::Version::additional, CMake::Version::hash };
 }
 
 namespace MuonPi::Config {
 constexpr const char* file { "/etc/muondetector/muondetector.conf" };
+constexpr const char* data_path { "/var/muondetector/" };
+constexpr const char* persistant_settings_file { "settings.conf" };
 constexpr int event_count_deadtime_ticks { 1000 };
 constexpr int event_count_max_pileups { 50 };
+constexpr double max_lock_in_dop { 3. };
+constexpr double lock_in_target_precision_meters { 7. };
+constexpr std::size_t lock_in_min_histogram_entries { 1500 };
+constexpr std::size_t lock_in_max_histogram_entries { 8000 };
 
 namespace MQTT {
     constexpr const char* host { "data.muonpi.org" };
     constexpr int port { 1883 };
-    constexpr int timeout { 10000 };
     constexpr int qos { 1 };
-    constexpr int keepalive_interval { 45 };
+    constexpr std::chrono::seconds retry_period { 2 };
+    constexpr std::size_t max_retry_count { 14 };
+    constexpr std::chrono::seconds keepalive_interval { 45 };
     constexpr const char* data_topic { "muonpi/data/" };
     constexpr const char* log_topic { "muonpi/log/" };
 }
 namespace Log {
-    constexpr int interval { 1 };
-    constexpr int max_geohash_length { 6 };
-}
-namespace Upload {
-    constexpr int reminder { 5 };
-    constexpr std::size_t timeout { 600000UL };
-    constexpr const char* url { "balu.physik.uni-giessen.de:/cosmicshower" };
-    constexpr int port { 35221 };
+    constexpr std::chrono::seconds interval { 60 };
+    constexpr int max_geohash_length_default { 6 };
+    constexpr std::chrono::hours rotate_period_default { 7 * 24 };
 }
 namespace Hardware {
     namespace OLED {
@@ -53,6 +59,10 @@ namespace Hardware {
         constexpr int deadtime { 8 };
     }
     namespace DAC {
+        namespace Channel {
+            constexpr int bias { 2 }; //!< channel of the dac where bias voltage is set
+            constexpr int threshold[2] { 0, 1 }; //!< channel of the dac where thresholds 1 and 2 are set
+        }
         namespace Voltage {
             constexpr float bias { 0.5 };
             constexpr float threshold[2] { 0.1, 1.0 };
@@ -74,7 +84,8 @@ namespace Hardware {
 
 namespace MuonPi::Settings {
 struct {
-    int max_geohash_length { Config::Log::max_geohash_length };
+    int max_geohash_length { Config::Log::max_geohash_length_default };
+    std::chrono::seconds rotate_period { Config::Log::rotate_period_default };
 } log;
 
 struct {

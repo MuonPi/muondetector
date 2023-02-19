@@ -1,3 +1,16 @@
+muondetector-daemon (2.1.0) ; urgency=low
+
+  * Bugfixes:
+  - removed wrong QT connect call which resulted in a warning in log messages after daemon startup
+
+  * Updates:
+  - restructured data logging system: 
+   - introduced log rotation and possibility to enable/disable data logging
+   - simplified structure of data storage path under /var/muondetector
+   - auto delete old data and log files
+  
+ -- MuonPi <developer@muonpi.org>  Fri, 8. Apr 2022 10:10:00 +0100
+
 muondetector-daemon (2.0.1) ; urgency=low
 
   * Bugfixes:

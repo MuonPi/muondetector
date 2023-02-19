@@ -5,15 +5,19 @@
 #include <QStandardItemModel>
 #include <QTime>
 #include <QVector>
-#include <gpio_pin_definitions.h>
-#include <tcpconnection.h>
 
 // for sig handling:
 #include <sys/types.h>
 
+#include <config.h>
+#include <gpio_pin_definitions.h>
+#include <mqtthandler.h>
+#include <tcpconnection.h>
+
 struct I2cDeviceEntry;
 struct CalibStruct;
-struct GeodeticPos;
+struct GnssPosStruct;
+struct PositionModeConfig;
 struct GnssConfigStruct;
 class GnssSatellite;
 class CalibForm;
@@ -45,10 +49,11 @@ signals:
     void gpioRates(quint8 whichrate, QVector<QPointF> rate);
     void tcpDisconnected();
     void setUiEnabledStates(bool enabled);
-    void geodeticPos(const GeodeticPos& pos);
+    void geodeticPos(const GnssPosStruct& pos);
+    void positionModeConfigReceived(const PositionModeConfig& posconfig);
     void adcSampleReceived(uint8_t channel, float value);
     void adcTraceReceived(const QVector<float>& sampleBuffer);
-    void inputSwitchReceived(uint8_t);
+    void inputSwitchReceived(TIMING_MUX_SELECTION);
     void dacReadbackReceived(uint8_t channel, float value);
     void biasSwitchReceived(bool state);
     void preampSwitchReceived(uint8_t channel, bool state);
@@ -78,10 +83,12 @@ signals:
     void adcModeReceived(quint8 mode);
     void logInfoReceived(const LogInfoStruct& lis);
     void mqttStatusChanged(bool connected);
+    void mqttStatusChanged(MuonPi::MqttHandler::Status status);
     void timeMarkReceived(const UbxTimeMarkStruct&);
     void polaritySwitchReceived(bool pol1, bool pol2);
     void gpioInhibitReceived(bool inhibit);
     void mqttInhibitReceived(bool inhibit);
+    void daemonVersionReceived(MuonPi::Version::Version hw_ver, MuonPi::Version::Version sw_ver);
 
 public slots:
     void receivedTcpMessage(TcpMessage tcpMessage);
@@ -97,6 +104,7 @@ public slots:
     void gpioInhibit(bool inhibit);
     void mqttInhibit(bool inhibit);
     void onPolarityChanged(bool pol1, bool pol2);
+    void onPosModeConfigChanged(const PositionModeConfig& posconfig);
 
 private slots:
     void resetAndHit();
@@ -111,7 +119,7 @@ private slots:
     void onIpButtonClicked();
     void connected();
     void connection_error(int error_code, const QString message);
-    void sendInputSwitch(uint8_t id);
+    void sendInputSwitch(TIMING_MUX_SELECTION sel);
 
     void on_discr1Save_clicked();
     void on_discr2Save_clicked();
@@ -126,6 +134,8 @@ private slots:
     void onSetTP5Config(const UbxTimePulseStruct& tp);
     void on_biasVoltageDoubleSpinBox_valueChanged(double arg1);
     void on_saveDacButton_clicked();
+    void onDaemonVersionReceived(MuonPi::Version::Version hw_ver, MuonPi::Version::Version sw_ver);
+    void onBiasSwitchReceived(bool biasEnabled);
 
 private:
     Ui::MainWindow* ui;
@@ -167,6 +177,7 @@ private:
     double biasCalibSlope = 1.;
     double minBiasVoltage = 0.;
     double maxBiasVoltage = 3.3;
+    QTimer m_connection_timeout {};
 };
 
 #endif // MAINWINDOW_H

@@ -6,6 +6,7 @@
 #include <QDateTime>
 #include <QElapsedTimer>
 #include <QTimer>
+#include <memory>
 
 #include <memory>
 #include <thread>
@@ -16,9 +17,9 @@
 
 #include <gpiod.h>
 
-class PigpiodHandler : public QObject
-{
-	Q_OBJECT
+class PigpiodHandler : public QObject {
+    Q_OBJECT
+
 public:
 	enum PinBias : std::uint8_t {
 		BiasDisabled = 0x00,

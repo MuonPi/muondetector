@@ -1,13 +1,13 @@
 #include <fcntl.h> // open
 #include <inttypes.h> // uint8_t, etc
 #include <iostream>
+#include <mutex>
 #include <stdio.h>
 #include <string>
 #include <sys/ioctl.h> // ioctl
 #include <sys/time.h> // for gettimeofday()
 #include <unistd.h>
 #include <vector>
-#include <mutex>
 
 #ifndef _I2CDEVICE_H_
 #define _I2CDEVICE_H_
@@ -16,30 +16,30 @@
 
 // base class fragment static_device_base which implemets static functions available to all derived classes
 // by the Curiously Recursive Template Pattern (CRTP) mechanism
-template<class T>
-struct static_device_base
-{
-	friend class i2cDevice;
-	static bool identifyDevice(uint8_t addr) {
-		auto it = T::getGlobalDeviceList().begin();
-		bool found { false };
-		while ( !found && it != T::getGlobalDeviceList().end() ) {
-			if ( (*it)->getAddress() == addr) { 
-				found = true;
-				break;
-			}
-			it++;
-		}
-		if ( found ) {
-			T dummyDevice( 0x00 );
-			if ( (*it)->getTitle() == dummyDevice.getTitle() ) return true;
-			return false;
-		}
-		T device(addr);
-		return device.identify();
-	}
+template <class T>
+struct static_device_base {
+    friend class i2cDevice;
+    static bool identifyDevice(uint8_t addr)
+    {
+        auto it = T::getGlobalDeviceList().begin();
+        bool found { false };
+        while (!found && it != T::getGlobalDeviceList().end()) {
+            if ((*it)->getAddress() == addr) {
+                found = true;
+                break;
+            }
+            it++;
+        }
+        if (found) {
+            T dummyDevice(0x00);
+            if ((*it)->getTitle() == dummyDevice.getTitle())
+                return true;
+            return false;
+        }
+        T device(addr);
+        return device.identify();
+    }
 };
-
 
 //We define a class named i2cDevices to outsource the hardware dependent program parts. We want to
 //access components of integrated curcuits, like the ads1115 or other subdevices via i2c-bus.
@@ -49,7 +49,6 @@ struct static_device_base
 // For device specific implementations, classes can inherit this base class
 // virtual methods should be reimplemented in the child classes to make sense there, e.g. devicePresent()
 class i2cDevice {
-
 public:
     enum MODE { MODE_NONE = 0,
         MODE_NORMAL = 0x01,
@@ -125,14 +124,14 @@ public:
     bool writeBytes(uint8_t regAddr, uint16_t length, uint8_t* data);
     bool writeWords(uint8_t regAddr, uint16_t length, uint16_t* data);
     bool writeWord(uint8_t regAddr, uint16_t data);
-	int16_t readWords(uint8_t regAddr, uint16_t length, uint16_t* data);
-	int16_t readWords(uint16_t length, uint16_t* data);
-	bool readWord(uint8_t regAddr, uint16_t* data);
-	bool readWord(uint16_t* data);
-	
+    int16_t readWords(uint8_t regAddr, uint16_t length, uint16_t* data);
+    int16_t readWords(uint16_t length, uint16_t* data);
+    bool readWord(uint8_t regAddr, uint16_t* data);
+    bool readWord(uint16_t* data);
+
     void getCapabilities();
-	
-	virtual bool identify();
+
+    virtual bool identify();
 
 protected:
     int fHandle { 0 };
@@ -149,7 +148,7 @@ protected:
     std::string fTitle { "I2C device" };
     uint8_t fMode { MODE_NONE };
     unsigned int fIOErrors { 0 };
-	std::mutex fMutex;
+    std::mutex fMutex;
 
     // fuctions for measuring time intervals
     void startTimer();

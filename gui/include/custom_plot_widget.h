@@ -8,6 +8,7 @@
 
 class CustomPlot : public QwtPlot {
     Q_OBJECT
+
 public:
     CustomPlot(QWidget* parent = 0)
         : QwtPlot(parent)
@@ -41,6 +42,7 @@ public slots:
     void setLogY(bool logscale);
     void rescale();
     void exportToFile();
+    void changeEvent(QEvent* e);
 
 private slots:
     void popUpMenu(const QPoint& pos);

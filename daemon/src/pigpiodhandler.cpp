@@ -1,3 +1,4 @@
+#include "utility/gpio_mapping.h"
 #include <QDebug>
 #include <QPointer>
 #include <cmath>
@@ -76,114 +77,6 @@ void calcLinearCoefficients(int n, quint64* xarray, qint64* yarray,
 }
 
 
-/* This is the central interrupt routine for all registered GPIO pins
- *
- */
-/*
-static void cbFunction(int user_pi, unsigned int user_gpio,
-    unsigned int level, uint32_t tick)
-{
-    if (pigHandlerAddress.isNull()) {
-        pigpio_stop(pi);
-        return;
-    }
-    if (pi != user_pi) {
-        // put some error here for the case pi is not the same as before initialized
-        return;
-    }
-
-    QPointer<PigpiodHandler> pigpioHandler = pigHandlerAddress;
-
-    if (pigpioHandler->isInhibited())
-        return;
-
-    static uint32_t lastTriggerTick = 0;
-    static uint32_t lastTick = 0;
-    static uint16_t pileupCounter = 0;
-
-    // look, if the last event occured just recently
-    // if so, count the pileup counter up
-    // count down if not
-    if (tick - lastTick < MuonPi::Config::event_count_deadtime_ticks) 
-    {
-        pileupCounter++;
-        // if more than a certain number of pileups happened in a short period of time, leave immediately
-        if (pileupCounter > MuonPi::Config::event_count_max_pileups) 
-        {
-            pileupCounter = MuonPi::Config::event_count_max_pileups;
-			lastTick = tick;
-            return;
-        }
-    } else if (pileupCounter > 0)
-    {
-        pileupCounter--;
-    }
-
-    lastTick = tick;
-
-    try {
-        // allow only registered signals to be processed here
-        // if gpio pin fired which is not in GPIO_PIN list, return immediately
-        auto it = std::find_if(GPIO_PINMAP.cbegin(), GPIO_PINMAP.cend(),
-            [&user_gpio](const std::pair<GPIO_SIGNAL, unsigned int>& val) {
-                if (val.second == user_gpio)
-                    return true;
-                return false;
-            });
-        if (it == GPIO_PINMAP.end())
-            return;
-
-        QDateTime now = QDateTime::currentDateTimeUtc();
-
-        if (user_gpio == GPIO_PINMAP[pigpioHandler->samplingTriggerSignal]) {
-            if (pigpioHandler->lastSamplingTime.msecsTo(now) >= MuonPi::Config::Hardware::ADC::deadtime) {
-                emit pigpioHandler->samplingTrigger();
-                pigpioHandler->lastSamplingTime = now;
-            }
-            quint64 nsecsElapsed = pigpioHandler->elapsedEventTimer.nsecsElapsed();
-            pigpioHandler->elapsedEventTimer.start();
-            emit pigpioHandler->eventInterval((tick - lastTriggerTick) * 1000);
-            lastTriggerTick = tick;
-        }
-
-        if (user_gpio == GPIO_PINMAP[TIMEPULSE]) {
-            struct timespec ts;
-            clock_gettime(CLOCK_REALTIME, &ts);
-            quint64 timestamp = pigpioHandler->gpioTickOverflowCounter + tick;
-            quint64 t0 = pigpioHandler->startOfProgram.toMSecsSinceEpoch();
-
-            long double meanDiff = pigpioHandler->clockMeasurementOffset;
-
-            long double dx = timestamp - pigpioHandler->lastTimeMeasurementTick;
-            long double dy = pigpioHandler->clockMeasurementSlope * dx;
-            meanDiff += dy;
-
-            qint64 meanDiffInt = (qint64)meanDiff;
-            double meanDiffFrac = (meanDiff - (qint64)meanDiff);
-            timestamp += meanDiffInt; // add diff to real time
-            long int ts_sec = timestamp / 1000000 + (t0 / 1000); // conv. us to s
-            long int ts_nsec = 1000 * (timestamp % 1000000) + (t0 % 1000) * 1000000L;
-            ts_nsec += (long int)(1000. * meanDiffFrac);
-
-            long double ppsOffs = (ts_sec - ts.tv_sec) + ts_nsec * 1e-9;
-            if (std::fabs(ppsOffs) < 3600.) {
-                qint32 t_diff_us = (double)(ppsOffs)*1e6;
-                emit pigpioHandler->timePulseDiff(t_diff_us);
-            }
-        }
-        
-        emit pigpioHandler->signal(user_gpio);
-         
-        // level gives the information if it is up or down (only important if trigger is
-        // at both: rising and falling edge)
-    } catch (std::exception& e) {
-        pigpioHandler = 0;
-        pigpio_stop(pi);
-        qCritical() << "Exception catched in 'static void cbFunction(int user_pi, unsigned int user_gpio, unsigned int level, uint32_t tick)':" << e.what();
-        qCritical() << "with user_pi=" << user_pi << "user_gpio=" << user_gpio << "level=" << level << "tick=" << tick;
-    }
-}
-*/
 
 PigpiodHandler::PigpiodHandler(std::vector<unsigned int> gpioPins, QObject *parent)
     : QObject(parent)

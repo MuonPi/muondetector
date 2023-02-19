@@ -1,7 +1,7 @@
 #ifndef _PCA9536_H_
 #define _PCA9536_H_
-#include "hardware/i2c/i2cdevice.h"
 #include "hardware/device_types.h"
+#include "hardware/i2c/i2cdevice.h"
 
 /* PCA9536  */
 class PCA9536 : public i2cDevice, public DeviceFunction<DeviceType::IO_EXTENDER>, public static_device_base<PCA9536> {
@@ -30,17 +30,17 @@ public:
     bool setOutputPorts(uint8_t portMask) override;
     bool setOutputState(uint8_t portMask) override;
     uint8_t getInputState() override;
-	bool devicePresent() override;
-	bool identify() override;
-	bool probeDevicePresence() override { return devicePresent(); }
+    bool devicePresent() override;
+    bool identify() override;
+    bool probeDevicePresence() override { return devicePresent(); }
 
 private:
-	enum REG { 	
-		INPUT = 0x00,
-		OUTPUT = 0x01,
-		POLARITY = 0x02,
-		CONFIG = 0x03 
-	};
+    enum REG {
+        INPUT = 0x00,
+        OUTPUT = 0x01,
+        POLARITY = 0x02,
+        CONFIG = 0x03
+    };
 };
 
 #endif // !_PCA9536_H_
