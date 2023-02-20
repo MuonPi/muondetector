@@ -260,13 +260,13 @@ bool QtSerialUblox::sendUBX(const UbxMessage& msg)
                 }
                 return true;
             } else {
-                emit toConsole("wait for bytes written timeout while trying to write to serialPort");
+                emit toConsole("wait for bytes written timeout while trying to write to serialPort\n");
             }
         } else {
-            emit toConsole("error writing to serialPort");
+            emit toConsole("error writing to serialPort\n");
         }
     } else {
-        emit toConsole("error: serialPort not instantiated");
+        emit toConsole("error: serialPort not instantiated\n");
     }
     return false;
 }
