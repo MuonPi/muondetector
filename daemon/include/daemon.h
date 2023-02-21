@@ -301,7 +301,6 @@ private:
     QPointer<QThread> tcpThread;
 
     configuration config;
-    KalmanGnssFilter m_gnss_pos_kalman { 0.02 };
     GeoPosManager m_geopos_manager;
 };
 
