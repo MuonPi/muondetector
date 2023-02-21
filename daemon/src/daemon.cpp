@@ -816,8 +816,7 @@ void Daemon::connectToPigpiod()
         rateCounterIntervalActualisation();
         if (gpio_pin == GPIO_PINMAP[EVT_XOR]) {
             xorCounts.back()++;
-        }
-        if (gpio_pin == GPIO_PINMAP[EVT_AND]) {
+        } else if (gpio_pin == GPIO_PINMAP[EVT_AND]) {
             andCounts.back()++;
         }
     });
