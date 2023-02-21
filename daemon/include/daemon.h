@@ -27,6 +27,7 @@
 #include "hardware/device_types.h"
 #include "networkdiscovery.h"
 #include "geoposmanager.h"
+#include "utility/ratebuffer.h"
 
 // from library
 #include <muondetector_structs.h>
@@ -302,6 +303,7 @@ private:
 
     configuration config;
     GeoPosManager m_geopos_manager;
+    std::map<unsigned int, std::shared_ptr<RateBuffer>> m_ratebuffers {};
 };
 
 #endif // DAEMON_H

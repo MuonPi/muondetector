@@ -59,6 +59,7 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/geohash.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/kalman_gnss_filter.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/geoposmanager.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/ratebuffer.cpp"
 
     "${MUONDETECTOR_I2C_SOURCE_FILES}"
     "${MUONDETECTOR_SPI_SOURCE_FILES}"
@@ -111,6 +112,7 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/logengine.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/geohash.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/kalman_gnss_filter.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/ratebuffer.h"
 
     "${MUONDETECTOR_I2C_HEADER_FILES}"
     "${MUONDETECTOR_SPI_HEADER_FILES}"

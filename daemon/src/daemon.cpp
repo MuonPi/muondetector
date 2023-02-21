@@ -637,6 +637,16 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     // connect to the pigpio daemon interface for gpio control
     connectToPigpiod();
 
+    // set up rate buffers for all GPIO input signals
+    for (auto [signal, pin]: GPIO_PINMAP) {
+        if (GPIO_SIGNAL_MAP.at(signal).direction == DIR_IN) {
+            auto ratebuf = std::make_shared<RateBuffer>(pin);
+            connect(pigHandler, &PigpiodHandler::signal, ratebuf.get(), &RateBuffer::onEvent);
+            // connect(&ratebuf, &RateBuffer::filteredEvent, this, &Daemon::sendGpioPinEvent);
+            m_ratebuffers.emplace(pin, ratebuf);
+        }
+    }
+
     // set up histograms
     setupHistos();
 
@@ -2287,6 +2297,11 @@ void Daemon::intSignalHandler(int)
 
 void Daemon::aquireMonitoringParameters()
 {
+    for ( auto [gpio, ratebuffer]: m_ratebuffers ) {
+        auto signal { bcmToGpioSignal(gpio) };
+        qDebug() << "signal: " << QString::fromStdString(GPIO_SIGNAL_MAP.at(signal).name) << " rate = " << ratebuffer->avgRate();
+    }
+
     if (temp_sensor_p && temp_sensor_p->probeDevicePresence()) {
         if (temp_sensor_p->getName() == "MIC184" && dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getAddress() < 0x4c) {
             // the attached temp sensor has a remote zone

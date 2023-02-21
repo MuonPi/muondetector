@@ -20,6 +20,8 @@
 #include <string>
 #include <sys/types.h>
 
+using EventTime = std::chrono::time_point<std::chrono::system_clock>;
+
 enum class ADC_SAMPLING_MODE {
     DISABLED = 0,
     PEAK = 1,
