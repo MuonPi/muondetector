@@ -11,8 +11,6 @@
 #include <queue>
 #include <utility/gpio_mapping.h>
 
-//class PigpiodHandler;
-
 using namespace std::literals;
 
 constexpr double MAX_AVG_RATE { 100. };
