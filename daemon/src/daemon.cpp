@@ -4,6 +4,7 @@
 #include "networkdiscovery.h"
 #include "utility/geohash.h"
 #include "utility/gpio_mapping.h"
+#include "utility/ratebuffer.h"
 #include <QNetworkInterface>
 #include <QThread>
 #include <Qt>
@@ -25,11 +26,9 @@
 #include <time.h>
 #include <ublox_messages.h>
 #include <unistd.h>
+#include <numbers>
 
 #define DEGREE_CHARCODE 248
-
-constexpr double pi() { return std::acos(-1); }
-constexpr double sqrt2 { std::sqrt(2.) };
 
 using namespace std;
 using namespace MuonPi;
@@ -598,16 +597,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
             dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getCapabilities();
     }
 
-    // for tcp connection with fileServer
-    peerPort = config.peerPort;
-    if (peerPort == 0) {
-        peerPort = 51508;
-    }
-    peerAddress = config.peerAddress;
-    if (peerAddress.isEmpty() || peerAddress == "local" || peerAddress == "localhost") {
-        peerAddress = QHostAddress(QHostAddress::LocalHost).toString();
-    }
-
     if (config.serverAddress.isEmpty()) {
         // if not otherwise specified: listen on all available addresses
         daemonAddress = QHostAddress(QHostAddress::Any);
@@ -632,7 +621,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     std::flush(std::cout);
 
     // create network discovery service
-    networkDiscovery = new NetworkDiscovery(NetworkDiscovery::DeviceType::DAEMON, peerPort, this);
+    networkDiscovery = new NetworkDiscovery(NetworkDiscovery::DeviceType::DAEMON, daemonPort, this);
 
     // connect to the pigpio daemon interface for gpio control
     connectToPigpiod();

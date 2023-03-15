@@ -56,8 +56,6 @@ public:
         float biasVoltage { -1.0F };
         bool bias_ON { false };
         GPIO_SIGNAL eventTrigger { EVT_XOR };
-        QString peerAddress { "" };
-        quint16 peerPort { 0 };
         QString serverAddress { "" };
         quint16 serverPort { 0 };
         bool showout { false };

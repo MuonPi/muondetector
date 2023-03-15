@@ -176,20 +176,6 @@ int main(int argc, char* argv[])
         QCoreApplication::translate("main", "show incoming ubx messages as hex"));
     parser.addOption(showinOption);
 
-    // peerAddress option
-    QCommandLineOption peerIpOption(QStringList() << "peer"
-                                                  << "peerAddress",
-        QCoreApplication::translate("main", "set file server ip address"),
-        QCoreApplication::translate("main", "peerAddress"));
-    parser.addOption(peerIpOption);
-
-    // peerPort option
-    QCommandLineOption peerPortOption(QStringList() << "pp"
-                                                    << "peerPort",
-        QCoreApplication::translate("main", "set file server port"),
-        QCoreApplication::translate("main", "peerPort"));
-    parser.addOption(peerPortOption);
-
     // daemonAddress option
     QCommandLineOption daemonIpOption(QStringList() << "server"
                                                     << "daemonAddress",
@@ -369,24 +355,10 @@ int main(int argc, char* argv[])
 
     daemonConfig.gnss_config = parser.isSet(showGnssConfigOption);
 
-    if (parser.isSet(peerPortOption)) {
-        daemonConfig.peerPort = parser.value(peerPortOption).toUInt(&ok);
-        if (!ok) {
-            daemonConfig.peerPort = 0;
-            qCritical() << "wrong input peerPort (maybe not an integer)";
-        }
-    }
-    if (parser.isSet(peerIpOption)) {
-        daemonConfig.peerAddress = parser.value(peerIpOption);
-        if (!QHostAddress(daemonConfig.peerAddress).toIPv4Address()) {
-            if (daemonConfig.peerAddress != "localhost" && daemonConfig.peerAddress != "local") {
-                daemonConfig.peerAddress = "";
-                qCritical() << "wrong input ipAddress, not an ipv4address";
-            }
-        }
-    }
     try {
         int port = cfg.lookup("tcp_port");
+        if (verbose > 2)
+            qDebug() << "tcp_port (listen port): " << port;
         daemonConfig.serverPort = static_cast<quint16>(port);
     } catch (const libconfig::SettingNotFoundException&) {
     }
@@ -396,6 +368,14 @@ int main(int argc, char* argv[])
             daemonConfig.peerPort = 0;
             qCritical() << "wrong input peerPort (maybe not an integer)";
         }
+    }
+
+    try{
+        std::string tcpIpCfg = cfg.lookup("tcp_ip");
+        if (verbose > 2)
+            qDebug() << "tcp_ip (listen ip): " << QString::fromStdString(tcpIpCfg);
+        daemonConfig.serverAddress = QString::fromStdString(tcpIpCfg);
+    } catch (const libconfig::SettingNotFoundException&) {
     }
     if (parser.isSet(daemonIpOption)) {
         daemonConfig.serverAddress = parser.value(daemonIpOption);
