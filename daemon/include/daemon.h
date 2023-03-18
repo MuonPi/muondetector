@@ -8,8 +8,9 @@
 #include <QTcpServer>
 #include <QTimer>
 #include <QVariant>
-#include <time.h>
+#include <libconfig.h++>
 #include <memory>
+#include <time.h>
 
 // clang-format off
 #include "qtserialublox.h"
@@ -25,6 +26,8 @@
 #include "hardware/spidevices.h"
 #include "hardware/device_types.h"
 #include "networkdiscovery.h"
+#include "geoposmanager.h"
+#include "utility/ratebuffer.h"
 
 // from library
 #include <muondetector_structs.h>
@@ -53,8 +56,6 @@ public:
         float biasVoltage { -1.0F };
         bool bias_ON { false };
         GPIO_SIGNAL eventTrigger { EVT_XOR };
-        QString peerAddress { "" };
-        quint16 peerPort { 0 };
         QString serverAddress { "" };
         quint16 serverPort { 0 };
         bool showout { false };
@@ -70,6 +71,15 @@ public:
         int gnss_baudrate { 9600 };
         bool gnss_config { false };
         UbxDynamicModel gnss_dynamic_model { UbxDynamicModel::stationary };
+        PositionModeConfig position_mode_config {
+            PositionModeConfig::Mode::Auto,
+            {},
+            MuonPi::Config::max_lock_in_dop,
+            MuonPi::Config::lock_in_target_precision_meters,
+            PositionModeConfig::FilterType::None
+        };
+        std::shared_ptr<libconfig::Config> config_file_data {};
+        std::shared_ptr<libconfig::Config> settings_file_data {};
     };
 
     Daemon(configuration cfg, QObject* parent = nullptr);
@@ -112,7 +122,7 @@ public slots:
     void receivedTcpMessage(TcpMessage tcpMessage);
     void pollAllUbxMsgRate();
     void sendGpioPinEvent(uint8_t gpio_pin);
-    void onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos);
+    void onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos);
     void UBXReceivedVersion(const QString& swString, const QString& hwString, const QString& protString);
     void sampleAdc0Event();
     void sampleAdc0TraceEvent();
@@ -162,6 +172,8 @@ private slots:
     void aquireMonitoringParameters();
     void onStatusLed1Event(int onTimeMs);
     void onStatusLed2Event(int onTimeMs);
+    void onGeoPosLockInReady(GeoPosition pos);
+    void onGeoPosValid(GeoPosition pos);
 
 private:
     void incomingConnection(qintptr socketDescriptor) override;
@@ -190,6 +202,8 @@ private:
     void sendCalib();
     void sendHistogram(const Histogram& hist);
     void sendLogInfo();
+    void sendGeodeticPos(const GnssPosStruct& pos);
+    void sendPositionModel(const PositionModeConfig& pos);
     bool readEeprom();
     void receivedCalibItems(const std::vector<CalibStruct>& newCalibs);
     void setupHistos();
@@ -204,6 +218,7 @@ private:
     void rateCounterIntervalActualisation();
     qreal getRateFromCounts(quint8 which_rate);
     void clearRates();
+    void writeSettingsToFile();
 
     std::shared_ptr<DeviceFunction<DeviceType::TEMP>> temp_sensor_p;
     std::shared_ptr<DeviceFunction<DeviceType::ADC>> adc_p;
@@ -248,7 +263,7 @@ private:
     ShowerDetectorCalib* calib = nullptr;
 
     // histograms
-    QMap<QString, Histogram> histoMap;
+    std::map<std::string, std::shared_ptr<Histogram>> m_histo_map {};
 
     // others
     QVector<QPointF> xorRatePoints, andRatePoints;
@@ -259,8 +274,13 @@ private:
     QTimer rateBufferReminder;
     QTimer oledUpdateTimer;
     QList<quint64> andCounts, xorCounts;
-    UbxDopStruct currentDOP;
-    Property nrSats, nrVisibleSats, fixStatus;
+
+    Property<size_t> nrSats {};
+    Property<size_t> nrVisibleSats {};
+    Property<UbxDopStruct> currentDOP {};
+    Property<std::chrono::nanoseconds> m_time_precision {};
+    Property<Gnss::FixType> m_fix_status {};
+
     QVector<QTcpSocket*> peerList;
     QList<float> adcSamplesBuffer;
     ADC_SAMPLING_MODE adcSamplingMode { ADC_SAMPLING_MODE::PEAK };
@@ -268,9 +288,9 @@ private:
     QTimer samplingTimer;
     QTimer parameterMonitorTimer;
     QTimer rateScanTimer;
-    QMap<QString, Property> propertyMap;
+    //    QMap<QString, Property> propertyMap;
     LogEngine logEngine;
-    NetworkDiscovery* networkDiscovery{nullptr};
+    NetworkDiscovery* networkDiscovery { nullptr };
 
     // threads
     QPointer<QThread> mqttHandlerThread;
@@ -280,7 +300,8 @@ private:
     QPointer<QThread> tcpThread;
 
     configuration config;
-	KalmanGnssFilter kalmanGnssFilter { 0.01 };
+    GeoPosManager m_geopos_manager;
+    std::map<unsigned int, std::shared_ptr<RateBuffer>> m_ratebuffers {};
 };
 
 #endif // DAEMON_H

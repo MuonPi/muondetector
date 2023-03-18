@@ -26,9 +26,13 @@ struct Version {
 namespace MuonPi::Config {
 constexpr const char* file { "/etc/muondetector/muondetector.conf" };
 constexpr const char* data_path { "/var/muondetector/" };
+constexpr const char* persistant_settings_file { "settings.conf" };
 constexpr int event_count_deadtime_ticks { 1000 };
 constexpr int event_count_max_pileups { 50 };
-constexpr double max_lock_in_dop { 2.0 };
+constexpr double max_lock_in_dop { 3. };
+constexpr double lock_in_target_precision_meters { 7. };
+constexpr std::size_t lock_in_min_histogram_entries { 1500 };
+constexpr std::size_t lock_in_max_histogram_entries { 8000 };
 
 namespace MQTT {
     constexpr const char* host { "data.muonpi.org" };

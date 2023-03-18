@@ -1,9 +1,10 @@
 #include "hardware/device_types.h"
 #include "hardware/i2c/i2cutil.h"
 #include "hardware/i2cdevices.h"
+#include "networkdiscovery.h"
 #include "utility/geohash.h"
 #include "utility/gpio_mapping.h"
-#include "networkdiscovery.h"
+#include "utility/ratebuffer.h"
 #include <QNetworkInterface>
 #include <QThread>
 #include <Qt>
@@ -25,6 +26,7 @@
 #include <time.h>
 #include <ublox_messages.h>
 #include <unistd.h>
+#include <numbers>
 
 #define DEGREE_CHARCODE 248
 
@@ -165,7 +167,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     std::locale::global(std::locale::classic());
 
     qRegisterMetaType<TcpMessage>("TcpMessage");
-    qRegisterMetaType<GeodeticPos>("GeodeticPos");
+    qRegisterMetaType<GnssPosStruct>("GnssPosStruct");
     qRegisterMetaType<int32_t>("int32_t");
     qRegisterMetaType<uint32_t>("uint32_t");
     qRegisterMetaType<uint16_t>("uint16_t");
@@ -595,16 +597,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
             dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getCapabilities();
     }
 
-    // for tcp connection with fileServer
-    peerPort = config.peerPort;
-    if (peerPort == 0) {
-        peerPort = 51508;
-    }
-    peerAddress = config.peerAddress;
-    if (peerAddress.isEmpty() || peerAddress == "local" || peerAddress == "localhost") {
-        peerAddress = QHostAddress(QHostAddress::LocalHost).toString();
-    }
-
     if (config.serverAddress.isEmpty()) {
         // if not otherwise specified: listen on all available addresses
         daemonAddress = QHostAddress(QHostAddress::Any);
@@ -629,10 +621,20 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     std::flush(std::cout);
 
     // create network discovery service
-    networkDiscovery = new NetworkDiscovery(NetworkDiscovery::DeviceType::DAEMON, peerPort, this);
+    networkDiscovery = new NetworkDiscovery(NetworkDiscovery::DeviceType::DAEMON, daemonPort, this);
 
     // connect to the pigpio daemon interface for gpio control
     connectToPigpiod();
+
+    // set up rate buffers for all GPIO input signals
+    for (auto [signal, pin]: GPIO_PINMAP) {
+        if (GPIO_SIGNAL_MAP.at(signal).direction == DIR_IN) {
+            auto ratebuf = std::make_shared<RateBuffer>(pin);
+            connect(pigHandler, &PigpiodHandler::signal, ratebuf.get(), &RateBuffer::onEvent);
+            // connect(&ratebuf, &RateBuffer::filteredEvent, this, &Daemon::sendGpioPinEvent);
+            m_ratebuffers.emplace(pin, ratebuf);
+        }
+    }
 
     // set up histograms
     setupHistos();
@@ -656,6 +658,48 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     emit logParameter(LogParameter("maxGeohashLength", QString::number(config.maxGeohashLength), LogParameter::LOG_ONCE));
     emit logParameter(LogParameter("softwareVersionString", QString::fromStdString(MuonPi::Version::software.string()), LogParameter::LOG_ONCE));
     emit logParameter(LogParameter("hardwareVersionString", QString::fromStdString(MuonPi::Version::hardware.string()), LogParameter::LOG_ONCE));
+
+    m_geopos_manager.set_lockin_ready_callback(std::bind(&Daemon::onGeoPosLockInReady, this, std::placeholders::_1));
+    m_geopos_manager.set_valid_pos_callback(std::bind(&Daemon::onGeoPosValid, this, std::placeholders::_1));
+    m_geopos_manager.set_mode_config(config.position_mode_config);
+}
+
+void Daemon::onGeoPosLockInReady(GeoPosition pos)
+{
+    qDebug() << "GeoPosition lock-in finished";
+    sendGeodeticPos(pos.getPosStruct());
+    sendPositionModel(m_geopos_manager.get_mode_config());
+
+    qInfo() << "concluded geo pos lock-in and fixed position: lat=" << pos.latitude
+            << "lon=" << pos.longitude
+            << "(err=" << pos.hor_error << "m)"
+            << "alt=" << pos.altitude
+            << "(err=" << pos.vert_error << "m)";
+
+    writeSettingsToFile();
+}
+
+void Daemon::onGeoPosValid(GeoPosition pos)
+{
+    if (m_geopos_manager.get_mode() != PositionModeConfig::Mode::Static) {
+        sendGeodeticPos(pos.getPosStruct());
+        QString geohash = GeoHash::hashFromCoordinates(pos.longitude, pos.latitude, 10);
+
+        emit logParameter(LogParameter("geoLongitude", QString::number(pos.longitude, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
+        emit logParameter(LogParameter("geoLatitude", QString::number(pos.latitude, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
+        emit logParameter(LogParameter("geoHash", geohash + " ", LogParameter::LOG_LATEST));
+        emit logParameter(LogParameter("geoHeightMSL", QString::number(pos.altitude, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+        if (m_histo_map.find("geoHeight") != m_histo_map.end())
+            emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(m_histo_map["geoHeight"]->getMean(), 'f', 2) + " m", LogParameter::LOG_LATEST));
+        emit logParameter(LogParameter("geoHorAccuracy", QString::number(pos.hor_error, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+        emit logParameter(LogParameter("geoVertAccuracy", QString::number(pos.vert_error, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+
+        qDebug() << "position: lat=" << pos.latitude
+                 << "lon=" << pos.longitude
+                 << "(err=" << pos.hor_error << "m)"
+                 << "alt=" << pos.altitude
+                 << "(err=" << pos.vert_error << "m)";
+    }
 }
 
 Daemon::~Daemon()
@@ -711,8 +755,8 @@ void Daemon::connectToPigpiod()
 
     //tdc <-> thread & daemon
     connect(tdc7200, &TDC7200::tdcEvent, this, [this](double usecs) {
-        if (histoMap.find("Time-to-Digital Time Diff") != histoMap.end()) {
-            histoMap["Time-to-Digital Time Diff"].fill(usecs);
+        if (m_histo_map.find("Time-to-Digital Time Diff") != m_histo_map.end()) {
+            m_histo_map["Time-to-Digital Time Diff"]->fill(usecs);
         }
     });
     connect(tdc7200, &TDC7200::statusUpdated, this, [this](bool isPresent) {
@@ -741,19 +785,19 @@ void Daemon::connectToPigpiod()
 
     connect(pigHandler, &PigpiodHandler::samplingTrigger, this, &Daemon::sampleAdc0Event);
     connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) {
-        if (histoMap.find("gpioEventInterval") != histoMap.end()) {
-            histoMap["gpioEventInterval"].fill(1e-6 * nsecs);
+        if (m_histo_map.find("gpioEventInterval") != m_histo_map.end()) {
+            m_histo_map["gpioEventInterval"]->fill(1e-6 * nsecs);
         }
     });
     connect(pigHandler, &PigpiodHandler::eventInterval, this, [this](quint64 nsecs) {
-        if (histoMap.find("gpioEventIntervalShort") != histoMap.end()) {
-            if (nsecs / 1000 <= histoMap["gpioEventIntervalShort"].getMax())
-                histoMap["gpioEventIntervalShort"].fill((double)nsecs / 1000.);
+        if (m_histo_map.find("gpioEventIntervalShort") != m_histo_map.end()) {
+            if (nsecs / 1000 <= m_histo_map["gpioEventIntervalShort"]->getMax())
+                m_histo_map["gpioEventIntervalShort"]->fill((double)nsecs / 1000.);
         }
     });
     connect(pigHandler, &PigpiodHandler::timePulseDiff, this, [this](qint32 usecs) {
-        if (histoMap.find("TPTimeDiff") != histoMap.end()) {
-            histoMap["TPTimeDiff"].fill((double)usecs);
+        if (m_histo_map.find("TPTimeDiff") != m_histo_map.end()) {
+            m_histo_map["TPTimeDiff"]->fill((double)usecs);
         }
     });
     pigHandler->setSamplingTriggerSignal(config.eventTrigger);
@@ -771,8 +815,7 @@ void Daemon::connectToPigpiod()
         rateCounterIntervalActualisation();
         if (gpio_pin == GPIO_PINMAP[EVT_XOR]) {
             xorCounts.back()++;
-        }
-        if (gpio_pin == GPIO_PINMAP[EVT_AND]) {
+        } else if (gpio_pin == GPIO_PINMAP[EVT_AND]) {
             andCounts.back()++;
         }
     });
@@ -876,6 +919,12 @@ void Daemon::connectToGps()
         currentDOP = dops;
         emit logParameter(LogParameter("positionDOP", QString::number(dops.pDOP / 100.), LogParameter::LOG_AVERAGE));
         emit logParameter(LogParameter("timeDOP", QString::number(dops.tDOP / 100.), LogParameter::LOG_AVERAGE));
+        if (m_histo_map.find("pDOP") != m_histo_map.end()) {
+            m_histo_map["pDOP"]->fill(1e-2 * dops.pDOP);
+        }
+        if (m_histo_map.find("tDOP") != m_histo_map.end()) {
+            m_histo_map["tDOP"]->fill(1e-2 * dops.tDOP);
+        }
     });
 
     // connect fileHandler related stuff
@@ -925,69 +974,34 @@ void Daemon::incomingConnection(qintptr socketDescriptor)
 // Histogram functions
 void Daemon::setupHistos()
 {
-    Histogram hist = Histogram("geoHeight", 200, 0., 199.);
-    hist.setUnit("m");
-    hist.setAutoscale();
-    histoMap["geoHeight"] = hist;
-    hist = Histogram("geoLongitude", 200, 0., 0.003);
-    hist.setUnit("deg");
-    hist.setAutoscale();
-    histoMap["geoLongitude"] = hist;
-    hist = Histogram("geoLatitude", 200, 0., 0.003);
-    hist.setUnit("deg");
-    hist.setAutoscale();
-    histoMap["geoLatitude"] = hist;
-    hist = Histogram("weightedGeoHeight", 200, 0., 199.);
-    hist.setUnit("m");
-    hist.setAutoscale();
-    histoMap["weightedGeoHeight"] = hist;
-    hist = Histogram("pulseHeight", 500, 0., 3.8);
-    hist.setUnit("V");
-    hist.setAutoscale(false);
-    histoMap["pulseHeight"] = hist;
-    hist = Histogram("adcSampleTime", 500, 0., 10.0);
-    hist.setUnit("ms");
-    hist.setAutoscale();
-    histoMap["adcSampleTime"] = hist;
-    hist = Histogram("UbxEventLength", 100, 50., 149.);
-    hist.setUnit("ns");
-    hist.setAutoscale();
-    histoMap["UbxEventLength"] = hist;
-    hist = Histogram("gpioEventInterval", 400, 0., 2000.);
-    hist.setUnit("ms");
-    hist.setAutoscale();
-    histoMap["gpioEventInterval"] = hist;
-    hist = Histogram("gpioEventIntervalShort", 50, 0., 49.);
-    hist.setUnit("us");
-    hist.setAutoscale(false);
-    histoMap["gpioEventIntervalShort"] = hist;
-    hist = Histogram("UbxEventInterval", 200, 0., 2000.);
-    hist.setUnit("ms");
-    hist.setAutoscale();
-    histoMap["UbxEventInterval"] = hist;
-    hist = Histogram("TPTimeDiff", 200, -999., 1000.);
-    hist.setUnit("us");
-    hist.setAutoscale();
-    histoMap["TPTimeDiff"] = hist;
-    hist = Histogram("Time-to-Digital Time Diff", 400, 0., 1e6);
-    hist.setUnit("ns");
-    hist.setAutoscale();
-    histoMap["Time-to-Digital Time Diff"] = hist;
-    hist = Histogram("Bias Voltage", 200, 0., 1.);
-    hist.setUnit("V");
-    hist.setAutoscale();
-    histoMap["Bias Voltage"] = hist;
-    hist = Histogram("Bias Current", 200, 0., 50.);
-    hist.setUnit("uA");
-    hist.setAutoscale();
-    histoMap["Bias Current"] = hist;
+    m_histo_map.emplace("geoHeight", std::make_shared<Histogram>("geoHeight", 200, 0., 199., true, "m"));
+    m_histo_map.emplace("geoLongitude", std::make_shared<Histogram>("geoLongitude", 200, 0., 0.003, true, "deg"));
+    m_histo_map.emplace("geoLatitude", std::make_shared<Histogram>("geoLatitude", 200, 0., 0.003, true, "deg"));
+    m_histo_map.emplace("weightedGeoHeight", std::make_shared<Histogram>("weightedGeoHeight", 200, 0., 199., true, "m"));
+    m_histo_map.emplace("pulseHeight", std::make_shared<Histogram>("pulseHeight", 500, 0., 3.8, false, "V"));
+    m_histo_map.emplace("adcSampleTime", std::make_shared<Histogram>("adcSampleTime", 500, 0., 10., true, "ms"));
+    m_histo_map.emplace("UbxEventLength", std::make_shared<Histogram>("UbxEventLength", 100, 50., 149., true, "ns"));
+    m_histo_map.emplace("gpioEventInterval", std::make_shared<Histogram>("gpioEventInterval", 400, 0., 2000., true, "ms"));
+    m_histo_map.emplace("gpioEventIntervalShort", std::make_shared<Histogram>("gpioEventIntervalShort", 50, 0., 49., false, "us"));
+    m_histo_map.emplace("UbxEventInterval", std::make_shared<Histogram>("UbxEventInterval", 200, 0., 2000., true, "ms"));
+    m_histo_map.emplace("TPTimeDiff", std::make_shared<Histogram>("TPTimeDiff", 200, -999., 1000., true, "us"));
+    m_histo_map.emplace("Time-to-Digital Time Diff", std::make_shared<Histogram>("Time-to-Digital Time Diff", 400, 0., 1e6, true, "ns"));
+    m_histo_map.emplace("Bias Voltage", std::make_shared<Histogram>("Bias Voltage", 200, 0., 1., true, "V"));
+    m_histo_map.emplace("Bias Current", std::make_shared<Histogram>("Bias Current", 200, 0., 50., true, "uA"));
+    m_histo_map.emplace("pDOP", std::make_shared<Histogram>("pDOP", 200, 0., 10., true));
+    m_histo_map.emplace("tDOP", std::make_shared<Histogram>("tDOP", 200, 0., 10., true));
+
+    m_geopos_manager.set_histos(
+        m_histo_map["geoLongitude"],
+        m_histo_map["geoLatitude"],
+        m_histo_map["geoHeight"]);
 }
 
 void Daemon::clearHisto(const QString& histoName)
 {
-    if (histoMap.find(histoName) != histoMap.end()) {
-        histoMap[histoName].clear();
-        emit sendHistogram(histoMap[histoName]);
+    if (m_histo_map.find(histoName.toStdString()) != m_histo_map.end()) {
+        m_histo_map[histoName.toStdString()]->clear();
+        emit sendHistogram(*m_histo_map[histoName.toStdString()]);
     }
     return;
 }
@@ -1015,8 +1029,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         float voltage;
         *(tcpMessage.dStream) >> voltage;
         setBiasVoltage(voltage);
-        if (histoMap.find("pulseHeight") != histoMap.end())
-            histoMap["pulseHeight"].clear();
+        clearHisto("pulseHeight");
         sendBiasVoltage();
     } else if (msgID == TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST) {
         sendBiasVoltage();
@@ -1068,8 +1081,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         *(tcpMessage.dStream) >> status;
         config.hi_gain = status;
         emit GpioSetState(GPIO_PINMAP[GAIN_HL], status);
-        if (histoMap.find("pulseHeight") != histoMap.end())
-            histoMap["pulseHeight"].clear();
+        clearHisto("pulseHeight");
         emit logParameter(LogParameter("gainSwitch", QString::number((int)config.hi_gain), LogParameter::LOG_EVERY));
         sendGainSwitchStatus();
         return;
@@ -1094,8 +1106,7 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         *(tcpMessage.dStream) >> portMask;
         setPcaChannel((uint8_t)portMask);
         sendPcaChannel();
-        if (histoMap.find("UbxEventLength") != histoMap.end())
-            histoMap["UbxEventLength"].clear();
+        clearHisto("UbxEventLength");
     } else if (msgID == TCP_MSG_KEY::MSG_PCA_SWITCH_REQUEST) {
         sendPcaChannel();
     } else if (msgID == TCP_MSG_KEY::MSG_EVENTTRIGGER) {
@@ -1217,6 +1228,15 @@ void Daemon::receivedTcpMessage(TcpMessage tcpMessage)
         }
     } else if (msgID == TCP_MSG_KEY::MSG_VERSION) {
         sendVersionInfo();
+    } else if (msgID == TCP_MSG_KEY::MSG_POSITION_MODEL) {
+        PositionModeConfig pos_mode_config {};
+        *(tcpMessage.dStream) >> pos_mode_config;
+        if (pos_mode_config != m_geopos_manager.get_mode_config()) {
+            m_geopos_manager.set_mode_config(pos_mode_config);
+            writeSettingsToFile();
+        }
+        sendPositionModel(m_geopos_manager.get_mode_config());
+        sendGeodeticPos(m_geopos_manager.get_current_position().getPosStruct());
     } else {
         qDebug() << "received unknown TCP message: msgID =" << QString::number(static_cast<int>(msgID));
     }
@@ -1306,50 +1326,53 @@ void Daemon::receivedCalibItems(const std::vector<CalibStruct>& newCalibs)
     }
 }
 
-void Daemon::onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos)
+void Daemon::sendGeodeticPos(const GnssPosStruct& pos)
 {
     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GEO_POS);
-    (*tcpMessage.dStream) << pos.iTOW << pos.lon << pos.lat
-                          << pos.height << pos.hMSL << pos.hAcc
-                          << pos.vAcc;
+    (*tcpMessage.dStream) << pos;
     emit sendTcpMessage(tcpMessage);
+}
 
-    QString geohash = GeoHash::hashFromCoordinates(1e-7 * pos.lon, 1e-7 * pos.lat, 10);
+void Daemon::sendPositionModel(const PositionModeConfig& pos)
+{
+    TcpMessage tcpMessage(TCP_MSG_KEY::MSG_POSITION_MODEL);
+    (*tcpMessage.dStream) << pos;
+    emit sendTcpMessage(tcpMessage);
+}
 
-    emit logParameter(LogParameter("geoLongitude", QString::number(1e-7 * pos.lon, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
-    emit logParameter(LogParameter("geoLatitude", QString::number(1e-7 * pos.lat, 'f', 7) + " deg", LogParameter::LOG_AVERAGE));
-    emit logParameter(LogParameter("geoHash", geohash + " ", LogParameter::LOG_LATEST));
-    emit logParameter(LogParameter("geoHeightMSL", QString::number(1e-3 * pos.hMSL, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
-    if (histoMap.find("geoHeight") != histoMap.end())
-        emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(histoMap["geoHeight"].getMean(), 'f', 2) + " m", LogParameter::LOG_LATEST));
-    emit logParameter(LogParameter("geoHorAccuracy", QString::number(1e-3 * pos.hAcc, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
-    emit logParameter(LogParameter("geoVertAccuracy", QString::number(1e-3 * pos.vAcc, 'f', 2) + " m", LogParameter::LOG_AVERAGE));
+void Daemon::onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos)
+{
+    GnssPosStruct new_pos_struct { pos };
+
+    // set correct position errors in case no fix is available (ublox bug?)
+    if (m_fix_status().value < Gnss::FixType::Fix2d && m_time_precision.age() < std::chrono::seconds(60)) {
+        constexpr double c_vacuum { 0.3 };
+        new_pos_struct.hAcc = new_pos_struct.vAcc = c_vacuum * m_time_precision().count() * 1e3;
+    }
+
+    m_geopos_manager.new_position(
+        { new_pos_struct.lon * 1e-7,
+            new_pos_struct.lat * 1e-7,
+            1e-3 * new_pos_struct.hMSL,
+            1e-3 * new_pos_struct.hAcc,
+            1e-3 * new_pos_struct.vAcc });
 
     if (1e-3 * pos.vAcc < 100.) {
-        QString name = "geoHeight";
-        if (histoMap.find(name) != histoMap.end()) {
-            histoMap[name].fill(1e-3 * pos.hMSL);
-            if (currentDOP.vDOP > 0) {
-                name = "weightedGeoHeight";
-                double heightWeight = 100. / currentDOP.vDOP;
-                histoMap[name].fill(1e-3 * pos.hMSL, heightWeight);
+        if (m_geopos_manager.get_mode() != PositionModeConfig::Mode::LockIn || currentDOP().vDOP / 100. < m_geopos_manager.get_mode_config().lock_in_max_dop) {
+            m_histo_map["geoHeight"]->fill(1e-3 * pos.hMSL);
+            if (currentDOP().vDOP > 0) {
+                const double heightWeight = 100. / currentDOP().vDOP;
+                m_histo_map["weightedGeoHeight"]->fill(1e-3 * pos.hMSL, heightWeight);
             }
         }
     }
+
     if (1e-3 * pos.hAcc < 100.) {
-        QString name = "geoLongitude";
-        histoMap[name].fill(1e-7 * pos.lon);
-        name = "geoLatitude";
-        histoMap[name].fill(1e-7 * pos.lat);
+        if (m_geopos_manager.get_mode() != PositionModeConfig::Mode::LockIn || currentDOP().hDOP / 100. < m_geopos_manager.get_mode_config().lock_in_max_dop) {
+            m_histo_map["geoLongitude"]->fill(1e-7 * pos.lon);
+            m_histo_map["geoLatitude"]->fill(1e-7 * pos.lat);
+        }
     }
-    double totalPosAccuracy = 1e-3 * std::sqrt( pos.hAcc * pos.hAcc + pos.vAcc * pos.vAcc );
-    if ( currentDOP.pDOP > 0. && currentDOP.pDOP / 100. < MuonPi::Config::max_lock_in_dop ) {
-		kalmanGnssFilter.process(1e-7 * pos.lat, 1e-7 * pos.lon, 1e-3 * pos.hMSL, totalPosAccuracy);
-		qDebug() << "Kalman: lat=" << kalmanGnssFilter.get_latitude() << "lon=" << kalmanGnssFilter.get_longitude()
-		<< "alt=" << kalmanGnssFilter.get_altitude() << "acc=" << kalmanGnssFilter.get_accuracy() << "pDOP=" << currentDOP.pDOP / 100.;
-	}
-	
-	
 }
 
 void Daemon::sendHistogram(const Histogram& hist)
@@ -1597,7 +1620,7 @@ void Daemon::onAdcSampleReady(ADS1115::Sample sample)
                 TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_SAMPLE);
                 *(tcpMessage.dStream) << (quint8)channel << voltage;
                 emit sendTcpMessage(tcpMessage);
-                histoMap["pulseHeight"].fill(voltage);
+                m_histo_map["pulseHeight"]->fill(voltage);
             }
             if (currentAdcSampleIndex >= 0) {
                 currentAdcSampleIndex++;
@@ -1615,13 +1638,13 @@ void Daemon::onAdcSampleReady(ADS1115::Sample sample)
             TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_SAMPLE);
             *(tcpMessage.dStream) << (quint8)channel << voltage;
             emit sendTcpMessage(tcpMessage);
-            histoMap["pulseHeight"].fill(voltage);
+            m_histo_map["pulseHeight"]->fill(voltage);
             currentAdcSampleIndex = 0;
         }
     }
     if (adc_p) {
         emit logParameter(LogParameter("adcSamplingTime", QString::number(adc_p->getLastConvTime()) + " ms", LogParameter::LOG_AVERAGE));
-        histoMap["adcSampleTime"].fill(adc_p->getLastConvTime());
+        m_histo_map["adcSampleTime"]->fill(adc_p->getLastConvTime());
     }
 }
 
@@ -1929,12 +1952,13 @@ void Daemon::onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
         (*tcpMessage.dStream) << sats[i];
     }
     emit sendTcpMessage(tcpMessage);
-    nrSats = Property("nrSats", N);
-    nrVisibleSats = QVariant { static_cast<qulonglong>(visibleSats.size()) };
-
+    nrSats = Property<size_t>("nrSats", N);
+    nrVisibleSats = Property<size_t>("visSats", visibleSats.size());
+    ;
+    /*
     propertyMap["nrSats"] = Property("nrSats", N);
     propertyMap["visSats"] = Property("visSats", visibleSats.size());
-
+*/
     int usedSats = 0, maxCnr = 0;
     if (visibleSats.size()) {
         for (auto sat : visibleSats) {
@@ -1944,9 +1968,10 @@ void Daemon::onGpsPropertyUpdatedGnss(const std::vector<GnssSatellite>& sats,
                 maxCnr = sat.Cnr;
         }
     }
+    /*
     propertyMap["usedSats"] = Property("usedSats", usedSats);
     propertyMap["maxCNR"] = Property("maxCNR", maxCnr);
-
+*/
     emit logParameter(LogParameter("sats", QString("%1").arg(visibleSats.size()), LogParameter::LOG_AVERAGE));
     emit logParameter(LogParameter("usedSats", QString("%1").arg(usedSats), LogParameter::LOG_AVERAGE));
     emit logParameter(LogParameter("maxCNR", QString("%1").arg(maxCnr) + " dB", LogParameter::LOG_AVERAGE));
@@ -2046,8 +2071,9 @@ void Daemon::gpsPropertyUpdatedUint8(uint8_t data, std::chrono::duration<double>
         delete tcpMessage;
         emit logParameter(LogParameter("fixStatus", QString::number(data), LogParameter::LOG_LATEST));
         emit logParameter(LogParameter("fixStatusString", QString::fromLocal8Bit(Gnss::FixType::name[data]), LogParameter::LOG_LATEST));
-        fixStatus = QVariant(data);
-        propertyMap["fixStatus"] = Property("fixStatus", QString::fromLocal8Bit(Gnss::FixType::name[data]));
+        //        fixStatus = Property<std::string>("fixStatus", std::string(Gnss::FixType::name[data]));
+        m_fix_status = Property<Gnss::FixType>("fixStatus", { data });
+        //propertyMap["fixStatus"] = Property("fixStatus", QString::fromLocal8Bit(Gnss::FixType::name[data]));
         break;
     default:
         break;
@@ -2069,6 +2095,7 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
         emit sendTcpMessage(*tcpMessage);
         delete tcpMessage;
         emit logParameter(LogParameter("timeAccuracy", QString::number(data) + " ns", LogParameter::LOG_AVERAGE));
+        m_time_precision = Property<std::chrono::nanoseconds>("timeAccuracy", std::chrono::nanoseconds(data));
         break;
     case 'f':
         if (verbose > 3)
@@ -2097,7 +2124,7 @@ void Daemon::gpsPropertyUpdatedUint32(uint32_t data, chrono::duration<double> up
             std::cout << std::chrono::system_clock::now()
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
                       << "rising edge counter: " << data << std::endl;
-        propertyMap["events"] = Property("events", (quint16)data);
+        //propertyMap["events"] = Property("events", (quint16)data);
         tcpMessage = new TcpMessage(TCP_MSG_KEY::MSG_UBX_EVENTCOUNTER);
         *(tcpMessage->dStream) << (quint32)data;
         emit sendTcpMessage(*tcpMessage);
@@ -2118,7 +2145,7 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
                       << "clock drift: " << data << " ns/s" << std::endl;
         logParameter(LogParameter("clockDrift", QString::number(data) + " ns/s", LogParameter::LOG_AVERAGE));
-        propertyMap["clkDrift"] = Property("clkDrift", (qint32)data);
+        //propertyMap["clkDrift"] = Property("clkDrift", (qint32)data);
         break;
     case 'b':
         if (verbose > 3)
@@ -2126,7 +2153,7 @@ void Daemon::gpsPropertyUpdatedInt32(int32_t data, std::chrono::duration<double>
                     - std::chrono::duration_cast<std::chrono::microseconds>(updateAge)
                       << "clock bias: " << data << " ns" << std::endl;
         emit logParameter(LogParameter("clockBias", QString::number(data) + " ns", LogParameter::LOG_AVERAGE));
-        propertyMap["clkBias"] = Property("clkBias", (qint32)data);
+        //propertyMap["clkBias"] = Property("clkBias", (qint32)data);
         break;
     default:
         break;
@@ -2182,6 +2209,10 @@ void Daemon::onMadeConnection(QString remotePeerAddress, quint16 remotePeerPort,
     sendDacThresh(1);
     sendPcaChannel();
     sendEventTriggerSelection();
+    sendPositionModel(m_geopos_manager.get_mode_config());
+    if (m_geopos_manager.get_mode() == PositionModeConfig::Mode::Static) {
+        sendGeodeticPos(m_geopos_manager.get_static_position().getPosStruct());
+    }
 }
 
 void Daemon::onStoppedConnection(QString remotePeerAddress, quint16 remotePeerPort, QString /*localAddress*/, quint16 /*localPort*/,
@@ -2255,6 +2286,11 @@ void Daemon::intSignalHandler(int)
 
 void Daemon::aquireMonitoringParameters()
 {
+    for ( auto [gpio, ratebuffer]: m_ratebuffers ) {
+        auto signal { bcmToGpioSignal(gpio) };
+        qDebug() << "signal: " << QString::fromStdString(GPIO_SIGNAL_MAP.at(signal).name) << " rate = " << ratebuffer->avgRate();
+    }
+
     if (temp_sensor_p && temp_sensor_p->probeDevicePresence()) {
         if (temp_sensor_p->getName() == "MIC184" && dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getAddress() < 0x4c) {
             // the attached temp sensor has a remote zone
@@ -2293,7 +2329,7 @@ void Daemon::aquireMonitoringParameters()
             logParameter(LogParameter("calib_rsense", QString::number(rsense * 1000.) + " kOhm", LogParameter::LOG_ONCE));
             double ubias = v2 * vdiv;
             logParameter(LogParameter("vbias", QString::number(ubias) + " V", LogParameter::LOG_AVERAGE));
-            histoMap["Bias Voltage"].fill(ubias);
+            m_histo_map["Bias Voltage"]->fill(ubias);
             double usense = (v1 - v2) * vdiv;
             logParameter(LogParameter("vsense", QString::number(usense) + " V", LogParameter::LOG_AVERAGE));
 
@@ -2324,13 +2360,26 @@ void Daemon::aquireMonitoringParameters()
                 icorr = ubias * islope + ioffs;
             }
             double ibias = usense / rsense - icorr;
-            histoMap["Bias Current"].fill(ibias);
+            m_histo_map["Bias Current"]->fill(ibias);
             logParameter(LogParameter("ibias", QString::number(ibias) + " uA", LogParameter::LOG_AVERAGE));
 
         } else {
             logParameter(LogParameter("vadc3", QString::number(v1) + " V", LogParameter::LOG_AVERAGE));
             logParameter(LogParameter("vadc4", QString::number(v2) + " V", LogParameter::LOG_AVERAGE));
         }
+    }
+
+    if (m_geopos_manager.get_mode() == PositionModeConfig::Mode::Static && m_geopos_manager.get_static_position().valid()) {
+        GeoPosition static_pos { m_geopos_manager.get_static_position() };
+        sendGeodeticPos(static_pos.getPosStruct());
+        const QString geohash { GeoHash::hashFromCoordinates(static_pos.longitude, static_pos.latitude, 10) };
+        emit logParameter(LogParameter("geoLongitude", QString::number(static_pos.longitude, 'f', 7) + " deg", LogParameter::LOG_LATEST));
+        emit logParameter(LogParameter("geoLatitude", QString::number(static_pos.latitude, 'f', 7) + " deg", LogParameter::LOG_LATEST));
+        emit logParameter(LogParameter("geoHash", geohash + " ", LogParameter::LOG_LATEST));
+        emit logParameter(LogParameter("geoHeightMSL", QString::number(static_pos.altitude, 'f', 2) + " m", LogParameter::LOG_LATEST));
+        emit logParameter(LogParameter("meanGeoHeightMSL", QString::number(static_pos.altitude, 'f', 2) + " m", LogParameter::LOG_LATEST));
+        emit logParameter(LogParameter("geoHorAccuracy", QString::number(static_pos.hor_error, 'f', 2) + " m", LogParameter::LOG_LATEST));
+        emit logParameter(LogParameter("geoVertAccuracy", QString::number(static_pos.vert_error, 'f', 2) + " m", LogParameter::LOG_LATEST));
     }
 }
 
@@ -2355,9 +2404,9 @@ void Daemon::onLogParameterPolled()
     if (pigHandler != nullptr)
         emit logParameter(LogParameter("gpioTriggerSelection", "0x" + QString::number((int)pigHandler->samplingTriggerSignal, 16), LogParameter::LOG_ON_CHANGE));
 
-    for (auto& hist : histoMap) {
-        sendHistogram(hist);
-        hist.rescale();
+    for (auto& [name, hist] : m_histo_map) {
+        sendHistogram(*hist);
+        hist->rescale();
     }
 
     sendLogInfo();
@@ -2420,12 +2469,12 @@ void Daemon::onUBXReceivedTimeTM2(const UbxTimeMarkStruct& tm)
     long double dts = (tm.falling.tv_sec - tm.rising.tv_sec) * 1.0e9L;
     dts += (tm.falling.tv_nsec - tm.rising.tv_nsec);
     if ((dts > 0.0L) && tm.fallingValid) {
-        histoMap["UbxEventLength"].fill(static_cast<double>(dts));
+        m_histo_map["UbxEventLength"]->fill(static_cast<double>(dts));
     }
     long double interval = (tm.rising.tv_sec - lastTimeMark.rising.tv_sec) * 1.0e9L;
     interval += (tm.rising.tv_nsec - lastTimeMark.rising.tv_nsec);
     if (interval < 1e12)
-        histoMap["UbxEventInterval"].fill(static_cast<double>(1.0e-6L * interval));
+        m_histo_map["UbxEventInterval"]->fill(static_cast<double>(1.0e-6L * interval));
     uint16_t diffCount = tm.evtCounter - lastTimeMark.evtCounter;
     emit timeMarkIntervalCountUpdate(diffCount, static_cast<double>(interval * 1.0e-9L));
     lastTimeMark = tm;
@@ -2458,8 +2507,8 @@ void Daemon::updateOledDisplay()
     if (temp_sensor_p && temp_sensor_p->probeDevicePresence()) {
         oled_p->printf("temp %4.2f %cC\n", temp_sensor_p->getTemperature(), DEGREE_CHARCODE);
     }
-    oled_p->printf("%d(%d) Sats ", nrVisibleSats().toInt(), nrSats().toInt(), DEGREE_CHARCODE);
-    oled_p->printf("%s\n", Gnss::FixType::name[fixStatus().toInt()]);
+    oled_p->printf("%d(%d) Sats ", nrVisibleSats(), nrSats(), DEGREE_CHARCODE);
+    oled_p->printf("%s\n", Gnss::FixType::name[m_fix_status().value]);
     oled_p->display();
 }
 
@@ -2480,5 +2529,36 @@ void Daemon::onStatusLed2Event(int onTimeMs)
         QTimer::singleShot(onTimeMs, [&]() {
             emit GpioSetState(GPIO_PINMAP[STATUS2], false);
         });
+    }
+}
+
+void Daemon::writeSettingsToFile()
+{
+#define ENUM_CAST static_cast<size_t>
+
+    switch (m_geopos_manager.get_mode()) {
+    case PositionModeConfig::Mode::Static:
+        config.settings_file_data->lookup("geo_handling.mode") = PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::Static)];
+        break;
+    case PositionModeConfig::Mode::LockIn:
+        config.settings_file_data->lookup("geo_handling.mode") = PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::LockIn)];
+        break;
+    case PositionModeConfig::Mode::Auto:
+    default:
+        config.settings_file_data->lookup("geo_handling.mode") = PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::Auto)];
+    }
+
+    config.settings_file_data->lookup("geo_handling.static_coordinates.lon") = m_geopos_manager.get_static_position().longitude;
+    config.settings_file_data->lookup("geo_handling.static_coordinates.lat") = m_geopos_manager.get_static_position().latitude;
+    config.settings_file_data->lookup("geo_handling.static_coordinates.alt") = m_geopos_manager.get_static_position().altitude;
+    config.settings_file_data->lookup("geo_handling.static_coordinates.hor_error") = m_geopos_manager.get_static_position().hor_error;
+    config.settings_file_data->lookup("geo_handling.static_coordinates.vert_error") = m_geopos_manager.get_static_position().vert_error;
+
+    static const std::string SETTINGS_FILE { std::string(MuonPi::Config::data_path) + std::string(MuonPi::Config::persistant_settings_file) };
+    try {
+        config.settings_file_data->writeFile(SETTINGS_FILE.c_str());
+        qDebug() << "settings written to: " << QString::fromStdString(SETTINGS_FILE);
+    } catch (const libconfig::FileIOException& fioex_new) {
+        qWarning() << "I/O error while writing settings file: " << QString::fromStdString(SETTINGS_FILE);
     }
 }
