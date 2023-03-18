@@ -26,7 +26,6 @@
 #include <time.h>
 #include <ublox_messages.h>
 #include <unistd.h>
-#include <numbers>
 
 #define DEGREE_CHARCODE 248
 
