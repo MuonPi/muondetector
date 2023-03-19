@@ -10,21 +10,23 @@ RateBuffer::RateBuffer(unsigned int gpio, QObject* parent)
 {
 }
 
-void RateBuffer::clear() {
+void RateBuffer::clear()
+{
     m_eventbuffer = std::queue<EventTime, std::list<EventTime>> {};
     m_instance_start = std::chrono::system_clock::now();
 }
 
 void RateBuffer::onEvent(uint8_t gpio)
 {
-    if ( gpio != m_gpio ) return;
+    if (gpio != m_gpio)
+        return;
     EventTime event_time { std::chrono::system_clock::now() };
     if (m_eventbuffer.empty()) {
         m_eventbuffer.push(event_time);
         emit filteredEvent(gpio, event_time);
         return;
     }
-    
+
     auto last_event_time = m_eventbuffer.back();
     if (event_time - last_event_time < m_current_deadtime) {
         // m_buffer[gpio].eventbuffer.push(event_time);
@@ -70,7 +72,8 @@ auto RateBuffer::avgRate() const -> double
         return 0.;
     auto tend = std::chrono::system_clock::now();
     auto tstart = tend - m_buffer_time;
-    if (tstart < m_instance_start) tstart = m_instance_start;
+    if (tstart < m_instance_start)
+        tstart = m_instance_start;
     if (tstart > m_eventbuffer.front())
         tstart = m_eventbuffer.front();
     double span = 1e-6 * std::chrono::duration_cast<std::chrono::microseconds>(tend - tstart).count();

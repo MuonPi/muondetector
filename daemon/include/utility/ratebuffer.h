@@ -26,9 +26,9 @@ public:
     struct RateItem {
         double avg_rate { 0. };
         double std_dev { 0. };
-        std::chrono::milliseconds interval { };
+        std::chrono::milliseconds interval {};
         EventTime time {};
-        std::chrono::microseconds deadtime { };
+        std::chrono::microseconds deadtime {};
     };
 
     RateBuffer(unsigned int gpio, QObject* parent = nullptr);

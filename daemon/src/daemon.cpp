@@ -626,7 +626,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     connectToPigpiod();
 
     // set up rate buffers for all GPIO input signals
-    for (auto [signal, pin]: GPIO_PINMAP) {
+    for (auto [signal, pin] : GPIO_PINMAP) {
         if (GPIO_SIGNAL_MAP.at(signal).direction == DIR_IN) {
             auto ratebuf = std::make_shared<RateBuffer>(pin);
             connect(pigHandler, &PigpiodHandler::signal, ratebuf.get(), &RateBuffer::onEvent);
@@ -2285,7 +2285,7 @@ void Daemon::intSignalHandler(int)
 
 void Daemon::aquireMonitoringParameters()
 {
-    for ( auto [gpio, ratebuffer]: m_ratebuffers ) {
+    for (auto [gpio, ratebuffer] : m_ratebuffers) {
         auto signal { bcmToGpioSignal(gpio) };
         qDebug() << "signal: " << QString::fromStdString(GPIO_SIGNAL_MAP.at(signal).name) << " rate = " << ratebuffer->avgRate();
     }

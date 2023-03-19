@@ -370,7 +370,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    try{
+    try {
         std::string tcpIpCfg = cfg.lookup("tcp_ip");
         if (verbose > 2)
             qDebug() << "tcp_ip (listen ip): " << QString::fromStdString(tcpIpCfg);
