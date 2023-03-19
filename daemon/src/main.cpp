@@ -365,7 +365,7 @@ int main(int argc, char* argv[])
     if (parser.isSet(daemonPortOption)) {
         daemonConfig.serverPort = parser.value(daemonPortOption).toUInt(&ok);
         if (!ok) {
-            daemonConfig.peerPort = 0;
+            daemonConfig.serverPort = 0;
             qCritical() << "wrong input peerPort (maybe not an integer)";
         }
     }
