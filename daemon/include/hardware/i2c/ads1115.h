@@ -57,6 +57,7 @@ public:
     virtual ~ADS1115();
 
     bool identify() override;
+    bool devicePresent() override;
 
     void setActiveChannel(uint8_t channel, bool differential_mode = false);
     void setPga(CFG_PGA pga) { fPga[0] = fPga[1] = fPga[2] = fPga[3] = pga; }
