@@ -4,6 +4,7 @@
 #include "networkdiscovery.h"
 #include "utility/geohash.h"
 #include "utility/gpio_mapping.h"
+#include "utility/ratebuffer.h"
 #include <QNetworkInterface>
 #include <QThread>
 #include <Qt>
@@ -27,9 +28,6 @@
 #include <unistd.h>
 
 #define DEGREE_CHARCODE 248
-
-constexpr double pi() { return std::acos(-1); }
-constexpr double sqrt2 { std::sqrt(2.) };
 
 using namespace std;
 using namespace MuonPi;
@@ -598,16 +596,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
             dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getCapabilities();
     }
 
-    // for tcp connection with fileServer
-    peerPort = config.peerPort;
-    if (peerPort == 0) {
-        peerPort = 51508;
-    }
-    peerAddress = config.peerAddress;
-    if (peerAddress.isEmpty() || peerAddress == "local" || peerAddress == "localhost") {
-        peerAddress = QHostAddress(QHostAddress::LocalHost).toString();
-    }
-
     if (config.serverAddress.isEmpty()) {
         // if not otherwise specified: listen on all available addresses
         daemonAddress = QHostAddress(QHostAddress::Any);
@@ -632,10 +620,20 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     std::flush(std::cout);
 
     // create network discovery service
-    networkDiscovery = new NetworkDiscovery(NetworkDiscovery::DeviceType::DAEMON, peerPort, this);
+    networkDiscovery = new NetworkDiscovery(NetworkDiscovery::DeviceType::DAEMON, daemonPort, this);
 
     // connect to the pigpio daemon interface for gpio control
     connectToPigpiod();
+
+    // set up rate buffers for all GPIO input signals
+    for (auto [signal, pin] : GPIO_PINMAP) {
+        if (GPIO_SIGNAL_MAP.at(signal).direction == DIR_IN) {
+            auto ratebuf = std::make_shared<RateBuffer>(pin);
+            connect(pigHandler, &PigpiodHandler::signal, ratebuf.get(), &RateBuffer::onEvent);
+            // connect(&ratebuf, &RateBuffer::filteredEvent, this, &Daemon::sendGpioPinEvent);
+            m_ratebuffers.emplace(pin, ratebuf);
+        }
+    }
 
     // set up histograms
     setupHistos();
@@ -816,8 +814,7 @@ void Daemon::connectToPigpiod()
         rateCounterIntervalActualisation();
         if (gpio_pin == GPIO_PINMAP[EVT_XOR]) {
             xorCounts.back()++;
-        }
-        if (gpio_pin == GPIO_PINMAP[EVT_AND]) {
+        } else if (gpio_pin == GPIO_PINMAP[EVT_AND]) {
             andCounts.back()++;
         }
     });
@@ -2288,6 +2285,11 @@ void Daemon::intSignalHandler(int)
 
 void Daemon::aquireMonitoringParameters()
 {
+    for (auto [gpio, ratebuffer] : m_ratebuffers) {
+        auto signal { bcmToGpioSignal(gpio) };
+        qDebug() << "signal: " << QString::fromStdString(GPIO_SIGNAL_MAP.at(signal).name) << " rate = " << ratebuffer->avgRate();
+    }
+
     if (temp_sensor_p && temp_sensor_p->probeDevicePresence()) {
         if (temp_sensor_p->getName() == "MIC184" && dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getAddress() < 0x4c) {
             // the attached temp sensor has a remote zone

@@ -6,3 +6,4 @@ myon_detector/upload_script.sh
 *.pdf
 .DS_Store
 .vscode/settings.json
+build/

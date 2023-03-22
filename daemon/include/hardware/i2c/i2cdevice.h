@@ -149,6 +149,7 @@ protected:
     uint8_t fMode { MODE_NONE };
     unsigned int fIOErrors { 0 };
     std::mutex fMutex;
+    static constexpr std::size_t fNrRetries { 3 };
 
     // fuctions for measuring time intervals
     void startTimer();

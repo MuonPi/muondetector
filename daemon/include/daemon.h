@@ -27,6 +27,7 @@
 #include "hardware/device_types.h"
 #include "networkdiscovery.h"
 #include "geoposmanager.h"
+#include "utility/ratebuffer.h"
 
 // from library
 #include <muondetector_structs.h>
@@ -55,8 +56,6 @@ public:
         float biasVoltage { -1.0F };
         bool bias_ON { false };
         GPIO_SIGNAL eventTrigger { EVT_XOR };
-        QString peerAddress { "" };
-        quint16 peerPort { 0 };
         QString serverAddress { "" };
         quint16 serverPort { 0 };
         bool showout { false };
@@ -300,8 +299,8 @@ private:
     QPointer<QThread> tcpThread;
 
     configuration config;
-    KalmanGnssFilter m_gnss_pos_kalman { 0.02 };
     GeoPosManager m_geopos_manager;
+    std::map<unsigned int, std::shared_ptr<RateBuffer>> m_ratebuffers {};
 };
 
 #endif // DAEMON_H

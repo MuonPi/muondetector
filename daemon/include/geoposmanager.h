@@ -1,36 +1,35 @@
 #ifndef GEOPOSMANAGER_H
 #define GEOPOSMANAGER_H
-#include <functional>
-#include <memory>
+#include "utility/kalman_gnss_filter.h"
 #include <cmath>
 #include <config.h>
-#include <muondetector_structs.h>
+#include <functional>
 #include <histogram.h>
-#include "utility/kalman_gnss_filter.h"
+#include <memory>
+#include <muondetector_structs.h>
 
 class GeoPosManager {
 public:
     GeoPosManager() = default;
-    GeoPosManager( const PositionModeConfig& mode_config );
+    GeoPosManager(const PositionModeConfig& mode_config);
     ~GeoPosManager() = default;
-    void set_mode_config( const PositionModeConfig& mode_config );
+    void set_mode_config(const PositionModeConfig& mode_config);
     auto get_mode_config() const -> const PositionModeConfig&;
     void set_histos(
         std::shared_ptr<Histogram> lon,
         std::shared_ptr<Histogram> lat,
-        std::shared_ptr<Histogram> height 
-    );
+        std::shared_ptr<Histogram> height);
     void new_position(const GeoPosition& new_pos);
     const GeoPosition& get_current_position() const;
-    void set_static_position( const GeoPosition& pos );
+    void set_static_position(const GeoPosition& pos);
     const GeoPosition& get_static_position() const;
-    void set_mode( PositionModeConfig::Mode mode );
+    void set_mode(PositionModeConfig::Mode mode);
     auto get_mode() const -> PositionModeConfig::Mode;
     void set_filter(PositionModeConfig::FilterType filter);
     auto get_filter() const -> PositionModeConfig::FilterType;
     void set_lockin_ready_callback(std::function<void(GeoPosition)> func);
     void set_valid_pos_callback(std::function<void(GeoPosition)> func);
-    
+
 private:
     GeoPosition get_pos_from_histos() const;
     void check_for_lockin_reached(const GeoPosition& preliminary_pos);

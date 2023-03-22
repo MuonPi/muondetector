@@ -63,6 +63,7 @@ target_include_directories(muondetector-shared PUBLIC
 
 if(WIN32)
 target_include_directories(muondetector-shared PUBLIC
+    $<BUILD_INTERFACE:${MOSQUITTO_DIR}/include>
     $<BUILD_INTERFACE:${QWT_DIR}/include>
     ${Qt5Network_INCLUDE_DIRS}
     )
