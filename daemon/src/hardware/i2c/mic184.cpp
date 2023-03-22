@@ -60,10 +60,7 @@ float MIC184::getTemperature()
 
 bool MIC184::identify()
 {
-    if (fMode == MODE_FAILED) {
-        return false;
-    }
-    if (!devicePresent()) {
+    if (fMode == MODE_FAILED || !devicePresent()) {
         return false;
     }
     
@@ -94,39 +91,30 @@ bool MIC184::identify()
         return false;
     }
 
-    // read Thyst register
-    if (!readWord(static_cast<uint8_t>(REG::THYST), &thyst_save)) {
+    // read Thyst and Tos registers
+    if (!readWord(static_cast<uint8_t>(REG::THYST), &thyst_save)
+        || !readWord(static_cast<uint8_t>(REG::TOS), &tos_save)) {
         // there was an error
         return false;
     }
     
     // the 7 LSBs should always read zero
-    if ((thyst_save & 0x7f) != 0) {
+    if ((thyst_save & 0x7f) != 0 
+        || (tos_save & 0x7f) != 0) {
         return false;
     }
     
-    // read Tos register
-    if (!readWord(static_cast<uint8_t>(REG::TOS), &tos_save)) {
-        // there was an error
-        return false;
+    if (fDebugLevel > 0) {
+        std::cout << "MIC184::identify() : found LM75 based device at 0x"<<std::setw(2) << std::setfill('0')<<std::hex<<(int)fAddress<<"\n"; 
+        std::cout << " Regs: \n";
+        std::cout << "  conf  = 0x"<<std::setw(2) << std::setfill('0')<<(int)conf_reg_save<<"\n";
+        std::cout << "  thyst = 0x"<<std::setw(4) << std::setfill('0')<<thyst_save<<"\n";
+        std::cout << "  tos   = 0x"<<std::setw(4) << std::setfill('0')<<tos_save<<"\n";
+        std::cout << "  temp  = 0x"<<std::setw(4) << std::setfill('0')<<dataword<<"\n";
     }
-    
-    // the 7 LSBs should always read zero
-    if ((tos_save & 0x7f) != 0) {
-        return false;
-    }
-    
-/*    
-	std::cout << "MIC184::identify() : found LM75 based device at 0x"<<std::setw(2) << std::setfill('0')<<std::hex<<(int)fAddress<<"\n"; 
-	std::cout << " Regs: \n";
-	std::cout << "  conf  = 0x"<<std::setw(2) << std::setfill('0')<<(int)conf_reg_save<<"\n";
-	std::cout << "  thyst = 0x"<<std::setw(4) << std::setfill('0')<<thyst_save<<"\n";
-	std::cout << "  tos   = 0x"<<std::setw(4) << std::setfill('0')<<tos_save<<"\n";
-	std::cout << "  temp  = 0x"<<std::setw(4) << std::setfill('0')<<dataword<<"\n";
-*/
 
     // determine, whether we have a MIC184 or just a plain LM75
-    // datasheet: test, if the STS (status) bit in config register toggles when a alarm condition is provoked
+    // datasheet: test, if the STS (status) bit in config register toggles when an alarm condition is provoked
     // set config reg to 0x02
     uint8_t conf_reg { 0x02 };
     if (!writeByte(static_cast<uint8_t>(REG::CONF), conf_reg)) {
@@ -134,10 +122,8 @@ bool MIC184::identify()
     }
     // write 0xc880 to Thyst and Tos regs. This corresponds to -55.5 degrees centigrade
     dataword = 0xc880;
-    if (!writeWord(static_cast<uint8_t>(REG::THYST), dataword)) {
-        return false;
-    }
-    if (!writeWord(static_cast<uint8_t>(REG::TOS), dataword)) {
+    if (!writeWord(static_cast<uint8_t>(REG::THYST), dataword)
+        || !writeWord(static_cast<uint8_t>(REG::TOS), dataword)) {
         return false;
     }
     // wait at least one conversion cycle (>160ms)
@@ -158,10 +144,8 @@ bool MIC184::identify()
     }
     // write 0x7f80 to Thyst and Tos regs. This corresponds to +127.5 degrees centigrade
     dataword = 0x7f80;
-    if (!writeWord(static_cast<uint8_t>(REG::THYST), dataword)) {
-        return false;
-    }
-    if (!writeWord(static_cast<uint8_t>(REG::TOS), dataword)) {
+    if (!writeWord(static_cast<uint8_t>(REG::THYST), dataword)
+        || !writeWord(static_cast<uint8_t>(REG::TOS), dataword)) {
         return false;
     }
     // wait at least one conversion cycle (>160ms)
