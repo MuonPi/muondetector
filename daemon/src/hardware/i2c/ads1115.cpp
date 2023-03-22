@@ -369,13 +369,11 @@ bool ADS1115::setCompQueue(uint8_t bitpattern)
     return true;
 }
 
-
 bool ADS1115::devicePresent()
 {
     std::uint16_t data {};
     return readWord(&data);
 }
-
 
 bool ADS1115::identify()
 {

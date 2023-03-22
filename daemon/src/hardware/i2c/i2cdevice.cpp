@@ -259,7 +259,7 @@ int16_t i2cDevice::readBytes(uint8_t regAddr, uint16_t length, uint8_t* data)
 {
     int nread {};
     size_t retry_ctr { 0 };
-    while ( (nread = readReg(regAddr, data, length)) != length && retry_ctr++ < fNrRetries ) {};
+    while ((nread = readReg(regAddr, data, length)) != length && retry_ctr++ < fNrRetries) { };
     return nread;
 }
 
@@ -331,7 +331,7 @@ bool i2cDevice::writeBytes(uint8_t regAddr, uint16_t length, uint8_t* data)
 {
     int nwritten {};
     size_t retry_ctr { 0 };
-    while ( (nwritten = writeReg(regAddr, data, length)) != length && retry_ctr++ < fNrRetries ) {};
+    while ((nwritten = writeReg(regAddr, data, length)) != length && retry_ctr++ < fNrRetries) { };
     return nwritten;
 }
 
@@ -355,8 +355,8 @@ bool i2cDevice::writeWords(uint8_t regAddr, uint16_t length, uint16_t* data)
         buf[i * 2 + 1] = data[i];
     }
 
-    while ( (nwritten = writeReg(regAddr, buf, length * 2)) != length * 2 && retry_ctr++ < fNrRetries ) {};
-    
+    while ((nwritten = writeReg(regAddr, buf, length * 2)) != length * 2 && retry_ctr++ < fNrRetries) { };
+
     if (nwritten < 0) {
         //fprintf(stderr, "Failed to write to device(%d): %s\n", nwritten, ::strerror(errno));
         return false;
@@ -408,7 +408,7 @@ int16_t i2cDevice::readWords(uint8_t regAddr, uint16_t length, uint16_t* data)
     size_t retry_ctr { 0 };
     uint8_t buf[512];
 
-    while ( (nread = readReg(regAddr, buf, length * 2)) != length * 2 && retry_ctr++ < fNrRetries ) {};
+    while ((nread = readReg(regAddr, buf, length * 2)) != length * 2 && retry_ctr++ < fNrRetries) { };
 
     if (nread < 0) {
         //fprintf(stderr, "Failed to read device(%d): %s\n", nread, ::strerror(errno));
@@ -437,7 +437,7 @@ int16_t i2cDevice::readWords(uint16_t length, uint16_t* data)
     size_t retry_ctr { 0 };
     uint8_t buf[512];
 
-    while ( (nread = read(buf, length * 2)) != length * 2 && retry_ctr++ < fNrRetries ) {};
+    while ((nread = read(buf, length * 2)) != length * 2 && retry_ctr++ < fNrRetries) { };
 
     if (nread < 0) {
         //fprintf(stderr, "Failed to read device(%d): %s\n", nread, ::strerror(errno));

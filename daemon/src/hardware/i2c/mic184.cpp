@@ -63,7 +63,7 @@ bool MIC184::identify()
     if (fMode == MODE_FAILED || !devicePresent()) {
         return false;
     }
-    
+
     uint8_t conf_reg_save { 0 };
     uint16_t dataword { 0 };
     uint16_t thyst_save { 0 };
@@ -74,7 +74,7 @@ bool MIC184::identify()
         // there was an error
         return false;
     }
-    
+
     // the 5 LSBs should always read zero
     if ((dataword & 0x1f) != 0) {
         return false;
@@ -97,20 +97,20 @@ bool MIC184::identify()
         // there was an error
         return false;
     }
-    
+
     // the 7 LSBs should always read zero
-    if ((thyst_save & 0x7f) != 0 
+    if ((thyst_save & 0x7f) != 0
         || (tos_save & 0x7f) != 0) {
         return false;
     }
-    
+
     if (fDebugLevel > 0) {
-        std::cout << "MIC184::identify() : found LM75 based device at 0x"<<std::setw(2) << std::setfill('0')<<std::hex<<(int)fAddress<<"\n"; 
+        std::cout << "MIC184::identify() : found LM75 based device at 0x" << std::setw(2) << std::setfill('0') << std::hex << (int)fAddress << "\n";
         std::cout << " Regs: \n";
-        std::cout << "  conf  = 0x"<<std::setw(2) << std::setfill('0')<<(int)conf_reg_save<<"\n";
-        std::cout << "  thyst = 0x"<<std::setw(4) << std::setfill('0')<<thyst_save<<"\n";
-        std::cout << "  tos   = 0x"<<std::setw(4) << std::setfill('0')<<tos_save<<"\n";
-        std::cout << "  temp  = 0x"<<std::setw(4) << std::setfill('0')<<dataword<<"\n";
+        std::cout << "  conf  = 0x" << std::setw(2) << std::setfill('0') << (int)conf_reg_save << "\n";
+        std::cout << "  thyst = 0x" << std::setw(4) << std::setfill('0') << thyst_save << "\n";
+        std::cout << "  tos   = 0x" << std::setw(4) << std::setfill('0') << tos_save << "\n";
+        std::cout << "  temp  = 0x" << std::setw(4) << std::setfill('0') << dataword << "\n";
     }
 
     // determine, whether we have a MIC184 or just a plain LM75
@@ -132,7 +132,7 @@ bool MIC184::identify()
     if (!readByte(static_cast<uint8_t>(REG::CONF), &conf_reg)) {
         return false;
     }
-    
+
     // datasheet: MSB of conf reg should be set to one
     // this is considered an indication for MIC184
     if (!(conf_reg & 0x80)) {

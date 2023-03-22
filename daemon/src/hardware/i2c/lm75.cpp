@@ -106,6 +106,6 @@ bool LM75::identify()
     if ((dataword & 0x7f) != 0) {
         return false;
     }
-    
+
     return true;
 }
