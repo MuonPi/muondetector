@@ -369,35 +369,37 @@ bool ADS1115::setCompQueue(uint8_t bitpattern)
     return true;
 }
 
-/*
 bool ADS1115::devicePresent()
 {
-    uint8_t buf[2];
-    return (read(buf, 2) == 2); // Read the currently selected register into readBuf
+    std::uint16_t data {};
+    return readWord(&data);
 }
-*/
 
 bool ADS1115::identify()
 {
-    //    startTimer();
-    if (fMode == MODE_FAILED)
+    if (fMode == MODE_FAILED) {
         return false;
-    if (!devicePresent())
+    }
+    if (!devicePresent()) {
         return false;
+    }
 
     uint16_t dataword { 0 };
-    if (!readWord(static_cast<uint8_t>(REG::CONFIG), &dataword))
+    if (!readWord(static_cast<uint8_t>(REG::CONFIG), &dataword)) {
         return false;
-    if (((dataword & 0x8000) == 0) && (dataword & 0x0100))
+    }
+    if (((dataword & 0x8000) == 0) && (dataword & 0x0100)) {
         return false;
+    }
     uint16_t dataword2 { 0 };
     // try to read at addr conf_reg+4 and compare with the previously read config register
     // both should be identical since only the 2 LSBs of the pointer register are evaluated by the ADS1115
-    if (!readWord(static_cast<uint8_t>(REG::CONFIG) | 0x04, &dataword2))
+    if (!readWord(static_cast<uint8_t>(REG::CONFIG) | 0x04, &dataword2)) {
         return false;
-    if (dataword != dataword2)
+    }
+    if (dataword != dataword2) {
         return false;
-
+    }
     return true;
 }
 

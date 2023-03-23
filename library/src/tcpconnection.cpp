@@ -137,7 +137,7 @@ void TcpConnection::onReadyRead()
 {
     // this function gets called when tcpSocket emits readyRead signal
     if (!in) {
-        emit toConsole("input stream not yet initialized");
+        emit toConsole("input stream not yet initialized\n");
         return;
     }
     while (tcpSocket->bytesAvailable() != 0) {
@@ -188,7 +188,7 @@ bool TcpConnection::sendTcpMessage(TcpMessage tcpMessage)
 bool TcpConnection::writeBlock(const QByteArray& block)
 {
     if (!tcpSocket) {
-        emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated");
+        emit toConsole("in client => tcpConnection:\ntcpSocket not instantiated\n");
         return false;
     }
     tcpSocket->write(block);
@@ -208,7 +208,7 @@ bool TcpConnection::writeBlock(const QByteArray& block)
         }
     }
     if (verbose > 1) {
-        emit toConsole("tcp unconnected state before wait for bytes written, closing connection");
+        emit toConsole("tcp unconnected state before wait for bytes written, closing connection\n");
     }
     this->thread()->quit();
     return false;

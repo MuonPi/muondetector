@@ -78,7 +78,6 @@ private:
 
     std::vector<CalibStruct> fCalibList;
     std::shared_ptr<EEPROM24AA02> fEeprom {};
-    //EEPROM24AA02* fEeprom = nullptr;
     uint8_t fEepBuffer[256];
     bool fEepromValid = false;
     bool fValid = false;

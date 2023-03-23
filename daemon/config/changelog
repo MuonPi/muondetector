@@ -2,13 +2,25 @@ muondetector-daemon (2.1.0) ; urgency=low
 
   * Bugfixes:
   - removed wrong QT connect call which resulted in a warning in log messages after daemon startup
+  - fixed reconnect to MQTT broker after connection was lost temporarily
+  - fixed bug in I2C subsystem which lead to a stuck bus after certain read operations and preventing detection of a device in the next logical read access
 
   * Updates:
   - restructured data logging system: 
-   - introduced log rotation and possibility to enable/disable data logging
-   - simplified structure of data storage path under /var/muondetector
-   - auto delete old data and log files
-  
+  - introduced log rotation and possibility to enable/disable data logging
+  - simplified structure of data storage path under /var/muondetector
+  - auto delete old data and log files
+  - added geo position managing system with three modes of operation:
+   - static: report position that was statically set (by user or as a result of a lock-in operation, see below)
+   - auto: report position from most recent uBlox position fix
+   - lock-in: fix a uBlox position only when accuracy is better than a user defined limit (for pos accuracy and pos DOP values) and make this the new static position
+  - added several position filters applicable to auto and lock-in modes:
+   - no filter: uBlox position fixes are not filtered (bad accuracy and bad precision))
+   - kalman: apply a kalman filter which smoothes the series of last fixes efficiently but poorly filters long term transients/drifts (poor accuracy, excellent precision)
+   - histogram mean (good accuracy, fair precision)
+   - histogram median (better accuracy, fair precision)
+   - histogram most probable value (mpv) (best accuracy, fair precision)
+    
  -- MuonPi <developer@muonpi.org>  Fri, 8. Apr 2022 10:10:00 +0100
 
 muondetector-daemon (2.0.1) ; urgency=low

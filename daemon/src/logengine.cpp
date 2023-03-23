@@ -57,6 +57,10 @@ void LogEngine::onLogInterval()
 {
     emit logIntervalSignal();
 
+    // Use one timestamp for writing all parameters
+    // Otherwise log messages can spread over multiple seconds, making data import challenging
+    auto ts = dateStringNow();
+
     // loop over the map with all accumulated parameters since last log reminder
     // no increment here since we erase and invalidate iterators within the loop
     for (auto it = logData.begin(); it != logData.end();) {
@@ -70,7 +74,7 @@ void LogEngine::onLogInterval()
 
         if (parVector.back().logType() == LogParameter::LOG_LATEST) {
             // easy to write only the last value to file
-            emit sendLogString(dateStringNow() + " " + name + " " + parVector.back().value());
+            emit sendLogString(ts + " " + name + " " + parVector.back().value());
             it = logData.erase(it);
         } else if (parVector.back().logType() == LogParameter::LOG_AVERAGE) {
             // here we loop over all values in the vector for the current parameter and do the averaging
@@ -96,13 +100,13 @@ void LogEngine::onLogInterval()
             }
             if (ok) {
                 sum /= parVector.size();
-                emit sendLogString(dateStringNow() + " " + QString(name + " " + QString::number(sum, 'f', 7) + " " + unitString));
+                emit sendLogString(ts + " " + QString(name + " " + QString::number(sum, 'f', 7) + " " + unitString));
             }
             it = logData.erase(it);
         } else if (parVector.back().logType() == LogParameter::LOG_ONCE) {
             // we want to log only one time per daemon lifetime || file change
             if (onceLogFlag || parVector.front().updatedRecently()) {
-                emit sendLogString(dateStringNow() + " " + name + " " + parVector.back().value());
+                emit sendLogString(ts + " " + name + " " + parVector.back().value());
             }
             while (parVector.size() > 2) {
                 parVector.pop_front();
@@ -115,12 +119,12 @@ void LogEngine::onLogInterval()
             // first entry is reference value
             if (onceLogFlag || parVector.front().updatedRecently()) {
                 // log the first time anyway
-                emit sendLogString(dateStringNow() + " " + name + " " + parVector.back().value());
+                emit sendLogString(ts + " " + name + " " + parVector.back().value());
             } else {
                 for (int i = 1; i < parVector.size(); i++) {
                     if (parVector[i].value().compare(parVector.front().value()) != 0) {
                         // found difference -> log it
-                        emit sendLogString(dateStringNow() + " " + name + " " + parVector[i].value());
+                        emit sendLogString(ts + " " + name + " " + parVector[i].value());
                         parVector.replace(0, parVector[i]);
                     }
                 }

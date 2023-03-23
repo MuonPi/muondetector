@@ -19,6 +19,7 @@ set(MUONDETECTOR_LIBRARY_SOURCE_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/histogram.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/custom_io_operators.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/ublox_structs.cpp"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/networkdiscovery.cpp"
     )
 
 set(MUONDETECTOR_LIBRARY_HEADER_FILES
@@ -33,6 +34,7 @@ set(MUONDETECTOR_LIBRARY_HEADER_FILES
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/muondetector_structs.h"
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/config.h"
     "${MUONDETECTOR_LIBRARY_HEADER_DIR}/custom_io_operators.h"
+    "${MUONDETECTOR_LIBRARY_HEADER_DIR}/networkdiscovery.h"
     )
 
 if (MUONDETECTOR_BUILD_DAEMON)
@@ -61,6 +63,7 @@ target_include_directories(muondetector-shared PUBLIC
 
 if(WIN32)
 target_include_directories(muondetector-shared PUBLIC
+    $<BUILD_INTERFACE:${MOSQUITTO_DIR}/include>
     $<BUILD_INTERFACE:${QWT_DIR}/include>
     ${Qt5Network_INCLUDE_DIRS}
     )

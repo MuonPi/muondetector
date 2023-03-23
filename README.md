@@ -37,7 +37,7 @@ Depending on the device of you choice, install the GUI for controlling the softw
 The steps to building the daemon are as follows:
 1. Install all dependencies
 2. Enter the build directory
-3. run `cmake ../source`
+3. run `cmake ../`
 6. run `make package`
 7. enter `output/packages`
 8. install the debian packages found there with `sudo apt install ./<filename>.deb`
@@ -65,7 +65,10 @@ When trying to create a Makefile with qmake (qt version 5.7.1 on raspbian) there
 
 Cheat-Sheet Copy&Paste:
 
-`sudo apt install qt5-default pyqt5-dev qt5-qmake libqt5serialport5-dev libqt5svg5-dev libqwt-qt5-dev libqwt-dev libcrypto++-dev libcrypto++-doc libcrypto++-utils libcrypto++-dev libcrypto++-doc libcrypto++-utils lftp libmosquitto-dev qtdeclarative5-dev libconfig++-dev`
+`sudo apt install qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools pyqt5-dev qt5-qmake libqt5serialport5-dev libqt5svg5-dev libcrypto++-dev libcrypto++-doc libcrypto++-utils lftp libmosquitto-dev qtdeclarative5-dev libconfig++-dev libpigpiod-if-dev cmake file`
+ and either `sudo apt install libqwt-qt5-dev`
+or 
+`sudo apt install libqwt-dev`
 
 ### Troubleshooting
 
@@ -91,8 +94,8 @@ On your network device or on your Raspberry Pi:
 
 ### Version >= 1.1.2
 
-1. `sudo pigpiod -s 1` for setting the GPIO sampling rate to 1 MHz
-2. start the daemon with `muondetector_daemon <device> [options]` where device is your serial interface (either "/dev/ttyS0" for Raspberry Pi 3 & 4 or "/dev/ttyAMA0" for Raspberry Pi 2). The options can be reviewed by adding `-h`. It is recommended to use the `-c` option on first start (if the configuration is not yet written to eeprom). To log on the MQTT service, add `-l` and enter your user name and password when asked. If you don't have a user account on our server yet, please send a mail to <support@muonpi.org>. With `-- id [station_id]` (integer from 0 to 9) you can set a unique station id in case you operate more than one station with one user account.  
+1. Make sure the daemon is properly installed. You can check the muondetector-daemon status with 'systemctl status muondetector-daemon.service'. It should show something like "loaded inactive" with a grey indication circle. Don't start the daemon yet. If the service is not recognized, the installation probably did not work correctly.
+2. On first start: to log on the MQTT service, run the 'muondetector-login program' while the daemon is still offline. If you don't have a user account on our server yet, please send a mail to <support@muonpi.org>. Inside of /etc/muondetector/muondetector.conf you can set a configuration, for example you can set a unique station id in case you operate more than one station with one user account. Start the daemon with `systemctl start muondetector-daemon.service` (make sure it is also enabled by default using 'systemctl enable muondetector-daemon.service').
 On your network device or on your Raspberry Pi: 
-3. Start the gui with `muondetector_gui` on the device of your choice and measure some tasty muons!
+2. Start the gui with `muondetector-gui` on the device of your choice and measure some tasty muons!
 

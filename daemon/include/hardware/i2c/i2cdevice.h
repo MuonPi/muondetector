@@ -12,7 +12,7 @@
 #ifndef _I2CDEVICE_H_
 #define _I2CDEVICE_H_
 
-#define DEFAULT_DEBUG_LEVEL 0
+static constexpr int DEFAULT_DEBUG_LEVEL { 0 };
 
 // base class fragment static_device_base which implemets static functions available to all derived classes
 // by the Curiously Recursive Template Pattern (CRTP) mechanism
@@ -143,12 +143,13 @@ protected:
     static unsigned long int fGlobalNrBytesWritten;
     double fLastTimeInterval { 0. }; // the last time measurement's result is stored here
     struct timeval fT1, fT2;
-    int fDebugLevel { 0 };
+    int fDebugLevel { DEFAULT_DEBUG_LEVEL };
     static std::vector<i2cDevice*> fGlobalDeviceList;
     std::string fTitle { "I2C device" };
     uint8_t fMode { MODE_NONE };
     unsigned int fIOErrors { 0 };
     std::mutex fMutex;
+    static constexpr std::size_t fNrRetries { 3 };
 
     // fuctions for measuring time intervals
     void startTimer();
