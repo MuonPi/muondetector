@@ -300,7 +300,8 @@ private:
 
     configuration config;
     GeoPosManager m_geopos_manager;
-    std::map<unsigned int, std::shared_ptr<RateBuffer>> m_ratebuffers {};
+    std::map<unsigned int, std::shared_ptr<EventRateBuffer>> m_gpio_ratebuffers {};
+    std::shared_ptr<CounterRateBuffer> m_ublox_ratebuffer {};
 };
 
 #endif // DAEMON_H

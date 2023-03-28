@@ -7,6 +7,7 @@
 #include <chrono>
 #include <list>
 #include <map>
+#include <limits>
 #include <muondetector_structs.h>
 #include <queue>
 #include <utility/gpio_mapping.h>
@@ -19,10 +20,35 @@ constexpr std::chrono::microseconds MAX_BUFFER_TIME { 60s };
 constexpr std::chrono::microseconds MAX_DEADTIME { static_cast<unsigned long>(1e+6 / MAX_AVG_RATE) };
 constexpr std::chrono::microseconds DEADTIME_INCREMENT { 50 };
 
-class RateBuffer : public QObject {
+class CounterRateBuffer : public QObject {
     Q_OBJECT
 
 public:
+    CounterRateBuffer(unsigned int counter_mask = static_cast<unsigned int>(std::numeric_limits<std::uint16_t>::max()), QObject* parent = nullptr);
+    ~CounterRateBuffer() = default;
+    void clear();
+
+    [[nodiscard]] auto avgRate() const -> double;
+    [[nodiscard]] auto lastEventTime() const -> EventTime;
+
+signals:
+
+public slots:
+    void onCounterValue(uint16_t value);
+
+private:
+    unsigned int m_counter_mask { };
+    std::chrono::microseconds m_buffer_time { MAX_BUFFER_TIME };
+    std::list<std::pair<EventTime, std::uint16_t>> m_countbuffer {};
+    std::chrono::nanoseconds m_last_interval { 0 };
+    EventTime m_instance_start {};
+};
+
+class EventRateBuffer : public QObject {
+    Q_OBJECT
+
+public:
+    /*
     struct RateItem {
         double avg_rate { 0. };
         double std_dev { 0. };
@@ -30,9 +56,9 @@ public:
         EventTime time {};
         std::chrono::microseconds deadtime {};
     };
-
-    RateBuffer(unsigned int gpio, QObject* parent = nullptr);
-    ~RateBuffer() = default;
+    */
+    EventRateBuffer(unsigned int gpio, QObject* parent = nullptr);
+    ~EventRateBuffer() = default;
     void setRateLimit(double max_cps);
     [[nodiscard]] auto currentRateLimit() const -> double { return fRateLimit; }
     void clear();

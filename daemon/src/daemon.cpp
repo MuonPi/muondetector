@@ -628,10 +628,10 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     // set up rate buffers for all GPIO input signals
     for (auto [signal, pin] : GPIO_PINMAP) {
         if (GPIO_SIGNAL_MAP.at(signal).direction == DIR_IN) {
-            auto ratebuf = std::make_shared<RateBuffer>(pin);
-            connect(pigHandler, &PigpiodHandler::signal, ratebuf.get(), &RateBuffer::onEvent);
-            // connect(&ratebuf, &RateBuffer::filteredEvent, this, &Daemon::sendGpioPinEvent);
-            m_ratebuffers.emplace(pin, ratebuf);
+            auto ratebuf = std::make_shared<EventRateBuffer>(pin);
+            connect(pigHandler, &PigpiodHandler::signal, ratebuf.get(), &EventRateBuffer::onEvent);
+            // connect(&ratebuf, &EventRateBuffer::filteredEvent, this, &Daemon::sendGpioPinEvent);
+            m_gpio_ratebuffers.emplace(pin, ratebuf);
         }
     }
 
@@ -640,6 +640,13 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 
     // establish ublox gnss module connection
     connectToGps();
+
+    // set up rate buffer for ublox counter
+    m_ublox_ratebuffer = std::make_shared<CounterRateBuffer>(std::numeric_limits<std::uint16_t>::max());
+    connect(qtGps, &QtSerialUblox::UBXReceivedTimeTM2, this, [this](const UbxTimeMarkStruct& tm)
+    {
+        this->m_ublox_ratebuffer->onCounterValue(tm.evtCounter);
+    });
 
     // configure the ublox module with preset ubx messages, if required
     if (config.gnss_config) {
@@ -2285,9 +2292,12 @@ void Daemon::intSignalHandler(int)
 
 void Daemon::aquireMonitoringParameters()
 {
-    for (auto [gpio, ratebuffer] : m_ratebuffers) {
+    for (auto [gpio, ratebuffer] : m_gpio_ratebuffers) {
         auto signal { bcmToGpioSignal(gpio) };
         qDebug() << "signal: " << QString::fromStdString(GPIO_SIGNAL_MAP.at(signal).name) << " rate = " << ratebuffer->avgRate();
+    }
+    if (m_ublox_ratebuffer) {
+        qDebug() << "ublox ctr rate = " << m_ublox_ratebuffer->avgRate();
     }
 
     if (temp_sensor_p && temp_sensor_p->probeDevicePresence()) {
