@@ -643,8 +643,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 
     // set up rate buffer for ublox counter
     m_ublox_ratebuffer = std::make_shared<CounterRateBuffer>(std::numeric_limits<std::uint16_t>::max());
-    connect(qtGps, &QtSerialUblox::UBXReceivedTimeTM2, this, [this](const UbxTimeMarkStruct& tm)
-    {
+    connect(qtGps, &QtSerialUblox::UBXReceivedTimeTM2, this, [this](const UbxTimeMarkStruct& tm) {
         this->m_ublox_ratebuffer->onCounterValue(tm.evtCounter);
     });
 

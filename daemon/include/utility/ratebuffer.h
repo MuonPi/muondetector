@@ -5,9 +5,9 @@
 #include <QString>
 #include <QVector>
 #include <chrono>
+#include <limits>
 #include <list>
 #include <map>
-#include <limits>
 #include <muondetector_structs.h>
 #include <queue>
 #include <utility/gpio_mapping.h>
@@ -37,7 +37,7 @@ public slots:
     void onCounterValue(uint16_t value);
 
 private:
-    unsigned int m_counter_mask { };
+    unsigned int m_counter_mask {};
     std::chrono::microseconds m_buffer_time { MAX_BUFFER_TIME };
     std::list<std::pair<EventTime, std::uint16_t>> m_countbuffer {};
     std::chrono::nanoseconds m_last_interval { 0 };
