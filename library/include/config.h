@@ -57,14 +57,21 @@ namespace Hardware {
         constexpr int update_interval { 2000 };
     }
     namespace ADC {
+        namespace Channel {
+            constexpr std::uint8_t amplitude { 0 }; //!< channel of the adc where the amplitude is sampled
+            constexpr std::uint8_t vcc { 1 }; //!< channel of the adc where vcc voltage is sampled
+            constexpr std::uint8_t bias1 { 2 }; //!< channel of the adc where the divided bias voltage before the current shunt is sampled
+            constexpr std::uint8_t bias2 { 3 }; //!< channel of the adc where the divided bias voltage after the current shunt is sampled
+        }
         constexpr int buffer_size { 50 };
         constexpr int pretrigger { 10 };
         constexpr int deadtime { 8 };
     }
     namespace DAC {
         namespace Channel {
-            constexpr int bias { 2 }; //!< channel of the dac where bias voltage is set
-            constexpr int threshold[2] { 0, 1 }; //!< channel of the dac where thresholds 1 and 2 are set
+            constexpr std::uint8_t bias { 2 }; //!< channel of the dac where bias voltage is set
+            constexpr std::uint8_t threshold[2] { 0, 1 }; //!< channel of the dac where thresholds 1 and 2 are set
+            constexpr std::uint8_t dac4 { 3 };
         }
         namespace Voltage {
             constexpr float bias { 0.5 };

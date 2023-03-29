@@ -1763,7 +1763,7 @@ void Daemon::setDacThresh(uint8_t channel, float threshold)
     if (threshold < 0 || channel > 3) {
         return;
     }
-    if (channel == 2 || channel == 3) {
+    if (channel == Config::Hardware::DAC::Channel::bias || channel == Config::Hardware::DAC::Channel::dac4) {
         if (dac_p) {
             dac_p->setVoltage(channel, threshold);
         }
@@ -2316,10 +2316,9 @@ void Daemon::aquireMonitoringParameters()
         }
     }
 
-    double v1 = 0., v2 = 0.;
     if (adc_p && (!(std::dynamic_pointer_cast<ADS1115>(adc_p)->getStatus() & i2cDevice::MODE_UNREACHABLE)) && (std::dynamic_pointer_cast<ADS1115>(adc_p)->getStatus() & (i2cDevice::MODE_NORMAL | i2cDevice::MODE_FORCE))) {
-        v1 = adc_p->getVoltage(2);
-        v2 = adc_p->getVoltage(3);
+        double v1 { adc_p->getVoltage(MuonPi::Config::Hardware::ADC::Channel::bias1) };
+        double v2 { adc_p->getVoltage(MuonPi::Config::Hardware::ADC::Channel::bias2) };
         if (calib && calib->getCalibItem("VDIV").name == "VDIV") {
             CalibStruct vdivItem = calib->getCalibItem("VDIV");
             std::istringstream istr(vdivItem.value);
