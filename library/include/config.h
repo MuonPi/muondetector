@@ -83,7 +83,7 @@ namespace Hardware {
         constexpr std::size_t buffer_size { 500 };
     }
     constexpr std::chrono::milliseconds trace_sampling_interval { 5 };
-    constexpr int monitor_interval { 5000 };
+    constexpr std::chrono::milliseconds monitor_interval { 5000 };
     namespace RateScan {
         constexpr int iterations { 10 };
         constexpr int interval { 400 };
@@ -94,7 +94,7 @@ namespace Hardware {
 
 namespace MuonPi::Settings {
 struct {
-    int max_geohash_length { Config::Log::max_geohash_length_default };
+    std::size_t max_geohash_length { Config::Log::max_geohash_length_default };
     std::chrono::seconds rotate_period { Config::Log::rotate_period_default };
 } log;
 
