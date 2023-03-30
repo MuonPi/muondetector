@@ -161,36 +161,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     : QTcpServer { parent }
     , config { cfg }
 {
-    // first, we must set the locale to be independent of the number format of the system's locale.
-    // We rely on parsing floating point numbers with a decimal point (not a komma) which might fail if not setting the classic locale
-    std::locale::global(std::locale::classic());
-
-    qRegisterMetaType<TcpMessage>("TcpMessage");
-    qRegisterMetaType<GnssPosStruct>("GnssPosStruct");
-    qRegisterMetaType<int32_t>("int32_t");
-    qRegisterMetaType<uint32_t>("uint32_t");
-    qRegisterMetaType<uint16_t>("uint16_t");
-    qRegisterMetaType<uint8_t>("uint8_t");
-    qRegisterMetaType<int8_t>("int8_t");
-    qRegisterMetaType<bool>("bool");
-    qRegisterMetaType<CalibStruct>("CalibStruct");
-    qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
-    qRegisterMetaType<std::vector<GnssConfigStruct>>("std::vector<GnssConfigStruct>");
-    qRegisterMetaType<std::chrono::duration<double>>("std::chrono::duration<double>");
-    qRegisterMetaType<std::string>("std::string");
-    qRegisterMetaType<LogParameter>("LogParameter");
-    qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
-    qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
-    qRegisterMetaType<timespec>("timespec");
-    qRegisterMetaType<GPIO_SIGNAL>("GPIO_SIGNAL");
-    qRegisterMetaType<GnssMonHwStruct>("GnssMonHwStruct");
-    qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
-    qRegisterMetaType<UbxTimeMarkStruct>("UbxTimeMarkStruct");
-    qRegisterMetaType<I2cDeviceEntry>("I2cDeviceEntry");
-    qRegisterMetaType<ADC_SAMPLING_MODE>("ADC_SAMPLING_MODE");
-    qRegisterMetaType<MuonPi::Version::Version>("MuonPi::Version::Version");
-    qRegisterMetaType<UbxDynamicModel>("UbxDynamicModel");
-
     // signal handling
     setup_unix_signal_handlers();
     if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)) {
@@ -217,9 +187,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         qDebug() << "daemon running in thread " << this->thread()->objectName();
     }
 
-    if (verbose > 3) {
-        qDebug() << "QT version is " << QString::number(QT_VERSION, 16);
-    }
     if (verbose > 3) {
         this->thread()->setObjectName("muondetector-daemon");
         qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
