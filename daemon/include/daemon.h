@@ -281,7 +281,7 @@ private:
     Property<Gnss::FixType> m_fix_status {};
 
     QVector<QTcpSocket*> peerList;
-    QList<float> adcSamplesBuffer;
+    std::list<float> adcSamplesBuffer {};
     ADC_SAMPLING_MODE adcSamplingMode { ADC_SAMPLING_MODE::PEAK };
     int currentAdcSampleIndex { -1 };
     QTimer samplingTimer;

@@ -1586,8 +1586,9 @@ void Daemon::onAdcSampleReady(ADS1115::Sample sample)
     } else {
         if (adcSamplingMode == ADC_SAMPLING_MODE::TRACE) {
             adcSamplesBuffer.push_back(voltage);
-            if (adcSamplesBuffer.size() > Config::Hardware::ADC::buffer_size)
+            if (adcSamplesBuffer.size() > Config::Hardware::ADC::buffer_size) {
                 adcSamplesBuffer.pop_front();
+            }
             if (currentAdcSampleIndex == 0) {
                 TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_SAMPLE);
                 *(tcpMessage.dStream) << (quint8)channel << voltage;
@@ -1596,11 +1597,11 @@ void Daemon::onAdcSampleReady(ADS1115::Sample sample)
             }
             if (currentAdcSampleIndex >= 0) {
                 currentAdcSampleIndex++;
-                if (currentAdcSampleIndex >= (Config::Hardware::ADC::buffer_size - Config::Hardware::ADC::pretrigger)) {
+                if (currentAdcSampleIndex >= static_cast<int>(Config::Hardware::ADC::buffer_size - Config::Hardware::ADC::pretrigger)) {
                     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_TRACE);
                     *(tcpMessage.dStream) << (quint16)adcSamplesBuffer.size();
-                    for (int i = 0; i < adcSamplesBuffer.size(); i++) {
-                        *(tcpMessage.dStream) << adcSamplesBuffer[i];
+                    for ( auto adc_sample : adcSamplesBuffer ) {
+                        *(tcpMessage.dStream) << adc_sample;
                     }
                     emit sendTcpMessage(tcpMessage);
                     currentAdcSampleIndex = -1;

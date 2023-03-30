@@ -63,9 +63,9 @@ namespace Hardware {
             constexpr std::uint8_t bias1 { 2 }; //!< channel of the adc where the divided bias voltage before the current shunt is sampled
             constexpr std::uint8_t bias2 { 3 }; //!< channel of the adc where the divided bias voltage after the current shunt is sampled
         }
-        constexpr int buffer_size { 50 };
-        constexpr int pretrigger { 10 };
-        constexpr int deadtime { 8 };
+        constexpr std::size_t buffer_size { 50 };
+        constexpr std::size_t pretrigger { 10 };
+        constexpr std::chrono::milliseconds deadtime { 8 };
     }
     namespace DAC {
         namespace Channel {
@@ -79,10 +79,10 @@ namespace Hardware {
         }
     }
     namespace GPIO::Clock::Measurement {
-        constexpr int interval { 100 };
-        constexpr int buffer_size { 500 };
+        constexpr std::chrono::milliseconds interval { 100 };
+        constexpr std::size_t buffer_size { 500 };
     }
-    constexpr int trace_sampling_interval { 5 };
+    constexpr std::chrono::milliseconds trace_sampling_interval { 5 };
     constexpr int monitor_interval { 5000 };
     namespace RateScan {
         constexpr int iterations { 10 };
