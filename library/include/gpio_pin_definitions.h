@@ -3,9 +3,7 @@
 
 #include "muondetector_shared_global.h"
 
-#include <QMap>
-#include <QString>
-#include <QVector>
+#include <string>
 #include <map>
 
 // define the pins which are used to interface the raspberry pi

@@ -111,7 +111,7 @@ bool i2cDevice::devicePresent()
 void i2cDevice::setAddress(uint8_t address)
 { //pointer to our device on the i2c-bus
     fAddress = address;
-    int res = ioctl(fHandle, I2C_SLAVE, fAddress); //i.g. Specify the address of the I2C Slave to communicate with
+    int res = ioctl(fHandle, I2C_SLAVE, fAddress); //i.e. specify the address of the I2C slave to communicate with
     if (res < 0) {
         res = ioctl(fHandle, I2C_SLAVE_FORCE, fAddress);
         if (res < 0) {

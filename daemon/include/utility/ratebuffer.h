@@ -1,9 +1,5 @@
 #ifndef RATEBUFFER_H
 #define RATEBUFFER_H
-#include <QMap>
-#include <QObject>
-#include <QString>
-#include <QVector>
 #include <chrono>
 #include <limits>
 #include <list>
