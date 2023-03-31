@@ -131,7 +131,7 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
         QDateTime now = QDateTime::currentDateTimeUtc();
 
         if (user_gpio == GPIO_PINMAP[pigpioHandler->samplingTriggerSignal]) {
-            if (pigpioHandler->lastSamplingTime.msecsTo(now) >= MuonPi::Config::Hardware::ADC::deadtime) {
+            if (pigpioHandler->lastSamplingTime.msecsTo(now) >= MuonPi::Config::Hardware::ADC::deadtime.count()) {
                 emit pigpioHandler->samplingTrigger();
                 pigpioHandler->lastSamplingTime = now;
             }

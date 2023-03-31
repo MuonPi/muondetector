@@ -64,7 +64,7 @@ public:
         bool hi_gain { false };
         QString station_ID { "0" };
         std::array<bool, 2> polarity { true, true };
-        int maxGeohashLength { MuonPi::Settings::log.max_geohash_length };
+        std::size_t maxGeohashLength { MuonPi::Settings::log.max_geohash_length };
         bool storeLocal { false };
         /* GNSS configs */
         bool gnss_dump_raw { false };
@@ -281,7 +281,7 @@ private:
     Property<Gnss::FixType> m_fix_status {};
 
     QVector<QTcpSocket*> peerList;
-    QList<float> adcSamplesBuffer;
+    std::list<float> adcSamplesBuffer {};
     ADC_SAMPLING_MODE adcSamplingMode { ADC_SAMPLING_MODE::PEAK };
     int currentAdcSampleIndex { -1 };
     QTimer samplingTimer;
