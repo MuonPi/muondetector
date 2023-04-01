@@ -3,8 +3,8 @@
 
 #include "muondetector_shared_global.h"
 
-#include <string>
 #include <map>
+#include <string>
 
 // define the pins which are used to interface the raspberry pi
 // UBIAS_EN is the power on/off pin for bias voltage

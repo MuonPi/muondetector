@@ -1600,7 +1600,7 @@ void Daemon::onAdcSampleReady(ADS1115::Sample sample)
                 if (currentAdcSampleIndex >= static_cast<int>(Config::Hardware::ADC::buffer_size - Config::Hardware::ADC::pretrigger)) {
                     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_TRACE);
                     *(tcpMessage.dStream) << (quint16)adcSamplesBuffer.size();
-                    for ( auto adc_sample : adcSamplesBuffer ) {
+                    for (auto adc_sample : adcSamplesBuffer) {
                         *(tcpMessage.dStream) << adc_sample;
                     }
                     emit sendTcpMessage(tcpMessage);
