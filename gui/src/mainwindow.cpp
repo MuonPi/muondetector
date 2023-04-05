@@ -387,10 +387,6 @@ bool MainWindow::eventFilter(QObject* object, QEvent* event)
 {
     if (event->type() == QEvent::KeyPress) {
         QKeyEvent* ke = static_cast<QKeyEvent*>(event);
-        if (ke->key() == Qt::Key_Escape) {
-            QCoreApplication::quit();
-            return true;
-        }
         auto combobox = dynamic_cast<QComboBox*>(object);
         if (combobox == ui->ipBox) {
             if (ke->key() == Qt::Key_Delete) {
