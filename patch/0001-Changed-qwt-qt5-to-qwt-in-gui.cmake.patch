@@ -1,0 +1,35 @@
+From 81b34e5b78f85ee2fe83c184af4eab8d6e24fb30 Mon Sep 17 00:00:00 2001
+From: SimonGLM <github@siglm.de>
+Date: Wed, 5 Apr 2023 21:41:49 +0200
+Subject: [PATCH] Changed 'qwt-qt5' to 'qwt' in gui.cmake
+
+Fixes the qwt-qt5 libraries not being found on arch based systems.
+---
+ cmake/gui.cmake | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/cmake/gui.cmake b/cmake/gui.cmake
+index 657d9b0..b252c56 100644
+--- a/cmake/gui.cmake
++++ b/cmake/gui.cmake
+@@ -112,7 +112,7 @@ elseif(WIN32)
+             message(STATUS "QWT found: ${QWT}")
+         endif()
+ else()
+-    find_library(QWT_QT5 qwt-qt5 REQUIRED)
++    find_library(QWT_QT5 qwt REQUIRED)
+ 
+ endif()
+ 
+@@ -193,7 +193,7 @@ target_link_libraries(muondetector-gui
+     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
+     muondetector-shared
+     pthread
+-    qwt-qt5
++    qwt
+     )
+ if (CMAKE_BUILD_TYPE STREQUAL Release)
+     add_custom_command(TARGET muondetector-gui POST_BUILD
+-- 
+2.40.0
+
