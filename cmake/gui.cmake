@@ -112,7 +112,7 @@ elseif(WIN32)
             message(STATUS "QWT found: ${QWT}")
         endif()
 else()
-    find_library(QWT_QT5 qwt-qt5 REQUIRED)
+    find_library(QWT_QT5 qwt-qt5 NAMES qwt REQUIRED)
 
 endif()
 
