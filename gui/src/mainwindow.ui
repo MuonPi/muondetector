@@ -47,6 +47,9 @@
         <property name="focusPolicy">
          <enum>Qt::WheelFocus</enum>
         </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter the IP adress of your MuonPi.&lt;br/&gt;&lt;br/&gt;Recent and found devices are shown in the drop-down menu.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="locale">
          <locale language="English" country="UnitedStates"/>
         </property>
@@ -128,6 +131,9 @@
       </item>
       <item>
        <widget class="QPushButton" name="networkSearchButton">
+        <property name="toolTip">
+         <string>Probe the network for active stations (only daemon &gt;=2.1.0)</string>
+        </property>
         <property name="text">
          <string>network search</string>
         </property>
@@ -143,12 +149,18 @@
       <layout class="QGridLayout" name="gridLayout_4">
        <item row="0" column="0">
         <widget class="QGroupBox" name="groupBox">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Threshold settings.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;Typical values: 25-60mV depending on detector hardware.&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="title">
           <string>Thresholds</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_2">
           <item row="1" column="0" colspan="2">
            <widget class="QPushButton" name="saveDacButton">
+            <property name="toolTip">
+             <string>Write Threshold into the DAC memory on the MuonPi HAT</string>
+            </property>
             <property name="text">
              <string>Store DAC settings</string>
             </property>
@@ -162,6 +174,9 @@
             <layout class="QVBoxLayout" name="verticalLayout">
              <item>
               <widget class="QwtSlider" name="discr1Slider">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Threshold for Channel 1 in millivolt [mV]. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
                <property name="upperBound">
                 <double>1000.000000000000000</double>
                </property>
@@ -197,6 +212,9 @@
              </item>
              <item>
               <widget class="QPushButton" name="discr1Save">
+               <property name="toolTip">
+                <string>Set the selected threshold.</string>
+               </property>
                <property name="text">
                 <string>Set</string>
                </property>
@@ -251,6 +269,9 @@
              </item>
              <item>
               <widget class="QPushButton" name="discr2Save">
+               <property name="toolTip">
+                <string>Set the selected threshold</string>
+               </property>
                <property name="text">
                 <string>Set</string>
                </property>
@@ -270,6 +291,9 @@
          <layout class="QGridLayout" name="gridLayout">
           <item row="0" column="0" colspan="2">
            <widget class="QComboBox" name="biasControlTypeComboBox">
+            <property name="toolTip">
+             <string>Select BIAS control backend.</string>
+            </property>
             <item>
              <property name="text">
               <string>Bias DAC Control</string>
@@ -290,6 +314,9 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select bias control voltage.&lt;br/&gt;&lt;br/&gt;See Section P&lt;span style=&quot; font-style:italic;&quot;&gt;arameter&lt;/span&gt; to check the bias voltage.&lt;br/&gt;Lower control voltage =&amp;gt; higher bias voltage.&lt;br/&gt;Higher control volatege =&amp;gt; lower bias voltage.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="value">
              <number>10</number>
             </property>
@@ -300,6 +327,13 @@
           </item>
           <item row="2" column="0" colspan="2">
            <widget class="QDoubleSpinBox" name="biasVoltageDoubleSpinBox">
+            <property name="toolTip">
+             <string>Select bias control voltage.
+
+See Section Parameter to check the bias voltage.
+Lower control voltage =&gt; higher bias voltage.
+Higher control volatege =&gt; lower bias voltage.</string>
+            </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
@@ -332,6 +366,9 @@
           </item>
           <item row="3" column="1">
            <widget class="QPushButton" name="biasPowerButton">
+            <property name="toolTip">
+             <string>Enable/Disable the bias voltage supply.</string>
+            </property>
             <property name="text">
              <string>Enable</string>
             </property>
@@ -365,6 +402,9 @@
               <width>54</width>
               <height>24</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Rate of detections in a single channel.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Moving average.&lt;/p&gt;&lt;p&gt;Use the UBXRATE vs TIME scan in the &lt;span style=&quot; font-style:italic;&quot;&gt;Scan&lt;/span&gt; Tab for more accurate rate mesurements&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>xRate</string>
@@ -438,6 +478,9 @@
               <height>24</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Rate of coincident detections both channels.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Moving average.&lt;/p&gt;&lt;p&gt;Use the UBXRATE vs TIME scan in the &lt;span style=&quot; font-style:italic;&quot;&gt;Scan&lt;/span&gt; Tab for more accurate rate mesurements&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>aRate</string>
             </property>
@@ -484,6 +527,9 @@
               <width>54</width>
               <height>24</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Total count of events. (aka uBlox counter)&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Counter has 16bit width. Rollover after 2&lt;span style=&quot; vertical-align:super;&quot;&gt;16 &lt;/span&gt;= 65536 events.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>count</string>

@@ -33,6 +33,9 @@
              <layout class="QHBoxLayout" name="horizontalLayout">
               <item>
                <widget class="QLabel" name="label">
+                <property name="toolTip">
+                 <string>The parameter to measure.</string>
+                </property>
                 <property name="text">
                  <string>Observable</string>
                 </property>
@@ -76,6 +79,9 @@
              <layout class="QHBoxLayout" name="horizontalLayout_2">
               <item>
                <widget class="QLabel" name="label_2">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Parameter to incrementally change.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Choose TIME together with &lt;span style=&quot; font-style:italic;&quot;&gt;Nr of Points &lt;/span&gt;and &lt;span style=&quot; font-style:italic;&quot;&gt;Integration Time&lt;/span&gt; to track plot the observable over time.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
                  <string>Scan Parameter</string>
                 </property>
@@ -104,6 +110,9 @@
              <layout class="QHBoxLayout" name="horizontalLayout_3">
               <item>
                <widget class="QLabel" name="label_3">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Lower and upper boundaries of the scanning parameter range.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;For Threshold scanning, this value is given in Volts [V] (0.020V = 20mV)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
                  <string>Scan Range from:</string>
                 </property>
@@ -144,6 +153,9 @@
                <layout class="QHBoxLayout" name="horizontalLayout_4">
                 <item>
                  <widget class="QLabel" name="label_5">
+                  <property name="toolTip">
+                   <string>Increment of Scan Parameter points.</string>
+                  </property>
                   <property name="text">
                    <string>Step Size</string>
                   </property>
@@ -172,7 +184,7 @@
                 <item>
                  <widget class="QCheckBox" name="activateNrMeasurementsCheckBox">
                   <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Define a number of scan points instead of scan increment&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   <string>Specify number of equally spaced points instead of stepping increments.</string>
                   </property>
                   <property name="text">
                    <string>Nr of Points</string>
@@ -212,8 +224,11 @@
                   <height>0</height>
                  </size>
                 </property>
+                <property name="toolTip">
+                 <string>Measurement time interval</string>
+                </property>
                 <property name="text">
-                 <string>Meas.Time Interval</string>
+                 <string>Integration Time</string>
                 </property>
                </widget>
               </item>
@@ -501,7 +516,7 @@
        <item row="1" column="0">
         <widget class="QCheckBox" name="plotDifferentialCheckBox">
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Switch between linear or logarithmic scale of the plot&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>Plot the difference between subsequent data points</string>
          </property>
          <property name="text">
           <string>differential</string>

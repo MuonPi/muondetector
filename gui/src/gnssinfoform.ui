@@ -71,6 +71,9 @@
                  <height>0</height>
                 </size>
                </property>
+               <property name="toolTip">
+                <string>Ublox hardware version</string>
+               </property>
                <property name="frameShape">
                 <enum>QFrame::Box</enum>
                </property>
@@ -113,6 +116,9 @@
                  <width>95</width>
                  <height>0</height>
                 </size>
+               </property>
+               <property name="toolTip">
+                <string>Ublox software/firmware version</string>
                </property>
                <property name="frameShape">
                 <enum>QFrame::Box</enum>
@@ -157,6 +163,9 @@
                  <height>0</height>
                 </size>
                </property>
+               <property name="toolTip">
+                <string>Ublox Protocol version</string>
+               </property>
                <property name="frameShape">
                 <enum>QFrame::Box</enum>
                </property>
@@ -179,7 +188,7 @@
              <item>
               <widget class="QLabel" name="label_4">
                <property name="text">
-                <string>Position Fix</string>
+                <string>Position Fix:</string>
                </property>
               </widget>
              </item>
@@ -203,6 +212,9 @@
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;GNSS Fix state.&lt;br/&gt;&lt;br/&gt;3D: 3-dimensional position fix&lt;/p&gt;&lt;p&gt;2D: 2-dimensional position fix (to few satellites available or signal too weak)&lt;/p&gt;&lt;p&gt;No Fix: Unable to optain accurate signal from GNSS providers.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;      </string>
                </property>
                <property name="frameShape">
                 <enum>QFrame::Box</enum>
@@ -302,6 +314,9 @@
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
+           <property name="toolTip">
+            <string>Uncertainty of the internal clock to sattelite reference.</string>
+           </property>
            <property name="frameShape">
             <enum>QFrame::Box</enum>
            </property>
@@ -392,6 +407,9 @@
              <height>0</height>
             </size>
            </property>
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Spacial uncertainty of the position calculation.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;Does not reflect the actual statistical uncertainty of the position, which is typically a few meteres.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
            <property name="frameShape">
             <enum>QFrame::Box</enum>
            </property>
@@ -408,6 +426,9 @@
       </item>
       <item row="1" column="1" rowspan="2">
        <widget class="QGroupBox" name="lnaGroupBox">
+        <property name="toolTip">
+         <string>GNSS antenna information.</string>
+        </property>
         <property name="title">
          <string>LNA</string>
         </property>
@@ -724,6 +745,9 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="toolTip">
+      <string>Info on recieved satellites.</string>
+     </property>
      <property name="title">
       <string>GNSS Sat Data</string>
      </property>
@@ -758,6 +782,9 @@
           </item>
           <item>
            <widget class="QCheckBox" name="visibleSatsCheckBox">
+            <property name="toolTip">
+             <string>Only show satellites used in position calculation.</string>
+            </property>
             <property name="layoutDirection">
              <enum>Qt::RightToLeft</enum>
             </property>
@@ -1004,6 +1031,9 @@ Corr</string>
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
+     </property>
+     <property name="toolTip">
+      <string>Recieved satellites and their location in the sky.</string>
      </property>
      <property name="title">
       <string>Sky Map</string>

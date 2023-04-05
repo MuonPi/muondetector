@@ -61,16 +61,30 @@
           <height>0</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>Graph of XOR- and AND-rates over time.</string>
+        </property>
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="QComboBox" name="ratePlotPresetComboBox"/>
+       <widget class="QComboBox" name="ratePlotPresetComboBox">
+        <property name="toolTip">
+         <string>x-axis time format</string>
+        </property>
+       </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QLineEdit" name="ratePlotBufferEdit"/>
+       <widget class="QLineEdit" name="ratePlotBufferEdit">
+        <property name="toolTip">
+         <string>Select time range to display in graph (DD:HH:MM:SS).</string>
+        </property>
+       </widget>
       </item>
       <item row="1" column="2">
        <widget class="QPushButton" name="resetRatePushButton">
+        <property name="toolTip">
+         <string>Clear graph.</string>
+        </property>
         <property name="text">
          <string>Reset</string>
         </property>
@@ -114,10 +128,16 @@
           <height>0</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>Pulse height histogram. (Seperate peak detector hardware needed)</string>
+        </property>
        </widget>
       </item>
       <item row="1" column="0">
        <widget class="QCheckBox" name="histoLogYCheckBox">
+        <property name="toolTip">
+         <string>Toggle logarithmic y-axis scaling.</string>
+        </property>
         <property name="text">
          <string>log Y</string>
         </property>
@@ -144,6 +164,9 @@
           <height>0</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>Total number of entries in this histogram</string>
+        </property>
         <property name="text">
          <string>0 entries</string>
         </property>
@@ -151,6 +174,9 @@
       </item>
       <item row="1" column="3">
        <widget class="QPushButton" name="resetHistoPushButton">
+        <property name="toolTip">
+         <string>Clear histogram.</string>
+        </property>
         <property name="text">
          <string>Reset</string>
         </property>
@@ -193,6 +219,9 @@
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>MuonPi board temperature</string>
         </property>
         <property name="frameShape">
          <enum>QFrame::Box</enum>
@@ -410,6 +439,9 @@
                 <pointsize>9</pointsize>
                </font>
               </property>
+              <property name="toolTip">
+               <string>Toggle bias voltage supply</string>
+              </property>
               <property name="text">
                <string>Bias On</string>
               </property>
@@ -499,6 +531,9 @@
                   <pointsize>9</pointsize>
                  </font>
                 </property>
+                <property name="toolTip">
+                 <string>Choose input for the ADC to trigger on.</string>
+                </property>
                 <property name="text">
                  <string>ADC Trigger Input</string>
                 </property>
@@ -530,6 +565,9 @@
                   <pointsize>9</pointsize>
                  </font>
                 </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Choose which signals to timestamp.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This is the signal the UBXCOUNTER and UBXRATE use.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
                  <string>Timestamping Input</string>
                 </property>
@@ -560,6 +598,9 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;GNSS timestamping health.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Green: OK&lt;/p&gt;&lt;p&gt;Red: No timestamping possible&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="frameShape">
          <enum>QFrame::Box</enum>
         </property>
@@ -578,6 +619,9 @@
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;MQTT-connection health.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="frameShape">
          <enum>QFrame::Box</enum>
