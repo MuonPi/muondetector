@@ -566,7 +566,7 @@
                  </font>
                 </property>
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Choose which signals to timestamp.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This is the signal the UBXCOUNTER and UBXRATE use.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Choose which signals to timestamp.&lt;br/&gt;&lt;br/&gt;This is the signal the UBXCOUNTER and UBXRATE use.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
                  <string>Timestamping Input</string>
@@ -599,7 +599,7 @@
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;GNSS timestamping health.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Green: OK&lt;/p&gt;&lt;p&gt;Red: No timestamping possible&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;GNSS timestamping health.&lt;br/&gt;&lt;br/&gt;Green: OK&lt;br/&gt;Red: No timestamping possible&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="frameShape">
          <enum>QFrame::Box</enum>
@@ -621,7 +621,7 @@
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;MQTT-connection health.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>MQTT-connection health.</string>
         </property>
         <property name="frameShape">
          <enum>QFrame::Box</enum>

@@ -408,7 +408,7 @@
             </size>
            </property>
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Spacial uncertainty of the position calculation.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;Does not reflect the actual statistical uncertainty of the position, which is typically a few meteres.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Spatial uncertainty of the position calculation.&lt;br/&gt;&lt;br/&gt;Does not reflect the actual statistical uncertainty of the position, which is typically a few meteres.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="frameShape">
             <enum>QFrame::Box</enum>

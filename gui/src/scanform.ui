@@ -111,7 +111,7 @@
               <item>
                <widget class="QLabel" name="label_3">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Lower and upper boundaries of the scanning parameter range.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;For Threshold scanning, this value is given in Volts [V] (0.020V = 20mV)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Lower and upper boundaries of the scanning parameter range.&lt;br/&gt;&lt;br/&gt;For Threshold scanning, this value is given in Volts [V] (0.020V = 20mV).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
                  <string>Scan Range from:</string>
@@ -120,9 +120,6 @@
               </item>
               <item>
                <widget class="QLineEdit" name="minRangeLineEdit">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Lower scan limit&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
                 <property name="text">
                  <string>0</string>
                 </property>
@@ -138,7 +135,7 @@
               <item>
                <widget class="QLineEdit" name="maxRangeLineEdit">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Upper scan limit&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>Upper scan limit</string>
                 </property>
                 <property name="text">
                  <string>1</string>
@@ -170,7 +167,7 @@
                    </size>
                   </property>
                   <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Scan increment&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   <string>Scan increment</string>
                   </property>
                   <property name="text">
                    <string>0.005</string>
@@ -197,7 +194,7 @@
                    <bool>false</bool>
                   </property>
                   <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of scan points&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   <string>Number of scan points</string>
                   </property>
                   <property name="minimum">
                    <number>1</number>
@@ -235,7 +232,7 @@
               <item>
                <widget class="QSpinBox" name="timeIntervalSpinBox">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Measurement duration at each step&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string/>
                 </property>
                 <property name="minimum">
                  <number>1</number>
@@ -259,7 +256,7 @@
               <item>
                <widget class="QCheckBox" name="limitStatisticsCheckBox">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Skip to the next scan point when a predefined statistics is satisfied&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>Skip to the next scan point when a predefined statistics is reached.</string>
                 </property>
                 <property name="text">
                  <string>limit statistics</string>
@@ -292,7 +289,7 @@
                  <bool>false</bool>
                 </property>
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Skip to next scan step when this number of events is recorded&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>Skip to next scan step when this number of events is recorded.</string>
                 </property>
                 <property name="currentIndex">
                  <number>2</number>
@@ -379,7 +376,7 @@
          <item row="1" column="0">
           <widget class="QPushButton" name="scanStartPushButton">
            <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Start or stop the scan process&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>Start or stop the scan process</string>
            </property>
            <property name="text">
             <string>Start Scan</string>
@@ -526,7 +523,7 @@
        <item row="1" column="1">
         <widget class="QPushButton" name="exportDataPushButton">
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Export measurements to file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>Export measurements to file.</string>
          </property>
          <property name="text">
           <string>export data</string>

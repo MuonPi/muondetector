@@ -899,6 +899,8 @@
                  <property name="font">
                   <font>
                    <pointsize>9</pointsize>
+                   <weight>50</weight>
+                   <bold>false</bold>
                   </font>
                  </property>
                  <property name="text">
@@ -911,6 +913,8 @@
                  <property name="font">
                   <font>
                    <pointsize>9</pointsize>
+                   <weight>50</weight>
+                   <bold>false</bold>
                   </font>
                  </property>
                  <property name="text">
@@ -923,6 +927,8 @@
                  <property name="font">
                   <font>
                    <pointsize>8</pointsize>
+                   <weight>50</weight>
+                   <bold>false</bold>
                   </font>
                  </property>
                  <property name="text">
@@ -965,10 +971,12 @@ Bias</string>
                  <property name="font">
                   <font>
                    <pointsize>8</pointsize>
+                   <weight>50</weight>
+                   <bold>false</bold>
                   </font>
                  </property>
                  <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Polarity of the signal.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Checked: signal over baseline&lt;/p&gt;&lt;p&gt;Unchecked: signal under baseline&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;Polarity of the signal.&lt;br/&gt;&lt;br/&gt;Checked: signal over baseline&lt;br/&gt;Unchecked: signal under baseline&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
                   <string>Polarity</string>
@@ -1309,7 +1317,7 @@ Bias</string>
            </font>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Current flowing through the SiPM.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Values should be between 1 and 20 µA.&lt;br/&gt;If this value changes depending on if the detector is in the shade or not, then the detector wrapping is not light tight.&lt;br/&gt;The detector might still register events, but at a lower rate due to saturation effects of the SiPM.&lt;/p&gt;&lt;p&gt;Covering the detector with fabric or placing it in a box is a sufficient fix.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Current flowing through the SiPM.&lt;br/&gt;&lt;br/&gt;Values should be between 1 and 20 µA.&lt;br/&gt;If this value changes depending on if the detector is in the shade or not, then the detector wrapping is not light tight.&lt;br/&gt;The detector might still register events, but at a lower rate due to saturation effects of the SiPM.&lt;br/&gt;Covering the detector with fabric or placing it in a box is a sufficient fix.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>SiPM Current</string>
