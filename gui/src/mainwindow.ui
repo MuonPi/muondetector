@@ -403,7 +403,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Rate of detections in a single channel.&lt;br/&gt;&lt;br/&gt;Moving average.&lt;br/&gt;Use the UBXRATE vs TIME scan in the &lt;span style=&quot; font-style:italic;&quot;&gt;Scan&lt;/span&gt; Tab for more accurate rate mesurements.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Rate of detections in a single channel.&lt;br/&gt;&lt;br/&gt;Moving average.&lt;br/&gt;Use the UBXRATE vs TIME scan in the &lt;span style=&quot; font-style:italic;&quot;&gt;Scan&lt;/span&gt; tab for more accurate rate measurements.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>xRate</string>
@@ -478,7 +478,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Rate of coincident detections both channels.&lt;br/&gt;&lt;br/&gt;Moving average.&lt;br/&gt;Use the UBXRATE vs TIME scan in the &lt;span style=&quot; font-style:italic;&quot;&gt;Scan&lt;/span&gt; Tab for more accurate rate mesurements.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Rate of coincident detections both channels.&lt;br/&gt;&lt;br/&gt;Moving average.&lt;br/&gt;Use the UBXRATE vs TIME scan in the &lt;span style=&quot; font-style:italic;&quot;&gt;Scan&lt;/span&gt; tab for more accurate rate measurements.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>aRate</string>
