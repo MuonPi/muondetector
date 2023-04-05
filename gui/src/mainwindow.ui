@@ -132,7 +132,7 @@
       <item>
        <widget class="QPushButton" name="networkSearchButton">
         <property name="toolTip">
-         <string>Probe the network for active stations (only daemon &gt;=2.1.0)</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Probe the network for active stations (only daemon &amp;gt;=2.1.0)&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Found devices will be added to the drop-down menu.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>network search</string>
