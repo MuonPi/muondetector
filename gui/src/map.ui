@@ -61,7 +61,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="modeComboBox"/>
+         <widget class="QComboBox" name="modeComboBox">
+          <property name="toolTip">
+           <string>Positioning mode which defines which positions are reported.</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -75,7 +79,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="filterTypeComboBox"/>
+         <widget class="QComboBox" name="filterTypeComboBox">
+          <property name="toolTip">
+           <string>Type of filter used for smoothing the position readings to improve average position.</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -89,7 +97,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="maxDopLineEdit"/>
+         <widget class="QLineEdit" name="maxDopLineEdit">
+          <property name="toolTip">
+           <string>Maximum allowed Dilution of Precision (DOP) of fixes to be considered in lock-in mode.</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -103,7 +115,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="minPosErrorLineEdit"/>
+         <widget class="QLineEdit" name="minPosErrorLineEdit">
+          <property name="toolTip">
+           <string>Minimum allowed positioning error of fixes to be considered in lock-in mode.</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -126,7 +142,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="longitudeLineEdit"/>
+         <widget class="QLineEdit" name="longitudeLineEdit">
+          <property name="toolTip">
+           <string>Static longitude</string>
+          </property>
+         </widget>
         </item>
         <item>
          <widget class="QLabel" name="label_5">
@@ -147,7 +167,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="latitudeLineEdit"/>
+         <widget class="QLineEdit" name="latitudeLineEdit">
+          <property name="toolTip">
+           <string>Static latitude</string>
+          </property>
+         </widget>
         </item>
         <item>
          <widget class="QLabel" name="label_6">
@@ -168,7 +192,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="altitudeLineEdit"/>
+         <widget class="QLineEdit" name="altitudeLineEdit">
+          <property name="toolTip">
+           <string>Static altitude (height over mean sea level)</string>
+          </property>
+         </widget>
         </item>
         <item>
          <widget class="QLabel" name="label_7">
@@ -198,7 +226,11 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="horErrorLineEdit"/>
+           <widget class="QLineEdit" name="horErrorLineEdit">
+            <property name="toolTip">
+             <string>Horizontal error of static position</string>
+            </property>
+           </widget>
           </item>
           <item>
            <widget class="QLabel" name="label_12">
@@ -219,7 +251,11 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="vertErrorLineEdit"/>
+           <widget class="QLineEdit" name="vertErrorLineEdit">
+            <property name="toolTip">
+             <string>Vertical error of static position</string>
+            </property>
+           </widget>
           </item>
           <item>
            <widget class="QLabel" name="label_11">
@@ -237,6 +273,9 @@
    </item>
    <item row="2" column="0">
     <widget class="QPushButton" name="setConfigPushButton">
+     <property name="toolTip">
+      <string>Persist current position mode, filter config and static pos in daemon.</string>
+     </property>
      <property name="text">
       <string>&amp;Set</string>
      </property>

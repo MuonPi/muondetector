@@ -13,20 +13,20 @@ NetworkDiscovery::NetworkDiscovery(DeviceType f_device_type, quint16 f_port, QOb
     const QHostAddress& localhost = QHostAddress(QHostAddress::LocalHost);
     // qDebug() << QNetworkInterface::allAddresses();
     for (auto address : QNetworkInterface::allAddresses()) {
-        if (address.protocol() == QAbstractSocket::IPv4Protocol && address != localhost && address != QHostAddress::AnyIPv4) {
-            m_own_ipv4 = address;
+        if (address.protocol() == QAbstractSocket::IPv4Protocol && address != localhost && address != QHostAddress(QHostAddress::AnyIPv4)) {
+            m_own_ipv4.push_back(address);
             auto temp = address.toString().split('.');
             QString broadcast_string {};
             for (auto it = temp.begin(); it != --temp.end(); it++) {
                 broadcast_string += (*it + ".");
             }
             broadcast_string += "255";
-            m_broadcast_address = QHostAddress { broadcast_string };
+            m_broadcast_address.push_back(QHostAddress { broadcast_string });
         }
     }
 
     connect(socket, &QUdpSocket::readyRead, this, &NetworkDiscovery::readPendingDatagrams);
-    socket->bind(QHostAddress::Any, m_port, QUdpSocket::ShareAddress); // ShareAddress is important so both daemon and gui can be on same device
+    socket->bind(QHostAddress(QHostAddress::AnyIPv4), m_port, QUdpSocket::ShareAddress); // ShareAddress is important so both daemon and gui can be on same device
     // qDebug() << "broadcast address: " << m_broadcast_address.toString();
     // qDebug() << "listening on port: " << m_port;
 }
@@ -39,10 +39,12 @@ void NetworkDiscovery::searchDevices()
     (*dStream) << static_cast<quint16>(m_device_type);
 
     if (socket != nullptr) {
-        // qDebug() << "sending " << data;
+        qDebug() << "NetworkDiscovery: sending " << data << " on address " << QHostAddress(QHostAddress::Any).toIPv4Address();
         // auto datagram = QNetworkDatagram{data,m_broadcast_address, m_port};
         // datagram.setHopLimit(255); // probably overkill
-        socket->writeDatagram(data, m_broadcast_address, m_port);
+        for (auto address : m_broadcast_address) {
+            socket->writeDatagram(data, address, m_port);
+        }
     }
 }
 
@@ -55,9 +57,17 @@ void NetworkDiscovery::readPendingDatagrams()
         QDataStream inStream { &data, QIODevice::ReadOnly };
         quint16 device_type;
         inStream >> device_type;
-        // qDebug() << "found device: " << sender_address << " type: " << device_type;
-        if (sender_address == m_own_ipv4 && device_type == static_cast<quint16>(m_device_type)) {
-            continue; // do not answer or discover self
+        qDebug() << "found device: " << sender_address << " type: " << device_type;
+        if (device_type == static_cast<quint16>(m_device_type)) {
+            bool skip = false;
+            for (auto address : m_own_ipv4) {
+                if (address == sender_address){
+                    skip = true;
+                }
+            }
+            if (skip){
+                continue; // do not answer or discover self
+            }
         }
         discovered_devices.append(QPair<quint16, QHostAddress> { static_cast<quint16>(device_type), sender_address });
         emit foundDevices(discovered_devices);

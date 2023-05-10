@@ -161,36 +161,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     : QTcpServer { parent }
     , config { cfg }
 {
-    // first, we must set the locale to be independent of the number format of the system's locale.
-    // We rely on parsing floating point numbers with a decimal point (not a komma) which might fail if not setting the classic locale
-    std::locale::global(std::locale::classic());
-
-    qRegisterMetaType<TcpMessage>("TcpMessage");
-    qRegisterMetaType<GnssPosStruct>("GnssPosStruct");
-    qRegisterMetaType<int32_t>("int32_t");
-    qRegisterMetaType<uint32_t>("uint32_t");
-    qRegisterMetaType<uint16_t>("uint16_t");
-    qRegisterMetaType<uint8_t>("uint8_t");
-    qRegisterMetaType<int8_t>("int8_t");
-    qRegisterMetaType<bool>("bool");
-    qRegisterMetaType<CalibStruct>("CalibStruct");
-    qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
-    qRegisterMetaType<std::vector<GnssConfigStruct>>("std::vector<GnssConfigStruct>");
-    qRegisterMetaType<std::chrono::duration<double>>("std::chrono::duration<double>");
-    qRegisterMetaType<std::string>("std::string");
-    qRegisterMetaType<LogParameter>("LogParameter");
-    qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
-    qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
-    qRegisterMetaType<timespec>("timespec");
-    qRegisterMetaType<GPIO_SIGNAL>("GPIO_SIGNAL");
-    qRegisterMetaType<GnssMonHwStruct>("GnssMonHwStruct");
-    qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
-    qRegisterMetaType<UbxTimeMarkStruct>("UbxTimeMarkStruct");
-    qRegisterMetaType<I2cDeviceEntry>("I2cDeviceEntry");
-    qRegisterMetaType<ADC_SAMPLING_MODE>("ADC_SAMPLING_MODE");
-    qRegisterMetaType<MuonPi::Version::Version>("MuonPi::Version::Version");
-    qRegisterMetaType<UbxDynamicModel>("UbxDynamicModel");
-
     // signal handling
     setup_unix_signal_handlers();
     if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)) {
@@ -217,9 +187,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         qDebug() << "daemon running in thread " << this->thread()->objectName();
     }
 
-    if (verbose > 3) {
-        qDebug() << "QT version is " << QString::number(QT_VERSION, 16);
-    }
     if (verbose > 3) {
         this->thread()->setObjectName("muondetector-daemon");
         qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
@@ -628,10 +595,10 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     // set up rate buffers for all GPIO input signals
     for (auto [signal, pin] : GPIO_PINMAP) {
         if (GPIO_SIGNAL_MAP.at(signal).direction == DIR_IN) {
-            auto ratebuf = std::make_shared<RateBuffer>(pin);
-            connect(pigHandler, &PigpiodHandler::signal, ratebuf.get(), &RateBuffer::onEvent);
-            // connect(&ratebuf, &RateBuffer::filteredEvent, this, &Daemon::sendGpioPinEvent);
-            m_ratebuffers.emplace(pin, ratebuf);
+            auto ratebuf = std::make_shared<EventRateBuffer>(pin);
+            connect(pigHandler, &PigpiodHandler::signal, ratebuf.get(), &EventRateBuffer::onEvent);
+            // connect(&ratebuf, &EventRateBuffer::filteredEvent, this, &Daemon::sendGpioPinEvent);
+            m_gpio_ratebuffers.emplace(pin, ratebuf);
         }
     }
 
@@ -640,6 +607,12 @@ Daemon::Daemon(configuration cfg, QObject* parent)
 
     // establish ublox gnss module connection
     connectToGps();
+
+    // set up rate buffer for ublox counter
+    m_ublox_ratebuffer = std::make_shared<CounterRateBuffer>(std::numeric_limits<std::uint16_t>::max());
+    connect(qtGps, &QtSerialUblox::UBXReceivedTimeTM2, this, [this](const UbxTimeMarkStruct& tm) {
+        this->m_ublox_ratebuffer->onCounterValue(tm.evtCounter);
+    });
 
     // configure the ublox module with preset ubx messages, if required
     if (config.gnss_config) {
@@ -1613,8 +1586,9 @@ void Daemon::onAdcSampleReady(ADS1115::Sample sample)
     } else {
         if (adcSamplingMode == ADC_SAMPLING_MODE::TRACE) {
             adcSamplesBuffer.push_back(voltage);
-            if (adcSamplesBuffer.size() > Config::Hardware::ADC::buffer_size)
+            if (adcSamplesBuffer.size() > Config::Hardware::ADC::buffer_size) {
                 adcSamplesBuffer.pop_front();
+            }
             if (currentAdcSampleIndex == 0) {
                 TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_SAMPLE);
                 *(tcpMessage.dStream) << (quint8)channel << voltage;
@@ -1623,11 +1597,11 @@ void Daemon::onAdcSampleReady(ADS1115::Sample sample)
             }
             if (currentAdcSampleIndex >= 0) {
                 currentAdcSampleIndex++;
-                if (currentAdcSampleIndex >= (Config::Hardware::ADC::buffer_size - Config::Hardware::ADC::pretrigger)) {
+                if (currentAdcSampleIndex >= static_cast<int>(Config::Hardware::ADC::buffer_size - Config::Hardware::ADC::pretrigger)) {
                     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_TRACE);
                     *(tcpMessage.dStream) << (quint16)adcSamplesBuffer.size();
-                    for (int i = 0; i < adcSamplesBuffer.size(); i++) {
-                        *(tcpMessage.dStream) << adcSamplesBuffer[i];
+                    for (auto adc_sample : adcSamplesBuffer) {
+                        *(tcpMessage.dStream) << adc_sample;
                     }
                     emit sendTcpMessage(tcpMessage);
                     currentAdcSampleIndex = -1;
@@ -1756,7 +1730,7 @@ void Daemon::setDacThresh(uint8_t channel, float threshold)
     if (threshold < 0 || channel > 3) {
         return;
     }
-    if (channel == 2 || channel == 3) {
+    if (channel == Config::Hardware::DAC::Channel::bias || channel == Config::Hardware::DAC::Channel::dac4) {
         if (dac_p) {
             dac_p->setVoltage(channel, threshold);
         }
@@ -2285,9 +2259,12 @@ void Daemon::intSignalHandler(int)
 
 void Daemon::aquireMonitoringParameters()
 {
-    for (auto [gpio, ratebuffer] : m_ratebuffers) {
+    for (auto [gpio, ratebuffer] : m_gpio_ratebuffers) {
         auto signal { bcmToGpioSignal(gpio) };
         qDebug() << "signal: " << QString::fromStdString(GPIO_SIGNAL_MAP.at(signal).name) << " rate = " << ratebuffer->avgRate();
+    }
+    if (m_ublox_ratebuffer) {
+        qDebug() << "ublox ctr rate = " << m_ublox_ratebuffer->avgRate();
     }
 
     if (temp_sensor_p && temp_sensor_p->probeDevicePresence()) {
@@ -2306,10 +2283,9 @@ void Daemon::aquireMonitoringParameters()
         }
     }
 
-    double v1 = 0., v2 = 0.;
     if (adc_p && (!(std::dynamic_pointer_cast<ADS1115>(adc_p)->getStatus() & i2cDevice::MODE_UNREACHABLE)) && (std::dynamic_pointer_cast<ADS1115>(adc_p)->getStatus() & (i2cDevice::MODE_NORMAL | i2cDevice::MODE_FORCE))) {
-        v1 = adc_p->getVoltage(2);
-        v2 = adc_p->getVoltage(3);
+        double v1 { adc_p->getVoltage(MuonPi::Config::Hardware::ADC::Channel::bias1) };
+        double v2 { adc_p->getVoltage(MuonPi::Config::Hardware::ADC::Channel::bias2) };
         if (calib && calib->getCalibItem("VDIV").name == "VDIV") {
             CalibStruct vdivItem = calib->getCalibItem("VDIV");
             std::istringstream istr(vdivItem.value);

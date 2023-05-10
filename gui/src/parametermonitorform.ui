@@ -899,6 +899,8 @@
                  <property name="font">
                   <font>
                    <pointsize>9</pointsize>
+                   <weight>50</weight>
+                   <bold>false</bold>
                   </font>
                  </property>
                  <property name="text">
@@ -911,6 +913,8 @@
                  <property name="font">
                   <font>
                    <pointsize>9</pointsize>
+                   <weight>50</weight>
+                   <bold>false</bold>
                   </font>
                  </property>
                  <property name="text">
@@ -923,6 +927,8 @@
                  <property name="font">
                   <font>
                    <pointsize>8</pointsize>
+                   <weight>50</weight>
+                   <bold>false</bold>
                   </font>
                  </property>
                  <property name="text">
@@ -965,7 +971,12 @@ Bias</string>
                  <property name="font">
                   <font>
                    <pointsize>8</pointsize>
+                   <weight>50</weight>
+                   <bold>false</bold>
                   </font>
+                 </property>
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;Polarity of the signal.&lt;br/&gt;&lt;br/&gt;Checked: signal over baseline&lt;br/&gt;Unchecked: signal under baseline&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
                   <string>Polarity</string>
@@ -1130,6 +1141,9 @@ Bias</string>
             <pointsize>9</pointsize>
            </font>
           </property>
+          <property name="toolTip">
+           <string>Enable/Disable the bias voltage supply.</string>
+          </property>
           <property name="text">
            <string>SiPM Bias Enabled</string>
           </property>
@@ -1161,6 +1175,9 @@ Bias</string>
         </item>
         <item row="2" column="1">
          <widget class="QCheckBox" name="mqttInhibitCheckBox">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Disable MQTT messages to muonpi.org.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Please check this if you tinker around with the MuonPi board.&lt;/p&gt;&lt;p&gt;Uncheck enable the submission of events, to contribute to the detector network.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>MQTT Inhibit</string>
           </property>
@@ -1299,6 +1316,9 @@ Bias</string>
             <pointsize>9</pointsize>
            </font>
           </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Current flowing through the SiPM.&lt;br/&gt;&lt;br/&gt;Values should be between 1 and 20 µA.&lt;br/&gt;If this value changes depending on if the detector is in the shade or not, then the detector wrapping is not light tight.&lt;br/&gt;The detector might still register events, but at a lower rate due to saturation effects of the SiPM.&lt;br/&gt;Covering the detector with fabric or placing it in a box is a sufficient fix.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>SiPM Current</string>
           </property>
@@ -1316,6 +1336,9 @@ Bias</string>
            <font>
             <pointsize>9</pointsize>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Board Temperature</string>
           </property>
           <property name="text">
            <string>Board Temperature</string>
@@ -1382,6 +1405,9 @@ Bias</string>
            <font>
             <pointsize>9</pointsize>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>MuonPi daemon version</string>
           </property>
           <property name="text">
            <string>SW Version</string>
@@ -1505,6 +1531,9 @@ Bias</string>
             <pointsize>9</pointsize>
            </font>
           </property>
+          <property name="toolTip">
+           <string>Timestamping precision by the Ublox GNSS chip</string>
+          </property>
           <property name="text">
            <string>Time Precision</string>
           </property>
@@ -1522,6 +1551,9 @@ Bias</string>
            <font>
             <pointsize>9</pointsize>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>MuonPi HAT Hardware Version (may ignore minor version)</string>
           </property>
           <property name="text">
            <string>HW Version</string>
@@ -1588,6 +1620,9 @@ Bias</string>
            <font>
             <pointsize>9</pointsize>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>Bias supply voltage for the Silicon Photo Multiplier (SiPM) of the detector assembly</string>
           </property>
           <property name="text">
            <string>SiPM Bias Voltage</string>
@@ -1702,6 +1737,9 @@ Bias</string>
            <font>
             <pointsize>9</pointsize>
            </font>
+          </property>
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Ublox counter counts the events specified with the &lt;span style=&quot; font-style:italic;&quot;&gt;Ublox timing input.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>Ublox Event Counter</string>

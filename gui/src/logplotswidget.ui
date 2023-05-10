@@ -232,7 +232,7 @@
         <item>
          <widget class="QDoubleSpinBox" name="logRotationSpinBox">
           <property name="suffix">
-           <string extracomment="log rotation in days">days</string>
+           <string extracomment="log rotation in days"> days</string>
           </property>
           <property name="decimals">
            <number>1</number>

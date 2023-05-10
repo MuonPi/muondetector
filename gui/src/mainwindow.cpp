@@ -83,17 +83,20 @@ MainWindow::MainWindow(QWidget* parent)
         if (addresses == nullptr) {
             return;
         }
+        unsigned device_counter{};
         for (auto device : devices) {
             // check if device is not a GUI (might show other GUIs later on)
             if (device.first == static_cast<quint16>(NetworkDiscovery::DeviceType::GUI)) {
                 continue;
             }
+            device_counter++;
             // append to addresses if not already there
             if (addresses->findItems(device.second.toString()).isEmpty()) {
                 auto row = new QStandardItem(device.second.toString());
                 addresses->appendRow(row);
             }
         }
+        connection_info("Found " + QString::number(device_counter) + " devices");
     });
 
     connect(ui->networkSearchButton, &QPushButton::clicked, networkDiscovery, &NetworkDiscovery::searchDevices);
@@ -387,10 +390,6 @@ bool MainWindow::eventFilter(QObject* object, QEvent* event)
 {
     if (event->type() == QEvent::KeyPress) {
         QKeyEvent* ke = static_cast<QKeyEvent*>(event);
-        if (ke->key() == Qt::Key_Escape) {
-            QCoreApplication::quit();
-            return true;
-        }
         auto combobox = dynamic_cast<QComboBox*>(object);
         if (combobox == ui->ipBox) {
             if (ke->key() == Qt::Key_Delete) {
@@ -989,6 +988,12 @@ void MainWindow::connected()
     sendRequest(TCP_MSG_KEY::MSG_CALIB_REQUEST);
     sendRequest(TCP_MSG_KEY::MSG_ADC_MODE_REQUEST);
     sendRequest(TCP_MSG_KEY::MSG_POLARITY_SWITCH_REQUEST);
+}
+
+void MainWindow::connection_info(const QString message)
+{
+   ui->ipStatusLabel->setStyleSheet("");
+   ui->ipStatusLabel->setText(message);
 }
 
 void MainWindow::connection_error(int error_code, const QString message)

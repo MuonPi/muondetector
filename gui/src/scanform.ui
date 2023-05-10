@@ -33,6 +33,9 @@
              <layout class="QHBoxLayout" name="horizontalLayout">
               <item>
                <widget class="QLabel" name="label">
+                <property name="toolTip">
+                 <string>The parameter to measure.</string>
+                </property>
                 <property name="text">
                  <string>Observable</string>
                 </property>
@@ -40,6 +43,24 @@
               </item>
               <item>
                <widget class="QComboBox" name="observableComboBox">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The parameter to be measured&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="toolTipDuration">
+                 <number>-1</number>
+                </property>
+                <property name="statusTip">
+                 <string/>
+                </property>
+                <property name="whatsThis">
+                 <string/>
+                </property>
+                <property name="accessibleName">
+                 <string/>
+                </property>
+                <property name="accessibleDescription">
+                 <string extracomment="description"/>
+                </property>
                 <item>
                  <property name="text">
                   <string>UBX Rate</string>
@@ -58,6 +79,9 @@
              <layout class="QHBoxLayout" name="horizontalLayout_2">
               <item>
                <widget class="QLabel" name="label_2">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Parameter to incrementally change.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Choose TIME together with &lt;span style=&quot; font-style:italic;&quot;&gt;Nr of Points &lt;/span&gt;and &lt;span style=&quot; font-style:italic;&quot;&gt;Integration Time&lt;/span&gt; to track plot the observable over time.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
                  <string>Scan Parameter</string>
                 </property>
@@ -65,6 +89,9 @@
               </item>
               <item>
                <widget class="QComboBox" name="scanParComboBox">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The independent scan parameter&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <item>
                  <property name="text">
                   <string>THR1</string>
@@ -83,6 +110,9 @@
              <layout class="QHBoxLayout" name="horizontalLayout_3">
               <item>
                <widget class="QLabel" name="label_3">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Lower and upper boundaries of the scanning parameter range.&lt;br/&gt;&lt;br/&gt;For Threshold scanning, this value is given in Volts [V] (0.020V = 20mV).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
                 <property name="text">
                  <string>Scan Range from:</string>
                 </property>
@@ -104,6 +134,9 @@
               </item>
               <item>
                <widget class="QLineEdit" name="maxRangeLineEdit">
+                <property name="toolTip">
+                 <string>Upper scan limit</string>
+                </property>
                 <property name="text">
                  <string>1</string>
                 </property>
@@ -117,6 +150,9 @@
                <layout class="QHBoxLayout" name="horizontalLayout_4">
                 <item>
                  <widget class="QLabel" name="label_5">
+                  <property name="toolTip">
+                   <string>Increment of Scan Parameter points.</string>
+                  </property>
                   <property name="text">
                    <string>Step Size</string>
                   </property>
@@ -130,6 +166,9 @@
                     <height>0</height>
                    </size>
                   </property>
+                  <property name="toolTip">
+                   <string>Scan increment</string>
+                  </property>
                   <property name="text">
                    <string>0.005</string>
                   </property>
@@ -141,6 +180,9 @@
                <layout class="QHBoxLayout" name="horizontalLayout_7">
                 <item>
                  <widget class="QCheckBox" name="activateNrMeasurementsCheckBox">
+                  <property name="toolTip">
+                   <string>Specify number of equally spaced points instead of stepping increments.</string>
+                  </property>
                   <property name="text">
                    <string>Nr of Points</string>
                   </property>
@@ -150,6 +192,9 @@
                  <widget class="QSpinBox" name="nrMeasurementSpinBox">
                   <property name="enabled">
                    <bool>false</bool>
+                  </property>
+                  <property name="toolTip">
+                   <string>Number of scan points</string>
                   </property>
                   <property name="minimum">
                    <number>1</number>
@@ -176,13 +221,19 @@
                   <height>0</height>
                  </size>
                 </property>
+                <property name="toolTip">
+                 <string>Measurement time interval</string>
+                </property>
                 <property name="text">
-                 <string>Meas.Time Interval</string>
+                 <string>Integration Time</string>
                 </property>
                </widget>
               </item>
               <item>
                <widget class="QSpinBox" name="timeIntervalSpinBox">
+                <property name="toolTip">
+                 <string/>
+                </property>
                 <property name="minimum">
                  <number>1</number>
                 </property>
@@ -204,6 +255,9 @@
              <layout class="QHBoxLayout" name="horizontalLayout_6">
               <item>
                <widget class="QCheckBox" name="limitStatisticsCheckBox">
+                <property name="toolTip">
+                 <string>Skip to the next scan point when a predefined statistics is reached.</string>
+                </property>
                 <property name="text">
                  <string>limit statistics</string>
                 </property>
@@ -233,6 +287,9 @@
                <widget class="QComboBox" name="maxStatisticsComboBox">
                 <property name="enabled">
                  <bool>false</bool>
+                </property>
+                <property name="toolTip">
+                 <string>Skip to next scan step when this number of events is recorded.</string>
                 </property>
                 <property name="currentIndex">
                  <number>2</number>
@@ -318,6 +375,9 @@
          </item>
          <item row="1" column="0">
           <widget class="QPushButton" name="scanStartPushButton">
+           <property name="toolTip">
+            <string>Start or stop the scan process</string>
+           </property>
            <property name="text">
             <string>Start Scan</string>
            </property>
@@ -452,6 +512,9 @@
        </item>
        <item row="1" column="0">
         <widget class="QCheckBox" name="plotDifferentialCheckBox">
+         <property name="toolTip">
+          <string>Plot the difference between subsequent data points</string>
+         </property>
          <property name="text">
           <string>differential</string>
          </property>
@@ -459,6 +522,9 @@
        </item>
        <item row="1" column="1">
         <widget class="QPushButton" name="exportDataPushButton">
+         <property name="toolTip">
+          <string>Export measurements to file.</string>
+         </property>
          <property name="text">
           <string>export data</string>
          </property>

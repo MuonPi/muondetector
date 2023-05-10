@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QTimer>
+#include <QVector>
 #include <QUdpSocket>
 
 class NetworkDiscovery : public QObject {
@@ -24,8 +25,8 @@ signals:
 private:
     DeviceType m_device_type;
     quint16 m_port;
-    QHostAddress m_broadcast_address;
-    QHostAddress m_own_ipv4;
+    QVector<QHostAddress> m_broadcast_address;
+    QVector<QHostAddress> m_own_ipv4;
     QUdpSocket* socket;
     QList<QPair<quint16, QHostAddress>> discovered_devices {};
 };

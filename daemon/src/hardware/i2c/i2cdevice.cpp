@@ -111,7 +111,7 @@ bool i2cDevice::devicePresent()
 void i2cDevice::setAddress(uint8_t address)
 { //pointer to our device on the i2c-bus
     fAddress = address;
-    int res = ioctl(fHandle, I2C_SLAVE, fAddress); //i.g. Specify the address of the I2C Slave to communicate with
+    int res = ioctl(fHandle, I2C_SLAVE, fAddress); //i.e. specify the address of the I2C slave to communicate with
     if (res < 0) {
         res = ioctl(fHandle, I2C_SLAVE_FORCE, fAddress);
         if (res < 0) {
@@ -182,12 +182,17 @@ int i2cDevice::writeReg(uint8_t reg, uint8_t* buf, int nBytes)
     // block sizes of up to 32 bytes only
     //i2c_smbus_write_i2c_block_data(int file, reg, nBytes, buf);
 
-    uint8_t writeBuf[nBytes + 1];
-
-    writeBuf[0] = reg; // first byte is register address
-    for (int i = 0; i < nBytes; i++)
-        writeBuf[i + 1] = buf[i];
-    int n = write(writeBuf, nBytes + 1);
+    uint8_t* wbuf = new uint8_t[nBytes + 1];
+    if (!wbuf)
+        return 0;
+    int n { 0 };
+    try {
+        std::copy(buf, buf + nBytes, wbuf + 1);
+        wbuf[0] = reg;
+        n = write(wbuf, nBytes + 1);
+    } catch (...) {
+    }
+    delete[] wbuf;
     return n - 1;
 }
 
