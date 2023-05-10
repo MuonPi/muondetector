@@ -267,7 +267,7 @@ private:
     // others
     QVector<QPointF> xorRatePoints, andRatePoints;
     timespec startOfProgram, lastRateInterval;
-    quint32 rateBufferTime = 30; // in s
+    quint32 rateBufferTime = 10; // in s
     quint32 rateBufferInterval = 2000; // in ms: 2 seconds
     quint32 rateMaxShowInterval = 60 * 60 * 1000; // in ms: 1 hour
     QTimer rateBufferReminder;

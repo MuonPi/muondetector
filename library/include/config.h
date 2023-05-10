@@ -45,7 +45,7 @@ namespace MQTT {
     constexpr const char* log_topic { "muonpi/log/" };
 }
 namespace Log {
-    constexpr std::chrono::seconds interval { 20 };
+    constexpr std::chrono::seconds interval { 5 };
     constexpr int max_geohash_length_default { 6 };
     constexpr std::chrono::hours rotate_period_default { 90 * 24 };
 }
