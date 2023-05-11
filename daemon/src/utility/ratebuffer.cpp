@@ -64,7 +64,7 @@ EventRateBuffer::EventRateBuffer(unsigned int gpio, QObject* parent)
 
 void EventRateBuffer::clear()
 {
-    m_eventbuffer = std::queue<EventTime, std::list<EventTime>> {};
+    m_eventbuffer = std::deque<EventTime> {};
     m_instance_start = std::chrono::system_clock::now();
 }
 
@@ -74,7 +74,7 @@ void EventRateBuffer::onEvent(uint8_t gpio)
         return;
     EventTime event_time { std::chrono::system_clock::now() };
     if (m_eventbuffer.empty()) {
-        m_eventbuffer.push(event_time);
+        m_eventbuffer.push_back(event_time);
         emit filteredEvent(gpio, event_time);
         return;
     }
@@ -87,7 +87,7 @@ void EventRateBuffer::onEvent(uint8_t gpio)
 
     while (!m_eventbuffer.empty()
         && (event_time - m_eventbuffer.front() > m_buffer_time)) {
-        m_eventbuffer.pop();
+        m_eventbuffer.pop_front();
     }
 
     if (!m_eventbuffer.empty()) {
@@ -99,7 +99,7 @@ void EventRateBuffer::onEvent(uint8_t gpio)
                 // std::cout << std::dec << "adjusting deadtime for gpio " << gpio << " to " << m_buffer.current_deadtime/1us << "us" << std::endl;
             }
             if (event_time - last_event_time < m_current_deadtime) {
-                m_eventbuffer.push(event_time);
+                m_eventbuffer.push_back(event_time);
                 return;
             }
         } else {
@@ -111,7 +111,7 @@ void EventRateBuffer::onEvent(uint8_t gpio)
             }
         }
     }
-    m_eventbuffer.push(event_time);
+    m_eventbuffer.push_back(event_time);
     emit filteredEvent(gpio, event_time);
     if (m_last_interval != std::chrono::nanoseconds(0)) {
         emit eventIntervalSignal(gpio, m_last_interval);
@@ -149,4 +149,97 @@ auto EventRateBuffer::lastEventTime() const -> EventTime
     if (m_eventbuffer.empty())
         return invalid_time;
     return m_eventbuffer.back();
+}
+
+CoincidenceEventBuffer::CoincidenceEventBuffer(unsigned int event_gpio, unsigned int coinc_gpio, bool anti_coinc, QObject* parent)
+    : EventRateBuffer(event_gpio,parent)
+    , m_coinc_gpio(coinc_gpio)
+    , m_is_veto(anti_coinc)
+{
+}
+
+void CoincidenceEventBuffer::onEvent(uint8_t gpio)
+{
+    EventTime event_time { std::chrono::system_clock::now() };
+    if (gpio == m_coinc_gpio) {
+		m_last_coinc_event = event_time;
+		long int distance_after_us = std::chrono::duration_cast<std::chrono::microseconds>(event_time - lastEventTime()).count();
+		if (m_is_veto) {
+			if ( std::abs(distance_after_us) <= COINCIDENCE_WINDOW.count()) {
+				//event is inside veto window
+				m_eventbuffer.pop_back();
+			}
+		} else {
+			long int distance_before_us = std::chrono::duration_cast<std::chrono::microseconds>(m_last_coinc_event - lastEventTime()).count();
+			if ( std::abs(distance_after_us) > COINCIDENCE_WINDOW.count() && std::abs(distance_before_us) > COINCIDENCE_WINDOW.count()) {
+				//event is outside coinc window
+				m_eventbuffer.pop_back();
+			}
+		}
+		return;
+	}
+    
+    if (gpio != m_gpio)
+        return;
+        
+    if (m_eventbuffer.empty()) {
+		long int distance_us = std::chrono::duration_cast<std::chrono::microseconds>(event_time - m_last_coinc_event).count();
+		if (!m_is_veto) {
+			if ( std::abs(distance_us) <= COINCIDENCE_WINDOW.count()) {
+				//event is inside coinc window
+				m_eventbuffer.push_back(event_time);
+			}
+		} else {
+			if ( std::abs(distance_us) > COINCIDENCE_WINDOW.count()) {
+				//event is outside veto window
+				m_eventbuffer.push_back(event_time);
+			}
+		}
+		return;
+    }
+
+    auto last_event_time = m_eventbuffer.back();
+    if (event_time - last_event_time < m_current_deadtime) {
+        // m_buffer[gpio].eventbuffer.push(event_time);
+        return;
+    }
+
+    while (!m_eventbuffer.empty()
+        && (event_time - m_eventbuffer.front() > m_buffer_time)) {
+        m_eventbuffer.pop_front();
+    }
+
+    if (!m_eventbuffer.empty()) {
+        m_last_interval = std::chrono::duration_cast<std::chrono::nanoseconds>(event_time - last_event_time);
+        if (event_time - last_event_time < MAX_DEADTIME) {
+            //			std::cout << "now-last:"<<(now-last_event_time)/1us<<" dt="<<buffermap[gpio].current_deadtime.count()<<std::endl;
+            if (m_current_deadtime < MAX_DEADTIME) {
+                m_current_deadtime += DEADTIME_INCREMENT;
+                // std::cout << std::dec << "adjusting deadtime for gpio " << gpio << " to " << m_buffer.current_deadtime/1us << "us" << std::endl;
+            }
+            if (event_time - last_event_time < m_current_deadtime) {
+				long int distance_us = std::chrono::duration_cast<std::chrono::microseconds>(event_time - m_last_coinc_event).count();
+				if (!m_is_veto) {
+					if ( std::abs(distance_us) <= COINCIDENCE_WINDOW.count()) {
+						//event is inside coinc window
+						m_eventbuffer.push_back(event_time);
+					}
+				} else {
+					if ( std::abs(distance_us) > COINCIDENCE_WINDOW.count()) {
+						//event is outside veto window
+						m_eventbuffer.push_back(event_time);
+					}
+				}
+                return;
+            }
+        } else {
+            auto deadtime = m_current_deadtime;
+            if (deadtime > DEADTIME_INCREMENT) {
+                m_current_deadtime -= DEADTIME_INCREMENT;
+            } else if (deadtime > 0s) {
+                m_current_deadtime -= std::chrono::microseconds(1);
+            }
+        }
+    }
+    m_eventbuffer.push_back(event_time);
 }

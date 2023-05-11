@@ -598,9 +598,14 @@ Daemon::Daemon(configuration cfg, QObject* parent)
             auto ratebuf = std::make_shared<EventRateBuffer>(pin);
             connect(pigHandler, &PigpiodHandler::signal, ratebuf.get(), &EventRateBuffer::onEvent);
             // connect(&ratebuf, &EventRateBuffer::filteredEvent, this, &Daemon::sendGpioPinEvent);
+            ratebuf->setBufferTime(std::chrono::seconds(rateBufferTime));
             m_gpio_ratebuffers.emplace(pin, ratebuf);
         }
     }
+    m_veto_eventbuffer = std::make_shared<CoincidenceEventBuffer>(GPIO_PINMAP.at(GPIO_SIGNAL::EVT_XOR), GPIO_PINMAP.at(GPIO_SIGNAL::TIME_MEAS_OUT), true);
+    m_veto_eventbuffer->setBufferTime(std::chrono::seconds(rateBufferTime));
+    connect(pigHandler, &PigpiodHandler::signal, m_veto_eventbuffer.get(), &EventRateBuffer::onEvent);
+    
 
     // set up histograms
     setupHistos();
@@ -613,6 +618,8 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     connect(qtGps, &QtSerialUblox::UBXReceivedTimeTM2, this, [this](const UbxTimeMarkStruct& tm) {
         this->m_ublox_ratebuffer->onCounterValue(tm.evtCounter);
     });
+    m_ublox_ratebuffer->setBufferTime(std::chrono::seconds(rateBufferTime));
+
 
     // configure the ublox module with preset ubx messages, if required
     if (config.gnss_config) {
@@ -2261,11 +2268,20 @@ void Daemon::aquireMonitoringParameters()
 {
     for (auto [gpio, ratebuffer] : m_gpio_ratebuffers) {
         auto signal { bcmToGpioSignal(gpio) };
-        qDebug() << "signal: " << QString::fromStdString(GPIO_SIGNAL_MAP.at(signal).name) << " rate = " << ratebuffer->avgRate();
+        double rate { ratebuffer->avgRate() };
+        qDebug() << "signal: " << QString::fromStdString(GPIO_SIGNAL_MAP.at(signal).name) << " rate = " << rate;
+        emit logParameter(LogParameter("rate_"+QString::fromStdString(GPIO_SIGNAL_MAP.at(signal).name), QString::number(rate) + " cps", LogParameter::LOG_AVERAGE));
     }
     if (m_ublox_ratebuffer) {
-        qDebug() << "ublox ctr rate = " << m_ublox_ratebuffer->avgRate();
+        double rate { m_ublox_ratebuffer->avgRate() };
+        qDebug() << "ublox ctr rate = " << rate;
+        emit logParameter(LogParameter("rate_ublox", QString::number(rate) + " cps", LogParameter::LOG_AVERAGE));
     }
+
+    double veto_rate { m_veto_eventbuffer->avgRate() };
+    
+    qDebug() << "veto event rate = " << m_veto_eventbuffer->avgRate();
+    emit logParameter(LogParameter("rate_veto", QString::number(veto_rate) + " cps", LogParameter::LOG_AVERAGE));
 
     if (temp_sensor_p && temp_sensor_p->probeDevicePresence()) {
         if (temp_sensor_p->getName() == "MIC184" && dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getAddress() < 0x4c) {

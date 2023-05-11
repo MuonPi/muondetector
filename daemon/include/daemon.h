@@ -301,6 +301,7 @@ private:
     configuration config;
     GeoPosManager m_geopos_manager;
     std::map<unsigned int, std::shared_ptr<EventRateBuffer>> m_gpio_ratebuffers {};
+	std::shared_ptr<CoincidenceEventBuffer> m_veto_eventbuffer {};
     std::shared_ptr<CounterRateBuffer> m_ublox_ratebuffer {};
 };
 

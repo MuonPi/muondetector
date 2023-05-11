@@ -15,6 +15,8 @@ constexpr unsigned long MAX_BURST_MULTIPLICITY { 10 };
 constexpr std::chrono::microseconds MAX_BUFFER_TIME { 60s };
 constexpr std::chrono::microseconds MAX_DEADTIME { static_cast<unsigned long>(1e+6 / MAX_AVG_RATE) };
 constexpr std::chrono::microseconds DEADTIME_INCREMENT { 50 };
+constexpr std::chrono::microseconds COINCIDENCE_WINDOW { 50 };
+
 
 class CounterRateBuffer : public QObject {
     Q_OBJECT
@@ -26,6 +28,9 @@ public:
 
     [[nodiscard]] auto avgRate() const -> double;
     [[nodiscard]] auto lastEventTime() const -> EventTime;
+    void setBufferTime(std::chrono::seconds buftime) {
+		m_buffer_time = std::chrono::duration_cast<std::chrono::microseconds>(buftime);
+	}
 
 signals:
 
@@ -63,6 +68,9 @@ public:
     [[nodiscard]] auto currentDeadtime() const -> std::chrono::microseconds;
     [[nodiscard]] auto lastInterval() const -> std::chrono::nanoseconds;
     [[nodiscard]] auto lastEventTime() const -> EventTime;
+    void setBufferTime(std::chrono::seconds buftime) {
+		m_buffer_time = std::chrono::duration_cast<std::chrono::microseconds>(buftime);
+	}
 
 signals:
     void filteredEvent(uint8_t gpio, EventTime event_time);
@@ -72,14 +80,36 @@ public slots:
     //void onEvent(unsigned int gpio, EventTime event_time);
     void onEvent(uint8_t gpio);
 
-private:
+protected:
     double fRateLimit { MAX_AVG_RATE };
     uint8_t m_gpio { 255 };
     std::chrono::microseconds m_buffer_time { MAX_BUFFER_TIME };
-    std::queue<EventTime, std::list<EventTime>> m_eventbuffer {};
+    std::deque<EventTime> m_eventbuffer {};
     std::chrono::microseconds m_current_deadtime { 0 };
     std::chrono::nanoseconds m_last_interval { 0 };
     EventTime m_instance_start {};
+};
+
+
+class CoincidenceEventBuffer : public EventRateBuffer {
+    Q_OBJECT
+
+public:
+    CoincidenceEventBuffer(unsigned int event_gpio, unsigned int coinc_gpio, bool anti_coinc = false, QObject* parent = nullptr);
+    ~CoincidenceEventBuffer() = default;
+    void clear();
+
+    //[[nodiscard]] auto lastEventTime() const -> EventTime;
+
+public slots:
+    //void onEvent(unsigned int gpio, EventTime event_time);
+    void onEvent(uint8_t gpio);
+
+protected:
+    uint8_t m_coinc_gpio { 255 };
+    bool m_is_veto { false };
+    EventTime m_last_coinc_event {};
+    
 };
 
 #endif // RATEBUFFER_H
