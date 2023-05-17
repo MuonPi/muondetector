@@ -39,7 +39,6 @@ void NetworkDiscovery::searchDevices()
     (*dStream) << static_cast<quint16>(0x2a) << static_cast<quint16>(m_device_type);
 
     if (socket != nullptr) {
-        qDebug() << "NetworkDiscovery: sending " << data << " on address " << QHostAddress(QHostAddress::Any).toIPv4Address();
         // auto datagram = QNetworkDatagram{data,m_broadcast_address, m_port};
         // datagram.setHopLimit(255); // probably overkill
         qDebug() << "NetworkDiscovery is an experimental feature and may or may not work!";
