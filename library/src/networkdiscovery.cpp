@@ -56,7 +56,6 @@ void NetworkDiscovery::readPendingDatagrams()
     while (socket->hasPendingDatagrams()) {
         auto datagram = socket->receiveDatagram();
         auto data = datagram.data();
-        qDebug() << data.size();
         if (datagram.isNull() || !datagram.isValid() || data.size() < 4) {
             datagram.clear();
             return;
