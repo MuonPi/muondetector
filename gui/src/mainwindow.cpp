@@ -96,7 +96,7 @@ MainWindow::MainWindow(QWidget* parent)
                 addresses->appendRow(row);
             }
         }
-        connection_info("Found " + QString::number(device_counter) + " devices");
+        connection_info("NetworkDiscovery (experimental): Found " + QString::number(device_counter) + " devices");
     });
 
     connect(ui->networkSearchButton, &QPushButton::clicked, networkDiscovery, &NetworkDiscovery::searchDevices);
