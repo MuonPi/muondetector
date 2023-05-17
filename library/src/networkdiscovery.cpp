@@ -36,7 +36,7 @@ void NetworkDiscovery::searchDevices()
     discovered_devices.clear();
     QByteArray data;
     auto dStream = std::make_unique<QDataStream>(&data, QIODevice::ReadWrite);
-    (*dStream) << static_cast<quint16>(m_device_type);
+    (*dStream) << static_cast<quint16>(0x2a) << static_cast<quint16>(m_device_type);
 
     if (socket != nullptr) {
         qDebug() << "NetworkDiscovery: sending " << data << " on address " << QHostAddress(QHostAddress::Any).toIPv4Address();
@@ -58,22 +58,21 @@ void NetworkDiscovery::readPendingDatagrams()
         auto sender_address = QHostAddress(datagram.senderAddress().toIPv4Address());
         auto data = datagram.data();
         QDataStream inStream { &data, QIODevice::ReadOnly };
+        quint16 the_answer_to_everything;
         quint16 device_type;
+        inStream >> the_answer_to_everything;
         inStream >> device_type;
         qDebug() << "found device: " << sender_address << " type: " << device_type;
         if (device_type == static_cast<quint16>(m_device_type)) {
             bool skip = false;
             for (auto address : m_own_ipv4) {
-                if (address == sender_address){
+                if (address == sender_address)
                     skip = true;
-                }
             }
-            if (skip){
+            if (skip)
                 continue; // do not answer or discover self
-            }
         }
-        discovered_devices.append(QPair<quint16, QHostAddress> { static_cast<quint16>(device_type), sender_address });
-        emit foundDevices(discovered_devices);
+        discovered_devices.append(QPair<quint16, QHostAddress> { static_cast<quint16>(device_type), sender_address});
 
         if (static_cast<DeviceType>(device_type) == DeviceType::GUI) {
             data = QByteArray();
@@ -82,4 +81,5 @@ void NetworkDiscovery::readPendingDatagrams()
             socket->writeDatagram(data, sender_address, m_port);
         }
     }
+    emit foundDevices(discovered_devices);
 }
