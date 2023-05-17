@@ -42,7 +42,10 @@ void NetworkDiscovery::searchDevices()
         qDebug() << "NetworkDiscovery: sending " << data << " on address " << QHostAddress(QHostAddress::Any).toIPv4Address();
         // auto datagram = QNetworkDatagram{data,m_broadcast_address, m_port};
         // datagram.setHopLimit(255); // probably overkill
-        for (auto address : m_broadcast_address) {
+        qDebug() << "NetworkDiscovery is an experimental feature and may or may not work!";
+        for (auto address : m_broadcast_address)
+        {
+            qDebug() << "NetworkDiscovery: sending " << data << " on address " << QHostAddress(address.toIPv4Address());
             socket->writeDatagram(data, address, m_port);
         }
     }
