@@ -1,16 +1,17 @@
 #ifndef QTSERIALUBLOX_H
 #define QTSERIALUBLOX_H
 
-#include <ublox_structs.h>
 #include <QLocale>
 #include <QObject>
 #include <QPointer>
 #include <QSerialPort>
 #include <QTimer>
+#include <memory>
 #include <queue>
 #include <string>
+#include <ublox_structs.h>
 
-struct GeodeticPos;
+struct GnssPosStruct;
 struct GnssMonHwStruct;
 struct GnssMonHw2Struct;
 struct UbxTimeMarkStruct;
@@ -59,7 +60,7 @@ signals:
         char propertyName);
     void gpsPropertyUpdatedGnss(std::vector<GnssSatellite>,
         std::chrono::duration<double> updateAge);
-    void gpsPropertyUpdatedGeodeticPos(GeodeticPos pos);
+    void gpsPropertyUpdatedGeodeticPos(GnssPosStruct pos);
     void timTM2(QString timTM2String);
     void UBXReceivedTimeTM2(const UbxTimeMarkStruct& tm);
     void gpsVersion(const QString& swVersion, const QString& hwVersion, const QString& protVersion);
@@ -96,7 +97,7 @@ public slots:
     void ackTimeout();
     // outPortMask is something like 1 for only UBX protocol or 0b11 for UBX and NMEA
 
-    void setDynamicModel(uint8_t model);
+    void setDynamicModel(UbxDynamicModel model);
     static const std::string& getProtVersionString() { return fProtVersionString; }
     static double getProtVersion();
 
@@ -104,39 +105,43 @@ private:
     // all functions for sending and receiving raw data used by other functions in "public slots" section
     // and scanning raw data up to the point where "UbxMessage" object is generated
     bool scanUnknownMessage(std::string& buffer, UbxMessage& message);
-    void calcChkSum(const std::string& buf, unsigned char* chkA, unsigned char* chkB);
     bool sendUBX(uint16_t msgID, const std::string& payload, uint16_t nBytes);
     bool sendUBX(uint16_t msgID, unsigned char* payload, uint16_t nBytes);
-    bool sendUBX(UbxMessage& msg);
+    bool sendUBX(const UbxMessage& msg);
     void sendQueuedMsg(bool afterTimeout = false);
     void delay(int millisecondsWait);
 
     // all functions only used for processing and showing "UbxMessage"
     void processMessage(const UbxMessage& msg);
-    bool UBXNavClock(uint32_t& itow, int32_t& bias, int32_t& drift,
-        uint32_t& tAccuracy, uint32_t& fAccuracy);
+
     bool UBXTimTP(uint32_t& itow, int32_t& quantErr, uint16_t& weekNr);
-    bool UBXTimTP(const std::string& msg);
-    bool UBXTimTM2(const std::string& msg);
-    std::vector<GnssSatellite> UBXNavSat(const std::string& msg, bool allSats);
-    std::vector<GnssSatellite> UBXNavSVinfo(const std::string& msg, bool allSats);
-    GeodeticPos UBXNavPosLLH(const std::string& msg);
-    void UBXCfgGNSS(const std::string& msg);
-    void UBXCfgNav5(const std::string& msg);
-    std::vector<std::string> UBXMonVer();
+    void UBXTimTP(const std::string& msg);
+    void UBXTimTM2(const std::string& msg);
+
+    auto UBXNavClock(uint32_t& itow, int32_t& bias, int32_t& drift,
+        uint32_t& tAccuracy, uint32_t& fAccuracy) -> bool;
+    void UBXNavSat(const std::string& msg, bool allSats);
+    void UBXNavSVinfo(const std::string& msg, bool allSats);
+    void UBXNavPosLLH(const std::string& msg);
     void UBXNavClock(const std::string& msg);
     void UBXNavTimeGPS(const std::string& msg);
     void UBXNavTimeUTC(const std::string& msg);
     void UBXNavStatus(const std::string& msg);
+    void UBXNavDOP(const std::string& msg);
+
+    void UBXCfgGNSS(const std::string& msg);
+    void UBXCfgMSG(const std::string& msg);
+    void UBXCfgNav5(const std::string& msg);
+    void UBXCfgNavX5(const std::string& msg);
+    void UBXCfgAnt(const std::string& msg);
+    void UBXCfgTP5(const std::string& msg);
+
+    auto UBXMonVer() -> std::vector<std::string>;
     void UBXMonHW(const std::string& msg);
     void UBXMonHW2(const std::string& msg);
     void UBXMonTx(const std::string& msg);
     void UBXMonRx(const std::string& msg);
     void UBXMonVer(const std::string& msg);
-    void UBXCfgNavX5(const std::string& msg);
-    void UBXCfgAnt(const std::string& msg);
-    void UBXCfgTP5(const std::string& msg);
-    void UBXNavDOP(const std::string& msg);
 
     static std::string toStdString(unsigned char* data, int dataSize);
 
@@ -153,9 +158,9 @@ private:
     bool showout = false; // if true show the ubx messages sent to the gps board as hex
     bool showin = false;
     std::queue<UbxMessage> outMsgBuffer;
-    UbxMessage* msgWaitingForAck = nullptr;
+    std::unique_ptr<UbxMessage> msgWaitingForAck { nullptr };
     QPointer<QTimer> ackTimer;
-    int sendRetryCounter = 0;
+    std::size_t sendRetryCounter { 0 };
 
     // all global variables used for keeping track of satellites and statistics (gpsProperty)
     gpsProperty<int> leapSeconds;
@@ -172,10 +177,15 @@ private:
     gpsProperty<int32_t> clkBias;
     gpsProperty<int32_t> clkDrift;
     gpsProperty<std::vector<GnssSatellite>> m_satList;
-    gpsProperty<GeodeticPos> geodeticPos;
+    gpsProperty<GnssPosStruct> geodeticPos;
     const int MSGTIMEOUT = 1500;
     std::queue<gpsTimestamp> fTimestamps;
     static std::string fProtVersionString;
+
+    static constexpr std::size_t s_nr_targets { 6 };
+    static constexpr std::size_t s_default_target { 1 };
+    // this is the uart port. (0 = i2c; 1 = uart; 3 = usb; 4 = isp;)
+    // see u-blox8-M8_Receiver... pdf documentation p. 170
 };
 
 #endif // QTSERIALUBLOX_H

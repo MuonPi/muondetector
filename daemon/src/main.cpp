@@ -3,25 +3,24 @@
 
 #include <QCommandLineParser>
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDir>
 #include <QHostAddress>
 #include <QObject>
-#include <QDateTime>
 #include <iostream>
 #include <libconfig.h++>
 #include <termios.h>
 #include <unistd.h>
 
-#include <config.h>
-#include "utility/custom_io_operators.h"
 #include "daemon.h"
+#include <config.h>
 #include <gpio_pin_definitions.h>
 
-static const char* CONFIG_FILE = MuonPi::Config::file;
+static const std::string CONFIG_FILE = std::string(MuonPi::Config::file);
+static const std::string SETTINGS_FILE = std::string(MuonPi::Config::data_path) + std::string(MuonPi::Config::persistant_settings_file);
 static int verbose = 0;
 
 [[nodiscard]] auto getch() -> int;
-[[nodiscard]] auto getpass(const char* prompt, bool show_asterisk) -> std::string;
 
 auto getch() -> int
 {
@@ -37,34 +36,6 @@ auto getch() -> int
 
     tcsetattr(STDIN_FILENO, TCSANOW, &t_old);
     return ch;
-}
-
-auto getpass(const char* prompt, bool show_asterisk) -> std::string
-{
-    const char BACKSPACE = 127;
-    const char RETURN = 10;
-
-    std::string password;
-    unsigned char ch = 0;
-    ch = getch();
-    std::cout << prompt << '\n'
-              << std::flush;
-    while ((ch = getch()) != RETURN) {
-        if (ch == BACKSPACE) {
-            if (password.length() != 0) {
-                if (show_asterisk)
-                    std::cout << "\b \b";
-                password.resize(password.length() - 1);
-            }
-        } else {
-            password += ch;
-            if (show_asterisk)
-                std::cout << '*';
-        }
-    }
-    std::cout << '\n'
-              << std::flush;
-    return password;
 }
 
 // The application's custom message handler
@@ -103,23 +74,85 @@ void messageOutput(QtMsgType type, const QMessageLogContext& context, const QStr
 
 int main(int argc, char* argv[])
 {
+    // first, we must set the locale to be independent of the number format of the system's locale.
+    // We rely on parsing floating point numbers with a decimal point (not a komma) which might fail if not setting the classic locale
+    std::locale::global(std::locale::classic());
+
     qRegisterMetaType<TcpMessage>("TcpMessage");
+    qRegisterMetaType<GnssPosStruct>("GnssPosStruct");
+    qRegisterMetaType<int32_t>("int32_t");
+    qRegisterMetaType<uint32_t>("uint32_t");
+    qRegisterMetaType<uint16_t>("uint16_t");
+    qRegisterMetaType<uint8_t>("uint8_t");
+    qRegisterMetaType<int8_t>("int8_t");
+    qRegisterMetaType<bool>("bool");
+    qRegisterMetaType<CalibStruct>("CalibStruct");
+    qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
+    qRegisterMetaType<std::vector<GnssConfigStruct>>("std::vector<GnssConfigStruct>");
+    qRegisterMetaType<std::chrono::duration<double>>("std::chrono::duration<double>");
+    qRegisterMetaType<std::string>("std::string");
+    qRegisterMetaType<LogParameter>("LogParameter");
+    qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
+    qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
+    qRegisterMetaType<timespec>("timespec");
+    qRegisterMetaType<GPIO_SIGNAL>("GPIO_SIGNAL");
+    qRegisterMetaType<GnssMonHwStruct>("GnssMonHwStruct");
+    qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
+    qRegisterMetaType<UbxTimeMarkStruct>("UbxTimeMarkStruct");
+    qRegisterMetaType<I2cDeviceEntry>("I2cDeviceEntry");
+    qRegisterMetaType<ADC_SAMPLING_MODE>("ADC_SAMPLING_MODE");
+    qRegisterMetaType<MuonPi::Version::Version>("MuonPi::Version::Version");
+    qRegisterMetaType<UbxDynamicModel>("UbxDynamicModel");
+
     qInstallMessageHandler(messageOutput);
+
     QCoreApplication a(argc, argv);
     QCoreApplication::setApplicationName("muondetector-daemon");
     QCoreApplication::setApplicationVersion(QString::fromStdString(MuonPi::Version::software.string()));
     // config file handling
     libconfig::Config cfg;
+    libconfig::Config settings;
 
-	qInfo()	<< "MuonPi Muondetector Daemon "
-			<< "V"+QString::fromStdString(MuonPi::Version::software.string())
-			<< "(build "+ QString(__TIMESTAMP__) +")";
-			
+    qInfo() << "MuonPi Muondetector Daemon "
+            << "V" + QString::fromStdString(MuonPi::Version::software.string())
+            << "(build " + QString(__TIMESTAMP__) + ")";
+
     // Read the file. If there is an error, report it and exit.
     try {
-        cfg.readFile(MuonPi::Config::file);
+        cfg.readFile(CONFIG_FILE.c_str());
     } catch (const libconfig::FileIOException& fioex) {
-        qWarning() << "Error while reading config file" << QString(CONFIG_FILE);
+        qWarning() << "Error while reading config file" << QString::fromStdString(CONFIG_FILE);
+    } catch (const libconfig::ParseException& pex) {
+        qFatal(qPrintable("Parse error at " + QString(pex.getFile()) + " : line " + QString(pex.getLine()) + " - " + QString(pex.getError())));
+        return (EXIT_FAILURE);
+    }
+
+    // Read in the settings file. If there is an error, create the settings
+    // tree and proceed anyway
+    try {
+        settings.readFile(SETTINGS_FILE.c_str());
+    } catch (const libconfig::FileIOException& fioex) {
+        // Find the stored settings in settings file. Add all entries if they don't yet
+        // exist.
+        libconfig::Setting& root = settings.getRoot();
+        // create setting fields
+        root.add("geo_handling", libconfig::Setting::TypeGroup);
+        libconfig::Setting& geo_handling = root["geo_handling"];
+        geo_handling.add("mode", libconfig::Setting::TypeString) = "Auto";
+        geo_handling.add("static_coordinates", libconfig::Setting::TypeGroup);
+        libconfig::Setting& static_coords = geo_handling["static_coordinates"];
+        static_coords.add("lon", libconfig::Setting::TypeFloat) = 0.;
+        static_coords.add("lat", libconfig::Setting::TypeFloat) = 0.;
+        static_coords.add("alt", libconfig::Setting::TypeFloat) = 0.;
+        static_coords.add("hor_error", libconfig::Setting::TypeFloat) = 0.;
+        static_coords.add("vert_error", libconfig::Setting::TypeFloat) = 0.;
+        // Write out the updated configuration.
+        try {
+            settings.writeFile(SETTINGS_FILE.c_str());
+            qInfo() << "Initialized settings successfully written to: " << QString::fromStdString(SETTINGS_FILE);
+        } catch (const libconfig::FileIOException& fioex_new) {
+            qCritical() << "I/O error while writing settings file: " << QString::fromStdString(SETTINGS_FILE);
+        }
     } catch (const libconfig::ParseException& pex) {
         qFatal(qPrintable("Parse error at " + QString(pex.getFile()) + " : line " + QString(pex.getLine()) + " - " + QString(pex.getError())));
         return (EXIT_FAILURE);
@@ -172,20 +205,6 @@ int main(int argc, char* argv[])
                                                   << "showin",
         QCoreApplication::translate("main", "show incoming ubx messages as hex"));
     parser.addOption(showinOption);
-
-    // peerAddress option
-    QCommandLineOption peerIpOption(QStringList() << "peer"
-                                                  << "peerAddress",
-        QCoreApplication::translate("main", "set file server ip address"),
-        QCoreApplication::translate("main", "peerAddress"));
-    parser.addOption(peerIpOption);
-
-    // peerPort option
-    QCommandLineOption peerPortOption(QStringList() << "pp"
-                                                    << "peerPort",
-        QCoreApplication::translate("main", "set file server port"),
-        QCoreApplication::translate("main", "peerPort"));
-    parser.addOption(peerPortOption);
 
     // daemonAddress option
     QCommandLineOption daemonIpOption(QStringList() << "server"
@@ -314,6 +333,12 @@ int main(int argc, char* argv[])
     } catch (const libconfig::SettingNotFoundException&) {
     }
 
+    try {
+        int model = cfg.lookup("gnss_dynamic_model");
+        daemonConfig.gnss_dynamic_model = static_cast<UbxDynamicModel>(model);
+    } catch (const libconfig::SettingNotFoundException&) {
+    }
+
     // setup all variables for ublox module manager, then make the object run
     if (!args.empty() && args.at(0) != "") {
         daemonConfig.gpsdevname = args.at(0);
@@ -331,7 +356,7 @@ int main(int argc, char* argv[])
                 daemonConfig.gpsdevname = QString("/dev/" + serialports.last());
                 qInfo() << "detected" << daemonConfig.gpsdevname << "as most probable candidate";
             } else {
-                qCritical() << "no device selected, will not connect to GNSS module" << endl;
+                qCritical() << "no device selected, will not connect to GNSS module";
             }
         }
 
@@ -339,52 +364,48 @@ int main(int argc, char* argv[])
         qDebug() << "int main running in thread"
                  << QString("0x%1").arg(reinterpret_cast<std::uint64_t>(QCoreApplication::instance()->thread()));
     }
-    daemonConfig.dumpRaw = parser.isSet(dumpRawOption);
+    daemonConfig.gnss_dump_raw = parser.isSet(dumpRawOption);
+
     if (parser.isSet(baudrateOption)) {
-        daemonConfig.baudrate = parser.value(baudrateOption).toInt(&ok);
-        if (!ok || daemonConfig.baudrate < 0) {
-            daemonConfig.baudrate = 9600;
-            qWarning() << "wrong input for baudrate...using default:" << daemonConfig.baudrate;
+        daemonConfig.gnss_baudrate = parser.value(baudrateOption).toInt(&ok);
+        if (!ok || daemonConfig.gnss_baudrate < 0) {
+            daemonConfig.gnss_baudrate = 9600;
+            qWarning() << "wrong input for baudrate...using default:" << daemonConfig.gnss_baudrate;
         }
     } else
         try {
             int baudrateCfg = cfg.lookup("ublox_baud");
             if (verbose > 2)
                 qInfo() << "ublox baudrate:" << baudrateCfg;
-            daemonConfig.baudrate = baudrateCfg;
+            daemonConfig.gnss_baudrate = baudrateCfg;
         } catch (const libconfig::SettingNotFoundException& nfex) {
             if (verbose > 1)
-                qWarning() << "No 'ublox_baud' setting in configuration file. Assuming" << daemonConfig.baudrate;
+                qWarning() << "No 'ublox_baud' setting in configuration file. Assuming" << daemonConfig.gnss_baudrate;
         }
 
-    daemonConfig.configGnss = parser.isSet(showGnssConfigOption);
-    if (parser.isSet(peerPortOption)) {
-        daemonConfig.peerPort = parser.value(peerPortOption).toUInt(&ok);
-        if (!ok) {
-            daemonConfig.peerPort = 0;
-            qCritical() << "wrong input peerPort (maybe not an integer)";
-        }
-    }
-    if (parser.isSet(peerIpOption)) {
-        daemonConfig.peerAddress = parser.value(peerIpOption);
-        if (!QHostAddress(daemonConfig.peerAddress).toIPv4Address()) {
-            if (daemonConfig.peerAddress != "localhost" && daemonConfig.peerAddress != "local") {
-                daemonConfig.peerAddress = "";
-                qCritical() << "wrong input ipAddress, not an ipv4address";
-            }
-        }
-    }
+    daemonConfig.gnss_config = parser.isSet(showGnssConfigOption);
+
     try {
         int port = cfg.lookup("tcp_port");
+        if (verbose > 2)
+            qDebug() << "tcp_port (listen port): " << port;
         daemonConfig.serverPort = static_cast<quint16>(port);
     } catch (const libconfig::SettingNotFoundException&) {
     }
     if (parser.isSet(daemonPortOption)) {
         daemonConfig.serverPort = parser.value(daemonPortOption).toUInt(&ok);
         if (!ok) {
-            daemonConfig.peerPort = 0;
+            daemonConfig.serverPort = 0;
             qCritical() << "wrong input peerPort (maybe not an integer)";
         }
+    }
+
+    try {
+        std::string tcpIpCfg = cfg.lookup("tcp_ip");
+        if (verbose > 2)
+            qDebug() << "tcp_ip (listen ip): " << QString::fromStdString(tcpIpCfg);
+        daemonConfig.serverAddress = QString::fromStdString(tcpIpCfg);
+    } catch (const libconfig::SettingNotFoundException&) {
     }
     if (parser.isSet(daemonIpOption)) {
         daemonConfig.serverAddress = parser.value(daemonIpOption);
@@ -406,7 +427,7 @@ int main(int argc, char* argv[])
         try {
             int pcaPortMaskCfg = cfg.lookup("timing_input");
             if (verbose > 2)
-                qDebug() << "timing input: " << pcaPortMaskCfg << endl;
+                qDebug() << "timing input: " << pcaPortMaskCfg;
             daemonConfig.pcaPortMask = pcaPortMaskCfg;
         } catch (const libconfig::SettingNotFoundException& nfex) {
             qWarning() << "No 'timing_input' setting in configuration file. Assuming" << (int)daemonConfig.pcaPortMask;
@@ -416,16 +437,16 @@ int main(int argc, char* argv[])
     daemonConfig.showin = parser.isSet(showinOption);
 
     if (parser.isSet(discr1Option)) {
-        daemonConfig.dacThresh[0] = parser.value(discr1Option).toFloat(&ok);
+        daemonConfig.thresholdVoltage[0] = parser.value(discr1Option).toFloat(&ok);
         if (!ok) {
-            daemonConfig.dacThresh[0] = -1.;
+            daemonConfig.thresholdVoltage[0] = -1.;
             qCritical() << "error in value for discr1 (maybe not a float)";
         }
     }
     if (parser.isSet(discr2Option)) {
-        daemonConfig.dacThresh[1] = parser.value(discr2Option).toFloat(&ok);
+        daemonConfig.thresholdVoltage[1] = parser.value(discr2Option).toFloat(&ok);
         if (!ok) {
-            daemonConfig.dacThresh[1] = -1.;
+            daemonConfig.thresholdVoltage[1] = -1.;
             qCritical() << "error in value for discr2 (maybe not a float)";
         }
     }
@@ -450,76 +471,77 @@ int main(int argc, char* argv[])
         }
 
     if (parser.isSet(preamp1Option)) {
-        daemonConfig.preamp[0] = true;
+        daemonConfig.preamp_enable[0] = true;
     } else
         try {
             int preamp1Cfg = cfg.lookup("preamp1_switch");
             if (verbose > 2)
                 qDebug() << "preamp1 switch:" << preamp1Cfg;
-            daemonConfig.preamp[0] = preamp1Cfg;
+            daemonConfig.preamp_enable[0] = preamp1Cfg;
         } catch (const libconfig::SettingNotFoundException& nfex) {
-            qWarning() << "No 'preamp1_switch' setting in configuration file. Assuming" << (int)daemonConfig.preamp[0];
+            qWarning() << "No 'preamp1_switch' setting in configuration file. Assuming" << (int)daemonConfig.preamp_enable[0];
         }
 
     if (parser.isSet(preamp2Option)) {
-        daemonConfig.preamp[1] = true;
+        daemonConfig.preamp_enable[1] = true;
     } else
         try {
             int preamp2Cfg = cfg.lookup("preamp2_switch");
             if (verbose > 2)
                 qDebug() << "preamp2 switch:" << preamp2Cfg;
-            daemonConfig.preamp[1] = preamp2Cfg;
+            daemonConfig.preamp_enable[1] = preamp2Cfg;
         } catch (const libconfig::SettingNotFoundException& nfex) {
-            qWarning() << "No 'preamp2_switch' setting in configuration file. Assuming " << (int)daemonConfig.preamp[1];
+            qWarning() << "No 'preamp2_switch' setting in configuration file. Assuming " << (int)daemonConfig.preamp_enable[1];
         }
 
     if (parser.isSet(gainOption)) {
-        daemonConfig.gain = true;
+        daemonConfig.hi_gain = true;
     } else {
         try {
             int gainCfg = cfg.lookup("gain_switch");
             if (verbose > 2)
                 qDebug() << "gain switch:" << gainCfg;
-            daemonConfig.gain = gainCfg;
+            daemonConfig.hi_gain = gainCfg;
         } catch (const libconfig::SettingNotFoundException& nfex) {
             if (verbose > 0)
-                qWarning() << "No 'gain_switch' setting in configuration file. Assuming" << (int)daemonConfig.gain;
+                qWarning() << "No 'gain_switch' setting in configuration file. Assuming" << (int)daemonConfig.hi_gain;
         }
     }
 
+    int eventTriggerCfg { -1 };
+    daemonConfig.eventTrigger = EVT_AND;
     if (parser.isSet(eventInputOption)) {
-        daemonConfig.eventTrigger = parser.value(eventInputOption).toUInt(&ok);
-        if (!ok || daemonConfig.eventTrigger > 1) {
-            qCritical() << "wrong trigger input signal (valid: 0,1)";
+        eventTriggerCfg = parser.value(eventInputOption).toInt(&ok);
+        if (!ok || eventTriggerCfg > 3) {
+            qCritical() << "wrong trigger input signal (valid: 0..3)";
             return -1;
-        } else {
-            switch (daemonConfig.eventTrigger) {
-            case 1:
-                daemonConfig.eventTrigger = EVT_AND;
-                break;
-            case 0:
-            default:
-                daemonConfig.eventTrigger = EVT_XOR;
-                break;
-            }
         }
     } else
         try {
-            int eventTriggerCfg = cfg.lookup("trigger_input");
+            eventTriggerCfg = cfg.lookup("trigger_input");
             if (verbose > 2)
                 qDebug() << "event trigger : " << eventTriggerCfg;
-            switch (eventTriggerCfg) {
-            case 1:
-                daemonConfig.eventTrigger = EVT_AND;
-                break;
-            case 0:
-            default:
-                daemonConfig.eventTrigger = EVT_XOR;
-                break;
-            }
         } catch (const libconfig::SettingNotFoundException& nfex) {
-            qWarning() << "No 'trigger_input' setting in configuration file. Assuming signal" << GPIO_SIGNAL_MAP[(GPIO_PIN)daemonConfig.eventTrigger].name;
+            qWarning() << "No 'trigger_input' setting in configuration file. Assuming signal" << QString::fromStdString(GPIO_SIGNAL_MAP.at(daemonConfig.eventTrigger).name);
         }
+
+    switch (eventTriggerCfg) {
+    case 0:
+        daemonConfig.eventTrigger = EVT_XOR;
+        break;
+    case 1:
+        daemonConfig.eventTrigger = EVT_AND;
+        break;
+    case 2:
+        daemonConfig.eventTrigger = TIME_MEAS_OUT;
+        break;
+    case 3:
+        daemonConfig.eventTrigger = EXT_TRIGGER;
+        break;
+    default:
+        daemonConfig.eventTrigger = EVT_AND;
+        break;
+    }
 
     if (parser.isSet(pol1Option)) {
         unsigned int pol1int = parser.value(pol1Option).toUInt(&ok);
@@ -586,6 +608,40 @@ int main(int argc, char* argv[])
         } catch (const libconfig::SettingNotFoundException& nfex) {
             qWarning() << "No 'stationID' setting in configuration file. Assuming stationID='0'";
         }
+    }
+
+    // Find the stored settings in settings file. Add intermediate entries if they don't yet
+    // exist.
+    libconfig::Setting& root = settings.getRoot();
+
+#define ENUM_CAST static_cast<size_t>
+
+    if (root.exists("geo_handling")) {
+        // try to read in the stored geo handling fields
+        std::string mode_str = settings.lookup("geo_handling.mode");
+        qDebug() << "mode = " << QString::fromStdString(mode_str);
+        if (mode_str == PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::Static)]) {
+            daemonConfig.position_mode_config.mode = PositionModeConfig::Mode::Static;
+        } else if (mode_str == PositionModeConfig::mode_name[ENUM_CAST(PositionModeConfig::Mode::LockIn)]) {
+            daemonConfig.position_mode_config.mode = PositionModeConfig::Mode::LockIn;
+        } else {
+            daemonConfig.position_mode_config.mode = PositionModeConfig::Mode::Auto;
+        }
+        daemonConfig.position_mode_config.static_position.longitude = settings.lookup("geo_handling.static_coordinates.lon");
+        daemonConfig.position_mode_config.static_position.latitude = settings.lookup("geo_handling.static_coordinates.lat");
+        daemonConfig.position_mode_config.static_position.altitude = settings.lookup("geo_handling.static_coordinates.alt");
+        daemonConfig.position_mode_config.static_position.hor_error = settings.lookup("geo_handling.static_coordinates.hor_error");
+        daemonConfig.position_mode_config.static_position.vert_error = settings.lookup("geo_handling.static_coordinates.vert_error");
+    } else {
+        qFatal("error accessing settings. Aborting...");
+        exit(EXIT_FAILURE);
+    }
+
+    daemonConfig.config_file_data.reset(&cfg);
+    daemonConfig.settings_file_data.reset(&settings);
+
+    if (verbose > 3) {
+        qDebug() << "QT version is " << QString::number(QT_VERSION, 16);
     }
 
     Daemon daemon { daemonConfig };

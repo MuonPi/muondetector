@@ -6,15 +6,15 @@
 
 int main(int argc, char* argv[])
 {
-    QApplication a(argc, argv);
+    QApplication app(argc, argv);
     QCoreApplication::setApplicationName("muondetector-gui");
     QCoreApplication::setApplicationVersion(QString::fromStdString(MuonPi::Version::software.string()));
     QCommandLineParser parser;
     parser.addVersionOption();
-    parser.process(a);
+    parser.process(app);
 
     MainWindow w;
     w.show();
 
-    return a.exec();
+    return app.exec();
 }

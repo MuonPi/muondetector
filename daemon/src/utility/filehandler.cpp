@@ -1,3 +1,4 @@
+#include "utility/filehandler.h"
 #include <QByteArray>
 #include <QCryptographicHash>
 #include <QDebug>
@@ -10,22 +11,17 @@
 #include <QThread>
 #include <QTimer>
 #include <QtGlobal>
-#include <config.h>
+#include <QFile>
 #include <crypto++/aes.h>
 #include <crypto++/filters.h>
 #include <crypto++/hex.h>
 #include <crypto++/modes.h>
 #include <crypto++/osrng.h>
 #include <crypto++/sha.h>
-#include "utility/filehandler.h"
 #include <sys/syscall.h>
 #include <unistd.h>
 
 using namespace CryptoPP;
-
-const unsigned long int lftpUploadTimeout = MuonPi::Config::Upload::timeout; // in msecs
-const int uploadReminderInterval = MuonPi::Config::Upload::reminder; // in minutes
-const int logReminderInterval = MuonPi::Config::Log::interval; // in minutes
 
 static std::string SHA256HashString(std::string aString)
 {
@@ -86,45 +82,35 @@ static QString dateStringNow()
     return QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd_hh-mm-ss");
 }
 
-FileHandler::FileHandler(const QString& userName, const QString& passWord, quint32 fileSizeMB, QObject* parent)
+FileHandler::FileHandler(const QString& username, const QString& password, quint32 fileSizeMB, QObject* parent)
     : QObject(parent)
 {
     lastUploadDateTime = QDateTime(QDate::currentDate(), QTime(0, 0, 0, 0), Qt::TimeSpec::UTC);
     dailyUploadTime = QTime(11, 11, 11, 111);
     fileSize = fileSizeMB;
     QDir temp;
-    QString fullPath = +"/var/muondetector/";
-    hashedMacAddress = QString(QCryptographicHash::hash(getMacAddressByteArray(), QCryptographicHash::Sha224).toHex());
-    fullPath += hashedMacAddress;
+    QString fullPath { MuonPi::Config::data_path };
     configPath = fullPath + "/";
     configFilePath = fullPath + "/currentWorkingFileInformation.conf";
     loginDataFilePath = fullPath + "/loginData.save";
-    fullPath += "/notUploadedFiles/";
-    dataFolderPath = fullPath;
-    if (!temp.exists(fullPath)) {
-        temp.mkpath(fullPath);
-        if (!temp.exists(fullPath)) {
-            qDebug() << "could not create folder " << fullPath;
-        }
-    }
-    QString uploadedFiles = configPath + "uploadedFiles/";
-    if (!temp.exists(uploadedFiles)) {
-        temp.mkpath(uploadedFiles);
-        if (!temp.exists(uploadedFiles)) {
-            qDebug() << "could not create folder " << uploadedFiles;
+    dataFolderPath = fullPath + "/data/";
+    if (!temp.exists(dataFolderPath)) {
+        temp.mkpath(dataFolderPath);
+        if (!temp.exists(dataFolderPath)) {
+            qDebug() << "could not create folder " << dataFolderPath;
         }
     }
     bool rewrite_login = false;
     if (!readLoginData()) {
         qDebug() << "could not read login data from file";
     }
-    if (userName != "" || passWord != "") {
-        username = userName;
-        password = passWord;
+    if (username != "" || password != "") {
+        m_username = username;
+        m_password = password;
         rewrite_login = true;
     }
     if (rewrite_login) {
-        if (!saveLoginData(userName, passWord)) {
+        if (!saveLoginData(username, password)) {
             qDebug() << "could not save login data";
         }
     }
@@ -140,7 +126,7 @@ QString FileHandler::getCurrentDataFileName() const
 
 QString FileHandler::getCurrentLogFileName() const
 {
-    if (logFile != nullptr)
+    if (logFile == nullptr)
         return "";
     QFileInfo fi(*logFile);
     return fi.absoluteFilePath();
@@ -163,12 +149,10 @@ QFileInfo FileHandler::logFileInfo() const
 }
 
 // return current log file age in s
-qint64 FileHandler::currentLogAge()
+std::chrono::seconds FileHandler::currentLogAge()
 {
-    if (dataFile == nullptr)
-        return -1;
-    if (configFilePath == "")
-        return -1;
+    if (dataFile == nullptr || configFilePath == "")
+        return std::chrono::seconds { -1 };
     QDateTime now = QDateTime::currentDateTime();
     QFileInfo fi(configFilePath);
 #if QT_VERSION >= 0x050a00
@@ -177,20 +161,43 @@ qint64 FileHandler::currentLogAge()
     qint64 difftime = -now.secsTo(fi.created());
 #endif
 
-    return difftime;
+    return std::chrono::seconds { difftime };
+}
+
+LogInfoStruct::status_t FileHandler::getStatus()
+{
+    LogInfoStruct::status_t status { LogInfoStruct::status_t::ERROR };
+    if (dataFileInfo().exists() && logFileInfo().exists()) {
+        status = LogInfoStruct::status_t::NORMAL;
+    }
+    return status;
+}
+
+LogInfoStruct FileHandler::getInfo()
+{
+    LogInfoStruct lis;
+    lis.logFileName = getCurrentLogFileName();
+    lis.dataFileName = getCurrentDataFileName();
+    lis.status = getStatus();
+    lis.logFileSize = logFileInfo().size();
+    lis.dataFileSize = dataFileInfo().size();
+    lis.logAge = currentLogAge();
+    lis.logRotationDuration = logRotatePeriod();
+    lis.logEnabled = true;
+    return lis;
 }
 
 void FileHandler::start()
 {
     // set upload reminder
     QTimer* uploadReminder = new QTimer(this);
-    uploadReminder->setInterval(60 * 1000 * uploadReminderInterval); // every 5 minutes or so
+    uploadReminder->setInterval(1000 * (MuonPi::Config::Log::interval.count() + 1UL));
     uploadReminder->setSingleShot(false);
     connect(uploadReminder, &QTimer::timeout, this, &FileHandler::onUploadRemind);
     uploadReminder->start();
     // open files that are currently written
     openFiles();
-    emit mqttConnect(username, password);
+    emit mqttConnect(m_username, m_password);
     qDebug() << "sent mqttConnect";
 }
 
@@ -200,14 +207,16 @@ void FileHandler::onUploadRemind()
     if (dataFile == nullptr) {
         return;
     }
+
     QDateTime todaysRegularUploadTime = QDateTime(QDate::currentDate(), dailyUploadTime, Qt::TimeSpec::UTC);
     if (dataFile->size() > (1024 * 1024 * fileSize)) {
-        switchFiles();
+        rotateFiles();
+    }
+    if (logFile->size() > (1024 * 1024 * fileSize)) {
+        rotateFiles();
     }
     if (lastUploadDateTime < todaysRegularUploadTime && QDateTime::currentDateTimeUtc() > todaysRegularUploadTime) {
-        switchFiles();
-        if (password.size() != 0 || username.size() != 0) {
-        }
+        rotateFiles();
         lastUploadDateTime = QDateTime::currentDateTimeUtc();
     }
 }
@@ -220,13 +229,11 @@ bool FileHandler::openFiles(bool writeHeader)
     }
     if (currentWorkingFilePath == "" || currentWorkingLogPath == "") {
         readFileInformation();
-    }
-    if (currentWorkingFilePath == "" || currentWorkingLogPath == "") {
         writeHeader = true;
         QString fileNamePart = createFileName();
         currentWorkingFilePath = dataFolderPath + "data_" + fileNamePart;
         currentWorkingLogPath = dataFolderPath + "log_" + fileNamePart;
-        while (notUploadedFilesNames.contains(QFileInfo(currentWorkingFilePath).fileName())) {
+        while (m_filename_list.contains(QFileInfo(currentWorkingFilePath).fileName())) {
             fileNamePart = createFileName();
             currentWorkingFilePath = dataFolderPath + "data_" + fileNamePart;
             currentWorkingLogPath = dataFolderPath + "log_" + fileNamePart;
@@ -251,9 +258,9 @@ bool FileHandler::openFiles(bool writeHeader)
     // write header
     if (writeHeader) {
         QTextStream dataOut(dataFile);
-        dataOut << "#unix_timestamp_rising(s)  unix_timestamp_trailing(s)  time_accuracy(ns)  valid  timebase(0=gps,2=utc)  utc_available\n";
+        dataOut << "#unix_timestamp_rising(s) unix_timestamp_trailing(s) time_accuracy(ns) valid timebase(0=gps,2=utc) utc_available\n";
         QTextStream logOut(logFile);
-        logOut << "#log parameters: time<YYYY-MM-DD_hh-mm-ss>  parname   value  unit\n";
+        logOut << "#time<YYYY-MM-DD_hh-mm-ss> parname value unit\n";
     }
     emit logRotateSignal();
     return true;
@@ -291,15 +298,47 @@ bool FileHandler::writeConfigFile()
     return true;
 }
 
-bool FileHandler::switchFiles(QString fileName)
+bool FileHandler::removeOldFiles()
+{
+    bool ok { true };
+
+    for (auto& fileName : m_filename_list) {
+        QString filePath = dataFolderPath + fileName;
+        if (filePath != currentWorkingFilePath
+            && filePath != currentWorkingLogPath) {
+            QFileInfo fileInfo(filePath);
+            qint64 fileAgeSecs = QDateTime::currentSecsSinceEpoch() - fileInfo.lastModified().toSecsSinceEpoch();
+            if (fileAgeSecs > m_logrotate_period.count()) {
+                qDebug() << "trying to delete file" << filePath << "( file age = " << fileAgeSecs << "s)";
+                ok = ok && QFile::remove(filePath);
+            }
+        }
+    }
+    return ok;
+}
+
+bool FileHandler::rotateFiles()
 {
     closeFiles();
-    currentWorkingFilePath = "data_" + fileName;
-    currentWorkingLogPath = "log_" + fileName;
-    if (fileName == "") {
-        QString fileNamePart = createFileName();
-        currentWorkingFilePath = dataFolderPath + "data_" + fileNamePart;
-        currentWorkingLogPath = dataFolderPath + "log_" + fileNamePart;
+    readFileInformation();
+    removeOldFiles();
+    QString fileNamePart = createFileName();
+    currentWorkingFilePath = dataFolderPath + "data_" + fileNamePart;
+    currentWorkingLogPath = dataFolderPath + "log_" + fileNamePart;
+    auto currentWorkingFilePathCandidate = currentWorkingFilePath;
+    auto currentWorkingLogPathCandidate = currentWorkingLogPath;
+    for (size_t i=0; i<1000ul; i++){
+        if ( QFile::exists(currentWorkingFilePathCandidate) || QFile::exists(currentWorkingLogPathCandidate)){
+        qDebug()<<currentWorkingFilePathCandidate<< " exists or";
+        qDebug()<<currentWorkingLogPathCandidate<< " exists.";
+        currentWorkingFilePathCandidate =currentWorkingFilePath+"."+QString::number(i);
+        currentWorkingLogPathCandidate =currentWorkingLogPath+"."+QString::number(i);
+        }else{
+            currentWorkingFilePath=currentWorkingFilePathCandidate;
+            currentWorkingLogPath=currentWorkingLogPathCandidate;
+            break;
+        }
+
     }
     writeConfigFile();
     if (!openFiles(true)) {
@@ -312,7 +351,7 @@ bool FileHandler::switchFiles(QString fileName)
 bool FileHandler::readFileInformation()
 {
     QDir directory(dataFolderPath);
-    notUploadedFilesNames = directory.entryList(QStringList() << "*.dat", QDir::Files);
+    m_filename_list = directory.entryList(QStringList() << "*.dat", QDir::Files);
     QFile configFile(configFilePath);
     if (!configFile.open(QIODevice::ReadWrite)) {
         qDebug() << "file open failed in 'ReadWrite' mode at location " << configFilePath;
@@ -359,70 +398,6 @@ QString FileHandler::createFileName()
     QString fileName = dateStringNow();
     fileName = fileName + ".dat";
     return fileName;
-}
-
-// upload related stuff
-
-bool FileHandler::uploadDataFile(QString fileName)
-{
-    char envName[] = "LFTP_PASSWORD";
-    if (setenv(envName, password.toStdString().c_str(), 1) != 0) {
-        qDebug() << "setenv returned not 0";
-    }
-    QProcess lftpProcess(this);
-    lftpProcess.setProgram("lftp");
-    QStringList arguments;
-    arguments << "--env-password";
-    arguments << "-p" << QString::number(MuonPi::Config::Upload::port);
-    arguments << "-u" << QString(username);
-    arguments << MuonPi::Config::Upload::url;
-    arguments << "-e" << QString("mkdir " + hashedMacAddress + " ; cd " + hashedMacAddress + " && put " + fileName + " ; exit");
-    lftpProcess.setArguments(arguments);
-    lftpProcess.start();
-    if (!lftpProcess.waitForFinished(lftpUploadTimeout)) {
-        qDebug() << lftpProcess.readAllStandardOutput();
-        qDebug() << lftpProcess.readAllStandardError();
-        qDebug() << "lftp not installed or timed out after " << lftpUploadTimeout / 1000 << " s";
-        system("unset LFTP_PASSWORD");
-        return false;
-    }
-    if (lftpProcess.exitStatus() != 0) {
-        qDebug() << "lftp returned exit status other than 0";
-        unsetenv(envName);
-        return false;
-    }
-    unsetenv(envName);
-    return true;
-}
-
-bool FileHandler::uploadRecentDataFiles()
-{
-    readFileInformation();
-    QDir lftpDir;
-    lftpDir.setPath(lftpDir.homePath() + "/.lftp");
-    if (!lftpDir.exists()) {
-        lftpDir.mkpath(".");
-    }
-    QFile lftp_rc_file(lftpDir.path() + "/rc");
-    if (!lftp_rc_file.exists() || lftp_rc_file.size() < 10) {
-        if (!lftp_rc_file.open(QIODevice::ReadWrite)) {
-            qDebug() << "could not open .lftp/rc file";
-            return false;
-        }
-        lftp_rc_file.write("set ssl:verify-certificate no\n");
-        lftp_rc_file.close();
-    }
-    for (auto& fileName : notUploadedFilesNames) {
-        QString filePath = dataFolderPath + fileName;
-        if (filePath != currentWorkingFilePath && filePath != currentWorkingLogPath) {
-            if (!uploadDataFile(filePath)) {
-                qDebug() << "failed to upload recent files";
-                return false;
-            }
-            QFile::rename(filePath, QString(configPath + "uploadedFiles/" + fileName));
-        }
-    }
-    return true;
 }
 
 // crypto related stuff
@@ -500,7 +475,7 @@ bool FileHandler::readLoginData()
     if (loginData.size() < 2) {
         return false;
     }
-    username = loginData.at(0);
-    password = loginData.at(1);
+    m_username = loginData.at(0);
+    m_password = loginData.at(1);
     return true;
 }

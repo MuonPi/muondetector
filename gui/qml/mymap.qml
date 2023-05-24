@@ -52,7 +52,7 @@ Item{
     property variant map: Map
     property variant parameters
     property variant searchLocation: map ? map.center : QtPositioning.coordinate()
-    property variant searchRegion: QtPositioning.circle(QtPositioning.coordinate(50.569212, 8.673828),1000)
+    property variant searchRegion: QtPositioning.circle(QtPositioning.coordinate(0.569212, 8.673828),1000)
     property variant searchRegionItem
     property Plugin favoritesPlugin
     //anchors.fill:  parent

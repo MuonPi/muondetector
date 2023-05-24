@@ -2,7 +2,6 @@
 #define CALIBRATION_H
 
 // clang-format off
-#include "utility/custom_io_operators.h"
 #include <muondetector_structs.h>
 #include "hardware/i2cdevices.h"
 // clang-format on
@@ -38,12 +37,11 @@ static const std::vector<std::tuple<std::string, std::string, std::string>> CALI
 };
 
 class ShowerDetectorCalib {
-
 public:
     static const CalibStruct InvalidCalibStruct;
 
     ShowerDetectorCalib() { init(); }
-    ShowerDetectorCalib(EEPROM24AA02* eep)
+    ShowerDetectorCalib(std::shared_ptr<EEPROM24AA02> eep)
         : fEeprom(eep)
     {
         init();
@@ -79,7 +77,7 @@ private:
     void buildCalibList();
 
     std::vector<CalibStruct> fCalibList;
-    EEPROM24AA02* fEeprom = nullptr;
+    std::shared_ptr<EEPROM24AA02> fEeprom {};
     uint8_t fEepBuffer[256];
     bool fEepromValid = false;
     bool fValid = false;

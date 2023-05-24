@@ -8,129 +8,39 @@
 #include <QTcpServer>
 #include <QTimer>
 #include <QVariant>
+#include <libconfig.h++>
+#include <memory>
 #include <time.h>
 
 // clang-format off
 #include "qtserialublox.h"
 #include "utility/filehandler.h"
+#include "utility/kalman_gnss_filter.h"
 #include "calibration.h"
 // clang-format on
 
-#include "utility/custom_io_operators.h"
-#include "histogram.h"
-#include "hardware/i2cdevices.h"
+#include <custom_io_operators.h>
 #include "logengine.h"
 #include "logparameter.h"
-#include "mqtthandler.h"
 #include "pigpiodhandler.h"
-#include "tcpconnection.h"
 #include "hardware/spidevices.h"
+#include "hardware/device_types.h"
+#include "networkdiscovery.h"
+#include "geoposmanager.h"
+#include "utility/ratebuffer.h"
+
+// from library
+#include <muondetector_structs.h>
+#include <histogram.h>
+#include <mqtthandler.h>
+#include <tcpconnection.h>
 
 // for sig handling:
 #include <signal.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 
-struct CalibStruct;
-struct UbxTimeMarkStruct;
-enum GPIO_PIN;
-
-class Property {
-public:
-    Property() = default;
-
-    template <typename T>
-    Property(const T& val)
-        : name("")
-        , unit("")
-    {
-        typeId = qMetaTypeId<T>();
-        if (typeId == QMetaType::UnknownType) {
-            typeId = qRegisterMetaType<T>();
-        }
-        value = QVariant(val);
-        updated = true;
-    }
-
-    template <typename T>
-    Property(const QString& a_name, const T& val, const QString& a_unit = "")
-        : name(a_name)
-        , unit(a_unit)
-    {
-        typeId = qMetaTypeId<T>();
-        if (typeId == QMetaType::UnknownType) {
-            typeId = qRegisterMetaType<T>();
-        }
-        value = QVariant(val);
-        updated = true;
-    }
-
-    Property(const Property& prop) = default;
-    Property& operator=(const Property& prop)
-    {
-        name = prop.name;
-        unit = prop.unit;
-        value = prop.value;
-        typeId = prop.typeId;
-        updated = prop.updated;
-        return *this;
-    }
-
-    Property& operator=(const QVariant& val)
-    {
-        value = val;
-        //lastUpdate = std::chrono::system_clock::now();
-        updated = true;
-        return *this;
-    }
-
-    const QVariant& operator()()
-    {
-        updated = false;
-        return value;
-    }
-
-    bool isUpdated() const { return updated; }
-    int type() const { return typeId; }
-
-    QString name = "";
-    QString unit = "";
-
-private:
-    QVariant value;
-    bool updated = false;
-    int typeId = 0;
-};
-
-struct RateScanInfo {
-    uint8_t origPcaMask = 0;
-    GPIO_PIN origEventTrigger = GPIO_PIN::UNDEFINED_PIN;
-    uint16_t lastEvtCounter = 0;
-    uint8_t thrChannel = 0;
-    float origThr = 3.3;
-    float thrIncrement = 0.1;
-    float minThr = 0.05;
-    float maxThr = 3.3;
-    float currentThr = 0.;
-    uint16_t nrLoops = 0;
-    uint16_t currentLoop = 0;
-};
-
-struct RateScan {
-    uint8_t origPcaMask = 0;
-    GPIO_PIN origEventTrigger = GPIO_PIN::UNDEFINED_PIN;
-    float origScanPar = 3.3;
-    double minScanPar = 0.;
-    double maxScanPar = 1.;
-    double currentScanPar = 0.;
-    double scanParIncrement = 0.;
-    uint32_t currentCounts = 0;
-    double currentTimeInterval = 0.;
-    double maxTimeInterval = 1.;
-    uint16_t nrLoops = 0;
-    uint16_t currentLoop = 0;
-    QMap<double, double> scanMap;
-};
+enum GPIO_SIGNAL;
 
 class Daemon : public QTcpServer {
     Q_OBJECT
@@ -142,25 +52,34 @@ public:
         QString gpsdevname { "" };
         int verbose { 0 };
         quint8 pcaPortMask { 0 };
-        std::array<float, 2> dacThresh { -1.0F, -1.0F };
+        std::array<float, 2> thresholdVoltage { -1.0F, -1.0F };
         float biasVoltage { -1.0F };
         bool bias_ON { false };
-        bool dumpRaw;
-        int baudrate { 9600 };
-        bool configGnss { false };
-        unsigned int eventTrigger { EVT_XOR };
-        QString peerAddress { "" };
-        quint16 peerPort { 0 };
+        GPIO_SIGNAL eventTrigger { EVT_XOR };
         QString serverAddress { "" };
         quint16 serverPort { 0 };
         bool showout { false };
         bool showin { false };
-        std::array<bool, 2> preamp { false, false };
-        bool gain { false };
+        std::array<bool, 2> preamp_enable { false, false };
+        bool hi_gain { false };
         QString station_ID { "0" };
         std::array<bool, 2> polarity { true, true };
-        int maxGeohashLength { MuonPi::Settings::log.max_geohash_length };
+        std::size_t maxGeohashLength { MuonPi::Settings::log.max_geohash_length };
         bool storeLocal { false };
+        /* GNSS configs */
+        bool gnss_dump_raw { false };
+        int gnss_baudrate { 9600 };
+        bool gnss_config { false };
+        UbxDynamicModel gnss_dynamic_model { UbxDynamicModel::stationary };
+        PositionModeConfig position_mode_config {
+            PositionModeConfig::Mode::Auto,
+            {},
+            MuonPi::Config::max_lock_in_dop,
+            MuonPi::Config::lock_in_target_precision_meters,
+            PositionModeConfig::FilterType::None
+        };
+        std::shared_ptr<libconfig::Config> config_file_data {};
+        std::shared_ptr<libconfig::Config> settings_file_data {};
     };
 
     Daemon(configuration cfg, QObject* parent = nullptr);
@@ -203,7 +122,7 @@ public slots:
     void receivedTcpMessage(TcpMessage tcpMessage);
     void pollAllUbxMsgRate();
     void sendGpioPinEvent(uint8_t gpio_pin);
-    void onGpsPropertyUpdatedGeodeticPos(const GeodeticPos& pos);
+    void onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos);
     void UBXReceivedVersion(const QString& swString, const QString& hwString, const QString& protString);
     void sampleAdc0Event();
     void sampleAdc0TraceEvent();
@@ -212,7 +131,7 @@ public slots:
     void scanI2cBus();
     void onUBXReceivedTimeTM2(const UbxTimeMarkStruct& tm);
     void onLogParameterPolled();
-    void sendMqttStatus(bool connected);
+    void sendExtendedMqttStatus(MuonPi::MqttHandler::Status status);
 
 signals:
     void sendTcpMessage(TcpMessage tcpMessage);
@@ -228,7 +147,7 @@ signals:
     void UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate);
     void UBXSetCfgRate(uint8_t measRate, uint8_t navRate);
     void UBXSetCfgPrt(uint8_t gpsPort, uint8_t outProtocolMask);
-    void UBXSetDynModel(uint8_t model);
+    void UBXSetDynModel(UbxDynamicModel model);
     void resetUbxDevice(uint32_t flags);
     void setGnssConfig(const std::vector<GnssConfigStruct>& gnssConfigs);
     void UBXSetMinMaxSVs(uint8_t minSVs, uint8_t maxSVs);
@@ -242,7 +161,7 @@ signals:
     void UBXSetCfgTP5(const UbxTimePulseStruct& tp);
     void UBXSetAopCfg(bool enable = true, uint16_t maxOrbErr = 0);
     void UBXSaveCfg(uint8_t devMask = QtSerialUblox::DEV_BBR | QtSerialUblox::DEV_FLASH);
-    void setSamplingTriggerSignal(GPIO_PIN signalName);
+    void setSamplingTriggerSignal(GPIO_SIGNAL signalName);
     void timeMarkIntervalCountUpdate(uint16_t newCounts, double lastInterval);
     void requestMqttConnectionStatus();
     void eventMessage(const QString& messageString);
@@ -251,14 +170,18 @@ private slots:
     void onRateBufferReminder();
     void updateOledDisplay();
     void aquireMonitoringParameters();
-    void doRateScanIteration(RateScanInfo* info);
+    void onStatusLed1Event(int onTimeMs);
+    void onStatusLed2Event(int onTimeMs);
+    void onGeoPosLockInReady(GeoPosition pos);
+    void onGeoPosValid(GeoPosition pos);
 
 private:
     void incomingConnection(qintptr socketDescriptor) override;
     void setPcaChannel(uint8_t channel); // channel 0 to 3
         // 0: coincidence ; 1: xor ; 2: discr 1 ; 3: discr 2
-    void setEventTriggerSelection(GPIO_PIN signal);
+    void setEventTriggerSelection(GPIO_SIGNAL signal);
     void sendPcaChannel();
+    void sendVersionInfo();
     void sendEventTriggerSelection();
     void setDacThresh(uint8_t channel, float threshold); // channel 0 or 1 ; threshold in volts
     void sendDacThresh(uint8_t channel);
@@ -279,36 +202,32 @@ private:
     void sendCalib();
     void sendHistogram(const Histogram& hist);
     void sendLogInfo();
+    void sendGeodeticPos(const GnssPosStruct& pos);
+    void sendPositionModel(const PositionModeConfig& pos);
     bool readEeprom();
     void receivedCalibItems(const std::vector<CalibStruct>& newCalibs);
     void setupHistos();
     void rescaleHisto(Histogram& hist, double center, double width);
     void rescaleHisto(Histogram& hist, double center);
-    void checkRescaleHisto(Histogram& hist, double newValue);
     void clearHisto(const QString& histoName);
-    void setAdcSamplingMode(quint8 mode);
-    void startRateScan(uint8_t channel);
+    void setAdcSamplingMode(ADC_SAMPLING_MODE mode);
     void printTimestamp();
     void delay(int millisecondsWait);
+    void onAdcSampleReady(ADS1115::Sample sample);
 
     void rateCounterIntervalActualisation();
     qreal getRateFromCounts(quint8 which_rate);
     void clearRates();
+    void writeSettingsToFile();
 
-    MCP4728* dac = nullptr;
-    ADS1115* adc = nullptr;
-    PCA9536* pca = nullptr;
-    LM75* lm75 = nullptr;
-    EEPROM24AA02* eep = nullptr;
-    UbloxI2c* ubloxI2c = nullptr;
-    Adafruit_SSD1306* oled = nullptr;
-    float biasVoltage = 0.;
-    bool biasON = false;
-    GPIO_PIN eventTrigger;
-    bool gainSwitch = false;
-    bool preampStatus[2];
-    uint8_t pcaPortMask = 0;
-    QVector<float> dacThresh; // do not give values here because of push_back in constructor of deamon
+    std::shared_ptr<DeviceFunction<DeviceType::TEMP>> temp_sensor_p;
+    std::shared_ptr<DeviceFunction<DeviceType::ADC>> adc_p;
+    std::shared_ptr<DeviceFunction<DeviceType::DAC>> dac_p;
+    std::shared_ptr<DeviceFunction<DeviceType::EEPROM>> eep_p;
+    std::shared_ptr<DeviceFunction<DeviceType::IO_EXTENDER>> io_extender_p;
+    std::shared_ptr<Adafruit_SSD1306> oled_p {};
+    std::shared_ptr<UbloxI2c> ublox_i2c_p {};
+
     QPointer<PigpiodHandler> pigHandler;
     QPointer<TDC7200> tdc7200;
     bool spiDevicePresent = false;
@@ -320,13 +239,9 @@ private:
     QString peerAddress;
     QHostAddress daemonAddress = QHostAddress::Null;
     quint16 peerPort, daemonPort;
-    QString gpsdevname;
     int verbose, baudrate;
-    int gpsTimeout = 5000;
-    bool dumpRaw, configGnss, showout, showin;
-    bool mqttConnectionStatus = false;
-    bool polarity1 = true; // input polarity switch: true=pos, false=neg
-    bool polarity2 = true;
+    bool dumpRaw, configGnss;
+    MuonPi::MqttHandler::Status mqttConnectionStatus { MuonPi::MqttHandler::Status::Invalid };
 
     // file handling
     QPointer<FileHandler> fileHandler;
@@ -347,7 +262,7 @@ private:
     ShowerDetectorCalib* calib = nullptr;
 
     // histograms
-    QMap<QString, Histogram> histoMap;
+    std::map<std::string, std::shared_ptr<Histogram>> m_histo_map {};
 
     // others
     QVector<QPointF> xorRatePoints, andRatePoints;
@@ -358,17 +273,23 @@ private:
     QTimer rateBufferReminder;
     QTimer oledUpdateTimer;
     QList<quint64> andCounts, xorCounts;
-    UbxDopStruct currentDOP;
-    Property nrSats, nrVisibleSats, fixStatus;
+
+    Property<size_t> nrSats {};
+    Property<size_t> nrVisibleSats {};
+    Property<UbxDopStruct> currentDOP {};
+    Property<std::chrono::nanoseconds> m_time_precision {};
+    Property<Gnss::FixType> m_fix_status {};
+
     QVector<QTcpSocket*> peerList;
-    QList<float> adcSamplesBuffer;
-    uint8_t adcSamplingMode = ADC_MODE_PEAK;
-    qint16 currentAdcSampleIndex = -1;
+    std::list<float> adcSamplesBuffer {};
+    ADC_SAMPLING_MODE adcSamplingMode { ADC_SAMPLING_MODE::PEAK };
+    int currentAdcSampleIndex { -1 };
     QTimer samplingTimer;
     QTimer parameterMonitorTimer;
     QTimer rateScanTimer;
-    QMap<QString, Property> propertyMap;
+    //    QMap<QString, Property> propertyMap;
     LogEngine logEngine;
+    NetworkDiscovery* networkDiscovery { nullptr };
 
     // threads
     QPointer<QThread> mqttHandlerThread;
@@ -378,6 +299,9 @@ private:
     QPointer<QThread> tcpThread;
 
     configuration config;
+    GeoPosManager m_geopos_manager;
+    std::map<unsigned int, std::shared_ptr<EventRateBuffer>> m_gpio_ratebuffers {};
+    std::shared_ptr<CounterRateBuffer> m_ublox_ratebuffer {};
 };
 
 #endif // DAEMON_H

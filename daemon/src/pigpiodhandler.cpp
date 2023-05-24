@@ -1,9 +1,9 @@
+#include "utility/gpio_mapping.h"
 #include <QDebug>
 #include <QPointer>
 #include <cmath>
 #include <config.h>
 #include <exception>
-#include "utility/gpio_mapping.h"
 #include <iostream>
 #include <pigpiodhandler.h>
 #include <sys/time.h>
@@ -102,18 +102,15 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
     // look, if the last event occured just recently
     // if so, count the pileup counter up
     // count down if not
-    if (tick - lastTick < MuonPi::Config::event_count_deadtime_ticks) 
-    {
+    if (tick - lastTick < MuonPi::Config::event_count_deadtime_ticks) {
         pileupCounter++;
         // if more than a certain number of pileups happened in a short period of time, leave immediately
-        if (pileupCounter > MuonPi::Config::event_count_max_pileups) 
-        {
+        if (pileupCounter > MuonPi::Config::event_count_max_pileups) {
             pileupCounter = MuonPi::Config::event_count_max_pileups;
-			lastTick = tick;
+            lastTick = tick;
             return;
         }
-    } else if (pileupCounter > 0)
-    {
+    } else if (pileupCounter > 0) {
         pileupCounter--;
     }
 
@@ -123,7 +120,7 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
         // allow only registered signals to be processed here
         // if gpio pin fired which is not in GPIO_PIN list, return immediately
         auto it = std::find_if(GPIO_PINMAP.cbegin(), GPIO_PINMAP.cend(),
-            [&user_gpio](const std::pair<GPIO_PIN, unsigned int>& val) {
+            [&user_gpio](const std::pair<GPIO_SIGNAL, unsigned int>& val) {
                 if (val.second == user_gpio)
                     return true;
                 return false;
@@ -134,11 +131,11 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
         QDateTime now = QDateTime::currentDateTimeUtc();
 
         if (user_gpio == GPIO_PINMAP[pigpioHandler->samplingTriggerSignal]) {
-            if (pigpioHandler->lastSamplingTime.msecsTo(now) >= MuonPi::Config::Hardware::ADC::deadtime) {
+            if (pigpioHandler->lastSamplingTime.msecsTo(now) >= MuonPi::Config::Hardware::ADC::deadtime.count()) {
                 emit pigpioHandler->samplingTrigger();
                 pigpioHandler->lastSamplingTime = now;
             }
-            quint64 nsecsElapsed = pigpioHandler->elapsedEventTimer.nsecsElapsed();
+            /* quint64 nsecsElapsed = pigpioHandler->elapsedEventTimer.nsecsElapsed(); */
             pigpioHandler->elapsedEventTimer.start();
             emit pigpioHandler->eventInterval((tick - lastTriggerTick) * 1000);
             lastTriggerTick = tick;
@@ -169,9 +166,9 @@ static void cbFunction(int user_pi, unsigned int user_gpio,
                 emit pigpioHandler->timePulseDiff(t_diff_us);
             }
         }
-        
+
         emit pigpioHandler->signal(user_gpio);
-         
+
         // level gives the information if it is up or down (only important if trigger is
         // at both: rising and falling edge)
     } catch (std::exception& e) {
@@ -248,8 +245,8 @@ void PigpiodHandler::registerForCallback(unsigned int gpio, bool edge)
 {
     int result = callback(pi, gpio, edge ? FALLING_EDGE : RISING_EDGE, cbFunction);
     if (result < 0) {
-        GPIO_PIN pin = bcmToGpioSignal(gpio);
-        qCritical() << "error registering gpio callback for BCM pin" << GPIO_SIGNAL_MAP[pin].name;
+        GPIO_SIGNAL pin = bcmToGpioSignal(gpio);
+        qCritical() << "error registering gpio callback for BCM pin" << QString::fromStdString(GPIO_SIGNAL_MAP.at(pin).name);
     }
 }
 
@@ -260,16 +257,19 @@ void PigpiodHandler::writeSpi(uint8_t command, std::string data)
             return;
         }
     }
-    char txBuf[data.size() + 1];
+
+    char* txBuf { static_cast<char*>(calloc(sizeof(char), data.size() + 1)) };
     txBuf[0] = (char)command;
     for (unsigned int i = 1; i < data.size() + 1; i++) {
         txBuf[i] = data[i - 1];
     }
-    char rxBuf[data.size() + 1];
-    if (spi_xfer(pi, spiHandle, txBuf, rxBuf, data.size() + 1) != 1 + data.size()) {
+
+    char* rxBuf { static_cast<char*>(calloc(sizeof(char), data.size() + 1)) };
+    if (spi_xfer(pi, spiHandle, txBuf, rxBuf, data.size() + 1) != static_cast<int>(1 + data.size())) {
         qWarning() << "writeSpi(uint8_t, std::string): wrong number of bytes transfered";
-        return;
     }
+    free(txBuf);
+    free(rxBuf);
 }
 
 void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead)
@@ -280,14 +280,17 @@ void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead)
         }
     }
 
-    char rxBuf[bytesToRead + 1];
-    char txBuf[bytesToRead + 1];
+    char* rxBuf { static_cast<char*>(calloc(sizeof(char), bytesToRead + 1)) };
+    char* txBuf { static_cast<char*>(calloc(sizeof(char), bytesToRead + 1)) };
+
     txBuf[0] = (char)command;
     for (unsigned int i = 1; i < bytesToRead; i++) {
         txBuf[i] = 0;
     }
-    if (spi_xfer(pi, spiHandle, txBuf, rxBuf, bytesToRead + 1) != 1 + bytesToRead) {
+    if (spi_xfer(pi, spiHandle, txBuf, rxBuf, bytesToRead + 1) != static_cast<int>(1 + bytesToRead)) {
         qWarning() << "readSpi(uint8_t, unsigned int): wrong number of bytes transfered";
+        free(txBuf);
+        free(rxBuf);
         return;
     }
 
@@ -295,6 +298,10 @@ void PigpiodHandler::readSpi(uint8_t command, unsigned int bytesToRead)
     for (unsigned int i = 1; i < bytesToRead + 1; i++) {
         data += rxBuf[i];
     }
+
+    free(txBuf);
+    free(rxBuf);
+
     emit spiData(command, data);
 }
 

@@ -8,6 +8,7 @@ Q_DECLARE_METATYPE(std::string)
 
 class TDC7200 : public QObject {
     Q_OBJECT
+
 public:
     explicit TDC7200(unsigned int _INTB = 20, QObject* parent = nullptr);
 

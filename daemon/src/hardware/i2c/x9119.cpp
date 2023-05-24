@@ -10,7 +10,6 @@
 
 unsigned int X9119::readWiperReg()
 {
-
     // just return the locally stored last value written to WCR
     // since readback doesn't work without repeated start transaction
     return fWiperReg;
@@ -37,7 +36,6 @@ unsigned int X9119::readWiperReg()
 
 unsigned int X9119::readDataReg(uint8_t reg)
 {
-
     uint8_t writeBuf[3]; // Buffer to store the 3 bytes that we write to the I2C device
     uint8_t readBuf[16]; // 2 byte buffer to store the data read from the I2C device
     int16_t val; // Stores the 16 bit value of our ADC conversion
@@ -114,7 +112,6 @@ unsigned int X9119::readWiperReg2()
 
 unsigned int X9119::readWiperReg3()
 {
-
     union i2c_smbus_data data;
     struct i2c_smbus_ioctl_data args;
 

@@ -11,7 +11,7 @@
 // TO MAKE IT MORE SIMPLE THERE WILL BE ONLY PIGPIO NAMING STANDARD,
 // NO WIRING PI FROM NOW
 
-static const std::map<GPIO_PIN, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER + 1] = {
+static const std::map<GPIO_SIGNAL, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER + 1] = {
     {
         /* Pin mapping, HW Version 0, proxy to be never used nor initializing something */
     },
@@ -66,11 +66,11 @@ static const std::map<GPIO_PIN, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER + 
         { IN_POL2, 25 } }
 };
 
-extern std::map<GPIO_PIN, unsigned int> GPIO_PINMAP;
+extern std::map<GPIO_SIGNAL, unsigned int> GPIO_PINMAP;
 
-inline GPIO_PIN bcmToGpioSignal(unsigned int bcmGpioNumber)
+inline GPIO_SIGNAL bcmToGpioSignal(unsigned int bcmGpioNumber)
 {
-    std::map<GPIO_PIN, unsigned int>::const_iterator i = GPIO_PINMAP.cbegin();
+    std::map<GPIO_SIGNAL, unsigned int>::const_iterator i = GPIO_PINMAP.cbegin();
     while (i != GPIO_PINMAP.cend() && i->second != bcmGpioNumber)
         ++i;
     if (i == GPIO_PINMAP.cend())

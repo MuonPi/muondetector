@@ -1,20 +1,18 @@
+#include "qtserialublox.h"
 #include <QDebug>
 #include <QEventLoop>
 #include <QThread>
 #include <iomanip>
 #include <iostream>
 #include <muondetector_structs.h>
-#include "qtserialublox.h"
 #include <sstream>
 #include <sys/syscall.h>
 #include <ublox_messages.h>
 #include <unistd.h>
 
-using namespace std;
+constexpr std::size_t MAX_SEND_RETRIES { 5 };
 
-#define MAX_SEND_RETRIES 5
-
-string QtSerialUblox::fProtVersionString = "";
+std::string QtSerialUblox::fProtVersionString = "";
 
 void QtSerialUblox::closeAll()
 {
@@ -71,10 +69,11 @@ void QtSerialUblox::makeConnection()
         return;
     }
     ackTimer = new QTimer();
+    ackTimer->setSingleShot(true);
     connect(ackTimer, &QTimer::timeout, this, &QtSerialUblox::ackTimeout);
     connect(serialPort, &QSerialPort::readyRead, this, &QtSerialUblox::onReadyRead);
     serialPort->clear(QSerialPort::AllDirections);
-    if (verbose == 1) {
+    if (verbose > 2) {
         emit toConsole("rising               falling               accEst valid timebase utc\n");
     }
 }
@@ -82,22 +81,21 @@ void QtSerialUblox::makeConnection()
 void QtSerialUblox::sendQueuedMsg(bool afterTimeout)
 {
     if (afterTimeout) {
-        if (msgWaitingForAck == nullptr) {
+        if (!msgWaitingForAck) {
             return;
         }
         if (++sendRetryCounter >= MAX_SEND_RETRIES) {
             sendRetryCounter = 0;
             ackTimer->stop();
-            delete msgWaitingForAck;
-            msgWaitingForAck = nullptr;
-            if (verbose > 1)
+            msgWaitingForAck.reset(nullptr);
+            if (verbose > 2)
                 emit toConsole("sendQueuedMsg: deleted message after 5 timeouts\n");
             sendQueuedMsg();
             return;
         }
         ackTimer->start(timeout);
         sendUBX(*msgWaitingForAck);
-        if (verbose > 1)
+        if (verbose > 2)
             emit toConsole("sendQueuedMsg: repeated resend after timeout\n");
         return;
     }
@@ -105,34 +103,32 @@ void QtSerialUblox::sendQueuedMsg(bool afterTimeout)
         return;
     }
     if (msgWaitingForAck) {
-        if (verbose > 1) {
+        if (verbose > 2) {
             emit toConsole("tried to send queued message but ack for previous message not yet received\n");
         }
         return;
     }
-    msgWaitingForAck = new UbxMessage;
-    *msgWaitingForAck = outMsgBuffer.front();
-    ackTimer->setSingleShot(true);
+    msgWaitingForAck = std::make_unique<UbxMessage>(outMsgBuffer.front());
+    outMsgBuffer.pop();
     ackTimer->start(timeout);
     sendUBX(*msgWaitingForAck);
-    if (verbose > 2)
+    if (verbose > 3)
         emit toConsole("sendQueuedMsg: sent fresh message\n");
-    outMsgBuffer.pop();
 }
 
 void QtSerialUblox::ackTimeout()
 {
-    if (msgWaitingForAck == nullptr) {
+    if (!msgWaitingForAck) {
         return;
     }
-    if (verbose > 1) {
+    if (verbose > 2) {
         std::stringstream tempStream;
-        tempStream << "ack timeout, trying to resend message 0x" << std::setfill('0') << std::setw(2) << hex
-                   << ((msgWaitingForAck->msgID & 0xff00) >> 8) << " 0x" << std::setfill('0') << std::setw(2) << hex << (msgWaitingForAck->msgID & 0x00ff);
-        for (unsigned int i = 0; i < msgWaitingForAck->data.length(); i++) {
-            tempStream << " 0x" << std::setfill('0') << std::setw(2) << hex << (int)(msgWaitingForAck->data[i]);
+        tempStream << "ack timeout, trying to resend message 0x" << std::setfill('0') << std::setw(2) << std::hex
+                   << static_cast<int>(msgWaitingForAck->class_id()) << " 0x" << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(msgWaitingForAck->message_id());
+        for (unsigned int i = 0; i < msgWaitingForAck->payload().size(); i++) {
+            tempStream << " 0x" << std::setfill('0') << std::setw(2) << std::hex << (int)(msgWaitingForAck->payload()[i]);
         }
-        tempStream << endl;
+        tempStream << std::endl;
         emit toConsole(QString::fromStdString(tempStream.str()));
     }
     sendQueuedMsg(true);
@@ -155,14 +151,14 @@ void QtSerialUblox::onReadyRead()
     while (scanUnknownMessage(m_buffer, message)) {
         // so it found a message therefore we can now process the message
         if (showin) {
-            std::stringstream tempStream;
+            std::stringstream tempStream {};
             tempStream << " in: ";
-            int classID = (int)((message.msgID & 0xff00) >> 8);
-            int msgID = (int)(message.msgID & 0xff);
+            int classID = message.class_id();
+            int msgID = message.message_id();
             tempStream << "0x" << std::setfill('0') << std::setw(2) << std::hex << classID;
             tempStream << " 0x" << std::setfill('0') << std::setw(2) << std::hex << msgID << " ";
-            for (std::string::size_type i = 0; i < message.data.length(); i++) {
-                tempStream << "0x" << std::setfill('0') << std::setw(2) << std::hex << (int)(message.data[i]) << " ";
+            for (std::string::size_type i = 0; i < message.payload().size(); i++) {
+                tempStream << "0x" << std::setfill('0') << std::setw(2) << std::hex << (int)(message.payload()[i]) << " ";
             }
             tempStream << "\n";
             emit toConsole(QString::fromStdString(tempStream.str()));
@@ -171,29 +167,22 @@ void QtSerialUblox::onReadyRead()
     }
 }
 
-bool QtSerialUblox::scanUnknownMessage(string& buffer, UbxMessage& message)
+bool QtSerialUblox::scanUnknownMessage(std::string& buffer, UbxMessage& message)
 { // gets the (maybe not finished) buffer and checks for messages in it that make sense
     if (buffer.size() < 9)
         return false;
-    std::string refstr = "";
     // refstr are the first two hex numbers defining the header of an ubx message
-    refstr += static_cast<unsigned char>(0xb5);
-    refstr += 0x62;
+    const std::string refstr { 0xb5, 0x62 };
     std::size_t found = buffer.find(refstr);
-    std::string mess = "";
-    if (found != string::npos) {
-        mess = buffer.substr(found, buffer.size());
-        // discard everything before start of the message
-        buffer.erase(0, found);
-    } else {
+    if (found == std::string::npos) {
         // discard everything before the start of a NMEA message, too
         // to ensure that buffer won't grow too big
         if (discardAllNMEA) {
             std::string beginNMEA = "$";
             found = 0;
-            while (found != string::npos) {
+            while (found != std::string::npos) {
                 found = buffer.find(beginNMEA);
-                if (found == string::npos) {
+                if (found == std::string::npos) {
                     break;
                 }
                 buffer.erase(0, found + 1);
@@ -201,22 +190,25 @@ bool QtSerialUblox::scanUnknownMessage(string& buffer, UbxMessage& message)
         }
         return false;
     }
-    message.msgID = (uint16_t)mess[2] << 8;
-    message.msgID += (uint16_t)mess[3];
-    if (mess.size() < 8)
+
+    const std::string message_raw_data { buffer.substr(found, buffer.size()) };
+    // discard everything before start of the message
+    buffer.erase(0, found);
+
+    if (message_raw_data.size() < 8)
         return false;
-    int len = (int)(mess[4]);
-    len += ((int)(mess[5])) << 8;
-    if (((long int)mess.size() - 8) < len) {
+    int len = (int)(message_raw_data[4]);
+    len += ((int)(message_raw_data[5])) << 8;
+    if (((long int)message_raw_data.size() - 8) < len) {
         found = buffer.find(refstr, 2);
-        if (found != string::npos) {
+        if (found != std::string::npos) {
             if (verbose > 1) {
                 std::stringstream tempStream;
-                tempStream << "received faulty UBX string:\n " << dec;
+                tempStream << "received faulty UBX string:\n " << std::dec;
                 for (std::string::size_type i = 0; i < found; i++)
                     tempStream
-                        << setw(2) << hex << "0x" << (int)buffer[i] << " ";
-                tempStream << endl;
+                        << std::setw(2) << std::hex << "0x" << (int)buffer[i] << " ";
+                tempStream << std::endl;
                 emit toConsole(QString::fromStdString(tempStream.str()));
             }
             buffer.erase(0, found);
@@ -225,83 +217,58 @@ bool QtSerialUblox::scanUnknownMessage(string& buffer, UbxMessage& message)
     }
     buffer.erase(0, len + 8);
 
-    unsigned char chkA;
-    unsigned char chkB;
-    calcChkSum(mess.substr(0, len + 6), &chkA, &chkB);
-    if (mess[len + 6] == chkA && mess[len + 7] == chkB) {
-        message.data = mess.substr(6, len);
+    std::uint16_t msg_id { static_cast<std::uint16_t>((message_raw_data[2] << 8) | (message_raw_data[3] & 0xff)) };
+
+    UbxMessage temp_message { msg_id, message_raw_data.substr(6, len) };
+    auto checksum { temp_message.check_sum() };
+    if ((checksum & 0xff) == message_raw_data[len + 6]
+        && (checksum >> 8) == message_raw_data[len + 7]) {
+        message = std::move(temp_message);
         return true;
     }
-
     return false;
 }
 
 bool QtSerialUblox::sendUBX(uint16_t msgID, const std::string& payload, uint16_t nBytes)
 {
-    std::string s = "";
-    s += static_cast<unsigned char>(0xb5);
-    s += 0x62;
-    s += (unsigned char)((msgID & 0xff00) >> 8);
-    s += (unsigned char)(msgID & 0xff);
-    s += (unsigned char)(nBytes & 0xff);
-    s += (unsigned char)((nBytes & 0xff00) >> 8);
-    for (int i = 0; i < nBytes; i++)
-        s += payload[i];
-    unsigned char chkA, chkB;
-    calcChkSum(s, &chkA, &chkB);
-    s += chkA;
-    s += chkB;
+    const UbxMessage message { msgID, payload };
+    return sendUBX(message);
+}
+
+bool QtSerialUblox::sendUBX(uint16_t msgID, unsigned char* payload, uint16_t nBytes)
+{
+    std::string payload_string { reinterpret_cast<const char*>(payload), nBytes };
+    const UbxMessage message { msgID, payload_string };
+    return sendUBX(message);
+}
+
+bool QtSerialUblox::sendUBX(const UbxMessage& msg)
+{
+    std::string raw_data_string { msg.raw_message_string() };
     if (!serialPort.isNull()) {
-        QByteArray block(s.c_str(), s.size());
+        QByteArray block(raw_data_string.c_str(), raw_data_string.size());
         if (serialPort->write(block)) {
             if (serialPort->waitForBytesWritten(timeout)) {
                 if (showout) {
-                    std::stringstream tempStream;
+                    std::stringstream tempStream {};
                     tempStream << "out: ";
-                    for (std::string::size_type i = 2; i < s.length(); i++) {
-                        tempStream << "0x" << std::setfill('0') << std::setw(2) << std::hex << (int)s[i] << " ";
+                    for (std::string::size_type i = 2; i < raw_data_string.length(); i++) {
+                        tempStream << "0x" << std::setfill('0') << std::setw(2) << std::hex << (int)raw_data_string[i] << " ";
                     }
                     tempStream << "\n";
                     emit toConsole(QString::fromStdString(tempStream.str()));
                 }
                 return true;
             } else {
-                emit toConsole("wait for bytes written timeout while trying to write to serialPort");
+                emit toConsole("wait for bytes written timeout while trying to write to serialPort\n");
             }
         } else {
-            emit toConsole("error writing to serialPort");
+            emit toConsole("error writing to serialPort\n");
         }
     } else {
-        emit toConsole("error: serialPort not instantiated");
+        emit toConsole("error: serialPort not instantiated\n");
     }
     return false;
-}
-
-bool QtSerialUblox::sendUBX(uint16_t msgID, unsigned char* payload, uint16_t nBytes)
-{
-    std::stringstream payloadStream;
-    std::string payloadString;
-    for (int i = 0; i < nBytes; i++) {
-        payloadStream << payload[i];
-    }
-    payloadString = payloadStream.str();
-    return sendUBX(msgID, payloadString, nBytes);
-}
-
-bool QtSerialUblox::sendUBX(UbxMessage& msg)
-{
-    return sendUBX(msg.msgID, msg.data, msg.data.size());
-}
-
-void QtSerialUblox::calcChkSum(const std::string& buf, unsigned char* chkA, unsigned char* chkB)
-{
-    // calc Fletcher checksum, ignore the message header (b5 62)
-    *chkA = 0;
-    *chkB = 0;
-    for (std::string::size_type i = 2; i < buf.size(); i++) {
-        *chkA += buf[i];
-        *chkB += *chkA;
-    }
 }
 
 void QtSerialUblox::UBXSetCfgRate(uint16_t measRate, uint16_t navRate)
@@ -324,7 +291,7 @@ void QtSerialUblox::UBXSetCfgRate(uint16_t measRate, uint16_t navRate)
     data[4] = 0;
     data[5] = 0;
 
-    enqueueMsg(UBX_CFG_RATE, toStdString(data, 6));
+    enqueueMsg(UBX_MSG::CFG_RATE, toStdString(data, 6));
 }
 
 void QtSerialUblox::UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask)
@@ -337,8 +304,9 @@ void QtSerialUblox::UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask)
     for (int i = 0; i < 20; i++) {
         data[i] = 0;
     }
-    if (port > 6) {
-        emit UBXCfgError("port > 5 is not possible");
+    if (port >= s_nr_targets) {
+        emit UBXCfgError("port > " + QString::number(s_nr_targets - 1) + " is not possible");
+        return;
     }
     if (port == 1) {
         // port 1 is UART port, payload for other ports may differ
@@ -374,7 +342,7 @@ void QtSerialUblox::UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask)
         data[18] = 0;
         data[19] = 0; // reserved
     }
-    enqueueMsg(UBX_CFG_PRT, toStdString(data, 20));
+    enqueueMsg(UBX_MSG::CFG_PRT, toStdString(data, 20));
 }
 
 void QtSerialUblox::UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate)
@@ -401,7 +369,7 @@ void QtSerialUblox::UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate)
         }
     }
 
-    enqueueMsg(UBX_CFG_MSG, toStdString(data, 8));
+    enqueueMsg(UBX_MSG::CFG_MSG, toStdString(data, 8));
 }
 
 void QtSerialUblox::UBXReset(uint32_t resetFlags)
@@ -414,9 +382,7 @@ void QtSerialUblox::UBXReset(uint32_t resetFlags)
     data[2] = resetMode;
     data[3] = 0;
 
-    UbxMessage newMessage;
-    newMessage.msgID = UBX_CFG_RST;
-    newMessage.data = toStdString(data, 4);
+    UbxMessage newMessage { UBX_MSG::CFG_RST, toStdString(data, 4) };
     sendUBX(newMessage);
 }
 
@@ -432,7 +398,7 @@ void QtSerialUblox::UBXSetMinMaxSVs(uint8_t minSVs, uint8_t maxSVs)
     data[10] = minSVs;
     data[11] = maxSVs;
 
-    enqueueMsg(UBX_CFG_NAVX5, toStdString(data, 40));
+    enqueueMsg(UBX_MSG::CFG_NAVX5, toStdString(data, 40));
 }
 
 void QtSerialUblox::UBXSetMinCNO(uint8_t minCNO)
@@ -446,7 +412,7 @@ void QtSerialUblox::UBXSetMinCNO(uint8_t minCNO)
     data[7] = 0;
     data[12] = minCNO;
 
-    enqueueMsg(UBX_CFG_NAVX5, toStdString(data, 40));
+    enqueueMsg(UBX_MSG::CFG_NAVX5, toStdString(data, 40));
 }
 
 void QtSerialUblox::UBXSetAopCfg(bool enable, uint16_t maxOrbErr)
@@ -463,7 +429,7 @@ void QtSerialUblox::UBXSetAopCfg(bool enable, uint16_t maxOrbErr)
     data[30] = maxOrbErr & 0xff;
     data[31] = (maxOrbErr >> 8) & 0xff;
 
-    enqueueMsg(UBX_CFG_NAVX5, toStdString(data, 40));
+    enqueueMsg(UBX_MSG::CFG_NAVX5, toStdString(data, 40));
 }
 
 void QtSerialUblox::UBXSaveCfg(uint8_t devMask)
@@ -481,7 +447,7 @@ void QtSerialUblox::UBXSaveCfg(uint8_t devMask)
     data[7] = (sectionMask >> 24) & 0xff;
     data[12] = devMask;
 
-    enqueueMsg(UBX_CFG_CFG, toStdString(data, 13));
+    enqueueMsg(UBX_MSG::CFG_CFG, toStdString(data, 13));
 }
 
 void QtSerialUblox::onRequestGpsProperties()
@@ -503,7 +469,7 @@ void QtSerialUblox::pollMsgRate(uint16_t msgID)
     unsigned char temp[2];
     temp[0] = (uint8_t)((msgID & 0xff00) >> 8);
     temp[1] = (uint8_t)(msgID & 0xff);
-    enqueueMsg(UBX_CFG_MSG, toStdString(temp, 2));
+    enqueueMsg(UBX_MSG::CFG_MSG, toStdString(temp, 2));
 }
 
 void QtSerialUblox::pollMsg(uint16_t msgID)
@@ -511,28 +477,21 @@ void QtSerialUblox::pollMsg(uint16_t msgID)
     UbxMessage msg;
     unsigned char temp[1];
     switch (msgID) {
-    case UBX_CFG_PRT: // CFG-PRT
+    case UBX_MSG::CFG_PRT: // CFG-PRT
         // in this special case "rate" is the port ID
         temp[0] = 1;
-        msg.msgID = msgID;
-        msg.data = toStdString(temp, 1);
-        outMsgBuffer.push(msg);
+        outMsgBuffer.push(UbxMessage { msgID, toStdString(temp, 1) });
         if (!msgWaitingForAck) {
             sendQueuedMsg();
         }
         break;
-    case UBX_MON_VER:
+    case UBX_MSG::MON_VER:
         // the VER message apparently does not confirm reception with an ACK
-        msg.msgID = msgID;
-        msg.data = "";
-        sendUBX(msg);
+        sendUBX(UbxMessage { msgID, "" });
         break;
-
     default:
         // for most messages the poll msg is just the message without payload
-        msg.msgID = msgID;
-        msg.data = "";
-        enqueueMsg(msgID, "");
+        sendUBX(UbxMessage { msgID, "" });
         break;
     }
 }
@@ -549,9 +508,7 @@ auto QtSerialUblox::getProtVersion() -> double
 
 void QtSerialUblox::enqueueMsg(uint16_t msgID, const std::string& payload)
 {
-    UbxMessage newMessage;
-    newMessage.msgID = msgID;
-    newMessage.data = payload;
+    UbxMessage newMessage { msgID, payload };
     outMsgBuffer.push(newMessage);
     if (!msgWaitingForAck) {
         sendQueuedMsg();

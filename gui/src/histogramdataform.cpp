@@ -39,7 +39,7 @@ void histogramDataForm::updateHistoTable()
         i++;
     }
     if (fCurrentHisto.size()) {
-        for (int j = 0; i < ui->tableWidget->rowCount(); j++) {
+        for (int j = 0; j < ui->tableWidget->rowCount(); j++) {
             if (ui->tableWidget->item(j, 0)->text() == fCurrentHisto) {
                 on_tableWidget_cellClicked(j, 0);
             }

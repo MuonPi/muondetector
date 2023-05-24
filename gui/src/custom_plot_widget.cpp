@@ -1,13 +1,16 @@
+#include <QApplication>
+#include <QEvent>
 #include <QFileDialog>
 #include <QMenu>
 #include <numeric>
-#include <qtextstream.h>
 #include <qpen.h>
+#include <qtextstream.h>
 #include <qwt.h>
-#include <qwt_text.h>
 #include <qwt_legend.h>
+#include <qwt_plot_canvas.h>
 #include <qwt_plot_renderer.h>
 #include <qwt_scale_engine.h>
+#include <qwt_text.h>
 
 #include <custom_plot_widget.h>
 
@@ -30,7 +33,13 @@ CustomPlot::~CustomPlot()
 void CustomPlot::initialize()
 {
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    setStyleSheet("background-color: white; border: 0px;");
+    this->setAutoFillBackground(true);
+    QwtPlotCanvas* canvas = dynamic_cast<QwtPlotCanvas*>(this->canvas());
+    canvas->setFrameStyle(QFrame::NoFrame);
+    QPalette pal = palette();
+    pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::Base));
+    setPalette(pal);
+    setCanvasBackground(QApplication::palette().color(QPalette::Base));
     setAutoReplot(false);
     enableAxis(QwtPlot::yLeft, true);
     setAxisAutoScale(QwtPlot::xBottom, true);
@@ -45,6 +54,19 @@ void CustomPlot::initialize()
     connect(this, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(popUpMenu(const QPoint&)));
 
     show();
+}
+
+void CustomPlot::changeEvent(QEvent* e)
+{
+    if (e->type() == QEvent::PaletteChange) {
+        // update canvas background to appropriate theme
+        QPalette pal = palette();
+        pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::Base));
+        setPalette(pal);
+        setCanvasBackground(QApplication::palette().color(QPalette::Base));
+        replot();
+    }
+    QwtPlot::changeEvent(e);
 }
 
 QwtPlotCurve& CustomPlot::curve(const QString& curveName)
@@ -102,15 +124,6 @@ void CustomPlot::rescale()
                 ymax = (*it)->maxYValue();
         }
     }
-
-    if (fLogY) {
-        if (this->axisInterval(QwtPlot::yLeft).minValue() <= 0.) {
-        }
-        if (this->axisAutoScale(QwtPlot::yLeft)) {
-        } else {
-        }
-    } else {
-    }
 }
 
 void CustomPlot::setLogY(bool logscale)
@@ -136,7 +149,6 @@ void CustomPlot::setLogY(bool logscale)
 
 void CustomPlot::setEnabled(bool enabled)
 {
-
     if (enabled) {
         for (auto& curve : fCurveMap) {
             curve->attach(this);

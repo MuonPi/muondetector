@@ -150,7 +150,6 @@ QString CalibForm::getCalibParameter(const QString& name)
 
 const CalibStruct& CalibForm::getCalibItem(const QString& name)
 {
-
     if (!fCalibList.empty()) {
         QVector<CalibStruct>::iterator result = std::find_if(fCalibList.begin(), fCalibList.end(), [&name](const CalibStruct& s) { return s.name == name.toStdString(); });
         if (result != fCalibList.end()) {

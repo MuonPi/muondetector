@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>GpsSatsForm</class>
- <widget class="QWidget" name="GpsSatsForm">
+ <class>GnssInfoForm</class>
+ <widget class="QWidget" name="GnssInfoForm">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>577</width>
-    <height>617</height>
+    <width>631</width>
+    <height>495</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_7">
-   <item row="0" column="0">
+   <item row="0" column="0" colspan="3">
     <widget class="QGroupBox" name="rxStatsGroupBox">
      <property name="title">
       <string>Receiver Status</string>
@@ -71,6 +71,9 @@
                  <height>0</height>
                 </size>
                </property>
+               <property name="toolTip">
+                <string>Ublox hardware version</string>
+               </property>
                <property name="frameShape">
                 <enum>QFrame::Box</enum>
                </property>
@@ -113,6 +116,9 @@
                  <width>95</width>
                  <height>0</height>
                 </size>
+               </property>
+               <property name="toolTip">
+                <string>Ublox software/firmware version</string>
                </property>
                <property name="frameShape">
                 <enum>QFrame::Box</enum>
@@ -157,6 +163,9 @@
                  <height>0</height>
                 </size>
                </property>
+               <property name="toolTip">
+                <string>Ublox Protocol version</string>
+               </property>
                <property name="frameShape">
                 <enum>QFrame::Box</enum>
                </property>
@@ -179,7 +188,7 @@
              <item>
               <widget class="QLabel" name="label_4">
                <property name="text">
-                <string>Position Fix</string>
+                <string>Position Fix:</string>
                </property>
               </widget>
              </item>
@@ -203,6 +212,9 @@
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;GNSS Fix state.&lt;br/&gt;&lt;br/&gt;3D: 3-dimensional position fix&lt;/p&gt;&lt;p&gt;2D: 2-dimensional position fix (to few satellites available or signal too weak)&lt;/p&gt;&lt;p&gt;No Fix: Unable to optain accurate signal from GNSS providers.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;      </string>
                </property>
                <property name="frameShape">
                 <enum>QFrame::Box</enum>
@@ -302,6 +314,9 @@
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
+           <property name="toolTip">
+            <string>Uncertainty of the internal clock to sattelite reference.</string>
+           </property>
            <property name="frameShape">
             <enum>QFrame::Box</enum>
            </property>
@@ -392,6 +407,9 @@
              <height>0</height>
             </size>
            </property>
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Spatial uncertainty of the position calculation.&lt;br/&gt;&lt;br/&gt;Does not reflect the actual statistical uncertainty of the position, which is typically a few meteres.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
            <property name="frameShape">
             <enum>QFrame::Box</enum>
            </property>
@@ -408,6 +426,9 @@
       </item>
       <item row="1" column="1" rowspan="2">
        <widget class="QGroupBox" name="lnaGroupBox">
+        <property name="toolTip">
+         <string>GNSS antenna information.</string>
+        </property>
         <property name="title">
          <string>LNA</string>
         </property>
@@ -718,10 +739,19 @@
    </item>
    <item row="1" column="0">
     <widget class="QGroupBox" name="satsGroupBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="toolTip">
+      <string>Info on recieved satellites.</string>
+     </property>
      <property name="title">
       <string>GNSS Sat Data</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout">
+     <layout class="QGridLayout" name="gridLayout_8">
       <item row="0" column="0">
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
@@ -752,6 +782,9 @@
           </item>
           <item>
            <widget class="QCheckBox" name="visibleSatsCheckBox">
+            <property name="toolTip">
+             <string>Only show satellites used in position calculation.</string>
+            </property>
             <property name="layoutDirection">
              <enum>Qt::RightToLeft</enum>
             </property>
@@ -764,6 +797,23 @@
         </item>
         <item>
          <widget class="QTableWidget" name="satsTableWidget">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="font">
+           <font>
+            <pointsize>9</pointsize>
+           </font>
+          </property>
+          <property name="horizontalScrollBarPolicy">
+           <enum>Qt::ScrollBarAsNeeded</enum>
+          </property>
+          <property name="sizeAdjustPolicy">
+           <enum>QAbstractScrollArea::AdjustIgnored</enum>
+          </property>
           <property name="alternatingRowColors">
            <bool>true</bool>
           </property>
@@ -773,11 +823,26 @@
           <property name="selectionBehavior">
            <enum>QAbstractItemView::SelectRows</enum>
           </property>
+          <property name="horizontalScrollMode">
+           <enum>QAbstractItemView::ScrollPerItem</enum>
+          </property>
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
           <property name="wordWrap">
            <bool>true</bool>
           </property>
+          <property name="cornerButtonEnabled">
+           <bool>true</bool>
+          </property>
+          <attribute name="horizontalHeaderCascadingSectionResizes">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="horizontalHeaderMinimumSectionSize">
+           <number>35</number>
+          </attribute>
           <attribute name="horizontalHeaderDefaultSectionSize">
-           <number>75</number>
+           <number>50</number>
           </attribute>
           <attribute name="horizontalHeaderStretchLastSection">
            <bool>true</bool>
@@ -787,86 +852,206 @@
           </attribute>
           <column>
            <property name="text">
-            <string>Sat ID</string>
+            <string>Sat
+ID</string>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>8</pointsize>
+            </font>
+           </property>
+           <property name="textAlignment">
+            <set>AlignCenter</set>
            </property>
           </column>
           <column>
            <property name="text">
-            <string>GNSS Sys</string>
+            <string>GNSS
+System</string>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>8</pointsize>
+            </font>
+           </property>
+           <property name="textAlignment">
+            <set>AlignCenter</set>
            </property>
           </column>
           <column>
            <property name="text">
-            <string>CNR (dBHz)</string>
+            <string>CNR
+(dBHz)</string>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>8</pointsize>
+            </font>
+           </property>
+           <property name="textAlignment">
+            <set>AlignCenter</set>
            </property>
           </column>
           <column>
            <property name="text">
-            <string>Az (deg)</string>
+            <string>Az
+(deg)</string>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>8</pointsize>
+            </font>
+           </property>
+           <property name="textAlignment">
+            <set>AlignCenter</set>
            </property>
           </column>
           <column>
            <property name="text">
-            <string>Elev (deg)</string>
+            <string>Alt
+(deg)</string>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>8</pointsize>
+            </font>
+           </property>
+           <property name="textAlignment">
+            <set>AlignCenter</set>
            </property>
           </column>
           <column>
            <property name="text">
-            <string>Res (m)</string>
+            <string>Residual
+(m)</string>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>7</pointsize>
+            </font>
+           </property>
+           <property name="textAlignment">
+            <set>AlignCenter</set>
            </property>
           </column>
           <column>
            <property name="text">
             <string>Quality</string>
            </property>
+           <property name="font">
+            <font>
+             <pointsize>8</pointsize>
+            </font>
+           </property>
+           <property name="textAlignment">
+            <set>AlignCenter</set>
+           </property>
           </column>
           <column>
            <property name="text">
             <string>Health</string>
            </property>
+           <property name="font">
+            <font>
+             <pointsize>8</pointsize>
+            </font>
+           </property>
+           <property name="textAlignment">
+            <set>AlignCenter</set>
+           </property>
           </column>
           <column>
            <property name="text">
-            <string>Orbit Src</string>
+            <string>Orbit
+Src</string>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>8</pointsize>
+            </font>
+           </property>
+           <property name="textAlignment">
+            <set>AlignCenter</set>
            </property>
           </column>
           <column>
            <property name="text">
             <string>Used</string>
            </property>
+           <property name="font">
+            <font>
+             <pointsize>8</pointsize>
+            </font>
+           </property>
+           <property name="textAlignment">
+            <set>AlignCenter</set>
+           </property>
           </column>
           <column>
            <property name="text">
-            <string>Diff Corr</string>
+            <string>Diff
+Corr</string>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>8</pointsize>
+            </font>
+           </property>
+           <property name="textAlignment">
+            <set>AlignCenter</set>
            </property>
           </column>
          </widget>
         </item>
        </layout>
       </item>
-      <item row="0" column="1">
-       <spacer name="horizontalSpacer_13">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeType">
-         <enum>QSizePolicy::Minimum</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>18</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="0" column="2">
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <spacer name="horizontalSpacer_13">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Minimum</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>18</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="1" column="2">
+    <widget class="QGroupBox" name="groupBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="toolTip">
+      <string>Recieved satellites and their location in the sky.</string>
+     </property>
+     <property name="title">
+      <string>Sky Map</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
        <widget class="GnssPosWidget" name="gnssPosWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>200</width>
+          <height>0</height>
+         </size>
         </property>
        </widget>
       </item>

@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <gpio_pin_definitions.h>
+#include <muondetector_structs.h>
 
 struct CalibStruct;
 struct UbxTimeMarkStruct;
@@ -22,25 +23,25 @@ signals:
     void setDacVoltage(uint8_t ch, float val);
     void biasVoltageCalculated(float vbias);
     void biasCurrentCalculated(float ibias);
-    void adcModeChanged(quint8 mode);
+    void adcModeChanged(ADC_SAMPLING_MODE mode);
     void gpioInhibitChanged(bool inhibitState);
     void mqttInhibitChanged(bool inhibitState);
     void biasEnableChanged(bool state);
     void preamp1EnableChanged(bool state);
     void preamp2EnableChanged(bool state);
     void polarityChanged(bool pol1, bool pol2);
-    void timingSelectionChanged(uint8_t sel);
-    void triggerSelectionChanged(GPIO_PIN signal);
+    void timingSelectionChanged(TIMING_MUX_SELECTION sel);
+    void triggerSelectionChanged(GPIO_SIGNAL signal);
     void gainSwitchChanged(bool state);
 
 public slots:
     void onCalibReceived(bool valid, bool eepromValid, quint64 id, const QVector<CalibStruct>& calibList);
     void onAdcSampleReceived(uint8_t channel, float value);
     void onDacReadbackReceived(uint8_t channel, float value);
-    void onInputSwitchReceived(uint8_t index);
+    void onInputSwitchReceived(TIMING_MUX_SELECTION sel);
     void onBiasSwitchReceived(bool state);
     void onPreampSwitchReceived(uint8_t channel, bool state);
-    void onTriggerSelectionReceived(GPIO_PIN signal);
+    void onTriggerSelectionReceived(GPIO_SIGNAL signal);
     void onGainSwitchReceived(bool state);
     void onTemperatureReceived(float temp);
     void onTimepulseReceived();
@@ -51,6 +52,7 @@ public slots:
     void onTimeMarkReceived(const UbxTimeMarkStruct& tm);
     void onPolaritySwitchReceived(bool pol1, bool pol2);
     void onUiEnabledStateChange(bool connected);
+    void onDaemonVersionReceived(MuonPi::Version::Version hw_ver, MuonPi::Version::Version sw_ver);
 
 private slots:
     void on_dacSpinBox1_valueChanged(double arg1);
@@ -62,6 +64,7 @@ private slots:
     void on_dacSlider3_valueChanged(int value);
     void on_dacSlider4_valueChanged(int value);
     void on_gpioInhibitCheckBox_clicked(bool checked);
+    void on_mqttInhibitCheckBox_clicked(bool checked);
     void onPolarityCheckBoxClicked(bool checked);
     void on_timingSelectionComboBox_currentIndexChanged(int index);
     void on_adcTriggerSelectionComboBox_currentIndexChanged(int index);

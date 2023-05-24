@@ -27,11 +27,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define swap(a, b)     \
-    {                  \
-        int16_t t = a; \
-        a = b;         \
-        b = t;         \
+#define adafruit_swap(a, b) \
+    {                       \
+        int16_t t = a;      \
+        a = b;              \
+        b = t;              \
     }
 
 class Adafruit_GFX {

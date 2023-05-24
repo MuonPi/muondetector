@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>658</width>
-    <height>638</height>
+    <width>588</width>
+    <height>619</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,8 +26,8 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
-   <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0" colspan="4">
+   <layout class="QGridLayout" name="gridLayout_5">
+    <item row="0" column="0" colspan="2">
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
        <widget class="QLabel" name="ipLabel">
@@ -46,6 +46,9 @@
         </property>
         <property name="focusPolicy">
          <enum>Qt::WheelFocus</enum>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter the hostname or IP adress of your MuonPi.&lt;br/&gt;&lt;br/&gt;Recent and found devices are shown in the drop-down menu.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="locale">
          <locale language="English" country="UnitedStates"/>
@@ -114,17 +117,27 @@
        </widget>
       </item>
       <item>
-       <spacer name="horizontalSpacer_3">
+       <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>40</width>
+          <width>20</width>
           <height>20</height>
          </size>
         </property>
        </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="networkSearchButton">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Probe the network for active stations (only daemon &amp;gt;=2.1.0).&lt;br/&gt;Found devices will be added to the drop-down menu.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>network search</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
@@ -133,15 +146,21 @@
       <property name="enabled">
        <bool>false</bool>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
-       <item>
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="0" column="0">
         <widget class="QGroupBox" name="groupBox">
+         <property name="toolTip">
+          <string/>
+         </property>
          <property name="title">
           <string>Thresholds</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_2">
           <item row="1" column="0" colspan="2">
            <widget class="QPushButton" name="saveDacButton">
+            <property name="toolTip">
+             <string>Write Threshold into the DAC memory on the MuonPi HAT.</string>
+            </property>
             <property name="text">
              <string>Store DAC settings</string>
             </property>
@@ -155,6 +174,9 @@
             <layout class="QVBoxLayout" name="verticalLayout">
              <item>
               <widget class="QwtSlider" name="discr1Slider">
+               <property name="toolTip">
+                <string>Threshold for Channel 1 in millivolt [mV].</string>
+               </property>
                <property name="upperBound">
                 <double>1000.000000000000000</double>
                </property>
@@ -190,6 +212,9 @@
              </item>
              <item>
               <widget class="QPushButton" name="discr1Save">
+               <property name="toolTip">
+                <string>Set the selected threshold.</string>
+               </property>
                <property name="text">
                 <string>Set</string>
                </property>
@@ -209,6 +234,9 @@
             <layout class="QVBoxLayout" name="verticalLayout_2">
              <item>
               <widget class="QwtSlider" name="discr2Slider">
+               <property name="toolTip">
+                <string>Threshold for Channel 2 in millivolt [mV].</string>
+               </property>
                <property name="upperBound">
                 <double>1000.000000000000000</double>
                </property>
@@ -244,6 +272,9 @@
              </item>
              <item>
               <widget class="QPushButton" name="discr2Save">
+               <property name="toolTip">
+                <string>Set the selected threshold.</string>
+               </property>
                <property name="text">
                 <string>Set</string>
                </property>
@@ -255,34 +286,53 @@
          </layout>
         </widget>
        </item>
-       <item>
+       <item row="1" column="0">
         <widget class="QGroupBox" name="groupBox_2">
          <property name="title">
           <string>Bias</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout_4">
-          <item row="3" column="0">
-           <widget class="QLabel" name="biasPowerLabel">
-            <property name="frameShape">
-             <enum>QFrame::Box</enum>
+         <layout class="QGridLayout" name="gridLayout">
+          <item row="0" column="0" colspan="2">
+           <widget class="QComboBox" name="biasControlTypeComboBox">
+            <property name="toolTip">
+             <string>Select BIAS control backend.</string>
             </property>
-            <property name="text">
-             <string>Bias OFF</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
+            <item>
+             <property name="text">
+              <string>Bias DAC Control</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Bias Voltage</string>
+             </property>
+            </item>
            </widget>
           </item>
-          <item row="3" column="1">
-           <widget class="QPushButton" name="biasPowerButton">
-            <property name="text">
-             <string>Enable</string>
+          <item row="1" column="0" colspan="2">
+           <widget class="QSlider" name="biasVoltageSlider">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select bias control voltage.&lt;br/&gt;&lt;br/&gt;See Section P&lt;span style=&quot; font-style:italic;&quot;&gt;arameter&lt;/span&gt; to check the bias voltage.&lt;br/&gt;Lower control voltage =&amp;gt; higher bias voltage.&lt;br/&gt;Higher control volatege =&amp;gt; lower bias voltage.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="value">
+             <number>10</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
             </property>
            </widget>
           </item>
           <item row="2" column="0" colspan="2">
            <widget class="QDoubleSpinBox" name="biasVoltageDoubleSpinBox">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select bias control voltage.&lt;br/&gt;&lt;br/&gt;See Section P&lt;span style=&quot; font-style:italic;&quot;&gt;arameter&lt;/span&gt; to check the bias voltage.&lt;br/&gt;Lower control voltage =&amp;gt; higher bias voltage.&lt;br/&gt;Higher control volatege =&amp;gt; lower bias voltage.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
@@ -300,40 +350,33 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="0" colspan="2">
-           <widget class="QSlider" name="biasVoltageSlider">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
+          <item row="3" column="0">
+           <widget class="QLabel" name="biasPowerLabel">
+            <property name="frameShape">
+             <enum>QFrame::Box</enum>
             </property>
-            <property name="value">
-             <number>10</number>
+            <property name="text">
+             <string>Bias OFF</string>
             </property>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
-          <item row="0" column="0" colspan="2">
-           <widget class="QComboBox" name="biasControlTypeComboBox">
-            <item>
-             <property name="text">
-              <string>Bias DAC Control</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Bias Voltage</string>
-             </property>
-            </item>
+          <item row="3" column="1">
+           <widget class="QPushButton" name="biasPowerButton">
+            <property name="toolTip">
+             <string>Enable/Disable the bias voltage supply.</string>
+            </property>
+            <property name="text">
+             <string>Enable</string>
+            </property>
            </widget>
           </item>
          </layout>
         </widget>
        </item>
-       <item>
+       <item row="2" column="0">
         <widget class="QGroupBox" name="groupBox_3">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
@@ -358,6 +401,9 @@
               <width>54</width>
               <height>24</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Rate of detections in a single channel.&lt;br/&gt;&lt;br/&gt;Moving average.&lt;br/&gt;Use the UBXRATE vs TIME scan in the &lt;span style=&quot; font-style:italic;&quot;&gt;Scan&lt;/span&gt; tab for more accurate rate measurements.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>xRate</string>
@@ -431,6 +477,9 @@
               <height>24</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Rate of coincident detections both channels.&lt;br/&gt;&lt;br/&gt;Moving average.&lt;br/&gt;Use the UBXRATE vs TIME scan in the &lt;span style=&quot; font-style:italic;&quot;&gt;Scan&lt;/span&gt; tab for more accurate rate measurements.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>aRate</string>
             </property>
@@ -478,6 +527,9 @@
               <height>24</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Total count of events. (aka uBlox counter)&lt;br/&gt;&lt;br/&gt;Counter has 16bit width. Rollover after 2&lt;span style=&quot; vertical-align:super;&quot;&gt;16 &lt;/span&gt;= 65536 events.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>count</string>
             </property>
@@ -492,7 +544,7 @@
       </layout>
      </widget>
     </item>
-    <item row="1" column="2">
+    <item row="1" column="1">
      <widget class="QTabWidget" name="tabWidget">
       <property name="enabled">
        <bool>false</bool>

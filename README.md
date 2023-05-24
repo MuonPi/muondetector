@@ -76,6 +76,13 @@ or
 
 It may be when starting for the first time that, if the daemon is not started as a service, the data folder structure cannot be written due to insufficient rights. Starting the daemon with sudo-er rights should be avoided. Here, the folder structure can be created by hand to solve the issue: copy paste the hashed folder name from the error output of the daemon when started without folder structure and create the folder with `sudo mkdir /var/muondetector/[Hashed Name]` with `notUploadedData` and `uploadedData` as sub-folders. Then, change the user rights with `sudo chown -R pi:pi /var/muondetector`. When restarted, the daemon should be able to write the data. 
 
+#### Manjaro
+
+The QT libraries are named differently in Manjaro.
+For successful installation, changes to the CMake files have to be made: In `gui.cmake` both occurences of `qwt-qt5` have to be changed to `qwt`.
+Compillation can then start as usual with `cmake <source_folder>`, `make` and `make install`.
+
+
 ## RUNNING THE SOFTWARE
 
 ### Version < 1.1.2

@@ -56,9 +56,7 @@
 
 static bool parseArgs(QStringList& args, QVariantMap& parameters)
 {
-
     while (!args.isEmpty()) {
-
         QString param = args.takeFirst();
 
         if (param.startsWith("--help")) {
@@ -70,13 +68,11 @@ static bool parseArgs(QStringList& args, QVariantMap& parameters)
         }
 
         if (param.startsWith("--plugin.")) {
-
             param.remove(0, 9);
 
             if (args.isEmpty() || args.first().startsWith("--")) {
                 parameters[param] = true;
             } else {
-
                 QString value = args.takeFirst();
 
                 if (value == "true" || value == "on" || value == "enabled") {

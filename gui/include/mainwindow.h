@@ -5,15 +5,19 @@
 #include <QStandardItemModel>
 #include <QTime>
 #include <QVector>
-#include <gpio_pin_definitions.h>
-#include <tcpconnection.h>
 
 // for sig handling:
 #include <sys/types.h>
 
+#include <config.h>
+#include <gpio_pin_definitions.h>
+#include <mqtthandler.h>
+#include <tcpconnection.h>
+
 struct I2cDeviceEntry;
 struct CalibStruct;
-struct GeodeticPos;
+struct GnssPosStruct;
+struct PositionModeConfig;
 struct GnssConfigStruct;
 class GnssSatellite;
 class CalibForm;
@@ -24,7 +28,7 @@ struct GnssMonHwStruct;
 struct GnssMonHw2Struct;
 struct LogInfoStruct;
 struct UbxTimeMarkStruct;
-
+enum class ADC_SAMPLING_MODE;
 enum class TCP_MSG_KEY : quint16;
 
 namespace Ui {
@@ -45,10 +49,11 @@ signals:
     void gpioRates(quint8 whichrate, QVector<QPointF> rate);
     void tcpDisconnected();
     void setUiEnabledStates(bool enabled);
-    void geodeticPos(const GeodeticPos& pos);
+    void geodeticPos(const GnssPosStruct& pos);
+    void positionModeConfigReceived(const PositionModeConfig& posconfig);
     void adcSampleReceived(uint8_t channel, float value);
     void adcTraceReceived(const QVector<float>& sampleBuffer);
-    void inputSwitchReceived(uint8_t);
+    void inputSwitchReceived(TIMING_MUX_SELECTION);
     void dacReadbackReceived(uint8_t channel, float value);
     void biasSwitchReceived(bool state);
     void preampSwitchReceived(uint8_t channel, bool state);
@@ -73,30 +78,33 @@ signals:
     void ubxUptimeReceived(quint32 val);
     void gpsTP5Received(const UbxTimePulseStruct& tp);
     void histogramReceived(const Histogram& h);
-    void triggerSelectionReceived(GPIO_PIN signal);
+    void triggerSelectionReceived(GPIO_SIGNAL signal);
     void timepulseReceived();
     void adcModeReceived(quint8 mode);
     void logInfoReceived(const LogInfoStruct& lis);
     void mqttStatusChanged(bool connected);
+    void mqttStatusChanged(MuonPi::MqttHandler::Status status);
     void timeMarkReceived(const UbxTimeMarkStruct&);
     void polaritySwitchReceived(bool pol1, bool pol2);
     void gpioInhibitReceived(bool inhibit);
     void mqttInhibitReceived(bool inhibit);
+    void daemonVersionReceived(MuonPi::Version::Version hw_ver, MuonPi::Version::Version sw_ver);
 
 public slots:
     void receivedTcpMessage(TcpMessage tcpMessage);
-    void receivedGpioRisingEdge(GPIO_PIN pin);
+    void receivedGpioRisingEdge(GPIO_SIGNAL pin);
     void sendRequestUbxMsgRates();
     void sendSetUbxMsgRateChanges(QMap<uint16_t, int> changes);
     void onSendUbxReset();
     void makeConnection(QString ipAddress, quint16 port);
-    void onTriggerSelectionChanged(GPIO_PIN signal);
+    void onTriggerSelectionChanged(GPIO_SIGNAL signal);
     void onHistogramCleared(QString histogramName);
-    void onAdcModeChanged(quint8 mode);
+    void onAdcModeChanged(ADC_SAMPLING_MODE mode);
     void onRateScanStart(uint8_t ch);
     void gpioInhibit(bool inhibit);
     void mqttInhibit(bool inhibit);
     void onPolarityChanged(bool pol1, bool pol2);
+    void onPosModeConfigChanged(const PositionModeConfig& posconfig);
 
 private slots:
     void resetAndHit();
@@ -110,8 +118,9 @@ private slots:
 
     void onIpButtonClicked();
     void connected();
+    void connection_info(const QString message);
     void connection_error(int error_code, const QString message);
-    void sendInputSwitch(uint8_t id);
+    void sendInputSwitch(TIMING_MUX_SELECTION sel);
 
     void on_discr1Save_clicked();
     void on_discr2Save_clicked();
@@ -126,6 +135,8 @@ private slots:
     void onSetTP5Config(const UbxTimePulseStruct& tp);
     void on_biasVoltageDoubleSpinBox_valueChanged(double arg1);
     void on_saveDacButton_clicked();
+    void onDaemonVersionReceived(MuonPi::Version::Version hw_ver, MuonPi::Version::Version sw_ver);
+    void onBiasSwitchReceived(bool biasEnabled);
 
 private:
     Ui::MainWindow* ui;
@@ -167,6 +178,7 @@ private:
     double biasCalibSlope = 1.;
     double minBiasVoltage = 0.;
     double maxBiasVoltage = 3.3;
+    QTimer m_connection_timeout {};
 };
 
 #endif // MAINWINDOW_H

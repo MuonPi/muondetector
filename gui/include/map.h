@@ -2,8 +2,9 @@
 #define MAP_H
 
 #include <QWidget>
+#include <ublox_structs.h>
 
-struct GeodeticPos;
+struct PositionModeConfig;
 
 namespace Ui {
 class Map;
@@ -14,8 +15,19 @@ class Map : public QWidget {
 
 public:
     explicit Map(QWidget* parent = nullptr);
-    void onGeodeticPosReceived(GeodeticPos pos);
     ~Map();
+
+signals:
+    void posModeConfigChanged(const PositionModeConfig& posconfig);
+
+public slots:
+    void onGeodeticPosReceived(const GnssPosStruct& pos);
+    void onPosConfigReceived(const PositionModeConfig& pos);
+    void onUiEnabledStateChange(bool connected);
+    void coordinateQmlSignal(double lat, double lon);
+
+private slots:
+    void on_setConfigPushButton_clicked();
 
 private:
     QObject* mapComponent = nullptr;

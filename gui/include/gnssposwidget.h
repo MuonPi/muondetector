@@ -2,6 +2,7 @@
 #define GNSSPOSWIDGET_H
 
 #include <QDateTime>
+#include <QEvent>
 #include <QHash>
 #include <QMap>
 #include <QPainterPath>
@@ -39,6 +40,7 @@ public slots:
     void onSatsReceived(const QVector<GnssSatellite>& satlist);
     void replot();
     void onUiEnabledStateChange(bool connected);
+    void changeEvent(QEvent* e);
 
 private slots:
     void on_satSizeSpinBox_valueChanged(int arg1);
@@ -55,7 +57,7 @@ private:
     QPolygonF getCartPolygonUnity(const QPointF& polarPos);
     void drawPolarPixMap(QPixmap& pm);
     void drawCartesianPixMap(QPixmap& pm);
-    int alphaFromCnr(int cnr);
+    static int alphaFromCnr(int cnr, int range);
 };
 
 inline uint qHash(const QPoint& p)

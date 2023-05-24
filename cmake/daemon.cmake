@@ -37,8 +37,12 @@ set(MUONDETECTOR_I2C_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/tca9546a.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/ubloxi2c.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/x9119.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/mic184.cpp"
 
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/i2cdevice.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/i2cutil.cpp"
+
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2cdevices.cpp"
     )
 
 set(MUONDETECTOR_DAEMON_SOURCE_FILES
@@ -47,12 +51,14 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/qtserialublox_processmessages.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/pigpiodhandler.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/daemon.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/custom_io_operators.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/filehandler.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/calibration.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/gpio_mapping.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/logengine.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/geohash.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/kalman_gnss_filter.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/geoposmanager.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/ratebuffer.cpp"
 
     "${MUONDETECTOR_I2C_SOURCE_FILES}"
     "${MUONDETECTOR_SPI_SOURCE_FILES}"
@@ -77,10 +83,12 @@ set(MUONDETECTOR_I2C_HEADER_FILES
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/tca9546a.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/ubloxi2c.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/x9119.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/mic184.h"
 
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/i2cdevice.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/addresses.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2c/i2cutil.h"
 
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/device_types.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/hardware/i2cdevices.h"
     )
 
@@ -94,7 +102,6 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/qtserialublox.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/daemon.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/pigpiodhandler.h"
-    "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/custom_io_operators.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/unixtime_from_gps.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/filehandler.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/calibration.h"
@@ -102,6 +109,9 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/gpio_mapping.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/logengine.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/geohash.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/kalman_gnss_filter.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/geoposmanager.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/ratebuffer.h"
 
     "${MUONDETECTOR_I2C_HEADER_FILES}"
     "${MUONDETECTOR_SPI_HEADER_FILES}"

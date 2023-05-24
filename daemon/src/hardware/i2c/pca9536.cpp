@@ -1,4 +1,6 @@
 #include "hardware/i2c/pca9536.h"
+#include <iomanip>
+#include <iostream>
 #include <stdint.h>
 
 /*
@@ -9,7 +11,7 @@ bool PCA9536::setOutputPorts(uint8_t portMask)
 {
     unsigned char data = ~portMask;
     startTimer();
-    if (1 != writeReg(CONFIG_REG, &data, 1)) {
+    if (1 != writeReg(REG::CONFIG, &data, 1)) {
         return false;
     }
     stopTimer();
@@ -19,7 +21,7 @@ bool PCA9536::setOutputPorts(uint8_t portMask)
 bool PCA9536::setOutputState(uint8_t portMask)
 {
     startTimer();
-    if (1 != writeReg(OUTPUT_REG, &portMask, 1)) {
+    if (1 != writeReg(REG::OUTPUT, &portMask, 1)) {
         return false;
     }
     stopTimer();
@@ -30,7 +32,7 @@ uint8_t PCA9536::getInputState()
 {
     uint8_t inport = 0x00;
     startTimer();
-    readReg(INPUT_REG, &inport, 1);
+    readReg(REG::INPUT, &inport, 1);
     stopTimer();
     return inport & 0x0f;
 }
@@ -39,5 +41,38 @@ bool PCA9536::devicePresent()
 {
     uint8_t inport = 0x00;
     // read input port
-    return (1 == readReg(INPUT_REG, &inport, 1));
+    return (1 == readReg(REG::INPUT, &inport, 1));
+}
+
+bool PCA9536::identify()
+{
+    if (fMode == MODE_FAILED)
+        return false;
+    if (!devicePresent())
+        return false;
+    uint8_t bytereg { 0 };
+
+    if (!readByte(static_cast<uint8_t>(REG::INPUT), &bytereg)) {
+        // there was an error
+        return false;
+    }
+    if ((bytereg & 0xf0) != 0xf0)
+        return false;
+
+    if (!readByte(static_cast<uint8_t>(REG::POLARITY), &bytereg)) {
+        // there was an error
+        return false;
+    }
+    if ((bytereg & 0xf0) != 0x00)
+        return false;
+
+    if (!readByte(static_cast<uint8_t>(REG::CONFIG), &bytereg)) {
+        // there was an error
+        return false;
+    }
+    if ((bytereg & 0xf0) != 0xf0)
+        return false;
+    if (readByte(0x04, &bytereg))
+        return false;
+    return true;
 }

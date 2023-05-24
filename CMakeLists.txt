@@ -15,7 +15,7 @@ execute_process(COMMAND bash "-c" "git rev-parse --short HEAD | tr -d '\n'"
 
 
 
-if ((${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l"))
+if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "^(armv7|armv6)")
     set(MUONDETECTOR_BUILD_DAEMON ON)
     set(MUONDETECTOR_ON_RASPBERRYPI ON)
 endif ()
@@ -28,8 +28,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/output/bin")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-
 
 add_compile_options(
     -Wall
@@ -57,8 +55,19 @@ if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
 add_compile_options(
     -mthumb
     -march=armv7-a
+    -mfpu=vfp
+    -mfloat-abi=hard
     )
 endif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
+
+if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv6l")
+add_compile_options(
+    -march=armv6z
+    -mfpu=vfp
+    -mfloat-abi=hard
+    -mtune=arm1176jzf-s
+    )
+endif (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv6l")
 
 
 if (NOT (WIN32 OR APPLE))
@@ -71,7 +80,7 @@ endif ()
 set(CPACK_RESOURCE_FILE_LICENSE "${MUONDETECTOR_CONFIG_DIR}/license")
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/output/packages")
 set(CPACK_PACKAGE_VENDOR "MuonPi.org")
-set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}-hotfix2")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}${PROJECT_VERSION_ADDITIONAL}")
 set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
@@ -85,6 +94,7 @@ set(CMAKE_AUTORCC ON)
 
 if(WIN32)
     set(QWT_DIR "C:/Qwt-6.2.0")
+    set(MOSQUITTO_DIR "C:/mosquitto/devel/")
     set(OPENSSL_DIR "C:/Qt/Tools/OpenSSL/Win_x64")
     set(QTROOT "C:/Qt")
     set(QTTOOLS "${QTROOT}/Tools")
