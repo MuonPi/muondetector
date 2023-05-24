@@ -3,7 +3,12 @@ muondetector-daemon (2.1.0) ; urgency=low
   * Bugfixes:
   - removed wrong QT connect call which resulted in a warning in log messages after daemon startup
   - fixed reconnect to MQTT broker after connection was lost temporarily
-  - fixed bug in I2C subsystem which lead to a stuck bus after certain read operations and preventing detection of a device in the next logical read access
+  - 
+6cecacd
+May 24, 2023
+Git stats
+
+1,254 c
 
   * Updates:
   - restructured data logging system: 
