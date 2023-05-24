@@ -83,7 +83,7 @@ MainWindow::MainWindow(QWidget* parent)
         if (addresses == nullptr) {
             return;
         }
-        unsigned device_counter{};
+        unsigned device_counter {};
         for (auto device : devices) {
             // check if device is not a GUI (might show other GUIs later on)
             if (device.first == static_cast<quint16>(NetworkDiscovery::DeviceType::GUI)) {
@@ -992,8 +992,8 @@ void MainWindow::connected()
 
 void MainWindow::connection_info(const QString message)
 {
-   ui->ipStatusLabel->setStyleSheet("");
-   ui->ipStatusLabel->setText(message);
+    ui->ipStatusLabel->setStyleSheet("");
+    ui->ipStatusLabel->setText(message);
 }
 
 void MainWindow::connection_error(int error_code, const QString message)

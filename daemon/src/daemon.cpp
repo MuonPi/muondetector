@@ -598,21 +598,24 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     // connect to the pigpio daemon interface for gpio control
     connectToPigpiod();
 
-/*
-//<<<<<<< HEAD
-    // set up the rate buffer for all GPIO signals
-    rateBuffer.clear();
-    connect(pigHandler, &PigpiodHandler::event, &rateBuffer, &RateBuffer::onEvent);
-    connect(&rateBuffer, &RateBuffer::filteredEvent, this, &Daemon::sendGpioPinEvent);
-    connect(&rateBuffer, &RateBuffer::filteredEvent, this, &Daemon::onGpioPinEvent);
+    // set up rate buffers for all GPIO input signals
+    for (auto [signal, pin] : GPIO_PINMAP) {
+        if (GPIO_SIGNAL_MAP.at(signal).direction == DIR_IN) {
+            auto ratebuf = std::make_shared<EventRateBuffer>(pin);
+            connect(pigHandler, &PigpiodHandler::event, ratebuf.get(), &EventRateBuffer::onEvent);
+            connect(ratebuf.get(), &EventRateBuffer::filteredEvent, this, &Daemon::sendGpioPinEvent);
+            connect(ratebuf.get(), &EventRateBuffer::filteredEvent, this, &Daemon::onGpioPinEvent);
 
-    //	connect(this, &Daemon::eventInterval, this, [this](quint64 nsecs)
-    connect(&rateBuffer, &RateBuffer::eventIntervalSignal, this, [this](unsigned int gpio, std::chrono::nanoseconds ns) {
-        if (m_histo_map.find("gpioEventInterval") != m_histo_map.end()
-            && (GPIO_PINMAP[config.eventTrigger] == gpio)) {
-            m_histo_map["gpioEventInterval"]->fill(1e-6 * ns.count());
+            connect(ratebuf.get(), &EventRateBuffer::eventIntervalSignal, this, [this](unsigned int gpio, std::chrono::nanoseconds ns) {
+                if (m_histo_map.find("gpioEventInterval") != m_histo_map.end()
+                    && (GPIO_PINMAP[config.eventTrigger] == gpio)) {
+                    m_histo_map["gpioEventInterval"]->fill(1e-6 * ns.count());
+                }
+            });
+
+            m_gpio_ratebuffers.emplace(pin, ratebuf);
         }
-    });
+    }
 
     connect(this, &Daemon::eventInterval, this, [this](quint64 nsecs)
         //	connect(&rateBuffer, &RateBuffer::eventIntervalSignal, this, [this](unsigned int gpio, std::chrono::nanoseconds ns)
@@ -623,41 +626,9 @@ Daemon::Daemon(configuration cfg, QObject* parent)
                 }
             }
         });
-//=======
-*/
-    // set up rate buffers for all GPIO input signals
-    for (auto [signal, pin] : GPIO_PINMAP) {
-        if (GPIO_SIGNAL_MAP.at(signal).direction == DIR_IN) {
-            auto ratebuf = std::make_shared<EventRateBuffer>(pin);
-            connect(pigHandler, &PigpiodHandler::event, ratebuf.get(), &EventRateBuffer::onEvent);
-            connect(ratebuf.get(), &EventRateBuffer::filteredEvent, this, &Daemon::sendGpioPinEvent);
-            connect(ratebuf.get(), &EventRateBuffer::filteredEvent, this, &Daemon::onGpioPinEvent);
-            
-            connect(ratebuf.get(), &EventRateBuffer::eventIntervalSignal, this, [this](unsigned int gpio, std::chrono::nanoseconds ns) {
-                if (m_histo_map.find("gpioEventInterval") != m_histo_map.end()
-                    && (GPIO_PINMAP[config.eventTrigger] == gpio)) 
-                {
-                    m_histo_map["gpioEventInterval"]->fill(1e-6 * ns.count());
-                }
-            });
-
-            m_gpio_ratebuffers.emplace(pin, ratebuf);
-        }
-    }
-
-    connect(this, &Daemon::eventInterval, this, [this](quint64 nsecs)
-    //	connect(&rateBuffer, &RateBuffer::eventIntervalSignal, this, [this](unsigned int gpio, std::chrono::nanoseconds ns)
-    {
-        if (m_histo_map.find("gpioEventIntervalShort") != m_histo_map.end()) {
-            if (nsecs / 1000 <= m_histo_map["gpioEventIntervalShort"]->getMax()) {
-                m_histo_map["gpioEventIntervalShort"]->fill(1e-3 * nsecs);
-            }
-        }
-    });
 
     // set up histograms
     setupHistos();
-//>>>>>>> dev
 
     // establish ublox gnss module connection
     connectToGps();
@@ -793,19 +764,7 @@ void Daemon::connectToPigpiod()
 
     timespec_get(&lastRateInterval, TIME_UTC);
     startOfProgram = lastRateInterval;
-//<<<<<<< HEAD
-/*
-//=======
-    connect(pigHandler, &PigpiodHandler::signal, this, [this](uint8_t gpio_pin) {
-        rateCounterIntervalActualisation();
-        if (gpio_pin == GPIO_PINMAP[EVT_XOR]) {
-            xorCounts.back()++;
-        } else if (gpio_pin == GPIO_PINMAP[EVT_AND]) {
-            andCounts.back()++;
-        }
-    });
-//>>>>>>> dev
-*/
+
     pigThread->start();
     rateBufferReminder.setInterval(rateBufferInterval);
     rateBufferReminder.setSingleShot(false);
