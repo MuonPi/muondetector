@@ -111,7 +111,7 @@ bool i2cDevice::devicePresent()
 void i2cDevice::setAddress(uint8_t address)
 { //pointer to our device on the i2c-bus
     fAddress = address;
-    int res = ioctl(fHandle, I2C_SLAVE, fAddress); //i.g. Specify the address of the I2C Slave to communicate with
+    int res = ioctl(fHandle, I2C_SLAVE, fAddress); //i.e. specify the address of the I2C slave to communicate with
     if (res < 0) {
         res = ioctl(fHandle, I2C_SLAVE_FORCE, fAddress);
         if (res < 0) {
@@ -182,12 +182,17 @@ int i2cDevice::writeReg(uint8_t reg, uint8_t* buf, int nBytes)
     // block sizes of up to 32 bytes only
     //i2c_smbus_write_i2c_block_data(int file, reg, nBytes, buf);
 
-    uint8_t writeBuf[nBytes + 1];
-
-    writeBuf[0] = reg; // first byte is register address
-    for (int i = 0; i < nBytes; i++)
-        writeBuf[i + 1] = buf[i];
-    int n = write(writeBuf, nBytes + 1);
+    uint8_t* wbuf = new uint8_t[nBytes + 1];
+    if (!wbuf)
+        return 0;
+    int n { 0 };
+    try {
+        std::copy(buf, buf + nBytes, wbuf + 1);
+        wbuf[0] = reg;
+        n = write(wbuf, nBytes + 1);
+    } catch (...) {
+    }
+    delete[] wbuf;
     return n - 1;
 }
 
@@ -257,7 +262,10 @@ bool i2cDevice::readByte(uint8_t regAddr, uint8_t* data)
 */
 int16_t i2cDevice::readBytes(uint8_t regAddr, uint16_t length, uint8_t* data)
 {
-    return readReg(regAddr, data, length);
+    int nread {};
+    size_t retry_ctr { 0 };
+    while ((nread = readReg(regAddr, data, length)) != length && retry_ctr++ < fNrRetries) { };
+    return nread;
 }
 
 /** write a single bit in an 8-bit device register.
@@ -326,8 +334,10 @@ bool i2cDevice::writeByte(uint8_t regAddr, uint8_t data)
 */
 bool i2cDevice::writeBytes(uint8_t regAddr, uint16_t length, uint8_t* data)
 {
-    int n = writeReg(regAddr, data, length);
-    return (n == length);
+    int nwritten {};
+    size_t retry_ctr { 0 };
+    while ((nwritten = writeReg(regAddr, data, length)) != length && retry_ctr++ < fNrRetries) { };
+    return nwritten;
 }
 
 /** Write multiple words to a 16-bit device register.
@@ -338,7 +348,8 @@ bool i2cDevice::writeBytes(uint8_t regAddr, uint16_t length, uint8_t* data)
 */
 bool i2cDevice::writeWords(uint8_t regAddr, uint16_t length, uint16_t* data)
 {
-    int8_t count = 0;
+    int nwritten {};
+    size_t retry_ctr { 0 };
     uint8_t buf[512];
 
     // Should do potential byteswap and call writeBytes() really, but that
@@ -349,13 +360,14 @@ bool i2cDevice::writeWords(uint8_t regAddr, uint16_t length, uint16_t* data)
         buf[i * 2 + 1] = data[i];
     }
 
-    count = writeReg(regAddr, buf, length * 2);
-    if (count < 0) {
-        fprintf(stderr, "Failed to write device(%d): %s\n", count, ::strerror(errno));
-        return (false);
-    } else if (count != length * 2) {
-        fprintf(stderr, "Short write to device, expected %d, got %d\n", length + 1, count);
-        return (false);
+    while ((nwritten = writeReg(regAddr, buf, length * 2)) != length * 2 && retry_ctr++ < fNrRetries) { };
+
+    if (nwritten < 0) {
+        //fprintf(stderr, "Failed to write to device(%d): %s\n", nwritten, ::strerror(errno));
+        return false;
+    } else if (nwritten != length * 2) {
+        //fprintf(stderr, "Short write to device: expected %d, got %d\n", length * 2, nwritten);
+        return false;
     }
     return true;
 }
@@ -397,16 +409,18 @@ bool i2cDevice::readWord(uint16_t* data)
 */
 int16_t i2cDevice::readWords(uint8_t regAddr, uint16_t length, uint16_t* data)
 {
-    int16_t count = 0;
+    int nread {};
+    size_t retry_ctr { 0 };
     uint8_t buf[512];
 
-    count = readReg(regAddr, buf, length * 2);
-    if (count < 0) {
-        fprintf(stderr, "Failed to read device(%d): %s\n", count, ::strerror(errno));
+    while ((nread = readReg(regAddr, buf, length * 2)) != length * 2 && retry_ctr++ < fNrRetries) { };
+
+    if (nread < 0) {
+        //fprintf(stderr, "Failed to read device(%d): %s\n", nread, ::strerror(errno));
         return -1;
-    } else if (count != length * 2) {
-        fprintf(stderr, "Short read from device, expected %d, got %d\n", length * 2, count);
-        return count / 2;
+    } else if (nread != length * 2) {
+        //fprintf(stderr, "Short read from device, expected %d, got %d\n", length * 2, nread);
+        return nread / 2;
     }
 
     for (int i = 0; i < length; i++) {
@@ -414,7 +428,7 @@ int16_t i2cDevice::readWords(uint8_t regAddr, uint16_t length, uint16_t* data)
         data[i] |= buf[i * 2 + 1];
     }
 
-    return count / 2;
+    return nread / 2;
 }
 
 /** Read multiple words.
@@ -424,24 +438,25 @@ int16_t i2cDevice::readWords(uint8_t regAddr, uint16_t length, uint16_t* data)
 */
 int16_t i2cDevice::readWords(uint16_t length, uint16_t* data)
 {
-    int16_t count = 0;
+    int nread {};
+    size_t retry_ctr { 0 };
     uint8_t buf[512];
 
-    count = read(buf, length * 2);
-    if (count < 0) {
-        fprintf(stderr, "Failed to read device(%d): %s\n", count, ::strerror(errno));
+    while ((nread = read(buf, length * 2)) != length * 2 && retry_ctr++ < fNrRetries) { };
+
+    if (nread < 0) {
+        //fprintf(stderr, "Failed to read device(%d): %s\n", nread, ::strerror(errno));
         return -1;
-    } else if (count != length * 2) {
-        fprintf(stderr, "Short read from device, expected %d, got %d\n", length * 2, count);
-        return count / 2;
+    } else if (nread != length * 2) {
+        //fprintf(stderr, "Short read from device, expected %d, got %d\n", length * 2, nread);
+        return nread / 2;
     }
 
     for (int i = 0; i < length; i++) {
         data[i] = buf[i * 2] << 8;
         data[i] |= buf[i * 2 + 1];
     }
-
-    return count / 2;
+    return nread / 2;
 }
 
 void i2cDevice::startTimer()

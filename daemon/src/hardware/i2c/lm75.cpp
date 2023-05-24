@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <iostream>
 #include <stdint.h>
+
 /*
 * LM75 Temperature Sensor
 */
@@ -58,20 +59,14 @@ float LM75::getTemperature()
 
 bool LM75::identify()
 {
-    if (fMode == MODE_FAILED)
-        return false;
-    if (!devicePresent())
-        return false;
-    uint16_t dataword { 0 };
-    uint8_t conf_reg { 0 };
-    // Read the config register
-    if (!readByte(static_cast<uint8_t>(REG::CONF), &conf_reg)) {
-        // there was an error
+    if (fMode == MODE_FAILED) {
         return false;
     }
-    // datasheet: 3 MSBs of conf register "should be kept as zeroes"
-    if ((conf_reg >> 5) != 0)
+    if (!devicePresent()) {
         return false;
+    }
+    uint16_t dataword { 0 };
+    uint8_t conf_reg { 0 };
 
     // read temp register
     if (!readWord(static_cast<uint8_t>(REG::TEMP), &dataword)) {
@@ -79,27 +74,38 @@ bool LM75::identify()
         return false;
     }
     // the 5 LSBs should always read zero
-    if ((dataword & 0x1f) != 0)
+    if ((dataword & 0x1f) != 0) {
         return false;
+    }
     //	if ( ( (dataword & 0x1f) != 0 ) && ( dataword >> 5 ) == 0 ) return false;
+    // Read the config register
+    if (!readByte(static_cast<uint8_t>(REG::CONF), &conf_reg)) {
+        // there was an error
+        return false;
+    }
+    // datasheet: 3 MSBs of conf register "should be kept as zeroes"
+    if ((conf_reg >> 5) != 0) {
+        return false;
+    }
 
     // read Thyst register
     if (!readWord(static_cast<uint8_t>(REG::THYST), &dataword)) {
         // there was an error
         return false;
     }
-    // the 7 MSBs should always read zero
-    if ((dataword & 0x7f) != 0)
+    // the 7 LSBs should always read zero
+    if ((dataword & 0x7f) != 0) {
         return false;
-
+    }
     // read Tos register
     if (!readWord(static_cast<uint8_t>(REG::TOS), &dataword)) {
         // there was an error
         return false;
     }
-    // the 7 MSBs should always read zero
-    if ((dataword & 0x7f) != 0)
+    // the 7 LSBs should always read zero
+    if ((dataword & 0x7f) != 0) {
         return false;
+    }
 
     return true;
 }

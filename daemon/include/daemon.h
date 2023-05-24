@@ -28,6 +28,7 @@
 #include "hardware/device_types.h"
 #include "networkdiscovery.h"
 #include "geoposmanager.h"
+#include "utility/ratebuffer.h"
 
 // from library
 #include <muondetector_structs.h>
@@ -56,8 +57,6 @@ public:
         float biasVoltage { -1.0F };
         bool bias_ON { false };
         GPIO_SIGNAL eventTrigger { EVT_XOR };
-        QString peerAddress { "" };
-        quint16 peerPort { 0 };
         QString serverAddress { "" };
         quint16 serverPort { 0 };
         bool showout { false };
@@ -66,7 +65,7 @@ public:
         bool hi_gain { false };
         QString station_ID { "0" };
         std::array<bool, 2> polarity { true, true };
-        int maxGeohashLength { MuonPi::Settings::log.max_geohash_length };
+        std::size_t maxGeohashLength { MuonPi::Settings::log.max_geohash_length };
         bool storeLocal { false };
         /* GNSS configs */
         bool gnss_dump_raw { false };
@@ -252,7 +251,6 @@ private:
     QHostAddress daemonAddress = QHostAddress::Null;
     quint16 peerPort, daemonPort;
     int verbose, baudrate;
-    int gpsTimeout = 5000;
     bool dumpRaw, configGnss;
     MuonPi::MqttHandler::Status mqttConnectionStatus { MuonPi::MqttHandler::Status::Invalid };
 
@@ -261,9 +259,6 @@ private:
 
     // mqtt
     QPointer<MuonPi::MqttHandler> mqttHandler;
-
-    // rate buffer
-    RateBuffer rateBuffer;
 
     // signal handling
     static int sighupFd[2];
@@ -297,7 +292,7 @@ private:
     Property<Gnss::FixType> m_fix_status {};
 
     QVector<QTcpSocket*> peerList;
-    QList<float> adcSamplesBuffer;
+    std::list<float> adcSamplesBuffer {};
     ADC_SAMPLING_MODE adcSamplingMode { ADC_SAMPLING_MODE::PEAK };
     int currentAdcSampleIndex { -1 };
     QTimer samplingTimer;
@@ -315,8 +310,9 @@ private:
     QPointer<QThread> tcpThread;
 
     configuration config;
-    KalmanGnssFilter m_gnss_pos_kalman { 0.02 };
     GeoPosManager m_geopos_manager;
+    std::map<unsigned int, std::shared_ptr<EventRateBuffer>> m_gpio_ratebuffers {};
+    std::shared_ptr<CounterRateBuffer> m_ublox_ratebuffer {};
 };
 
 #endif // DAEMON_H

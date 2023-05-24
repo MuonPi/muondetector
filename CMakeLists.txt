@@ -29,8 +29,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/output/bin")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-
-
 add_compile_options(
     -Wall
     -O3
@@ -96,7 +94,7 @@ set(CMAKE_AUTORCC ON)
 
 if(WIN32)
     set(QWT_DIR "C:/Qwt-6.2.0")
-    set(MOSQUITTO_DIR "C:/mosquitto")
+    set(MOSQUITTO_DIR "C:/mosquitto/devel/")
     set(OPENSSL_DIR "C:/Qt/Tools/OpenSSL/Win_x64")
     set(QTROOT "C:/Qt")
     set(QTTOOLS "${QTROOT}/Tools")

@@ -1,8 +1,8 @@
 #include "geoposmanager.h"
 #include <QDebug>
 
-constexpr double pi() { return std::acos(-1); }
-constexpr double sqrt2 { std::sqrt(2.) };
+static constexpr double pi() { return 3.14159265358979; }
+static constexpr double sqrt2 { 1.414213562373095 };
 static double sqr(double x) { return x * x; }
 constexpr size_t MIN_HISTO_ENTRIES { 10 };
 
@@ -58,7 +58,8 @@ void GeoPosManager::new_position(const GeoPosition& new_pos)
             m_gnss_pos_kalman.get_longitude(),
             m_gnss_pos_kalman.get_latitude(),
             m_gnss_pos_kalman.get_altitude(),
-            m_gnss_pos_kalman.get_accuracy() / sqrt2, m_gnss_pos_kalman.get_accuracy() / sqrt2
+            m_gnss_pos_kalman.get_accuracy() / sqrt2,
+            m_gnss_pos_kalman.get_accuracy() / sqrt2
         };
         break;
     case PositionModeConfig::FilterType::HistoMpv:
@@ -138,7 +139,7 @@ GeoPosition GeoPosManager::get_pos_from_histos() const
     preliminary_pos.vert_error = m_height_histo->getRMS();
     preliminary_pos.hor_error = m_lat_histo->getRMS() * degree_to_surface_meters;
     preliminary_pos.hor_error *= preliminary_pos.hor_error;
-    preliminary_pos.hor_error += sqr(m_lon_histo->getRMS() * degree_to_surface_meters / std::cos(pi() * preliminary_pos.latitude / 180.));
+    preliminary_pos.hor_error += sqr(m_lon_histo->getRMS() * degree_to_surface_meters / pi() * preliminary_pos.latitude / 180.);
     preliminary_pos.hor_error = std::sqrt(preliminary_pos.hor_error);
     return preliminary_pos;
 }

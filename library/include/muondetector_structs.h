@@ -23,8 +23,6 @@
 
 using EventTime = std::chrono::time_point<std::chrono::system_clock>;
 
-//struct GnssPosStruct;
-
 enum class ADC_SAMPLING_MODE {
     DISABLED = 0,
     PEAK = 1,

@@ -50,18 +50,28 @@ namespace Log {
     constexpr std::chrono::hours rotate_period_default { 7 * 24 };
 }
 namespace Hardware {
+    namespace GNSS {
+        constexpr size_t uart_timeout { 5000 };
+    }
     namespace OLED {
         constexpr int update_interval { 2000 };
     }
     namespace ADC {
-        constexpr int buffer_size { 50 };
-        constexpr int pretrigger { 10 };
-        constexpr int deadtime { 8 };
+        namespace Channel {
+            constexpr std::uint8_t amplitude { 0 }; //!< channel of the adc where the amplitude is sampled
+            constexpr std::uint8_t vcc { 1 }; //!< channel of the adc where vcc voltage is sampled
+            constexpr std::uint8_t bias1 { 2 }; //!< channel of the adc where the divided bias voltage before the current shunt is sampled
+            constexpr std::uint8_t bias2 { 3 }; //!< channel of the adc where the divided bias voltage after the current shunt is sampled
+        }
+        constexpr std::size_t buffer_size { 50 };
+        constexpr std::size_t pretrigger { 10 };
+        constexpr std::chrono::milliseconds deadtime { 8 };
     }
     namespace DAC {
         namespace Channel {
-            constexpr int bias { 2 }; //!< channel of the dac where bias voltage is set
-            constexpr int threshold[2] { 0, 1 }; //!< channel of the dac where thresholds 1 and 2 are set
+            constexpr std::uint8_t bias { 2 }; //!< channel of the dac where bias voltage is set
+            constexpr std::uint8_t threshold[2] { 0, 1 }; //!< channel of the dac where thresholds 1 and 2 are set
+            constexpr std::uint8_t dac4 { 3 };
         }
         namespace Voltage {
             constexpr float bias { 0.5 };
@@ -69,11 +79,11 @@ namespace Hardware {
         }
     }
     namespace GPIO::Clock::Measurement {
-        constexpr int interval { 100 };
-        constexpr int buffer_size { 500 };
+        constexpr std::chrono::milliseconds interval { 100 };
+        constexpr std::size_t buffer_size { 500 };
     }
-    constexpr int trace_sampling_interval { 5 };
-    constexpr int monitor_interval { 5000 };
+    constexpr std::chrono::milliseconds trace_sampling_interval { 5 };
+    constexpr std::chrono::milliseconds monitor_interval { 5000 };
     namespace RateScan {
         constexpr int iterations { 10 };
         constexpr int interval { 400 };
@@ -84,7 +94,7 @@ namespace Hardware {
 
 namespace MuonPi::Settings {
 struct {
-    int max_geohash_length { Config::Log::max_geohash_length_default };
+    std::size_t max_geohash_length { Config::Log::max_geohash_length_default };
     std::chrono::seconds rotate_period { Config::Log::rotate_period_default };
 } log;
 

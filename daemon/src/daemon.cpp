@@ -4,6 +4,7 @@
 #include "networkdiscovery.h"
 #include "utility/geohash.h"
 #include "utility/gpio_mapping.h"
+#include "utility/ratebuffer.h"
 #include <QNetworkInterface>
 #include <QThread>
 #include <Qt>
@@ -27,13 +28,9 @@
 #include <unistd.h>
 
 #define DEGREE_CHARCODE 248
-
 #define XOR_RATE 0
 #define AND_RATE 1
 #define COMBINED_RATE 2
-
-constexpr double pi() { return std::acos(-1); }
-constexpr double sqrt2 { std::sqrt(2.) };
 
 using namespace std;
 using namespace MuonPi;
@@ -167,38 +164,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     : QTcpServer { parent }
     , config { cfg }
 {
-    // first, we must set the locale to be independent of the number format of the system's locale.
-    // We rely on parsing floating point numbers with a decimal point (not a komma) which might fail if not setting the classic locale
-    std::locale::global(std::locale::classic());
-
-    qRegisterMetaType<TcpMessage>("TcpMessage");
-    qRegisterMetaType<GnssPosStruct>("GnssPosStruct");
-    qRegisterMetaType<int32_t>("int32_t");
-    qRegisterMetaType<uint32_t>("uint32_t");
-    qRegisterMetaType<uint16_t>("uint16_t");
-    qRegisterMetaType<uint8_t>("uint8_t");
-    qRegisterMetaType<int8_t>("int8_t");
-    qRegisterMetaType<bool>("bool");
-    qRegisterMetaType<CalibStruct>("CalibStruct");
-    qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
-    qRegisterMetaType<std::vector<GnssConfigStruct>>("std::vector<GnssConfigStruct>");
-    qRegisterMetaType<std::chrono::duration<double>>("std::chrono::duration<double>");
-    qRegisterMetaType<std::string>("std::string");
-    qRegisterMetaType<LogParameter>("LogParameter");
-    qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
-    qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
-    qRegisterMetaType<timespec>("timespec");
-    qRegisterMetaType<GPIO_SIGNAL>("GPIO_SIGNAL");
-    qRegisterMetaType<GnssMonHwStruct>("GnssMonHwStruct");
-    qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
-    qRegisterMetaType<UbxTimeMarkStruct>("UbxTimeMarkStruct");
-    qRegisterMetaType<I2cDeviceEntry>("I2cDeviceEntry");
-    qRegisterMetaType<ADC_SAMPLING_MODE>("ADC_SAMPLING_MODE");
-    qRegisterMetaType<PigpiodHandler::EventEdge>("PigpiodHandler::EventEdge");
-    qRegisterMetaType<EventTime>("EventTime");
-    qRegisterMetaType<MuonPi::Version::Version>("MuonPi::Version::Version");
-    qRegisterMetaType<UbxDynamicModel>("UbxDynamicModel");
-
     // signal handling
     setup_unix_signal_handlers();
     if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sighupFd)) {
@@ -225,9 +190,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         qDebug() << "daemon running in thread " << this->thread()->objectName();
     }
 
-    if (verbose > 3) {
-        qDebug() << "QT version is " << QString::number(QT_VERSION, 16);
-    }
     if (verbose > 3) {
         this->thread()->setObjectName("muondetector-daemon");
         qInfo() << this->thread()->objectName() << " thread id (pid): " << syscall(SYS_gettid);
@@ -604,16 +566,6 @@ Daemon::Daemon(configuration cfg, QObject* parent)
             dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getCapabilities();
     }
 
-    // for tcp connection with fileServer
-    peerPort = config.peerPort;
-    if (peerPort == 0) {
-        peerPort = 51508;
-    }
-    peerAddress = config.peerAddress;
-    if (peerAddress.isEmpty() || peerAddress == "local" || peerAddress == "localhost") {
-        peerAddress = QHostAddress(QHostAddress::LocalHost).toString();
-    }
-
     if (config.serverAddress.isEmpty()) {
         // if not otherwise specified: listen on all available addresses
         daemonAddress = QHostAddress(QHostAddress::Any);
@@ -638,7 +590,7 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     std::flush(std::cout);
 
     // create network discovery service
-    networkDiscovery = new NetworkDiscovery(NetworkDiscovery::DeviceType::DAEMON, peerPort, this);
+    networkDiscovery = new NetworkDiscovery(NetworkDiscovery::DeviceType::DAEMON, daemonPort, this);
 
     // set up histograms
     setupHistos();
@@ -646,6 +598,8 @@ Daemon::Daemon(configuration cfg, QObject* parent)
     // connect to the pigpio daemon interface for gpio control
     connectToPigpiod();
 
+/*
+//<<<<<<< HEAD
     // set up the rate buffer for all GPIO signals
     rateBuffer.clear();
     connect(pigHandler, &PigpiodHandler::event, &rateBuffer, &RateBuffer::onEvent);
@@ -669,9 +623,50 @@ Daemon::Daemon(configuration cfg, QObject* parent)
                 }
             }
         });
+//=======
+*/
+    // set up rate buffers for all GPIO input signals
+    for (auto [signal, pin] : GPIO_PINMAP) {
+        if (GPIO_SIGNAL_MAP.at(signal).direction == DIR_IN) {
+            auto ratebuf = std::make_shared<EventRateBuffer>(pin);
+            connect(pigHandler, &PigpiodHandler::event, ratebuf.get(), &EventRateBuffer::onEvent);
+            connect(ratebuf.get(), &EventRateBuffer::filteredEvent, this, &Daemon::sendGpioPinEvent);
+            connect(ratebuf.get(), &EventRateBuffer::filteredEvent, this, &Daemon::onGpioPinEvent);
+            
+            connect(ratebuf.get(), &EventRateBuffer::eventIntervalSignal, this, [this](unsigned int gpio, std::chrono::nanoseconds ns) {
+                if (m_histo_map.find("gpioEventInterval") != m_histo_map.end()
+                    && (GPIO_PINMAP[config.eventTrigger] == gpio)) 
+                {
+                    m_histo_map["gpioEventInterval"]->fill(1e-6 * ns.count());
+                }
+            });
+
+            m_gpio_ratebuffers.emplace(pin, ratebuf);
+        }
+    }
+
+    connect(this, &Daemon::eventInterval, this, [this](quint64 nsecs)
+    //	connect(&rateBuffer, &RateBuffer::eventIntervalSignal, this, [this](unsigned int gpio, std::chrono::nanoseconds ns)
+    {
+        if (m_histo_map.find("gpioEventIntervalShort") != m_histo_map.end()) {
+            if (nsecs / 1000 <= m_histo_map["gpioEventIntervalShort"]->getMax()) {
+                m_histo_map["gpioEventIntervalShort"]->fill(1e-3 * nsecs);
+            }
+        }
+    });
+
+    // set up histograms
+    setupHistos();
+//>>>>>>> dev
 
     // establish ublox gnss module connection
     connectToGps();
+
+    // set up rate buffer for ublox counter
+    m_ublox_ratebuffer = std::make_shared<CounterRateBuffer>(std::numeric_limits<std::uint16_t>::max());
+    connect(qtGps, &QtSerialUblox::UBXReceivedTimeTM2, this, [this](const UbxTimeMarkStruct& tm) {
+        this->m_ublox_ratebuffer->onCounterValue(tm.evtCounter);
+    });
 
     // configure the ublox module with preset ubx messages, if required
     if (config.gnss_config) {
@@ -798,7 +793,19 @@ void Daemon::connectToPigpiod()
 
     timespec_get(&lastRateInterval, TIME_UTC);
     startOfProgram = lastRateInterval;
-
+//<<<<<<< HEAD
+/*
+//=======
+    connect(pigHandler, &PigpiodHandler::signal, this, [this](uint8_t gpio_pin) {
+        rateCounterIntervalActualisation();
+        if (gpio_pin == GPIO_PINMAP[EVT_XOR]) {
+            xorCounts.back()++;
+        } else if (gpio_pin == GPIO_PINMAP[EVT_AND]) {
+            andCounts.back()++;
+        }
+    });
+//>>>>>>> dev
+*/
     pigThread->start();
     rateBufferReminder.setInterval(rateBufferInterval);
     rateBufferReminder.setSingleShot(false);
@@ -856,7 +863,7 @@ void Daemon::connectToGps()
     prepareSerial.waitForFinished();
 
     // here is where the magic threading happens look closely
-    qtGps = new QtSerialUblox(config.gpsdevname, gpsTimeout, config.gnss_baudrate, config.gnss_dump_raw, verbose - 1, config.showout, config.showin);
+    qtGps = new QtSerialUblox(config.gpsdevname, MuonPi::Config::Hardware::GNSS::uart_timeout, config.gnss_baudrate, config.gnss_dump_raw, verbose - 1, config.showout, config.showin);
     gpsThread = new QThread();
     gpsThread->setObjectName("muondetector-daemon-gnss");
     qtGps->moveToThread(gpsThread);
@@ -1435,11 +1442,13 @@ void Daemon::onGpioPinEvent(unsigned int gpio, EventTime event_time)
             if (start_gpio != GPIO_PINMAP.end()) {
                 long long nsecs { 0 };
                 if (result->first != config.eventTrigger) {
-                    nsecs = rateBuffer.lastInterval(gpio, start_gpio->second).count();
-                    if (nsecs < 0)
-                        nsecs = rateBuffer.lastInterval(start_gpio->second, gpio).count();
+                    nsecs = (m_gpio_ratebuffers.at(gpio)->lastEventTime() - m_gpio_ratebuffers.at(start_gpio->second)->lastEventTime()).count();
+                    //nsecs = rateBuffer.lastInterval(gpio, start_gpio->second).count();
+                    //if (nsecs < 0)
+                    //    nsecs = rateBuffer.lastInterval(start_gpio->second, gpio).count();
                 } else {
-                    nsecs = rateBuffer.lastInterval(gpio).count();
+                    nsecs = m_gpio_ratebuffers.at(gpio)->lastInterval().count();
+                    //nsecs = rateBuffer.lastInterval(gpio).count();
                 }
                 if (nsecs > 0) {
                     //emit eventInterval( nsecs );
@@ -1658,8 +1667,9 @@ void Daemon::onAdcSampleReady(ADS1115::Sample sample)
     } else {
         if (adcSamplingMode == ADC_SAMPLING_MODE::TRACE) {
             adcSamplesBuffer.push_back(voltage);
-            if (adcSamplesBuffer.size() > Config::Hardware::ADC::buffer_size)
+            if (adcSamplesBuffer.size() > Config::Hardware::ADC::buffer_size) {
                 adcSamplesBuffer.pop_front();
+            }
             if (currentAdcSampleIndex == 0) {
                 TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_SAMPLE);
                 *(tcpMessage.dStream) << (quint8)channel << voltage;
@@ -1668,11 +1678,11 @@ void Daemon::onAdcSampleReady(ADS1115::Sample sample)
             }
             if (currentAdcSampleIndex >= 0) {
                 currentAdcSampleIndex++;
-                if (currentAdcSampleIndex >= (Config::Hardware::ADC::buffer_size - Config::Hardware::ADC::pretrigger)) {
+                if (currentAdcSampleIndex >= static_cast<int>(Config::Hardware::ADC::buffer_size - Config::Hardware::ADC::pretrigger)) {
                     TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_TRACE);
                     *(tcpMessage.dStream) << (quint16)adcSamplesBuffer.size();
-                    for (int i = 0; i < adcSamplesBuffer.size(); i++) {
-                        *(tcpMessage.dStream) << adcSamplesBuffer[i];
+                    for (auto adc_sample : adcSamplesBuffer) {
+                        *(tcpMessage.dStream) << adc_sample;
                     }
                     emit sendTcpMessage(tcpMessage);
                     currentAdcSampleIndex = -1;
@@ -1802,7 +1812,7 @@ void Daemon::setDacThresh(uint8_t channel, float threshold)
     if (threshold < 0 || channel > 3) {
         return;
     }
-    if (channel == 2 || channel == 3) {
+    if (channel == Config::Hardware::DAC::Channel::bias || channel == Config::Hardware::DAC::Channel::dac4) {
         if (dac_p) {
             dac_p->setVoltage(channel, threshold);
         }
@@ -2331,6 +2341,14 @@ void Daemon::intSignalHandler(int)
 
 void Daemon::aquireMonitoringParameters()
 {
+    for (auto [gpio, ratebuffer] : m_gpio_ratebuffers) {
+        auto signal { bcmToGpioSignal(gpio) };
+        qDebug() << "signal: " << QString::fromStdString(GPIO_SIGNAL_MAP.at(signal).name) << " rate = " << ratebuffer->avgRate();
+    }
+    if (m_ublox_ratebuffer) {
+        qDebug() << "ublox ctr rate = " << m_ublox_ratebuffer->avgRate();
+    }
+
     if (temp_sensor_p && temp_sensor_p->probeDevicePresence()) {
         if (temp_sensor_p->getName() == "MIC184" && dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getAddress() < 0x4c) {
             // the attached temp sensor has a remote zone
@@ -2347,10 +2365,9 @@ void Daemon::aquireMonitoringParameters()
         }
     }
 
-    double v1 = 0., v2 = 0.;
     if (adc_p && (!(std::dynamic_pointer_cast<ADS1115>(adc_p)->getStatus() & i2cDevice::MODE_UNREACHABLE)) && (std::dynamic_pointer_cast<ADS1115>(adc_p)->getStatus() & (i2cDevice::MODE_NORMAL | i2cDevice::MODE_FORCE))) {
-        v1 = adc_p->getVoltage(2);
-        v2 = adc_p->getVoltage(3);
+        double v1 { adc_p->getVoltage(MuonPi::Config::Hardware::ADC::Channel::bias1) };
+        double v2 { adc_p->getVoltage(MuonPi::Config::Hardware::ADC::Channel::bias2) };
         if (calib && calib->getCalibItem("VDIV").name == "VDIV") {
             CalibStruct vdivItem = calib->getCalibItem("VDIV");
             std::istringstream istr(vdivItem.value);
@@ -2495,20 +2512,6 @@ void Daemon::onLogParameterPolled()
         emit logParameter(LogParameter("systemFreeMem", QString::number(1e-6 * info.freeram / info.mem_unit) + " Mb", LogParameter::LOG_AVERAGE));
         emit logParameter(LogParameter("systemFreeSwap", QString::number(1e-6 * info.freeswap / info.mem_unit) + " Mb", LogParameter::LOG_AVERAGE));
         emit logParameter(LogParameter("systemLoadAvg", QString::number(info.loads[0] * f_load) + " ", LogParameter::LOG_AVERAGE));
-    }
-
-    // rate buffer debug output
-    if (verbose > 2) {
-        qDebug() << "GPIO Rate Summary:";
-        for (auto signalIt = GPIO_PINMAP.begin(); signalIt != GPIO_PINMAP.end(); signalIt++) {
-            const GPIO_SIGNAL signalId = signalIt->first;
-            if (GPIO_SIGNAL_MAP.at(signalId).direction == DIR_IN) {
-                qDebug() << QString::fromStdString(GPIO_SIGNAL_MAP.at(signalId).name)
-                         << "pin:" << signalIt->second
-                         << "rate:" << rateBuffer.avgRate(signalIt->second) << "Hz"
-                         << "deadtime" << rateBuffer.currentDeadtime(signalIt->second).count() << "us";
-            }
-        }
     }
 }
 

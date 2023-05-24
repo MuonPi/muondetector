@@ -24,6 +24,9 @@
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
          <widget class="QLabel" name="nrDevicesLabel">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The number of devices currently identified on the bus&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>Nr. of devices:</string>
           </property>
@@ -31,6 +34,9 @@
         </item>
         <item>
          <widget class="QLabel" name="bytesReadLabel">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The total number of bytes read on the bus since daemon restart&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>total bytes read: </string>
           </property>
@@ -38,6 +44,9 @@
         </item>
         <item>
          <widget class="QLabel" name="bytesWrittenLabel">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The total number of bytes written on the bus since daemon restart&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
           <property name="text">
            <string>total bytes written:</string>
           </property>
@@ -50,6 +59,9 @@
    </item>
    <item row="1" column="0">
     <widget class="QGroupBox" name="devicesGroupBox">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;List of I&lt;span style=&quot; vertical-align:super;&quot;&gt;2&lt;/span&gt;C devices on the bus&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="title">
       <string>I2C devices</string>
      </property>
@@ -90,6 +102,9 @@
    </item>
    <item row="2" column="0">
     <widget class="QPushButton" name="statsQueryPushButton">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Probe the status of each device in the list through a read operation&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="text">
       <string>Read</string>
      </property>
@@ -97,6 +112,9 @@
    </item>
    <item row="3" column="0">
     <widget class="QPushButton" name="scanBusPushButton">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Scan the bus for additional devices by probing every yet unallocated address&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="text">
       <string>Scan Bus for extra devices</string>
      </property>

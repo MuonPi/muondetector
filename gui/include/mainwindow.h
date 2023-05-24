@@ -118,6 +118,7 @@ private slots:
 
     void onIpButtonClicked();
     void connected();
+    void connection_info(const QString message);
     void connection_error(int error_code, const QString message);
     void sendInputSwitch(TIMING_MUX_SELECTION sel);
 

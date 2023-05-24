@@ -3,10 +3,8 @@
 
 #include "muondetector_shared_global.h"
 
-#include <QMap>
-#include <QString>
-#include <QVector>
 #include <map>
+#include <string>
 
 // Define the signals of the hardware interface to the MuonPi HAT
 // Note: The pin definitions are enum constants and have nothing to do with the actual pin numbers

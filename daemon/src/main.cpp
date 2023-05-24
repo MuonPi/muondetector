@@ -74,8 +74,39 @@ void messageOutput(QtMsgType type, const QMessageLogContext& context, const QStr
 
 int main(int argc, char* argv[])
 {
+    // first, we must set the locale to be independent of the number format of the system's locale.
+    // We rely on parsing floating point numbers with a decimal point (not a komma) which might fail if not setting the classic locale
+    std::locale::global(std::locale::classic());
+
     qRegisterMetaType<TcpMessage>("TcpMessage");
+    qRegisterMetaType<GnssPosStruct>("GnssPosStruct");
+    qRegisterMetaType<int32_t>("int32_t");
+    qRegisterMetaType<uint32_t>("uint32_t");
+    qRegisterMetaType<uint16_t>("uint16_t");
+    qRegisterMetaType<uint8_t>("uint8_t");
+    qRegisterMetaType<int8_t>("int8_t");
+    qRegisterMetaType<bool>("bool");
+    qRegisterMetaType<CalibStruct>("CalibStruct");
+    qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
+    qRegisterMetaType<std::vector<GnssConfigStruct>>("std::vector<GnssConfigStruct>");
+    qRegisterMetaType<std::chrono::duration<double>>("std::chrono::duration<double>");
+    qRegisterMetaType<std::string>("std::string");
+    qRegisterMetaType<LogParameter>("LogParameter");
+    qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
+    qRegisterMetaType<UbxDopStruct>("UbxDopStruct");
+    qRegisterMetaType<timespec>("timespec");
+    qRegisterMetaType<GPIO_SIGNAL>("GPIO_SIGNAL");
+    qRegisterMetaType<GnssMonHwStruct>("GnssMonHwStruct");
+    qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
+    qRegisterMetaType<UbxTimeMarkStruct>("UbxTimeMarkStruct");
+    qRegisterMetaType<I2cDeviceEntry>("I2cDeviceEntry");
+    qRegisterMetaType<ADC_SAMPLING_MODE>("ADC_SAMPLING_MODE");
+    qRegisterMetaType<MuonPi::Version::Version>("MuonPi::Version::Version");
+    qRegisterMetaType<UbxDynamicModel>("UbxDynamicModel");
+    qRegisterMetaType<EventTime>("EventTime");
+
     qInstallMessageHandler(messageOutput);
+
     QCoreApplication a(argc, argv);
     QCoreApplication::setApplicationName("muondetector-daemon");
     QCoreApplication::setApplicationVersion(QString::fromStdString(MuonPi::Version::software.string()));
@@ -175,20 +206,6 @@ int main(int argc, char* argv[])
                                                   << "showin",
         QCoreApplication::translate("main", "show incoming ubx messages as hex"));
     parser.addOption(showinOption);
-
-    // peerAddress option
-    QCommandLineOption peerIpOption(QStringList() << "peer"
-                                                  << "peerAddress",
-        QCoreApplication::translate("main", "set file server ip address"),
-        QCoreApplication::translate("main", "peerAddress"));
-    parser.addOption(peerIpOption);
-
-    // peerPort option
-    QCommandLineOption peerPortOption(QStringList() << "pp"
-                                                    << "peerPort",
-        QCoreApplication::translate("main", "set file server port"),
-        QCoreApplication::translate("main", "peerPort"));
-    parser.addOption(peerPortOption);
 
     // daemonAddress option
     QCommandLineOption daemonIpOption(QStringList() << "server"
@@ -369,33 +386,27 @@ int main(int argc, char* argv[])
 
     daemonConfig.gnss_config = parser.isSet(showGnssConfigOption);
 
-    if (parser.isSet(peerPortOption)) {
-        daemonConfig.peerPort = parser.value(peerPortOption).toUInt(&ok);
-        if (!ok) {
-            daemonConfig.peerPort = 0;
-            qCritical() << "wrong input peerPort (maybe not an integer)";
-        }
-    }
-    if (parser.isSet(peerIpOption)) {
-        daemonConfig.peerAddress = parser.value(peerIpOption);
-        if (!QHostAddress(daemonConfig.peerAddress).toIPv4Address()) {
-            if (daemonConfig.peerAddress != "localhost" && daemonConfig.peerAddress != "local") {
-                daemonConfig.peerAddress = "";
-                qCritical() << "wrong input ipAddress, not an ipv4address";
-            }
-        }
-    }
     try {
         int port = cfg.lookup("tcp_port");
+        if (verbose > 2)
+            qDebug() << "tcp_port (listen port): " << port;
         daemonConfig.serverPort = static_cast<quint16>(port);
     } catch (const libconfig::SettingNotFoundException&) {
     }
     if (parser.isSet(daemonPortOption)) {
         daemonConfig.serverPort = parser.value(daemonPortOption).toUInt(&ok);
         if (!ok) {
-            daemonConfig.peerPort = 0;
+            daemonConfig.serverPort = 0;
             qCritical() << "wrong input peerPort (maybe not an integer)";
         }
+    }
+
+    try {
+        std::string tcpIpCfg = cfg.lookup("tcp_ip");
+        if (verbose > 2)
+            qDebug() << "tcp_ip (listen ip): " << QString::fromStdString(tcpIpCfg);
+        daemonConfig.serverAddress = QString::fromStdString(tcpIpCfg);
+    } catch (const libconfig::SettingNotFoundException&) {
     }
     if (parser.isSet(daemonIpOption)) {
         daemonConfig.serverAddress = parser.value(daemonIpOption);
@@ -629,6 +640,11 @@ int main(int argc, char* argv[])
 
     daemonConfig.config_file_data.reset(&cfg);
     daemonConfig.settings_file_data.reset(&settings);
+
+    if (verbose > 3) {
+        qDebug() << "QT version is " << QString::number(QT_VERSION, 16);
+    }
+
     Daemon daemon { daemonConfig };
 
     return a.exec();
