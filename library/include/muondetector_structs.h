@@ -21,7 +21,8 @@
 #include <string>
 #include <sys/types.h>
 
-using EventTime = std::chrono::time_point<std::chrono::system_clock>;
+using TimestampClockType = std::chrono::steady_clock;
+using EventTime = std::chrono::time_point<TimestampClockType, std::chrono::nanoseconds>;
 
 enum class ADC_SAMPLING_MODE {
     DISABLED = 0,

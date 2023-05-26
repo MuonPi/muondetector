@@ -1,18 +1,18 @@
 #include "utility/ratebuffer.h"
 #include <iostream>
 
-constexpr auto invalid_time = std::chrono::system_clock::time_point::min();
+constexpr auto invalid_time = TimestampClockType::time_point::min();
 
 CounterRateBuffer::CounterRateBuffer(unsigned int counter_mask, QObject* parent)
     : QObject(parent)
     , m_counter_mask(counter_mask)
-    , m_instance_start(std::chrono::system_clock::now())
+    , m_instance_start(TimestampClockType::now())
 {
 }
 
 void CounterRateBuffer::onCounterValue(uint16_t value)
 {
-    EventTime event_time { std::chrono::system_clock::now() };
+    EventTime event_time { TimestampClockType::now() };
     m_countbuffer.emplace_back(event_time, value);
     if (m_countbuffer.size() == 1) {
         return;
@@ -29,7 +29,7 @@ auto CounterRateBuffer::avgRate() const -> double
     if (m_countbuffer.size() < 2) {
         return 0.;
     }
-    auto tend = std::chrono::system_clock::now();
+    auto tend = TimestampClockType::now();
     auto tstart = tend - m_buffer_time;
     if (tstart < m_instance_start) {
         tstart = m_instance_start;
@@ -58,21 +58,21 @@ auto CounterRateBuffer::avgRate() const -> double
 EventRateBuffer::EventRateBuffer(unsigned int gpio, QObject* parent)
     : QObject(parent)
     , m_gpio(gpio)
-    , m_instance_start(std::chrono::system_clock::now())
+    , m_instance_start(TimestampClockType::now())
 {
 }
 
 void EventRateBuffer::clear()
 {
     m_eventbuffer = std::queue<EventTime, std::list<EventTime>> {};
-    m_instance_start = std::chrono::system_clock::now();
+    m_instance_start = TimestampClockType::now();
 }
 
-void EventRateBuffer::onEvent(uint8_t gpio)
+void EventRateBuffer::onEvent(unsigned int gpio, EventTime event_time)
 {
     if (gpio != m_gpio)
         return;
-    EventTime event_time { std::chrono::system_clock::now() };
+    //EventTime event_time { TimestampClockType::now() };
     if (m_eventbuffer.empty()) {
         m_eventbuffer.push(event_time);
         emit filteredEvent(gpio, event_time);
@@ -81,6 +81,7 @@ void EventRateBuffer::onEvent(uint8_t gpio)
 
     auto last_event_time = m_eventbuffer.back();
     if (event_time - last_event_time < m_current_deadtime) {
+        emit eventIntervalSignal(gpio, event_time - last_event_time);
         // m_buffer[gpio].eventbuffer.push(event_time);
         return;
     }
@@ -92,14 +93,15 @@ void EventRateBuffer::onEvent(uint8_t gpio)
 
     if (!m_eventbuffer.empty()) {
         m_last_interval = std::chrono::duration_cast<std::chrono::nanoseconds>(event_time - last_event_time);
-        if (event_time - last_event_time < MAX_DEADTIME) {
+        if (m_last_interval < MAX_DEADTIME) {
             //			std::cout << "now-last:"<<(now-last_event_time)/1us<<" dt="<<buffermap[gpio].current_deadtime.count()<<std::endl;
             if (m_current_deadtime < MAX_DEADTIME) {
                 m_current_deadtime += DEADTIME_INCREMENT;
                 // std::cout << std::dec << "adjusting deadtime for gpio " << gpio << " to " << m_buffer.current_deadtime/1us << "us" << std::endl;
             }
-            if (event_time - last_event_time < m_current_deadtime) {
+            if (m_last_interval < m_current_deadtime) {
                 m_eventbuffer.push(event_time);
+                emit eventIntervalSignal(gpio, m_last_interval);
                 return;
             }
         } else {
@@ -122,7 +124,7 @@ auto EventRateBuffer::avgRate() const -> double
 {
     if (m_eventbuffer.empty())
         return 0.;
-    auto tend = std::chrono::system_clock::now();
+    auto tend = TimestampClockType::now();
     auto tstart = tend - m_buffer_time;
     if (tstart < m_instance_start)
         tstart = m_instance_start;

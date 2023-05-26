@@ -16,6 +16,14 @@ const std::string chipname { "/dev/gpiochip0" };
 template <typename T>
 inline static T sqr(T x) { return x * x; }
 
+constexpr std::chrono::nanoseconds timespecToDuration(timespec ts)
+{
+    auto duration = std::chrono::seconds{ts.tv_sec} 
+        + std::chrono::nanoseconds{ts.tv_nsec};
+
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
+}
+
 /*
  linear regression algorithm
  taken from:
@@ -125,22 +133,19 @@ PigpiodHandler::~PigpiodHandler()
 
 void PigpiodHandler::processEvent(unsigned int gpio, std::shared_ptr<gpiod_line_event> line_event)
 {
-
-    std::chrono::nanoseconds since_epoch_ns(line_event->ts.tv_nsec);
-    since_epoch_ns += std::chrono::seconds(line_event->ts.tv_sec);
-    EventTime timestamp(since_epoch_ns);
+    EventTime timestamp{timespecToDuration(line_event->ts)};
     emit event(gpio, timestamp);
     if (verbose > 3) {
         qDebug() << "line event: gpio" << gpio << " edge: "
                  << QString((line_event->event_type == GPIOD_LINE_EVENT_RISING_EDGE) ? "rising" : "falling")
-                 << " ts=" << since_epoch_ns.count();
+                 << " ts=" << timestamp.time_since_epoch().count();
     }
 }
 
 void PigpiodHandler::eventHandler(struct gpiod_line* line)
 {
-    static const struct timespec timeout {
-        4ULL, 0ULL
+    static constexpr struct timespec timeout {
+        4, 0
     };
     while (fThreadRunning) {
         if (inhibit) {

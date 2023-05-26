@@ -621,8 +621,9 @@ Daemon::Daemon(configuration cfg, QObject* parent)
         //	connect(&rateBuffer, &RateBuffer::eventIntervalSignal, this, [this](unsigned int gpio, std::chrono::nanoseconds ns)
         {
             if (m_histo_map.find("gpioEventIntervalShort") != m_histo_map.end()) {
-                if (nsecs / 1000 <= m_histo_map["gpioEventIntervalShort"]->getMax()) {
-                    m_histo_map["gpioEventIntervalShort"]->fill(1e-3 * nsecs);
+                const long usecs = nsecs / 1000L;
+                if (usecs <= m_histo_map["gpioEventIntervalShort"]->getMax()) {
+                    m_histo_map["gpioEventIntervalShort"]->fill(usecs);
                 }
             }
         });
@@ -1387,12 +1388,12 @@ void Daemon::onGpioPinEvent(unsigned int gpio, EventTime event_time)
             }
         }
         if (result->first == config.eventTrigger) {
-            /*
-			auto nsecs = rateBuffer.lastInterval(gpio).count();
+            
+			auto nsecs = m_gpio_ratebuffers.at(gpio)->lastInterval().count();
 			if ( nsecs > 0 ) { 
-				emit eventInterval( rateBuffer.lastInterval(gpio).count() );
+				emit eventInterval( nsecs );
 			}
-			*/
+			
             emit sampleAdc0Event();
         }
 
@@ -1409,12 +1410,8 @@ void Daemon::onGpioPinEvent(unsigned int gpio, EventTime event_time)
                     nsecs = m_gpio_ratebuffers.at(gpio)->lastInterval().count();
                     //nsecs = rateBuffer.lastInterval(gpio).count();
                 }
-                if (nsecs > 0) {
-                    //emit eventInterval( nsecs );
-                    if (nsecs < 100000L) {
-                        emit eventInterval(nsecs);
-                    }
-                } else {
+                if (std::abs(nsecs) < 100'000L) {
+                   emit eventInterval(nsecs);
                 }
             }
             onStatusLed2Event(10);
