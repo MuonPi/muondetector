@@ -103,7 +103,9 @@ int main(int argc, char* argv[])
     qRegisterMetaType<ADC_SAMPLING_MODE>("ADC_SAMPLING_MODE");
     qRegisterMetaType<MuonPi::Version::Version>("MuonPi::Version::Version");
     qRegisterMetaType<UbxDynamicModel>("UbxDynamicModel");
-
+    qRegisterMetaType<EventTime>("EventTime");
+    qRegisterMetaType<PigpiodHandler::EventEdge>("PigpiodHandler::EventEdge");
+    
     qInstallMessageHandler(messageOutput);
 
     QCoreApplication a(argc, argv);

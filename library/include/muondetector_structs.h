@@ -13,6 +13,7 @@
 #include <QString>
 #include <QVariant>
 #include <any>
+#include <chrono>
 #include <cmath>
 #include <functional>
 #include <iomanip>
@@ -20,7 +21,8 @@
 #include <string>
 #include <sys/types.h>
 
-using EventTime = std::chrono::time_point<std::chrono::system_clock>;
+using TimestampClockType = std::chrono::steady_clock;
+using EventTime = std::chrono::time_point<TimestampClockType, std::chrono::nanoseconds>;
 
 enum class ADC_SAMPLING_MODE {
     DISABLED = 0,
@@ -104,7 +106,7 @@ struct PositionModeConfig {
 
 struct IoConfiguration {
     TIMING_MUX_SELECTION timing_input { TIMING_MUX_SELECTION::UNDEFINED };
-    GPIO_SIGNAL event_trigger { GPIO_SIGNAL::UNDEFINED_PIN };
+    GPIO_SIGNAL event_trigger { GPIO_SIGNAL::UNDEFINED_SIGNAL };
     GeneralEvent led1_event;
     GeneralEvent led2_event;
 };

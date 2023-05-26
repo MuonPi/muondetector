@@ -43,8 +43,7 @@ void NetworkDiscovery::searchDevices()
         // auto datagram = QNetworkDatagram{data,m_broadcast_address, m_port};
         // datagram.setHopLimit(255); // probably overkill
         qDebug() << "NetworkDiscovery is an experimental feature and may or may not work!";
-        for (auto address : m_broadcast_address)
-        {
+        for (auto address : m_broadcast_address) {
             qDebug() << "NetworkDiscovery: sending " << data << " on address " << QHostAddress(address.toIPv4Address());
             socket->writeDatagram(data, address, m_port);
         }
@@ -74,15 +73,15 @@ void NetworkDiscovery::readPendingDatagrams()
         if (device_type == static_cast<quint16>(m_device_type)) {
             bool skip = false;
             for (auto address : m_own_ipv4) {
-                if (address == sender_address){
+                if (address == sender_address) {
                     skip = true;
                 }
             }
-            if (skip){
+            if (skip) {
                 continue; // do not answer or discover self
             }
         }
-        discovered_devices.append(QPair<quint16, QHostAddress> { static_cast<quint16>(device_type), sender_address});
+        discovered_devices.append(QPair<quint16, QHostAddress> { static_cast<quint16>(device_type), sender_address });
 
         if (static_cast<DeviceType>(device_type) == DeviceType::GUI) {
             data = QByteArray();

@@ -21,6 +21,7 @@
 
 #include <custom_io_operators.h>
 #include "logengine.h"
+#include "utility/ratebuffer.h"
 #include "logparameter.h"
 #include "pigpiodhandler.h"
 #include "hardware/spidevices.h"
@@ -121,7 +122,8 @@ public slots:
     void onGpsMonHW2Updated(const GnssMonHw2Struct& hw2);
     void receivedTcpMessage(TcpMessage tcpMessage);
     void pollAllUbxMsgRate();
-    void sendGpioPinEvent(uint8_t gpio_pin);
+    void onGpioPinEvent(unsigned int gpio, EventTime event_time);
+    void sendGpioPinEvent(unsigned int gpio, EventTime event_time);
     void onGpsPropertyUpdatedGeodeticPos(const GnssPosStruct& pos);
     void UBXReceivedVersion(const QString& swString, const QString& hwString, const QString& protString);
     void sampleAdc0Event();
@@ -153,11 +155,11 @@ signals:
     void UBXSetMinMaxSVs(uint8_t minSVs, uint8_t maxSVs);
     void UBXSetMinCNO(uint8_t minCNO);
     void GpioSetInput(unsigned int gpio);
-    void GpioSetOutput(unsigned int gpio);
+    void GpioSetOutput(unsigned int gpio, bool initState = false);
     void GpioSetPullUp(unsigned int gpio);
     void GpioSetPullDown(unsigned int gpio);
     void GpioSetState(unsigned int gpio, bool state);
-    void GpioRegisterForCallback(unsigned int gpio, bool edge); // false=falling, true=rising
+    void GpioRegisterForCallback(unsigned int gpio, PigpiodHandler::EventEdge edge); // false=falling, true=rising
     void UBXSetCfgTP5(const UbxTimePulseStruct& tp);
     void UBXSetAopCfg(bool enable = true, uint16_t maxOrbErr = 0);
     void UBXSaveCfg(uint8_t devMask = QtSerialUblox::DEV_BBR | QtSerialUblox::DEV_FLASH);
@@ -165,6 +167,7 @@ signals:
     void timeMarkIntervalCountUpdate(uint16_t newCounts, double lastInterval);
     void requestMqttConnectionStatus();
     void eventMessage(const QString& messageString);
+    void eventInterval(quint64 nsecs);
 
 private slots:
     void onRateBufferReminder();
@@ -227,7 +230,15 @@ private:
     std::shared_ptr<DeviceFunction<DeviceType::IO_EXTENDER>> io_extender_p;
     std::shared_ptr<Adafruit_SSD1306> oled_p {};
     std::shared_ptr<UbloxI2c> ublox_i2c_p {};
-
+    /*
+	float biasVoltage = 0.;
+    bool biasON = false;
+    GPIO_SIGNAL eventTrigger { UNDEFINED_SIGNAL };
+    bool gainSwitch = false;
+    bool preampStatus[2];
+    uint8_t pcaPortMask = 0;
+    QVector<float> dacThresh; // do not give values here because of push_back in constructor of deamon
+*/
     QPointer<PigpiodHandler> pigHandler;
     QPointer<TDC7200> tdc7200;
     bool spiDevicePresent = false;

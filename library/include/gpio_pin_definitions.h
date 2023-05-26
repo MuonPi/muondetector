@@ -1,18 +1,15 @@
-#ifndef GPIO_PIN_DEFINITIONS_H
-#define GPIO_PIN_DEFINITIONS_H
+#ifndef GPIO_SIGNAL_DEFINITIONS_H
+#define GPIO_SIGNAL_DEFINITIONS_H
 
 #include "muondetector_shared_global.h"
 
 #include <map>
 #include <string>
 
-// define the pins which are used to interface the raspberry pi
-// UBIAS_EN is the power on/off pin for bias voltage
-// PREAMP_1/2 enables the DC voltage to power the preamp through the signal cable
-// EVT_AND, EVT_XOR are the event inputs from AND and XOR gates
+// Define the signals of the hardware interface to the MuonPi HAT
 // Note: The pin definitions are enum constants and have nothing to do with the actual pin numbers
 // of the RPi GPIO header. To be independent of the specific hardware implementation,
-// the pin numbers for these signals are defined in gpio_pin_mapping.h on the daemon side
+// the pin numbers for these signals are defined in gpio_pin_mapping.h on the daemon side through the static map GPIO_PINMAP
 
 enum GPIO_SIGNAL { UBIAS_EN,
     PREAMP_1,
@@ -32,7 +29,7 @@ enum GPIO_SIGNAL { UBIAS_EN,
     TDC_STATUS,
     IN_POL1,
     IN_POL2,
-    UNDEFINED_PIN = 255
+    UNDEFINED_SIGNAL = 255
 };
 
 enum SIGNAL_DIRECTION { DIR_UNDEFINED,
@@ -63,7 +60,7 @@ static const std::map<GPIO_SIGNAL, GpioSignalDescriptor> GPIO_SIGNAL_MAP = { { U
     { TDC_STATUS, { "TDC_STATUS", DIR_OUT } },
     { IN_POL1, { "IN_POL1", DIR_OUT } },
     { IN_POL2, { "IN_POL2", DIR_OUT } },
-    { UNDEFINED_PIN, { "UNDEFINED_PIN", DIR_UNDEFINED } } };
+    { UNDEFINED_SIGNAL, { "UNDEFINED_SIGNAL", DIR_UNDEFINED } } };
 
 enum class TIMING_MUX_SELECTION : uint8_t {
     AND = 0,
@@ -89,4 +86,4 @@ static const std::map<TIMING_MUX_SELECTION, std::string> TIMING_MUX_SIGNAL_NAMES
     { TIMING_MUX_SELECTION::UNDEFINED, "UNDEFINED" }
 };
 
-#endif // GPIO_PIN_DEFINITIONS_H
+#endif // GPIO_SIGNAL_DEFINITIONS_H

@@ -5,11 +5,9 @@
 
 #define MAX_HW_VER 3
 
-// define pins on the raspberry pi, UBIAS_EN is the power on/off pin for bias voltage
-// PREAMP_1/2 enables the DC voltage to power the preamp through the signal cable
+// Mapping between signals of the MuonPi hardware interface and the actual GPIO pins of the RaspberryPi
 // ATTENTION:
-// TO MAKE IT MORE SIMPLE THERE WILL BE ONLY PIGPIO NAMING STANDARD,
-// NO WIRING PI FROM NOW
+// All pins are numbered according to the BCM designation
 
 static const std::map<GPIO_SIGNAL, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER + 1] = {
     {
@@ -27,9 +25,9 @@ static const std::map<GPIO_SIGNAL, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER
         { STATUS1, 13 },
         { STATUS2, 19 },
         { STATUS3, 26 },
-        { TDC_INTB, 20 },
-        { TDC_STATUS, 21 },
-        { EXT_TRIGGER, 21 } },
+        { TDC_INTB, 24 },
+        { TDC_STATUS, 25 },
+        { EXT_TRIGGER, 16 } },
     { /* Pin mapping, HW Version 2 */
         { UBIAS_EN, 26 },
         { PREAMP_1, 4 },
@@ -74,7 +72,7 @@ inline GPIO_SIGNAL bcmToGpioSignal(unsigned int bcmGpioNumber)
     while (i != GPIO_PINMAP.cend() && i->second != bcmGpioNumber)
         ++i;
     if (i == GPIO_PINMAP.cend())
-        return UNDEFINED_PIN;
+        return UNDEFINED_SIGNAL;
     return i->first;
 }
 

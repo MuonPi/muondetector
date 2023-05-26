@@ -3,8 +3,8 @@
 
 #include <QObject>
 #include <QTimer>
-#include <QVector>
 #include <QUdpSocket>
+#include <QVector>
 
 class NetworkDiscovery : public QObject {
     Q_OBJECT

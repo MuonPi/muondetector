@@ -7,7 +7,7 @@ if(NOT WIN32) # added to make program editable in qt-creator on windows
 find_library(CRYPTOPP crypto++ REQUIRED)
 find_library(CONFIGPP config++ REQUIRED)
 if (${MUONDETECTOR_ON_RASPBERRY})
-find_library(PIGPIOD_IF2 pigpiod_if2 REQUIRED)
+find_library(LIBGPIOD gpiod REQUIRED)
 endif ()
 find_library(RT rt REQUIRED)
 find_library(MOSQUITTO mosquitto REQUIRED)
@@ -56,12 +56,13 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/gpio_mapping.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/logengine.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/geohash.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/ratebuffer.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/kalman_gnss_filter.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/geoposmanager.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/ratebuffer.cpp"
 
     "${MUONDETECTOR_I2C_SOURCE_FILES}"
-    "${MUONDETECTOR_SPI_SOURCE_FILES}"
+#    "${MUONDETECTOR_SPI_SOURCE_FILES}"
     )
 
 
@@ -109,12 +110,13 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/gpio_mapping.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/logengine.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/geohash.h"
+    "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/ratebuffer.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/kalman_gnss_filter.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/geoposmanager.h"
     "${MUONDETECTOR_DAEMON_HEADER_DIR}/utility/ratebuffer.h"
 
     "${MUONDETECTOR_I2C_HEADER_FILES}"
-    "${MUONDETECTOR_SPI_HEADER_FILES}"
+    #"${MUONDETECTOR_SPI_HEADER_FILES}"
     )
 
 set(MUONDETECTOR_LOGIN_SOURCE_FILES
@@ -166,7 +168,7 @@ target_include_directories(muondetector-daemon PUBLIC
 target_link_libraries(muondetector-daemon
     Qt5::Network Qt5::SerialPort
     crypto++
-    pigpiod_if2
+    gpiod
     rt
     config++
     mosquitto
