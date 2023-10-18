@@ -11,6 +11,7 @@
 #include <QThread>
 #include <QTimer>
 #include <QtGlobal>
+#include <QFile>
 #include <crypto++/aes.h>
 #include <crypto++/filters.h>
 #include <crypto++/hex.h>
@@ -324,6 +325,21 @@ bool FileHandler::rotateFiles()
     QString fileNamePart = createFileName();
     currentWorkingFilePath = dataFolderPath + "data_" + fileNamePart;
     currentWorkingLogPath = dataFolderPath + "log_" + fileNamePart;
+    auto currentWorkingFilePathCandidate = currentWorkingFilePath;
+    auto currentWorkingLogPathCandidate = currentWorkingLogPath;
+    for (size_t i=0; i<1000ul; i++){
+        if ( QFile::exists(currentWorkingFilePathCandidate) || QFile::exists(currentWorkingLogPathCandidate)){
+        qDebug()<<currentWorkingFilePathCandidate<< " exists or";
+        qDebug()<<currentWorkingLogPathCandidate<< " exists.";
+        currentWorkingFilePathCandidate =currentWorkingFilePath+"."+QString::number(i);
+        currentWorkingLogPathCandidate =currentWorkingLogPath+"."+QString::number(i);
+        }else{
+            currentWorkingFilePath=currentWorkingFilePathCandidate;
+            currentWorkingLogPath=currentWorkingLogPathCandidate;
+            break;
+        }
+
+    }
     writeConfigFile();
     if (!openFiles(true)) {
         closeFiles();

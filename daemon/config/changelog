@@ -3,11 +3,16 @@ muondetector-daemon (2.1.0) ; urgency=low
   * Bugfixes:
   - removed wrong QT connect call which resulted in a warning in log messages after daemon startup
   - fixed reconnect to MQTT broker after connection was lost temporarily
-  - fixed bug in I2C subsystem which lead to a stuck bus after certain read operations and preventing detection of a device in the next logical read access
+  - 
+6cecacd
+May 24, 2023
+Git stats
+
+1,254 c
 
   * Updates:
   - restructured data logging system: 
-  - introduced log rotation and possibility to enable/disable data logging
+   - introduced log rotation and possibility to enable/disable data logging
   - simplified structure of data storage path under /var/muondetector
   - auto delete old data and log files
   - added geo position managing system with three modes of operation:
@@ -20,8 +25,8 @@ muondetector-daemon (2.1.0) ; urgency=low
    - histogram mean (good accuracy, fair precision)
    - histogram median (better accuracy, fair precision)
    - histogram most probable value (mpv) (best accuracy, fair precision)
-    
- -- MuonPi <developer@muonpi.org>  Fri, 8. Apr 2022 10:10:00 +0100
+  - Added NetworkDiscovery feature (experimental)
+ -- MuonPi <developer@muonpi.org>  Wed, 17. May 2023 10:10:00 +0200
 
 muondetector-daemon (2.0.1) ; urgency=low
 
