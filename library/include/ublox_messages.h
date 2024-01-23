@@ -4,6 +4,7 @@
 #include "muondetector_shared_global.h"
 #include <map>
 #include <string>
+#include <cstdint>
 
 #define UBLOX_VERSION 7
 // not in this list are all msg of types: LOG, AID and INF

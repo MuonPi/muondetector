@@ -136,6 +136,7 @@ MainWindow::MainWindow(QWidget* parent)
 
     // set all tabs
     ui->tabWidget->removeTab(0);
+    // ui->tabWidget->tabBar()->setStyleSheet("QTabBar::tab { margin-top: 5px; margin-bottom: 5px;}");
     Status* status = new Status(this);
     connect(this, &MainWindow::setUiEnabledStates, status, &Status::onUiEnabledStateChange);
 
@@ -160,7 +161,7 @@ MainWindow::MainWindow(QWidget* parent)
         status, static_cast<void (Status::*)(bool)>(&Status::onMqttStatusChanged));
     connect(this, static_cast<void (MainWindow::*)(MuonPi::MqttHandler::Status)>(&MainWindow::mqttStatusChanged),
         status, static_cast<void (Status::*)(MuonPi::MqttHandler::Status)>(&Status::onMqttStatusChanged));
-
+    // status->hide();
     ui->tabWidget->addTab(status, "Overview");
 
     UbloxSettingsForm* settings = new UbloxSettingsForm(this);
@@ -179,7 +180,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this, &MainWindow::gpsTP5Received, settings, &UbloxSettingsForm::onTP5Received);
     connect(settings, &UbloxSettingsForm::setTP5Config, this, &MainWindow::onSetTP5Config);
     connect(settings, &UbloxSettingsForm::sendUbxSaveCfg, this, [this]() { this->sendRequest(TCP_MSG_KEY::MSG_UBX_CFG_SAVE); });
-
+    // settings->hide();
     ui->tabWidget->addTab(settings, "Ublox Settings");
 
     Map* map = new Map(this);
@@ -187,6 +188,7 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this, &MainWindow::geodeticPos, map, &Map::onGeodeticPosReceived);
     connect(this, &MainWindow::positionModeConfigReceived, map, &Map::onPosConfigReceived);
     connect(map, &Map::posModeConfigChanged, this, &MainWindow::onPosModeConfigChanged);
+    // map->hide();
     ui->tabWidget->addTab(map, "Map");
 
     I2cForm* i2cTab = new I2cForm(this);
@@ -194,8 +196,8 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this, &MainWindow::i2cStatsReceived, i2cTab, &I2cForm::onI2cStatsReceived);
     connect(i2cTab, &I2cForm::i2cStatsRequest, this, [this]() { this->sendRequest(TCP_MSG_KEY::MSG_I2C_STATS_REQUEST); });
     connect(i2cTab, &I2cForm::scanI2cBusRequest, this, [this]() { this->sendRequest(TCP_MSG_KEY::MSG_I2C_SCAN_BUS); });
-
-    ui->tabWidget->addTab(i2cTab, "I2C bus");
+    i2cTab->hide();
+    // ui->tabWidget->addTab(i2cTab, "I2C bus");
 
     calib = new CalibForm(this);
     connect(this, &MainWindow::setUiEnabledStates, calib, &CalibForm::onUiEnabledStateChange);
@@ -207,33 +209,35 @@ MainWindow::MainWindow(QWidget* parent)
     connect(calib, &CalibForm::setDacVoltage, this, &MainWindow::sendSetThresh);
     connect(calib, &CalibForm::updatedCalib, this, &MainWindow::onCalibUpdated);
     connect(calib, &CalibForm::setBiasSwitch, this, &MainWindow::sendSetBiasStatus);
-    ui->tabWidget->addTab(calib, "Calibration");
+    calib->hide();
+    // ui->tabWidget->addTab(calib, "Calibration");
 
     calibscandialog = new CalibScanDialog(this);
     calibscandialog->hide();
     connect(this, &MainWindow::calibReceived, calibscandialog, &CalibScanDialog::onCalibReceived);
     connect(this, &MainWindow::adcSampleReceived, calibscandialog, &CalibScanDialog::onAdcSampleReceived);
 
-    GnssInfoForm* satsTab = new GnssInfoForm(this);
-    connect(this, &MainWindow::setUiEnabledStates, satsTab, &GnssInfoForm::onUiEnabledStateChange);
-    connect(this, &MainWindow::satsReceived, satsTab, &GnssInfoForm::onSatsReceived);
-    connect(this, &MainWindow::timeAccReceived, satsTab, &GnssInfoForm::onTimeAccReceived);
-    connect(this, &MainWindow::freqAccReceived, satsTab, &GnssInfoForm::onFreqAccReceived);
-    connect(this, &MainWindow::intCounterReceived, satsTab, &GnssInfoForm::onIntCounterReceived);
-    connect(this, &MainWindow::gpsMonHWReceived, satsTab, &GnssInfoForm::onGpsMonHWReceived);
-    connect(this, &MainWindow::gpsMonHW2Received, satsTab, &GnssInfoForm::onGpsMonHW2Received);
-    connect(this, &MainWindow::gpsVersionReceived, satsTab, &GnssInfoForm::onGpsVersionReceived);
-    connect(this, &MainWindow::gpsFixReceived, satsTab, &GnssInfoForm::onGpsFixReceived);
-    connect(this, &MainWindow::geodeticPos, satsTab, &GnssInfoForm::onGeodeticPosReceived);
-    connect(this, &MainWindow::ubxUptimeReceived, satsTab, &GnssInfoForm::onUbxUptimeReceived);
-
-    ui->tabWidget->addTab(satsTab, "GNSS Data");
+    GnssInfoForm* statsTab = new GnssInfoForm(this);
+    connect(this, &MainWindow::setUiEnabledStates, statsTab, &GnssInfoForm::onUiEnabledStateChange);
+    connect(this, &MainWindow::satsReceived, statsTab, &GnssInfoForm::onSatsReceived);
+    connect(this, &MainWindow::timeAccReceived, statsTab, &GnssInfoForm::onTimeAccReceived);
+    connect(this, &MainWindow::freqAccReceived, statsTab, &GnssInfoForm::onFreqAccReceived);
+    connect(this, &MainWindow::intCounterReceived, statsTab, &GnssInfoForm::onIntCounterReceived);
+    connect(this, &MainWindow::gpsMonHWReceived, statsTab, &GnssInfoForm::onGpsMonHWReceived);
+    connect(this, &MainWindow::gpsMonHW2Received, statsTab, &GnssInfoForm::onGpsMonHW2Received);
+    connect(this, &MainWindow::gpsVersionReceived, statsTab, &GnssInfoForm::onGpsVersionReceived);
+    connect(this, &MainWindow::gpsFixReceived, statsTab, &GnssInfoForm::onGpsFixReceived);
+    connect(this, &MainWindow::geodeticPos, statsTab, &GnssInfoForm::onGeodeticPosReceived);
+    connect(this, &MainWindow::ubxUptimeReceived, statsTab, &GnssInfoForm::onUbxUptimeReceived);
+    statsTab->hide();
+    // ui->tabWidget->addTab(statsTab, "GNSS Data");
 
     histogramDataForm* histoTab = new histogramDataForm(this);
     connect(this, &MainWindow::setUiEnabledStates, histoTab, &histogramDataForm::onUiEnabledStateChange);
     connect(this, &MainWindow::histogramReceived, histoTab, &histogramDataForm::onHistogramReceived);
     connect(histoTab, &histogramDataForm::histogramCleared, this, &MainWindow::onHistogramCleared);
-    ui->tabWidget->addTab(histoTab, "Statistics");
+    histoTab->hide();
+    // ui->tabWidget->addTab(histoTab, "Statistics");
 
     ParameterMonitorForm* paramTab = new ParameterMonitorForm(this);
     connect(this, &MainWindow::setUiEnabledStates, paramTab, &ParameterMonitorForm::onUiEnabledStateChange);
@@ -263,7 +267,8 @@ MainWindow::MainWindow(QWidget* parent)
     connect(paramTab, &ParameterMonitorForm::triggerSelectionChanged, this, &MainWindow::onTriggerSelectionChanged);
     connect(paramTab, &ParameterMonitorForm::gpioInhibitChanged, this, &MainWindow::gpioInhibit);
     connect(paramTab, &ParameterMonitorForm::mqttInhibitChanged, this, &MainWindow::mqttInhibit);
-    ui->tabWidget->addTab(paramTab, "Parameters");
+    paramTab->hide();
+    // ui->tabWidget->addTab(paramTab, "Parameters");
 
     ScanForm* scanTab = new ScanForm(this);
     connect(this, &MainWindow::setUiEnabledStates, scanTab, &ScanForm::onUiEnabledStateChange);
@@ -273,7 +278,8 @@ MainWindow::MainWindow(QWidget* parent)
     connect(scanTab, &ScanForm::setBiasControlVoltage, this, &MainWindow::sendSetBiasVoltage);
     connect(scanTab, &ScanForm::gpioInhibitChanged, this, &MainWindow::gpioInhibit);
     connect(scanTab, &ScanForm::mqttInhibitChanged, this, &MainWindow::mqttInhibit);
-    ui->tabWidget->addTab(scanTab, "Scans");
+    scanTab->hide();
+    // ui->tabWidget->addTab(scanTab, "Scans");
 
     LogPlotsWidget* logTab = new LogPlotsWidget(this);
     connect(this, &MainWindow::temperatureReceived, logTab, &LogPlotsWidget::onTemperatureReceived);
@@ -285,7 +291,8 @@ MainWindow::MainWindow(QWidget* parent)
     connect(this, &MainWindow::gpioRates, logTab, &LogPlotsWidget::onGpioRatesReceived, Qt::QueuedConnection);
 
     connect(this, &MainWindow::logInfoReceived, logTab, &LogPlotsWidget::onLogInfoReceived);
-    ui->tabWidget->addTab(logTab, "Log");
+    logTab->hide();
+    // ui->tabWidget->addTab(logTab, "Log");
 
     const QStandardItemModel* model = dynamic_cast<QStandardItemModel*>(ui->biasControlTypeComboBox->model());
     QStandardItem* item = model->item(1);
