@@ -39,3 +39,12 @@
 
 # debug information files
 *.dwo
+
+*.user
+*.o
+*.stash
+*.pdf
+.DS_Store
+.vscode/settings.json
+build/
+.codex
