@@ -1,0 +1,3 @@
+#!/bin/bash -e
+deb-systemd-helper stop muondetector-daemon.service
+deb-systemd-helper disable muondetector-daemon.service

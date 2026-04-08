@@ -1,0 +1,298 @@
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <map>
+#include <string>
+
+#include "histogram.h"
+
+Histogram::Histogram(const std::string& name, int nrBins, double min, double max, bool autoscale, const std::string& unit) noexcept
+    : fName(name)
+    , fUnit(unit)
+    , fNrBins(nrBins)
+    , fMin(min)
+    , fMax(max)
+    , fAutoscale(autoscale)
+{
+}
+
+Histogram::~Histogram()
+{
+    fHistogramMap.clear();
+}
+
+void Histogram::clear()
+{
+    fHistogramMap.clear();
+    fUnderflow = fOverflow = 0.;
+}
+
+void Histogram::setName(const std::string& name)
+{
+    fName = name;
+}
+
+void Histogram::setUnit(const std::string& unit)
+{
+    fUnit = unit;
+}
+
+void Histogram::setNrBins(int bins)
+{
+    fNrBins = bins;
+    clear();
+}
+
+int Histogram::getNrBins() const
+{
+    return fNrBins;
+}
+
+void Histogram::setMin(double val)
+{
+    fMin = val;
+}
+
+double Histogram::getMin() const
+{
+    return fMin;
+}
+
+void Histogram::setMax(double val)
+{
+    fMax = val;
+}
+
+double Histogram::getMax() const
+{
+    return fMax;
+}
+
+double Histogram::getRange() const
+{
+    return fMax - fMin;
+}
+
+double Histogram::getCenter() const
+{
+    return 0.5 * getRange() + fMin;
+}
+
+double Histogram::getBinCenter(int bin) const
+{
+    return bin2Value(bin);
+}
+
+int Histogram::getLowestOccupiedBin() const
+{
+    if (fHistogramMap.empty())
+        return -1;
+
+    auto it { std::find_if(fHistogramMap.cbegin(), fHistogramMap.cend(), [](std::pair<const int, double> element) { return std::fabs(element.second) > std::numeric_limits<double>::epsilon(); }) };
+
+    if (it == fHistogramMap.cend())
+        return -1;
+    return it->first;
+}
+
+int Histogram::getHighestOccupiedBin() const
+{
+    if (fHistogramMap.empty())
+        return -1;
+
+    auto it { std::find_if(fHistogramMap.crbegin(), fHistogramMap.crend(), [](std::pair<const int, double> element) { return std::fabs(element.second) > std::numeric_limits<double>::epsilon(); }) };
+
+    if (it == fHistogramMap.crend())
+        return -1;
+    return it->first;
+}
+
+void Histogram::fill(double x, double mult)
+{
+    int bin = value2Bin(x);
+    if (fAutoscale && getEntries() < 1e-6) {
+        // initial fill, so lets see if we should rescale to the first value
+        if (bin < 0 || bin >= fNrBins) {
+            rescale(x);
+            fill(x, mult);
+            return;
+        }
+    }
+    if (bin < 0) {
+        fUnderflow += mult;
+    } else if (bin >= fNrBins) {
+        fOverflow += mult;
+    } else
+        fHistogramMap[bin] += mult;
+}
+
+void Histogram::setBinContent(int bin, double value)
+{
+    if (bin >= 0 && bin < fNrBins)
+        fHistogramMap[bin] = value;
+}
+
+double Histogram::getBinContent(int bin) const
+{
+    if (bin >= 0 && bin < fNrBins) {
+        try {
+            auto it = fHistogramMap.find(bin);
+            if (it != fHistogramMap.end())
+                return fHistogramMap.at(bin);
+            else
+                return double {};
+        } catch (...) {
+            return double {};
+        }
+    } else
+        return double {};
+}
+
+double Histogram::getMean()
+{
+    double sum { 0. };
+    double entries { 0. };
+    for (const auto& entry : fHistogramMap) {
+        entries += entry.second;
+        sum += bin2Value(entry.first) * entry.second;
+    }
+    if (entries > 0.)
+        return sum / entries;
+    else
+        return double {};
+}
+
+double Histogram::getMedian()
+{
+    const double half_entries { getEntries() / 2. };
+    double binsum { 0. };
+    for (const auto& [bin, content] : fHistogramMap) {
+        binsum += content;
+        if (binsum > half_entries) {
+            return bin2Value(bin);
+        }
+    }
+    return double {};
+}
+
+double Histogram::getMpv()
+{
+    int highest_bin { 0 };
+    double highest { 1e-12 };
+    for (const auto& [bin, content] : fHistogramMap) {
+        if (content > highest) {
+            highest = content;
+            highest_bin = bin;
+        }
+    }
+    return bin2Value(highest_bin);
+}
+
+double Histogram::getRMS()
+{
+    double mean { getMean() };
+    double sum { 0. };
+    double entries { 0. };
+    for (const auto& entry : fHistogramMap) {
+        entries += entry.second;
+        double dx = bin2Value(entry.first) - mean;
+        sum += dx * dx * entry.second;
+    }
+    if (entries > 1.)
+        return sqrt(sum / (entries - 1.));
+    else
+        return double {};
+}
+
+double Histogram::getUnderflow() const
+{
+    return fUnderflow;
+}
+
+double Histogram::getOverflow() const
+{
+    return fOverflow;
+}
+
+double Histogram::getEntries()
+{
+    double sum { fUnderflow + fOverflow };
+    for (const auto& entry : fHistogramMap) {
+        sum += entry.second;
+    }
+    return sum;
+}
+
+int Histogram::value2Bin(double value) const
+{
+    double range { fMax - fMin };
+    if (range <= 0.)
+        return -1;
+    return static_cast<int>(std::lround((value - fMin) / range * (fNrBins - 1)));
+}
+
+double Histogram::bin2Value(int bin) const
+{
+    double range { fMax - fMin };
+    if (range <= 0.)
+        return -1;
+    double value { range * bin / (fNrBins - 1) + fMin };
+    return value;
+}
+
+void Histogram::rescale(double center, double width)
+{
+    setMin(center - width / 2.);
+    setMax(center + width / 2.);
+    clear();
+}
+
+void Histogram::rescale(double center)
+{
+    double width { getMax() - getMin() };
+    rescale(center, width);
+}
+
+void Histogram::rescale()
+{
+    if (!fAutoscale)
+        return;
+
+    // Strategy: check if more than 1% of all entries in underflow/overflow
+    // set new center to old center, adjust range by 20%
+    // set center to newValue if histo empty or only underflow/overflow filled
+    // histo will not be filled with supplied value, it has to be done externally
+    double entries { getEntries() };
+    // do nothing if histo is empty
+    if (entries < 3.) {
+        return;
+    }
+    const double ufl { getUnderflow() };
+    const double ofl { getOverflow() };
+    entries -= ufl + ofl;
+    const double range { getMax() - getMin() };
+    const int lowest { getLowestOccupiedBin() };
+    const int highest { getHighestOccupiedBin() };
+    const double lowestEntry { getBinCenter(lowest) };
+    const double highestEntry { getBinCenter(highest) };
+    if (ufl > 0. && ofl > 0. && (ufl + ofl) > 0.01 * entries) {
+        // range is too small, underflow and overflow have more than 1% of all entries
+        rescale(0.5 * range + getMin(), 1.1 * range);
+    } else if (ufl > 0.005 * entries) {
+        setMin(getMax() - range * 1.2);
+        clear();
+    } else if (ofl > 0.005 * entries) {
+        setMax(getMin() + range * 1.2);
+        clear();
+    } else if (ufl < 1e-3 && ofl < 1e-3) {
+        // check if range is too wide
+        if (entries > 100. && static_cast<double>(highest - lowest) / fNrBins < 0.05) {
+            rescale(0.5 * (highestEntry - lowestEntry) + lowestEntry, 0.8 * range);
+        }
+    }
+}
+
+void Histogram::setAutoscale(bool autoscale)
+{
+    fAutoscale = autoscale;
+}

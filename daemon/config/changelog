@@ -1,0 +1,104 @@
+muondetector-daemon (2.2.0) ; urgency=low
+
+  * Updates:
+  - Moved gpio handling from pigpiod to libgpiod which removes dependency on external application.
+    Requires user to be in gpio group
+  - 
+
+ -- MuonPi <developer@muonpi.org>  Sat, 8. June 2024 20:00:00 +0200
+
+muondetector-daemon (2.1.1) ; urgency=low
+
+  * Bugfixes:
+  - Fixed missing includes to work with newer compiler versions
+  - Changed scripts for compatibility with newer raspbian version bookworm
+ -- MuonPi <developer@muonpi.org>  Sat, 8. June 2024 20:00:00 +0200
+
+muondetector-daemon (2.1.0) ; urgency=low
+
+  * Bugfixes:
+  - removed wrong QT connect call which resulted in a warning in log messages after daemon startup
+  - fixed reconnect to MQTT broker after connection was lost temporarily
+
+  * Updates:
+  - restructured data logging system: 
+   - introduced log rotation and possibility to enable/disable data logging
+  - simplified structure of data storage path under /var/muondetector
+  - auto delete old data and log files
+  - added geo position managing system with three modes of operation:
+   - static: report position that was statically set (by user or as a result of a lock-in operation, see below)
+   - auto: report position from most recent uBlox position fix
+   - lock-in: fix a uBlox position only when accuracy is better than a user defined limit (for pos accuracy and pos DOP values) and make this the new static position
+  - added several position filters applicable to auto and lock-in modes:
+   - no filter: uBlox position fixes are not filtered (bad accuracy and bad precision))
+   - kalman: apply a kalman filter which smoothes the series of last fixes efficiently but poorly filters long term transients/drifts (poor accuracy, excellent precision)
+   - histogram mean (good accuracy, fair precision)
+   - histogram median (better accuracy, fair precision)
+   - histogram most probable value (mpv) (best accuracy, fair precision)
+  - Added NetworkDiscovery feature (experimental)
+ -- MuonPi <developer@muonpi.org>  Wed, 17. May 2023 10:10:00 +0200
+
+muondetector-daemon (2.0.1) ; urgency=low
+
+  * Bugfixes:
+  - formerly invalid TimeTM2 messages from u-Blox due to a missing rising/falling edge timestamp are now replaced with a valid message where the missing ts is reconstructed from the other edge and the last obeserved valid pulse length
+  - fixed shadowed declaration of a pointer to MqttHandler in Daemon
+  
+  * Updates:
+  - added configuration option for input polarity (input1_polarity/input2_polarity) in muondetector.conf file
+  
+ -- MuonPi <developer@muonpi.org>  Fri, 29. Jan 2021 10:10:00 +0100
+
+muondetector-daemon (2.0.0) ; urgency=low
+
+  * Updated
+
+ -- MuonPi <developer@muonpi.org>  Wed, 16. Dec 2020 21:55:00 +0100
+
+muondetector-daemon (1.2.2) ; urgency=low
+
+  * Updated
+
+ -- MuonPi <developer@muonpi.org>  Wed, 12. Aug 2020 01:00:00 +0200
+
+muondetector-daemon (1.2.1) ; urgency=low
+
+  * Updated
+
+ -- MuonPi <developer@muonpi.org>  Mon, 20. Jul 2020 09:00:00 +0200
+
+muondetector-daemon (1.2.0) ; urgency=low
+
+  * Updated
+
+ -- MuonPi <developer@muonpi.org>  Tue, 16. Jun 2020 22:00:00 +0200
+
+muondetector-daemon (1.1.2) ; urgency=low
+
+  * Updated
+
+ -- MuonPi <developer@muonpi.org>  Mon, 27 Apr 2020 16:00:00 +0200
+
+muondetector-daemon (1.1.1) ; urgency=low
+
+  * Updated
+
+ -- MuonPi <developer@muonpi.org>  Mon, 03 Mar 2020 15:00:00 +0100
+
+muondetector-daemon (1.1.0) ; urgency=low
+
+  * Updated
+
+ -- MuonPi <developer@muonpi.org>  Thu, 05 Dec 2019 12:17:17 +0100
+
+muondetector-daemon (1.0.3) ; urgency=low
+
+  * Updated
+
+ -- MuonPi <developer@muonpi.org>  Thu, 22 Aug 2019 14:12:17 +0200
+
+muondetector-daemon (1.0.1) ; urgency=low
+
+  * Initial release.
+
+ -- MuonPi <developer@muonpi.org>  Fri, 26 Oct 2018 15:20:00 +0200
