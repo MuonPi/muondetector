@@ -1,11 +1,13 @@
 #include "config_parser.h"
 #include "system_config.h"
+#include "core/logging/logger.h"
 
 #include <algorithm>
 #include <cstring>
 #include <filesystem>
 #include <vector>
 #include <arpa/inet.h>
+#include <limits>
 #include <libconfig.h++>
 
 
@@ -13,6 +15,13 @@ ConfigParser::ConfigParser(int argc, char *argv[], SystemConfig && f_config) : m
 {
     apply_defaults();
     parse(argc, argv);
+    if (m_config.verbose > 2) {
+        AsyncLogger::instance().setMinimumLevel(LogLevel::Debug);
+    } else if (m_config.verbose > 0) {
+        AsyncLogger::instance().setMinimumLevel(LogLevel::Info);
+    } else {
+        AsyncLogger::instance().setMinimumLevel(LogLevel::Warn);
+    }
     validate();
     report();
 }
@@ -40,6 +49,48 @@ std::string ConfigParser::strip_prefix(const std::string &arg)
     return arg;
 }
 
+void ConfigParser::print_help(const std::string& progName)
+{
+    std::cout << "Usage: " << progName << " [options] [gps_device]\n\n";
+
+    std::cout << "General:\n";
+    std::cout << "  -e, --verbose <level>     Set verbosity level\n";
+    std::cout << "  -h, --help                Show this help message\n\n";
+
+    std::cout << "GNSS:\n";
+    std::cout << "  -b <baud>                 Set GNSS baudrate\n";
+    std::cout << "  -d                        Dump raw GNSS data\n";
+    std::cout << "  [gps_device]              Device path (e.g. /dev/ttyUSB0)\n\n";
+
+    std::cout << "Networking:\n";
+    std::cout << "  --server <ip>             Set server address\n";
+    std::cout << "  --dp <port>               Set server port\n\n";
+
+    std::cout << "DAQ Settings:\n";
+    std::cout << "  --th1 <V>                 Threshold channel 1\n";
+    std::cout << "  --th2 <V>                 Threshold channel 2\n";
+    std::cout << "  --bias <V>                Bias voltage\n";
+    std::cout << "  -p                        Enable bias\n\n";
+
+    std::cout << "Hardware:\n";
+    std::cout << "  --pre1                    Enable preamp 1\n";
+    std::cout << "  --pre2                    Enable preamp 2\n";
+    std::cout << "  -g, --gain                Enable high gain\n";
+    std::cout << "  --pol1 <0|1>              Set polarity channel 1\n";
+    std::cout << "  --pol2 <0|1>              Set polarity channel 2\n\n";
+
+    std::cout << "Trigger:\n";
+    std::cout << "  -t, --trigger <mode>\n";
+    std::cout << "       0 = XOR\n";
+    std::cout << "       1 = AND\n";
+    std::cout << "       2 = TIME_MEAS_OUT\n";
+    std::cout << "       3 = EXT_TRIGGER\n\n";
+
+    std::cout << "Misc:\n";
+    std::cout << "  --id <string>             Station ID\n";
+    std::cout << "  --pca <mask>              PCA port mask\n";
+}
+
 void ConfigParser::parse(int argc, char *argv[])
 {
     for (int i = 1; i < argc; ++i)
@@ -49,8 +100,10 @@ void ConfigParser::parse(int argc, char *argv[])
         // -------- positional (device) --------
         if (!is_flag(arg))
         {
-            if (m_config.gpsdevname.empty())
+            if (m_config.gpsdevname.empty()) {
                 m_config.gpsdevname = arg;
+                m_presence.cliGpsDevice = true;
+            }
             continue;
         }
 
@@ -107,6 +160,7 @@ void ConfigParser::parse(int argc, char *argv[])
                 try
                 {
                     m_config.gnss_baudrate = std::stoi(value);
+                    m_presence.cliGnssBaud = true;
                 }
                 catch (...)
                 {
@@ -120,6 +174,7 @@ void ConfigParser::parse(int argc, char *argv[])
             if (next_value(value))
             {
                 m_config.serverAddress = value;
+                m_presence.cliServerAddress = true;
             }
         }
 
@@ -130,6 +185,7 @@ void ConfigParser::parse(int argc, char *argv[])
                 try
                 {
                     m_config.serverPort = static_cast<uint16_t>(std::stoi(value));
+                    m_presence.cliServerPort = true;
                 }
                 catch (...)
                 {
@@ -174,6 +230,7 @@ void ConfigParser::parse(int argc, char *argv[])
                 try
                 {
                     m_config.biasVoltage = std::stof(value);
+                    m_presence.cliBias = true;
                 }
                 catch (...)
                 {
@@ -184,22 +241,26 @@ void ConfigParser::parse(int argc, char *argv[])
         else if (key == "p")
         {
             m_config.bias_ON = true;
+            m_presence.cliBias = true;
         }
 
         // -------- preamps --------
         else if (key == "pre1")
         {
             m_config.preamp_enable[0] = true;
+            m_presence.cliPreamp1 = true;
         }
         else if (key == "pre2")
         {
             m_config.preamp_enable[1] = true;
+            m_presence.cliPreamp2 = true;
         }
 
         // -------- gain --------
         else if (key == "g" || key == "gain")
         {
             m_config.hi_gain = true;
+            m_presence.cliGain = true;
         }
 
         // -------- polarity --------
@@ -208,6 +269,7 @@ void ConfigParser::parse(int argc, char *argv[])
             if (next_value(value))
             {
                 m_config.polarity[0] = (value == "1");
+                m_presence.cliPolarity1 = true;
             }
         }
         else if (key == "pol2")
@@ -215,6 +277,7 @@ void ConfigParser::parse(int argc, char *argv[])
             if (next_value(value))
             {
                 m_config.polarity[1] = (value == "1");
+                m_presence.cliPolarity2 = true;
             }
         }
 
@@ -224,6 +287,7 @@ void ConfigParser::parse(int argc, char *argv[])
             if (next_value(value))
             {
                 m_config.station_ID = value;
+                m_presence.cliStationId = true;
             }
         }
 
@@ -250,6 +314,7 @@ void ConfigParser::parse(int argc, char *argv[])
                 default:
                     break;
                 }
+                m_presence.cliTrigger = true;
             }
         }
 
@@ -261,11 +326,19 @@ void ConfigParser::parse(int argc, char *argv[])
                 try
                 {
                     m_config.pcaPortMask = static_cast<uint8_t>(std::stoi(value));
+                    m_presence.cliTimingInput = true;
                 }
                 catch (...)
                 {
                 }
             }
+        }
+
+        // -------- help --------
+        else if (key == "h" || key == "help")
+        {
+            print_help(argv[0]);
+            std::exit(0);
         }
     }
 }
@@ -314,11 +387,10 @@ void ConfigParser::apply_defaults()
     try
     {
         m_config.gpsdevname = static_cast<std::string>(m_config.config_file_data->lookup("ublox_device"));
+        m_presence.cfgGpsDevice = true;
     }
     catch (const libconfig::SettingNotFoundException &)
     {
-        std::cerr << "No 'ublox_device' setting in SystemConfig file. Will guess...\n";
-
         std::vector<std::string> candidates = {"ttyS0", "ttyAMA0", "serial0"};
 
         std::vector<std::string> found;
@@ -337,17 +409,13 @@ void ConfigParser::apply_defaults()
         }
         catch (const std::filesystem::filesystem_error &e)
         {
-            std::cerr << "Error accessing /dev: " << e.what() << '\n';
+            logWarn(std::string("Error accessing /dev while probing GNSS devices: ") + e.what());
         }
 
         if (!found.empty())
         {
             m_config.gpsdevname = found.back(); // mimic Qt "last()"
-            std::cout << "detected " << m_config.gpsdevname << " as most probable candidate\n";
-        }
-        else
-        {
-            std::cerr << "no device selected, will not connect to GNSS module\n";
+            logInfo("Detected " + m_config.gpsdevname + " as probable GNSS device candidate");
         }
     }
 
@@ -355,10 +423,10 @@ void ConfigParser::apply_defaults()
     try
     {
         m_config.gnss_baudrate = m_config.config_file_data->lookup("ublox_baud");
+        m_presence.cfgGnssBaud = true;
     }
-    catch (const libconfig::SettingNotFoundException &nfex)
+    catch (const libconfig::SettingNotFoundException &)
     {
-        std::cerr << "No 'ublox_baud' setting in SystemConfig file. Assuming" << m_config.gnss_baudrate;
     }
 
     // Load tcp_ip
@@ -367,6 +435,7 @@ void ConfigParser::apply_defaults()
     {
         std::string tcpIpCfg = m_config.config_file_data->lookup("tcp_ip");
         m_config.serverAddress = tcpIpCfg;
+        m_presence.cfgServerAddress = true;
     }
     catch (const libconfig::SettingNotFoundException &)
     {
@@ -377,6 +446,7 @@ void ConfigParser::apply_defaults()
     {
         int port = m_config.config_file_data->lookup("tcp_port");
         m_config.serverPort = static_cast<std::uint16_t>(port);
+        m_presence.cfgServerPort = true;
     }
     catch (const libconfig::SettingNotFoundException &)
     {
@@ -388,66 +458,58 @@ void ConfigParser::apply_defaults()
         auto mask = static_cast<int>(m_config.config_file_data->lookup("timing_input"));
         if (mask < 0 || mask > std::numeric_limits<std::uint8_t>::max())
         {
-            std::cerr << "Invalid 'timing_input' in SystemConfig file: " << mask;
+            std::cerr << "Invalid 'timing_input' in SystemConfig file: " << mask << "\n";
         }
         else
         {
             m_config.pcaPortMask = mask;
+            m_presence.cfgTimingInput = true;
         }
     }
-    catch (const libconfig::SettingNotFoundException &nfex)
-    {
-        std::cerr << "No 'timing_input' setting in SystemConfig file. Assuming" << static_cast<unsigned>(m_config.pcaPortMask);
-    }
+    catch (const libconfig::SettingNotFoundException &)
+    {}
 
     // Load biasPowerCfg
     try
     {
         m_config.bias_ON = m_config.config_file_data->lookup("bias_switch");
+        m_presence.cfgBias = true;
     }
-    catch (const libconfig::SettingNotFoundException &nfex)
-    {
-        std::cerr << "No 'bias_switch' setting in SystemConfig file. Assuming" << (int)m_config.bias_ON;
-    }
+    catch (const libconfig::SettingNotFoundException &)
+    {}
 
     try
     {
         m_config.preamp_enable[0] = m_config.config_file_data->lookup("preamp1_switch");
+        m_presence.cfgPreamp1 = true;
     }
-    catch (const libconfig::SettingNotFoundException &nfex)
-    {
-        std::cerr << "No 'preamp1_switch' setting in SystemConfig file. Assuming" << (int)m_config.preamp_enable[0];
-    }
+    catch (const libconfig::SettingNotFoundException &)
+    {}
 
     try
     {
         m_config.preamp_enable[1] = m_config.config_file_data->lookup("preamp2_switch");
+        m_presence.cfgPreamp2 = true;
     }
-    catch (const libconfig::SettingNotFoundException &nfex)
-    {
-        std::cerr << "No 'preamp2_switch' setting in SystemConfig file. Assuming " << (int)m_config.preamp_enable[1];
-    }
+    catch (const libconfig::SettingNotFoundException &)
+    {}
 
     try
     {
         m_config.hi_gain = m_config.config_file_data->lookup("gain_switch");
+        m_presence.cfgGain = true;
     }
-    catch (const libconfig::SettingNotFoundException &nfex)
-    {
-        std::cerr << "No 'gain_switch' setting in SystemConfig file. Assuming" << (int)m_config.hi_gain;
-    }
+    catch (const libconfig::SettingNotFoundException &)
+    {}
 
     int eventTriggerCfg{-1};
     try
     {
         eventTriggerCfg = m_config.config_file_data->lookup("trigger_input");
-        std::cout << "event trigger : " << eventTriggerCfg;
+        m_presence.cfgTrigger = true;
     }
-    catch (const libconfig::SettingNotFoundException &nfex)
-    {
-        std::cerr << "No 'trigger_input' setting in SystemConfig file. Assuming signal"
-                  << GPIO_SIGNAL_MAP.at(m_config.eventTrigger).name;
-    }
+    catch (const libconfig::SettingNotFoundException &)
+    {}
 
     switch (eventTriggerCfg)
     {
@@ -472,21 +534,19 @@ void ConfigParser::apply_defaults()
     try
     {
         m_config.polarity[0] = m_config.config_file_data->lookup("input1_polarity");
+        m_presence.cfgPolarity1 = true;
     }
-    catch (const libconfig::SettingNotFoundException &nfex)
-    {
-        std::cerr << "No 'input1_polarity' setting in SystemConfig file. Assuming" << (int)m_config.polarity[0];
-    }
+    catch (const libconfig::SettingNotFoundException &)
+    {}
 
     // Load pol2Cfg
     try
     {
         m_config.polarity[1] = m_config.config_file_data->lookup("input2_polarity");
+        m_presence.cfgPolarity2 = true;
     }
-    catch (const libconfig::SettingNotFoundException &nfex)
-    {
-        std::cerr << "No 'input2_polarity' setting in SystemConfig file. Assuming" << (int)m_config.polarity[1];
-    }
+    catch (const libconfig::SettingNotFoundException &)
+    {}
 
     // Load mqtt credentials
     try {
@@ -496,7 +556,7 @@ void ConfigParser::apply_defaults()
         m_config.username = userNameCfg;
         m_config.password = passwordCfg;
     } catch (const libconfig::SettingNotFoundException& nfex) {
-        std::cout << "No 'mqtt_user' or 'mqtt_password' setting in SystemConfig file. Will continue with previously stored credentials";
+        logInfo("No 'mqtt_user' or 'mqtt_password' in config; using previously stored credentials");
     }
 
 
@@ -504,13 +564,12 @@ void ConfigParser::apply_defaults()
     try {
         std::string stationIdString = m_config.config_file_data->lookup("stationID");
         m_config.station_ID = stationIdString;
-    } catch (const libconfig::SettingNotFoundException& nfex) {
-        std::cerr << "No 'stationID' setting in SystemConfig file. Assuming stationID='0'";
-    }
+        m_presence.cfgStationId = true;
+    } catch (const libconfig::SettingNotFoundException&) {}
 
     // try to read in the stored geo handling fields
     std::string mode_str = m_config.settings_file_data->lookup("geo_handling.mode");
-    std::cout << "mode = " << mode_str;
+    logInfo("Position mode from settings: " + mode_str);
     if (mode_str == PositionModeConfig::mode_name[static_cast<std::size_t>(PositionModeConfig::Mode::Static)]) {
         m_config.position_mode_config.mode = PositionModeConfig::Mode::Static;
     } else if (mode_str == PositionModeConfig::mode_name[static_cast<std::size_t>(PositionModeConfig::Mode::LockIn)]) {
@@ -523,6 +582,7 @@ void ConfigParser::apply_defaults()
     m_config.position_mode_config.static_position.altitude = m_config.settings_file_data->lookup("geo_handling.static_coordinates.alt");
     m_config.position_mode_config.static_position.hor_error = m_config.settings_file_data->lookup("geo_handling.static_coordinates.hor_error");
     m_config.position_mode_config.static_position.vert_error = m_config.settings_file_data->lookup("geo_handling.static_coordinates.vert_error");
+
 }
 
 bool ConfigParser::is_valid_ipv4(const std::string& ip)
@@ -533,6 +593,46 @@ bool ConfigParser::is_valid_ipv4(const std::string& ip)
 
 void ConfigParser::validate()
 {
+    if (!m_presence.cfgGpsDevice && !m_presence.cliGpsDevice && m_config.gpsdevname.empty()) {
+        logWarn("No GNSS device provided by config/settings/CLI; GNSS module will stay disconnected");
+    }
+    if (!m_presence.cfgGnssBaud && !m_presence.cliGnssBaud) {
+        logWarn("No 'ublox_baud' in config and no CLI override; using existing/default baudrate");
+    }
+    if (!m_presence.cfgServerAddress && !m_presence.cliServerAddress) {
+        logWarn("No 'tcp_ip' in config and no CLI override; using existing/default listen address");
+    }
+    if (!m_presence.cfgServerPort && !m_presence.cliServerPort) {
+        logWarn("No 'tcp_port' in config and no CLI override; using existing/default listen port");
+    }
+    if (!m_presence.cfgTimingInput && !m_presence.cliTimingInput) {
+        logWarn("No 'timing_input' in config and no CLI override; using existing/default timing input");
+    }
+    if (!m_presence.cfgBias && !m_presence.cliBias) {
+        logWarn("No 'bias_switch' in config and no CLI override; using existing/default bias switch state");
+    }
+    if (!m_presence.cfgPreamp1 && !m_presence.cliPreamp1) {
+        logWarn("No 'preamp1_switch' in config and no CLI override; using existing/default preamp1 state");
+    }
+    if (!m_presence.cfgPreamp2 && !m_presence.cliPreamp2) {
+        logWarn("No 'preamp2_switch' in config and no CLI override; using existing/default preamp2 state");
+    }
+    if (!m_presence.cfgGain && !m_presence.cliGain) {
+        logWarn("No 'gain_switch' in config and no CLI override; using existing/default gain state");
+    }
+    if (!m_presence.cfgTrigger && !m_presence.cliTrigger) {
+        logWarn("No 'trigger_input' in config and no CLI override; using existing/default trigger mode");
+    }
+    if (!m_presence.cfgPolarity1 && !m_presence.cliPolarity1) {
+        logWarn("No 'input1_polarity' in config and no CLI override; using existing/default polarity for channel 1");
+    }
+    if (!m_presence.cfgPolarity2 && !m_presence.cliPolarity2) {
+        logWarn("No 'input2_polarity' in config and no CLI override; using existing/default polarity for channel 2");
+    }
+    if (!m_presence.cfgStationId && !m_presence.cliStationId) {
+        logWarn("No 'stationID' in config and no CLI override; using existing/default station ID");
+    }
+
     // Validate IP
     if (!is_valid_ipv4(m_config.serverAddress))
     {
@@ -540,7 +640,7 @@ void ConfigParser::validate()
             m_config.serverAddress != "local")
         {
             m_config.serverAddress.clear();
-            std::cerr << "wrong daemon ipAddress, not an ipv4address\n";
+            logError("Invalid daemon IP address; not a valid IPv4 address");
         }
     }
 }
@@ -550,21 +650,20 @@ void ConfigParser::report()
 
     if (m_config.verbose > 2)
     {
-        std::cout << "ublox baudrate:" << m_config.gnss_baudrate << '\n';
-        std::cout << "ublox device: " << m_config.gpsdevname << '\n';
-        std::cout << "tcp_ip (listen ip): " << m_config.serverAddress << '\n';
-        std::cout << "tcp_port (listen port): " << m_config.serverPort << '\n';
-        std::cout << "timing input: " << m_config.pcaPortMask << '\n';
-        std::cout << "bias switch:" << m_config.bias_ON << '\n';
-        std::cout << "preamp1 switch:" << m_config.preamp_enable[0] << '\n';
-        std::cout << "preamp2 switch:" << m_config.preamp_enable[1] << '\n';
-        std::cout << "gain switch:" << m_config.hi_gain << '\n';
-        std::cout << "input polarity ch1:" << m_config.polarity[0] << '\n';
-        std::cout << "input polarity ch2:" << m_config.polarity[1] << '\n';
-        std::cout << "mqtt user: " << m_config.username << " passw: " << m_config.password << '\n';
+        logInfo("ublox baudrate: " + std::to_string(m_config.gnss_baudrate));
+        logInfo("ublox device: " + m_config.gpsdevname);
+        logInfo("tcp_ip (listen ip): " + m_config.serverAddress);
+        logInfo("tcp_port (listen port): " + std::to_string(m_config.serverPort));
+        logInfo("timing input: " + std::to_string(m_config.pcaPortMask));
+        logInfo("bias switch: " + std::to_string(m_config.bias_ON));
+        logInfo("preamp1 switch: " + std::to_string(m_config.preamp_enable[0]));
+        logInfo("preamp2 switch: " + std::to_string(m_config.preamp_enable[1]));
+        logInfo("gain switch: " + std::to_string(m_config.hi_gain));
+        logInfo("input polarity ch1: " + std::to_string(m_config.polarity[0]));
+        logInfo("input polarity ch2: " + std::to_string(m_config.polarity[1]));
+        logInfo("mqtt user: " + m_config.username + " passw: " + m_config.password);
     }
     if (m_config.verbose) {
-        std::cout << "station id: " << m_config.station_ID << '\n';
+        logInfo("station id: " + m_config.station_ID);
     }
-    std::cout << std::flush;
 }

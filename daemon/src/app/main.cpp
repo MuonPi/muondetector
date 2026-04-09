@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 
     std::cout << "MuonPi Muondetector Daemon "
             << "V" + MuonPi::Version::software.string()
-            << "(build " + std::string(__TIMESTAMP__) + ")";
+            << "(build " + std::string(__TIMESTAMP__) + ")\n";
 
     // Read the file. If there is an error, report it and exit.
     try {
