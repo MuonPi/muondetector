@@ -51,20 +51,22 @@ set(MUONDETECTOR_I2C_SOURCE_FILES
     )
 
 set(MUONDETECTOR_DAEMON_SOURCE_FILES
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/main.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/config_parser.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/app/main.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/app/config_parser.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/app/daemon.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/event_bus.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/scheduler.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/system_builder.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/thread_pool.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/factories/source_factory.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/factories/device_factory.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/registries/data_store.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/registries/source_manager.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/registries/sink_manager.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/network/tcpserver.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/ublox/serialublox.cpp"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/serialublox_processmessages.cpp"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/pigpiodhandler.cpp"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/daemon.cpp"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/filehandler.cpp"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/calibration.cpp"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/gpio_mapping.cpp"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/logengine.cpp"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/geohash.cpp"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/kalman_gnss_filter.cpp"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/geoposmanager.cpp"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/ratebuffer.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/tcp_sink.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/i2c_sources/ads1115_source.cpp"
 
     "${MUONDETECTOR_I2C_SOURCE_FILES}"
     "${MUONDETECTOR_SPI_SOURCE_FILES}"
@@ -105,20 +107,24 @@ set(MUONDETECTOR_I2C_HEADER_FILES
 #     )
 
 set(MUONDETECTOR_DAEMON_HEADER_FILES
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/config_parser.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/app/config_parser.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/app/daemon.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/event_bus.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/scheduler.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/task.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/system_builder.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/thread_pool.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/factories/source_factory.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/factories/device_factory.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/registries/device_registry.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/registries/data_store.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/network/tcpserver.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/ublox/serialublox.h"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/daemon.h"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/pigpiodhandler.h"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/unixtime_from_gps.h"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/filehandler.h"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/calibration.h"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/logparameter.h"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/gpio_mapping.h"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/logengine.h"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/geohash.h"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/kalman_gnss_filter.h"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/geoposmanager.h"
-    # "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/ratebuffer.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/sink.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/tcp_sink.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/mqtt_sink.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/source.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/i2c_sources/ads1115_source.h"
 
     "${MUONDETECTOR_I2C_HEADER_FILES}"
     "${MUONDETECTOR_SPI_HEADER_FILES}"
@@ -166,9 +172,12 @@ add_executable(muondetector-daemon ${MUONDETECTOR_DAEMON_SOURCE_FILES} ${MUONDET
 
 set_target_properties(muondetector-daemon PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
+
 target_include_directories(muondetector-daemon PUBLIC
     $<BUILD_INTERFACE:${MUONDETECTOR_DAEMON_SRC_DIR}>
-    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>)
+    $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
+    $<BUILD_INTERFACE:${CAPNP_INCLUDE_DIR}>
+)
 
 
 target_link_libraries(muondetector-daemon PRIVATE
@@ -176,6 +185,8 @@ target_link_libraries(muondetector-daemon PRIVATE
     ${MOSQUITTO}
     ${CRYPTOPP}
     ${RT}
+    ${CAPNP_LIBRARIES}
+    ${CAPNP_KJ_LIBRARIES}
     muondetector-shared
     muondetector-shared-mqtt
     pthread

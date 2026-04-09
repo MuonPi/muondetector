@@ -1,13 +1,16 @@
-#include <signal.h>
-#include <stdio.h>
+
+#include "config_parser.h"
+#include "system_config.h"
+#include "daemon.h"
+#include <cstdio>
 
 #include <iostream>
 #include <libconfig.h++>
-#include <termios.h>
-#include <unistd.h>
+// #include <termios.h>
+// #include <unistd.h>
+#include <csignal>
+#include <atomic>
 
-#include "config_parser.h"
-// #include "daemon.h"
 #include <config.h>
 #include <gpio_pin_definitions.h>
 
@@ -15,6 +18,19 @@ static const std::string CONFIG_FILE = std::string(MuonPi::Config::file);
 static const std::string SETTINGS_FILE = std::string(MuonPi::Config::data_path) + std::string(MuonPi::Config::persistant_settings_file);
 static int verbose = 0;
 
+namespace Runtime
+{
+    inline std::atomic<bool> g_running = true;
+}
+
+static std::unique_ptr<Daemon> g_daemon = nullptr;
+
+extern "C" void handleSignal(int)
+{
+    if (g_daemon != nullptr) {
+        g_daemon->stop();
+    }
+}
 
 int main(int argc, char* argv[])
 {
@@ -79,19 +95,24 @@ int main(int argc, char* argv[])
     libconfig::Setting& root = settings->getRoot();
 
     if (root.exists("geo_handling") == false) {
-        throw std::runtime_error("error accessing settings. Aborting...");
+        std::cerr << "error accessing settings. Aborting...";
+        return EXIT_FAILURE;
     }
 
-    auto config = std::make_shared<ConfigParser::configuration>();
+    auto config = SystemConfig{};
 
-    config->config_file_data = cfg;
-    config->settings_file_data = settings;
-    config = ConfigParser(argc, argv, config).get(); // Loads default settings and updates them with commandline arguments
+    config.config_file_data = cfg;
+    config.settings_file_data = settings;
+    config = ConfigParser(argc, argv, std::move(config)).get(); // Loads default settings and updates them with commandline arguments
     
+    std::signal(SIGTERM, handleSignal);
+    std::signal(SIGINT,  handleSignal);
     // START
 
-    // Daemon daemon { daemonConfig };
+    // Clean handoff between main() and Daemon class through share of configuration
+    g_daemon = std::make_unique<Daemon>(config);
 
+    g_daemon->exec();
     // return a.exec();
     return EXIT_SUCCESS;
 }

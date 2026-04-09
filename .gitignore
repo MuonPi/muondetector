@@ -47,3 +47,4 @@
 .DS_Store
 .vscode/settings.json
 build/
+.codex
