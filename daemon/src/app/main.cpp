@@ -16,7 +16,6 @@
 
 static const std::string CONFIG_FILE = std::string(MuonPi::Config::file);
 static const std::string SETTINGS_FILE = std::string(MuonPi::Config::data_path) + std::string(MuonPi::Config::persistant_settings_file);
-static int verbose = 0;
 
 namespace Runtime
 {

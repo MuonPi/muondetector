@@ -528,9 +528,9 @@ double BME280::getPressure(signed int adc_P, signed int t_fine)
     double P = ((uint32_t)p) / 256.;
     if (fDebugLevel > 1) {
         printf("adc_P=%d\n", adc_P);
-        printf("X1=%lld\n", X1);
-        printf("X2=%lld\n", X2);
-        printf("p=%lld\n", p);
+        printf("X1=%ld\n", static_cast<long>(X1));
+        printf("X2=%ld\n", static_cast<long>(X2));
+        printf("p=%ld\n", static_cast<long>(p));
         printf("P=%.3f\n", P);
     }
     return P;

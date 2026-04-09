@@ -5,6 +5,7 @@ string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
 
 option(MUONDETECTOR_BUILD_GUI "Build the gui for the muondetector" ON)
 option(MUONDETECTOR_BUILD_DAEMON "Build the daemon for the muondetector. Defaults to ON on armv7l architecture" OFF)
+option(MUONDETECTOR_BUILD_TESTS "Build integration tests" ON)
 set(MUONDETECTOR_ON_RASPBERRYPI OFF)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.cmake")
@@ -107,6 +108,11 @@ set(MUONDETECTOR_ALL_FILES
     "${MUONDETECTOR_LOGIN_HEADER_FILES}"
     )
 endif (MUONDETECTOR_BUILD_DAEMON)
+
+if (MUONDETECTOR_BUILD_TESTS AND MUONDETECTOR_BUILD_DAEMON)
+enable_testing()
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/tests")
+endif ()
 
 add_custom_target(clangformat COMMAND clang-format -style=WebKit -i ${MUONDETECTOR_ALL_FILES})
 

@@ -28,7 +28,7 @@ private:
         TOS = 0x03
     };
 
-    unsigned int fLastConvTime;
+    [[maybe_unused]] unsigned int fLastConvTime;
     signed int fLastRawValue;
     bool fExternal { false };
 };

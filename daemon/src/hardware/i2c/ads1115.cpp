@@ -9,8 +9,6 @@
 constexpr uint16_t HI_RANGE_LIMIT { static_cast<uint16_t>(ADS1115::MAX_ADC_VALUE * 0.8) };
 constexpr uint16_t LO_RANGE_LIMIT { static_cast<uint16_t>(ADS1115::MAX_ADC_VALUE * 0.2) };
 
-constexpr std::chrono::microseconds loop_delay { 100L };
-
 bool ADS1115::Sample::operator==(const Sample& other)
 {
     return (value == other.value && voltage == other.voltage && channel == other.channel && timestamp == other.timestamp);

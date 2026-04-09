@@ -534,6 +534,7 @@ void Adafruit_GFX::setRotation(uint8_t x)
 
 void Adafruit_GFX::invertDisplay(bool i)
 {
+    (void)i;
     // do nothing, can be subclassed
 }
 

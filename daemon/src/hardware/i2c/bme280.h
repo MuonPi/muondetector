@@ -58,7 +58,7 @@ public:
 
 private:
     int32_t fT_fine = 0;
-    unsigned int fLastConvTime;
+    [[maybe_unused]] unsigned int fLastConvTime;
     bool fCalibrationValid;
     uint16_t fCalibParameters[18]; // 18x 16-Bit words in 36 8-Bit registers
 };

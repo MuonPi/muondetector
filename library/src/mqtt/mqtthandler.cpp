@@ -85,6 +85,7 @@ namespace MuonPi
 
     void MqttHandler::callback_message(const mosquitto_message *message)
     {
+        (void)message;
         // emit receivedMessage(message->topic, reinterpret_cast<char *>(message->payload));
     }
 

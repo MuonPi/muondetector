@@ -33,7 +33,7 @@ public:
     double getPressure(uint8_t oss);
 
 private:
-    unsigned int fLastConvTime;
+    [[maybe_unused]] unsigned int fLastConvTime;
     bool fCalibrationValid;
     signed int fCalibParameters[11];
 };

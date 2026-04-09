@@ -93,9 +93,9 @@ namespace MuonPi
         std::string m_password{};
         std::string m_client_id{};
 
-        int m_verbose{0};
+        [[maybe_unused]] int m_verbose{0};
 
-        std::size_t m_publish_error_count{0};
+        [[maybe_unused]] std::size_t m_publish_error_count{0};
         static constexpr std::size_t s_max_publish_errors{3};
 
         friend void wrapper_callback_connected(mosquitto *mqtt, void *object, int result);

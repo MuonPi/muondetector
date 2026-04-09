@@ -36,10 +36,10 @@ public:
     bool calibrate(int& x, int& y, int& z);
 
 private:
-    unsigned int fLastConvTime;
-    bool fCalibrationValid;
+    [[maybe_unused]] unsigned int fLastConvTime;
+    [[maybe_unused]] bool fCalibrationValid;
     unsigned int fGain;
-    signed int fCalibParameters[11];
+    [[maybe_unused]] signed int fCalibParameters[11];
 };
 
 #endif // !_HMC5883_H_

@@ -1,6 +1,6 @@
 #include "source_manager.h"
 
-void SourceManager::add(std::unique_ptr<Source> src)
+void SourceManager::add(std::shared_ptr<Source> src)
 {
     m_sources.push_back(std::move(src));
 }

@@ -19,6 +19,7 @@
 #include "data/ad1115_event.h"
 
 #include <memory>
+#include <chrono>
 
 
 SystemBuilder::Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config, Scheduler& scheduler)
@@ -38,6 +39,7 @@ SystemBuilder::Context SystemBuilder::build(ThreadPool& pool, const SystemConfig
     // --- sources ---
     SourceFactory::createADS1115Source(ctx.sources, 1, ctx.registry, ctx.bus);
     SourceFactory::createADS1115Source(ctx.sources, 2, ctx.registry, ctx.bus);
+    auto tcp_source = SourceFactory::createTcpSource(ctx.sources, ctx.bus);
 
     // --- sinks ---
     auto tcp_sink = SinkFactory::createTcpSink(ctx.sinks);
@@ -46,7 +48,16 @@ SystemBuilder::Context SystemBuilder::build(ThreadPool& pool, const SystemConfig
     ctx.bus->subscribe<Ad1115SampleEvent>(std::bind(&TcpSink::handle, tcp_sink, std::placeholders::_1));
 
     // --- tcp_server ---
+    // When server accepts a new TCP connection, call this handler.
     ctx.server = std::make_unique<TcpServer>(ctx.io, config.serverPort, tcp_sink);
+    ctx.server->addConnectionHandler([tcp_source](const std::shared_ptr<TcpConnection>& connection) {
+        tcp_source->registerConnection(connection);
+    });
+
+    // --- maintenance ---
+    scheduler.every(std::chrono::seconds(5), [server = ctx.server.get()]() {
+        server->heartbeatAndCleanup(std::chrono::seconds(30));
+    });
 
     return ctx;
 }

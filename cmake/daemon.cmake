@@ -66,6 +66,7 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/network/tcpserver.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/ublox/serialublox.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/tcp_sink.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/tcp_source.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/i2c_sources/ads1115_source.cpp"
 
     "${MUONDETECTOR_I2C_SOURCE_FILES}"
@@ -118,12 +119,15 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/factories/device_factory.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/registries/device_registry.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/registries/data_store.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/data/ad1115_event.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/data/tcp_packet_event.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/network/tcpserver.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/ublox/serialublox.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/sink.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/tcp_sink.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/mqtt_sink.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/source.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/tcp_source.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/i2c_sources/ads1115_source.h"
 
     "${MUONDETECTOR_I2C_HEADER_FILES}"

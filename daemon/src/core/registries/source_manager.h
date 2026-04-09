@@ -7,10 +7,10 @@
 class SourceManager
 {
 public:
-    void add(std::unique_ptr<Source> src);
+    void add(std::shared_ptr<Source> src);
 
     void updateAll();
 
 private:
-    std::vector<std::unique_ptr<Source>> m_sources;
+    std::vector<std::shared_ptr<Source>> m_sources;
 };
