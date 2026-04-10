@@ -25,7 +25,7 @@ function(add_muondetector_tcp_test target_name test_source test_name)
     target_link_libraries(${target_name} PRIVATE
         ${CAPNP_LIBRARIES}
         ${CAPNP_KJ_LIBRARIES}
-        pthread
+        Threads::Threads
     )
 
     add_test(NAME ${test_name} COMMAND ${target_name})

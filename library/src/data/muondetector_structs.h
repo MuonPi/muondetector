@@ -6,7 +6,7 @@
 #include "gpio_pin_definitions.h"
 #include "histogram.h"
 
-#include "ublox_structs.h"
+#include "ublox/ublox_structs.h"
 #include <any>
 #include <chrono>
 #include <cmath>
