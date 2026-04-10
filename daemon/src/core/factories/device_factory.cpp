@@ -1,15 +1,17 @@
 #include "device_factory.h"
+#include "hardware/devices.h"
+#include "hardware/i2cdevice_wrapper.h"
 #include "hardware/i2c/ads1115.h"
 
 #include <memory>
 #include <cstdint>
 #include <string>
 
-void DeviceFactory::createADS1115(
-    std::unique_ptr<DeviceRegistry>& registry,
-    std::uint32_t id,
+auto DeviceFactory::createADS1115(
     const std::string& bus,
-    std::uint8_t address)
+    std::uint8_t address) -> std::unique_ptr<IDevice>
 {
-    registry->emplace<ADS1115>(id, bus.c_str(), address);
+    return std::make_unique<I2CDeviceWrapper<ADS1115>>(
+        std::make_unique<ADS1115>(bus.c_str(), address)
+    );
 }

@@ -1,8 +1,6 @@
 set(MUONDETECTOR_DAEMON_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/daemon/src")
 set(MUONDETECTOR_DAEMON_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/daemon/config")
 
-if(NOT WIN32) # added to make program editable in qt-creator on windows
-
 find_library(LIBCONFIG
     names libconfig++ libconfigpp config++ configpp libconfig config
     REQUIRED
@@ -19,8 +17,6 @@ find_library(RT
     NAMES rt
     REQUIRED
 )
-
-endif()
 
 # set(MUONDETECTOR_SPI_SOURCE_FILES
 #     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/spi/tdc7200.cpp"
@@ -53,7 +49,6 @@ set(MUONDETECTOR_I2C_SOURCE_FILES
 set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/app/main.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/app/config_parser.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/app/daemon.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/event_bus.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/logging/logger.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/scheduler.cpp"
@@ -110,7 +105,6 @@ set(MUONDETECTOR_I2C_HEADER_FILES
 
 set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/app/config_parser.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/app/daemon.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/event_bus.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/logging/logger.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/scheduler.h"

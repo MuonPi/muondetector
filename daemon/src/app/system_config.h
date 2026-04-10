@@ -40,6 +40,8 @@ struct SystemConfig {
     };
     std::shared_ptr<libconfig::Config> config_file_data {nullptr};
     std::shared_ptr<libconfig::Config> settings_file_data {nullptr};
+    std::string hardwareConfigPath{"daemon/config/sources.conf"};
+    std::string sourcesConfigPath{"daemon/config/hardware.conf"};
     std::size_t max_thread_count{0};
 };
 

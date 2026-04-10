@@ -1,7 +1,11 @@
 
 #include "config_parser.h"
 #include "system_config.h"
-#include "daemon.h"
+#include "core/event_bus.h"
+#include "core/scheduler.h"
+#include "core/thread_pool.h"
+#include "core/system_builder.h"
+
 #include <cstdio>
 
 #include <iostream>
@@ -22,13 +26,9 @@ namespace Runtime
     inline std::atomic<bool> g_running = true;
 }
 
-static std::unique_ptr<Daemon> g_daemon = nullptr;
-
 extern "C" void handleSignal(int)
 {
-    if (g_daemon != nullptr) {
-        g_daemon->stop();
-    }
+    Runtime::g_running = false;
 }
 
 int main(int argc, char* argv[])
@@ -41,27 +41,20 @@ int main(int argc, char* argv[])
     // QCoreApplication::setApplicationName("muondetector-daemon");
     // QCoreApplication::setApplicationVersion(std::string::fromStdString(MuonPi::Version::software.string()));
     // config file handling
-    auto cfg = std::make_shared<libconfig::Config>();
-    auto settings = std::make_shared<libconfig::Config>();
 
     std::cout << "MuonPi Muondetector Daemon "
             << "V" + MuonPi::Version::software.string()
             << "(build " + std::string(__TIMESTAMP__) + ")\n";
 
     // Read the file. If there is an error, report it and exit.
-    try {
-        cfg->readFile(CONFIG_FILE.c_str());
-    } catch (const libconfig::FileIOException& fioex) {
-        std::cerr << "Error while reading config file" << CONFIG_FILE << std::endl;
-    } catch (const libconfig::ParseException& pex) {
-        std::cerr << "Parse error at " + std::string(pex.getFile()) + " : line " + std::to_string(pex.getLine()) + " - " + std::string(pex.getError()) << std::endl;
-        return EXIT_FAILURE;
-    }
+    auto cfg = ConfigParser::loadConfigFile(CONFIG_FILE);
 
     // Read in the settings file. If there is an error, create the settings
     // tree and proceed anyway
+
+    auto settings = std::make_shared<libconfig::Config>();
     try {
-        settings->readFile(SETTINGS_FILE.c_str());
+        settings = ConfigParser::loadConfigFile(SETTINGS_FILE);
     } catch (const libconfig::FileIOException& fioex) {
         // Find the stored settings in settings file. Add all entries if they don't yet
         // exist.
@@ -108,10 +101,36 @@ int main(int argc, char* argv[])
     std::signal(SIGINT,  handleSignal);
     // START
 
-    // Clean handoff between main() and Daemon class through share of configuration
-    g_daemon = std::make_unique<Daemon>(config);
 
-    g_daemon->exec();
-    // return a.exec();
+    ThreadPool pool{[&]() -> std::size_t {
+          std::size_t n = 0;
+
+          n = config.max_thread_count;
+
+          if (n == 0)
+          {
+              n = std::thread::hardware_concurrency();
+          }
+
+          if (n == 0)
+          {
+              n = 1; // absolute fallback
+          }
+
+          n = std::min<std::size_t>(n, 64);
+
+          return n;
+      }()};
+
+    auto context = SystemBuilder::build(pool, config);
+
+    context.scheduler->start();
+
+    while (Runtime::g_running) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+
+    context.scheduler->stop();
+
     return EXIT_SUCCESS;
 }

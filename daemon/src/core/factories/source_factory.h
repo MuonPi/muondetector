@@ -6,16 +6,16 @@
 #include "core/registries/device_registry.h"
 #include "sources/i2c_sources/ads1115_source.h"
 #include "sources/tcp_source.h"
+#include "hardware/devices.h"
 
 
 class SourceFactory
 {
 public:
-    static void createADS1115Source(
-        std::unique_ptr<SourceManager>& sources,
-        uint32_t id,
+    static auto createADS1115Source(
+        Device id,
         std::unique_ptr<DeviceRegistry>& registry,
-        std::unique_ptr<EventBus>& bus);
+        std::unique_ptr<EventBus>& bus) -> std::shared_ptr<ADS1115Source>;
 
     static auto createTcpSource(
         std::unique_ptr<SourceManager>& sources,

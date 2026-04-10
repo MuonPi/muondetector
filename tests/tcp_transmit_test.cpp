@@ -88,7 +88,7 @@ int main()
 
     // Server -> client path: publish ADC event via sink and verify decoded payload.
     const auto now = std::chrono::steady_clock::now().time_since_epoch().count();
-    Ad1115SampleEvent event{
+    Ads1115Event event{
         0x48,
         2,
         1234,

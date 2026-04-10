@@ -5,28 +5,23 @@
 #include <unordered_map>
 #include <mutex>
 #include <typeindex>
+#include <cstdint>
 
-#include "hardware/i2cdevices.h"
+#include "hardware/idevice.h"
+#include "hardware/devices.h"
 
 class DeviceRegistry
 {
 public:
-    template<typename T, typename... Args>
-    T& emplace(uint32_t id, Args&&... args)
+    void add(Device id, std::unique_ptr<IDevice> dev)
     {
         std::lock_guard<std::mutex> lock(m_mutex);
 
-        auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
-        T& ref = *ptr;
-
-        m_devices[id] = std::move(ptr);
-        m_types.insert_or_assign(id, std::type_index(typeid(T)));
-
-        return ref;
+        m_devices[id] = std::move(dev);
     }
 
     template<typename T>
-    T* get(uint32_t id)
+    T* get(Device id)
     {
         std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -37,18 +32,8 @@ public:
         return dynamic_cast<T*>(it->second.get());
     }
 
-    i2cDevice* getBase(uint32_t id)
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-
-        auto it = m_devices.find(id);
-        return (it != m_devices.end()) ? it->second.get() : nullptr;
-    }
-
 private:
-    std::unordered_map<uint32_t, std::unique_ptr<i2cDevice>> m_devices;
-    std::unordered_map<uint32_t, std::type_index> m_types;
+    std::unordered_map<Device, std::unique_ptr<IDevice>> m_devices;
     std::mutex m_mutex;
 };
-
 #endif // SENSOR_REGSITRY_H

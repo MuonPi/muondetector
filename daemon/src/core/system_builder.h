@@ -26,9 +26,12 @@ public:
         std::unique_ptr<SinkManager> sinks;
         std::unique_ptr<EventBus> bus;
         std::unique_ptr<TcpServer> server;
+        std::unique_ptr<Scheduler> scheduler;
     };
 
-    static Context build(ThreadPool& pool, const SystemConfig& config, Scheduler& scheduler);
+    static void loadHardwareConfig();
+    static void loadSourcesConfig();
+    static Context build(ThreadPool& pool, const SystemConfig& config);
 };
 
 #endif // SYSTEM_BUILDER_H

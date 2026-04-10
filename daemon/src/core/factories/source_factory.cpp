@@ -1,20 +1,18 @@
 #include "source_factory.h"
+#include "hardware/devices.h"
 #include <memory>
 
-void SourceFactory::createADS1115Source(
-        std::unique_ptr<SourceManager>& sources,
-        uint32_t id,
+auto SourceFactory::createADS1115Source(
+        Device id,
         std::unique_ptr<DeviceRegistry>& registry,
-        std::unique_ptr<EventBus>& bus)
+        std::unique_ptr<EventBus>& bus) -> std::shared_ptr<ADS1115Source>
 {
-    sources->add(std::make_unique<ADS1115Source>(id, *registry, *bus));
+    return std::make_shared<ADS1115Source>(id, *registry, *bus);
 }
 
 auto SourceFactory::createTcpSource(
         std::unique_ptr<SourceManager>& sources,
         std::unique_ptr<EventBus>& bus) -> std::shared_ptr<TcpSource>
 {
-    auto source = std::make_shared<TcpSource>(*bus);
-    sources->add(source);
-    return source;
+    return std::make_shared<TcpSource>(*bus);
 }

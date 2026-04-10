@@ -43,7 +43,7 @@ auto TcpSink::connectionCount() const -> std::size_t
     return connections_.size();
 }
 
-void TcpSink::handle(const Ad1115SampleEvent& event)
+void TcpSink::handle(const Ads1115Event& event)
 {
     std::vector<std::shared_ptr<TcpConnection>> conns;
 
@@ -61,7 +61,7 @@ void TcpSink::handle(const Ad1115SampleEvent& event)
     }
 }
 
-std::vector<uint8_t> TcpSink::serialize(const Ad1115SampleEvent& event)
+std::vector<uint8_t> TcpSink::serialize(const Ads1115Event& event)
 {
     capnp::MallocMessageBuilder msg;
     auto root = msg.initRoot<Ad1115Event>();

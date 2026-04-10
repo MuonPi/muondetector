@@ -2,6 +2,7 @@
 #include "system_config.h"
 #include "core/logging/logger.h"
 
+#include <memory>
 #include <algorithm>
 #include <cstring>
 #include <filesystem>
@@ -28,6 +29,20 @@ ConfigParser::ConfigParser(int argc, char *argv[], SystemConfig && f_config) : m
 
 ConfigParser::~ConfigParser()
 {
+}
+
+auto ConfigParser::loadConfigFile(const std::string& file) -> std::shared_ptr<libconfig::Config>
+{
+    auto cfg = std::make_shared<libconfig::Config>();
+    try {
+        cfg->readFile(file.c_str());
+    } catch (const libconfig::FileIOException& fioex) {
+        logError("Error while reading config file " + file);
+    } catch (const libconfig::ParseException& pex) {
+        logError("Parse error at " + std::string(pex.getFile()) + " : line " + std::to_string(pex.getLine()) + " - " + std::string(pex.getError()));
+        throw pex;
+    }
+    return cfg;
 }
 
 auto ConfigParser::get() const -> SystemConfig
@@ -353,6 +368,24 @@ void ConfigParser::apply_defaults()
     {
         throw std::runtime_error("CommandlineParser: Could not access config file data or settings data, please load "
                                  "them to config before initialization.");
+    }
+
+    // Load hardware config path
+    try
+    {
+        m_config.hardwareConfigPath = static_cast<std::string>(m_config.config_file_data->lookup("hardware_config"));
+    }
+    catch (const libconfig::SettingNotFoundException &)
+    {
+    }
+
+    // Load sources config path
+    try
+    {
+        m_config.sourcesConfigPath = static_cast<std::string>(m_config.config_file_data->lookup("sources_config"));
+    }
+    catch (const libconfig::SettingNotFoundException &)
+    {
     }
 
     // Load max_geohash_length

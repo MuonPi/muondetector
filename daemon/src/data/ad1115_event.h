@@ -1,9 +1,9 @@
-#ifndef AD1115_EVENT_H
-#define AD1115_EVENT_H
+#ifndef ADS1115_EVENT_H
+#define ADS1115_EVENT_H
 
 #include <cstdint>
 
-struct Ad1115SampleEvent
+struct Ads1115Event
 {
     std::uint32_t deviceId;
     std::uint8_t channel;
@@ -12,4 +12,4 @@ struct Ad1115SampleEvent
     std::uint64_t timestamp;
 };
 
-#endif // AD1115_EVENT_H
+#endif // ADS1115_EVENT_H

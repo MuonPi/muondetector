@@ -19,9 +19,11 @@ public:
 
 
     auto get() const -> SystemConfig;
+    static auto loadConfigFile(const std::string& file) -> std::shared_ptr<libconfig::Config>;
 
 private:
     struct PresenceFlags {
+        bool cliConfigDir{false};
         bool cliGpsDevice{false};
         bool cliGnssBaud{false};
         bool cliServerAddress{false};
@@ -36,6 +38,7 @@ private:
         bool cliPolarity2{false};
         bool cliStationId{false};
 
+        bool cfgConfigDir{false};
         bool cfgGpsDevice{false};
         bool cfgGnssBaud{false};
         bool cfgServerAddress{false};

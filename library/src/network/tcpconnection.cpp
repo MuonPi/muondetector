@@ -76,6 +76,11 @@ auto TcpConnection::lastReceivedAt() const -> clock_type::time_point
     return clock_type::time_point(std::chrono::nanoseconds(lastReceivedNanos_.load()));
 }
 
+auto TcpConnection::socket() const -> const tcp::socket&
+{
+    return socket_;
+}
+
 void TcpConnection::consumeIncomingBytes(std::size_t n)
 {
     receiveBuffer_.insert(receiveBuffer_.end(), readBuffer_.begin(), readBuffer_.begin() + n);

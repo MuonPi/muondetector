@@ -43,6 +43,9 @@ public:
     bool isOpen() const;
     auto lastReceivedAt() const -> clock_type::time_point;
 
+    // Getter for relevant socket informations
+    auto socket() const -> const tcp::socket&;
+
 private:
     void do_write();
     void do_read();
