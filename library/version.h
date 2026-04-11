@@ -6,7 +6,7 @@ constexpr int major { 2 };
 constexpr int minor { 1 };
 constexpr int patch { 0 };
 constexpr const char* additional { "" };
-constexpr const char* hash { "a87f878" };
+constexpr const char* hash { "0c947c9" };
 }
 
 #endif // MUONDETECTOR_VERSION_H

@@ -1,5 +1,6 @@
 #include "core/system_builder.h"
 #include "app/system_config.h"
+#include "app/config_parser.h"
 #include "core/thread_pool.h"
 #include "core/scheduler.h"
 #include "core/logging/logger.h"
@@ -27,18 +28,105 @@
 #include <memory>
 #include <chrono>
 
-
-static void loadHardwareConfig(const std::string& path)
+std::vector<DeviceConfig> parseDevices(const libconfig::Setting& root)
 {
 }
 
-static void loadSourcesConfig(const std::string& path)
+auto SystemBuilder::parseHardwareConfig(Context& ctx, const libconfig::Config& hardwareConfig) -> std::vector<DeviceConfig>
+{
+    std::vector<DeviceConfig> result;
+
+    const libconfig::Setting& root = hardwareConfig.getRoot();
+    const libconfig::Setting& devices = root.lookup("devices");
+    const int count = devices.getLength();
+
+    std::string deviceList{};
+    for ( const auto &[key, value]: deviceLookup ) {
+        deviceList.append(key + "\n");
+    }
+
+
+    std::map<std::string, DeviceType> deviceTypeLookup;
+
+    for (const auto& [type, name] : DeviceTypes)
+    {
+        deviceTypeLookup.emplace(name, type);
+    }
+
+    for (int i = 0; i < count; ++i)
+    {
+        const libconfig::Setting& d = devices[i];
+
+        DeviceConfig cfg;
+
+        std::string idStr;
+        if (d.lookupValue("id", idStr) == false) {
+            logWarn("id not found in hardware configuration at device " + std::to_string(i));
+            continue;
+        }
+
+        auto id = deviceLookup.find(idStr);
+        if (id == deviceLookup.end()) {
+            logWarn("Device " + idStr + " not found in configurable devices, devices are:\n" + deviceList);
+            continue;
+        }
+        cfg.id = id->second;
+
+        std::string typeStr;
+        if (d.lookupValue("type", typeStr) == false) {
+            continue;
+        }
+        auto type_it = deviceTypeLookup.find(typeStr);
+        if (type_it != deviceTypeLookup.end()) {
+            cfg.type = type_it->second;
+        }
+
+        if (d.lookupValue("category", cfg.category) == false) {
+            continue;
+        }
+        if (cfg.category == "i2c")
+        {
+            std::string dev;
+            int address;
+
+            d.lookupValue("device", dev);
+            d.lookupValue("address", address);
+
+            cfg.device = dev;
+            if (cfg.address < 0 || cfg.address > std::numeric_limits<std::uint8_t>::max()) {
+                logError("Hardware address parsing error, outside uint8_t range. Ignoring device " + idStr);
+                continue;
+            }
+            cfg.address = static_cast<std::uint8_t>(address);
+        }
+        else if (cfg.category == "uart")
+        {
+            std::string dev;
+            int baud;
+
+            d.lookupValue("device", dev);
+            d.lookupValue("baud", baud);
+
+            cfg.device = dev;
+            cfg.baud = baud;
+        }
+
+        result.push_back(cfg);
+    }
+}
+
+void SystemBuilder::parseSourcesConfig(Context& ctx, const libconfig::Config& sourcesConfig)
 {
 
 }
 
 SystemBuilder::Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config)
 {
+    // First try loading libconfig data
+    auto hardwareConfig = ConfigParser::loadConfigFile(config.hardwareConfigPath);
+    auto sourcesConfig = ConfigParser::loadConfigFile(config.sourcesConfigPath);
+
+    // Build System
     Context ctx;
 
     ctx.io = std::make_shared<boost::asio::io_context>();
@@ -48,14 +136,21 @@ SystemBuilder::Context SystemBuilder::build(ThreadPool& pool, const SystemConfig
     ctx.bus = std::make_unique<EventBus>(pool);
     ctx.scheduler = std::make_unique<Scheduler>(pool);
 
+    std::vector<DeviceConfig> deviceConfigurations = SystemBuilder::parseHardwareConfig(ctx, *hardwareConfig);
+
+
     // --- hardware ---
-    ctx.registry->add(Device::AD1115, DeviceFactory::createADS1115("/dev/i2c-1", 0x48));
+    for (auto& config : deviceConfigurations) {
+        ctx.registry->add(config.id, DeviceFactory::create(config));
+        auto source = SourceFactory::createDeviceSource(config.id, *ctx.registry, *ctx.bus);
+        ctx.scheduler->every(std::chrono::seconds(5), [source]() {
+            source->update();
+        });
+    }
 
     // --- sources ---
-    auto ads1115Source = SourceFactory::createADS1115Source(Device::AD1115, ctx.registry, ctx.bus);
-    auto tcp_source = SourceFactory::createTcpSource(ctx.sources, ctx.bus);
+    auto tcp_source = SourceFactory::createTcpSource(*ctx.bus);
 
-    ctx.sources->add(ads1115Source);
     ctx.sources->add(tcp_source);
 
     // --- sinks ---
@@ -75,13 +170,6 @@ SystemBuilder::Context SystemBuilder::build(ThreadPool& pool, const SystemConfig
     // --- maintenance ---
     ctx.scheduler->every(std::chrono::seconds(5), [server = ctx.server.get()]() {
         server->heartbeatAndCleanup(std::chrono::seconds(30));
-    });
-
-    // --- read sensors ---
-    ctx.scheduler->every(std::chrono::seconds(1), std::bind(&ADS1115Source::update, ads1115Source));
-
-    ctx.scheduler->every(std::chrono::seconds(1), [source = ads1115Source]() {
-        source->update();
     });
 
     return ctx;

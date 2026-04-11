@@ -14,7 +14,6 @@
 #include <boost/asio.hpp>
 #include <memory>
 
-
 class SystemBuilder
 {
 public:
@@ -29,8 +28,8 @@ public:
         std::unique_ptr<Scheduler> scheduler;
     };
 
-    static void loadHardwareConfig();
-    static void loadSourcesConfig();
+    static auto parseHardwareConfig(Context& ctx, const libconfig::Config& hardwareConfig) -> std::vector<DeviceConfig>;
+    static void parseSourcesConfig(Context& ctx, const libconfig::Config& sourcesConfig);
     static Context build(ThreadPool& pool, const SystemConfig& config);
 };
 

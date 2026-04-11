@@ -6,13 +6,16 @@
 #include "hardware/i2cdevices.h"
 
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <string>
 
+using DeviceCreator = std::function<std::unique_ptr<IDevice>(const DeviceConfig &)>;
 class DeviceFactory
 {
   public:
-    static auto createADS1115(const std::string &bus, std::uint8_t address) -> std::unique_ptr<IDevice>;
+    static auto create(const DeviceConfig &config) -> std::unique_ptr<IDevice>;
+    static const std::unordered_map<Device, DeviceCreator> deviceCreator;
 };
 
 #endif // DEVICE_FACTORY_H
