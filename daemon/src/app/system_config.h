@@ -16,8 +16,8 @@ struct SystemConfig {
     float biasVoltage { -1.0F };
     bool bias_ON { false };
     GPIO_SIGNAL eventTrigger { EVT_XOR };
-    std::string serverAddress { "" };
-    std::uint16_t serverPort { 0 };
+    std::string serverAddress { "0.0.0.0" };
+    std::uint16_t serverPort { 25891 };
     bool showout { false };
     bool showin { false };
     std::array<bool, 2> preamp_enable { false, false };

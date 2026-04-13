@@ -538,7 +538,7 @@ void ConfigParser::apply_defaults()
     // Load biasPowerCfg
     try
     {
-        m_config.bias_ON = m_config.config_file_data->lookup("bias_switch");
+        m_config.bias_ON = static_cast<bool>(m_config.config_file_data->lookup("bias_switch"));
         m_presence.cfgBias = true;
     }
     catch (const libconfig::SettingNotFoundException &)
@@ -549,7 +549,7 @@ void ConfigParser::apply_defaults()
 
     try
     {
-        m_config.preamp_enable[0] = m_config.config_file_data->lookup("preamp1_switch");
+        m_config.preamp_enable[0] = static_cast<bool>(m_config.config_file_data->lookup("preamp1_switch"));
         m_presence.cfgPreamp1 = true;
     }
     catch (const libconfig::SettingNotFoundException &)
@@ -561,7 +561,7 @@ void ConfigParser::apply_defaults()
 
     try
     {
-        m_config.preamp_enable[1] = m_config.config_file_data->lookup("preamp2_switch");
+        m_config.preamp_enable[1] = static_cast<bool>(m_config.config_file_data->lookup("preamp2_switch"));
         m_presence.cfgPreamp2 = true;
     }
     catch (const libconfig::SettingNotFoundException &)
