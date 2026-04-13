@@ -1,9 +1,10 @@
+#include "sources/source.h"
 #include "sources/tcp_source.h"
 #include "data/tcp_packet_event.h"
 #include "tcpconnection.h"
 
-TcpSource::TcpSource(EventBus& bus)
-    : bus_(bus)
+TcpSource::TcpSource(SourceId id, EventBus& bus)
+    : Source::Source(id), bus_(bus)
 {
 }
 
@@ -25,5 +26,8 @@ void TcpSource::registerConnection(const std::shared_ptr<TcpConnection>& connect
 
 void TcpSource::update()
 {
+    if (!std::holds_alternative<NonDeviceSource>(m_id)) {
+        throw std::logic_error("NonDeviceSource constructed with device ID");
+    }
     // network source is event-driven by socket callbacks
 }

@@ -25,7 +25,7 @@ DeviceFactory::deviceCreator =
         [](const DeviceConfig& cfg)
         {
             return std::make_unique<I2CDeviceWrapper<ADS1115>>(
-                std::make_unique<ADS1115>(cfg.device.c_str(), cfg.address)
+                std::make_unique<ADS1115>(cfg.device.value().c_str(), cfg.address.value())
             );
         }
     }

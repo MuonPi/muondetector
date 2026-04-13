@@ -4,6 +4,7 @@
 #include "core/registries/device_registry.h"
 #include "hardware/devices.h"
 #include "hardware/i2cdevices.h"
+#include "core/device_config.h"
 
 #include <cstdint>
 #include <map>

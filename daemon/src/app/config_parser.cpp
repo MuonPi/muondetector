@@ -378,6 +378,9 @@ void ConfigParser::apply_defaults()
     catch (const libconfig::SettingNotFoundException &)
     {
     }
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'hardware_config': " + std::string(e.what()));
+    }
 
     // Load sources config path
     try
@@ -387,6 +390,10 @@ void ConfigParser::apply_defaults()
     catch (const libconfig::SettingNotFoundException &)
     {
     }
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'sources_config': " + std::string(e.what()));
+    }
+
 
     // Load max_geohash_length
     try
@@ -395,6 +402,9 @@ void ConfigParser::apply_defaults()
     }
     catch (const libconfig::SettingNotFoundException &)
     {
+    }
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'max_geohash_length': " + std::string(e.what()));
     }
 
     // Load store_local
@@ -405,6 +415,10 @@ void ConfigParser::apply_defaults()
     catch (const libconfig::SettingNotFoundException &)
     {
     }
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'store_local': " + std::string(e.what()));
+    }
+
 
     // Load gnss_dynamic_model
     try
@@ -415,6 +429,9 @@ void ConfigParser::apply_defaults()
     catch (const libconfig::SettingNotFoundException &)
     {
     }
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'gnss_dynamic_model': " + std::string(e.what()));
+    }
 
     // Load GPS dev
     try
@@ -422,10 +439,14 @@ void ConfigParser::apply_defaults()
         m_config.gpsdevname = static_cast<std::string>(m_config.config_file_data->lookup("ublox_device"));
         m_presence.cfgGpsDevice = true;
     }
-    catch (const libconfig::SettingNotFoundException &)
+    catch (const libconfig::SettingTypeException& e)
     {
+        logWarn("Could not load setting 'ublox_device': " + std::string(e.what()));
+    }
+    catch (const libconfig::SettingException& e)
+    {
+        // fallback logic
         std::vector<std::string> candidates = {"ttyS0", "ttyAMA0", "serial0"};
-
         std::vector<std::string> found;
 
         try
@@ -447,7 +468,7 @@ void ConfigParser::apply_defaults()
 
         if (!found.empty())
         {
-            m_config.gpsdevname = found.back(); // mimic Qt "last()"
+            m_config.gpsdevname = found.back();
             logInfo("Detected " + m_config.gpsdevname + " as probable GNSS device candidate");
         }
     }
@@ -461,6 +482,9 @@ void ConfigParser::apply_defaults()
     catch (const libconfig::SettingNotFoundException &)
     {
     }
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'ublox_baud': " + std::string(e.what()));
+    }
 
     // Load tcp_ip
 
@@ -473,6 +497,9 @@ void ConfigParser::apply_defaults()
     catch (const libconfig::SettingNotFoundException &)
     {
     }
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'tcp_ip': " + std::string(e.what()));
+    }
 
     // Load tcp_port
     try
@@ -483,6 +510,9 @@ void ConfigParser::apply_defaults()
     }
     catch (const libconfig::SettingNotFoundException &)
     {
+    }
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'tcp_port': " + std::string(e.what()));
     }
 
     // Load pcaPortmaskCfg
@@ -501,6 +531,9 @@ void ConfigParser::apply_defaults()
     }
     catch (const libconfig::SettingNotFoundException &)
     {}
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'timing_input': " + std::string(e.what()));
+    }
 
     // Load biasPowerCfg
     try
@@ -510,6 +543,9 @@ void ConfigParser::apply_defaults()
     }
     catch (const libconfig::SettingNotFoundException &)
     {}
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'bias_switch': " + std::string(e.what()));
+    }
 
     try
     {
@@ -518,6 +554,10 @@ void ConfigParser::apply_defaults()
     }
     catch (const libconfig::SettingNotFoundException &)
     {}
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'preamp1_switch': " + std::string(e.what()));
+    }
+
 
     try
     {
@@ -526,6 +566,9 @@ void ConfigParser::apply_defaults()
     }
     catch (const libconfig::SettingNotFoundException &)
     {}
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'preamp2_switch': " + std::string(e.what()));
+    }
 
     try
     {
@@ -534,34 +577,40 @@ void ConfigParser::apply_defaults()
     }
     catch (const libconfig::SettingNotFoundException &)
     {}
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'gain_switch': " + std::string(e.what()));
+    }
 
     int eventTriggerCfg{-1};
     try
     {
         eventTriggerCfg = m_config.config_file_data->lookup("trigger_input");
         m_presence.cfgTrigger = true;
+        switch (eventTriggerCfg)
+        {
+        case 0:
+            m_config.eventTrigger = EVT_XOR;
+            break;
+        case 1:
+            m_config.eventTrigger = EVT_AND;
+            break;
+        case 2:
+            m_config.eventTrigger = TIME_MEAS_OUT;
+            break;
+        case 3:
+            m_config.eventTrigger = EXT_TRIGGER;
+            break;
+        default:
+            m_config.eventTrigger = EVT_AND;
+            break;
+        }
     }
     catch (const libconfig::SettingNotFoundException &)
     {}
-
-    switch (eventTriggerCfg)
-    {
-    case 0:
-        m_config.eventTrigger = EVT_XOR;
-        break;
-    case 1:
-        m_config.eventTrigger = EVT_AND;
-        break;
-    case 2:
-        m_config.eventTrigger = TIME_MEAS_OUT;
-        break;
-    case 3:
-        m_config.eventTrigger = EXT_TRIGGER;
-        break;
-    default:
-        m_config.eventTrigger = EVT_AND;
-        break;
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'trigger_input': " + std::string(e.what()));
     }
+
 
     // Load pol1Cfg
     try
@@ -571,6 +620,9 @@ void ConfigParser::apply_defaults()
     }
     catch (const libconfig::SettingNotFoundException &)
     {}
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'input1_polarity': " + std::string(e.what()));
+    }
 
     // Load pol2Cfg
     try
@@ -580,6 +632,9 @@ void ConfigParser::apply_defaults()
     }
     catch (const libconfig::SettingNotFoundException &)
     {}
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'input2_polarity': " + std::string(e.what()));
+    }
 
     // Load mqtt credentials
     try {
@@ -591,6 +646,9 @@ void ConfigParser::apply_defaults()
     } catch (const libconfig::SettingNotFoundException& nfex) {
         logInfo("No 'mqtt_user' or 'mqtt_password' in config; using previously stored credentials");
     }
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'mqtt_user' or 'mqtt_password': " + std::string(e.what()));
+    }
 
 
     // Load stationID - Get the station id from config, if it exists
@@ -599,10 +657,22 @@ void ConfigParser::apply_defaults()
         m_config.station_ID = stationIdString;
         m_presence.cfgStationId = true;
     } catch (const libconfig::SettingNotFoundException&) {}
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'mqtt_user' or 'stationID': " + std::string(e.what()));
+    }
 
     // try to read in the stored geo handling fields
-    std::string mode_str = m_config.settings_file_data->lookup("geo_handling.mode");
-    logInfo("Position mode from settings: " + mode_str);
+    std::string mode_str{};
+    try {
+        mode_str = static_cast<std::string>(m_config.settings_file_data->lookup("geo_handling.mode"));
+        logInfo("Position mode from settings: " + mode_str);
+    }
+    catch (const libconfig::SettingNotFoundException& e) {
+        m_config.position_mode_config.mode = PositionModeConfig::Mode::Auto;
+    }
+    catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'mqtt_user' or 'stationID': " + std::string(e.what()));
+    }
     if (mode_str == PositionModeConfig::mode_name[static_cast<std::size_t>(PositionModeConfig::Mode::Static)]) {
         m_config.position_mode_config.mode = PositionModeConfig::Mode::Static;
     } else if (mode_str == PositionModeConfig::mode_name[static_cast<std::size_t>(PositionModeConfig::Mode::LockIn)]) {
@@ -610,11 +680,26 @@ void ConfigParser::apply_defaults()
     } else {
         m_config.position_mode_config.mode = PositionModeConfig::Mode::Auto;
     }
-    m_config.position_mode_config.static_position.longitude = m_config.settings_file_data->lookup("geo_handling.static_coordinates.lon");
-    m_config.position_mode_config.static_position.latitude = m_config.settings_file_data->lookup("geo_handling.static_coordinates.lat");
-    m_config.position_mode_config.static_position.altitude = m_config.settings_file_data->lookup("geo_handling.static_coordinates.alt");
-    m_config.position_mode_config.static_position.hor_error = m_config.settings_file_data->lookup("geo_handling.static_coordinates.hor_error");
-    m_config.position_mode_config.static_position.vert_error = m_config.settings_file_data->lookup("geo_handling.static_coordinates.vert_error");
+
+    try {
+        m_config.position_mode_config.static_position.longitude = m_config.settings_file_data->lookup("geo_handling.static_coordinates.lon");
+        m_config.position_mode_config.static_position.latitude = m_config.settings_file_data->lookup("geo_handling.static_coordinates.lat");
+        m_config.position_mode_config.static_position.altitude = m_config.settings_file_data->lookup("geo_handling.static_coordinates.alt");
+        m_config.position_mode_config.static_position.hor_error = m_config.settings_file_data->lookup("geo_handling.static_coordinates.hor_error");
+        m_config.position_mode_config.static_position.vert_error = m_config.settings_file_data->lookup("geo_handling.static_coordinates.vert_error");
+        m_presence.cfgPositionMode = true;
+    }
+    catch (const libconfig::SettingNotFoundException& e) {
+    }
+    catch (const libconfig::SettingException& e) {
+        logWarn(std::string(e.what()) + " Could not load setting one of:\n " +
+            "'geo_handling.static_coordinates.lon'\n" +
+            "'geo_handling.static_coordinates.lat'\n" +
+            "'geo_handling.static_coordinates.alt'\n" +
+            "'geo_handling.static_coordinates.hor_error'\n" +
+            "'geo_handling.static_coordinates.vert_error'"
+        );
+    }
 
 }
 

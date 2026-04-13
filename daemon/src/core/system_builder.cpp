@@ -5,6 +5,10 @@
 #include "core/scheduler.h"
 #include "core/logging/logger.h"
 
+// Configurations
+#include "core/source_config.h"
+#include "core/device_config.h"
+
 // Factories
 #include "core/factories/device_factory.h"
 #include "core/factories/source_factory.h"
@@ -22,15 +26,14 @@
 #include "hardware/i2cdevices.h"
 #include "hardware/i2cdevice_wrapper.h"
 
+// Sources
+#include "sources/tcp_source.h"
+
 // Data
 #include "data/ad1115_event.h"
 
 #include <memory>
 #include <chrono>
-
-std::vector<DeviceConfig> parseDevices(const libconfig::Setting& root)
-{
-}
 
 auto SystemBuilder::parseHardwareConfig(Context& ctx, const libconfig::Config& hardwareConfig) -> std::vector<DeviceConfig>
 {
@@ -113,18 +116,70 @@ auto SystemBuilder::parseHardwareConfig(Context& ctx, const libconfig::Config& h
 
         result.push_back(cfg);
     }
+    return result;
 }
 
-void SystemBuilder::parseSourcesConfig(Context& ctx, const libconfig::Config& sourcesConfig)
+auto SystemBuilder::parseSourcesConfig(Context& ctx, const libconfig::Config& sourcesConfig) -> std::vector<SourceConfig>
 {
+    std::vector<SourceConfig> result;
 
+    const libconfig::Setting& root = sourcesConfig.getRoot();
+    const libconfig::Setting& sources = root.lookup("sources");
+    const int count = sources.getLength();
+
+
+    for (int i = 0; i < count; ++i)
+    {
+        SourceConfig cfg;
+        const libconfig::Setting& s = sources[i];
+
+        std::string idStr;
+        if (s.lookupValue("id", idStr) == false) {
+            logWarn("id not found in sources configuration at source " + std::to_string(i));
+            continue;
+        }
+        auto id = sourceLookup.find(idStr);
+        if (id == sourceLookup.end()) {
+            logWarn("Source '" + idStr + "' not found.");
+            continue;
+        }
+        cfg.id = SourceId{id->second};
+
+        std::string deviceIdStr;
+        if (s.lookupValue("device", deviceIdStr) != false) {
+            auto deviceId = deviceLookup.find(deviceIdStr);
+            if (deviceId == deviceLookup.end()) {
+                logWarn("Device " + deviceIdStr + " for source " + idStr + " missing deviceId. Unable to initialize source.");
+            }else{
+                cfg.deviceId = deviceId->second;
+            }
+        }
+        result.push_back(cfg);
+    }
+    return result;
 }
 
 SystemBuilder::Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config)
 {
     // First try loading libconfig data
-    auto hardwareConfig = ConfigParser::loadConfigFile(config.hardwareConfigPath);
-    auto sourcesConfig = ConfigParser::loadConfigFile(config.sourcesConfigPath);
+    std::shared_ptr<libconfig::Config> hardwareConfig{nullptr};
+    std::shared_ptr<libconfig::Config> sourcesConfig{nullptr};
+    try {
+        hardwareConfig = ConfigParser::loadConfigFile(config.hardwareConfigPath);
+    } catch (const libconfig::ParseException& e) {
+        std::stringstream sstr{};
+        sstr << e.getFile() << ":" << e.getLine()
+              << " - " << e.getError() << std::endl;
+        throw std::runtime_error(sstr.str());
+    }
+    try {
+        sourcesConfig = ConfigParser::loadConfigFile(config.sourcesConfigPath);
+    } catch (const libconfig::ParseException& e) {
+        std::stringstream sstr{};
+        sstr << e.getFile() << ":" << e.getLine()
+              << " - " << e.getError() << std::endl;
+        throw std::runtime_error(sstr.str());
+    }
 
     // Build System
     Context ctx;
@@ -137,21 +192,24 @@ SystemBuilder::Context SystemBuilder::build(ThreadPool& pool, const SystemConfig
     ctx.scheduler = std::make_unique<Scheduler>(pool);
 
     std::vector<DeviceConfig> deviceConfigurations = SystemBuilder::parseHardwareConfig(ctx, *hardwareConfig);
+    std::vector<SourceConfig> sourceConfigurations = SystemBuilder::parseSourcesConfig(ctx, *sourcesConfig);
 
 
     // --- hardware ---
-    for (auto& config : deviceConfigurations) {
-        ctx.registry->add(config.id, DeviceFactory::create(config));
-        auto source = SourceFactory::createDeviceSource(config.id, *ctx.registry, *ctx.bus);
-        ctx.scheduler->every(std::chrono::seconds(5), [source]() {
-            source->update();
-        });
+    for (auto& devConfig : deviceConfigurations) {
+        ctx.registry->add(devConfig.id, DeviceFactory::create(devConfig));
     }
 
     // --- sources ---
-    auto tcp_source = SourceFactory::createTcpSource(*ctx.bus);
-
-    ctx.sources->add(tcp_source);
+    for (auto& sourceConfig : sourceConfigurations) {
+        auto source = SourceFactory::createSource(sourceConfig, *ctx.registry, *ctx.bus);
+        ctx.sources->add(source->id(), source);
+        if (sourceConfig.interval.has_value()) {
+            ctx.scheduler->every(sourceConfig.interval.value(), [source]() {
+                source->update();
+            });
+        }
+    }
 
     // --- sinks ---
     auto tcp_sink = SinkFactory::createTcpSink(ctx.sinks);
@@ -163,8 +221,13 @@ SystemBuilder::Context SystemBuilder::build(ThreadPool& pool, const SystemConfig
     // --- tcp_server ---
     // When server accepts a new TCP connection, call this handler.
     ctx.server = std::make_unique<TcpServer>(ctx.io, config.serverPort, tcp_sink);
-    ctx.server->addConnectionHandler([tcp_source](const std::shared_ptr<TcpConnection>& connection) {
-        tcp_source->registerConnection(connection);
+
+    ctx.server->addConnectionHandler([tcp_source = ctx.sources->get<TcpSource>(NonDeviceSource::TCP_SOURCE_0)](const std::shared_ptr<TcpConnection>& connection) {
+        if (tcp_source != nullptr) {
+            tcp_source->registerConnection(connection);
+        }else{
+            logError("Nullpointer in creating connection handler for tcpsource. Make sure sources are initialized beforehand.");
+        }
     });
 
     // --- maintenance ---

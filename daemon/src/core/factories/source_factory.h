@@ -3,21 +3,22 @@
 
 #include "core/registries/device_registry.h"
 #include "core/registries/source_manager.h"
+#include "core/source_config.h"
+#include "core/event_bus.h"
 #include "hardware/devices.h"
-#include "sources/i2c_sources/ads1115_source.h"
-#include "sources/tcp_source.h"
 
-using DeviceSourceCreator = std::function<std::shared_ptr<Source>(Device, DeviceRegistry &, EventBus &)>;
+
+using SourceCreator = std::function<std::shared_ptr<Source>(const SourceConfig&, DeviceRegistry &, EventBus &)>;
+using DeviceSourceCreator = std::function<std::shared_ptr<Source>(const SourceConfig&, DeviceRegistry &, EventBus &)>;
 
 class SourceFactory
 {
   public:
-    static auto createDeviceSource(Device id, DeviceRegistry &registry, EventBus &bus) -> std::shared_ptr<Source>;
-
-    static auto createTcpSource(EventBus &bus) -> std::shared_ptr<TcpSource>;
+    static auto createSource(const SourceConfig& config, DeviceRegistry &registry, EventBus &bus) -> std::shared_ptr<Source>;
 
   private:
-    static const std::unordered_map<Device, DeviceSourceCreator> deviceSourceCreator;
+    static const std::unordered_map<SourceId, SourceCreator> sourceCreator;
+    static const std::unordered_map<SourceId, DeviceSourceCreator> deviceSourceCreator;
 };
 
 #endif // SOURCE_FACTORY_H

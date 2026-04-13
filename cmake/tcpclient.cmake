@@ -19,6 +19,7 @@ set(TCPCLIENT_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/thread_pool.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/event_bus.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/tcp_sink.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/source.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/tcp_source.cpp"
     $<TARGET_OBJECTS:muondetector-shared>
 )

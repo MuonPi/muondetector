@@ -66,7 +66,7 @@ int main()
     TcpServer server(io, 0, sink);
     ThreadPool pool(2);
     EventBus bus(pool);
-    TcpSource tcpSource(bus);
+    TcpSource tcpSource(NonDeviceSource::TCP_SOURCE_0, bus);
     server.addConnectionHandler([&tcpSource](const std::shared_ptr<TcpConnection>& conn) {
         tcpSource.registerConnection(conn);
     });

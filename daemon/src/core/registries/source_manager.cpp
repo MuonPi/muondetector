@@ -1,12 +1,21 @@
 #include "source_manager.h"
 
-void SourceManager::add(std::shared_ptr<Source> src)
+#include <vector>
+#include <memory>
+#include <string>
+#include <mutex>
+#include <unordered_map>
+
+
+void SourceManager::add(SourceId id, std::shared_ptr<Source> src)
 {
-    m_sources.push_back(std::move(src));
+    m_sources[id] = std::move(src);
 }
 
 void SourceManager::updateAll()
 {
-    for (auto& s : m_sources)
-        s->update();
+    for (auto &s : m_sources)
+    {
+        s.second->update();
+    }
 }

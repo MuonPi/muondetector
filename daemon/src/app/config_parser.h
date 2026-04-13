@@ -37,6 +37,7 @@ private:
         bool cliPolarity1{false};
         bool cliPolarity2{false};
         bool cliStationId{false};
+        bool cliPositionMode{false};
 
         bool cfgConfigDir{false};
         bool cfgGpsDevice{false};
@@ -52,6 +53,7 @@ private:
         bool cfgPolarity1{false};
         bool cfgPolarity2{false};
         bool cfgStationId{false};
+        bool cfgPositionMode{false};
     };
 
     SystemConfig m_config;

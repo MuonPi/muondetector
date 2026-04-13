@@ -14,6 +14,8 @@
 #include <boost/asio.hpp>
 #include <memory>
 
+struct DeviceConfig;
+struct SourceConfig;
 class SystemBuilder
 {
 public:
@@ -29,7 +31,7 @@ public:
     };
 
     static auto parseHardwareConfig(Context& ctx, const libconfig::Config& hardwareConfig) -> std::vector<DeviceConfig>;
-    static void parseSourcesConfig(Context& ctx, const libconfig::Config& sourcesConfig);
+    static auto parseSourcesConfig(Context& ctx, const libconfig::Config& sourcesConfig) -> std::vector<SourceConfig>;
     static Context build(ThreadPool& pool, const SystemConfig& config);
 };
 

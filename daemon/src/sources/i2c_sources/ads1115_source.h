@@ -12,13 +12,12 @@
 class ADS1115Source : public Source
 {
 public:
-    ADS1115Source(Device id,
+    ADS1115Source(SourceId id,
                   DeviceRegistry& registry,
                   EventBus& bus);
 
     void update() override;
 private:
-    Device m_id;
     DeviceRegistry& m_registry;
     EventBus& m_bus;
 };

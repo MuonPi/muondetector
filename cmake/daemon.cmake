@@ -62,6 +62,7 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/network/tcpserver.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/ublox/serialublox.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/tcp_sink.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/source.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/tcp_source.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/i2c_sources/ads1115_source.cpp"
 
