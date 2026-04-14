@@ -95,23 +95,31 @@ auto SystemBuilder::parseHardwareConfig(Context& ctx, const libconfig::Config& h
             d.lookupValue("device", dev);
             d.lookupValue("address", address);
 
-            cfg.device = dev;
-            if (cfg.address < 0 || cfg.address > std::numeric_limits<std::uint8_t>::max()) {
-                logError("Hardware address parsing error, outside uint8_t range. Ignoring device " + idStr);
-                continue;
+            if (d.lookupValue("device", dev) != false) {
+                cfg.device = dev;
             }
-            cfg.address = static_cast<std::uint8_t>(address);
+            if (d.lookupValue("address", address) != false) {
+                if (address < 0 || address > std::numeric_limits<std::uint8_t>::max()) {
+                    logError("Hardware address parsing error, outside uint8_t range. Ignoring address setting for device " + idStr);
+                } else {
+                    cfg.address = static_cast<std::uint8_t>(address);
+                }
+            }
         }
         else if (cfg.category == "uart")
         {
             std::string dev;
             int baud;
 
-            d.lookupValue("device", dev);
-            d.lookupValue("baud", baud);
-
-            cfg.device = dev;
-            cfg.baud = baud;
+            if (d.lookupValue("device", dev) != false) {
+                cfg.device = dev;
+            }
+            if (d.lookupValue("baud", baud) != false) {
+                if (baud > 0 || baud > std::numeric_limits<std::uint32_t>::max()) {
+                    logError("Baudrate parsing error, outside uint32_t range. Ignoring setting for device " + idStr);
+                }
+                cfg.baud = baud;
+            }
         }
 
         result.push_back(cfg);
@@ -148,9 +156,7 @@ auto SystemBuilder::parseSourcesConfig(Context& ctx, const libconfig::Config& so
         std::string deviceIdStr;
         if (s.lookupValue("device", deviceIdStr) != false) {
             auto deviceId = deviceLookup.find(deviceIdStr);
-            if (deviceId == deviceLookup.end()) {
-                logWarn("Device " + deviceIdStr + " for source " + idStr + " missing deviceId. Unable to initialize source.");
-            }else{
+            if (deviceId != deviceLookup.end()) {
                 cfg.deviceId = deviceId->second;
             }
         }

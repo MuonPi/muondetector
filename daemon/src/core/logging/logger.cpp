@@ -45,6 +45,12 @@ void AsyncLogger::log(LogLevel level, const std::string& message)
     cv_.notify_one();
 }
 
+
+auto AsyncLogger::level() const -> LogLevel
+{
+    return minimumLevel_;
+}
+
 auto AsyncLogger::levelName(LogLevel level) -> const char*
 {
     switch (level) {

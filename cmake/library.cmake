@@ -28,6 +28,7 @@ set(MUONDETECTOR_LIBRARY_SOURCE_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/histogram.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/custom_io_operators.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/ublox/ublox_structs.cpp"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/custom_io_operators.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network/networkdiscovery.cpp"
     "${CAPNP_SRCS}"
     )
@@ -40,6 +41,7 @@ set(MUONDETECTOR_LIBRARY_HEADER_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/ublox/ublox_messages.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/ublox/ublox_structs.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/muondetector_structs.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/custom_io_operators.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/config.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/custom_io_operators.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network/networkdiscovery.h"

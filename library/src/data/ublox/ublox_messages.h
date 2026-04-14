@@ -222,6 +222,7 @@ const static std::map<msg_id, std::string> msg_string {
 };
 }
 
+
 // proto is the shortcut for protocol and
 // is defined as the correct bitmask for one
 // protocol

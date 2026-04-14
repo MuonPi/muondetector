@@ -123,6 +123,8 @@ int main(int argc, char* argv[])
       }()};
 
     auto context = SystemBuilder::build(pool, config);
+    auto work_guard = boost::asio::make_work_guard(context.io);
+    std::thread t1([&]{ context.io->run(); });
 
     context.scheduler->start();
 
@@ -131,6 +133,13 @@ int main(int argc, char* argv[])
     }
 
     context.scheduler->stop();
+
+    // stop asio
+    work_guard.reset();
+    context.io->stop();
+
+    // wait for io thread
+    t1.join();
 
     return EXIT_SUCCESS;
 }
