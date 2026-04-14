@@ -25,6 +25,7 @@ public:
 
     void setMinimumLevel(LogLevel level);
     void log(LogLevel level, const std::string& message);
+    auto level() const -> LogLevel;
 
 private:
     AsyncLogger();
@@ -46,6 +47,7 @@ private:
     LogLevel minimumLevel_{LogLevel::Info};
 };
 
+inline auto logLevel() { return AsyncLogger::instance().level(); }
 inline void logDebug(const std::string& msg) { AsyncLogger::instance().log(LogLevel::Debug, msg); }
 inline void logInfo(const std::string& msg) { AsyncLogger::instance().log(LogLevel::Info, msg); }
 inline void logWarn(const std::string& msg) { AsyncLogger::instance().log(LogLevel::Warn, msg); }
