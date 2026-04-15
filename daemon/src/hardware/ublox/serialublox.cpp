@@ -15,8 +15,7 @@
 SerialUblox::SerialUblox(boost::asio::io_context& io,
             const std::string& port,
             unsigned int baud,
-            EventBus& bus)
-    : io_(io),
+            EventBus& bus) :
         serial_(io),
         timer_(io),
         port_(port),
@@ -53,7 +52,7 @@ void SerialUblox::startAsyncRead()
             m_buffer += std::string(buffer_.data(), length);
             std::optional<UbxMessage> msgCandidate{std::nullopt};
             do {
-                if (msgCandidate = parseStreamForMsg(m_buffer)) {
+                if ((msgCandidate = parseStreamForMsg(m_buffer))) {
                     if (auto parsed = MessageProcessor::processMessage(msgCandidate.value())) {
                         bus_.publish(parsed.value());
                     }
@@ -125,38 +124,38 @@ auto SerialUblox::parseStreamForMsg(std::string& buffer) -> std::optional<UbxMes
     return std::nullopt;
 }
 
-bool SerialUblox::sendUBX(uint16_t msgID, const std::string& payload, uint16_t nBytes)
-{
-    const UbxMessage message { msgID, payload };
-    return sendUBX(message);
-}
 
-bool SerialUblox::sendUBX(uint16_t msgID, unsigned char* payload, uint16_t nBytes)
+auto SerialUblox::enqueueMessage(const UbxMessage& msg) -> bool
 {
-    std::string payload_string { reinterpret_cast<const char*>(payload), nBytes };
-    const UbxMessage message { msgID, payload_string };
-    return sendUBX(message);
-}
+    if (tx_queue_.size() >= maxQueueSize_) {
+        return false; // caller must handle
+    }
+    bool write_in_progress = !tx_queue_.empty();
 
-
-bool SerialUblox::sendUBX(const UbxMessage& msg)
-{
     if (!serial_.is_open()) {
-        logWarn("serial port not open on write attempt.");
-        return false;
+        logWarn("Serial port not open on enqueuMessage.");
     }
 
-    std::string raw_data_string = msg.raw_message_string();
+    tx_queue_.emplace(std::move(msg));
+    if (!write_in_progress) {
+        do_write();
+    }
+    return true;
+}
 
+void SerialUblox::do_write()
+{
     boost::asio::async_write(serial_,
-        boost::asio::buffer(raw_data_string),
-        [](boost::system::error_code ec, std::size_t /*length*/)
+        boost::asio::buffer(tx_queue_.front().raw_message_string()),
+        [this](boost::system::error_code ec, std::size_t)
         {
-            if (ec) {
-                logWarn("write failed: " + ec.message());
+            if (!ec) {
+                tx_queue_.pop();
+                if (!tx_queue_.empty()) {
+                    do_write(); // next write starts AFTER previous finishes
+                }
             }
         });
-    return true;
 }
 
 /*
@@ -227,7 +226,7 @@ void SerialUblox::makeConnection()
     }
 }
 
-void SerialUblox::sendQueuedMsg(bool afterTimeout)
+void SerialUblox::sendm_queuedMsg(bool afterTimeout)
 {
     if (afterTimeout) {
         if (!msgWaitingForAck) {
@@ -238,14 +237,14 @@ void SerialUblox::sendQueuedMsg(bool afterTimeout)
             ackTimer->stop();
             msgWaitingForAck.reset(nullptr);
             if (verbose > 2)
-                emit toConsole("sendQueuedMsg: deleted message after 5 timeouts\n");
-            sendQueuedMsg();
+                emit toConsole("sendm_queuedMsg: deleted message after 5 timeouts\n");
+            sendm_queuedMsg();
             return;
         }
         ackTimer->start(timeout);
         sendUBX(*msgWaitingForAck);
         if (verbose > 2)
-            emit toConsole("sendQueuedMsg: repeated resend after timeout\n");
+            emit toConsole("sendm_queuedMsg: repeated resend after timeout\n");
         return;
     }
     if (outMsgBuffer.empty()) {
@@ -253,7 +252,7 @@ void SerialUblox::sendQueuedMsg(bool afterTimeout)
     }
     if (msgWaitingForAck) {
         if (verbose > 2) {
-            emit toConsole("tried to send queued message but ack for previous message not yet received\n");
+            emit toConsole("tried to send m_queued message but ack for previous message not yet received\n");
         }
         return;
     }
@@ -262,7 +261,7 @@ void SerialUblox::sendQueuedMsg(bool afterTimeout)
     ackTimer->start(timeout);
     sendUBX(*msgWaitingForAck);
     if (verbose > 3)
-        emit toConsole("sendQueuedMsg: sent fresh message\n");
+        emit toConsole("sendm_queuedMsg: sent fresh message\n");
 }
 
 void SerialUblox::ackTimeout()
@@ -280,7 +279,7 @@ void SerialUblox::ackTimeout()
         tempStream << std::endl;
         emit toConsole(std::string::fromStdString(tempStream.str()));
     }
-    sendQueuedMsg(true);
+    sendm_queuedMsg(true);
 }
 
 void SerialUblox::onReadyRead()
@@ -398,7 +397,7 @@ void SerialUblox::UBXSetCfgRate(uint16_t measRate, uint16_t navRate)
     data[4] = 0;
     data[5] = 0;
 
-    enqueueMsg(UBX_MSG::CFG_RATE, toStdString(data, 6));
+    enqueueMessage(UBX_MSG::CFG_RATE, toStdString(data, 6));
 }
 
 void SerialUblox::UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask)
@@ -449,7 +448,7 @@ void SerialUblox::UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask)
         data[18] = 0;
         data[19] = 0; // reserved
     }
-    enqueueMsg(UBX_MSG::CFG_PRT, toStdString(data, 20));
+    enqueueMessage(UBX_MSG::CFG_PRT, toStdString(data, 20));
 }
 
 void SerialUblox::UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate)
@@ -476,7 +475,7 @@ void SerialUblox::UBXSetCfgMsgRate(uint16_t msgID, uint8_t port, uint8_t rate)
         }
     }
 
-    enqueueMsg(UBX_MSG::CFG_MSG, toStdString(data, 8));
+    enqueueMessage(UBX_MSG::CFG_MSG, toStdString(data, 8));
 }
 
 void SerialUblox::UBXReset(uint32_t resetFlags)
@@ -505,7 +504,7 @@ void SerialUblox::UBXSetMinMaxSVs(uint8_t minSVs, uint8_t maxSVs)
     data[10] = minSVs;
     data[11] = maxSVs;
 
-    enqueueMsg(UBX_MSG::CFG_NAVX5, toStdString(data, 40));
+    enqueueMessage(UBX_MSG::CFG_NAVX5, toStdString(data, 40));
 }
 
 void SerialUblox::UBXSetMinCNO(uint8_t minCNO)
@@ -519,7 +518,7 @@ void SerialUblox::UBXSetMinCNO(uint8_t minCNO)
     data[7] = 0;
     data[12] = minCNO;
 
-    enqueueMsg(UBX_MSG::CFG_NAVX5, toStdString(data, 40));
+    enqueueMessage(UBX_MSG::CFG_NAVX5, toStdString(data, 40));
 }
 
 void SerialUblox::UBXSetAopCfg(bool enable, uint16_t maxOrbErr)
@@ -536,7 +535,7 @@ void SerialUblox::UBXSetAopCfg(bool enable, uint16_t maxOrbErr)
     data[30] = maxOrbErr & 0xff;
     data[31] = (maxOrbErr >> 8) & 0xff;
 
-    enqueueMsg(UBX_MSG::CFG_NAVX5, toStdString(data, 40));
+    enqueueMessage(UBX_MSG::CFG_NAVX5, toStdString(data, 40));
 }
 
 void SerialUblox::UBXSaveCfg(uint8_t devMask)
@@ -554,7 +553,7 @@ void SerialUblox::UBXSaveCfg(uint8_t devMask)
     data[7] = (sectionMask >> 24) & 0xff;
     data[12] = devMask;
 
-    enqueueMsg(UBX_MSG::CFG_CFG, toStdString(data, 13));
+    enqueueMessage(UBX_MSG::CFG_CFG, toStdString(data, 13));
 }
 
 void SerialUblox::onRequestGpsProperties()
@@ -576,7 +575,7 @@ void SerialUblox::pollMsgRate(uint16_t msgID)
     unsigned char temp[2];
     temp[0] = (uint8_t)((msgID & 0xff00) >> 8);
     temp[1] = (uint8_t)(msgID & 0xff);
-    enqueueMsg(UBX_MSG::CFG_MSG, toStdString(temp, 2));
+    enqueueMessage(UBX_MSG::CFG_MSG, toStdString(temp, 2));
 }
 
 void SerialUblox::pollMsg(uint16_t msgID)
@@ -589,7 +588,7 @@ void SerialUblox::pollMsg(uint16_t msgID)
         temp[0] = 1;
         outMsgBuffer.push(UbxMessage { msgID, toStdString(temp, 1) });
         if (!msgWaitingForAck) {
-            sendQueuedMsg();
+            sendm_queuedMsg();
         }
         break;
     case UBX_MSG::MON_VER:
@@ -613,12 +612,12 @@ auto SerialUblox::getProtVersion() -> double
     return verValue;
 }
 
-void SerialUblox::enqueueMsg(uint16_t msgID, const std::string& payload)
+void SerialUblox::enqueueMessage(uint16_t msgID, const std::string& payload)
 {
     UbxMessage newMessage { msgID, payload };
     outMsgBuffer.push(newMessage);
     if (!msgWaitingForAck) {
-        sendQueuedMsg();
+        sendm_queuedMsg();
     }
 }
 */

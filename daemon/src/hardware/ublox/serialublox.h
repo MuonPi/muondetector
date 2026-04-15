@@ -26,6 +26,7 @@ public:
                 EventBus& bus);
 
     void makeConnection();
+    auto enqueueMessage(const UbxMessage& msg) -> bool;
 
 private:
     void startAsyncRead();
@@ -45,16 +46,14 @@ private:
                   << ec.message() << std::endl;
     }
 
-private:
     auto parseStreamForMsg(std::string& buffer) -> std::optional<UbxMessage>;
-    bool sendUBX(std::uint16_t msgID, const std::string& payload, std::uint16_t nBytes);
-    bool sendUBX(std::uint16_t msgID, unsigned char* payload, std::uint16_t nBytes);
-    bool sendUBX(const UbxMessage& msg);
 
-    boost::asio::io_context& io_;
+    void do_write();
+
     boost::asio::serial_port serial_;
     boost::asio::steady_timer timer_;
-    std::queue<UbxMessage> outMsgBuffer;
+    std::size_t maxQueueSize_ = 3000;
+    std::queue<UbxMessage> tx_queue_;
 
     std::array<char, 1024> buffer_;
     std::string m_buffer = "";
