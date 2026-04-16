@@ -4,6 +4,7 @@
 #include "tcpconnection.h"
 #include "tcpmessage_keys.h"
 #include "ad1115.capnp.h"
+#include "data/events/ad1115_event.h"
 
 #include <capnp/message.h>
 #include <capnp/serialize.h>

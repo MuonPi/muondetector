@@ -2,7 +2,7 @@
 #define TCP_SINK_H
 
 #include "sink.h"
-#include "data/ad1115_event.h"
+#include "data/events/ad1115_event.h"
 #include "tcpconnection.h"
 
 #include <vector>
@@ -17,6 +17,7 @@ public:
     void removeConnection(const std::shared_ptr<TcpConnection>& conn);
     void pruneDisconnected();
     auto connectionCount() const -> std::size_t;
+    
 
 private:
     std::vector<uint8_t> serialize(const Ads1115Event& event);

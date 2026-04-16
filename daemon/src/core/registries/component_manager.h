@@ -1,7 +1,7 @@
 #ifndef SOURCE_MANAGER_H
 #define SOURCE_MANAGER_H
 
-#include "sources/source.h"
+#include "core/component.h"
 
 #include <vector>
 #include <memory>
@@ -9,29 +9,28 @@
 #include <mutex>
 #include <unordered_map>
 
-class SourceManager
+class ComponentManager
 {
 public:
-    void add(SourceId id, std::shared_ptr<Source> src);
+    void add(ComponentId id, std::shared_ptr<Component> src);
 
     template<typename T>
-    T* get(SourceId id)
+    T* get(ComponentId id)
     {
         std::lock_guard<std::mutex> lock(m_mutex);
 
-        auto it = m_sources.find(id);
-        if (it == m_sources.end()) {
+        auto it = m_components.find(id);
+        if (it == m_components.end()) {
             return nullptr;
         }
 
         return dynamic_cast<T*>(it->second.get());
     }
 
-    void updateAll();
 
 private:
     std::mutex m_mutex;
-    std::unordered_map<SourceId, std::shared_ptr<Source>> m_sources;
+    std::unordered_map<ComponentId, std::shared_ptr<Component>> m_components;
 };
 
 #endif // SOURCE_MANAGER_H^

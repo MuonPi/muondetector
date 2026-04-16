@@ -54,7 +54,9 @@ void SerialUblox::startAsyncRead()
             do {
                 if ((msgCandidate = parseStreamForMsg(m_buffer))) {
                     if (auto parsed = MessageProcessor::processMessage(msgCandidate.value())) {
-                        bus_.publish(parsed.value());
+                        std::visit([this](auto&& msg) {
+                            bus_.publish(msg);  // typed publish
+                        }, parsed.value());
                     }
                 }
             } while(msgCandidate.has_value());
