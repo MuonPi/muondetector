@@ -17,7 +17,7 @@ struct SystemConfig {
     bool bias_ON { false };
     GPIO_SIGNAL eventTrigger { EVT_XOR };
     std::string serverAddress { "0.0.0.0" };
-    std::uint16_t serverPort { 25891 };
+    std::uint16_t serverPort { 51508 };
     bool showout { false };
     bool showin { false };
     std::array<bool, 2> preamp_enable { false, false };
@@ -41,7 +41,7 @@ struct SystemConfig {
     std::shared_ptr<libconfig::Config> config_file_data {nullptr};
     std::shared_ptr<libconfig::Config> settings_file_data {nullptr};
     std::string hardwareConfigPath{"/etc/muondetector/hardware.conf"};
-    std::string sourcesConfigPath{"/etc/muondetector/sources.conf"};
+    std::string componentConfigPath{"/etc/muondetector/components.conf"};
     std::size_t max_thread_count{0};
 };
 

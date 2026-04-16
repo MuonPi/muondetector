@@ -7,6 +7,7 @@
 #include "histogram.h"
 
 #include "ublox/ublox_structs.h"
+#include "data/events/ubx_event.h"
 #include <any>
 #include <chrono>
 #include <cmath>

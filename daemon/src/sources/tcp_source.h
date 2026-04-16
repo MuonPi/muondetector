@@ -11,7 +11,7 @@ class TcpConnection;
 class TcpSource : public Source
 {
 public:
-    explicit TcpSource(SourceId id, EventBus& bus);
+    explicit TcpSource(ComponentId id, EventBus& bus);
 
     void registerConnection(const std::shared_ptr<TcpConnection>& connection);
     void update() override;

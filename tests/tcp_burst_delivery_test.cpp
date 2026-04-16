@@ -3,7 +3,7 @@
 #include "sources/tcp_source.h"
 #include "core/event_bus.h"
 #include "core/thread_pool.h"
-#include "data/tcp_packet_event.h"
+#include "data/events/tcp_packet_event.h"
 #include "tcpconnection.h"
 #include "tcpmessage_keys.h"
 
@@ -42,7 +42,7 @@ int main()
     TcpServer server(io, 0, sink);
     ThreadPool pool(4);
     EventBus bus(pool);
-    TcpSource tcpSource(NonDeviceSource::TCP_SOURCE_0, bus);
+    TcpSource tcpSource(NonDeviceComponent::TCP_SOURCE_0, bus);
     server.addConnectionHandler([&tcpSource](const std::shared_ptr<TcpConnection>& conn) {
         tcpSource.registerConnection(conn);
     });
