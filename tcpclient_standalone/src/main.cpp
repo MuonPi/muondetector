@@ -3,8 +3,8 @@
 #include "sources/tcp_source.h"
 #include "core/event_bus.h"
 #include "core/thread_pool.h"
-#include "data/ad1115_event.h"
-#include "data/tcp_packet_event.h"
+#include "data/events/ad1115_event.h"
+#include "data/events/tcp_packet_event.h"
 #include "core/logging/logger.h"
 
 #include <boost/asio.hpp>
@@ -52,7 +52,7 @@ int main()
     auto sink = std::make_shared<TcpSink>();
     ThreadPool pool(2);
     EventBus bus(pool);
-    TcpSource tcpSource(NonDeviceSource::TCP_SOURCE_0, bus);
+    TcpSource tcpSource(NonDeviceComponent::TCP_SOURCE_0, bus);
 
     std::promise<TcpPacketEvent> busPacketPromise;
     bus.subscribe<TcpPacketEvent>([](const TcpPacketEvent& event) {

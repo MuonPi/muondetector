@@ -3,8 +3,8 @@
 #include "sources/tcp_source.h"
 #include "core/event_bus.h"
 #include "core/thread_pool.h"
-#include "data/ad1115_event.h"
-#include "data/tcp_packet_event.h"
+#include "data/events/ad1115_event.h"
+#include "data/events/tcp_packet_event.h"
 #include "ad1115.capnp.h"
 #include "tcpmessage_keys.h"
 
@@ -45,7 +45,7 @@ int main()
     TcpServer server(io, 0, sink);
     ThreadPool pool(2);
     EventBus bus(pool);
-    TcpSource tcpSource(NonDeviceSource::TCP_SOURCE_0, bus);
+    TcpSource tcpSource(NonDeviceComponent::TCP_SOURCE_0, bus);
 
     std::promise<TcpPacketEvent> busPacketPromise;
     auto busPacketFuture = busPacketPromise.get_future();

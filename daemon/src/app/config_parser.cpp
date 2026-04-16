@@ -199,7 +199,7 @@ void ConfigParser::parse(int argc, char *argv[])
             {
                 try
                 {
-                    m_config.serverPort = static_cast<uint16_t>(std::stoi(value));
+                    m_config.serverPort = static_cast<uint16_t>(std::stoul(value));
                     m_presence.cliServerPort = true;
                 }
                 catch (...)
@@ -385,13 +385,13 @@ void ConfigParser::apply_defaults()
     // Load sources config path
     try
     {
-        m_config.sourcesConfigPath = static_cast<std::string>(m_config.config_file_data->lookup("sources_config"));
+        m_config.componentConfigPath = static_cast<std::string>(m_config.config_file_data->lookup("component_config"));
     }
     catch (const libconfig::SettingNotFoundException &)
     {
     }
     catch (const libconfig::SettingException& e) {
-        logWarn("Could not load setting 'sources_config': " + std::string(e.what()));
+        logWarn("Could not load setting 'component_config': " + std::string(e.what()));
     }
 
 

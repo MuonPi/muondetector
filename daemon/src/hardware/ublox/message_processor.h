@@ -2,7 +2,7 @@
 #define MESSAGE_PROCESSOR_H
 
 #include "data/ublox/ublox_messages.h"
-#include "data/ublox/ublox_structs.h"
+#include "data/events/ubx_event.h"
 #include <functional>
 #include <optional>
 #include <string>

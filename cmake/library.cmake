@@ -42,6 +42,8 @@ set(MUONDETECTOR_LIBRARY_HEADER_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/ublox/ublox_structs.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/muondetector_structs.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/custom_io_operators.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/events/ad1115_event.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/events/tcp_packet_event.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/config.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/custom_io_operators.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network/networkdiscovery.h"
