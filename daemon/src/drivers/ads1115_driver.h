@@ -37,12 +37,10 @@ class ADS1115Driver : public Source
     }
 
     void startBurst(const StartBurstSampling &cmd);
-
     void stopBurst();
 
-    void scheduleBurst();
-
   private:
+    void scheduleBurst();
     DeviceRegistry &registry_;
     EventBus &bus_;
     boost::asio::steady_timer timer_;

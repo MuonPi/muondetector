@@ -64,9 +64,9 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/ublox/serialublox.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/ublox/message_processor.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/tcp_sink.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/source.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/tcp_source.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/ads1115_driver.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/mcp4728_driver.cpp"
 
     "${MUONDETECTOR_I2C_SOURCE_FILES}"
     "${MUONDETECTOR_SPI_SOURCE_FILES}"
@@ -129,6 +129,7 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/source.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/tcp_source.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/ads1115_driver.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/mcp4728_driver.h"
 
     "${MUONDETECTOR_I2C_HEADER_FILES}"
     "${MUONDETECTOR_SPI_HEADER_FILES}"

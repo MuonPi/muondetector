@@ -26,7 +26,7 @@ void TcpSource::registerConnection(const std::shared_ptr<TcpConnection>& connect
 
 void TcpSource::update()
 {
-    if (!std::holds_alternative<NonDeviceComponent>(m_id)) {
+    if (!std::holds_alternative<NonDeviceComponent>(id())) {
         throw std::logic_error("NonDeviceSource constructed with device ID");
     }
 }

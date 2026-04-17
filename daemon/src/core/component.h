@@ -23,12 +23,15 @@ inline const std::unordered_map<std::string, ComponentId> componentLookup {
 
 class Component {
 public:
-    Component(ComponentId id);
+    Component(const ComponentId id);
     virtual ~Component() = default;
-    auto id() -> ComponentId;
+    auto id() const noexcept -> ComponentId;
 
-protected:
-    ComponentId m_id;
+
+    static void handleDeviceMissing(const ComponentId id);
+
+private:
+    ComponentId id_;
 };
 
 #endif // COMPONENT_H

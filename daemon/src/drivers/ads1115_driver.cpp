@@ -22,11 +22,11 @@ ADS1115Driver::ADS1115Driver(ComponentId id, DeviceRegistry &registry, EventBus 
 
 void ADS1115Driver::update()
 {
-    if (!std::holds_alternative<Device>(m_id))
+    if (!std::holds_alternative<Device>(id()))
     {
         throw std::logic_error("DeviceComponent constructed with non-device ID");
     }
-    auto *wrapper = registry_.get<I2CDeviceWrapper<ADS1115>>(std::get<Device>(m_id));
+    auto *wrapper = registry_.get<I2CDeviceWrapper<ADS1115>>(std::get<Device>(id()));
     if (!wrapper)
         return;
 
