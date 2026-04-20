@@ -35,6 +35,23 @@ void AsyncLogger::setMinimumLevel(LogLevel level)
     minimumLevel_ = level;
 }
 
+
+void AsyncLogger::setMinimumLevel(const std::string& level)
+{
+    if (level == "Debug"){
+        return setMinimumLevel(LogLevel::Debug);
+    }
+    if (level == "Info"){
+        return setMinimumLevel(LogLevel::Info);
+    }
+    if (level == "Warning"){
+        return setMinimumLevel(LogLevel::Warn);
+    }
+    if (level == "Error"){
+        return setMinimumLevel(LogLevel::Error);
+    }
+}
+
 void AsyncLogger::log(LogLevel level, const std::string& message)
 {
     std::lock_guard<std::mutex> lock(mutex_);
