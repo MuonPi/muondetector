@@ -6,7 +6,9 @@
 
 struct MCP4728Event
 {
-    std::unordered_map<std::uint8_t, std::uint16_t> data;
+    std::unordered_map<std::uint8_t, std::uint16_t> dacValues;
+    std::unordered_map<std::uint8_t, std::uint16_t> eepromValues;
+    std::unordered_map<std::uint8_t, float> voltages;
 };
 
 #endif // MCP4728_EVENT_H

@@ -24,6 +24,7 @@ public:
     auto operator=(const AsyncLogger&) -> AsyncLogger& = delete;
 
     void setMinimumLevel(LogLevel level);
+    void setMinimumLevel(const std::string& level);
     void log(LogLevel level, const std::string& message);
     auto level() const -> LogLevel;
 
@@ -47,6 +48,8 @@ private:
     LogLevel minimumLevel_{LogLevel::Info};
 };
 
+inline void setLogLevel(const std::string& level) { AsyncLogger::instance().setMinimumLevel(level); }
+inline void setLogLevel(LogLevel level) { AsyncLogger::instance().setMinimumLevel(level); }
 inline auto logLevel() { return AsyncLogger::instance().level(); }
 inline void logDebug(const std::string& msg) { AsyncLogger::instance().log(LogLevel::Debug, msg); }
 inline void logInfo(const std::string& msg) { AsyncLogger::instance().log(LogLevel::Info, msg); }

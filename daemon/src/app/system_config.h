@@ -10,7 +10,7 @@ struct SystemConfig {
     std::string username;
     std::string password;
     std::string gpsdevname { "" };
-    int verbose { 0 };
+    std::string logLevel { "Warning" };
     std::uint8_t pcaPortMask { 0 };
     std::array<float, 2> thresholdVoltage { -1.0F, -1.0F };
     float biasVoltage { -1.0F };
