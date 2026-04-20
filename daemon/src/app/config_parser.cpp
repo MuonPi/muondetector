@@ -16,13 +16,7 @@ ConfigParser::ConfigParser(int argc, char *argv[], SystemConfig && f_config) : m
 {
     apply_defaults();
     parse(argc, argv);
-    if (m_config.verbose > 2) {
-        AsyncLogger::instance().setMinimumLevel(LogLevel::Debug);
-    } else if (m_config.verbose > 0) {
-        AsyncLogger::instance().setMinimumLevel(LogLevel::Info);
-    } else {
-        AsyncLogger::instance().setMinimumLevel(LogLevel::Warn);
-    }
+    setLogLevel(m_config.logLevel);
     validate();
     report();
 }
@@ -69,7 +63,7 @@ void ConfigParser::print_help(const std::string& progName)
     std::cout << "Usage: " << progName << " [options] [gps_device]\n\n";
 
     std::cout << "General:\n";
-    std::cout << "  -e, --verbose <level>     Set verbosity level\n";
+    std::cout << "  -l, --logging <level>     Set verbosity level\n";
     std::cout << "  -h, --help                Show this help message\n\n";
 
     std::cout << "GNSS:\n";
@@ -136,17 +130,15 @@ void ConfigParser::parse(int argc, char *argv[])
         std::string value;
 
         // -------- verbosity --------
-        if (key == "e" || key == "verbose")
+        if (key == "l" || key == "logging")
         {
             if (next_value(value))
             {
-                try
-                {
-                    m_config.verbose = std::stoi(value);
-                }
-                catch (...)
-                {
-                    m_config.verbose = 0;
+                std::vector<std::string> allowed({"Warning", "Error", "Info", "Debug"});
+                if (std::find(allowed.begin(), allowed.end(), value) != allowed.end()) {
+                    m_config.logLevel = value;
+                }else{
+                    logWarn("Value " + value + " invalid for argument -l --logging");
                 }
             }
         }
@@ -765,23 +757,17 @@ void ConfigParser::validate()
 
 void ConfigParser::report()
 {
-
-    if (m_config.verbose > 2)
-    {
-        logInfo("ublox baudrate: " + std::to_string(m_config.gnss_baudrate));
-        logInfo("ublox device: " + m_config.gpsdevname);
-        logInfo("tcp_ip (listen ip): " + m_config.serverAddress);
-        logInfo("tcp_port (listen port): " + std::to_string(m_config.serverPort));
-        logInfo("timing input: " + std::to_string(m_config.pcaPortMask));
-        logInfo("bias switch: " + std::to_string(m_config.bias_ON));
-        logInfo("preamp1 switch: " + std::to_string(m_config.preamp_enable[0]));
-        logInfo("preamp2 switch: " + std::to_string(m_config.preamp_enable[1]));
-        logInfo("gain switch: " + std::to_string(m_config.hi_gain));
-        logInfo("input polarity ch1: " + std::to_string(m_config.polarity[0]));
-        logInfo("input polarity ch2: " + std::to_string(m_config.polarity[1]));
-        logInfo("mqtt user: " + m_config.username + " passw: " + m_config.password);
-    }
-    if (m_config.verbose) {
-        logInfo("station id: " + m_config.station_ID);
-    }
+    logInfo("ublox baudrate: " + std::to_string(m_config.gnss_baudrate));
+    logInfo("ublox device: " + m_config.gpsdevname);
+    logInfo("tcp_ip (listen ip): " + m_config.serverAddress);
+    logInfo("tcp_port (listen port): " + std::to_string(m_config.serverPort));
+    logInfo("timing input: " + std::to_string(m_config.pcaPortMask));
+    logInfo("bias switch: " + std::to_string(m_config.bias_ON));
+    logInfo("preamp1 switch: " + std::to_string(m_config.preamp_enable[0]));
+    logInfo("preamp2 switch: " + std::to_string(m_config.preamp_enable[1]));
+    logInfo("gain switch: " + std::to_string(m_config.hi_gain));
+    logInfo("input polarity ch1: " + std::to_string(m_config.polarity[0]));
+    logInfo("input polarity ch2: " + std::to_string(m_config.polarity[1]));
+    logInfo("mqtt user: " + m_config.username + " passw: " + m_config.password);
+    logInfo("station id: " + m_config.station_ID);
 }

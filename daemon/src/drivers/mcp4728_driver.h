@@ -2,6 +2,7 @@
 #define MCP4728_DRIVER_H
 
 #include "core/component.h"
+#include "app/system_config.h"
 #include "core/event_bus.h"
 #include "core/registries/device_registry.h"
 #include "hardware/i2cdevice_wrapper.h"
@@ -14,7 +15,7 @@
 class MCP4728Driver : public Component
 {
   public:
-    MCP4728Driver(ComponentId id, DeviceRegistry &registry, EventBus &bus);
+    MCP4728Driver(ComponentId id, SystemConfig& systemConfig, DeviceRegistry &registry, EventBus &bus);
 
   private:
     auto dev() -> MCP4728*;
