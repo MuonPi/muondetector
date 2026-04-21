@@ -52,7 +52,7 @@ int main()
     auto sink = std::make_shared<TcpSink>();
     ThreadPool pool(2);
     EventBus bus(pool);
-    TcpSource tcpSource(NonDeviceComponent::TCP_SOURCE_0, bus);
+    TcpSource tcpSource(OtherComponent::TCP_SOURCE_0, bus);
 
     std::promise<TcpPacketEvent> busPacketPromise;
     bus.subscribe<TcpPacketEvent>([](const TcpPacketEvent& event) {

@@ -11,6 +11,11 @@
 #include <iomanip>
 #include <sstream>
 #include <type_traits>
+#include <string>
+#include <string_view>
+#include <optional>
+#include <charconv>
+#include <cctype>
 
 template <class T, class = void> struct is_iterator : std::false_type
 {
@@ -830,7 +835,7 @@ auto MessageProcessor::UBXCfgTP5(const std::string &msg) -> std::optional<UbxEve
         sstr << " alignToTow                : " << std::string((tp.flags & 0x20) ? "on" : "off") << '\n';
         sstr << " polarity                  : " << std::string((tp.flags & 0x40) ? "rising" : "falling") << '\n';
         sstr << " time grid                 : ";
-        if (gpsVersion && getProtVersion(gpsVersion.value().prot) < 16)
+        if (gpsVersion.has_value() && getProtVersion(gpsVersion.value().prot).has_value() && getProtVersion(gpsVersion.value().prot).value().major < 16)
             sstr << std::string((tp.flags & 0x80) ? "GPS" : "UTC") << '\n';
         else
         {
@@ -1084,17 +1089,58 @@ auto MessageProcessor::UBXMonHW2(const std::string &msg) -> std::optional<UbxEve
 }
 
 
-auto MessageProcessor::getProtVersion(const std::string &prot) -> double
+// Parses strings like:
+// "9.10"
+// "10.0"
+// "18"
+// "  23.01 "
+// Returns std::nullopt on invalid input.
+auto MessageProcessor::getProtVersion(std::string_view text) -> std::optional<Version>
 {
-    double verValue = 0.;
-    try
+    // trim whitespace
+    while (!text.empty() && std::isspace(static_cast<unsigned char>(text.front())))
+        text.remove_prefix(1);
+
+    while (!text.empty() && std::isspace(static_cast<unsigned char>(text.back())))
+        text.remove_suffix(1);
+
+    if (text.empty())
+        return std::nullopt;
+
+    Version v{};
+
+    auto dotPos = text.find('.');
+
+    if (dotPos == std::string_view::npos)
     {
-        verValue = std::stod(prot);
+        // major only
+        auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), v.major);
+        if (ec != std::errc{} || ptr != text.data() + text.size())
+            return std::nullopt;
+
+        v.minor = 0;
+        return v;
     }
-    catch (std::exception &)
-    {
-    }
-    return verValue;
+
+    auto majorPart = text.substr(0, dotPos);
+    auto minorPart = text.substr(dotPos + 1);
+
+    if (majorPart.empty() || minorPart.empty())
+        return std::nullopt;
+
+    auto [ptr1, ec1] =
+        std::from_chars(majorPart.data(), majorPart.data() + majorPart.size(), v.major);
+
+    auto [ptr2, ec2] =
+        std::from_chars(minorPart.data(), minorPart.data() + minorPart.size(), v.minor);
+
+    if (ec1 != std::errc{} || ptr1 != majorPart.data() + majorPart.size())
+        return std::nullopt;
+
+    if (ec2 != std::errc{} || ptr2 != minorPart.data() + minorPart.size())
+        return std::nullopt;
+
+    return v;
 }
 
 auto MessageProcessor::UBXMonVer(const std::string &msg) -> std::optional<UbxEvent>
@@ -1132,11 +1178,11 @@ auto MessageProcessor::UBXMonVer(const std::string &msg) -> std::optional<UbxEve
                        (str[str.size() - 1] == ' ' || !std::isgraph(static_cast<unsigned char>(str[str.size() - 1]))))
                     str.erase(str.size() - 1, 1);
                 data.prot = str;
-                double nr = getProtVersion(str);
-                if (logLevel() == LogLevel::Debug)
+                auto version = getProtVersion(str);
+                if (logLevel() == LogLevel::Debug && version.has_value())
                 {
                     sstr << "caught PROTVER string: '" << str << "'\n";
-                    sstr << "ver: " + std::to_string(nr) + "\n";
+                    sstr << "ver: " + std::to_string(version.value().major) + "." + std::to_string(version.value().minor) + "\n";
                 }
             }
         }
