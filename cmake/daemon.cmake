@@ -181,7 +181,7 @@ set_target_properties(muondetector-daemon PROPERTIES POSITION_INDEPENDENT_CODE 1
 target_include_directories(muondetector-daemon PUBLIC
     $<BUILD_INTERFACE:${MUONDETECTOR_DAEMON_SRC_DIR}>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
-    $<BUILD_INTERFACE:${CAPNP_INCLUDE_DIR}>
+    $<BUILD_INTERFACE:${CAPNP_INCLUDE_DIRS}>
     $<BUILD_INTERFACE:${Boost_INCLUDE_DIRS}>
 )
 
@@ -195,6 +195,7 @@ target_link_libraries(muondetector-daemon PRIVATE
     ${CAPNP_KJ_LIBRARIES}
     muondetector-shared
     muondetector-shared-mqtt
+    muondetector-protocol
     Threads::Threads
 )
 

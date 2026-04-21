@@ -204,7 +204,7 @@ struct NavSat
     std::optional<std::uint8_t> globFlags{std::nullopt};
     std::uint8_t numSvs{0};
     std::size_t goodSats{0};
-    std::vector<GnssSatellite> satellites{0};
+    std::vector<GnssSatellite> satellites{};
 };
 
 struct GnssPosStruct {

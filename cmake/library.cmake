@@ -8,18 +8,9 @@ configure_file(
     )
 
 
-set(FOUND_LIBATOMIC TRUE)
-find_package(CapnProto REQUIRED)
-add_definitions(${CAPNP_DEFINITIONS})
-file(GLOB CAPNP_FILES
-    ${MUONDETECTOR_LIBRARY_DIR}/src/capnp/*.capnp
-)
-capnp_generate_cpp(CAPNP_SRCS CAPNP_HDRS ${CAPNP_FILES})
-get_filename_component(CAPNP_INCLUDE_DIR ${CAPNP_HDRS} DIRECTORY)
-
+# Add Boost
 find_package(Boost CONFIG REQUIRED)
 find_package(Threads REQUIRED)
-
 
 
 set(MUONDETECTOR_LIBRARY_SOURCE_FILES
@@ -30,7 +21,6 @@ set(MUONDETECTOR_LIBRARY_SOURCE_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/ublox/ublox_structs.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/custom_io_operators.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network/networkdiscovery.cpp"
-    "${CAPNP_SRCS}"
     )
 
 set(MUONDETECTOR_LIBRARY_HEADER_FILES
@@ -47,7 +37,6 @@ set(MUONDETECTOR_LIBRARY_HEADER_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/config.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/custom_io_operators.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network/networkdiscovery.h"
-    "${CAPNP_HDRS}"
     )
 
 set(MUONDETECTOR_COMMANDS_HEADER_FILES
@@ -94,9 +83,10 @@ target_include_directories(muondetector-shared-mqtt PUBLIC
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/mqtt"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network"
-    "${CAPNP_INCLUDE_DIR}"
     "${Boost_INCLUDE_DIRS}"
     )
+    
+target_link_libraries(muondetector-shared-mqtt PUBLIC muondetector-protocol)
 endif ()
 
 add_library(muondetector-shared OBJECT ${MUONDETECTOR_LIBRARY_SOURCE_FILES} ${MUONDETECTOR_LIBRARY_HEADER_FILES})
@@ -108,6 +98,7 @@ target_include_directories(muondetector-shared PUBLIC
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/mqtt"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network"
-    "${CAPNP_INCLUDE_DIR}"
     "${Boost_INCLUDE_DIRS}"
     )
+
+target_link_libraries(muondetector-shared PUBLIC muondetector-protocol)

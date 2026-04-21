@@ -30,6 +30,7 @@ SerialUblox::SerialUblox(ComponentId id, boost::asio::io_context &io, const std:
                          EventBus &bus)
     : Component(id), serial_(io), timer_(io), port_(port), baud_(baud), bus_(bus)
 {
+    makeConnection();
     bus_.subscribe<UbxRateCmd>([this](const UbxRateCmd &cmd) { handle(cmd); });
     bus_.subscribe<UbxMsgPollCmd>([this](const UbxMsgPollCmd &cmd) { handle(cmd); });
     bus_.subscribe<UbxSetAopCmd>([this](const UbxSetAopCmd &cmd) { handle(cmd); });

@@ -1,0 +1,13 @@
+commands:
+  - name: UbxRateCmd
+    id: CFG-RATE
+    fields:
+      - { name: measRate, type: uint16 }
+      - { name: navRate,  type: uint16 }
+      - { name: timeRef,  type: uint16 }
+
+  - name: UbxResetCmd
+    id: CFG-RST
+    fields:
+      - { name: navBbrMask, type: uint16 }
+      - { name: resetMode,  type: uint8 }
