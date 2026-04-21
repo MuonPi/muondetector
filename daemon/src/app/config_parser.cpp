@@ -17,6 +17,7 @@ ConfigParser::ConfigParser(int argc, char *argv[], SystemConfig && f_config) : m
     apply_defaults();
     parse(argc, argv);
     setLogLevel(m_config.logLevel);
+    logInfo("Loglevel is " + m_config.logLevel);
     validate();
     report();
 }
@@ -453,9 +454,9 @@ void ConfigParser::apply_defaults()
                 }
             }
         }
-        catch (const std::filesystem::filesystem_error &e)
+        catch (const std::filesystem::filesystem_error &f)
         {
-            logWarn(std::string("Error accessing /dev while probing GNSS devices: ") + e.what());
+            logWarn(std::string("Error accessing /dev while probing GNSS devices: ") + f.what());
         }
 
         if (!found.empty())

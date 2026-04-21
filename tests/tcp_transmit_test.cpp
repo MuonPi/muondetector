@@ -45,7 +45,7 @@ int main()
     TcpServer server(io, 0, sink);
     ThreadPool pool(2);
     EventBus bus(pool);
-    TcpSource tcpSource(NonDeviceComponent::TCP_SOURCE_0, bus);
+    TcpSource tcpSource(OtherComponent::TCP_SOURCE_0, bus);
 
     std::promise<TcpPacketEvent> busPacketPromise;
     auto busPacketFuture = busPacketPromise.get_future();

@@ -25,8 +25,19 @@
 #include "hardware/devices.h"
 #include "hardware/i2cdevice_wrapper.h"
 #include "hardware/i2cdevices.h"
+#include "hardware/ublox/serialublox.h"
+
 
 #include "core/component.h"
+
+// Ublox
+#include "data/ublox/ublox_messages.h"
+#include "data/commands/ubx_protocol_selection_cmd.h"
+#include "data/commands/ubx_msg_rate_cmd.h"
+#include "data/commands/ubx_msg_poll_cmd.h"
+#include "data/commands/ubx_rate_cmd.h"
+#include "data/commands/ubx_set_aop_cmd.h"
+#include "data/commands/ubx_version_dependent_msg_rate_cmd.h"
 
 // Sources
 #include "sources/source.h"
@@ -135,7 +146,7 @@ auto SystemBuilder::parseHardwareConfig(const libconfig::Config &hardwareConfig)
             }
             if (d.lookupValue("baud", baud) != false)
             {
-                if (baud > 0 || baud > std::numeric_limits<std::uint32_t>::max())
+                if (baud < 0)
                 {
                     logError("Baudrate parsing error, outside uint32_t range. Ignoring setting for device " + idStr);
                 }
@@ -272,6 +283,7 @@ Context SystemBuilder::build(ThreadPool &pool, const SystemConfig &config)
     for (auto &c : componentConfigurations)
     {
         auto component = ComponentFactory::createComponent(c, ctx);
+        logDebug("Created component " + component->name().value_or("<unknown>"));
         auto component_as_source = std::dynamic_pointer_cast<Source>(component);
         if (component_as_source)
         {
@@ -291,6 +303,7 @@ Context SystemBuilder::build(ThreadPool &pool, const SystemConfig &config)
         ctx.components->add(component->id(), component);
     }
 
+    // TODO: Replace this call with Sink Factory and make each sink subscribe to their events
     // --- sinks ---
     auto tcp_sink = SinkFactory::createTcpSink(ctx.sinks);
 
@@ -301,7 +314,7 @@ Context SystemBuilder::build(ThreadPool &pool, const SystemConfig &config)
     // When server accepts a new TCP connection, call this handler.
     ctx.server = std::make_unique<TcpServer>(ctx.io, config.serverPort, tcp_sink);
 
-    ctx.server->addConnectionHandler([tcp_source = ctx.components->get<TcpSource>(NonDeviceComponent::TCP_SOURCE_0)](
+    ctx.server->addConnectionHandler([tcp_source = ctx.components->get<TcpSource>(OtherComponent::TCP_SOURCE_0)](
                                          const std::shared_ptr<TcpConnection> &connection) {
         if (tcp_source != nullptr)
         {
@@ -317,6 +330,65 @@ Context SystemBuilder::build(ThreadPool &pool, const SystemConfig &config)
     // --- maintenance ---
     ctx.scheduler->every(std::chrono::seconds(5),
                          [server = ctx.server.get()]() { server->heartbeatAndCleanup(std::chrono::seconds(30)); });
+
+    // --- GPS default config ---
+
+    // set dynamic model: Stationary
+    logInfo("setting GNSS dynamic model to" + std::to_string(static_cast<unsigned>(config.gnss_dynamic_model)));
+    ctx.bus->publish(UbxDynamicModel::stationary);
+    ctx.bus->publish(UbxProtocolSelectionCmd{1, PROTO_UBX});
+
+    // --- Message Rates ---
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::TIM_TM2, 1, 1});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::TIM_TP, 1, 0});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_TIMEUTC, 1, 131});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_HW, 1, 47});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_HW2, 1, 49});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_POSLLH, 1, 43});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_TIMEGPS, 1, 0});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_STATUS, 1, 71});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_CLOCK, 1, 189});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_RXBUF, 1, 53});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_TXBUF, 1, 51});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_SBAS, 1, 0});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_DOP, 1, 254});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_RXBUF, 1, 53});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_RXBUF, 1, 53});
+    ctx.bus->publish(UbxSetAopCmd{true});
+
+    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_PRT});
+    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::MON_VER});
+    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_GNSS});
+    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_NAVX5});
+    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_ANT});
+    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_TP5});
+    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_PRT});
+    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_PRT});
+
+    std::uint16_t measinterval = 100;
+    ctx.bus->publish(UbxRateCmd{measinterval, 1}); // set rate of messages and nav
+
+    // Enable NAV_SVINFO only for version 0.1 - 15.0
+    // Enable NAV_SAT for version > 15.0
+    ctx.bus->publish(UbxVersionDependentMsgRateCmd{
+        {
+            UbxVersionDependentMsgRateCmd::Entry{
+                Version {0, 1},
+                Version {15, 0},
+                UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 69}
+            },
+            UbxVersionDependentMsgRateCmd::Entry{
+                Version {15, 0},
+                Version {std::numeric_limits<unsigned>().max(), 0},
+                UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 0}
+            },
+            UbxVersionDependentMsgRateCmd::Entry{
+                Version {15, 0},
+                Version {std::numeric_limits<unsigned>().max(), 0},
+                UbxMsgRateCmd{UBX_MSG::NAV_SAT, 1, 69}
+            }
+        }
+    });
 
     return ctx;
 }

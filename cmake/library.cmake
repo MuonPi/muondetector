@@ -50,6 +50,33 @@ set(MUONDETECTOR_LIBRARY_HEADER_FILES
     "${CAPNP_HDRS}"
     )
 
+set(MUONDETECTOR_COMMANDS_HEADER_FILES
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/bias_dac_setting_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/calibration_save_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/pca_switch_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/ubx_default_config_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/ubx_msg_poll_rate_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/ubx_reset_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/bias_switch_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/event_trigger_selection_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/polarity_switch_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/ubx_min_cno_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/ubx_msg_rate_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/ubx_save_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/burst_sampling_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/gain_switch_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/preamp_switch_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/ubx_min_max_sv_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/ubx_protocol_selection_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/ubx_set_aop_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/calibration_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/mqtt_inhibit_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/threshold_setting_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/ubx_msg_poll_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/ubx_rate_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/ubx_version_dependent_msg_rate_cmd.h"
+)
+
 if (MUONDETECTOR_BUILD_DAEMON)
 set(MUONDETECTOR_LIBRARY_MQTT_SOURCE_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/mqtt/mqtthandler.cpp"

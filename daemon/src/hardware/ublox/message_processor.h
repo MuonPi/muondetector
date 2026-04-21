@@ -6,6 +6,7 @@
 #include <functional>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 class MessageProcessor
@@ -19,6 +20,7 @@ class MessageProcessor
 
     static const std::unordered_map<UBX_MSG::msg_id, std::pair<std::function<std::optional<UbxEvent>()>, std::string>> handler;
 
+    static auto getProtVersion(std::string_view text) -> std::optional<Version>;
 
   private:
     static void unhandled(const UbxMessage &msg, const std::map<std::uint8_t, const char *> ubx_class_names);
@@ -43,7 +45,6 @@ class MessageProcessor
     static auto UBXMonVer(const std::string& msg) -> std::optional<UbxEvent>;
     static auto UBXTimTP(const std::string& msg) -> std::optional<UbxEvent>;
     static auto UBXTimTM2(const std::string& msg) -> std::optional<UbxEvent>;
-    static auto getProtVersion(const std::string& prot) -> double;
     static std::optional<GpsVersion> gpsVersion;
     static std::optional<UbxMessage> msgWaitingForAck;
 };
