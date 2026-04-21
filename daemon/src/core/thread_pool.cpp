@@ -17,7 +17,6 @@ ThreadPool::~ThreadPool() {
 }
 
 void ThreadPool::enqueue(std::function<void()> task) {
-    logDebug("Enqueue task");
     {
         std::lock_guard lock(mutex);
         tasks.push(std::move(task));
@@ -39,9 +38,7 @@ void ThreadPool::worker_loop() {
             tasks.pop();
         }
 
-        logDebug("Starting task");
         task();
-        logDebug("Finished task");
     }
     logDebug("End worker loop");
 }

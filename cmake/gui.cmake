@@ -173,6 +173,7 @@ if(WIN32)
 target_link_libraries(muondetector-gui
     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
     muondetector-shared
+    protocol
     pthread
     ${QWT}
     ${MOSQUITTO}
@@ -183,6 +184,7 @@ elseif(APPLE)
 target_link_libraries(muondetector-gui
     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
     muondetector-shared
+    protocol
     pthread
     )
 #strip muss im Bundle erfolgen
@@ -196,6 +198,7 @@ else()
 target_link_libraries(muondetector-gui
     Qt5::Network Qt5::Svg Qt5::Widgets Qt5::Gui Qt5::Quick Qt5::QuickWidgets Qt5::Qml
     muondetector-shared
+    protocol
     pthread
     qwt-qt5
     )

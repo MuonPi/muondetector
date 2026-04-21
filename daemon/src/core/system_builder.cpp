@@ -390,5 +390,10 @@ Context SystemBuilder::build(ThreadPool &pool, const SystemConfig &config)
         }
     });
 
+    // Debug reading version every second // TESTED -> Working!
+    // ctx.scheduler->every(std::chrono::milliseconds(1000),[bus = &(*ctx.bus)](){
+    //     bus->publish(UbxMsgPollCmd{UBX_MSG::MON_VER});
+    // });
+
     return ctx;
 }
