@@ -1,11 +1,12 @@
 set(MUONDETECTOR_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(MUONDETECTOR_TCP_TEST_COMMON_SOURCES
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/logging/logger.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/thread_pool.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/event_bus.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/network/tcpserver.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/tcp_sink.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/source.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/component.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/tcp_source.cpp"
     $<TARGET_OBJECTS:muondetector-shared>
 )
@@ -26,6 +27,7 @@ function(add_muondetector_tcp_test target_name test_source test_name)
     target_link_libraries(${target_name} PRIVATE
         ${CAPNP_LIBRARIES}
         ${CAPNP_KJ_LIBRARIES}
+        muondetector-protocol
         Threads::Threads
     )
 
