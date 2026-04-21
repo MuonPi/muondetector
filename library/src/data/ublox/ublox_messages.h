@@ -8,6 +8,75 @@
 #define UBLOX_VERSION 7
 // not in this list are all msg of types: LOG, AID and INF
 
+
+struct Version
+{
+    unsigned major;
+    unsigned minor;
+
+    bool operator<(const Version& other) const
+    {
+        if (major != other.major)
+            return major < other.major;
+        return minor < other.minor;
+    }
+};
+
+enum class UBX_RESET : std::uint32_t {
+    RESET_HOT = 0x00000000,
+    RESET_WARM = 0x00010000,
+    RESET_COLD = 0xFFFF0000,
+    RESET_HW = 0x000000,
+    RESET_SW = 0x00000001,
+    RESET_SW_GNSS = 0x00000002,
+    RESET_HW_AFTER_SHUTDOWN = 0x00000004,
+    GNSS_STOP = 0x00000008,
+    GNSS_START = 0x00000009 };
+
+constexpr UBX_RESET operator|(UBX_RESET lhs, UBX_RESET rhs)
+{
+    using T = std::underlying_type_t<UBX_RESET>;
+    return static_cast<UBX_RESET>(
+        static_cast<T>(lhs) | static_cast<T>(rhs)
+    );
+}
+
+constexpr UBX_RESET operator&(UBX_RESET lhs, UBX_RESET rhs)
+{
+    using T = std::underlying_type_t<UBX_RESET>;
+    return static_cast<UBX_RESET>(
+        static_cast<T>(lhs) & static_cast<T>(rhs)
+    );
+}
+
+enum class UBX_DEV : std::uint8_t {
+    DEV_BBR = 0x01,
+    DEV_FLASH = 0x02,
+    DEV_EEPROM = 0x04,
+    DEV_SPI_FLASH = 0x10 };
+
+constexpr UBX_DEV operator|(UBX_DEV lhs, UBX_DEV rhs)
+{
+    using T = std::underlying_type_t<UBX_DEV>;
+    return static_cast<UBX_DEV>(
+        static_cast<T>(lhs) | static_cast<T>(rhs)
+    );
+}
+
+constexpr UBX_DEV operator&(UBX_DEV lhs, UBX_DEV rhs)
+{
+    using T = std::underlying_type_t<UBX_DEV>;
+    return static_cast<UBX_DEV>(
+        static_cast<T>(lhs) & static_cast<T>(rhs)
+    );
+}
+
+constexpr UBX_DEV& operator|=(UBX_DEV& lhs, UBX_DEV rhs)
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
+
 namespace UBX_MSG {
 enum msg_id : std::uint16_t {
     ACK = 0x0501,

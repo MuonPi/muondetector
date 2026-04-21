@@ -28,5 +28,14 @@ DeviceFactory::deviceCreator =
                 std::make_unique<ADS1115>(cfg.device.value().c_str(), cfg.address.value())
             );
         }
+    },
+    {
+        Device::MCP4728_0,
+        [](const DeviceConfig& cfg)
+        {
+            return std::make_unique<I2CDeviceWrapper<MCP4728>>(
+                std::make_unique<MCP4728>(cfg.device.value().c_str(), cfg.address.value())
+            );
+        }
     }
 };

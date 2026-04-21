@@ -34,7 +34,7 @@ void EventBus::publish(const T& event)
     {
         T copy = event;
 
-        threadPool.enqueue([handler, copy]() mutable {
+        threadPool.enqueue([handler, copy]() {
             handler(&copy);
         });
     }

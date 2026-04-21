@@ -2,11 +2,27 @@
 #define SERIALUBLOX_H
 
 #include "data/ublox/ublox_structs.h"
+#include "data/events/ubx_event.h"
+#include "data/commands/ubx_rate_cmd.h"
+#include "data/commands/ubx_msg_rate_cmd.h"
+#include "data/commands/ubx_msg_poll_cmd.h"
+#include "data/commands/ubx_msg_poll_rate_cmd.h"
+#include "data/commands/ubx_version_dependent_msg_rate_cmd.h"
+#include "data/commands/ubx_protocol_selection_cmd.h"
+#include "data/commands/ubx_save_cmd.h"
+#include "data/commands/ubx_reset_cmd.h"
+#include "data/commands/ubx_set_aop_cmd.h"
+#include "data/commands/ubx_min_max_sv_cmd.h"
+#include "data/commands/ubx_min_cno_cmd.h"
+#include "core/component.h"
 #include "core/event_bus.h"
 #include <memory>
 #include <queue>
 #include <string>
 #include <optional>
+#include <boost/asio.hpp>
+#include <iostream>
+#include <memory>
 
 struct GnssPosStruct;
 struct GnssMonHwStruct;
@@ -14,13 +30,10 @@ struct GnssMonHw2Struct;
 struct UbxTimeMarkStruct;
 
 
-#include <boost/asio.hpp>
-#include <iostream>
-#include <memory>
-
-class SerialUblox {
+class SerialUblox : public Component {
 public:
-    SerialUblox(boost::asio::io_context& io,
+    SerialUblox(ComponentId id,
+                boost::asio::io_context& io,
                 const std::string& port,
                 unsigned int baud,
                 EventBus& bus);
@@ -30,6 +43,21 @@ public:
 
 private:
     void startAsyncRead();
+
+    void handle(const UbxRateCmd&);
+    void handle(const UbxMsgRateCmd&);
+    void handle(const UbxMsgPollCmd&);
+    void handle(const UbxMsgPollRateCmd&);
+    void handle(const UbxProtocolSelectionCmd&);
+    void handle(const UbxSaveCmd&);
+    void handle(const UbxResetCmd&);
+    void handle(const UbxSetAopCmd&);
+    void handle(const UbxMinMaxSvCmd&);
+    void handle(const UbxMinCnoCmd&);
+    void handle(const UbxVersionDependentMsgRateCmd&);
+    void handle(const GpsVersion&);
+
+    void processQueuedCmds();
 
     void retryLater()
     {
@@ -62,177 +90,8 @@ private:
     unsigned int baud_;
     EventBus& bus_;
     int timeout_ = 5;
+    std::optional<GpsVersion> protocolVersion_;
+    std::queue<UbxVersionDependentMsgRateCmd> queuedCmds_;
 };
-/*
-class SerialUblox
-{
-public:
-    enum { RESET_HOT = 0x00000000,
-        RESET_WARM = 0x00010000,
-        RESET_COLD = 0xFFFF0000,
-        RESET_HW = 0x000000,
-        RESET_SW = 0x00000001,
-        RESET_SW_GNSS = 0x00000002,
-        RESET_HW_AFTER_SHUTDOWN = 0x00000004,
-        GNSS_STOP = 0x00000008,
-        GNSS_START = 0x00000009 };
 
-    enum { DEV_BBR = 0x01,
-        DEV_FLASH = 0x02,
-        DEV_EEPROM = 0x04,
-        DEV_SPI_FLASH = 0x10 };
-
-    SerialUblox(boost::asio::io_context& io,
-                const std::string& port,
-                unsigned int baud);
-
-    // all messages coming from SerialUblox class that should be displayed on console
-    // get sent to Client thread with signal/slot mechanics
-    void toConsole(std::string data);
-    void UBXReceivedAckNak(std::uint16_t ackedMsgID, std::uint16_t ackedCfgMsgID);
-    // ackedMsgID contains the return value of the ack msg (in case of CFG_MSG that is CFG_MSG)
-    void UBXreceivedMsgRateCfg(std::uint16_t msgID, uint8_t rate);
-    void UBXCfgError(std::string data);
-    void gpsRestart();
-    void gpsConnectionError();
-    // information about updated properties
-    void gpsPropertyUpdatedUint8(uint8_t data,
-        std::chrono::duration<double> updateAge,
-        char propertyName);
-    void gpsPropertyUpdatedUint32(uint32_t data,
-        std::chrono::duration<double> updateAge,
-        char propertyName);
-    void gpsPropertyUpdatedInt32(int32_t data,
-        std::chrono::duration<double> updateAge,
-        char propertyName);
-    void gpsPropertyUpdatedGnss(std::vector<GnssSatellite>,
-        std::chrono::duration<double> updateAge);
-    void gpsPropertyUpdatedGeodeticPos(GnssPosStruct pos);
-    void timTM2(std::string timTM2String);
-    void UBXReceivedTimeTM2(const UbxTimeMarkStruct& tm);
-    void gpsVersion(const std::string& swVersion, const std::string& hwVersion, const std::string& protVersion);
-    void gpsMonHW(const GnssMonHwStruct& hw);
-    void gpsMonHW2(const GnssMonHw2Struct& hw2);
-    void UBXReceivedGnssConfig(uint8_t numTrkCh, const std::vector<GnssConfigStruct>& gnssConfigs);
-    void UBXReceivedTP5(const UbxTimePulseStruct& tp);
-    void UBXReceivedDops(const UbxDopStruct& dops);
-    void UBXReceivedTxBuf(uint8_t txUsage, uint8_t txPeakUsage);
-    void UBXReceivedRxBuf(uint8_t rxUsage, uint8_t rxPeakUsage);
-
-public slots:
-    // all functions that can be called from other classes through signal/slot mechanics
-    void makeConnection();
-    void onReadyRead();
-    void onRequestGpsProperties();
-    void pollMsgRate(std::uint16_t msgID);
-    void pollMsg(std::uint16_t msgID);
-    void enqueueMsg(std::uint16_t msgID, const std::string& payload);
-    // for polling the port configuration for specific port set rate to port ID
-    void UBXSetCfgMsgRate(std::uint16_t msgID, uint8_t port, uint8_t rate);
-    void UBXSetCfgRate(std::uint16_t measRate, std::uint16_t navRate);
-    void UBXSetCfgPrt(uint8_t port, uint8_t outProtocolMask);
-    void UBXReset(uint32_t resetFlags = RESET_WARM | RESET_SW);
-    void onSetGnssConfig(const std::vector<GnssConfigStruct>& gnssConfigs);
-    void UBXSetMinMaxSVs(uint8_t minSVs, uint8_t maxSVs);
-    void UBXSetMinCNO(uint8_t minCNO);
-    void UBXSetCfgTP5(const UbxTimePulseStruct& tp);
-    void UBXSetAopCfg(bool enable = true, std::uint16_t maxOrbErr = 0);
-    void UBXSaveCfg(uint8_t devMask = DEV_BBR | DEV_FLASH);
-
-    void closeAll();
-
-    void ackTimeout();
-    // outPortMask is something like 1 for only UBX protocol or 0b11 for UBX and NMEA
-
-    void setDynamicModel(UbxDynamicModel model);
-    static const std::string& getProtVersionString() { return fProtVersionString; }
-    static double getProtVersion();
-
-private:
-    // all functions for sending and receiving raw data used by other functions in "public slots" section
-    // and scanning raw data up to the point where "UbxMessage" object is generated
-    bool scanUnknownMessage(std::string& buffer, UbxMessage& message);
-    bool sendUBX(std::uint16_t msgID, const std::string& payload, std::uint16_t nBytes);
-    bool sendUBX(std::uint16_t msgID, unsigned char* payload, std::uint16_t nBytes);
-    bool sendUBX(const UbxMessage& msg);
-    void sendQueuedMsg(bool afterTimeout = false);
-    void delay(int millisecondsWait);
-
-    // all functions only used for processing and showing "UbxMessage"
-    void processMessage(const UbxMessage& msg);
-
-    bool UBXTimTP(uint32_t& itow, int32_t& quantErr, std::uint16_t& weekNr);
-    void UBXTimTP(const std::string& msg);
-    void UBXTimTM2(const std::string& msg);
-
-    auto UBXNavClock(uint32_t& itow, int32_t& bias, int32_t& drift,
-        uint32_t& tAccuracy, uint32_t& fAccuracy) -> bool;
-    void UBXNavSat(const std::string& msg, bool allSats);
-    void UBXNavSVinfo(const std::string& msg, bool allSats);
-    void UBXNavPosLLH(const std::string& msg);
-    void UBXNavClock(const std::string& msg);
-    void UBXNavTimeGPS(const std::string& msg);
-    void UBXNavTimeUTC(const std::string& msg);
-    void UBXNavStatus(const std::string& msg);
-    void UBXNavDOP(const std::string& msg);
-
-    void UBXCfgGNSS(const std::string& msg);
-    void UBXCfgMSG(const std::string& msg);
-    void UBXCfgNav5(const std::string& msg);
-    void UBXCfgNavX5(const std::string& msg);
-    void UBXCfgAnt(const std::string& msg);
-    void UBXCfgTP5(const std::string& msg);
-
-    auto UBXMonVer() -> std::vector<std::string>;
-    void UBXMonHW(const std::string& msg);
-    void UBXMonHW2(const std::string& msg);
-    void UBXMonTx(const std::string& msg);
-    void UBXMonRx(const std::string& msg);
-    void UBXMonVer(const std::string& msg);
-
-    static std::string toStdString(unsigned char* data, int dataSize);
-
-    // all global variables used in SerialUblox class until UbxMessage was created
-    std::unique_ptr<QSerialPort> serialPort;
-    std::string _portName;
-    std::string m_buffer = "";
-    int _baudRate = 0;
-    int verbose = 0;
-    int timeout = 5000;
-    bool dumpRaw = false; // if true show all messages coming from the gps board that can
-        // be interpreted as std::string by std::string(message) (basically all NMEA)
-    bool discardAllNMEA = true; // if true discard all NMEA messages and do not parse them
-    bool showout = false; // if true show the ubx messages sent to the gps board as hex
-    bool showin = false;
-    std::queue<UbxMessage> outMsgBuffer;
-    std::unique_ptr<UbxMessage> msgWaitingForAck { nullptr };
-    std::unique_ptr<QTimer> ackTimer;
-    std::size_t sendRetryCounter { 0 };
-
-    // all global variables used for keeping track of satellites and statistics (gpsProperty)
-    gpsProperty<int> leapSeconds;
-    gpsProperty<double> noise;
-    gpsProperty<double> agc;
-    gpsProperty<uint8_t> fix;
-    gpsProperty<uint8_t> nrSats;
-    gpsProperty<uint8_t> TPQuantErr;
-    gpsProperty<uint8_t> txBufUsage;
-    gpsProperty<uint8_t> txBufPeakUsage;
-    gpsProperty<uint32_t> timeAccuracy;
-    gpsProperty<uint32_t> freqAccuracy;
-    gpsProperty<uint32_t> eventCounter;
-    gpsProperty<int32_t> clkBias;
-    gpsProperty<int32_t> clkDrift;
-    gpsProperty<std::vector<GnssSatellite>> m_satList;
-    gpsProperty<GnssPosStruct> geodeticPos;
-    const int MSGTIMEOUT = 1500;
-    std::queue<gpsTimestamp> fTimestamps;
-    static std::string fProtVersionString;
-
-    static constexpr std::size_t s_nr_targets { 6 };
-    static constexpr std::size_t s_default_target { 1 };
-    // this is the uart port. (0 = i2c; 1 = uart; 3 = usb; 4 = isp;)
-    // see u-blox8-M8_Receiver... pdf documentation p. 170
-};
-*/
-#endif // SerialUblox_H
+#endif // SERIALUBLOX_H
