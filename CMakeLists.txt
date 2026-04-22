@@ -3,10 +3,10 @@ project (muondetector LANGUAGES CXX C)
 
 string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
 
-option(MUONDETECTOR_BUILD_GUI "Build the gui for the muondetector" ON)
-option(MUONDETECTOR_BUILD_DAEMON "Build the daemon for the muondetector. Defaults to ON on armv7l architecture" OFF)
+option(MUONDETECTOR_BUILD_GUI "Build the gui for the muondetector" OFF)
+option(MUONDETECTOR_BUILD_DAEMON "Build the daemon for the muondetector. Defaults to ON on armv7l architecture" ON)
 option(MUONDETECTOR_BUILD_TESTS "Build integration tests" ON)
-option(MUONDETECTOR_BUILD_TCP_DEBUG_CLIENT "Build tcp connection client for testing" OFF)
+option(MUONDETECTOR_BUILD_TCP_DEBUG_CLIENT "Build tcp connection client for testing" ON)
 set(MUONDETECTOR_ON_RASPBERRYPI OFF)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.cmake")

@@ -2,9 +2,8 @@
 #include "sinks/tcp_sink.h"
 #include "tcpconnection.h"
 
-#include <boost/asio.hpp>
-
 #include <array>
+#include <boost/asio.hpp>
 #include <chrono>
 #include <cstdint>
 #include <iostream>
@@ -15,22 +14,18 @@ using boost::asio::ip::tcp;
 
 namespace {
 // Framing helpers for crafting oversize header.
-auto be16(std::uint16_t v) -> std::array<std::uint8_t, 2>
-{
+auto be16(std::uint16_t v) -> std::array<std::uint8_t, 2> {
     return {static_cast<std::uint8_t>((v >> 8) & 0xFF), static_cast<std::uint8_t>(v & 0xFF)};
 }
 
-auto be32(std::uint32_t v) -> std::array<std::uint8_t, 4>
-{
-    return {
-        static_cast<std::uint8_t>((v >> 24) & 0xFF),
-        static_cast<std::uint8_t>((v >> 16) & 0xFF),
-        static_cast<std::uint8_t>((v >> 8) & 0xFF),
-        static_cast<std::uint8_t>(v & 0xFF)};
+auto be32(std::uint32_t v) -> std::array<std::uint8_t, 4> {
+    return {static_cast<std::uint8_t>((v >> 24) & 0xFF),
+            static_cast<std::uint8_t>((v >> 16) & 0xFF), static_cast<std::uint8_t>((v >> 8) & 0xFF),
+            static_cast<std::uint8_t>(v & 0xFF)};
 }
 
-bool waitForConnectionCount(const TcpSink& sink, std::size_t expected, std::chrono::milliseconds timeout)
-{
+bool waitForConnectionCount(const TcpSink& sink, std::size_t expected,
+                            std::chrono::milliseconds timeout) {
     const auto deadline = std::chrono::steady_clock::now() + timeout;
     while (std::chrono::steady_clock::now() < deadline) {
         if (sink.connectionCount() == expected) {
@@ -40,10 +35,9 @@ bool waitForConnectionCount(const TcpSink& sink, std::size_t expected, std::chro
     }
     return false;
 }
-}
+} // namespace
 
-int main()
-{
+int main() {
     // Bring up server and connect one client.
     auto io = std::make_shared<boost::asio::io_context>();
     auto sink = std::make_shared<TcpSink>();

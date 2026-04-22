@@ -1,22 +1,21 @@
 #ifndef TCPSERVER_H
 #define TCPSERVER_H
 
-#include "tcpconnection.h"
 #include "sinks/tcp_sink.h"
+#include "tcpconnection.h"
+
 #include <boost/asio.hpp>
+#include <chrono>
+#include <cstdint>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <unordered_map>
 #include <vector>
-#include <iostream>
-#include <chrono>
-#include <cstdint>
-
 
 class TcpSink;
-class TcpServer
-{
-public:
+class TcpServer {
+  public:
     using ConnectionHandler = std::function<void(const std::shared_ptr<TcpConnection>&)>;
     using SessionId = std::uint64_t;
 
@@ -27,12 +26,13 @@ public:
         std::uint32_t heartbeatCount{0};
     };
 
-    TcpServer(std::shared_ptr<boost::asio::io_context> io, std::uint16_t port, std::shared_ptr<TcpSink> sink);
+    TcpServer(std::shared_ptr<boost::asio::io_context> io, std::uint16_t port,
+              std::shared_ptr<TcpSink> sink);
     std::uint16_t port() const;
     void addConnectionHandler(ConnectionHandler handler);
     void heartbeatAndCleanup(std::chrono::steady_clock::duration maxIdle);
 
-private:
+  private:
     void do_accept();
     void removeSession(SessionId id);
 

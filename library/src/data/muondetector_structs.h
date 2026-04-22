@@ -3,84 +3,74 @@
 
 #include "config.h"
 #include "custom_io_operators.h"
+#include "data/events/ubx_event.h"
 #include "gpio_pin_definitions.h"
 #include "histogram.h"
-
 #include "ublox/ublox_structs.h"
-#include "data/events/ubx_event.h"
+
 #include <any>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <string>
 #include <sys/types.h>
-#include <map>
-#include <cstdint>
 
 using TimestampClockType = std::chrono::steady_clock;
 using EventTime = std::chrono::time_point<TimestampClockType, std::chrono::nanoseconds>;
 
-enum class ADC_SAMPLING_MODE {
-    DISABLED = 0,
-    PEAK = 1,
-    TRACE = 2
-};
+enum class ADC_SAMPLING_MODE { DISABLED = 0, PEAK = 1, TRACE = 2 };
 
 class GeneralEvent {
-public:
+  public:
     explicit GeneralEvent(std::function<void()> fn);
-// public slots:
+    // public slots:
     void trigger();
 
-protected:
+  protected:
     std::function<void()> fFn;
 };
 
 struct GeoPosition {
-    double longitude { 0. };
-    double latitude { 0. };
-    double altitude { 0. };
-    double hor_error { 0. };
-    double vert_error { 0. };
-    bool valid() const { return !(longitude == 0. && latitude == 0. && altitude == 0. && hor_error == 0. && vert_error == 0.); }
+    double longitude{0.};
+    double latitude{0.};
+    double altitude{0.};
+    double hor_error{0.};
+    double vert_error{0.};
+    bool valid() const {
+        return !(longitude == 0. && latitude == 0. && altitude == 0. && hor_error == 0. &&
+                 vert_error == 0.);
+    }
 
-    [[nodiscard]] auto pos_error() const -> double { return std::sqrt(hor_error * hor_error + vert_error * vert_error); }
-    [[nodiscard]] auto getPosStruct() const -> GnssPosStruct
-    {
-        GnssPosStruct pos_struct {
-            0,
-            static_cast<int32_t>(longitude * 1e7),
-            static_cast<int32_t>(latitude * 1e7),
-            static_cast<int32_t>(altitude * 1e3),
-            static_cast<int32_t>(altitude * 1e3),
-            static_cast<uint32_t>(hor_error * 1e3),
-            static_cast<uint32_t>(vert_error * 1e3)
-        };
+    [[nodiscard]] auto pos_error() const -> double {
+        return std::sqrt(hor_error * hor_error + vert_error * vert_error);
+    }
+    [[nodiscard]] auto getPosStruct() const -> GnssPosStruct {
+        GnssPosStruct pos_struct{0,
+                                 static_cast<int32_t>(longitude * 1e7),
+                                 static_cast<int32_t>(latitude * 1e7),
+                                 static_cast<int32_t>(altitude * 1e3),
+                                 static_cast<int32_t>(altitude * 1e3),
+                                 static_cast<uint32_t>(hor_error * 1e3),
+                                 static_cast<uint32_t>(vert_error * 1e3)};
         return pos_struct;
     }
-    friend bool operator==(const GeoPosition& a, const GeoPosition& b)
-    {
-        return (a.longitude == b.longitude && a.latitude == b.latitude && a.altitude == b.altitude && a.hor_error == b.hor_error && a.vert_error == b.vert_error);
+    friend bool operator==(const GeoPosition& a, const GeoPosition& b) {
+        return (a.longitude == b.longitude && a.latitude == b.latitude &&
+                a.altitude == b.altitude && a.hor_error == b.hor_error &&
+                a.vert_error == b.vert_error);
     }
-    friend bool operator!=(const GeoPosition& a, const GeoPosition& b)
-    {
-        return !(a == b);
-    }
+    friend bool operator!=(const GeoPosition& a, const GeoPosition& b) { return !(a == b); }
 };
 
 struct PositionModeConfig {
-    enum class Mode {
-        Static = 0,
-        LockIn = 1,
-        Auto = 2,
-        first = Static,
-        last = Auto
-    } mode;
-    GeoPosition static_position {};
-    double lock_in_max_dop { 3. };
-    double lock_in_min_error_meters { 7.5 };
+    enum class Mode { Static = 0, LockIn = 1, Auto = 2, first = Static, last = Auto } mode;
+    GeoPosition static_position{};
+    double lock_in_max_dop{3.};
+    double lock_in_min_error_meters{7.5};
     enum class FilterType {
         None = 0,
         Kalman = 1,
@@ -90,27 +80,30 @@ struct PositionModeConfig {
         first = None,
         last = HistoMpv
     } filter_config;
-    friend bool operator==(const PositionModeConfig& a, const PositionModeConfig& b)
-    {
-        return (a.mode == b.mode && a.filter_config == b.filter_config && a.lock_in_max_dop == b.lock_in_max_dop && a.lock_in_min_error_meters == b.lock_in_min_error_meters && a.static_position == b.static_position);
+    friend bool operator==(const PositionModeConfig& a, const PositionModeConfig& b) {
+        return (a.mode == b.mode && a.filter_config == b.filter_config &&
+                a.lock_in_max_dop == b.lock_in_max_dop &&
+                a.lock_in_min_error_meters == b.lock_in_min_error_meters &&
+                a.static_position == b.static_position);
     }
-    friend bool operator!=(const PositionModeConfig& a, const PositionModeConfig& b)
-    {
+    friend bool operator!=(const PositionModeConfig& a, const PositionModeConfig& b) {
         return !(a == b);
     }
-    static constexpr std::array<const char*, static_cast<size_t>(Mode::last) + 1> mode_name { "static", "lock-in", "auto" };
-    static constexpr std::array<const char*, static_cast<size_t>(FilterType::last) + 1> filter_name { "none", "kalman", "histo_mean", "histo_median", "histo_mpv" };
+    static constexpr std::array<const char*, static_cast<size_t>(Mode::last) + 1> mode_name{
+        "static", "lock-in", "auto"};
+    static constexpr std::array<const char*, static_cast<size_t>(FilterType::last) + 1> filter_name{
+        "none", "kalman", "histo_mean", "histo_median", "histo_mpv"};
 };
 
 struct IoConfiguration {
-    TIMING_MUX_SELECTION timing_input { TIMING_MUX_SELECTION::UNDEFINED };
-    GPIO_SIGNAL event_trigger { GPIO_SIGNAL::UNDEFINED_SIGNAL };
+    TIMING_MUX_SELECTION timing_input{TIMING_MUX_SELECTION::UNDEFINED};
+    GPIO_SIGNAL event_trigger{GPIO_SIGNAL::UNDEFINED_SIGNAL};
     GeneralEvent led1_event;
     GeneralEvent led2_event;
 };
 
 struct CalibStruct {
-public:
+  public:
     enum {
         CALIBFLAGS_NO_CALIB = 0x00,
         CALIBFLAGS_COMPONENTS = 0x01,
@@ -128,33 +121,26 @@ public:
     };
 
     CalibStruct() = default;
-    CalibStruct(const std::string& a_name, const std::string& a_type, uint8_t a_address, const std::string& a_value)
-        : name(a_name)
-        , type(a_type)
-        , address(a_address)
-        , value(a_value)
-    {
-    }
+    CalibStruct(const std::string& a_name, const std::string& a_type, uint8_t a_address,
+                const std::string& a_value)
+        : name(a_name), type(a_type), address(a_address), value(a_value) {}
     ~CalibStruct() = default;
     CalibStruct(const CalibStruct& s)
-        : name(s.name)
-        , type(s.type)
-        , address(s.address)
-        , value(s.value)
-    {
-    }
+        : name(s.name), type(s.type), address(s.address), value(s.value) {}
     std::string name = "";
     std::string type = "";
     uint16_t address = 0;
     std::string value = "";
 };
 
-enum I2C_DEVICE_MODE { I2C_MODE_NONE = 0,
+enum I2C_DEVICE_MODE {
+    I2C_MODE_NONE = 0,
     I2C_MODE_NORMAL = 0x01,
     I2C_MODE_FORCE = 0x02,
     I2C_MODE_UNREACHABLE = 0x04,
     I2C_MODE_FAILED = 0x08,
-    I2C_MODE_LOCKED = 0x10 };
+    I2C_MODE_LOCKED = 0x10
+};
 
 struct I2cDeviceEntry {
     std::uint8_t address;
@@ -169,17 +155,12 @@ struct I2cDeviceEntry {
 struct LogInfoStruct {
     std::string logFileName;
     std::string dataFileName;
-    enum status_t : std::uint8_t {
-        ERROR = 0,
-        NORMAL,
-        LOG_ONLY,
-        OFF
-    } status;
+    enum status_t : std::uint8_t { ERROR = 0, NORMAL, LOG_ONLY, OFF } status;
     std::uint32_t logFileSize;
     std::uint32_t dataFileSize;
     std::chrono::seconds logAge;
-    std::chrono::seconds logRotationDuration { 86400L };
-    bool logEnabled { true };
+    std::chrono::seconds logRotationDuration{86400L};
+    bool logEnabled{true};
 };
 
 struct OledItem {
@@ -187,12 +168,9 @@ struct OledItem {
     std::string displayString;
 };
 
-static const std::map<std::uint8_t, std::string> I2C_MODE_STRINGMAP = { { 0x00, "None" },
-    { 0x01, "Normal" },
-    { 0x02, "System" },
-    { 0x04, "Unreachable" },
-    { 0x08, "Failed" },
-    { 0x10, "Locked" } };
+static const std::map<std::uint8_t, std::string> I2C_MODE_STRINGMAP = {
+    {0x00, "None"},        {0x01, "Normal"}, {0x02, "System"},
+    {0x04, "Unreachable"}, {0x08, "Failed"}, {0x10, "Locked"}};
 /*
 class Property {
 public:
@@ -323,7 +301,9 @@ public:
 
     bool updated() const { return m_updated; }
     [[nodiscard]] auto age() const -> std::chrono::microseconds {
-        return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_update_time);
+        return
+std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() -
+m_update_time);
     }
 
     std::string name { };
@@ -338,12 +318,10 @@ private:
 
 template <typename T>
 class Property {
-public:
+  public:
     Property() = default;
 
-    Property(const std::string& a_name, const T& val)
-        : name(a_name)
-    {
+    Property(const std::string& a_name, const T& val) : name(a_name) {
         m_value = val;
         m_updated = true;
         m_update_time = std::chrono::steady_clock::now();
@@ -351,38 +329,35 @@ public:
 
     Property(const Property& prop) = default;
 
-    Property<T>& operator=(const T& val)
-    {
+    Property<T>& operator=(const T& val) {
         m_value = val;
         m_updated = true;
         m_update_time = std::chrono::steady_clock::now();
         return *this;
     }
 
-    const T& operator()()
-    {
+    const T& operator()() {
         m_updated = false;
         return m_value;
     }
 
-    const T& get()
-    {
+    const T& get() {
         m_updated = false;
         return m_value;
     }
 
     bool updated() const { return m_updated; }
-    [[nodiscard]] auto age() const -> std::chrono::microseconds
-    {
-        return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_update_time);
+    [[nodiscard]] auto age() const -> std::chrono::microseconds {
+        return std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::steady_clock::now() - m_update_time);
     }
 
-    std::string name {};
+    std::string name{};
 
-protected:
-    T m_value {};
-    bool m_updated { false };
-    std::chrono::time_point<std::chrono::steady_clock> m_update_time {};
+  protected:
+    T m_value{};
+    bool m_updated{false};
+    std::chrono::time_point<std::chrono::steady_clock> m_update_time{};
 };
 
 #endif // MUONDETECTOR_STRUCTS_H

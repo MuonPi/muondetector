@@ -18,7 +18,8 @@ struct Version;
 }
 
 // std::ostream& operator<<(std::ostream& os, const QString& someQString);
-std::ostream& operator<<(std::ostream& os, const std::chrono::time_point<std::chrono::system_clock>& timestamp);
+std::ostream& operator<<(std::ostream& os,
+                         const std::chrono::time_point<std::chrono::system_clock>& timestamp);
 std::ostream& operator<<(std::ostream& os, const timespec& ts);
 
 // QDataStream& operator>>(QDataStream& in, GnssSatellite& sat);
@@ -48,4 +49,4 @@ std::ostream& operator<<(std::ostream& os, const timespec& ts);
 // QDataStream& operator>>(QDataStream& in, MuonPi::Version::Version& ver);
 // QDataStream& operator<<(QDataStream& out, const MuonPi::Version::Version& ver);
 
-#endif //CUSTOM_IO_OPERATORS_H
+#endif // CUSTOM_IO_OPERATORS_H

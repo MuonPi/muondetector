@@ -3,8 +3,7 @@
 
 #include <cstdint>
 
-struct UbxRateCmd
-{
+struct UbxRateCmd {
     std::uint16_t measRate;
     std::uint16_t navRate;
 };

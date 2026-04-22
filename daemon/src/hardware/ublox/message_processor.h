@@ -1,29 +1,32 @@
 #ifndef MESSAGE_PROCESSOR_H
 #define MESSAGE_PROCESSOR_H
 
-#include "data/ublox/ublox_messages.h"
 #include "data/events/ubx_event.h"
+#include "data/ublox/ublox_messages.h"
+
 #include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 
-class MessageProcessor
-{
+class MessageProcessor {
   public:
     MessageProcessor() = delete;
     ~MessageProcessor() = delete;
 
     // all functions only used for processing and showing "UbxMessage"
-    static auto processMessage(const UbxMessage &msg) -> std::optional<UbxEvent>;
+    static auto processMessage(const UbxMessage& msg) -> std::optional<UbxEvent>;
 
-    static const std::unordered_map<UBX_MSG::msg_id, std::pair<std::function<std::optional<UbxEvent>()>, std::string>> handler;
+    static const std::unordered_map<
+        UBX_MSG::msg_id, std::pair<std::function<std::optional<UbxEvent>()>, std::string>>
+        handler;
 
     static auto getProtVersion(std::string_view text) -> std::optional<Version>;
 
   private:
-    static void unhandled(const UbxMessage &msg, const std::map<std::uint8_t, const char *> ubx_class_names);
+    static void unhandled(const UbxMessage& msg,
+                          const std::map<std::uint8_t, const char*> ubx_class_names);
     static auto UBXNavStatus(const std::string& msg) -> std::optional<UbxEvent>;
     static auto UBXNavDOP(const std::string& msg) -> std::optional<UbxEvent>;
     static auto UBXNavTimeGPS(const std::string& msg) -> std::optional<UbxEvent>;

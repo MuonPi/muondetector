@@ -1,4 +1,5 @@
 #include "hardware/i2c/ubloxi2c.h"
+
 #include <algorithm>
 #include <stdint.h>
 #include <stdio.h>
@@ -6,14 +7,12 @@
 
 /* Ublox GPS receiver, I2C interface */
 
-bool UbloxI2c::devicePresent()
-{
+bool UbloxI2c::devicePresent() {
     uint8_t dummy;
     return (1 == readReg(0xff, &dummy, 1));
 }
 
-std::string UbloxI2c::getData()
-{
+std::string UbloxI2c::getData() {
     uint16_t nrBytes = 0;
     if (!getTxBufCount(nrBytes))
         return "";
@@ -30,12 +29,12 @@ std::string UbloxI2c::getData()
     if (n != nrBytes)
         return "";
     std::string str(nrBytes, ' ');
-    std::transform(&buf[0], &buf[nrBytes], str.begin(), [](uint8_t c) { return (unsigned char)c; });
+    std::transform(&buf[0], &buf[nrBytes], str.begin(),
+                   [](uint8_t c) { return (unsigned char) c; });
     return str;
 }
 
-bool UbloxI2c::getTxBufCount(uint16_t& nrBytes)
-{
+bool UbloxI2c::getTxBufCount(uint16_t& nrBytes) {
     startTimer();
     uint8_t reg = 0xfd;
     uint8_t buf[2];
@@ -47,7 +46,7 @@ bool UbloxI2c::getTxBufCount(uint16_t& nrBytes)
     if (n != 2)
         return false;
     uint16_t temp = buf[1];
-    temp |= (uint16_t)buf[0] << 8;
+    temp |= (uint16_t) buf[0] << 8;
     nrBytes = temp;
     return true;
 }

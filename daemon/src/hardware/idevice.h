@@ -1,9 +1,8 @@
 #ifndef IDEVICE_H
 #define IDEVICE_H
 
-class IDevice
-{
-public:
+class IDevice {
+  public:
     virtual ~IDevice() = default;
 };
 

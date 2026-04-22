@@ -1,9 +1,8 @@
 #ifndef _ADAFRUIT_SSD1306_H_
 #define _ADAFRUIT_SSD1306_H_
 
-#include "hardware/i2c/i2cdevice.h"
-
 #include "hardware/i2c/Adafruit_GFX.h"
+#include "hardware/i2c/i2cdevice.h"
 // OLED defines
 #define OLED_I2C_RESET RPI_V2_GPIO_P1_22 /* GPIO 25 pin 12  */
 // Oled supported display
@@ -40,25 +39,21 @@ ArduiPi project documentation http://hallard.me/arduipi
 
 *********************************************************************/
 class Adafruit_SSD1306 : public i2cDevice, public Adafruit_GFX {
-public:
-    enum { BLACK = 0,
-        WHITE = 1 };
+  public:
+    enum { BLACK = 0, WHITE = 1 };
 
-    Adafruit_SSD1306()
-        : i2cDevice(0x3c)
-    {
+    Adafruit_SSD1306() : i2cDevice(0x3c) {
         fTitle = "SSD1306 OLED";
         init(OLED_ADAFRUIT_I2C_128x64, -1);
     }
     Adafruit_SSD1306(const char* busAddress, uint8_t slaveAddress)
-        : i2cDevice(busAddress, slaveAddress)
-    {
+        : i2cDevice(busAddress, slaveAddress) {
         fTitle = "SSD1306 OLED";
         init(OLED_ADAFRUIT_I2C_128x64, -1);
     }
-    Adafruit_SSD1306(uint8_t slaveAddress, uint8_t OLED_TYPE = OLED_ADAFRUIT_I2C_128x64, int8_t rst_pin = -1)
-        : i2cDevice(slaveAddress)
-    {
+    Adafruit_SSD1306(uint8_t slaveAddress, uint8_t OLED_TYPE = OLED_ADAFRUIT_I2C_128x64,
+                     int8_t rst_pin = -1)
+        : i2cDevice(slaveAddress) {
         fTitle = "SSD1306 OLED";
         init(OLED_TYPE, rst_pin);
     }
@@ -91,7 +86,7 @@ public:
 
     void drawPixel(int16_t x, int16_t y, uint16_t color);
 
-private:
+  private:
     uint8_t* poledbuff = nullptr; // Pointer to OLED data buffer in memory
     int8_t rst;
     int16_t ssd1306_lcdwidth, ssd1306_lcdheight;

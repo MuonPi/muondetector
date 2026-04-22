@@ -1,23 +1,21 @@
-#include "network/tcpconnection.h"
-#include "sinks/tcp_sink.h"
-#include "sources/tcp_source.h"
 #include "core/event_bus.h"
+#include "core/logging/logger.h"
 #include "core/thread_pool.h"
 #include "data/events/ad1115_event.h"
 #include "data/events/tcp_packet_event.h"
-#include "core/logging/logger.h"
+#include "network/tcpconnection.h"
+#include "sinks/tcp_sink.h"
+#include "sources/tcp_source.h"
 
 #include <boost/asio.hpp>
 #include <capnp/serialize.h>
+#include <iomanip>
 #include <kj/array.h>
 #include <sstream>
-#include <iomanip>
-
 
 using boost::asio::ip::tcp;
 
-std::string build_message(const TcpPacketEvent& event)
-{
+std::string build_message(const TcpPacketEvent& event) {
     std::stringstream sstr{};
     // Information from socket
     const tcp::socket& socket = event.connection->socket();
@@ -30,23 +28,20 @@ std::string build_message(const TcpPacketEvent& event)
     sstr << "----------------------\n";
     sstr << "Received TCP Message:\n";
     sstr << "From: " << remote_address << "\n";
-    sstr << "On: " << local_address<< "\n";
+    sstr << "On: " << local_address << "\n";
     sstr << "Is Open: " << (is_open ? "true" : "false") << "\n";
-    sstr << "Bytes available: " << bytes_available<< "\n";
-    sstr << "Key: 0x" << std::setw(2) << std::setfill('0') << std::hex << event.packet.key << std::dec << "\n";
+    sstr << "Bytes available: " << bytes_available << "\n";
+    sstr << "Key: 0x" << std::setw(2) << std::setfill('0') << std::hex << event.packet.key
+         << std::dec << "\n";
     sstr << "Payload:\n";
     for (auto byte : event.packet.payload) {
-        sstr << std::hex
-            << std::setw(2)
-            << std::setfill('0')
-            << static_cast<unsigned>(byte);
+        sstr << std::hex << std::setw(2) << std::setfill('0') << static_cast<unsigned>(byte);
     }
     sstr << std::dec << "\n----------------------\n";
     return sstr.str();
 }
 
-int main()
-{
+int main() {
     // Build in-process server stack: acceptor + sink + source -> EventBus bridge.
     auto io = std::make_shared<boost::asio::io_context>();
     auto sink = std::make_shared<TcpSink>();
@@ -55,14 +50,10 @@ int main()
     TcpSource tcpSource(OtherComponent::TCP_SOURCE_0, bus);
 
     std::promise<TcpPacketEvent> busPacketPromise;
-    bus.subscribe<TcpPacketEvent>([](const TcpPacketEvent& event) {
-        logInfo(build_message(event));
-    });
+    bus.subscribe<TcpPacketEvent>(
+        [](const TcpPacketEvent& event) { logInfo(build_message(event)); });
 
-    std::thread ioThread([&io]() {
-        io->run();
-    });
-
+    std::thread ioThread([&io]() { io->run(); });
 
     tcp::socket clientSocket(*io);
     boost::system::error_code ec;
@@ -79,13 +70,11 @@ int main()
         return EXIT_FAILURE;
     }
 
-
     auto clientConn = std::make_shared<TcpConnection>(std::move(clientSocket));
     std::promise<TcpPacket> clientPacketPromise;
     auto clientPacketFuture = clientPacketPromise.get_future();
-    clientConn->setPacketHandler([&clientPacketPromise](const TcpPacket& packet) {
-        clientPacketPromise.set_value(packet);
-    });
+    clientConn->setPacketHandler(
+        [&clientPacketPromise](const TcpPacket& packet) { clientPacketPromise.set_value(packet); });
     clientConn->start();
     std::mutex mx;
     std::condition_variable cv;

@@ -1,15 +1,14 @@
-#include "network/tcpserver.h"
-#include "sinks/tcp_sink.h"
-#include "sources/tcp_source.h"
 #include "core/event_bus.h"
 #include "core/thread_pool.h"
 #include "data/events/tcp_packet_event.h"
+#include "network/tcpserver.h"
+#include "sinks/tcp_sink.h"
+#include "sources/tcp_source.h"
 #include "tcpmessage_keys.h"
-
-#include <boost/asio.hpp>
 
 #include <array>
 #include <atomic>
+#include <boost/asio.hpp>
 #include <chrono>
 #include <cstdint>
 #include <future>
@@ -21,22 +20,17 @@ using boost::asio::ip::tcp;
 
 namespace {
 // Big-endian framing helpers + checksum matching TcpConnection implementation.
-auto be16(std::uint16_t v) -> std::array<std::uint8_t, 2>
-{
+auto be16(std::uint16_t v) -> std::array<std::uint8_t, 2> {
     return {static_cast<std::uint8_t>((v >> 8) & 0xFF), static_cast<std::uint8_t>(v & 0xFF)};
 }
 
-auto be32(std::uint32_t v) -> std::array<std::uint8_t, 4>
-{
-    return {
-        static_cast<std::uint8_t>((v >> 24) & 0xFF),
-        static_cast<std::uint8_t>((v >> 16) & 0xFF),
-        static_cast<std::uint8_t>((v >> 8) & 0xFF),
-        static_cast<std::uint8_t>(v & 0xFF)};
+auto be32(std::uint32_t v) -> std::array<std::uint8_t, 4> {
+    return {static_cast<std::uint8_t>((v >> 24) & 0xFF),
+            static_cast<std::uint8_t>((v >> 16) & 0xFF), static_cast<std::uint8_t>((v >> 8) & 0xFF),
+            static_cast<std::uint8_t>(v & 0xFF)};
 }
 
-auto checksum(const std::vector<std::uint8_t>& payload) -> std::uint32_t
-{
+auto checksum(const std::vector<std::uint8_t>& payload) -> std::uint32_t {
     std::uint32_t hash = 2166136261u;
     for (auto b : payload) {
         hash ^= b;
@@ -45,8 +39,8 @@ auto checksum(const std::vector<std::uint8_t>& payload) -> std::uint32_t
     return hash;
 }
 
-bool waitForConnectionCount(const TcpSink& sink, std::size_t expected, std::chrono::milliseconds timeout)
-{
+bool waitForConnectionCount(const TcpSink& sink, std::size_t expected,
+                            std::chrono::milliseconds timeout) {
     const auto deadline = std::chrono::steady_clock::now() + timeout;
     while (std::chrono::steady_clock::now() < deadline) {
         if (sink.connectionCount() == expected) {
@@ -56,10 +50,9 @@ bool waitForConnectionCount(const TcpSink& sink, std::size_t expected, std::chro
     }
     return false;
 }
-}
+} // namespace
 
-int main()
-{
+int main() {
     // Server + source + EventBus path under test.
     auto io = std::make_shared<boost::asio::io_context>();
     auto sink = std::make_shared<TcpSink>();
@@ -139,7 +132,8 @@ int main()
     }
 
     const auto event = packetFuture.get();
-    if (event.packet.key != static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PING) || event.packet.payload != payload) {
+    if (event.packet.key != static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PING) ||
+        event.packet.payload != payload) {
         std::cerr << "reassembled packet mismatch\n";
         io->stop();
         ioThread.join();

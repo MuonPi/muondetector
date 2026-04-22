@@ -1,14 +1,14 @@
 #include "hardware/i2c/pca9536.h"
+
 #include <iomanip>
 #include <iostream>
 #include <stdint.h>
 
 /*
-* PCA9536 4 pin I/O expander
-*/
+ * PCA9536 4 pin I/O expander
+ */
 
-bool PCA9536::setOutputPorts(uint8_t portMask)
-{
+bool PCA9536::setOutputPorts(uint8_t portMask) {
     unsigned char data = ~portMask;
     startTimer();
     if (1 != writeReg(REG::CONFIG, &data, 1)) {
@@ -18,8 +18,7 @@ bool PCA9536::setOutputPorts(uint8_t portMask)
     return true;
 }
 
-bool PCA9536::setOutputState(uint8_t portMask)
-{
+bool PCA9536::setOutputState(uint8_t portMask) {
     startTimer();
     if (1 != writeReg(REG::OUTPUT, &portMask, 1)) {
         return false;
@@ -28,8 +27,7 @@ bool PCA9536::setOutputState(uint8_t portMask)
     return true;
 }
 
-uint8_t PCA9536::getInputState()
-{
+uint8_t PCA9536::getInputState() {
     uint8_t inport = 0x00;
     startTimer();
     readReg(REG::INPUT, &inport, 1);
@@ -37,20 +35,18 @@ uint8_t PCA9536::getInputState()
     return inport & 0x0f;
 }
 
-bool PCA9536::devicePresent()
-{
+bool PCA9536::devicePresent() {
     uint8_t inport = 0x00;
     // read input port
     return (1 == readReg(REG::INPUT, &inport, 1));
 }
 
-bool PCA9536::identify()
-{
+bool PCA9536::identify() {
     if (fMode == MODE_FAILED)
         return false;
     if (!devicePresent())
         return false;
-    uint8_t bytereg { 0 };
+    uint8_t bytereg{0};
 
     if (!readByte(static_cast<uint8_t>(REG::INPUT), &bytereg)) {
         // there was an error

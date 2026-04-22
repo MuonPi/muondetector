@@ -1,15 +1,15 @@
 #include "hardware/i2c/eeprom24aa02.h"
+
 #include <chrono>
 #include <stdint.h>
 #include <thread>
 #include <unistd.h>
 
 /*
-* 24AA02 EEPROM
-*/
+ * 24AA02 EEPROM
+ */
 
-uint8_t EEPROM24AA02::readByte(uint8_t addr)
-{
+uint8_t EEPROM24AA02::readByte(uint8_t addr) {
     uint8_t val = 0;
     startTimer();
     readReg(addr, &val, 1); // Read the data at address location
@@ -17,16 +17,14 @@ uint8_t EEPROM24AA02::readByte(uint8_t addr)
     return val;
 }
 
-bool EEPROM24AA02::readByte(uint8_t addr, uint8_t* value)
-{
+bool EEPROM24AA02::readByte(uint8_t addr, uint8_t* value) {
     startTimer();
     int n = readReg(addr, value, 1); // Read the data at address location
     stopTimer();
     return (n == 1);
 }
 
-void EEPROM24AA02::writeByte(uint8_t addr, uint8_t data)
-{
+void EEPROM24AA02::writeByte(uint8_t addr, uint8_t data) {
     uint8_t writeBuf[2]; // Buffer to store the 2 bytes that we write to the I2C device
 
     writeBuf[0] = addr; // address of data byte
@@ -41,8 +39,7 @@ void EEPROM24AA02::writeByte(uint8_t addr, uint8_t data)
     stopTimer();
 }
 
-bool EEPROM24AA02::writeBytes(uint8_t addr, uint16_t length, uint8_t* data)
-{
+bool EEPROM24AA02::writeBytes(uint8_t addr, uint16_t length, uint8_t* data) {
     static const uint8_t PAGESIZE = 8;
     bool success = true;
     startTimer();
@@ -61,19 +58,17 @@ bool EEPROM24AA02::writeBytes(uint8_t addr, uint16_t length, uint8_t* data)
     return success;
 }
 
-int16_t EEPROM24AA02::readBytes(uint8_t regAddr, uint16_t length, uint8_t* data)
-{
+int16_t EEPROM24AA02::readBytes(uint8_t regAddr, uint16_t length, uint8_t* data) {
     return i2cDevice::readBytes(regAddr, length, data);
 }
 
-bool EEPROM24AA02::identify()
-{
+bool EEPROM24AA02::identify() {
     if (fMode == MODE_FAILED)
         return false;
     if (!devicePresent())
         return false;
 
-    const unsigned int N { 256 };
+    const unsigned int N{256};
     uint8_t buf[N + 1];
     //	std::cout << " attempt 1: offs=0, len="<<N<<std::endl;
     if (readBytes(0x00, N, buf) != N) {

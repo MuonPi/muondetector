@@ -1,47 +1,43 @@
 #ifndef SERIALUBLOX_H
 #define SERIALUBLOX_H
 
-#include "data/ublox/ublox_structs.h"
-#include "data/events/ubx_event.h"
-#include "data/commands/ubx_rate_cmd.h"
-#include "data/commands/ubx_msg_rate_cmd.h"
-#include "data/commands/ubx_msg_poll_cmd.h"
-#include "data/commands/ubx_msg_poll_rate_cmd.h"
-#include "data/commands/ubx_version_dependent_msg_rate_cmd.h"
-#include "data/commands/ubx_protocol_selection_cmd.h"
-#include "data/commands/ubx_save_cmd.h"
-#include "data/commands/ubx_reset_cmd.h"
-#include "data/commands/ubx_set_aop_cmd.h"
-#include "data/commands/ubx_min_max_sv_cmd.h"
-#include "data/commands/ubx_min_cno_cmd.h"
 #include "core/component.h"
 #include "core/event_bus.h"
-#include <memory>
-#include <queue>
-#include <string>
-#include <optional>
+#include "data/commands/ubx_min_cno_cmd.h"
+#include "data/commands/ubx_min_max_sv_cmd.h"
+#include "data/commands/ubx_msg_poll_cmd.h"
+#include "data/commands/ubx_msg_poll_rate_cmd.h"
+#include "data/commands/ubx_msg_rate_cmd.h"
+#include "data/commands/ubx_protocol_selection_cmd.h"
+#include "data/commands/ubx_rate_cmd.h"
+#include "data/commands/ubx_reset_cmd.h"
+#include "data/commands/ubx_save_cmd.h"
+#include "data/commands/ubx_set_aop_cmd.h"
+#include "data/commands/ubx_version_dependent_msg_rate_cmd.h"
+#include "data/events/ubx_event.h"
+#include "data/ublox/ublox_structs.h"
+
 #include <boost/asio.hpp>
 #include <iostream>
 #include <memory>
+#include <optional>
+#include <queue>
+#include <string>
 
 struct GnssPosStruct;
 struct GnssMonHwStruct;
 struct GnssMonHw2Struct;
 struct UbxTimeMarkStruct;
 
-
 class SerialUblox : public Component {
-public:
-    SerialUblox(ComponentId id,
-                boost::asio::io_context& io,
-                const std::string& port,
-                unsigned int baud,
-                EventBus& bus);
+  public:
+    SerialUblox(ComponentId id, boost::asio::io_context& io, const std::string& port,
+                unsigned int baud, EventBus& bus);
 
     void makeConnection();
     auto enqueueMessage(const UbxMessage& msg) -> bool;
 
-private:
+  private:
     void startAsyncRead();
 
     void handle(const UbxRateCmd&);
@@ -59,19 +55,13 @@ private:
 
     void processQueuedCmds();
 
-    void retryLater()
-    {
+    void retryLater() {
         timer_.expires_after(std::chrono::seconds(timeout_));
-        timer_.async_wait([this](boost::system::error_code) {
-            makeConnection();
-        });
+        timer_.async_wait([this](boost::system::error_code) { makeConnection(); });
     }
 
-    void handleError(const std::string& where,
-                     const boost::system::error_code& ec)
-    {
-        std::cerr << "Error in " << where << ": "
-                  << ec.message() << std::endl;
+    void handleError(const std::string& where, const boost::system::error_code& ec) {
+        std::cerr << "Error in " << where << ": " << ec.message() << std::endl;
     }
 
     auto parseStreamForMsg(std::string& buffer) -> std::optional<UbxMessage>;

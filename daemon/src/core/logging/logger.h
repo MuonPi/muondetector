@@ -8,16 +8,10 @@
 #include <string>
 #include <thread>
 
-enum class LogLevel {
-    Debug = 0,
-    Info = 1,
-    Warn = 2,
-    Error = 3
-};
+enum class LogLevel { Debug = 0, Info = 1, Warn = 2, Error = 3 };
 
-class AsyncLogger
-{
-public:
+class AsyncLogger {
+  public:
     static auto instance() -> AsyncLogger&;
 
     AsyncLogger(const AsyncLogger&) = delete;
@@ -28,7 +22,7 @@ public:
     void log(LogLevel level, const std::string& message);
     auto level() const -> LogLevel;
 
-private:
+  private:
     AsyncLogger();
     ~AsyncLogger();
 
@@ -48,12 +42,26 @@ private:
     LogLevel minimumLevel_{LogLevel::Info};
 };
 
-inline void setLogLevel(const std::string& level) { AsyncLogger::instance().setMinimumLevel(level); }
-inline void setLogLevel(LogLevel level) { AsyncLogger::instance().setMinimumLevel(level); }
-inline auto logLevel() { return AsyncLogger::instance().level(); }
-inline void logDebug(const std::string& msg) { AsyncLogger::instance().log(LogLevel::Debug, msg); }
-inline void logInfo(const std::string& msg) { AsyncLogger::instance().log(LogLevel::Info, msg); }
-inline void logWarn(const std::string& msg) { AsyncLogger::instance().log(LogLevel::Warn, msg); }
-inline void logError(const std::string& msg) { AsyncLogger::instance().log(LogLevel::Error, msg); }
+inline void setLogLevel(const std::string& level) {
+    AsyncLogger::instance().setMinimumLevel(level);
+}
+inline void setLogLevel(LogLevel level) {
+    AsyncLogger::instance().setMinimumLevel(level);
+}
+inline auto logLevel() {
+    return AsyncLogger::instance().level();
+}
+inline void logDebug(const std::string& msg) {
+    AsyncLogger::instance().log(LogLevel::Debug, msg);
+}
+inline void logInfo(const std::string& msg) {
+    AsyncLogger::instance().log(LogLevel::Info, msg);
+}
+inline void logWarn(const std::string& msg) {
+    AsyncLogger::instance().log(LogLevel::Warn, msg);
+}
+inline void logError(const std::string& msg) {
+    AsyncLogger::instance().log(LogLevel::Error, msg);
+}
 
 #endif // LOGGER_H

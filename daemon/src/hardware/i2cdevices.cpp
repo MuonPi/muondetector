@@ -1,17 +1,17 @@
 #include "hardware/i2cdevices.h"
+
 #include <iomanip>
 #include <iostream>
 
-i2cDevice* instantiateI2cDevice(uint8_t addr)
-{
-    i2cDevice* device { nullptr };
+i2cDevice* instantiateI2cDevice(uint8_t addr) {
+    i2cDevice* device{nullptr};
     for (uint8_t i = 0; i < i2cDevice::getGlobalDeviceList().size(); i++) {
         if (addr == i2cDevice::getGlobalDeviceList()[i]->getAddress()) {
             return device;
         }
     }
 
-    bool ident { false };
+    bool ident{false};
     ident = MCP4728::identifyDevice(static_cast<uint8_t>(addr));
     if (ident) {
         device = new MCP4728(addr);

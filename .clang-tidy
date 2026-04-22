@@ -1,0 +1,16 @@
+Checks: >
+  -*,
+  modernize-*,
+  readability-*,
+  performance-*,
+  bugprone-*
+
+WarningsAsErrors: ''
+
+HeaderFilterRegex: '.*'
+
+FormatStyle: file
+
+CheckOptions:
+  - key: modernize-use-trailing-return-type.UseTrailingReturnType
+    value: 'true'

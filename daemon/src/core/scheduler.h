@@ -12,10 +12,9 @@
 #include <queue>
 #include <thread>
 
-class Scheduler
-{
+class Scheduler {
   public:
-    explicit Scheduler(ThreadPool &pool);
+    explicit Scheduler(ThreadPool& pool);
     ~Scheduler();
 
     void start();
@@ -25,10 +24,11 @@ class Scheduler
     void once(std::function<void()> func, time_point time);
 
   private:
-    void schedule(std::function<void()> func, time_point time, std::chrono::milliseconds interval = std::chrono::milliseconds{0});
+    void schedule(std::function<void()> func, time_point time,
+                  std::chrono::milliseconds interval = std::chrono::milliseconds{0});
     void loop();
 
-    ThreadPool &threadPool;
+    ThreadPool& threadPool;
 
     std::priority_queue<Task> queue;
     std::mutex mutex;

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+if ! command -v pre-commit >/dev/null; then
+    echo "pre-commit is not installed."
+    echo "Run: pip install pre-commit && pre-commit install"
+    exit 1
+fi
+
+pre-commit run --hook-stage pre-commit

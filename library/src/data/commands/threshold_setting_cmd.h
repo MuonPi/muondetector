@@ -1,10 +1,9 @@
 #ifndef THRESHOLD_SETTING_CMD_H
 #define THRESHOLD_SETTING_CMD_H
 
-#include<cstdint>
+#include <cstdint>
 
-struct ThresholdSettingCmd
-{
+struct ThresholdSettingCmd {
     std::uint8_t channel;
     float threshold;
 };

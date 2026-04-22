@@ -3,8 +3,7 @@
 
 #include "data/ublox/ublox_messages.h"
 
-struct UbxMsgPollRateCmd
-{
+struct UbxMsgPollRateCmd {
     UBX_MSG::msg_id id;
 };
 

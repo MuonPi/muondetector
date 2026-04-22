@@ -1,38 +1,31 @@
 #include "hardware/i2c/lm75.h"
+
 #include <iomanip>
 #include <iostream>
 #include <stdint.h>
 
 /*
-* LM75 Temperature Sensor
-*/
-LM75::LM75()
-    : i2cDevice(0x4f)
-{
+ * LM75 Temperature Sensor
+ */
+LM75::LM75() : i2cDevice(0x4f) {
     fTitle = fName = "LM75";
 }
 
-LM75::LM75(const char* busAddress, uint8_t slaveAddress)
-    : i2cDevice(busAddress, slaveAddress)
-{
+LM75::LM75(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {
     fTitle = fName = "LM75";
 }
 
-LM75::LM75(uint8_t slaveAddress)
-    : i2cDevice(slaveAddress)
-{
+LM75::LM75(uint8_t slaveAddress) : i2cDevice(slaveAddress) {
     fTitle = fName = "LM75";
 }
 
-LM75::~LM75()
-{
+LM75::~LM75() {
 }
 
-int16_t LM75::readRaw()
-{
+int16_t LM75::readRaw() {
     startTimer();
 
-    uint16_t dataword { 0 };
+    uint16_t dataword{0};
     // Read the temp register
     if (!readWord(static_cast<uint8_t>(REG::TEMP), &dataword)) {
         // there was an error
@@ -48,8 +41,7 @@ int16_t LM75::readRaw()
     return val;
 }
 
-float LM75::getTemperature()
-{
+float LM75::getTemperature() {
     int16_t dataword = readRaw();
     float temp = static_cast<float>(dataword >> 8);
     temp += static_cast<float>(dataword & 0xff) / 256.;
@@ -57,16 +49,15 @@ float LM75::getTemperature()
     return temp;
 }
 
-bool LM75::identify()
-{
+bool LM75::identify() {
     if (fMode == MODE_FAILED) {
         return false;
     }
     if (!devicePresent()) {
         return false;
     }
-    uint16_t dataword { 0 };
-    uint8_t conf_reg { 0 };
+    uint16_t dataword{0};
+    uint8_t conf_reg{0};
 
     // read temp register
     if (!readWord(static_cast<uint8_t>(REG::TEMP), &dataword)) {

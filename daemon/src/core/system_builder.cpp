@@ -1,4 +1,5 @@
 #include "core/system_builder.h"
+
 #include "app/config_parser.h"
 #include "app/system_config.h"
 #include "core/logging/logger.h"
@@ -22,22 +23,20 @@
 #include "network/tcpserver.h"
 
 // Devices
+#include "core/component.h"
 #include "hardware/devices.h"
 #include "hardware/i2cdevice_wrapper.h"
 #include "hardware/i2cdevices.h"
 #include "hardware/ublox/serialublox.h"
 
-
-#include "core/component.h"
-
 // Ublox
-#include "data/ublox/ublox_messages.h"
-#include "data/commands/ubx_protocol_selection_cmd.h"
-#include "data/commands/ubx_msg_rate_cmd.h"
 #include "data/commands/ubx_msg_poll_cmd.h"
+#include "data/commands/ubx_msg_rate_cmd.h"
+#include "data/commands/ubx_protocol_selection_cmd.h"
 #include "data/commands/ubx_rate_cmd.h"
 #include "data/commands/ubx_set_aop_cmd.h"
 #include "data/commands/ubx_version_dependent_msg_rate_cmd.h"
+#include "data/ublox/ublox_messages.h"
 
 // Sources
 #include "sources/source.h"
@@ -51,104 +50,87 @@
 #include <chrono>
 #include <memory>
 
-auto SystemBuilder::parseHardwareConfig(const libconfig::Config &hardwareConfig)
-    -> std::vector<DeviceConfig>
-{
+auto SystemBuilder::parseHardwareConfig(const libconfig::Config& hardwareConfig)
+    -> std::vector<DeviceConfig> {
     std::vector<DeviceConfig> result;
 
-    const libconfig::Setting &root = hardwareConfig.getRoot();
-    const libconfig::Setting &devices = root.lookup("devices");
+    const libconfig::Setting& root = hardwareConfig.getRoot();
+    const libconfig::Setting& devices = root.lookup("devices");
     const int count = devices.getLength();
 
     std::string deviceList{};
-    for (const auto &[key, value] : deviceLookup)
-    {
+    for (const auto& [key, value] : deviceLookup) {
         deviceList.append(key + "\n");
     }
 
     std::map<std::string, DeviceType> deviceTypeLookup;
 
-    for (const auto &[type, name] : DeviceTypes)
-    {
+    for (const auto& [type, name] : DeviceTypes) {
         deviceTypeLookup.emplace(name, type);
     }
 
-    for (int i = 0; i < count; ++i)
-    {
-        const libconfig::Setting &d = devices[i];
+    for (int i = 0; i < count; ++i) {
+        const libconfig::Setting& d = devices[i];
 
         DeviceConfig cfg;
 
         std::string idStr;
-        if (d.lookupValue("id", idStr) == false)
-        {
+        if (d.lookupValue("id", idStr) == false) {
             logWarn("id not found in hardware configuration at device " + std::to_string(i));
             continue;
         }
 
         auto id = deviceLookup.find(idStr);
-        if (id == deviceLookup.end())
-        {
-            logWarn("Device " + idStr + " not found in configurable devices, devices are:\n" + deviceList);
+        if (id == deviceLookup.end()) {
+            logWarn("Device " + idStr + " not found in configurable devices, devices are:\n" +
+                    deviceList);
             continue;
         }
         cfg.id = id->second;
 
         std::string typeStr;
-        if (d.lookupValue("type", typeStr) == false)
-        {
+        if (d.lookupValue("type", typeStr) == false) {
             continue;
         }
         auto type_it = deviceTypeLookup.find(typeStr);
-        if (type_it != deviceTypeLookup.end())
-        {
+        if (type_it != deviceTypeLookup.end()) {
             cfg.type = type_it->second;
         }
 
-        if (d.lookupValue("category", cfg.category) == false)
-        {
+        if (d.lookupValue("category", cfg.category) == false) {
             continue;
         }
-        if (cfg.category == "i2c")
-        {
+        if (cfg.category == "i2c") {
             std::string dev;
             int address;
 
             d.lookupValue("device", dev);
             d.lookupValue("address", address);
 
-            if (d.lookupValue("device", dev) != false)
-            {
+            if (d.lookupValue("device", dev) != false) {
                 cfg.device = dev;
             }
-            if (d.lookupValue("address", address) != false)
-            {
-                if (address < 0 || address > std::numeric_limits<std::uint8_t>::max())
-                {
-                    logError(
-                        "Hardware address parsing error, outside uint8_t range. Ignoring address setting for device " +
-                        idStr);
-                }
-                else
-                {
+            if (d.lookupValue("address", address) != false) {
+                if (address < 0 || address > std::numeric_limits<std::uint8_t>::max()) {
+                    logError("Hardware address parsing error, outside uint8_t range. Ignoring "
+                             "address setting for device " +
+                             idStr);
+                } else {
                     cfg.address = static_cast<std::uint8_t>(address);
                 }
             }
-        }
-        else if (cfg.category == "uart")
-        {
+        } else if (cfg.category == "uart") {
             std::string dev;
             int baud;
 
-            if (d.lookupValue("device", dev) != false)
-            {
+            if (d.lookupValue("device", dev) != false) {
                 cfg.device = dev;
             }
-            if (d.lookupValue("baud", baud) != false)
-            {
-                if (baud < 0)
-                {
-                    logError("Baudrate parsing error, outside uint32_t range. Ignoring setting for device " + idStr);
+            if (d.lookupValue("baud", baud) != false) {
+                if (baud < 0) {
+                    logError("Baudrate parsing error, outside uint32_t range. Ignoring setting for "
+                             "device " +
+                             idStr);
                 }
                 cfg.baud = baud;
             }
@@ -159,40 +141,34 @@ auto SystemBuilder::parseHardwareConfig(const libconfig::Config &hardwareConfig)
     return result;
 }
 
-auto SystemBuilder::parseComponentConfig(const libconfig::Config &componentConfig)
-    -> std::vector<ComponentConfig>
-{
+auto SystemBuilder::parseComponentConfig(const libconfig::Config& componentConfig)
+    -> std::vector<ComponentConfig> {
     std::vector<ComponentConfig> result;
 
-    const libconfig::Setting &root = componentConfig.getRoot();
-    const libconfig::Setting &components = root.lookup("components");
+    const libconfig::Setting& root = componentConfig.getRoot();
+    const libconfig::Setting& components = root.lookup("components");
     const int count = components.getLength();
 
-    for (int i = 0; i < count; ++i)
-    {
+    for (int i = 0; i < count; ++i) {
         ComponentConfig cfg;
-        const libconfig::Setting &s = components[i];
+        const libconfig::Setting& s = components[i];
 
         std::string idStr;
-        if (s.lookupValue("id", idStr) == false)
-        {
+        if (s.lookupValue("id", idStr) == false) {
             logWarn("id not found in components configuration at source " + std::to_string(i));
             continue;
         }
         auto id = componentLookup.find(idStr);
-        if (id == componentLookup.end())
-        {
+        if (id == componentLookup.end()) {
             logWarn("Source '" + idStr + "' not found.");
             continue;
         }
         cfg.id = ComponentId{id->second};
 
         std::string deviceIdStr;
-        if (s.lookupValue("device", deviceIdStr) != false)
-        {
+        if (s.lookupValue("device", deviceIdStr) != false) {
             auto deviceId = deviceLookup.find(deviceIdStr);
-            if (deviceId != deviceLookup.end())
-            {
+            if (deviceId != deviceLookup.end()) {
                 cfg.deviceId = deviceId->second;
             }
         }
@@ -201,37 +177,26 @@ auto SystemBuilder::parseComponentConfig(const libconfig::Config &componentConfi
     return result;
 }
 
-Context SystemBuilder::build(ThreadPool &pool, const SystemConfig &config)
-{
+Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     // First try loading libconfig data
     std::shared_ptr<libconfig::Config> hardwareConfig{nullptr};
     std::shared_ptr<libconfig::Config> componentConfig{nullptr};
-    try
-    {
+    try {
         hardwareConfig = ConfigParser::loadConfigFile(config.hardwareConfigPath);
-    }
-    catch (const libconfig::FileIOException &fioex)
-    {
+    } catch (const libconfig::FileIOException& fioex) {
         logError("Error while reading config file " + config.hardwareConfigPath);
-    }
-    catch (const libconfig::ParseException &pex)
-    {
-        logError("Parse error at " + std::string(pex.getFile()) + " : line " + std::to_string(pex.getLine()) + " - " +
-                 std::string(pex.getError()));
+    } catch (const libconfig::ParseException& pex) {
+        logError("Parse error at " + std::string(pex.getFile()) + " : line " +
+                 std::to_string(pex.getLine()) + " - " + std::string(pex.getError()));
         throw pex;
     }
-    try
-    {
+    try {
         componentConfig = ConfigParser::loadConfigFile(config.componentConfigPath);
-    }
-    catch (const libconfig::FileIOException &fioex)
-    {
+    } catch (const libconfig::FileIOException& fioex) {
         logError("Error while reading config file " + config.componentConfigPath);
-    }
-    catch (const libconfig::ParseException &pex)
-    {
-        logError("Parse error at " + std::string(pex.getFile()) + " : line " + std::to_string(pex.getLine()) + " - " +
-                 std::string(pex.getError()));
+    } catch (const libconfig::ParseException& pex) {
+        logError("Parse error at " + std::string(pex.getFile()) + " : line " +
+                 std::to_string(pex.getLine()) + " - " + std::string(pex.getError()));
         throw pex;
     }
 
@@ -247,52 +212,41 @@ Context SystemBuilder::build(ThreadPool &pool, const SystemConfig &config)
     ctx.config = std::make_unique<SystemConfig>(std::move(config));
 
     std::vector<DeviceConfig> deviceConfigurations;
-    try
-    {
+    try {
         deviceConfigurations = SystemBuilder::parseHardwareConfig(*hardwareConfig);
-    }
-    catch (const libconfig::SettingNotFoundException &e)
-    {
-        logWarn(std::string(e.what()) + " in file " + config.hardwareConfigPath + " " + std::string(e.getPath()));
-    }
-    catch (const libconfig::SettingException &e)
-    {
-        logWarn(std::string(e.what()) + " in file " + config.hardwareConfigPath + " " + std::string(e.getPath()));
+    } catch (const libconfig::SettingNotFoundException& e) {
+        logWarn(std::string(e.what()) + " in file " + config.hardwareConfigPath + " " +
+                std::string(e.getPath()));
+    } catch (const libconfig::SettingException& e) {
+        logWarn(std::string(e.what()) + " in file " + config.hardwareConfigPath + " " +
+                std::string(e.getPath()));
     }
     std::vector<ComponentConfig> componentConfigurations;
-    try
-    {
+    try {
         componentConfigurations = SystemBuilder::parseComponentConfig(*componentConfig);
-    }
-    catch (const libconfig::SettingNotFoundException &e)
-    {
-        logWarn(std::string(e.what()) + " in file " + config.componentConfigPath + " " + std::string(e.getPath()));
-    }
-    catch (const libconfig::SettingException &e)
-    {
-        logWarn(std::string(e.what()) + " in file " + config.componentConfigPath + " " + std::string(e.getPath()));
+    } catch (const libconfig::SettingNotFoundException& e) {
+        logWarn(std::string(e.what()) + " in file " + config.componentConfigPath + " " +
+                std::string(e.getPath()));
+    } catch (const libconfig::SettingException& e) {
+        logWarn(std::string(e.what()) + " in file " + config.componentConfigPath + " " +
+                std::string(e.getPath()));
     }
 
     // --- hardware ---
-    for (auto &d : deviceConfigurations)
-    {
+    for (auto& d : deviceConfigurations) {
         ctx.registry->add(d.id, DeviceFactory::create(d));
     }
 
     // --- components ---
-    for (auto &c : componentConfigurations)
-    {
+    for (auto& c : componentConfigurations) {
         auto component = ComponentFactory::createComponent(c, ctx);
         logDebug("Created component " + component->name().value_or("<unknown>"));
         auto component_as_source = std::dynamic_pointer_cast<Source>(component);
-        if (component_as_source)
-        {
+        if (component_as_source) {
             std::weak_ptr<Source> weak = component_as_source;
-            if (c.interval)
-            {
+            if (c.interval) {
                 ctx.scheduler->every(c.interval.value(), [weak]() {
-                    if (auto locked = weak.lock())
-                    {
+                    if (auto locked = weak.lock()) {
                         locked->update();
                     }
                 });
@@ -314,27 +268,28 @@ Context SystemBuilder::build(ThreadPool &pool, const SystemConfig &config)
     // When server accepts a new TCP connection, call this handler.
     ctx.server = std::make_unique<TcpServer>(ctx.io, config.serverPort, tcp_sink);
 
-    ctx.server->addConnectionHandler([tcp_source = ctx.components->get<TcpSource>(OtherComponent::TCP_SOURCE_0)](
-                                         const std::shared_ptr<TcpConnection> &connection) {
-        if (tcp_source != nullptr)
-        {
-            tcp_source->registerConnection(connection);
-        }
-        else
-        {
-            logError("Nullpointer in creating connection handler for tcpsource. Make sure components are initialized "
-                     "beforehand.");
-        }
-    });
+    ctx.server->addConnectionHandler(
+        [tcp_source = ctx.components->get<TcpSource>(OtherComponent::TCP_SOURCE_0)](
+            const std::shared_ptr<TcpConnection>& connection) {
+            if (tcp_source != nullptr) {
+                tcp_source->registerConnection(connection);
+            } else {
+                logError("Nullpointer in creating connection handler for tcpsource. Make sure "
+                         "components are initialized "
+                         "beforehand.");
+            }
+        });
 
     // --- maintenance ---
-    ctx.scheduler->every(std::chrono::seconds(5),
-                         [server = ctx.server.get()]() { server->heartbeatAndCleanup(std::chrono::seconds(30)); });
+    ctx.scheduler->every(std::chrono::seconds(5), [server = ctx.server.get()]() {
+        server->heartbeatAndCleanup(std::chrono::seconds(30));
+    });
 
     // --- GPS default config ---
 
     // set dynamic model: Stationary
-    logInfo("setting GNSS dynamic model to" + std::to_string(static_cast<unsigned>(config.gnss_dynamic_model)));
+    logInfo("setting GNSS dynamic model to" +
+            std::to_string(static_cast<unsigned>(config.gnss_dynamic_model)));
     ctx.bus->publish(UbxDynamicModel::stationary);
     ctx.bus->publish(UbxProtocolSelectionCmd{1, PROTO_UBX});
 
@@ -371,24 +326,14 @@ Context SystemBuilder::build(ThreadPool &pool, const SystemConfig &config)
     // Enable NAV_SVINFO only for version 0.1 - 15.0
     // Enable NAV_SAT for version > 15.0
     ctx.bus->publish(UbxVersionDependentMsgRateCmd{
-        {
-            UbxVersionDependentMsgRateCmd::Entry{
-                Version {0, 1},
-                Version {15, 0},
-                UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 69}
-            },
-            UbxVersionDependentMsgRateCmd::Entry{
-                Version {15, 0},
-                Version {std::numeric_limits<unsigned>().max(), 0},
-                UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 0}
-            },
-            UbxVersionDependentMsgRateCmd::Entry{
-                Version {15, 0},
-                Version {std::numeric_limits<unsigned>().max(), 0},
-                UbxMsgRateCmd{UBX_MSG::NAV_SAT, 1, 69}
-            }
-        }
-    });
+        {UbxVersionDependentMsgRateCmd::Entry{Version{0, 1}, Version{15, 0},
+                                              UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 69}},
+         UbxVersionDependentMsgRateCmd::Entry{Version{15, 0},
+                                              Version{std::numeric_limits<unsigned>().max(), 0},
+                                              UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 0}},
+         UbxVersionDependentMsgRateCmd::Entry{Version{15, 0},
+                                              Version{std::numeric_limits<unsigned>().max(), 0},
+                                              UbxMsgRateCmd{UBX_MSG::NAV_SAT, 1, 69}}}});
 
     // Debug reading version every second // TESTED -> Working!
     // ctx.scheduler->every(std::chrono::milliseconds(1000),[bus = &(*ctx.bus)](){

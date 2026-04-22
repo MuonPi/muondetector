@@ -7,7 +7,6 @@
 using used_clock = std::chrono::steady_clock;
 using time_point = used_clock::time_point;
 
-
 struct Task {
     std::function<void()> func;
     time_point time;

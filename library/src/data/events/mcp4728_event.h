@@ -4,8 +4,7 @@
 #include <cstdint>
 #include <unordered_map>
 
-struct MCP4728Event
-{
+struct MCP4728Event {
     std::unordered_map<std::uint8_t, std::uint16_t> dacValues;
     std::unordered_map<std::uint8_t, std::uint16_t> eepromValues;
     std::unordered_map<std::uint8_t, float> voltages;

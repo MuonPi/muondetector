@@ -1,10 +1,8 @@
 #ifndef SINK_H
 #define SINK_H
 
-
-class Sink
-{
-public:
+class Sink {
+  public:
     virtual ~Sink() = default;
 };
 

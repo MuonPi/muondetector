@@ -3,8 +3,7 @@
 
 #include <cstdint>
 
-struct ThresholdSettingEvent
-{
+struct ThresholdSettingEvent {
     std::uint8_t channel;
     double voltage;
     bool success;

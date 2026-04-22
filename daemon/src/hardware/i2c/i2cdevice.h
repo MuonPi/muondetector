@@ -1,28 +1,27 @@
-#include <fcntl.h> // open
+#include <fcntl.h>    // open
 #include <inttypes.h> // uint8_t, etc
 #include <iostream>
 #include <mutex>
 #include <stdio.h>
 #include <string>
 #include <sys/ioctl.h> // ioctl
-#include <sys/time.h> // for gettimeofday()
+#include <sys/time.h>  // for gettimeofday()
 #include <unistd.h>
 #include <vector>
 
 #ifndef _I2CDEVICE_H_
 #define _I2CDEVICE_H_
 
-static constexpr int DEFAULT_DEBUG_LEVEL { 0 };
+static constexpr int DEFAULT_DEBUG_LEVEL{0};
 
-// base class fragment static_device_base which implemets static functions available to all derived classes
-// by the Curiously Recursive Template Pattern (CRTP) mechanism
+// base class fragment static_device_base which implemets static functions available to all derived
+// classes by the Curiously Recursive Template Pattern (CRTP) mechanism
 template <class T>
 struct static_device_base {
     friend class i2cDevice;
-    static bool identifyDevice(uint8_t addr)
-    {
+    static bool identifyDevice(uint8_t addr) {
         auto it = T::getGlobalDeviceList().begin();
-        bool found { false };
+        bool found{false};
         while (!found && it != T::getGlobalDeviceList().end()) {
             if ((*it)->getAddress() == addr) {
                 found = true;
@@ -41,21 +40,24 @@ struct static_device_base {
     }
 };
 
-//We define a class named i2cDevices to outsource the hardware dependent program parts. We want to
-//access components of integrated curcuits, like the ads1115 or other subdevices via i2c-bus.
-//The main aim here is, that the user does not have to be concerned about the c like low level operations
-//of I2C access
-// First, we define an abstract base class with all low-level i2c acess functions implemented.
-// For device specific implementations, classes can inherit this base class
-// virtual methods should be reimplemented in the child classes to make sense there, e.g. devicePresent()
+// We define a class named i2cDevices to outsource the hardware dependent program parts. We want to
+// access components of integrated curcuits, like the ads1115 or other subdevices via i2c-bus.
+// The main aim here is, that the user does not have to be concerned about the c like low level
+// operations of I2C access
+//  First, we define an abstract base class with all low-level i2c acess functions implemented.
+//  For device specific implementations, classes can inherit this base class
+//  virtual methods should be reimplemented in the child classes to make sense there, e.g.
+//  devicePresent()
 class i2cDevice {
-public:
-    enum MODE { MODE_NONE = 0,
+  public:
+    enum MODE {
+        MODE_NONE = 0,
         MODE_NORMAL = 0x01,
         MODE_FORCE = 0x02,
         MODE_UNREACHABLE = 0x04,
         MODE_FAILED = 0x08,
-        MODE_LOCKED = 0x10 };
+        MODE_LOCKED = 0x10
+    };
 
     i2cDevice();
     i2cDevice(const char* busAddress = "/dev/i2c-1");
@@ -133,23 +135,23 @@ public:
 
     virtual bool identify();
 
-protected:
-    int fHandle { 0 };
-    uint8_t fAddress { 0x00 };
+  protected:
+    int fHandle{0};
+    uint8_t fAddress{0x00};
     static unsigned int fNrDevices;
-    unsigned long int fNrBytesWritten { 0 };
-    unsigned long int fNrBytesRead { 0 };
+    unsigned long int fNrBytesWritten{0};
+    unsigned long int fNrBytesRead{0};
     static unsigned long int fGlobalNrBytesRead;
     static unsigned long int fGlobalNrBytesWritten;
-    double fLastTimeInterval { 0. }; // the last time measurement's result is stored here
+    double fLastTimeInterval{0.}; // the last time measurement's result is stored here
     struct timeval fT1, fT2;
-    int fDebugLevel { DEFAULT_DEBUG_LEVEL };
+    int fDebugLevel{DEFAULT_DEBUG_LEVEL};
     static std::vector<i2cDevice*> fGlobalDeviceList;
-    std::string fTitle { "I2C device" };
-    uint8_t fMode { MODE_NONE };
-    unsigned int fIOErrors { 0 };
+    std::string fTitle{"I2C device"};
+    uint8_t fMode{MODE_NONE};
+    unsigned int fIOErrors{0};
     std::mutex fMutex;
-    static constexpr std::size_t fNrRetries { 3 };
+    static constexpr std::size_t fNrRetries{3};
 
     // fuctions for measuring time intervals
     void startTimer();
