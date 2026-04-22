@@ -4,11 +4,8 @@
 #include <cstdint>
 
 class NetworkDiscovery {
-public:
-    enum class DeviceType {
-        GUI,
-        DAEMON
-    };
+  public:
+    enum class DeviceType { GUI, DAEMON };
 
     explicit NetworkDiscovery(DeviceType f_device_type, std::uint16_t f_port);
     ~NetworkDiscovery();
@@ -17,7 +14,7 @@ public:
     void readPendingDatagrams();
     // void foundDevices(const QList<QPair<quint16, QHostAddress>>& devices);
 
-private:
+  private:
     DeviceType m_device_type;
     std::uint16_t m_port;
     // QVector<QHostAddress> m_broadcast_address;

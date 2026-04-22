@@ -1,22 +1,23 @@
 #ifndef THREAD_POOL_H
 #define THREAD_POOL_H
 
-#include <vector>
-#include <thread>
-#include <queue>
-#include <mutex>
+#include <atomic>
 #include <condition_variable>
 #include <functional>
-#include <atomic>
+#include <mutex>
+#include <queue>
+#include <thread>
+#include <vector>
 
 class ThreadPool {
-public:
-    explicit ThreadPool(size_t numThreads = std::max<std::size_t>(1, std::thread::hardware_concurrency()));
+  public:
+    explicit ThreadPool(
+        size_t numThreads = std::max<std::size_t>(1, std::thread::hardware_concurrency()));
     ~ThreadPool();
 
     void enqueue(std::function<void()> task);
 
-private:
+  private:
     void worker_loop();
 
     std::vector<std::thread> workers;

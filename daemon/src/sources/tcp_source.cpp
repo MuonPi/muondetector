@@ -1,15 +1,13 @@
-#include "sources/source.h"
 #include "sources/tcp_source.h"
+
 #include "data/events/tcp_packet_event.h"
+#include "sources/source.h"
 #include "tcpconnection.h"
 
-TcpSource::TcpSource(ComponentId id, EventBus& bus)
-    : Source::Source(id), bus_(bus)
-{
+TcpSource::TcpSource(ComponentId id, EventBus& bus) : Source::Source(id), bus_(bus) {
 }
 
-void TcpSource::registerConnection(const std::shared_ptr<TcpConnection>& connection)
-{
+void TcpSource::registerConnection(const std::shared_ptr<TcpConnection>& connection) {
     if (!connection) {
         return;
     }
@@ -20,12 +18,11 @@ void TcpSource::registerConnection(const std::shared_ptr<TcpConnection>& connect
         if (!conn) {
             return;
         }
-        bus_.publish(TcpPacketEvent{ conn, packet });
+        bus_.publish(TcpPacketEvent{conn, packet});
     });
 }
 
-void TcpSource::update()
-{
+void TcpSource::update() {
     if (!std::holds_alternative<OtherComponent>(id())) {
         throw std::logic_error("NonDeviceSource constructed with device ID");
     }

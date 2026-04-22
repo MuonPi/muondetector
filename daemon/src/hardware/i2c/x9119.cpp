@@ -1,22 +1,22 @@
 #include "hardware/i2c/x9119.h"
+
 #include <linux/i2c-dev.h> // I2C bus definitions for linux like systems
-#include <linux/i2c.h> // I2C bus definitions for linux like systems
+#include <linux/i2c.h>     // I2C bus definitions for linux like systems
 #include <stdint.h>
 #include <stdio.h>
 
 /*
-* X9119
-*/
+ * X9119
+ */
 
-unsigned int X9119::readWiperReg()
-{
+unsigned int X9119::readWiperReg() {
     // just return the locally stored last value written to WCR
     // since readback doesn't work without repeated start transaction
     return fWiperReg;
 
     uint8_t writeBuf[3]; // Buffer to store the 3 bytes that we write to the I2C device
     uint8_t readBuf[16]; // 2 byte buffer to store the data read from the I2C device
-    int16_t val; // Stores the 16 bit value of our ADC conversion
+    int16_t val;         // Stores the 16 bit value of our ADC conversion
 
     writeBuf[0] = 0x80; // op-code read WCR
 
@@ -34,11 +34,10 @@ unsigned int X9119::readWiperReg()
     return val;
 }
 
-unsigned int X9119::readDataReg(uint8_t reg)
-{
+unsigned int X9119::readDataReg(uint8_t reg) {
     uint8_t writeBuf[3]; // Buffer to store the 3 bytes that we write to the I2C device
     uint8_t readBuf[16]; // 2 byte buffer to store the data read from the I2C device
-    int16_t val; // Stores the 16 bit value of our ADC conversion
+    int16_t val;         // Stores the 16 bit value of our ADC conversion
 
     writeBuf[0] = 0x80 | 0x20 | (reg & 0x03) << 2; // op-code read data reg
 
@@ -56,11 +55,10 @@ unsigned int X9119::readDataReg(uint8_t reg)
     return val;
 }
 
-unsigned int X9119::readWiperReg2()
-{
+unsigned int X9119::readWiperReg2() {
     uint8_t writeBuf[3]; // Buffer to store the 3 bytes that we write to the I2C device
     uint8_t readBuf[16]; // 2 byte buffer to store the data read from the I2C device
-    int16_t val; // Stores the 16 bit value of our ADC conversion
+    int16_t val;         // Stores the 16 bit value of our ADC conversion
 
     writeBuf[0] = 0x80; // op-code read WCR
 
@@ -110,8 +108,7 @@ unsigned int X9119::readWiperReg2()
     return val;
 }
 
-unsigned int X9119::readWiperReg3()
-{
+unsigned int X9119::readWiperReg3() {
     union i2c_smbus_data data;
     struct i2c_smbus_ioctl_data args;
 
@@ -130,13 +127,12 @@ unsigned int X9119::readWiperReg3()
     return 0x0FFFF & data.word;
 }
 
-void X9119::writeWiperReg(unsigned int value)
-{
+void X9119::writeWiperReg(unsigned int value) {
     uint8_t writeBuf[3]; // Buffer to store the 3 bytes that we write to the I2C device
 
-    writeBuf[0] = 0x80 | 0x20; // op-code write WCR
+    writeBuf[0] = 0x80 | 0x20;             // op-code write WCR
     writeBuf[1] = ((value & 0xff00) >> 8); // MSB of WCR
-    writeBuf[2] = (value & 0xff); // LSB of WCR
+    writeBuf[2] = (value & 0xff);          // LSB of WCR
 
     // Write writeBuf to the X9119
     // this sets the write address for WCR register and writes WCR
@@ -145,13 +141,12 @@ void X9119::writeWiperReg(unsigned int value)
         fWiperReg = value;
 }
 
-void X9119::writeDataReg(uint8_t reg, unsigned int value)
-{
+void X9119::writeDataReg(uint8_t reg, unsigned int value) {
     uint8_t writeBuf[3]; // Buffer to store the 3 bytes that we write to the I2C device
 
     writeBuf[0] = 0x80 | 0x40 | (reg & 0x03) << 2; // op-code write data reg
-    writeBuf[1] = ((value & 0xff00) >> 8); // MSB of WCR
-    writeBuf[2] = (value & 0xff); // LSB of WCR
+    writeBuf[1] = ((value & 0xff00) >> 8);         // MSB of WCR
+    writeBuf[2] = (value & 0xff);                  // LSB of WCR
 
     // Write writeBuf to the X9119
     // this sets the write address for data register and writes dr with value

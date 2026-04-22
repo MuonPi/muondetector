@@ -1,11 +1,12 @@
 #include "hardware/i2c/sht31.h"
+
 #include <stdint.h>
 #include <stdio.h>
 
 /*
-* SHT31 Temperature&Humidity Sensor
-* Prefered option is the no hold mastermode
-*/
+ * SHT31 Temperature&Humidity Sensor
+ * Prefered option is the no hold mastermode
+ */
 
 bool SHT31::checksumCorrect(uint8_t data[]) // expects data to be greater or equal 3 (expecting 3)
 {
@@ -35,15 +36,14 @@ bool SHT31::checksumCorrect(uint8_t data[]) // expects data to be greater or equ
     }
 }
 
-bool SHT31::getValues(float& ftemp, float& fhum)
-{
+bool SHT31::getValues(float& ftemp, float& fhum) {
     uint16_t data_hum = 0;
     uint16_t data_temp = 0;
     if (!readRaw(data_temp, data_hum)) {
         return false;
     }
-    ftemp = -45. + 175. * (((float)((data_temp))) / 65535.0);
-    fhum = 100.0 * (((float)(data_hum)) / 65535.0);
+    ftemp = -45. + 175. * (((float) ((data_temp))) / 65535.0);
+    fhum = 100.0 * (((float) (data_hum)) / 65535.0);
     return true;
 }
 
@@ -74,22 +74,21 @@ bool SHT31::readRaw(uint16_t& UT, uint16_t& UH) // von unsigned int auf float ge
         printf("Inhalt: (Checksum Byte H): %x\n", readBuf[5]);
     }
 
-    UT = ((uint16_t)readBuf[0]) << 8;
+    UT = ((uint16_t) readBuf[0]) << 8;
     UT |= readBuf[1];
-    UH = ((uint16_t)readBuf[3]) << 8;
+    UH = ((uint16_t) readBuf[3]) << 8;
     UH |= readBuf[4];
 
     if (!checksumCorrect(readBuf)) {
         printf("temperature checksum error\n");
     }
-    if (!checksumCorrect((uint8_t*)(readBuf + 3))) {
+    if (!checksumCorrect((uint8_t*) (readBuf + 3))) {
         printf("humidity checksum error\n");
     }
     return true;
 }
 
-bool SHT31::heater(bool on)
-{
+bool SHT31::heater(bool on) {
     uint8_t writeBuf[2];
     writeBuf[0] = 0x30;
     writeBuf[1] = 0x66;
@@ -103,8 +102,7 @@ bool SHT31::heater(bool on)
     return true;
 }
 
-bool SHT31::breakCommand()
-{
+bool SHT31::breakCommand() {
     uint8_t writeBuf[2];
     writeBuf[0] = 0x30;
     writeBuf[1] = 0x93;
@@ -115,19 +113,19 @@ bool SHT31::breakCommand()
     return (n != 2);
 }
 
-bool SHT31::softReset()
-{
+bool SHT31::softReset() {
     uint8_t writeBuf[2];
     writeBuf[0] = 0x30;
     writeBuf[1] = 0xA2;
 
     int n = 0;
     n = write(writeBuf, 2);
-    usleep(15000); //wait for the SHT to reset; datasheet on page 9
+    usleep(15000); // wait for the SHT to reset; datasheet on page 9
 
     if (n == 2) {
         printf("soft_reset succesfull %i\n", n);
     }
 
-    return (n == 0); //Wenn n == 0, gibt die Funktion True zurück. Wenn nicht gibt sie False zurück.
+    return (n == 0); // Wenn n == 0, gibt die Funktion True zurück. Wenn nicht gibt sie False
+                     // zurück.
 }

@@ -1,5 +1,13 @@
 set(MUONDETECTOR_DAEMON_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/daemon/src")
 set(MUONDETECTOR_DAEMON_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/daemon/config")
+set(MUONDETECTOR_DAEMON_BINARY_DIR "${CMAKE_BINARY_DIR}/daemon")
+
+
+configure_file(
+    "${MUONDETECTOR_LIBRARY_DIR}/config/version.h.in"
+    "${MUONDETECTOR_DAEMON_BINARY_DIR}/version.h"
+    )
+
 
 find_library(LIBCONFIG
     names libconfig++ libconfigpp config++ configpp libconfig config
@@ -180,6 +188,7 @@ set_target_properties(muondetector-daemon PROPERTIES POSITION_INDEPENDENT_CODE 1
 
 target_include_directories(muondetector-daemon PUBLIC
     $<BUILD_INTERFACE:${MUONDETECTOR_DAEMON_SRC_DIR}>
+    $<BUILD_INTERFACE:${MUONDETECTOR_DAEMON_BINARY_DIR}>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
     $<BUILD_INTERFACE:${CAPNP_INCLUDE_DIRS}>
     $<BUILD_INTERFACE:${Boost_INCLUDE_DIRS}>

@@ -5,9 +5,10 @@
 #include <string>
 
 class Histogram {
-public:
+  public:
     Histogram() = default;
-    Histogram(const std::string& name, int nrBins, double min, double max, bool autoscale = false, const std::string& unit = "") noexcept;
+    Histogram(const std::string& name, int nrBins, double min, double max, bool autoscale = false,
+              const std::string& unit = "") noexcept;
     ~Histogram();
     void clear();
     void setName(const std::string& name);
@@ -44,19 +45,19 @@ public:
     const std::string& getName() const { return fName; }
     const std::string& getUnit() const { return fUnit; }
 
-protected:
+  protected:
     int value2Bin(double value) const;
     double bin2Value(int bin) const;
 
-    std::string fName { "defaultHisto" };
-    std::string fUnit { "A.U." };
-    int fNrBins { 100 };
-    double fMin { 0.0 };
-    double fMax { 1.0 };
-    double fOverflow { 0 };
-    double fUnderflow { 0 };
-    std::map<int, double> fHistogramMap {};
-    bool fAutoscale { false };
+    std::string fName{"defaultHisto"};
+    std::string fUnit{"A.U."};
+    int fNrBins{100};
+    double fMin{0.0};
+    double fMax{1.0};
+    double fOverflow{0};
+    double fUnderflow{0};
+    std::map<int, double> fHistogramMap{};
+    bool fAutoscale{false};
 };
 
 #endif // HISTOGRAM_H

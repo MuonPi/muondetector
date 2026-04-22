@@ -3,8 +3,7 @@
 
 #include "data/ublox/ublox_messages.h"
 
-struct UbxMsgRateCmd
-{
+struct UbxMsgRateCmd {
     UBX_MSG::msg_id id;
     std::uint8_t port;
     std::uint8_t rate;

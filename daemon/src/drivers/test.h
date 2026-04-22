@@ -5,15 +5,13 @@
 #include "datastore/datastore.h"
 
 class FixProcessor {
-public:
-    FixProcessor(EventBus& bus, Datastore& store)
-        : bus_(bus), store_(store)
-    {
+  public:
+    FixProcessor(EventBus& bus, Datastore& store) : bus_(bus), store_(store) {
         bus_.subscribe<NavSat>([this](const NavSat&) { evaluate(); });
         bus_.subscribe<NavTimeGPS>([this](const NavTimeGPS&) { evaluate(); });
     }
 
-private:
+  private:
     void evaluate() {
         auto sat = store_.get<NavSat>();
         auto time = store_.get<NavTimeGPS>();
@@ -31,7 +29,7 @@ private:
         // compute derived result
         bool validFix = sat->first.numSats >= 4;
 
-        bus_.publish(validFix);  // or a struct
+        bus_.publish(validFix); // or a struct
     }
 
     EventBus& bus_;

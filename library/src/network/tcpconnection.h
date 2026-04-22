@@ -1,28 +1,26 @@
 #ifndef TCP_CONNECTION_H
 #define TCP_CONNECTION_H
 
-#include <boost/asio.hpp>
 #include <array>
+#include <atomic>
+#include <boost/asio.hpp>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <deque>
 #include <functional>
 #include <memory>
-#include <atomic>
-#include <chrono>
 #include <vector>
 
 using boost::asio::ip::tcp;
 
-struct TcpPacket
-{
+struct TcpPacket {
     std::uint16_t key;
     std::vector<std::uint8_t> payload;
 };
 
-class TcpConnection : public std::enable_shared_from_this<TcpConnection>
-{
-public:
+class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
+  public:
     using PacketHandler = std::function<void(const TcpPacket&)>;
     using DisconnectHandler = std::function<void(const boost::system::error_code&)>;
 
@@ -46,13 +44,14 @@ public:
     // Getter for relevant socket informations
     auto socket() const -> const tcp::socket&;
 
-private:
+  private:
     void do_write();
     void do_read();
     void closeWithError(const boost::system::error_code& ec);
     void consumeIncomingBytes(std::size_t n);
     auto tryParsePacket() -> bool;
-    auto buildFrame(std::uint16_t key, const std::vector<std::uint8_t>& payload) -> std::vector<std::uint8_t>;
+    auto buildFrame(std::uint16_t key,
+                    const std::vector<std::uint8_t>& payload) -> std::vector<std::uint8_t>;
     static auto checksum(const std::vector<std::uint8_t>& payload) -> std::uint32_t;
     static auto readU16(const std::uint8_t* p) -> std::uint16_t;
     static auto readU32(const std::uint8_t* p) -> std::uint32_t;

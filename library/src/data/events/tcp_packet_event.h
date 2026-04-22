@@ -5,8 +5,7 @@
 
 #include <memory>
 
-struct TcpPacketEvent
-{
+struct TcpPacketEvent {
     std::shared_ptr<TcpConnection> connection;
     TcpPacket packet;
 };

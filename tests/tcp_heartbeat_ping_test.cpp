@@ -4,7 +4,6 @@
 #include "tcpmessage_keys.h"
 
 #include <boost/asio.hpp>
-
 #include <chrono>
 #include <future>
 #include <iostream>
@@ -14,8 +13,8 @@ using boost::asio::ip::tcp;
 
 namespace {
 // Wait until sink-side connection count reaches expected value.
-bool waitForConnectionCount(const TcpSink& sink, std::size_t expected, std::chrono::milliseconds timeout)
-{
+bool waitForConnectionCount(const TcpSink& sink, std::size_t expected,
+                            std::chrono::milliseconds timeout) {
     const auto deadline = std::chrono::steady_clock::now() + timeout;
     while (std::chrono::steady_clock::now() < deadline) {
         if (sink.connectionCount() == expected) {
@@ -25,10 +24,9 @@ bool waitForConnectionCount(const TcpSink& sink, std::size_t expected, std::chro
     }
     return false;
 }
-}
+} // namespace
 
-int main()
-{
+int main() {
     // Start server and attach a client-side TcpConnection packet handler.
     auto io = std::make_shared<boost::asio::io_context>();
     auto sink = std::make_shared<TcpSink>();
@@ -50,9 +48,7 @@ int main()
     }
 
     auto conn = std::make_shared<TcpConnection>(std::move(socket));
-    conn->setPacketHandler([&](const TcpPacket& p) {
-        packetPromise.set_value(p);
-    });
+    conn->setPacketHandler([&](const TcpPacket& p) { packetPromise.set_value(p); });
     conn->start();
 
     if (!waitForConnectionCount(*sink, 1, std::chrono::seconds(2))) {

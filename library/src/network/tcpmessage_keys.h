@@ -3,9 +3,9 @@
 
 #include <cstdint>
 
-
 // no specific reason but the codes are all prime numbers :)
-enum class TCP_MSG_KEY : std::uint16_t { MSG_PING = 2,
+enum class TCP_MSG_KEY : std::uint16_t {
+    MSG_PING = 2,
     MSG_QUIT_CONNECTION = 3,
     MSG_TIMEOUT = 5,
     MSG_THRESHOLD = 7,

@@ -3,8 +3,7 @@
 
 #include <cstdint>
 
-struct UbxMinMaxSvCmd
-{
+struct UbxMinMaxSvCmd {
     std::uint8_t minSVs;
     std::uint8_t maxSVs;
 };

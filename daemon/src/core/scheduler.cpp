@@ -1,18 +1,18 @@
 
 
 #include "scheduler.h"
+
 #include "task.h"
 
 #include <atomic>
 #include <chrono>
-#include <functional>
-#include <mutex>
 #include <condition_variable>
+#include <functional>
 #include <map>
+#include <mutex>
 
-
-Scheduler::Scheduler(ThreadPool& pool)
-    : threadPool(pool) {}
+Scheduler::Scheduler(ThreadPool& pool) : threadPool(pool) {
+}
 
 Scheduler::~Scheduler() {
     stop();
@@ -27,7 +27,7 @@ void Scheduler::stop() {
     running = false;
     cv.notify_all();
 
-    if (thread.joinable()){
+    if (thread.joinable()) {
         thread.join();
     }
 }
@@ -63,20 +63,16 @@ void Scheduler::loop() {
     }
 }
 
-
-void Scheduler::every(std::chrono::milliseconds interval, std::function<void()> func)
-{
+void Scheduler::every(std::chrono::milliseconds interval, std::function<void()> func) {
     schedule(func, used_clock::now(), interval);
 }
 
-
-void Scheduler::once(std::function<void()> func, time_point time)
-{
+void Scheduler::once(std::function<void()> func, time_point time) {
     schedule(func, time);
 }
 
-
-void Scheduler::schedule(std::function<void()> func, time_point time, std::chrono::milliseconds interval) {
+void Scheduler::schedule(std::function<void()> func, time_point time,
+                         std::chrono::milliseconds interval) {
     {
         std::lock_guard lock(mutex);
         queue.push({func, time, interval});

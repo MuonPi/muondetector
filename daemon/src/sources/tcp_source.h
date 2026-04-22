@@ -8,15 +8,14 @@
 
 class TcpConnection;
 
-class TcpSource : public Source
-{
-public:
+class TcpSource : public Source {
+  public:
     explicit TcpSource(ComponentId id, EventBus& bus);
 
     void registerConnection(const std::shared_ptr<TcpConnection>& connection);
     void update() override;
 
-private:
+  private:
     EventBus& bus_;
 };
 

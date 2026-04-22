@@ -5,19 +5,18 @@
 #ifndef DATASTORE_SINK_H
 #define DATASTORE_SINK_H
 
-#include "sinks/sink.h"
 #include "data/events/ubx_event.h"
 #include "datastore/datastore.h"
+#include "sinks/sink.h"
+
 #include <mutex>
 
-
-class DatastoreSink : public Sink
-{
-public:
+class DatastoreSink : public Sink {
+  public:
     DatastoreSink(Datastore& datastore);
     void handle(const UbxEvent& event);
 
-private:
+  private:
     Datastore& datastore_;
 };
 

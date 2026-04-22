@@ -7,13 +7,9 @@
 
 #include <memory>
 
-
-class SinkFactory
-{
-public:
-    static auto createTcpSink(
-        std::unique_ptr<SinkManager>& sinks) -> std::shared_ptr<TcpSink>
-    {
+class SinkFactory {
+  public:
+    static auto createTcpSink(std::unique_ptr<SinkManager>& sinks) -> std::shared_ptr<TcpSink> {
         auto tcp_sink = std::make_shared<TcpSink>();
         sinks->add(tcp_sink);
         return tcp_sink;

@@ -1,16 +1,15 @@
-#include "network/tcpserver.h"
-#include "sinks/tcp_sink.h"
-#include "sources/tcp_source.h"
 #include "core/event_bus.h"
 #include "core/thread_pool.h"
 #include "data/events/tcp_packet_event.h"
+#include "network/tcpserver.h"
+#include "sinks/tcp_sink.h"
+#include "sources/tcp_source.h"
 #include "tcpconnection.h"
 #include "tcpmessage_keys.h"
 
-#include <boost/asio.hpp>
-
 #include <array>
 #include <atomic>
+#include <boost/asio.hpp>
 #include <chrono>
 #include <cstdint>
 #include <future>
@@ -24,26 +23,18 @@ using boost::asio::ip::tcp;
 
 namespace {
 // Big-endian helpers for handcrafted malformed frame.
-auto be16(std::uint16_t v) -> std::array<std::uint8_t, 2>
-{
-    return {
-        static_cast<std::uint8_t>((v >> 8) & 0xFF),
-        static_cast<std::uint8_t>(v & 0xFF)
-    };
+auto be16(std::uint16_t v) -> std::array<std::uint8_t, 2> {
+    return {static_cast<std::uint8_t>((v >> 8) & 0xFF), static_cast<std::uint8_t>(v & 0xFF)};
 }
 
-auto be32(std::uint32_t v) -> std::array<std::uint8_t, 4>
-{
-    return {
-        static_cast<std::uint8_t>((v >> 24) & 0xFF),
-        static_cast<std::uint8_t>((v >> 16) & 0xFF),
-        static_cast<std::uint8_t>((v >> 8) & 0xFF),
-        static_cast<std::uint8_t>(v & 0xFF)
-    };
+auto be32(std::uint32_t v) -> std::array<std::uint8_t, 4> {
+    return {static_cast<std::uint8_t>((v >> 24) & 0xFF),
+            static_cast<std::uint8_t>((v >> 16) & 0xFF), static_cast<std::uint8_t>((v >> 8) & 0xFF),
+            static_cast<std::uint8_t>(v & 0xFF)};
 }
 
-bool waitForConnectionCount(const TcpSink& sink, std::size_t expected, std::chrono::milliseconds timeout)
-{
+bool waitForConnectionCount(const TcpSink& sink, std::size_t expected,
+                            std::chrono::milliseconds timeout) {
     const auto deadline = std::chrono::steady_clock::now() + timeout;
     while (std::chrono::steady_clock::now() < deadline) {
         if (sink.connectionCount() == expected) {
@@ -53,10 +44,9 @@ bool waitForConnectionCount(const TcpSink& sink, std::size_t expected, std::chro
     }
     return false;
 }
-}
+} // namespace
 
-int main()
-{
+int main() {
     // Wire server with TcpSource so inbound packets are published into EventBus.
     auto io = std::make_shared<boost::asio::io_context>();
     auto sink = std::make_shared<TcpSink>();
@@ -75,30 +65,28 @@ int main()
     auto gotTwoMessagesFuture = gotTwoMessages.get_future();
     std::atomic<bool> promiseDone{false};
 
-    bus.subscribe<TcpPacketEvent>(
-        [&](const TcpPacketEvent& e) {
-            if (e.packet.key != static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PING)) {
-                return;
-            }
+    bus.subscribe<TcpPacketEvent>([&](const TcpPacketEvent& e) {
+        if (e.packet.key != static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PING)) {
+            return;
+        }
 
-            std::string value(e.packet.payload.begin(), e.packet.payload.end());
-            std::lock_guard<std::mutex> lock(eventsMutex);
-            payloads.push_back(value);
+        std::string value(e.packet.payload.begin(), e.packet.payload.end());
+        std::lock_guard<std::mutex> lock(eventsMutex);
+        payloads.push_back(value);
 
-            if (payloads.size() >= 2 && !promiseDone.exchange(true)) {
-                gotTwoMessages.set_value();
-            }
-        });
-
-    std::thread ioThread([&io]() {
-        io->run();
+        if (payloads.size() >= 2 && !promiseDone.exchange(true)) {
+            gotTwoMessages.set_value();
+        }
     });
+
+    std::thread ioThread([&io]() { io->run(); });
 
     // Connect healthy client #1 and malformed client #2.
     boost::system::error_code ec;
 
     tcp::socket client1Socket(*io);
-    client1Socket.connect(tcp::endpoint(boost::asio::ip::address_v4::loopback(), server.port()), ec);
+    client1Socket.connect(tcp::endpoint(boost::asio::ip::address_v4::loopback(), server.port()),
+                          ec);
     if (ec) {
         std::cerr << "client1 connect failed: " << ec.message() << "\n";
         io->stop();

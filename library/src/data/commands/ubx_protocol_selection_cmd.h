@@ -3,8 +3,7 @@
 
 #include <cstdint>
 
-struct UbxProtocolSelectionCmd
-{
+struct UbxProtocolSelectionCmd {
     std::uint8_t port;
     std::uint8_t outProtocolMask;
 };

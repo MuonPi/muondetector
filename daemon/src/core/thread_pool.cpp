@@ -1,4 +1,5 @@
 #include "thread_pool.h"
+
 #include "core/logging/logger.h"
 
 ThreadPool::ThreadPool(size_t numThreads) {
@@ -12,7 +13,8 @@ ThreadPool::~ThreadPool() {
     cv.notify_all();
 
     for (auto& t : workers) {
-        if (t.joinable()) t.join();
+        if (t.joinable())
+            t.join();
     }
 }
 
@@ -32,7 +34,8 @@ void ThreadPool::worker_loop() {
             std::unique_lock lock(mutex);
             cv.wait(lock, [&] { return !tasks.empty() || !running; });
 
-            if (!running && tasks.empty()) return;
+            if (!running && tasks.empty())
+                return;
 
             task = std::move(tasks.front());
             tasks.pop();

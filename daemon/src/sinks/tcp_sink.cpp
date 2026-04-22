@@ -1,51 +1,44 @@
 #include "tcp_sink.h"
-#include "sink.h"
+
+#include "ad1115.capnp.h"
 #include "core/event_bus.h"
+#include "data/events/ad1115_event.h"
+#include "sink.h"
 #include "tcpconnection.h"
 #include "tcpmessage_keys.h"
-#include "ad1115.capnp.h"
-#include "data/events/ad1115_event.h"
 
+#include <algorithm>
 #include <capnp/message.h>
 #include <capnp/serialize.h>
-
-#include <vector>
-#include <mutex>
 #include <cstring>
-#include <algorithm>
+#include <mutex>
+#include <vector>
 
-
-void TcpSink::addConnection(std::shared_ptr<TcpConnection> conn)
-{
+void TcpSink::addConnection(std::shared_ptr<TcpConnection> conn) {
     std::lock_guard<std::mutex> lock(mutex_);
     connections_.push_back(conn);
 }
 
-void TcpSink::removeConnection(const std::shared_ptr<TcpConnection>& conn)
-{
+void TcpSink::removeConnection(const std::shared_ptr<TcpConnection>& conn) {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = std::remove(connections_.begin(), connections_.end(), conn);
     connections_.erase(it, connections_.end());
 }
 
-void TcpSink::pruneDisconnected()
-{
+void TcpSink::pruneDisconnected() {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto it = std::remove_if(connections_.begin(), connections_.end(),
-                             [](const std::shared_ptr<TcpConnection>& conn) {
-                                 return !conn || !conn->isOpen();
-                             });
+    auto it = std::remove_if(
+        connections_.begin(), connections_.end(),
+        [](const std::shared_ptr<TcpConnection>& conn) { return !conn || !conn->isOpen(); });
     connections_.erase(it, connections_.end());
 }
 
-auto TcpSink::connectionCount() const -> std::size_t
-{
+auto TcpSink::connectionCount() const -> std::size_t {
     std::lock_guard<std::mutex> lock(mutex_);
     return connections_.size();
 }
 
-void TcpSink::handle(const Ads1115Event& event)
-{
+void TcpSink::handle(const Ads1115Event& event) {
     std::vector<std::shared_ptr<TcpConnection>> conns;
 
     {
@@ -55,15 +48,13 @@ void TcpSink::handle(const Ads1115Event& event)
 
     auto packet = serialize(event);
 
-    for (auto& conn : conns)
-    {
+    for (auto& conn : conns) {
         if (conn)
             conn->sendPacket(static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_ADC_SAMPLE), packet);
     }
 }
 
-std::vector<uint8_t> TcpSink::serialize(const Ads1115Event& event)
-{
+std::vector<uint8_t> TcpSink::serialize(const Ads1115Event& event) {
     capnp::MallocMessageBuilder msg;
     auto root = msg.initRoot<Ad1115Event>();
 

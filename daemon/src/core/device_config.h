@@ -2,11 +2,11 @@
 #define DEVICE_CONFIG_H
 
 #include "hardware/devices.h"
-#include <string>
-#include <optional>
 
-struct DeviceConfig
-{
+#include <optional>
+#include <string>
+
+struct DeviceConfig {
     Device id;
     DeviceType type{DeviceType::OTHER};
     std::string category;

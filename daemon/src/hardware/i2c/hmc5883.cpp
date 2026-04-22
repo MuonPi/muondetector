@@ -1,16 +1,16 @@
 #include "hardware/i2c/hmc5883.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
 
 /*
-* HMC5883 3 axis magnetic field sensor (Honeywell)
-*/
+ * HMC5883 3 axis magnetic field sensor (Honeywell)
+ */
 
-const double HMC5883::GAIN[8] = { 0.73, 0.92, 1.22, 1.52, 2.27, 2.56, 3.03, 4.35 };
+const double HMC5883::GAIN[8] = {0.73, 0.92, 1.22, 1.52, 2.27, 2.56, 3.03, 4.35};
 
-bool HMC5883::init()
-{
+bool HMC5883::init() {
     uint8_t readBuf[3]; // 2 byte buffer to store the data read from the I2C device
 
     // init value 0 for gain
@@ -41,19 +41,17 @@ bool HMC5883::init()
     return true;
 }
 
-void HMC5883::setGain(uint8_t gain)
-{
+void HMC5883::setGain(uint8_t gain) {
     uint8_t writeBuf[3]; // Buffer to store the 3 bytes that we write to the I2C device
 
     // set CRB
-    writeBuf[0] = 0x01; // addr config reg B (CRB)
+    writeBuf[0] = 0x01;               // addr config reg B (CRB)
     writeBuf[1] = (gain & 0x07) << 5; // gain=xx
     write(writeBuf, 2);
     fGain = gain & 0x07;
 }
 
-uint8_t HMC5883::readGain()
-{
+uint8_t HMC5883::readGain() {
     uint8_t readBuf[3]; // 2 byte buffer to store the data read from the I2C device
 
     int n = readReg(0x01, readBuf, 1); // Read the config register into readBuf
@@ -68,8 +66,7 @@ uint8_t HMC5883::readGain()
     return gain;
 }
 
-bool HMC5883::readRDYBit()
-{
+bool HMC5883::readRDYBit() {
     uint8_t readBuf[3]; // 2 byte buffer to store the data read from the I2C device
 
     // addr status reg (SR)
@@ -87,8 +84,7 @@ bool HMC5883::readRDYBit()
     return false;
 }
 
-bool HMC5883::readLockBit()
-{
+bool HMC5883::readLockBit() {
     uint8_t readBuf[3]; // 2 byte buffer to store the data read from the I2C device
 
     // addr status reg (SR)
@@ -106,19 +102,18 @@ bool HMC5883::readLockBit()
     return false;
 }
 
-bool HMC5883::getXYZRawValues(int& x, int& y, int& z)
-{
+bool HMC5883::getXYZRawValues(int& x, int& y, int& z) {
     uint8_t readBuf[6];
 
-    uint8_t cmd = 0x01; // start single measurement
+    uint8_t cmd = 0x01;              // start single measurement
     int n = writeReg(0x02, &cmd, 1); // addr mode reg (MR)
     usleep(6000);
 
     // Read the 3 data registers into readBuf starting from addr 0x03
     n = readReg(0x03, readBuf, 6);
-    int16_t xreg = (int16_t)(readBuf[0] << 8 | readBuf[1]);
-    int16_t yreg = (int16_t)(readBuf[2] << 8 | readBuf[3]);
-    int16_t zreg = (int16_t)(readBuf[4] << 8 | readBuf[5]);
+    int16_t xreg = (int16_t) (readBuf[0] << 8 | readBuf[1]);
+    int16_t yreg = (int16_t) (readBuf[2] << 8 | readBuf[3]);
+    int16_t zreg = (int16_t) (readBuf[4] << 8 | readBuf[5]);
 
     if (fDebugLevel > 1) {
         printf("%d bytes read\n", n);
@@ -131,14 +126,14 @@ bool HMC5883::getXYZRawValues(int& x, int& y, int& z)
     y = yreg;
     z = zreg;
 
-    if (xreg >= -2048 && xreg < 2048 && yreg >= -2048 && yreg < 2048 && zreg >= -2048 && zreg < 2048)
+    if (xreg >= -2048 && xreg < 2048 && yreg >= -2048 && yreg < 2048 && zreg >= -2048 &&
+        zreg < 2048)
         return true;
 
     return false;
 }
 
-bool HMC5883::getXYZMagneticFields(double& x, double& y, double& z)
-{
+bool HMC5883::getXYZMagneticFields(double& x, double& y, double& z) {
     int xreg, yreg, zreg;
     bool ok = getXYZRawValues(xreg, yreg, zreg);
     double lsbgain = GAIN[fGain];
@@ -155,8 +150,7 @@ bool HMC5883::getXYZMagneticFields(double& x, double& y, double& z)
     return ok;
 }
 
-bool HMC5883::calibrate(int& x, int& y, int& z)
-{
+bool HMC5883::calibrate(int& x, int& y, int& z) {
     // addr config reg A (CRA)
     // 8 average, 15 Hz, positive self test measurement: 0x71
     uint8_t cmd = 0x71;

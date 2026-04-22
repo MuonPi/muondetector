@@ -1,9 +1,8 @@
 #include "network/tcpserver.h"
 #include "sinks/tcp_sink.h"
 
-#include <boost/asio.hpp>
-
 #include <array>
+#include <boost/asio.hpp>
 #include <chrono>
 #include <cstdint>
 #include <iostream>
@@ -14,26 +13,18 @@ using boost::asio::ip::tcp;
 
 namespace {
 // Big-endian helpers matching transport framing.
-auto be16(std::uint16_t v) -> std::array<std::uint8_t, 2>
-{
-    return {
-        static_cast<std::uint8_t>((v >> 8) & 0xFF),
-        static_cast<std::uint8_t>(v & 0xFF)
-    };
+auto be16(std::uint16_t v) -> std::array<std::uint8_t, 2> {
+    return {static_cast<std::uint8_t>((v >> 8) & 0xFF), static_cast<std::uint8_t>(v & 0xFF)};
 }
 
-auto be32(std::uint32_t v) -> std::array<std::uint8_t, 4>
-{
-    return {
-        static_cast<std::uint8_t>((v >> 24) & 0xFF),
-        static_cast<std::uint8_t>((v >> 16) & 0xFF),
-        static_cast<std::uint8_t>((v >> 8) & 0xFF),
-        static_cast<std::uint8_t>(v & 0xFF)
-    };
+auto be32(std::uint32_t v) -> std::array<std::uint8_t, 4> {
+    return {static_cast<std::uint8_t>((v >> 24) & 0xFF),
+            static_cast<std::uint8_t>((v >> 16) & 0xFF), static_cast<std::uint8_t>((v >> 8) & 0xFF),
+            static_cast<std::uint8_t>(v & 0xFF)};
 }
 
-bool waitForConnectionCount(const TcpSink& sink, std::size_t expected, std::chrono::milliseconds timeout)
-{
+bool waitForConnectionCount(const TcpSink& sink, std::size_t expected,
+                            std::chrono::milliseconds timeout) {
     const auto deadline = std::chrono::steady_clock::now() + timeout;
     while (std::chrono::steady_clock::now() < deadline) {
         if (sink.connectionCount() == expected) {
@@ -43,18 +34,15 @@ bool waitForConnectionCount(const TcpSink& sink, std::size_t expected, std::chro
     }
     return false;
 }
-}
+} // namespace
 
-int main()
-{
+int main() {
     // Start server and connect one client.
     auto io = std::make_shared<boost::asio::io_context>();
     auto sink = std::make_shared<TcpSink>();
     TcpServer server(io, 0, sink);
 
-    std::thread ioThread([&io]() {
-        io->run();
-    });
+    std::thread ioThread([&io]() { io->run(); });
 
     tcp::socket client(*io);
     boost::system::error_code ec;

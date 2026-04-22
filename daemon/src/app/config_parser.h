@@ -3,25 +3,21 @@
 
 #include "system_config.h"
 
-#include <libconfig.h++>
 #include <cstdint>
-#include <string>
+#include <libconfig.h++>
 #include <memory>
 #include <optional>
+#include <string>
 
-
-class ConfigParser
-{
-public:
-
-    ConfigParser(int argc, char* argv[], SystemConfig && f_config);
+class ConfigParser {
+  public:
+    ConfigParser(int argc, char* argv[], SystemConfig&& f_config);
     ~ConfigParser();
-
 
     auto get() const -> SystemConfig;
     static auto loadConfigFile(const std::string& file) -> std::shared_ptr<libconfig::Config>;
 
-private:
+  private:
     struct PresenceFlags {
         bool cliConfigDir{false};
         bool cliGpsDevice{false};

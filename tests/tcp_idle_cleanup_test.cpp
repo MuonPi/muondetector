@@ -2,7 +2,6 @@
 #include "sinks/tcp_sink.h"
 
 #include <boost/asio.hpp>
-
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -11,8 +10,8 @@ using boost::asio::ip::tcp;
 
 namespace {
 // Wait until sink-side connection count reaches expected value.
-bool waitForConnectionCount(const TcpSink& sink, std::size_t expected, std::chrono::milliseconds timeout)
-{
+bool waitForConnectionCount(const TcpSink& sink, std::size_t expected,
+                            std::chrono::milliseconds timeout) {
     const auto deadline = std::chrono::steady_clock::now() + timeout;
     while (std::chrono::steady_clock::now() < deadline) {
         if (sink.connectionCount() == expected) {
@@ -22,18 +21,15 @@ bool waitForConnectionCount(const TcpSink& sink, std::size_t expected, std::chro
     }
     return false;
 }
-}
+} // namespace
 
-int main()
-{
+int main() {
     // Start server and create one idle client connection.
     auto io = std::make_shared<boost::asio::io_context>();
     auto sink = std::make_shared<TcpSink>();
     TcpServer server(io, 0, sink);
 
-    std::thread ioThread([&io]() {
-        io->run();
-    });
+    std::thread ioThread([&io]() { io->run(); });
 
     tcp::socket client(*io);
     boost::system::error_code ec;

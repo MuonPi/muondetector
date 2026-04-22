@@ -5,14 +5,13 @@
 
 #include <memory>
 
-template<typename TDevice>
-class I2CDeviceWrapper : public IDevice
-{
-public:
-    I2CDeviceWrapper(std::unique_ptr<TDevice> && dev) : m_dev {std::move(dev)} {}
+template <typename TDevice>
+class I2CDeviceWrapper : public IDevice {
+  public:
+    I2CDeviceWrapper(std::unique_ptr<TDevice>&& dev) : m_dev{std::move(dev)} {}
     TDevice& device() { return *m_dev; }
 
-private:
+  private:
     std::unique_ptr<TDevice> m_dev;
 };
 

@@ -1,15 +1,14 @@
-#include "network/tcpserver.h"
-#include "sinks/tcp_sink.h"
-#include "sources/tcp_source.h"
 #include "core/event_bus.h"
 #include "core/thread_pool.h"
 #include "data/events/tcp_packet_event.h"
+#include "network/tcpserver.h"
+#include "sinks/tcp_sink.h"
+#include "sources/tcp_source.h"
 #include "tcpconnection.h"
 #include "tcpmessage_keys.h"
 
-#include <boost/asio.hpp>
-
 #include <atomic>
+#include <boost/asio.hpp>
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -19,8 +18,8 @@ using boost::asio::ip::tcp;
 
 namespace {
 // Wait until sink-side connection count reaches expected value.
-bool waitForConnectionCount(const TcpSink& sink, std::size_t expected, std::chrono::milliseconds timeout)
-{
+bool waitForConnectionCount(const TcpSink& sink, std::size_t expected,
+                            std::chrono::milliseconds timeout) {
     const auto deadline = std::chrono::steady_clock::now() + timeout;
     while (std::chrono::steady_clock::now() < deadline) {
         if (sink.connectionCount() == expected) {
@@ -30,10 +29,9 @@ bool waitForConnectionCount(const TcpSink& sink, std::size_t expected, std::chro
     }
     return false;
 }
-}
+} // namespace
 
-int main()
-{
+int main() {
     constexpr int kBurstCount = 100;
 
     // Server + source + EventBus path under burst traffic.
@@ -93,8 +91,8 @@ int main()
     }
 
     if (received.load() != kBurstCount) {
-        std::cerr << "burst delivery mismatch: expected " << kBurstCount
-                  << " got " << received.load() << "\n";
+        std::cerr << "burst delivery mismatch: expected " << kBurstCount << " got "
+                  << received.load() << "\n";
         io->stop();
         ioThread.join();
         return 1;

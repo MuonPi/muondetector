@@ -5,12 +5,11 @@
 /* ADS1015: 4(2) ch, 12 bit ADC  */
 
 class ADS1015 : public ADS1115 {
-public:
+  public:
     using ADS1115::ADS1115;
 
-protected:
-    inline void init()
-    {
+  protected:
+    inline void init() {
         ADS1115::init();
         fTitle = "ADS1015";
     }

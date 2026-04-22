@@ -1,12 +1,12 @@
 #ifndef COMPONENT_H
 #define COMPONENT_H
 
+#include "hardware/devices.h"
+
 #include <cstdint>
-#include <variant>
 #include <string>
 #include <unordered_map>
-
-#include "hardware/devices.h"
+#include <variant>
 
 enum class OtherComponent : std::uint32_t {
     GPS_DRIVER_0,
@@ -15,8 +15,7 @@ enum class OtherComponent : std::uint32_t {
 
 using ComponentId = std::variant<Device, OtherComponent>;
 
-
-inline const std::unordered_map<std::string, ComponentId> componentLookup {
+inline const std::unordered_map<std::string, ComponentId> componentLookup{
     {"ADC_DRIVER_0", Device::ADS1115_0},
     {"DAC_DRIVER_0", Device::MCP4728_0},
     {"GPS_DRIVER_0", OtherComponent::GPS_DRIVER_0},
@@ -24,16 +23,15 @@ inline const std::unordered_map<std::string, ComponentId> componentLookup {
 };
 
 class Component {
-public:
+  public:
     Component(const ComponentId id);
     virtual ~Component() = default;
     auto id() const noexcept -> ComponentId;
     auto name() const noexcept -> std::optional<std::string>;
 
-
     static void handleDeviceMissing(const ComponentId id);
 
-private:
+  private:
     ComponentId id_;
 };
 

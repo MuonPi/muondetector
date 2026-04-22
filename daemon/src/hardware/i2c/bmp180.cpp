@@ -1,13 +1,13 @@
 #include "hardware/i2c/bmp180.h"
+
 #include <stdint.h>
 #include <stdio.h>
 
 /*
-* BMP180 Pressure Sensor
-*/
+ * BMP180 Pressure Sensor
+ */
 
-bool BMP180::init()
-{
+bool BMP180::init() {
     uint8_t val = 0;
 
     fCalibrationValid = false;
@@ -24,10 +24,9 @@ bool BMP180::init()
     return (val == 0x55);
 }
 
-unsigned int BMP180::readUT()
-{
+unsigned int BMP180::readUT() {
     uint8_t readBuf[2]; // 2 byte buffer to store the data read from the I2C device
-    unsigned int val; // Stores the 16 bit value of our ADC conversion
+    unsigned int val;   // Stores the 16 bit value of our ADC conversion
 
     // start temp measurement: CR -> 0x2e
     uint8_t cr_val = 0x2e;
@@ -50,11 +49,10 @@ unsigned int BMP180::readUT()
     return val;
 }
 
-unsigned int BMP180::readUP(uint8_t oss)
-{
+unsigned int BMP180::readUP(uint8_t oss) {
     uint8_t readBuf[3]; // 2 byte buffer to store the data read from the I2C device
-    unsigned int val; // Stores the 16 bit value of our ADC conversion
-    static const int delay[4] = { 4500, 7500, 13500, 25500 };
+    unsigned int val;   // Stores the 16 bit value of our ADC conversion
+    static const int delay[4] = {4500, 7500, 13500, 25500};
 
     // start pressure measurement: CR -> 0x34 | oss<<6
     uint8_t cr_val = 0x34 | (oss & 0x03) << 6;
@@ -76,15 +74,13 @@ unsigned int BMP180::readUP(uint8_t oss)
     return val;
 }
 
-signed int BMP180::getCalibParameter(unsigned int param) const
-{
+signed int BMP180::getCalibParameter(unsigned int param) const {
     if (param < 11)
         return fCalibParameters[param];
     return 0xffff;
 }
 
-void BMP180::readCalibParameters()
-{
+void BMP180::readCalibParameters() {
     uint8_t readBuf[22];
     // register address first byte eeprom
     int n = readReg(0xaa, readBuf, 22); // Read the 11 eeprom word values into readBuf
@@ -97,9 +93,9 @@ void BMP180::readCalibParameters()
     bool ok = true;
     for (int i = 0; i < 11; i++) {
         if (i > 2 && i < 6)
-            fCalibParameters[i] = (uint16_t)(readBuf[2 * i] << 8 | readBuf[2 * i + 1]);
+            fCalibParameters[i] = (uint16_t) (readBuf[2 * i] << 8 | readBuf[2 * i + 1]);
         else
-            fCalibParameters[i] = (int16_t)(readBuf[2 * i] << 8 | readBuf[2 * i + 1]);
+            fCalibParameters[i] = (int16_t) (readBuf[2 * i] << 8 | readBuf[2 * i + 1]);
         if (fCalibParameters[i] == 0 || fCalibParameters[i] == 0xffff)
             ok = false;
         if (fDebugLevel > 1)
@@ -115,8 +111,7 @@ void BMP180::readCalibParameters()
     fCalibrationValid = ok;
 }
 
-double BMP180::getTemperature()
-{
+double BMP180::getTemperature() {
     if (!fCalibrationValid)
         return -999.;
     signed int UT = readUT();
@@ -134,8 +129,7 @@ double BMP180::getTemperature()
     return T;
 }
 
-double BMP180::getPressure(uint8_t oss)
-{
+double BMP180::getPressure(uint8_t oss) {
     if (!fCalibrationValid)
         return 0.;
     signed int UT = readUT();
@@ -171,10 +165,10 @@ double BMP180::getPressure(uint8_t oss)
     X3 = (X1 + X2 + 2) / 4;
     if (fDebugLevel > 1)
         printf("X3=%d\n", X3);
-    unsigned long B4 = (fCalibParameters[3] * (unsigned long)(X3 + 32768)) >> 15;
+    unsigned long B4 = (fCalibParameters[3] * (unsigned long) (X3 + 32768)) >> 15;
     if (fDebugLevel > 1)
         printf("B4=%ld\n", B4);
-    unsigned long B7 = ((unsigned long)UP - B3) * (50000 >> (oss & 0x03));
+    unsigned long B7 = ((unsigned long) UP - B3) * (50000 >> (oss & 0x03));
     if (fDebugLevel > 1)
         printf("B7=%ld\n", B7);
     int p = 0;

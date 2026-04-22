@@ -1,11 +1,13 @@
 #ifndef _MIC184_H_
 #define _MIC184_H_
 #include "hardware/i2c/i2cdevice.h"
-//#include "hardware/i2c/lm75.h"
+// #include "hardware/i2c/lm75.h"
 #include "hardware/device_types.h"
 
-class MIC184 : public i2cDevice, public DeviceFunction<DeviceType::TEMP>, public static_device_base<MIC184> {
-public:
+class MIC184 : public i2cDevice,
+               public DeviceFunction<DeviceType::TEMP>,
+               public static_device_base<MIC184> {
+  public:
     MIC184();
     MIC184(const char* busAddress, uint8_t slaveAddress);
     MIC184(uint8_t slaveAddress);
@@ -18,18 +20,13 @@ public:
     bool isExternal() const { return fExternal; }
     bool setExternal(bool enable_external = true);
 
-private:
+  private:
     int16_t readRaw();
 
-    enum REG : uint8_t {
-        TEMP = 0x00,
-        CONF = 0x01,
-        THYST = 0x02,
-        TOS = 0x03
-    };
+    enum REG : uint8_t { TEMP = 0x00, CONF = 0x01, THYST = 0x02, TOS = 0x03 };
 
     [[maybe_unused]] unsigned int fLastConvTime;
     signed int fLastRawValue;
-    bool fExternal { false };
+    bool fExternal{false};
 };
 #endif // !_MIC184_H_
