@@ -1,9 +1,11 @@
 Checks: >
   -*,
-  modernize-*,
-  readability-*,
+  bugprone-*,
   performance-*,
-  bugprone-*
+  readability-*,
+  modernize-*,
+  clang-analyzer-*,
+  misc-*
 
 WarningsAsErrors: ''
 
@@ -14,3 +16,6 @@ FormatStyle: file
 CheckOptions:
   - key: modernize-use-trailing-return-type.UseTrailingReturnType
     value: 'true'
+
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
