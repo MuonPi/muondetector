@@ -12,22 +12,12 @@ struct TPH {
     double T, P, H;
 };
 class BME280 : public i2cDevice { // t_max = 112.8 ms for all three measurements at max oversampling
-public:
-    BME280()
-        : i2cDevice(0x76)
-    {
+  public:
+    BME280() : i2cDevice(0x76) { init(); }
+    BME280(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {
         init();
     }
-    BME280(const char* busAddress, uint8_t slaveAddress)
-        : i2cDevice(busAddress, slaveAddress)
-    {
-        init();
-    }
-    BME280(uint8_t slaveAddress)
-        : i2cDevice(slaveAddress)
-    {
-        init();
-    }
+    BME280(uint8_t slaveAddress) : i2cDevice(slaveAddress) { init(); }
 
     bool init();
     bool status();
@@ -56,7 +46,7 @@ public:
     double getHumidity(int32_t adc_H);
     double getHumidity(int32_t adc_H, int32_t t_fine);
 
-private:
+  private:
     int32_t fT_fine = 0;
     [[maybe_unused]] unsigned int fLastConvTime;
     bool fCalibrationValid;

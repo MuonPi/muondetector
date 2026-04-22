@@ -1,40 +1,37 @@
 
 #include "config_parser.h"
-#include "system_config.h"
 #include "core/event_bus.h"
 #include "core/scheduler.h"
-#include "core/thread_pool.h"
 #include "core/system_builder.h"
+#include "core/thread_pool.h"
+#include "system_config.h"
 
 #include <cstdio>
-
 #include <iostream>
 #include <libconfig.h++>
 // #include <termios.h>
 // #include <unistd.h>
-#include <csignal>
 #include <atomic>
-
 #include <config.h>
+#include <csignal>
 #include <gpio_pin_definitions.h>
 
 static const std::string CONFIG_FILE = std::string(MuonPi::Config::file);
-static const std::string SETTINGS_FILE = std::string(MuonPi::Config::data_path) + std::string(MuonPi::Config::persistant_settings_file);
+static const std::string SETTINGS_FILE =
+    std::string(MuonPi::Config::data_path) + std::string(MuonPi::Config::persistant_settings_file);
 
-namespace Runtime
-{
-    inline std::atomic<bool> g_running = true;
+namespace Runtime {
+inline std::atomic<bool> g_running = true;
 }
 
-extern "C" void handleSignal(int)
-{
+extern "C" void handleSignal(int) {
     Runtime::g_running = false;
 }
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     // first, we must set the locale to be independent of the number format of the system's locale.
-    // We rely on parsing floating point numbers with a decimal point (not a komma) which might fail if not setting the classic locale
+    // We rely on parsing floating point numbers with a decimal point (not a komma) which might fail
+    // if not setting the classic locale
     std::locale::global(std::locale::classic());
 
     // QCoreApplication a(argc, argv);
@@ -43,8 +40,8 @@ int main(int argc, char* argv[])
     // config file handling
 
     std::cout << "MuonPi Muondetector Daemon "
-            << "V" + MuonPi::Version::software.string()
-            << "(build " + std::string(__TIMESTAMP__) + ")\n";
+              << "V" + MuonPi::Version::software.string()
+              << "(build " + std::string(__TIMESTAMP__) + ")\n";
 
     // Read the file. If there is an error, report it and exit.
     auto cfg = ConfigParser::loadConfigFile(CONFIG_FILE);
@@ -73,12 +70,15 @@ int main(int argc, char* argv[])
         // Write out the updated configuration.
         try {
             settings->writeFile(SETTINGS_FILE.c_str());
-            std::cout << "Initialized settings successfully written to: " << SETTINGS_FILE << std::endl;
+            std::cout << "Initialized settings successfully written to: " << SETTINGS_FILE
+                      << std::endl;
         } catch (const libconfig::FileIOException& fioex_new) {
             std::cerr << "I/O error while writing settings file: " << SETTINGS_FILE << std::endl;
         }
     } catch (const libconfig::ParseException& pex) {
-        std::cerr << "Parse error at " + std::string(pex.getFile()) + " : line " + std::to_string(pex.getLine()) + " - " + std::string(pex.getError()) << std::endl;
+        std::cerr << "Parse error at " + std::string(pex.getFile()) + " : line " +
+                         std::to_string(pex.getLine()) + " - " + std::string(pex.getError())
+                  << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -95,36 +95,34 @@ int main(int argc, char* argv[])
 
     config.config_file_data = cfg;
     config.settings_file_data = settings;
-    config = ConfigParser(argc, argv, std::move(config)).get(); // Loads default settings and updates them with commandline arguments
-    
+    config = ConfigParser(argc, argv, std::move(config))
+                 .get(); // Loads default settings and updates them with commandline arguments
+
     std::signal(SIGTERM, handleSignal);
-    std::signal(SIGINT,  handleSignal);
+    std::signal(SIGINT, handleSignal);
     // START
 
-
     ThreadPool pool{[&]() -> std::size_t {
-          std::size_t n = 0;
+        std::size_t n = 0;
 
-          n = config.max_thread_count;
+        n = config.max_thread_count;
 
-          if (n == 0)
-          {
-              n = std::thread::hardware_concurrency();
-          }
+        if (n == 0) {
+            n = std::thread::hardware_concurrency();
+        }
 
-          if (n == 0)
-          {
-              n = 1; // absolute fallback
-          }
+        if (n == 0) {
+            n = 1; // absolute fallback
+        }
 
-          n = std::min<std::size_t>(n, 64);
+        n = std::min<std::size_t>(n, 64);
 
-          return n;
-      }()};
+        return n;
+    }()};
 
     auto context = SystemBuilder::build(pool, config);
     auto work_guard = boost::asio::make_work_guard(context.io);
-    std::thread t1([&]{ context.io->run(); });
+    std::thread t1([&] { context.io->run(); });
 
     context.scheduler->start();
 

@@ -1,10 +1,11 @@
 set(MUONDETECTOR_LIBRARY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/library")
 set(MUONDETECTOR_LIBRARY_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/library/src")
+set(MUONDETECTOR_LIBRARY_BINARY_DIR "${CMAKE_BINARY_DIR}/library")
 
 
 configure_file(
-    "${MUONDETECTOR_LIBRARY_DIR}/config/version.h"
-    "${MUONDETECTOR_LIBRARY_DIR}/version.h"
+    "${MUONDETECTOR_LIBRARY_DIR}/config/version.h.in"
+    "${MUONDETECTOR_LIBRARY_BINARY_DIR}/version.h"
     )
 
 
@@ -83,6 +84,7 @@ target_include_directories(muondetector-shared-mqtt PUBLIC
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/mqtt"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network"
+    "${MUONDETECTOR_LIBRARY_BINARY_DIR}"
     "${Boost_INCLUDE_DIRS}"
     )
     
@@ -98,6 +100,7 @@ target_include_directories(muondetector-shared PUBLIC
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/mqtt"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network"
+    "${MUONDETECTOR_LIBRARY_BINARY_DIR}"
     "${Boost_INCLUDE_DIRS}"
     )
 

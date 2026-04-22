@@ -3,8 +3,7 @@
 
 #include <cstdint>
 
-struct UbxMinCnoCmd
-{
+struct UbxMinCnoCmd {
     std::uint8_t minCNO;
 };
 

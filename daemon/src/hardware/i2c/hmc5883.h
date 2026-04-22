@@ -6,24 +6,14 @@
 /* HMC5883  */
 
 class HMC5883 : public i2cDevice {
-public:
+  public:
     // Resolution for the 8 gain settings in mG/LSB
     static const double GAIN[8];
-    HMC5883()
-        : i2cDevice(0x1e)
-    {
+    HMC5883() : i2cDevice(0x1e) { fTitle = "HMC5883"; }
+    HMC5883(const char* busAddress, uint8_t slaveAddress) : i2cDevice(busAddress, slaveAddress) {
         fTitle = "HMC5883";
     }
-    HMC5883(const char* busAddress, uint8_t slaveAddress)
-        : i2cDevice(busAddress, slaveAddress)
-    {
-        fTitle = "HMC5883";
-    }
-    HMC5883(uint8_t slaveAddress)
-        : i2cDevice(slaveAddress)
-    {
-        fTitle = "HMC5883";
-    }
+    HMC5883(uint8_t slaveAddress) : i2cDevice(slaveAddress) { fTitle = "HMC5883"; }
 
     bool init();
     // gain range 0..7
@@ -35,7 +25,7 @@ public:
     bool readLockBit();
     bool calibrate(int& x, int& y, int& z);
 
-private:
+  private:
     [[maybe_unused]] unsigned int fLastConvTime;
     [[maybe_unused]] bool fCalibrationValid;
     unsigned int fGain;

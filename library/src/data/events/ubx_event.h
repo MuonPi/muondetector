@@ -3,31 +3,25 @@
 
 #include "data/ublox/ublox_structs.h"
 
-
 class GnssSatellite {
-public:
+  public:
     GnssSatellite() = default;
-    GnssSatellite(int gnssId, int satId, int cnr, int elev, int azim, float prRes, std::uint32_t flags)
-        : GnssId(gnssId)
-        , SatId(satId)
-        , Cnr(cnr)
-        , Elev(elev)
-        , Azim(azim)
-        , PrRes(prRes)
-    {
-        Quality = (int)(flags & 0x07);
+    GnssSatellite(int gnssId, int satId, int cnr, int elev, int azim, float prRes,
+                  std::uint32_t flags)
+        : GnssId(gnssId), SatId(satId), Cnr(cnr), Elev(elev), Azim(azim), PrRes(prRes) {
+        Quality = (int) (flags & 0x07);
         if (flags & 0x08)
             Used = true;
         else
             Used = false;
-        Health = (int)(flags >> 4 & 0x03);
+        Health = (int) (flags >> 4 & 0x03);
         OrbitSource = (flags >> 8 & 0x07);
         Smoothed = (flags & 0x80);
         DiffCorr = (flags & 0x40);
     }
 
-    GnssSatellite(int gnssId, int satId, int cnr, int elev, int azim, float prRes,
-        int quality, int health, int orbitSource, bool used, bool diffCorr, bool smoothed)
+    GnssSatellite(int gnssId, int satId, int cnr, int elev, int azim, float prRes, int quality,
+                  int health, int orbitSource, bool used, bool diffCorr, bool smoothed)
         : GnssId(gnssId)
         , SatId(satId)
         , Cnr(cnr)
@@ -39,34 +33,31 @@ public:
         , OrbitSource(orbitSource)
         , Used(used)
         , DiffCorr(diffCorr)
-        , Smoothed(smoothed)
-    {
-    }
+        , Smoothed(smoothed) {}
 
-    ~GnssSatellite() { }
+    ~GnssSatellite() {}
 
     static void PrintHeader(bool wIndex);
     void Print(bool wHeader) const;
     void Print(int index, bool wHeader) const;
 
-    static bool sortByCnr(const GnssSatellite& sat1, const GnssSatellite& sat2)
-    {
+    static bool sortByCnr(const GnssSatellite& sat1, const GnssSatellite& sat2) {
         return sat1.Cnr > sat2.Cnr;
     }
 
-public:
-    std::uint8_t GnssId { 0 };
-    std::uint8_t SatId { 0 };
-    std::uint8_t Cnr { 0 };
-    int8_t Elev { 0 };
-    int16_t Azim { 0 };
-    float PrRes { 0. };
-    std::uint8_t Quality { 0 };
-    std::uint8_t Health { 0 };
-    std::uint8_t OrbitSource { 0 };
-    bool Used { false };
-    bool DiffCorr { false };
-    bool Smoothed { false };
+  public:
+    std::uint8_t GnssId{0};
+    std::uint8_t SatId{0};
+    std::uint8_t Cnr{0};
+    int8_t Elev{0};
+    int16_t Azim{0};
+    float PrRes{0.};
+    std::uint8_t Quality{0};
+    std::uint8_t Health{0};
+    std::uint8_t OrbitSource{0};
+    bool Used{false};
+    bool DiffCorr{false};
+    bool Smoothed{false};
 };
 
 struct gpsTimestamp {
@@ -93,56 +84,85 @@ enum UbxDynamicModel {
     bike = 10
 };
 
-
-inline void GnssSatellite::PrintHeader(bool wIndex)
-{
+inline void GnssSatellite::PrintHeader(bool wIndex) {
     if (wIndex) {
-        std::cout << "   ----------------------------------------------------------------------------------" << std::endl;
-        std::cout << "   Nr   Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth DiffCorr" << std::endl;
-        std::cout << "   ----------------------------------------------------------------------------------" << std::endl;
+        std::cout
+            << "   "
+               "----------------------------------------------------------------------------------"
+            << std::endl;
+        std::cout << "   Nr   Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth "
+                     "DiffCorr"
+                  << std::endl;
+        std::cout
+            << "   "
+               "----------------------------------------------------------------------------------"
+            << std::endl;
     } else {
-        std::cout << "   -----------------------------------------------------------------" << std::endl;
-        std::cout << "    Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth DiffCorr" << std::endl;
-        std::cout << "   -----------------------------------------------------------------" << std::endl;
+        std::cout << "   -----------------------------------------------------------------"
+                  << std::endl;
+        std::cout
+            << "    Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth DiffCorr"
+            << std::endl;
+        std::cout << "   -----------------------------------------------------------------"
+                  << std::endl;
     }
 }
 
-inline void GnssSatellite::Print(bool wHeader) const
-{
+inline void GnssSatellite::Print(bool wHeader) const {
     if (wHeader) {
-        std::cout << "   ------------------------------------------------------------------------------" << std::endl;
-        std::cout << "    Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth DiffCorr" << std::endl;
-        std::cout << "   ------------------------------------------------------------------------------" << std::endl;
+        std::cout
+            << "   ------------------------------------------------------------------------------"
+            << std::endl;
+        std::cout
+            << "    Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth DiffCorr"
+            << std::endl;
+        std::cout
+            << "   ------------------------------------------------------------------------------"
+            << std::endl;
     }
-    std::cout << "   " << std::dec << "  " << Gnss::Id::name[static_cast<int>(GnssId)] << "   " << std::setw(3) << (int)SatId << "    ";
-    std::cout << std::setw(3) << (int)Cnr << "      " << std::setw(3) << (int)Elev << "       " << std::setw(3) << (int)Azim;
-    std::cout << "   " << std::setw(6) << PrRes << "    " << Quality << "   " << std::string((Used) ? "Y" : "N");
-    std::cout << "    " << Health << "   " << OrbitSource << "   " << (int)Smoothed << "    " << (int)DiffCorr;
+    std::cout << "   " << std::dec << "  " << Gnss::Id::name[static_cast<int>(GnssId)] << "   "
+              << std::setw(3) << (int) SatId << "    ";
+    std::cout << std::setw(3) << (int) Cnr << "      " << std::setw(3) << (int) Elev << "       "
+              << std::setw(3) << (int) Azim;
+    std::cout << "   " << std::setw(6) << PrRes << "    " << Quality << "   "
+              << std::string((Used) ? "Y" : "N");
+    std::cout << "    " << Health << "   " << OrbitSource << "   " << (int) Smoothed << "    "
+              << (int) DiffCorr;
     std::cout << std::endl;
 }
 
-inline void GnssSatellite::Print(int index, bool wHeader) const
-{
+inline void GnssSatellite::Print(int index, bool wHeader) const {
     if (wHeader) {
-        std::cout << "   ----------------------------------------------------------------------------------" << std::endl;
-        std::cout << "   Nr   Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth DiffCorr" << std::endl;
-        std::cout << "   ----------------------------------------------------------------------------------" << std::endl;
+        std::cout
+            << "   "
+               "----------------------------------------------------------------------------------"
+            << std::endl;
+        std::cout << "   Nr   Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth "
+                     "DiffCorr"
+                  << std::endl;
+        std::cout
+            << "   "
+               "----------------------------------------------------------------------------------"
+            << std::endl;
     }
-    std::cout << "   " << std::dec << std::setw(2) << index + 1 << "  " << Gnss::Id::name[static_cast<int>(GnssId)] << "   " << std::setw(3) << (int)SatId << "    ";
-    std::cout << std::setw(3) << (int)Cnr << "      " << std::setw(3) << (int)Elev << "       " << std::setw(3) << (int)Azim;
-    std::cout << "   " << std::setw(6) << PrRes << "    " << Quality << "   " << std::string((Used) ? "Y" : "N");
-    std::cout << "    " << Health << "   " << OrbitSource << "   " << (int)Smoothed << "    " << (int)DiffCorr;
+    std::cout << "   " << std::dec << std::setw(2) << index + 1 << "  "
+              << Gnss::Id::name[static_cast<int>(GnssId)] << "   " << std::setw(3) << (int) SatId
+              << "    ";
+    std::cout << std::setw(3) << (int) Cnr << "      " << std::setw(3) << (int) Elev << "       "
+              << std::setw(3) << (int) Azim;
+    std::cout << "   " << std::setw(6) << PrRes << "    " << Quality << "   "
+              << std::string((Used) ? "Y" : "N");
+    std::cout << "    " << Health << "   " << OrbitSource << "   " << (int) Smoothed << "    "
+              << (int) DiffCorr;
     ;
     std::cout << std::endl;
 }
-
 
 struct UbxDopStruct {
     uint16_t gDOP = 0, pDOP = 0, tDOP = 0, vDOP = 0, hDOP = 0, nDOP = 0, eDOP = 0;
 };
 
-struct NavStatus
-{
+struct NavStatus {
     std::uint32_t iTOW{0};
     std::uint8_t gpsFix{0};
     std::uint8_t flags{0};
@@ -151,8 +171,7 @@ struct NavStatus
     std::uint32_t msss{0};
 };
 
-struct NavTimeGPS
-{
+struct NavTimeGPS {
     std::uint32_t iTOW{0};
     std::int32_t fTOW{0};
     std::uint16_t wnR{0};
@@ -163,8 +182,7 @@ struct NavTimeGPS
     std::uint32_t tAcc{0};
 };
 
-struct NavTimeUTC
-{
+struct NavTimeUTC {
     std::uint32_t iTOW{0};
     std::uint32_t tAcc{0};
     std::int32_t nano{0};
@@ -177,8 +195,7 @@ struct NavTimeUTC
     std::uint8_t flags{0};
 };
 
-struct NavClock
-{
+struct NavClock {
     std::uint32_t iTOW{0};
     // clock bias
     std::int32_t clkB{0};
@@ -188,8 +205,7 @@ struct NavClock
     std::uint32_t fAcc{0};
 };
 
-struct NavSVinfo
-{
+struct NavSVinfo {
     std::uint32_t iTOW{0};
     std::uint8_t numSvs{0};
     std::uint8_t globFlags{0};
@@ -197,8 +213,7 @@ struct NavSVinfo
     std::vector<GnssSatellite> satellites{0};
 };
 
-struct NavSat
-{
+struct NavSat {
     std::uint32_t iTOW{0};
     std::optional<std::uint8_t> version{std::nullopt};
     std::optional<std::uint8_t> globFlags{std::nullopt};
@@ -209,22 +224,20 @@ struct NavSat
 
 struct GnssPosStruct {
     std::uint32_t iTOW{0};
-    std::int32_t lon{0}; // longitude 1e-7 scaling (increase by 1 means 100 nano degrees)
-    std::int32_t lat{0}; // latitude 1e-7 scaling (increase by 1 means 100 nano degrees)
+    std::int32_t lon{0};    // longitude 1e-7 scaling (increase by 1 means 100 nano degrees)
+    std::int32_t lat{0};    // latitude 1e-7 scaling (increase by 1 means 100 nano degrees)
     std::int32_t height{0}; // height above ellipsoid
-    std::int32_t hMSL{0}; // height above main sea level
-    std::uint32_t hAcc{0}; // horizontal accuracy estimate
-    std::uint32_t vAcc{0}; // vertical accuracy estimate
+    std::int32_t hMSL{0};   // height above main sea level
+    std::uint32_t hAcc{0};  // horizontal accuracy estimate
+    std::uint32_t vAcc{0};  // vertical accuracy estimate
 };
 
-struct CfgAnt
-{
+struct CfgAnt {
     std::uint16_t flags{0};
     std::uint16_t pins{0};
 };
 
-struct CfgNavX5
-{
+struct CfgNavX5 {
     std::uint8_t version{0};
     // std::uint16_t mask1{0};
     std::uint8_t minSVs{0};
@@ -236,8 +249,7 @@ struct CfgNavX5
     std::uint16_t aopOrbMaxErr{0};
 };
 
-struct CfgNav5
-{
+struct CfgNav5 {
     std::uint16_t mask{0};
     std::uint8_t dynModel{0};
     std::uint8_t fixMode{0};
@@ -248,16 +260,17 @@ struct CfgNav5
     std::uint8_t cnoThresh{0};
 };
 
-struct UbxTimePulseStruct
-{
-    enum { ACTIVE = 0x01,
+struct UbxTimePulseStruct {
+    enum {
+        ACTIVE = 0x01,
         LOCK_GPS = 0x02,
         LOCK_OTHER = 0x04,
         IS_FREQ = 0x08,
         IS_LENGTH = 0x10,
         ALIGN_TO_TOW = 0x20,
         POLARITY = 0x40,
-        GRID_UTC_GPS = 0x780 };
+        GRID_UTC_GPS = 0x780
+    };
     std::uint8_t tpIndex{0};
     std::uint8_t version{0};
     int16_t antCableDelay{0};
@@ -270,8 +283,7 @@ struct UbxTimePulseStruct
     std::uint32_t flags{0};
 };
 
-struct CfgGNSS
-{
+struct CfgGNSS {
 
     std::uint8_t version{0};
     std::uint8_t numTrkChHw{0};
@@ -280,14 +292,12 @@ struct CfgGNSS
     std::vector<GnssConfigStruct> configs;
 };
 
-struct CfgMsg
-{
+struct CfgMsg {
     std::uint16_t msgID{0};
     std::uint8_t rate{0};
 };
 
-struct MonRx
-{
+struct MonRx {
     std::array<std::uint16_t, s_nr_targets> pending{};
     std::array<std::uint8_t, s_nr_targets> usage{};
     std::array<std::uint8_t, s_nr_targets> peakUsage{};
@@ -295,9 +305,7 @@ struct MonRx
     std::uint8_t tPeakUsage{0};
 };
 
-
-struct MonTx
-{
+struct MonTx {
     std::array<std::uint16_t, s_nr_targets> pending{};
     std::array<std::uint8_t, s_nr_targets> usage{};
     std::array<std::uint8_t, s_nr_targets> peakUsage{};
@@ -305,8 +313,7 @@ struct MonTx
     std::uint8_t tPeakUsage{0};
 };
 
-struct GnssMonHwStruct
-{
+struct GnssMonHwStruct {
     std::uint16_t noisePerMS{0};
     std::uint16_t agcCnt{0};
     std::uint8_t antStatus{0};
@@ -315,8 +322,7 @@ struct GnssMonHwStruct
     std::uint8_t jamInd{0};
 };
 
-struct GnssMonHw2Struct
-{
+struct GnssMonHw2Struct {
     std::int8_t ofsI{0};
     std::uint8_t magI{0};
     std::int8_t ofsQ{0};
@@ -325,15 +331,13 @@ struct GnssMonHw2Struct
     std::uint32_t postStatus{0};
 };
 
-struct GpsVersion
-{
+struct GpsVersion {
     std::string hwString{0};
     std::string swString{0};
     std::string prot{0};
 };
 
-struct TimTP
-{
+struct TimTP {
 
     std::uint32_t towMS{0};
     // TP time of week, sub ms
@@ -349,12 +353,14 @@ struct TimTP
 };
 
 struct UbxTimeMarkStruct {
-    enum { TIMEBASE_LOCAL = 0x00,
+    enum {
+        TIMEBASE_LOCAL = 0x00,
         TIMEBASE_GNSS = 0x01,
         TIMEBASE_UTC = 0x02,
-        TIMEBASE_OTHER = 0x03 };
-    struct timespec rising = { 0, 0 };
-    struct timespec falling = { 0, 0 };
+        TIMEBASE_OTHER = 0x03
+    };
+    struct timespec rising = {0, 0};
+    struct timespec falling = {0, 0};
     bool risingValid = false;
     bool fallingValid = false;
     std::uint32_t accuracy_ns = 0;
@@ -365,27 +371,9 @@ struct UbxTimeMarkStruct {
     uint16_t evtCounter = 0;
 };
 
-using UbxEvent = std::variant<
-    NavStatus,
-    UbxDopStruct,
-    NavTimeGPS,
-    NavTimeUTC,
-    NavClock,
-    NavSat,
-    GnssPosStruct,
-    CfgAnt,
-    CfgNavX5,
-    CfgNav5,
-    UbxTimePulseStruct,
-    CfgGNSS,
-    CfgMsg,
-    MonRx,
-    MonTx,
-    GnssMonHwStruct,
-    GnssMonHw2Struct,
-    GpsVersion,
-    TimTP,
-    UbxTimeMarkStruct
->;
+using UbxEvent =
+    std::variant<NavStatus, UbxDopStruct, NavTimeGPS, NavTimeUTC, NavClock, NavSat, GnssPosStruct,
+                 CfgAnt, CfgNavX5, CfgNav5, UbxTimePulseStruct, CfgGNSS, CfgMsg, MonRx, MonTx,
+                 GnssMonHwStruct, GnssMonHw2Struct, GpsVersion, TimTP, UbxTimeMarkStruct>;
 
 #endif // UBX_EVENT_H

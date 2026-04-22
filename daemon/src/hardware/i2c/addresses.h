@@ -1,5 +1,5 @@
 /*
-	Every address is defined here
+    Every address is defined here
 */
 
 #define ADC1_ADDR 0x4a

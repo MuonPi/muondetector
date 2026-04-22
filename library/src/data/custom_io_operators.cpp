@@ -1,4 +1,5 @@
 #include "custom_io_operators.h"
+
 #include "config.h"
 #include "muondetector_structs.h"
 #include "ublox/ublox_structs.h"
@@ -11,19 +12,21 @@
 //     return os;
 // }
 
-std::ostream& operator<<(std::ostream& os, const std::chrono::time_point<std::chrono::system_clock>& timestamp)
-{
-    std::chrono::microseconds mus = std::chrono::duration_cast<std::chrono::microseconds>(timestamp.time_since_epoch());
+std::ostream& operator<<(std::ostream& os,
+                         const std::chrono::time_point<std::chrono::system_clock>& timestamp) {
+    std::chrono::microseconds mus =
+        std::chrono::duration_cast<std::chrono::microseconds>(timestamp.time_since_epoch());
     std::chrono::seconds secs = std::chrono::duration_cast<std::chrono::seconds>(mus);
     std::chrono::microseconds subs = mus - secs;
 
-    os << secs.count() << "." << std::setw(6) << std::setfill('0') << subs.count() << " " << std::setfill(' ');
+    os << secs.count() << "." << std::setw(6) << std::setfill('0') << subs.count() << " "
+       << std::setfill(' ');
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const timespec& ts)
-{
-    os << ts.tv_sec << "." << std::setw(9) << std::setfill('0') << ts.tv_nsec << " " << std::setfill(' ');
+std::ostream& operator<<(std::ostream& os, const timespec& ts) {
+    os << ts.tv_sec << "." << std::setw(9) << std::setfill('0') << ts.tv_nsec << " "
+       << std::setfill(' ');
     return os;
 }
 
@@ -70,18 +73,21 @@ std::ostream& operator<<(std::ostream& os, const timespec& ts)
 
 // QDataStream& operator<<(QDataStream& out, const PositionModeConfig& pos)
 // {
-//     out << static_cast<int>(pos.mode) << pos.static_position.longitude << pos.static_position.latitude << pos.static_position.altitude << pos.static_position.hor_error << pos.static_position.vert_error << pos.lock_in_max_dop << pos.lock_in_min_error_meters << static_cast<int>(pos.filter_config);
-//     return out;
+//     out << static_cast<int>(pos.mode) << pos.static_position.longitude <<
+//     pos.static_position.latitude << pos.static_position.altitude << pos.static_position.hor_error
+//     << pos.static_position.vert_error << pos.lock_in_max_dop << pos.lock_in_min_error_meters <<
+//     static_cast<int>(pos.filter_config); return out;
 // }
 
 // QDataStream& operator>>(QDataStream& in, PositionModeConfig& pos)
 // {
 //     int mode { 0 };
 //     int filter_config { 0 };
-//     in >> mode >> pos.static_position.longitude >> pos.static_position.latitude >> pos.static_position.altitude >> pos.static_position.hor_error >> pos.static_position.vert_error >> pos.lock_in_max_dop >> pos.lock_in_min_error_meters >> filter_config;
-//     pos.mode = static_cast<PositionModeConfig::Mode>(mode);
-//     pos.filter_config = static_cast<PositionModeConfig::FilterType>(filter_config);
-//     return in;
+//     in >> mode >> pos.static_position.longitude >> pos.static_position.latitude >>
+//     pos.static_position.altitude >> pos.static_position.hor_error >>
+//     pos.static_position.vert_error >> pos.lock_in_max_dop >> pos.lock_in_min_error_meters >>
+//     filter_config; pos.mode = static_cast<PositionModeConfig::Mode>(mode); pos.filter_config =
+//     static_cast<PositionModeConfig::FilterType>(filter_config); return in;
 // }
 
 // QDataStream& operator>>(QDataStream& in, UbxTimePulseStruct& tp)
@@ -116,7 +122,8 @@ std::ostream& operator<<(std::ostream& os, const timespec& ts)
 
 // QDataStream& operator<<(QDataStream& out, const UbxTimeMarkStruct& tm)
 // {
-//     out << (qint64)tm.rising.tv_sec << (qint64)tm.rising.tv_nsec << (qint64)tm.falling.tv_sec << (qint64)tm.falling.tv_nsec
+//     out << (qint64)tm.rising.tv_sec << (qint64)tm.rising.tv_nsec << (qint64)tm.falling.tv_sec <<
+//     (qint64)tm.falling.tv_nsec
 //         << tm.risingValid << tm.fallingValid << tm.accuracy_ns << tm.valid
 //         << tm.timeBase << tm.utcAvailable << tm.flags << tm.evtCounter;
 //     return out;
@@ -183,8 +190,8 @@ std::ostream& operator<<(std::ostream& os, const timespec& ts)
 
 // QDataStream& operator<<(QDataStream& out, const Histogram& h)
 // {
-//     out << QString::fromStdString(h.fName) << h.fMin << h.fMax << h.fUnderflow << h.fOverflow << h.fNrBins;
-//     for (int i = 0; i < h.fNrBins; i++) {
+//     out << QString::fromStdString(h.fName) << h.fMin << h.fMax << h.fUnderflow << h.fOverflow <<
+//     h.fNrBins; for (int i = 0; i < h.fNrBins; i++) {
 //         out << h.getBinContent(i);
 //     }
 //     out << QString::fromStdString(h.fUnit);
@@ -206,8 +213,10 @@ std::ostream& operator<<(std::ostream& os, const timespec& ts)
 
 // QDataStream& operator<<(QDataStream& out, const LogInfoStruct& lis)
 // {
-//     out << lis.logFileName << lis.dataFileName << static_cast<quint8>(lis.status) << lis.logFileSize
-//         << lis.dataFileSize << static_cast<qint32>(lis.logAge.count()) << static_cast<qint32>(lis.logRotationDuration.count()) << lis.logEnabled;
+//     out << lis.logFileName << lis.dataFileName << static_cast<quint8>(lis.status) <<
+//     lis.logFileSize
+//         << lis.dataFileSize << static_cast<qint32>(lis.logAge.count()) <<
+//         static_cast<qint32>(lis.logRotationDuration.count()) << lis.logEnabled;
 //     return out;
 // }
 
@@ -217,12 +226,12 @@ std::ostream& operator<<(std::ostream& os, const timespec& ts)
 //     in >> major >> minor >> patch;
 //     QString additional, hash;
 //     in >> additional >> hash;
-//     ver = MuonPi::Version::Version { major, minor, patch, additional.toStdString(), hash.toStdString() };
-//     return in;
+//     ver = MuonPi::Version::Version { major, minor, patch, additional.toStdString(),
+//     hash.toStdString() }; return in;
 // }
 
 // QDataStream& operator<<(QDataStream& out, const MuonPi::Version::Version& ver)
 // {
-//     out << (qint16)ver.major << (qint16)ver.minor << (qint16)ver.patch << QString::fromStdString(ver.additional) << QString::fromStdString(ver.hash);
-//     return out;
+//     out << (qint16)ver.major << (qint16)ver.minor << (qint16)ver.patch <<
+//     QString::fromStdString(ver.additional) << QString::fromStdString(ver.hash); return out;
 // }

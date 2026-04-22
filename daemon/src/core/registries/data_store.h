@@ -2,13 +2,13 @@
 #define DATA_STORE_H
 
 class DataStore {
-public:
+  public:
     void update(const GpsEvent& e);
     void update(const TempEvent& e);
 
     std::optional<GpsEvent> latestGps() const;
 
-private:
+  private:
     mutable std::mutex m;
 
     GpsEvent latestGps_;

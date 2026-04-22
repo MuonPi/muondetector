@@ -1,21 +1,18 @@
 #ifndef UBLOX_MESSAGES_H
 #define UBLOX_MESSAGES_H
 
+#include <cstdint>
 #include <map>
 #include <string>
-#include <cstdint>
 
 #define UBLOX_VERSION 7
 // not in this list are all msg of types: LOG, AID and INF
 
-
-struct Version
-{
+struct Version {
     unsigned major;
     unsigned minor;
 
-    bool operator<(const Version& other) const
-    {
+    bool operator<(const Version& other) const {
         if (major != other.major)
             return major < other.major;
         return minor < other.minor;
@@ -31,48 +28,37 @@ enum class UBX_RESET : std::uint32_t {
     RESET_SW_GNSS = 0x00000002,
     RESET_HW_AFTER_SHUTDOWN = 0x00000004,
     GNSS_STOP = 0x00000008,
-    GNSS_START = 0x00000009 };
+    GNSS_START = 0x00000009
+};
 
-constexpr UBX_RESET operator|(UBX_RESET lhs, UBX_RESET rhs)
-{
+constexpr UBX_RESET operator|(UBX_RESET lhs, UBX_RESET rhs) {
     using T = std::underlying_type_t<UBX_RESET>;
-    return static_cast<UBX_RESET>(
-        static_cast<T>(lhs) | static_cast<T>(rhs)
-    );
+    return static_cast<UBX_RESET>(static_cast<T>(lhs) | static_cast<T>(rhs));
 }
 
-constexpr UBX_RESET operator&(UBX_RESET lhs, UBX_RESET rhs)
-{
+constexpr UBX_RESET operator&(UBX_RESET lhs, UBX_RESET rhs) {
     using T = std::underlying_type_t<UBX_RESET>;
-    return static_cast<UBX_RESET>(
-        static_cast<T>(lhs) & static_cast<T>(rhs)
-    );
+    return static_cast<UBX_RESET>(static_cast<T>(lhs) & static_cast<T>(rhs));
 }
 
 enum class UBX_DEV : std::uint8_t {
     DEV_BBR = 0x01,
     DEV_FLASH = 0x02,
     DEV_EEPROM = 0x04,
-    DEV_SPI_FLASH = 0x10 };
+    DEV_SPI_FLASH = 0x10
+};
 
-constexpr UBX_DEV operator|(UBX_DEV lhs, UBX_DEV rhs)
-{
+constexpr UBX_DEV operator|(UBX_DEV lhs, UBX_DEV rhs) {
     using T = std::underlying_type_t<UBX_DEV>;
-    return static_cast<UBX_DEV>(
-        static_cast<T>(lhs) | static_cast<T>(rhs)
-    );
+    return static_cast<UBX_DEV>(static_cast<T>(lhs) | static_cast<T>(rhs));
 }
 
-constexpr UBX_DEV operator&(UBX_DEV lhs, UBX_DEV rhs)
-{
+constexpr UBX_DEV operator&(UBX_DEV lhs, UBX_DEV rhs) {
     using T = std::underlying_type_t<UBX_DEV>;
-    return static_cast<UBX_DEV>(
-        static_cast<T>(lhs) & static_cast<T>(rhs)
-    );
+    return static_cast<UBX_DEV>(static_cast<T>(lhs) & static_cast<T>(rhs));
 }
 
-constexpr UBX_DEV& operator|=(UBX_DEV& lhs, UBX_DEV rhs)
-{
+constexpr UBX_DEV& operator|=(UBX_DEV& lhs, UBX_DEV rhs) {
     lhs = lhs | rhs;
     return lhs;
 }
@@ -86,15 +72,15 @@ enum msg_id : std::uint16_t {
     NAV_DGPS = 0x0131,
     NAV_AOPSTATUS = 0x0160,
     NAV_DOP = 0x0104,
-    NAV_EOE = 0x0161, // not supportet on U-Blox 7
+    NAV_EOE = 0x0161,      // not supportet on U-Blox 7
     NAV_GEOFENCE = 0x0139, // not supportet on U-Blox 7
-    NAV_ODO = 0x0109, // not supportet on U-Blox 7
-    NAV_ORB = 0x0134, // not supportet on U-Blox 7
+    NAV_ODO = 0x0109,      // not supportet on U-Blox 7
+    NAV_ORB = 0x0134,      // not supportet on U-Blox 7
     NAV_POSECEF = 0x0101,
     NAV_POSLLH = 0x0102,
     NAV_PVT = 0x0107,
     NAV_RESETODO = 0x0110, // not supportet on U-Blox 7
-    NAV_SAT = 0x0135, // not supportet on U-Blox 7
+    NAV_SAT = 0x0135,      // not supportet on U-Blox 7
     NAV_SBAS = 0x0132,
     NAV_SOL = 0x0106,
     NAV_STATUS = 0x0103,
@@ -111,10 +97,10 @@ enum msg_id : std::uint16_t {
     CFG_ANT = 0x0613,
     CFG_CFG = 0x0609,
     CFG_DAT = 0x0606,
-    CFG_DOSC = 0x0661, // not supportet on U-Blox 7 (only with time & frequency sync products)
-    CFG_DYNSEED = 0x0685, // not supportet on U-Blox 7
-    CFG_ESRC = 0x0660, // not supportet on U-Blox 7 (only with time & frequency sync products)
-    CFG_FIXSEED = 0x0684, // not supportet on U-Blox 7
+    CFG_DOSC = 0x0661,     // not supportet on U-Blox 7 (only with time & frequency sync products)
+    CFG_DYNSEED = 0x0685,  // not supportet on U-Blox 7
+    CFG_ESRC = 0x0660,     // not supportet on U-Blox 7 (only with time & frequency sync products)
+    CFG_FIXSEED = 0x0684,  // not supportet on U-Blox 7
     CFG_GEOFENCE = 0x0669, // not supportet on U-Blox 7
     CFG_GNSS = 0x063e,
     CFG_INF = 0x0602,
@@ -134,7 +120,7 @@ enum msg_id : std::uint16_t {
     CFG_RST = 0x0604,
     CFG_RXM = 0x0611,
     CFG_SBAS = 0x0616,
-    CFG_SMGR = 0x0662, // not supportet on U-Blox 7 (only with time & frequency sync products)
+    CFG_SMGR = 0x0662,   // not supportet on U-Blox 7 (only with time & frequency sync products)
     CFG_TMODE2 = 0x063d, // not supportet on U-Blox 7 (only for timing receivers)
     CFG_TP5 = 0x0631,
     CFG_TXSLOT = 0x0653, // not supportet on U-Blox 7 (only with time & frequency sync products)
@@ -156,7 +142,7 @@ enum msg_id : std::uint16_t {
     MON_SMGR = 0x0a2e, // not supportet on U-Blox 7 (only with time & frequency sync products)
     MON_TXBUF = 0x0a08,
 
-    //MEA message Cls/ID
+    // MEA message Cls/ID
     NMEA_DTM = 0xf00a,
     NMEA_GBQ = 0xf044,
     NMEA_GBS = 0xf009,
@@ -181,116 +167,113 @@ enum msg_id : std::uint16_t {
     NMEA_SVSTATUS = 0xf103,
     NMEA_TIME = 0xf104,
 
-    RXM_RAW = 0x0210, /* ubx message id: raw measurement data */
-    RXM_SFRB = 0x0211, /* ubx message id: subframe buffer */
+    RXM_RAW = 0x0210,   /* ubx message id: raw measurement data */
+    RXM_SFRB = 0x0211,  /* ubx message id: subframe buffer */
     RXM_SFRBX = 0x0213, /* ubx message id: raw subframe data */
-    RXM_RAWX = 0x0215, /* ubx message id: multi-gnss raw meas data */
+    RXM_RAWX = 0x0215,  /* ubx message id: multi-gnss raw meas data */
 
-    TRK_D5 = 0x030A, /* ubx message id: trace mesurement data */
+    TRK_D5 = 0x030A,   /* ubx message id: trace mesurement data */
     TRK_MEAS = 0x0310, /* ubx message id: trace mesurement data */
     TRK_SFRBX = 0x030F /* ubx message id: trace subframe buffer */
 };
 
-const static std::map<msg_id, std::string> msg_string {
-    { ACK, "ACK-ACK" },
-    { NAK, "ACK-NAK" },
+const static std::map<msg_id, std::string> msg_string{{ACK, "ACK-ACK"},
+                                                      {NAK, "ACK-NAK"},
 
-    { NAV_CLOCK, "NAV-CLOCK" },
-    { NAV_DGPS, "NAV-DGPS" },
-    { NAV_AOPSTATUS, "NAV-AOPSTATUS" },
-    { NAV_DOP, "NAV-DOP" },
-    { NAV_POSECEF, "NAV-POSECEF" },
-    { NAV_POSLLH, "NAV-POSLLH" },
-    { NAV_PVT, "NAV-PVT" },
-    { NAV_SBAS, "NAV-SBAS" },
-    { NAV_SOL, "NAV-SOL" },
-    { NAV_STATUS, "NAV-STATUS" },
-    { NAV_SVINFO, "NAV-SVINFO" },
-    { NAV_TIMEGPS, "NAV-TIMEGPS" },
-    { NAV_TIMEUTC, "NAV-TIMEUTC" },
-    { NAV_VELECEF, "NAV-VELECEF" },
-    { NAV_VELNED, "NAV-VELNED" },
-    // CFG
-    { CFG_ANT, "CFG-ANT" },
-    { CFG_CFG, "CFG-CFG" },
-    { CFG_DAT, "CFG-DAT" },
-    { CFG_GNSS, "CFG-GNSS" },
-    { CFG_INF, "CFG-INF" },
-    { CFG_ITFM, "CFG-ITFM" },
-    { CFG_LOGFILTER, "CFG-LOGFILTER" },
-    { CFG_MSG, "CFG-MSG" },
-    { CFG_NAV5, "CFG-NAV5" },
-    { CFG_NAVX5, "CFG-NAV5X" },
-    { CFG_NMEA, "CFG-NMEA" },
-    { CFG_PM2, "CFG-PM2" },
-    { CFG_PRT, "CFG-PRT" },
-    { CFG_RATE, "CFG-RATE" },
-    { CFG_RINV, "CFG-RINV" },
-    { CFG_RST, "CFG-RST" },
-    { CFG_RXM, "CFG-RXM" },
-    { CFG_SBAS, "CFG-SBAS" },
-    { CFG_TP5, "CFG-TP5" },
-    { CFG_USB, "CFG-USB" },
-    // TIM
-    { TIM_TP, "TIM-TP" },
-    { TIM_TM2, "TIM-TM2" },
-    { TIM_VRFY, "TIM-VRFY" },
-    // MON
-    { MON_VER, "MON-VER" },
-    { MON_HW, "MON-HW" },
-    { MON_HW2, "MON-HW2" },
-    { MON_IO, "MON-IO" },
-    { MON_MSGPP, "MON-MSGP" },
-    { MON_RXBUF, "MON-RXBUF" },
-    { MON_RXR, "MON-RXR" },
-    { MON_TXBUF, "MON-TXBUF" },
+                                                      {NAV_CLOCK, "NAV-CLOCK"},
+                                                      {NAV_DGPS, "NAV-DGPS"},
+                                                      {NAV_AOPSTATUS, "NAV-AOPSTATUS"},
+                                                      {NAV_DOP, "NAV-DOP"},
+                                                      {NAV_POSECEF, "NAV-POSECEF"},
+                                                      {NAV_POSLLH, "NAV-POSLLH"},
+                                                      {NAV_PVT, "NAV-PVT"},
+                                                      {NAV_SBAS, "NAV-SBAS"},
+                                                      {NAV_SOL, "NAV-SOL"},
+                                                      {NAV_STATUS, "NAV-STATUS"},
+                                                      {NAV_SVINFO, "NAV-SVINFO"},
+                                                      {NAV_TIMEGPS, "NAV-TIMEGPS"},
+                                                      {NAV_TIMEUTC, "NAV-TIMEUTC"},
+                                                      {NAV_VELECEF, "NAV-VELECEF"},
+                                                      {NAV_VELNED, "NAV-VELNED"},
+                                                      // CFG
+                                                      {CFG_ANT, "CFG-ANT"},
+                                                      {CFG_CFG, "CFG-CFG"},
+                                                      {CFG_DAT, "CFG-DAT"},
+                                                      {CFG_GNSS, "CFG-GNSS"},
+                                                      {CFG_INF, "CFG-INF"},
+                                                      {CFG_ITFM, "CFG-ITFM"},
+                                                      {CFG_LOGFILTER, "CFG-LOGFILTER"},
+                                                      {CFG_MSG, "CFG-MSG"},
+                                                      {CFG_NAV5, "CFG-NAV5"},
+                                                      {CFG_NAVX5, "CFG-NAV5X"},
+                                                      {CFG_NMEA, "CFG-NMEA"},
+                                                      {CFG_PM2, "CFG-PM2"},
+                                                      {CFG_PRT, "CFG-PRT"},
+                                                      {CFG_RATE, "CFG-RATE"},
+                                                      {CFG_RINV, "CFG-RINV"},
+                                                      {CFG_RST, "CFG-RST"},
+                                                      {CFG_RXM, "CFG-RXM"},
+                                                      {CFG_SBAS, "CFG-SBAS"},
+                                                      {CFG_TP5, "CFG-TP5"},
+                                                      {CFG_USB, "CFG-USB"},
+                                                      // TIM
+                                                      {TIM_TP, "TIM-TP"},
+                                                      {TIM_TM2, "TIM-TM2"},
+                                                      {TIM_VRFY, "TIM-VRFY"},
+                                                      // MON
+                                                      {MON_VER, "MON-VER"},
+                                                      {MON_HW, "MON-HW"},
+                                                      {MON_HW2, "MON-HW2"},
+                                                      {MON_IO, "MON-IO"},
+                                                      {MON_MSGPP, "MON-MSGP"},
+                                                      {MON_RXBUF, "MON-RXBUF"},
+                                                      {MON_RXR, "MON-RXR"},
+                                                      {MON_TXBUF, "MON-TXBUF"},
 
-    // the messages only used in Ublox-8
-    { NAV_EOE, "NAV-EOE" },
-    { NAV_GEOFENCE, "NAV-GEOFENCE" },
-    { NAV_ODO, "NAV-ODO" },
-    { NAV_ORB, "NAV-ORB" },
-    { NAV_RESETODO, "NAV-RESETODO" },
-    { NAV_SAT, "NAV-SAT" },
-    { NAV_TIMEBDS, "NAV-TIMEBDS" },
-    { NAV_TIMEGAL, "NAV-TIMEGAL" },
-    { NAV_TIMEGLO, "NAV-TIMEGLO" },
-    { NAV_TIMELS, "NAV-TIMELS" },
+                                                      // the messages only used in Ublox-8
+                                                      {NAV_EOE, "NAV-EOE"},
+                                                      {NAV_GEOFENCE, "NAV-GEOFENCE"},
+                                                      {NAV_ODO, "NAV-ODO"},
+                                                      {NAV_ORB, "NAV-ORB"},
+                                                      {NAV_RESETODO, "NAV-RESETODO"},
+                                                      {NAV_SAT, "NAV-SAT"},
+                                                      {NAV_TIMEBDS, "NAV-TIMEBDS"},
+                                                      {NAV_TIMEGAL, "NAV-TIMEGAL"},
+                                                      {NAV_TIMEGLO, "NAV-TIMEGLO"},
+                                                      {NAV_TIMELS, "NAV-TIMELS"},
 
-    // NMEA
-    { NMEA_DTM, "NMEA-DTM" },
-    { NMEA_GBQ, "NMEA-GBQ" },
-    { NMEA_GBS, "NMEA-GBS" },
-    { NMEA_GGA, "NMEA-GGA" },
-    { NMEA_GLL, "NMEA-GLL" },
-    { NMEA_GLQ, "NMEA-GLQ" },
-    { NMEA_GNQ, "NMEA-GNQ" },
-    { NMEA_GNS, "NMEA-GNS" },
-    { NMEA_GPQ, "NMEA-GPQ" },
-    { NMEA_GRS, "NMEA-GRS" },
-    { NMEA_GSA, "NMEA-GSA" },
-    { NMEA_GST, "NMEA-GST" },
-    { NMEA_GSV, "NMEA-GSV" },
-    { NMEA_RMC, "NMEA-RMC" },
-    { NMEA_TXT, "NMEA-TXT" },
-    { NMEA_VLW, "NMEA-VLW" },
-    { NMEA_VTG, "NMEA-VTG" },
-    { NMEA_ZDA, "NMEA-ZDA" },
-    { NMEA_CONFIG, "NMEA-CONFIG" },
-    { NMEA_POSITION, "NMEA-POSITION" },
-    { NMEA_RATE, "NMEA-RATE" },
-    { NMEA_SVSTATUS, "NMEA-SVSTATUS" },
-    { NMEA_TIME, "NMEA-TIME" },
+                                                      // NMEA
+                                                      {NMEA_DTM, "NMEA-DTM"},
+                                                      {NMEA_GBQ, "NMEA-GBQ"},
+                                                      {NMEA_GBS, "NMEA-GBS"},
+                                                      {NMEA_GGA, "NMEA-GGA"},
+                                                      {NMEA_GLL, "NMEA-GLL"},
+                                                      {NMEA_GLQ, "NMEA-GLQ"},
+                                                      {NMEA_GNQ, "NMEA-GNQ"},
+                                                      {NMEA_GNS, "NMEA-GNS"},
+                                                      {NMEA_GPQ, "NMEA-GPQ"},
+                                                      {NMEA_GRS, "NMEA-GRS"},
+                                                      {NMEA_GSA, "NMEA-GSA"},
+                                                      {NMEA_GST, "NMEA-GST"},
+                                                      {NMEA_GSV, "NMEA-GSV"},
+                                                      {NMEA_RMC, "NMEA-RMC"},
+                                                      {NMEA_TXT, "NMEA-TXT"},
+                                                      {NMEA_VLW, "NMEA-VLW"},
+                                                      {NMEA_VTG, "NMEA-VTG"},
+                                                      {NMEA_ZDA, "NMEA-ZDA"},
+                                                      {NMEA_CONFIG, "NMEA-CONFIG"},
+                                                      {NMEA_POSITION, "NMEA-POSITION"},
+                                                      {NMEA_RATE, "NMEA-RATE"},
+                                                      {NMEA_SVSTATUS, "NMEA-SVSTATUS"},
+                                                      {NMEA_TIME, "NMEA-TIME"},
 
-    { RXM_RAW, "RXM-RAW" },
-    { RXM_SFRB, "RXMSFRB" },
-    { RXM_RAWX, "RXM-RAWX" },
-    { TRK_D5, "TRK-D5" },
-    { TRK_MEAS, "TRK-MEAS" },
-    { TRK_SFRBX, "TRK-SFRBX" }
-};
-}
-
+                                                      {RXM_RAW, "RXM-RAW"},
+                                                      {RXM_SFRB, "RXMSFRB"},
+                                                      {RXM_RAWX, "RXM-RAWX"},
+                                                      {TRK_D5, "TRK-D5"},
+                                                      {TRK_MEAS, "TRK-MEAS"},
+                                                      {TRK_SFRBX, "TRK-SFRBX"}};
+} // namespace UBX_MSG
 
 // proto is the shortcut for protocol and
 // is defined as the correct bitmask for one

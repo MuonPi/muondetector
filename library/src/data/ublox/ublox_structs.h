@@ -5,14 +5,13 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <variant>
-#include <optional>
 #include <vector>
 
 namespace Gnss {
-
 
 struct Id {
     enum {
@@ -27,7 +26,8 @@ struct Id {
         first = GPS,
         last = Undefined
     };
-    static constexpr std::array<const char*, last + 1> name { "GPS", "SBAS", "GAL", "BEID", "IMES", "QZSS", "GLNS", "N/A" };
+    static constexpr std::array<const char*, last + 1> name{"GPS",  "SBAS", "GAL",  "BEID",
+                                                            "IMES", "QZSS", "GLNS", "N/A"};
 };
 
 struct FixType {
@@ -42,8 +42,9 @@ struct FixType {
         first = None,
         last = Undefined
     };
-    size_t value { None };
-    static constexpr std::array<const char*, last + 1> name { "NoFix", "DeadReck", "2D", "3D", "GPS+DeadReck", "TimeFix", "N/A" };
+    size_t value{None};
+    static constexpr std::array<const char*, last + 1> name{"NoFix",        "DeadReck", "2D", "3D",
+                                                            "GPS+DeadReck", "TimeFix",  "N/A"};
 };
 
 struct OrbitSource {
@@ -60,7 +61,8 @@ struct OrbitSource {
         first = None,
         last = Undefined
     };
-    static constexpr std::array<const char*, last + 1> name { "N/A", "Ephem", "Alm", "AOP", "AOP+", "Alt", "Alt", "Alt", "Undef" };
+    static constexpr std::array<const char*, last + 1> name{"N/A", "Ephem", "Alm", "AOP",  "AOP+",
+                                                            "Alt", "Alt",   "Alt", "Undef"};
 };
 
 struct AntennaStatus {
@@ -76,26 +78,19 @@ struct AntennaStatus {
         first = Init,
         last = Undefined
     };
-    static constexpr std::array<const char*, last + 1> name { "init", "unknown", "ok", "short", "open", "unknown", "unknown", "N/A" };
+    static constexpr std::array<const char*, last + 1> name{"init", "unknown", "ok",      "short",
+                                                            "open", "unknown", "unknown", "N/A"};
 };
 
 struct SvHealth {
-    enum {
-        Undefined = 0,
-        Good = 1,
-        Bad = 2,
-        VeryBad = 3,
-        first = Undefined,
-        last = VeryBad
-    };
-    static constexpr std::array<const char*, last + 1> name { "N/A", "good", "bad", "bad+" };
+    enum { Undefined = 0, Good = 1, Bad = 2, VeryBad = 3, first = Undefined, last = VeryBad };
+    static constexpr std::array<const char*, last + 1> name{"N/A", "good", "bad", "bad+"};
 };
 
 } // namespace Gnss
 
-
-constexpr std::size_t s_nr_targets { 6 };
-constexpr std::size_t s_default_target { 1 };
+constexpr std::size_t s_nr_targets{6};
+constexpr std::size_t s_default_target{1};
 
 struct UbxMessage {
     UbxMessage() = default;
@@ -109,11 +104,10 @@ struct UbxMessage {
     [[nodiscard]] auto check_sum() const -> std::uint16_t;
     [[nodiscard]] static auto check_sum(const std::string& data) -> std::uint16_t;
 
-private:
-    std::uint16_t m_full_id { 0 };
-    std::string m_payload {};
+  private:
+    std::uint16_t m_full_id{0};
+    std::string m_payload{};
 };
-
 
 struct GnssConfigStruct {
     std::uint8_t gnssId;
@@ -121,6 +115,5 @@ struct GnssConfigStruct {
     std::uint8_t maxTrkCh;
     std::uint32_t flags;
 };
-
 
 #endif // UBLOX_STRUCTS_H

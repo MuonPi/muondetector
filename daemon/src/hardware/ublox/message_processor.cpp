@@ -1,54 +1,43 @@
 #include "hardware/ublox/message_processor.h"
+
 #include "core/logging/logger.h"
+#include "data/custom_io_operators.h"
 #include "data/ublox/ublox_messages.h"
 #include "data/ublox/ublox_structs.h"
 #include "utility/unixtime_from_gps.h"
-#include "data/custom_io_operators.h"
 // #include <custom_io_operators.h>
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <iomanip>
+#include <optional>
 #include <sstream>
-#include <type_traits>
 #include <string>
 #include <string_view>
-#include <optional>
-#include <charconv>
-#include <cctype>
+#include <type_traits>
 
-template <class T, class = void> struct is_iterator : std::false_type
-{
-};
+template <class T, class = void>
+struct is_iterator : std::false_type {};
 
 template <class T>
-struct is_iterator<T, std::void_t<typename std::iterator_traits<T>::iterator_category>> : std::true_type
-{
-};
+struct is_iterator<T, std::void_t<typename std::iterator_traits<T>::iterator_category>>
+    : std::true_type {};
 
-enum class endian : bool
-{
-    big,
-    little
-};
+enum class endian : bool { big, little };
 
 template <typename T, endian Endian = endian::little, typename It,
           std::enable_if_t<std::is_integral<T>::value, bool> = true,
           std::enable_if_t<is_iterator<It>::value, bool> = true>
-[[nodiscard]] auto get(const It &start) -> T
-{
-    const auto &end{start + sizeof(T)};
+[[nodiscard]] auto get(const It& start) -> T {
+    const auto& end{start + sizeof(T)};
     T value{0};
     std::size_t shift{(Endian == endian::little) ? 0 : (sizeof(T) - 1) * 8};
-    for (auto it = start; it != end; it++)
-    {
+    for (auto it = start; it != end; it++) {
         value += static_cast<T>(*it) << shift;
-        if (Endian == endian::little)
-        {
+        if (Endian == endian::little) {
             shift += 8;
-        }
-        else
-        {
+        } else {
             shift -= 8;
         }
     }
@@ -58,19 +47,14 @@ template <typename T, endian Endian = endian::little, typename It,
 template <typename T, endian Endian = endian::little, typename It,
           std::enable_if_t<std::is_integral<T>::value, bool> = true,
           std::enable_if_t<is_iterator<It>::value, bool> = true>
-void put(const It &start, const T &value)
-{
-    const auto &end{start + sizeof(T)};
+void put(const It& start, const T& value) {
+    const auto& end{start + sizeof(T)};
     std::size_t shift{(Endian == endian::little) ? 0 : (sizeof(T) - 1) * 8};
-    for (auto it = start; it != end; it++)
-    {
+    for (auto it = start; it != end; it++) {
         *it = static_cast<std::uint8_t>((value >> shift) & 0xff);
-        if (Endian == endian::little)
-        {
+        if (Endian == endian::little) {
             shift += 8;
-        }
-        else
-        {
+        } else {
             shift -= 8;
         }
     }
@@ -79,151 +63,154 @@ void put(const It &start, const T &value)
 std::optional<UbxMessage> MessageProcessor::msgWaitingForAck{std::nullopt};
 std::optional<GpsVersion> MessageProcessor::gpsVersion{std::nullopt};
 
-auto MessageProcessor::processMessage(const UbxMessage &msg) -> std::optional<UbxEvent>
-{
-    static const std::map<std::uint8_t, const char *> ubx_class_names{
-        {0x01, "UBX-NAV"}, {0x02, "UBX-RXM"}, {0x04, "UBX-INF"}, {0x05, "UBX-ACK"}, {0x06, "UBX-CFG"},
-        {0x09, "UBX-UPD"}, {0x10, "UBX-ESF"}, {0x13, "UBX-MGA"}, {0x0a, "UBX-MON"}, {0x0b, "UBX-AID"},
-        {0x0d, "UBX-TIM"}, {0x21, "UBX-LOG"}, {0x27, "UBX-SEC"}, {0x28, "UBX-HNR"}};
+auto MessageProcessor::processMessage(const UbxMessage& msg) -> std::optional<UbxEvent> {
+    static const std::map<std::uint8_t, const char*> ubx_class_names{
+        {0x01, "UBX-NAV"}, {0x02, "UBX-RXM"}, {0x04, "UBX-INF"}, {0x05, "UBX-ACK"},
+        {0x06, "UBX-CFG"}, {0x09, "UBX-UPD"}, {0x10, "UBX-ESF"}, {0x13, "UBX-MGA"},
+        {0x0a, "UBX-MON"}, {0x0b, "UBX-AID"}, {0x0d, "UBX-TIM"}, {0x21, "UBX-LOG"},
+        {0x27, "UBX-SEC"}, {0x28, "UBX-HNR"}};
 
-    const std::map<uint16_t, std::pair<std::function<std::optional<UbxEvent>()>, std::string>> handlerLookup {
-        {{UBX_MSG::NAV_STATUS, std::make_pair([&] { return UBXNavStatus(msg.payload()); }, "UBX-NAV-STATUS")},
-         {UBX_MSG::NAV_DOP, std::make_pair([&] { return UBXNavDOP(msg.payload()); }, "UBX-NAV-DOP")},
-         {UBX_MSG::NAV_TIMEGPS, std::make_pair([&] { return UBXNavTimeGPS(msg.payload()); }, "UBX-NAV-TIMEGPS")},
-         {UBX_MSG::NAV_TIMEUTC, std::make_pair([&] { return UBXNavTimeUTC(msg.payload()); }, "UBX-NAV-TIMEUTC")},
-         {UBX_MSG::NAV_CLOCK, std::make_pair([&] { return UBXNavClock(msg.payload()); }, "UBX-NAV-CLOCK")},
-         {UBX_MSG::NAV_SVINFO, std::make_pair([&] { return UBXNavSVinfo(msg.payload()); }, "UBX-NAV-SVINFO")},
-         {UBX_MSG::NAV_SAT, std::make_pair([&] { return UBXNavSat(msg.payload()); }, "UBX-NAV-SAT")},
-         {UBX_MSG::NAV_POSLLH, std::make_pair([&] { return UBXNavPosLLH(msg.payload()); }, "UBX-NAV-POSLLH")}
+    const std::map<uint16_t, std::pair<std::function<std::optional<UbxEvent>()>, std::string>>
+        handlerLookup{
+            {{UBX_MSG::NAV_STATUS,
+              std::make_pair([&] { return UBXNavStatus(msg.payload()); }, "UBX-NAV-STATUS")},
+             {UBX_MSG::NAV_DOP,
+              std::make_pair([&] { return UBXNavDOP(msg.payload()); }, "UBX-NAV-DOP")},
+             {UBX_MSG::NAV_TIMEGPS,
+              std::make_pair([&] { return UBXNavTimeGPS(msg.payload()); }, "UBX-NAV-TIMEGPS")},
+             {UBX_MSG::NAV_TIMEUTC,
+              std::make_pair([&] { return UBXNavTimeUTC(msg.payload()); }, "UBX-NAV-TIMEUTC")},
+             {UBX_MSG::NAV_CLOCK,
+              std::make_pair([&] { return UBXNavClock(msg.payload()); }, "UBX-NAV-CLOCK")},
+             {UBX_MSG::NAV_SVINFO,
+              std::make_pair([&] { return UBXNavSVinfo(msg.payload()); }, "UBX-NAV-SVINFO")},
+             {UBX_MSG::NAV_SAT,
+              std::make_pair([&] { return UBXNavSat(msg.payload()); }, "UBX-NAV-SAT")},
+             {UBX_MSG::NAV_POSLLH,
+              std::make_pair([&] { return UBXNavPosLLH(msg.payload()); }, "UBX-NAV-POSLLH")}
 
-         ,
-         {UBX_MSG::CFG_ANT, std::make_pair([&] { return UBXCfgAnt(msg.payload()); }, "UBX-CFG-ANT")},
-         {UBX_MSG::CFG_NAVX5, std::make_pair([&] { return UBXCfgNavX5(msg.payload()); }, "UBX-CFG-NAVX5")},
-         {UBX_MSG::CFG_NAV5, std::make_pair([&] { return UBXCfgNav5(msg.payload()); }, "UBX-CFG-NAV5")},
-         {UBX_MSG::CFG_TP5, std::make_pair([&] { return UBXCfgTP5(msg.payload()); }, "UBX-CFG-TP5")},
-         {UBX_MSG::CFG_GNSS, std::make_pair([&] { return UBXCfgGNSS(msg.payload()); }, "UBX-CFG-GNSS")},
-         {UBX_MSG::CFG_MSG, std::make_pair([&] { return UBXCfgMSG(msg.payload()); }, "UBX-CFG-MSG")}
+             ,
+             {UBX_MSG::CFG_ANT,
+              std::make_pair([&] { return UBXCfgAnt(msg.payload()); }, "UBX-CFG-ANT")},
+             {UBX_MSG::CFG_NAVX5,
+              std::make_pair([&] { return UBXCfgNavX5(msg.payload()); }, "UBX-CFG-NAVX5")},
+             {UBX_MSG::CFG_NAV5,
+              std::make_pair([&] { return UBXCfgNav5(msg.payload()); }, "UBX-CFG-NAV5")},
+             {UBX_MSG::CFG_TP5,
+              std::make_pair([&] { return UBXCfgTP5(msg.payload()); }, "UBX-CFG-TP5")},
+             {UBX_MSG::CFG_GNSS,
+              std::make_pair([&] { return UBXCfgGNSS(msg.payload()); }, "UBX-CFG-GNSS")},
+             {UBX_MSG::CFG_MSG,
+              std::make_pair([&] { return UBXCfgMSG(msg.payload()); }, "UBX-CFG-MSG")}
 
-         ,
-         {UBX_MSG::MON_RXBUF, std::make_pair([&] { return UBXMonRx(msg.payload()); }, "UBX-MON-RXBUF")},
-         {UBX_MSG::MON_TXBUF, std::make_pair([&] { return UBXMonTx(msg.payload()); }, "UBX-MON-TXBUF")},
-         {UBX_MSG::MON_HW, std::make_pair([&] { return UBXMonHW(msg.payload()); }, "UBX-MON-HW")},
-         {UBX_MSG::MON_HW2, std::make_pair([&] { return UBXMonHW2(msg.payload()); }, "UBX-MON-HW2")},
-         {UBX_MSG::MON_VER, std::make_pair([&] { return UBXMonVer(msg.payload()); }, "UBX-MON-VER")}
+             ,
+             {UBX_MSG::MON_RXBUF,
+              std::make_pair([&] { return UBXMonRx(msg.payload()); }, "UBX-MON-RXBUF")},
+             {UBX_MSG::MON_TXBUF,
+              std::make_pair([&] { return UBXMonTx(msg.payload()); }, "UBX-MON-TXBUF")},
+             {UBX_MSG::MON_HW,
+              std::make_pair([&] { return UBXMonHW(msg.payload()); }, "UBX-MON-HW")},
+             {UBX_MSG::MON_HW2,
+              std::make_pair([&] { return UBXMonHW2(msg.payload()); }, "UBX-MON-HW2")},
+             {UBX_MSG::MON_VER,
+              std::make_pair([&] { return UBXMonVer(msg.payload()); }, "UBX-MON-VER")}
 
-         ,
-         {UBX_MSG::TIM_TP, std::make_pair([&] { return UBXTimTP(msg.payload()); }, "UBX-TIM-TP")},
-         {UBX_MSG::TIM_TM2, std::make_pair([&] { return UBXTimTM2(msg.payload()); }, "UBX-TIM-TM2")}}};
+             ,
+             {UBX_MSG::TIM_TP,
+              std::make_pair([&] { return UBXTimTP(msg.payload()); }, "UBX-TIM-TP")},
+             {UBX_MSG::TIM_TM2,
+              std::make_pair([&] { return UBXTimTM2(msg.payload()); }, "UBX-TIM-TM2")}}};
 
-    if (handlerLookup.count(msg.full_id()) > 0)
-    {
-        const auto &[handle, name] = handlerLookup.at(msg.full_id());
-        if (logLevel() == LogLevel::Debug)
-        {
+    if (handlerLookup.count(msg.full_id()) > 0) {
+        const auto& [handle, name] = handlerLookup.at(msg.full_id());
+        if (logLevel() == LogLevel::Debug) {
             std::stringstream sstr{};
-            sstr << "received " << name << " message (0x" << std::hex << std::setfill('0') << std::setw(2)
-                 << static_cast<unsigned>(msg.class_id()) << " 0x" << std::hex
+            sstr << "received " << name << " message (0x" << std::hex << std::setfill('0')
+                 << std::setw(2) << static_cast<unsigned>(msg.class_id()) << " 0x" << std::hex
                  << static_cast<unsigned>(msg.message_id()) << ")";
             logInfo(sstr.str());
         }
         return handle();
-    }
-    else if (msg.class_id() == 0x05)
-    {
+    } else if (msg.class_id() == 0x05) {
         // Handle acknowledge messages
-        if (msg.payload().size() < 2)
-        {
+        if (msg.payload().size() < 2) {
             logWarn("received UBX-ACK message but data is corrupted");
             return std::nullopt;
         }
-        if (msgWaitingForAck.has_value() == false)
-        {
+        if (msgWaitingForAck.has_value() == false) {
             // Got acknowledge message from ublox without requesting anything
             std::stringstream sstr{};
             sstr << "received ACK message but no message is waiting for Ack (msgID: 0x";
-            sstr << std::setfill('0') << std::setw(2) << std::hex << (int)msg.payload()[0] << " 0x" << std::setfill('0')
-                 << std::setw(2) << std::hex << (int)msg.payload()[1] << ")\n";
+            sstr << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[0] << " 0x"
+                 << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[1]
+                 << ")\n";
             logWarn(sstr.str());
             return std::nullopt;
         }
-        if (logLevel() == LogLevel::Debug)
-        {
+        if (logLevel() == LogLevel::Debug) {
             std::stringstream sstr{};
             sstr << "received UBX-ACK-ACK message about msgID: 0x";
-            sstr << std::setfill('0') << std::setw(2) << std::hex << (int)msg.payload()[0] << " 0x" << std::setfill('0')
-                 << std::setw(2) << std::hex << (int)msg.payload()[1];
+            sstr << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[0] << " 0x"
+                 << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[1];
             logInfo(sstr.str());
         }
 
-        auto ackedMsgID = (uint16_t)(msg.payload()[0]) << 8U | msg.payload()[1];
-        if (ackedMsgID != msgWaitingForAck.value().full_id())
-        {
+        auto ackedMsgID = (uint16_t) (msg.payload()[0]) << 8U | msg.payload()[1];
+        if (ackedMsgID != msgWaitingForAck.value().full_id()) {
             std::stringstream sstr{};
             sstr << "received unexpected UBX-ACK message about msgID: 0x";
-            sstr << std::setfill('0') << std::setw(2) << std::hex << (int)msg.payload()[0] << " 0x" << std::setfill('0')
-                 << std::setw(2) << std::hex << (int)msg.payload()[1] << "\n";
+            sstr << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[0] << " 0x"
+                 << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[1] << "\n";
             logWarn(sstr.str());
             return std::nullopt;
         }
-        if (msg.message_id() == 0x00)
-        {
+        if (msg.message_id() == 0x00) {
             // emit UBXReceivedAckNak(msgWaitingForAck->full_id(),
             //                        (uint16_t)(msgWaitingForAck->payload()[0]) << 8U |
             //                        msgWaitingForAck->payload()[1]);
         }
         // ackTimer->stop(); // TODO : implement ack timer logic
         msgWaitingForAck = std::nullopt;
-        if (logLevel() == LogLevel::Debug)
-        {
+        if (logLevel() == LogLevel::Debug) {
             logInfo("processMessage: deleted message after ACK/NACK");
         }
-    }
-    else
-    {
+    } else {
         unhandled(msg, ubx_class_names);
     }
     return std::nullopt;
 }
 
-void MessageProcessor::unhandled(const UbxMessage &msg, const std::map<std::uint8_t, const char *> ubx_class_names)
-{
+void MessageProcessor::unhandled(const UbxMessage& msg,
+                                 const std::map<std::uint8_t, const char*> ubx_class_names) {
 
-    if (msg.class_id() == 0x06)
-    {
-        if (logLevel() == LogLevel::Debug)
-        {
+    if (msg.class_id() == 0x06) {
+        if (logLevel() == LogLevel::Debug) {
             std::stringstream sstr{};
             sstr << "received unhandled UBX-CFG message:";
-            for (std::string::size_type i = 0; i < msg.payload().size(); i++)
-            {
-                sstr << " 0x" << std::setfill('0') << std::setw(2) << std::hex << (int)msg.payload()[i];
+            for (std::string::size_type i = 0; i < msg.payload().size(); i++) {
+                sstr << " 0x" << std::setfill('0') << std::setw(2) << std::hex
+                     << (int) msg.payload()[i];
             }
             logDebug(sstr.str());
         }
-    }
-    else
-    {
-        if (logLevel() == LogLevel::Debug)
-        {
+    } else {
+        if (logLevel() == LogLevel::Debug) {
             std::stringstream sstr{};
-            if (ubx_class_names.count(msg.class_id()) > 0)
-            {
+            if (ubx_class_names.count(msg.class_id()) > 0) {
                 sstr << "received unhandled " << ubx_class_names.at(msg.class_id()) << " message"
-                     << " (0x" << std::hex << std::setfill('0') << std::setw(2) << (int)msg.class_id() << " 0x"
-                     << std::hex << (int)msg.message_id() << ")";
-            }
-            else
-            {
-                sstr << "received unknown UBX message (0x" << std::hex << std::setfill('0') << std::setw(2)
-                     << (int)msg.class_id() << " 0x" << std::hex << (int)msg.message_id() << ")";
+                     << " (0x" << std::hex << std::setfill('0') << std::setw(2)
+                     << (int) msg.class_id() << " 0x" << std::hex << (int) msg.message_id() << ")";
+            } else {
+                sstr << "received unknown UBX message (0x" << std::hex << std::setfill('0')
+                     << std::setw(2) << (int) msg.class_id() << " 0x" << std::hex
+                     << (int) msg.message_id() << ")";
             }
             logDebug(sstr.str());
         }
     }
 }
 
-auto MessageProcessor::UBXNavStatus(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXNavStatus(const std::string& msg) -> std::optional<UbxEvent> {
     // UBX-NAV_STATUS: RX status information
     // parse all fields
     NavStatus data;
@@ -234,24 +221,22 @@ auto MessageProcessor::UBXNavStatus(const std::string &msg) -> std::optional<Ubx
     data.ttff = get<std::uint32_t>(msg.begin() + 8);
     data.msss = get<std::uint32_t>(msg.begin() + 12);
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
         sstr << "*** UBX NAV-STATUS message:" << '\n';
         sstr << " iTOW             : " << data.iTOW / 1000 << " s" << '\n';
-        sstr << " gpsFix           : " << (int)data.gpsFix << '\n';
-        sstr << " time to first fix: " << (float)data.ttff / 1000. << " s" << '\n';
-        sstr << " uptime           : " << (float)data.msss / 1000. << " s" << '\n';
-        sstr << " flags            : " << std::hex << "0x" << (int)data.flags << std::dec << '\n';
-        sstr << " flags2           : " << std::hex << "0x" << (int)data.flags2 << std::dec << '\n';
+        sstr << " gpsFix           : " << (int) data.gpsFix << '\n';
+        sstr << " time to first fix: " << (float) data.ttff / 1000. << " s" << '\n';
+        sstr << " uptime           : " << (float) data.msss / 1000. << " s" << '\n';
+        sstr << " flags            : " << std::hex << "0x" << (int) data.flags << std::dec << '\n';
+        sstr << " flags2           : " << std::hex << "0x" << (int) data.flags2 << std::dec << '\n';
         logDebug(sstr.str());
     }
 
     return data;
 }
 
-auto MessageProcessor::UBXNavDOP(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXNavDOP(const std::string& msg) -> std::optional<UbxEvent> {
     // UBX-NAV-DOP: dilution of precision values
     UbxDopStruct data{};
 
@@ -272,8 +257,7 @@ auto MessageProcessor::UBXNavDOP(const std::string &msg) -> std::optional<UbxEve
     // easting DOP
     data.eDOP = get<std::uint16_t>(msg.begin() + 16);
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
         sstr << "*** UBX NAV-DOP message:" << '\n';
         sstr << " iTOW             : " << std::dec << iTOW / 1000. << " s" << '\n';
@@ -290,8 +274,7 @@ auto MessageProcessor::UBXNavDOP(const std::string &msg) -> std::optional<UbxEve
     return data;
 }
 
-auto MessageProcessor::UBXNavTimeGPS(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXNavTimeGPS(const std::string& msg) -> std::optional<UbxEvent> {
     // parse all fields
     // GPS time of week
     NavTimeGPS data;
@@ -314,15 +297,15 @@ auto MessageProcessor::UBXNavTimeGPS(const std::string &msg) -> std::optional<Ub
     // week nr, second in current week, ns of timestamp in current second,
     // nr of leap seconds wrt UTC, accuracy (ns)
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
         sstr << "*** UBX-NAV-TIMEGPS message:" << '\n';
         sstr << " week nr       : " << std::dec << data.wnR << '\n';
-        sstr << " iTOW          : " << std::dec << data.iTOW << " ms = " << data.iTOW / 1000 << " s" << '\n';
-        sstr << " fTOW          : " << std::dec << data.fTOW << " = " << (long int)(sr * 1e9 + data.fTOW) << " ns"
+        sstr << " iTOW          : " << std::dec << data.iTOW << " ms = " << data.iTOW / 1000 << " s"
              << '\n';
-        sstr << " leap seconds  : " << std::dec << (int)data.leapS << " s" << '\n';
+        sstr << " fTOW          : " << std::dec << data.fTOW << " = "
+             << (long int) (sr * 1e9 + data.fTOW) << " ns" << '\n';
+        sstr << " leap seconds  : " << std::dec << (int) data.leapS << " s" << '\n';
         sstr << " time accuracy : " << std::dec << data.tAcc << " ns" << '\n';
         sstr << " flags             : ";
         for (int i = 7; i >= 0; i--)
@@ -344,15 +327,15 @@ auto MessageProcessor::UBXNavTimeGPS(const std::string &msg) -> std::optional<Ub
         //     leapSeconds = leapS;
         // }
 
-        struct timespec ts = unixtime_from_gps(data.wnR, data.iTOW / 1000, (long int)(sr * 1e9 + data.fTOW));
+        struct timespec ts =
+            unixtime_from_gps(data.wnR, data.iTOW / 1000, (long int) (sr * 1e9 + data.fTOW));
         sstr << ts.tv_sec << '.' << ts.tv_nsec << "\n";
         logDebug(sstr.str());
     }
     return data;
 }
 
-auto MessageProcessor::UBXNavTimeUTC(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXNavTimeUTC(const std::string& msg) -> std::optional<UbxEvent> {
     // parse all fields
     // GPS time of week
     NavTimeUTC data;
@@ -379,25 +362,21 @@ auto MessageProcessor::UBXNavTimeUTC(const std::string &msg) -> std::optional<Ub
     // second in current week, year, month, day, hour, minute, seconds(+fraction)
     // accuracy (ns)
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
         sstr << "*** UBX-NAV-TIMEUTC message:" << '\n';
         sstr << " iTOW           : " << data.iTOW << " ms = " << data.iTOW / 1000 << " s" << '\n';
         sstr << " nano           : " << data.nano << " ns" << '\n';
         sstr << " date y/m/d     : " << data.year << "/" << data.month << "/" << data.day << '\n';
-        sstr << " UTC time h:m:s : " << std::setw(2) << std::setfill('0') << data.hour << ":" << data.min << ":";
+        sstr << " UTC time h:m:s : " << std::setw(2) << std::setfill('0') << data.hour << ":"
+             << data.min << ":";
         sstr << static_cast<int>(data.sec + data.nano * 1e-9) << '\n';
         sstr << " time accuracy : " << data.tAcc << " ns" << '\n';
         sstr << " flags";
-        for (int i = 7; i >= 0; i--)
-        {
-            if (flags & 1 << i)
-            {
+        for (int i = 7; i >= 0; i--) {
+            if (flags & 1 << i) {
                 sstr << i;
-            }
-            else
-            {
+            } else {
                 sstr << "-";
             }
         }
@@ -406,34 +385,33 @@ auto MessageProcessor::UBXNavTimeUTC(const std::string &msg) -> std::optional<Ub
         sstr << "   week valid       : " << std::string((flags & 2) ? "yes" : "no") << '\n';
         sstr << "   UTC time valid   : " << std::string((flags & 4) ? "yes" : "no") << '\n';
         std::string utcStd;
-        switch ((flags & 0xf0) >> 4)
-        {
-        case 0:
-            utcStd = "n/a";
-            break;
-        case 1:
-            utcStd = "CRL";
-            break;
-        case 2:
-            utcStd = "NIST";
-            break;
-        case 3:
-            utcStd = "USNO";
-            break;
-        case 4:
-            utcStd = "BIPM";
-            break;
-        case 5:
-            utcStd = "EU";
-            break;
-        case 6:
-            utcStd = "SU";
-            break;
-        case 7:
-            utcStd = "NTSC";
-            break;
-        default:
-            utcStd = "unknown";
+        switch ((flags & 0xf0) >> 4) {
+            case 0:
+                utcStd = "n/a";
+                break;
+            case 1:
+                utcStd = "CRL";
+                break;
+            case 2:
+                utcStd = "NIST";
+                break;
+            case 3:
+                utcStd = "USNO";
+                break;
+            case 4:
+                utcStd = "BIPM";
+                break;
+            case 5:
+                utcStd = "EU";
+                break;
+            case 6:
+                utcStd = "SU";
+                break;
+            case 7:
+                utcStd = "NTSC";
+                break;
+            default:
+                utcStd = "unknown";
         }
         sstr << "   UTC standard  : " << utcStd << "\n";
         logDebug(sstr.str());
@@ -441,8 +419,7 @@ auto MessageProcessor::UBXNavTimeUTC(const std::string &msg) -> std::optional<Ub
     return data;
 }
 
-auto MessageProcessor::UBXNavClock(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXNavClock(const std::string& msg) -> std::optional<UbxEvent> {
     // parse all fields
     // GPS time of week
     NavClock data;
@@ -458,15 +435,15 @@ auto MessageProcessor::UBXNavClock(const std::string &msg) -> std::optional<UbxE
 
     // meaning of columns:
     // 01 22 - signature of NAV-CLOCK message
-    // second in current week (s), clock bias (ns), clock drift (ns/s), time accuracy (ns), freq accuracy (ps/s)
+    // second in current week (s), clock bias (ns), clock drift (ns/s), time accuracy (ns), freq
+    // accuracy (ps/s)
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
-        sstr << "clkB[0]=" << std::setfill('0') << std::setw(2) << std::hex << (int)msg[4] << '\n';
-        sstr << "clkB[1]=" << std::setfill('0') << std::setw(2) << std::hex << (int)msg[5] << '\n';
-        sstr << "clkB[2]=" << std::setfill('0') << std::setw(2) << std::hex << (int)msg[6] << '\n';
-        sstr << "clkB[3]=" << std::setfill('0') << std::setw(2) << std::hex << (int)msg[7];
+        sstr << "clkB[0]=" << std::setfill('0') << std::setw(2) << std::hex << (int) msg[4] << '\n';
+        sstr << "clkB[1]=" << std::setfill('0') << std::setw(2) << std::hex << (int) msg[5] << '\n';
+        sstr << "clkB[2]=" << std::setfill('0') << std::setw(2) << std::hex << (int) msg[6] << '\n';
+        sstr << "clkB[3]=" << std::setfill('0') << std::setw(2) << std::hex << (int) msg[7];
         sstr << "*** UBX-NAV-CLOCK message:" << '\n';
         sstr << " iTOW          : " << data.iTOW / 1000 << " s" << '\n';
         sstr << " clock bias    : " << data.clkB << " ns" << '\n';
@@ -478,8 +455,7 @@ auto MessageProcessor::UBXNavClock(const std::string &msg) -> std::optional<UbxE
     return data;
 }
 
-auto MessageProcessor::UBXNavSVinfo(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXNavSVinfo(const std::string& msg) -> std::optional<UbxEvent> {
     bool allSats = true;
     NavSat data;
     // UBX-NAV-SVINFO: satellite information
@@ -491,8 +467,7 @@ auto MessageProcessor::UBXNavSVinfo(const std::string &msg) -> std::optional<Ubx
 
     const std::size_t N{(msg.size() - 8) / 12};
 
-    for (std::size_t i = 0; i < N; i++)
-    {
+    for (std::size_t i = 0; i < N; i++) {
         const std::size_t n{8 + i * 12};
 
         auto satId{get<std::uint8_t>(msg.begin() + n + 1)};
@@ -509,8 +484,7 @@ auto MessageProcessor::UBXNavSVinfo(const std::string &msg) -> std::optional<Ubx
         std::uint8_t health = (flags >> 4 & 0x01);
         health += 1;
         std::uint8_t orbitSource = 0;
-        if (flags & 0x04)
-        {
+        if (flags & 0x04) {
             if (flags & 0x08)
                 orbitSource = 1;
             else if (flags & 0x20)
@@ -522,72 +496,54 @@ auto MessageProcessor::UBXNavSVinfo(const std::string &msg) -> std::optional<Ubx
         bool diffCorr = (flags & 0x02);
 
         int gnssId{[&satId] {
-            if (satId < 33)
-            {
+            if (satId < 33) {
                 return 0;
-            }
-            else if (satId < 65)
-            {
+            } else if (satId < 65) {
                 return 3;
-            }
-            else if (satId < 97 || satId == 255)
-            {
+            } else if (satId < 97 || satId == 255) {
                 return 6;
-            }
-            else if (satId < 159)
-            {
+            } else if (satId < 159) {
                 return 1;
-            }
-            else if (satId < 164)
-            {
+            } else if (satId < 164) {
                 return 3;
-            }
-            else if (satId < 183)
-            {
+            } else if (satId < 183) {
                 return 4;
-            }
-            else if (satId < 198)
-            {
+            } else if (satId < 198) {
                 return 5;
-            }
-            else if (satId < 247)
-            {
+            } else if (satId < 247) {
                 return 2;
             }
             return 7;
         }()};
 
-        GnssSatellite sat(gnssId, satId, cnr, elev, azim, prRes, quality, health, orbitSource, used, diffCorr,
-                          smoothed);
-        if (sat.Cnr > 0)
-        {
+        GnssSatellite sat(gnssId, satId, cnr, elev, azim, prRes, quality, health, orbitSource, used,
+                          diffCorr, smoothed);
+        if (sat.Cnr > 0) {
             data.goodSats++;
         }
         data.satellites.push_back(std::move(sat));
     }
-    if (!allSats)
-    {
+    if (!allSats) {
         std::sort(data.satellites.begin(), data.satellites.end(), GnssSatellite::sortByCnr);
-        while (!data.satellites.empty() && (data.satellites.back().Cnr == 0))
-        {
+        while (!data.satellites.empty() && (data.satellites.back().Cnr == 0)) {
             data.satellites.pop_back();
         }
     }
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
         sstr << std::setfill(' ') << std::setw(3);
         sstr << "*** UBX-NAV-SVINFO message:" << '\n';
         sstr << " iTOW          : " << data.iTOW / 1000 << " s" << '\n';
-        sstr << " global flags  : 0x" << std::hex << (int)data.globFlags.value() << std::dec << '\n';
-        sstr << " Nr of sats    : " << (int)data.numSvs << "  (nr of sections=" << N << ")\n";
+        sstr << " global flags  : 0x" << std::hex << (int) data.globFlags.value() << std::dec
+             << '\n';
+        sstr << " Nr of sats    : " << (int) data.numSvs << "  (nr of sections=" << N << ")\n";
         logDebug(sstr.str());
         sstr.clear();
 
         GnssSatellite::PrintHeader(true);
-        for (std::vector<GnssSatellite>::iterator it = data.satellites.begin(); it != data.satellites.end(); it++)
-        {
+        for (std::vector<GnssSatellite>::iterator it = data.satellites.begin();
+             it != data.satellites.end(); it++) {
             it->Print(distance(data.satellites.begin(), it), false);
         }
         sstr << "   Sat Data :\n";
@@ -599,8 +555,7 @@ auto MessageProcessor::UBXNavSVinfo(const std::string &msg) -> std::optional<Ubx
     return data;
 }
 
-auto MessageProcessor::UBXNavSat(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXNavSat(const std::string& msg) -> std::optional<UbxEvent> {
     bool allSats = true;
 
     NavSat data;
@@ -614,8 +569,7 @@ auto MessageProcessor::UBXNavSat(const std::string &msg) -> std::optional<UbxEve
 
     const std::size_t N{(msg.size() - 8) / 12};
 
-    for (std::size_t i = 0; i < N; i++)
-    {
+    for (std::size_t i = 0; i < N; i++) {
         const std::size_t n{8 + i * 12};
 
         auto gnssId{get<std::uint8_t>(msg.begin() + n)};
@@ -628,39 +582,35 @@ auto MessageProcessor::UBXNavSat(const std::string &msg) -> std::optional<UbxEve
 
         GnssSatellite sat(gnssId, satId, cnr, elev, azim, prRes, flags);
 
-        if (sat.Cnr > 0)
-        {
+        if (sat.Cnr > 0) {
             data.goodSats++;
         }
         data.satellites.push_back(std::move(sat));
     }
-    if (!allSats)
-    {
+    if (!allSats) {
         std::sort(data.satellites.begin(), data.satellites.end(), GnssSatellite::sortByCnr);
-        while (!data.satellites.empty() && (data.satellites.back().Cnr == 0))
-        {
+        while (!data.satellites.empty() && (data.satellites.back().Cnr == 0)) {
             data.satellites.pop_back();
         }
     }
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
         sstr << "   --------------------------------------------------------------------\n";
-        sstr << " Nr of avail sats : " << (int)data.goodSats << "\n";
+        sstr << " Nr of avail sats : " << (int) data.goodSats << "\n";
         logDebug(sstr.str());
         sstr.clear();
 
         GnssSatellite::PrintHeader(true);
-        for (std::vector<GnssSatellite>::iterator it = data.satellites.begin(); it != data.satellites.end(); it++)
-        {
+        for (std::vector<GnssSatellite>::iterator it = data.satellites.begin();
+             it != data.satellites.end(); it++) {
             it->Print(distance(data.satellites.begin(), it), false);
         }
         sstr << std::setfill(' ') << std::setw(3);
         sstr << "*** UBX-NAV-SAT message:" << '\n';
         sstr << " iTOW          : " << data.iTOW / 1000 << " s" << '\n';
-        sstr << " version       : " << (int)version << '\n';
-        sstr << " Nr of sats    : " << (int)numSvs << "  (nr of sections=" << N << ")\n";
+        sstr << " version       : " << (int) version << '\n';
+        sstr << " Nr of sats    : " << (int) numSvs << "  (nr of sections=" << N << ")\n";
         sstr << "   Sat Data :\n";
         logDebug(sstr.str());
     }
@@ -668,8 +618,7 @@ auto MessageProcessor::UBXNavSat(const std::string &msg) -> std::optional<UbxEve
     return data;
 }
 
-auto MessageProcessor::UBXNavPosLLH(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXNavPosLLH(const std::string& msg) -> std::optional<UbxEvent> {
     GnssPosStruct pos{};
     // GPS time of week
     pos.iTOW = get<decltype(pos.iTOW)>(msg.begin());
@@ -688,34 +637,37 @@ auto MessageProcessor::UBXNavPosLLH(const std::string &msg) -> std::optional<Ubx
     return pos;
 }
 
-auto MessageProcessor::UBXCfgAnt(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXCfgAnt(const std::string& msg) -> std::optional<UbxEvent> {
     CfgAnt data;
     // parse all fields
     data.flags = get<std::uint16_t>(msg.begin());
     data.pins = get<std::uint16_t>(msg.begin() + 2);
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
         sstr << "*** UBX-CFG-ANT message:" << '\n';
-        sstr << " flags                     : 0x" << std::hex << (int)data.flags << std::dec << '\n';
-        sstr << " ant supply control signal : " << std::string((data.flags & 0x01) ? "on" : "off") << '\n';
-        sstr << " short detection           : " << std::string((data.flags & 0x02) ? "on" : "off") << '\n';
-        sstr << " open detection            : " << std::string((data.flags & 0x04) ? "on" : "off") << '\n';
-        sstr << " pwr down on short         : " << std::string((data.flags & 0x08) ? "on" : "off") << '\n';
-        sstr << " auto recovery from short  : " << std::string((data.flags & 0x10) ? "on" : "off") << '\n';
-        sstr << " supply switch pin         : " << (int)(data.pins & 0x1f) << '\n';
-        sstr << " short detection pin       : " << (int)((data.pins >> 5) & 0x1f) << '\n';
-        sstr << " open detection pin        : " << (int)((data.pins >> 10) & 0x1f) << '\n';
+        sstr << " flags                     : 0x" << std::hex << (int) data.flags << std::dec
+             << '\n';
+        sstr << " ant supply control signal : " << std::string((data.flags & 0x01) ? "on" : "off")
+             << '\n';
+        sstr << " short detection           : " << std::string((data.flags & 0x02) ? "on" : "off")
+             << '\n';
+        sstr << " open detection            : " << std::string((data.flags & 0x04) ? "on" : "off")
+             << '\n';
+        sstr << " pwr down on short         : " << std::string((data.flags & 0x08) ? "on" : "off")
+             << '\n';
+        sstr << " auto recovery from short  : " << std::string((data.flags & 0x10) ? "on" : "off")
+             << '\n';
+        sstr << " supply switch pin         : " << (int) (data.pins & 0x1f) << '\n';
+        sstr << " short detection pin       : " << (int) ((data.pins >> 5) & 0x1f) << '\n';
+        sstr << " open detection pin        : " << (int) ((data.pins >> 10) & 0x1f) << '\n';
 
         logDebug(sstr.str());
     }
     return data;
 }
 
-auto MessageProcessor::UBXCfgNavX5(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXCfgNavX5(const std::string& msg) -> std::optional<UbxEvent> {
     CfgNavX5 data;
     // parse all fields
     data.version = get<std::uint8_t>(msg.begin());
@@ -728,25 +680,23 @@ auto MessageProcessor::UBXCfgNavX5(const std::string &msg) -> std::optional<UbxE
     data.aopCfg = get<std::uint8_t>(msg.begin() + 27);
     data.aopOrbMaxErr = get<std::uint16_t>(msg.begin() + 30);
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
         sstr << "*** UBX-MON-NAVX5 message:" << '\n';
-        sstr << " msg version         : " << (int)data.version << '\n';
-        sstr << " min nr of SVs       : " << (int)data.minSVs << '\n';
-        sstr << " max nr of SVs       : " << (int)data.maxSVs << '\n';
-        sstr << " min CNR for nav     : " << (int)data.minCNO << '\n';
-        sstr << " initial 3D fix      : " << (int)data.iniFix3D << '\n';
-        sstr << " GPS week rollover   : " << (int)data.wknRollover << '\n';
-        sstr << " AOP auton config    : " << (int)data.aopCfg << '\n';
-        sstr << " max AOP orbit error : " << (int)data.aopOrbMaxErr << " m" << '\n';
+        sstr << " msg version         : " << (int) data.version << '\n';
+        sstr << " min nr of SVs       : " << (int) data.minSVs << '\n';
+        sstr << " max nr of SVs       : " << (int) data.maxSVs << '\n';
+        sstr << " min CNR for nav     : " << (int) data.minCNO << '\n';
+        sstr << " initial 3D fix      : " << (int) data.iniFix3D << '\n';
+        sstr << " GPS week rollover   : " << (int) data.wknRollover << '\n';
+        sstr << " AOP auton config    : " << (int) data.aopCfg << '\n';
+        sstr << " max AOP orbit error : " << (int) data.aopOrbMaxErr << " m" << '\n';
         logDebug(sstr.str());
     }
     return data;
 }
 
-auto MessageProcessor::UBXCfgNav5(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXCfgNav5(const std::string& msg) -> std::optional<UbxEvent> {
     CfgNav5 data;
     // UBX CFG-NAV5: satellite information
     // parse all fields
@@ -759,25 +709,23 @@ auto MessageProcessor::UBXCfgNav5(const std::string &msg) -> std::optional<UbxEv
     data.cnoThreshNumSVs = get<std::uint8_t>(msg.begin() + 24);
     data.cnoThresh = get<std::uint8_t>(msg.begin() + 25);
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
         sstr << "*** UBX CFG-NAV5 message:" << '\n';
-        sstr << " mask               : " << std::hex << (int)data.mask << std::dec << '\n';
-        sstr << " dynamic model used : " << (int)data.dynModel << '\n';
-        sstr << " fixMode            : " << (int)data.fixMode << '\n';
-        sstr << " fixed Alt          : " << (double)data.fixedAlt * 0.01 << " m" << '\n';
-        sstr << " fixed Alt Var      : " << (double)data.fixedAltVar * 0.0001 << " m^2" << '\n';
-        sstr << " min elevation      : " << (int)data.minElev << " deg\n";
-        sstr << " cnoThresh required for fix : " << (int)data.cnoThresh << " dBHz\n";
-        sstr << " min nr of SVs having cnoThresh for fix : " << (int)data.cnoThreshNumSVs << '\n';
+        sstr << " mask               : " << std::hex << (int) data.mask << std::dec << '\n';
+        sstr << " dynamic model used : " << (int) data.dynModel << '\n';
+        sstr << " fixMode            : " << (int) data.fixMode << '\n';
+        sstr << " fixed Alt          : " << (double) data.fixedAlt * 0.01 << " m" << '\n';
+        sstr << " fixed Alt Var      : " << (double) data.fixedAltVar * 0.0001 << " m^2" << '\n';
+        sstr << " min elevation      : " << (int) data.minElev << " deg\n";
+        sstr << " cnoThresh required for fix : " << (int) data.cnoThresh << " dBHz\n";
+        sstr << " min nr of SVs having cnoThresh for fix : " << (int) data.cnoThreshNumSVs << '\n';
         logDebug(sstr.str());
     }
     return data;
 }
 
-auto MessageProcessor::UBXCfgTP5(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXCfgTP5(const std::string& msg) -> std::optional<UbxEvent> {
     UbxTimePulseStruct tp{};
     // parse all fields
     tp.tpIndex = get<std::uint8_t>(msg.begin());
@@ -794,71 +742,79 @@ auto MessageProcessor::UBXCfgTP5(const std::string &msg) -> std::optional<UbxEve
     bool isFreq{(tp.flags & 0x08u) != 0x00u};
     bool isLength{(tp.flags & 0x10) != 0x00u};
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
         sstr << "*** UBX-CFG-TP5 message:" << '\n';
-        sstr << " message version           : " << std::dec << (int)tp.version << '\n';
-        sstr << " time pulse index          : " << std::dec << (int)tp.tpIndex << '\n';
-        sstr << " ant cable delay           : " << std::dec << (int)tp.antCableDelay << " ns" << '\n';
-        sstr << " rf group delay            : " << std::dec << (int)tp.rfGroupDelay << " ns" << '\n';
-        sstr << " user config delay         : " << std::dec << (int)tp.userConfigDelay << " ns" << '\n';
-        if (isFreq)
-        {
-            sstr << " pulse frequency           : " << std::dec << (int)tp.freqPeriod << " Hz" << '\n';
-            sstr << " locked pulse frequency    : " << std::dec << (int)tp.freqPeriodLock << " Hz" << '\n';
-        }
-        else
-        {
-            sstr << " pulse period              : " << std::dec << (int)tp.freqPeriod << " us" << '\n';
-            sstr << " locked pulse period       : " << std::dec << (int)tp.freqPeriodLock << " us" << '\n';
-        }
-        if (isLength)
-        {
-            sstr << " pulse length              : " << std::dec << (int)tp.pulseLenRatio << " us" << '\n';
-            sstr << " locked pulse length       : " << std::dec << (int)tp.pulseLenRatioLock << " us" << '\n';
-        }
-        else
-        {
-            sstr << " pulse duty cycle          : " << std::dec << (double)tp.pulseLenRatio / ((uint64_t)1 << 32)
+        sstr << " message version           : " << std::dec << (int) tp.version << '\n';
+        sstr << " time pulse index          : " << std::dec << (int) tp.tpIndex << '\n';
+        sstr << " ant cable delay           : " << std::dec << (int) tp.antCableDelay << " ns"
+             << '\n';
+        sstr << " rf group delay            : " << std::dec << (int) tp.rfGroupDelay << " ns"
+             << '\n';
+        sstr << " user config delay         : " << std::dec << (int) tp.userConfigDelay << " ns"
+             << '\n';
+        if (isFreq) {
+            sstr << " pulse frequency           : " << std::dec << (int) tp.freqPeriod << " Hz"
                  << '\n';
-            sstr << " locked pulse duty cycle   : " << std::dec << (double)tp.pulseLenRatioLock / ((uint64_t)1 << 32)
+            sstr << " locked pulse frequency    : " << std::dec << (int) tp.freqPeriodLock << " Hz"
+                 << '\n';
+        } else {
+            sstr << " pulse period              : " << std::dec << (int) tp.freqPeriod << " us"
+                 << '\n';
+            sstr << " locked pulse period       : " << std::dec << (int) tp.freqPeriodLock << " us"
                  << '\n';
         }
-        sstr << " flags                     : 0x" << std::hex << (int)tp.flags << std::dec << '\n';
-        sstr << " tp active                 : " << std::string((tp.flags & 0x01) ? "yes" : "no") << '\n';
+        if (isLength) {
+            sstr << " pulse length              : " << std::dec << (int) tp.pulseLenRatio << " us"
+                 << '\n';
+            sstr << " locked pulse length       : " << std::dec << (int) tp.pulseLenRatioLock
+                 << " us" << '\n';
+        } else {
+            sstr << " pulse duty cycle          : " << std::dec
+                 << (double) tp.pulseLenRatio / ((uint64_t) 1 << 32) << '\n';
+            sstr << " locked pulse duty cycle   : " << std::dec
+                 << (double) tp.pulseLenRatioLock / ((uint64_t) 1 << 32) << '\n';
+        }
+        sstr << " flags                     : 0x" << std::hex << (int) tp.flags << std::dec << '\n';
+        sstr << " tp active                 : " << std::string((tp.flags & 0x01) ? "yes" : "no")
+             << '\n';
 
-        sstr << " lockGpsFreq               : " << std::string((tp.flags & 0x02) ? "on" : "off") << '\n';
-        sstr << " lockedOtherSet            : " << std::string((tp.flags & 0x04) ? "on" : "off") << '\n';
-        sstr << " isFreq                    : " << std::string((tp.flags & 0x08) ? "on" : "off") << '\n';
-        sstr << " isLength                  : " << std::string((tp.flags & 0x10) ? "on" : "off") << '\n';
-        sstr << " alignToTow                : " << std::string((tp.flags & 0x20) ? "on" : "off") << '\n';
-        sstr << " polarity                  : " << std::string((tp.flags & 0x40) ? "rising" : "falling") << '\n';
+        sstr << " lockGpsFreq               : " << std::string((tp.flags & 0x02) ? "on" : "off")
+             << '\n';
+        sstr << " lockedOtherSet            : " << std::string((tp.flags & 0x04) ? "on" : "off")
+             << '\n';
+        sstr << " isFreq                    : " << std::string((tp.flags & 0x08) ? "on" : "off")
+             << '\n';
+        sstr << " isLength                  : " << std::string((tp.flags & 0x10) ? "on" : "off")
+             << '\n';
+        sstr << " alignToTow                : " << std::string((tp.flags & 0x20) ? "on" : "off")
+             << '\n';
+        sstr << " polarity                  : "
+             << std::string((tp.flags & 0x40) ? "rising" : "falling") << '\n';
         sstr << " time grid                 : ";
-        if (gpsVersion.has_value() && getProtVersion(gpsVersion.value().prot).has_value() && getProtVersion(gpsVersion.value().prot).value().major < 16)
+        if (gpsVersion.has_value() && getProtVersion(gpsVersion.value().prot).has_value() &&
+            getProtVersion(gpsVersion.value().prot).value().major < 16)
             sstr << std::string((tp.flags & 0x80) ? "GPS" : "UTC") << '\n';
-        else
-        {
+        else {
             int timeGrid = (tp.flags & UbxTimePulseStruct::GRID_UTC_GPS) >> 7;
-            switch (timeGrid)
-            {
-            case 0:
-                sstr << "UTC" << '\n';
-                break;
-            case 1:
-                sstr << "GPS" << '\n';
-                break;
-            case 2:
-                sstr << "Glonass" << '\n';
-                break;
-            case 3:
-                sstr << "BeiDou" << '\n';
-                break;
-            case 4:
-                sstr << "Galileo" << '\n';
-                break;
-            default:
-                sstr << "unknown" << '\n';
+            switch (timeGrid) {
+                case 0:
+                    sstr << "UTC" << '\n';
+                    break;
+                case 1:
+                    sstr << "GPS" << '\n';
+                    break;
+                case 2:
+                    sstr << "Glonass" << '\n';
+                    break;
+                case 3:
+                    sstr << "BeiDou" << '\n';
+                    break;
+                case 4:
+                    sstr << "Galileo" << '\n';
+                    break;
+                default:
+                    sstr << "unknown" << '\n';
             }
         }
 
@@ -867,8 +823,7 @@ auto MessageProcessor::UBXCfgTP5(const std::string &msg) -> std::optional<UbxEve
     return tp;
 }
 
-auto MessageProcessor::UBXCfgGNSS(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXCfgGNSS(const std::string& msg) -> std::optional<UbxEvent> {
     // UBX-CFG-GNSS: GNSS configuration
     // parse all fields
     // version
@@ -882,36 +837,35 @@ auto MessageProcessor::UBXCfgGNSS(const std::string &msg) -> std::optional<UbxEv
 
     const std::size_t N{(msg.size() - 4) / 8};
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
         sstr << "*** UBX CFG-GNSS message:" << '\n';
-        sstr << " version                    : " << (int)data.version << '\n';
-        sstr << " nr of hw tracking channels : " << (int)data.numTrkChHw << '\n';
-        sstr << " nr of channels in use      : " << (int)data.numTrkChUse << '\n';
-        sstr << " Nr of config blocks        : " << (int)data.numConfigBlocks << "  (nr of sections=" << N << ")";
+        sstr << " version                    : " << (int) data.version << '\n';
+        sstr << " nr of hw tracking channels : " << (int) data.numTrkChHw << '\n';
+        sstr << " nr of channels in use      : " << (int) data.numTrkChUse << '\n';
+        sstr << " Nr of config blocks        : " << (int) data.numConfigBlocks
+             << "  (nr of sections=" << N << ")";
         sstr << "  Config Data :\n";
         logDebug(sstr.str());
     }
 
-    for (std::size_t i = 0; i < N; i++)
-    {
+    for (std::size_t i = 0; i < N; i++) {
         GnssConfigStruct config;
         const auto n{8 * i};
         config.gnssId = get<decltype(config.gnssId)>(msg.begin() + n + 4);
         config.resTrkCh = get<decltype(config.resTrkCh)>(msg.begin() + n + 5);
         config.maxTrkCh = get<decltype(config.maxTrkCh)>(msg.begin() + n + 6);
         config.flags = get<decltype(config.flags)>(msg.begin() + n + 8);
-        if (logLevel() == LogLevel::Debug)
-        {
+        if (logLevel() == LogLevel::Debug) {
             std::stringstream sstr;
             sstr << "   " << i << ":   GNSS name : ";
-            sstr << std::string(Gnss::Id::name[std::clamp(
-                static_cast<int>(config.gnssId), static_cast<int>(Gnss::Id::first), static_cast<int>(Gnss::Id::last))]);
+            sstr << std::string(Gnss::Id::name[std::clamp(static_cast<int>(config.gnssId),
+                                                          static_cast<int>(Gnss::Id::first),
+                                                          static_cast<int>(Gnss::Id::last))]);
             sstr << '\n';
-            sstr << "      reserved (min)tracking channels  : " << (int)config.resTrkCh << '\n';
-            sstr << "      max nr of tracking channels used : " << (int)config.maxTrkCh << '\n';
-            sstr << "      flags  : 0x" << std::hex << (int)config.flags << "\n";
+            sstr << "      reserved (min)tracking channels  : " << (int) config.resTrkCh << '\n';
+            sstr << "      max nr of tracking channels used : " << (int) config.maxTrkCh << '\n';
+            sstr << "      flags  : 0x" << std::hex << (int) config.flags << "\n";
             logDebug(sstr.str());
         }
         data.configs.push_back(std::move(config));
@@ -919,8 +873,7 @@ auto MessageProcessor::UBXCfgGNSS(const std::string &msg) -> std::optional<UbxEv
     return data;
 }
 
-auto MessageProcessor::UBXCfgMSG(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXCfgMSG(const std::string& msg) -> std::optional<UbxEvent> {
     // caution: the message id is stored in the first two bytes of the data array
     // with message class in the first and message id in the second byte.
     // So, reading the 16-bit message with one operation, the endianness is big
@@ -932,12 +885,10 @@ auto MessageProcessor::UBXCfgMSG(const std::string &msg) -> std::optional<UbxEve
     return data;
 }
 
-auto MessageProcessor::UBXMonRx(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXMonRx(const std::string& msg) -> std::optional<UbxEvent> {
     MonRx data;
 
-    for (std::size_t target = 0; target < s_nr_targets; target++)
-    {
+    for (std::size_t target = 0; target < s_nr_targets; target++) {
         data.pending[target] = get<uint16_t>(msg.begin() + 2 * target);
         data.usage[target] = get<std::uint8_t>(msg.begin() + target + 12);
         data.peakUsage[target] = get<std::uint8_t>(msg.begin() + target + 18);
@@ -945,28 +896,24 @@ auto MessageProcessor::UBXMonRx(const std::string &msg) -> std::optional<UbxEven
         data.tPeakUsage += data.peakUsage[target];
     }
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
         sstr << std::setfill(' ') << std::setw(3);
         sstr << "*** UBX-MON-RXBUF message:" << '\n';
-        sstr << " global RX buf usage      : " << (int)data.tUsage << " %" << '\n';
-        sstr << " global RX buf peak usage : " << (int)data.tPeakUsage << " %" << '\n';
+        sstr << " global RX buf usage      : " << (int) data.tUsage << " %" << '\n';
+        sstr << " global RX buf peak usage : " << (int) data.tPeakUsage << " %" << '\n';
         sstr << " RX buf usage for target      : ";
-        for (std::size_t i = 0; i < s_nr_targets; i++)
-        {
-            sstr << "    (" << i << ") " << std::setw(3) << (int)data.usage[i];
+        for (std::size_t i = 0; i < s_nr_targets; i++) {
+            sstr << "    (" << i << ") " << std::setw(3) << (int) data.usage[i];
         }
         sstr << '\n';
         sstr << " RX buf peak usage for target : ";
-        for (std::size_t i = 0; i < s_nr_targets; i++)
-        {
-            sstr << "    (" << i << ") " << std::setw(3) << (int)data.peakUsage[i];
+        for (std::size_t i = 0; i < s_nr_targets; i++) {
+            sstr << "    (" << i << ") " << std::setw(3) << (int) data.peakUsage[i];
         }
         sstr << '\n';
         sstr << " RX bytes pending for target  : ";
-        for (std::size_t i = 0; i < s_nr_targets; i++)
-        {
+        for (std::size_t i = 0; i < s_nr_targets; i++) {
             sstr << "    (" << i << ") " << std::setw(3) << data.pending[i];
         }
         sstr << "\n";
@@ -975,11 +922,9 @@ auto MessageProcessor::UBXMonRx(const std::string &msg) -> std::optional<UbxEven
     return data;
 }
 
-auto MessageProcessor::UBXMonTx(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXMonTx(const std::string& msg) -> std::optional<UbxEvent> {
     MonTx data;
-    for (std::size_t target = 0; target < s_nr_targets; target++)
-    {
+    for (std::size_t target = 0; target < s_nr_targets; target++) {
         data.pending[target] = get<uint16_t>(msg.begin() + 2 * target);
         data.usage[target] = get<std::uint8_t>(msg.begin() + target + 12);
         data.peakUsage[target] = get<std::uint8_t>(msg.begin() + target + 18);
@@ -988,28 +933,24 @@ auto MessageProcessor::UBXMonTx(const std::string &msg) -> std::optional<UbxEven
     data.tUsage = get<std::uint8_t>(msg.begin() + 24);
     data.tPeakUsage = get<std::uint8_t>(msg.begin() + 25);
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
         sstr << std::setfill(' ') << std::setw(3);
         sstr << "*** UBX-MON-TXBUF message:" << '\n';
-        sstr << " global TX buf usage      : " << (int)data.tUsage << " %" << '\n';
-        sstr << " global TX buf peak usage : " << (int)data.tPeakUsage << " %" << '\n';
+        sstr << " global TX buf usage      : " << (int) data.tUsage << " %" << '\n';
+        sstr << " global TX buf peak usage : " << (int) data.tPeakUsage << " %" << '\n';
         sstr << " TX buf usage for target      : ";
-        for (std::size_t i = 0; i < s_nr_targets; i++)
-        {
-            sstr << "    (" << i << ") " << std::setw(3) << (int)data.usage[i];
+        for (std::size_t i = 0; i < s_nr_targets; i++) {
+            sstr << "    (" << i << ") " << std::setw(3) << (int) data.usage[i];
         }
         sstr << '\n';
         sstr << " TX buf peak usage for target : ";
-        for (std::size_t i = 0; i < s_nr_targets; i++)
-        {
-            sstr << "    (" << i << ") " << std::setw(3) << (int)data.peakUsage[i];
+        for (std::size_t i = 0; i < s_nr_targets; i++) {
+            sstr << "    (" << i << ") " << std::setw(3) << (int) data.peakUsage[i];
         }
         sstr << '\n';
         sstr << " TX bytes pending for target  : ";
-        for (std::size_t i = 0; i < s_nr_targets; i++)
-        {
+        for (std::size_t i = 0; i < s_nr_targets; i++) {
             sstr << "    (" << i << ") " << std::setw(3) << data.pending[i];
         }
         sstr << "\n";
@@ -1018,8 +959,7 @@ auto MessageProcessor::UBXMonTx(const std::string &msg) -> std::optional<UbxEven
     return data;
 }
 
-auto MessageProcessor::UBXMonHW(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXMonHW(const std::string& msg) -> std::optional<UbxEvent> {
     GnssMonHwStruct data;
     // parse all fields
     // noise
@@ -1033,15 +973,14 @@ auto MessageProcessor::UBXMonHW(const std::string &msg) -> std::optional<UbxEven
     data.flags = get<std::uint8_t>(msg.begin() + 22);
     data.jamInd = get<std::uint8_t>(msg.begin() + 45);
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
         sstr << "*** UBX-MON-HW message:" << '\n';
         sstr << " noise            : " << data.noisePerMS << " dBc" << '\n';
         sstr << " agcCnt (0..8192) : " << data.agcCnt << '\n';
-        sstr << " antenna status   : " << (int)data.antStatus << '\n';
-        sstr << " antenna power    : " << (int)data.antPower << '\n';
-        sstr << " jamming indicator: " << (int)data.jamInd << '\n';
+        sstr << " antenna status   : " << (int) data.antStatus << '\n';
+        sstr << " antenna power    : " << (int) data.antPower << '\n';
+        sstr << " jamming indicator: " << (int) data.jamInd << '\n';
         sstr << " flags             : ";
         for (int i = 7; i >= 0; i--)
             if (data.flags & 1 << i)
@@ -1051,7 +990,7 @@ auto MessageProcessor::UBXMonHW(const std::string &msg) -> std::optional<UbxEven
         sstr << '\n';
         sstr << "   RTC calibrated   : " << std::string((data.flags & 1) ? "yes" : "no") << '\n';
         sstr << "   safe boot        : " << std::string((data.flags & 2) ? "yes" : "no") << '\n';
-        sstr << "   jamming state    : " << std::dec << (int)((data.flags & 0x0c) >> 2) << '\n';
+        sstr << "   jamming state    : " << std::dec << (int) ((data.flags & 0x0c) >> 2) << '\n';
         sstr << "   Xtal absent      : " << std::string((data.flags & 0x10) ? "yes" : "no");
         sstr << "\n";
         logDebug(sstr.str());
@@ -1059,8 +998,7 @@ auto MessageProcessor::UBXMonHW(const std::string &msg) -> std::optional<UbxEven
     return data;
 }
 
-auto MessageProcessor::UBXMonHW2(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXMonHW2(const std::string& msg) -> std::optional<UbxEvent> {
     GnssMonHw2Struct data;
     // parse all fields
     // I/Q offset and magnitude information of front-end
@@ -1073,21 +1011,19 @@ auto MessageProcessor::UBXMonHW2(const std::string &msg) -> std::optional<UbxEve
     // auto lowLevCfg { get<uint32_t>(msg.begin() + 8) };
     auto postStatus{get<uint32_t>(msg.begin() + 20)};
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
         sstr << "*** UBX-MON-HW2 message:" << '\n';
-        sstr << " I offset         : " << (int)ofsI << '\n';
-        sstr << " I magnitude      : " << (int)magI << '\n';
-        sstr << " Q offset         : " << (int)ofsQ << '\n';
-        sstr << " Q magnitude      : " << (int)magQ << '\n';
-        sstr << " config source    : " << std::hex << (int)cfgSrc << '\n';
+        sstr << " I offset         : " << (int) ofsI << '\n';
+        sstr << " I magnitude      : " << (int) magI << '\n';
+        sstr << " Q offset         : " << (int) ofsQ << '\n';
+        sstr << " Q magnitude      : " << (int) magQ << '\n';
+        sstr << " config source    : " << std::hex << (int) cfgSrc << '\n';
         sstr << " POST status word : " << std::hex << postStatus << std::dec << '\n';
         logDebug(sstr.str());
     }
     return data;
 }
-
 
 // Parses strings like:
 // "9.10"
@@ -1095,8 +1031,7 @@ auto MessageProcessor::UBXMonHW2(const std::string &msg) -> std::optional<UbxEve
 // "18"
 // "  23.01 "
 // Returns std::nullopt on invalid input.
-auto MessageProcessor::getProtVersion(std::string_view text) -> std::optional<Version>
-{
+auto MessageProcessor::getProtVersion(std::string_view text) -> std::optional<Version> {
     // trim whitespace
     while (!text.empty() && std::isspace(static_cast<unsigned char>(text.front())))
         text.remove_prefix(1);
@@ -1111,8 +1046,7 @@ auto MessageProcessor::getProtVersion(std::string_view text) -> std::optional<Ve
 
     auto dotPos = text.find('.');
 
-    if (dotPos == std::string_view::npos)
-    {
+    if (dotPos == std::string_view::npos) {
         // major only
         auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), v.major);
         if (ec != std::errc{} || ptr != text.data() + text.size())
@@ -1143,54 +1077,47 @@ auto MessageProcessor::getProtVersion(std::string_view text) -> std::optional<Ve
     return v;
 }
 
-auto MessageProcessor::UBXMonVer(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXMonVer(const std::string& msg) -> std::optional<UbxEvent> {
     // parse all fields
     GpsVersion data;
 
-    for (int i = 0; msg[i] != 0 && i < 30; i++)
-    {
-        data.swString += (char)msg[i];
+    for (int i = 0; msg[i] != 0 && i < 30; i++) {
+        data.swString += (char) msg[i];
     }
-    for (int i = 30; msg[i] != 0 && i < 40; i++)
-    {
-        data.hwString += (char)msg[i];
+    for (int i = 30; msg[i] != 0 && i < 40; i++) {
+        data.hwString += (char) msg[i];
     }
 
     std::stringstream sstr;
     std::string::size_type i = 0;
-    while (i != std::string::npos && i < msg.size())
-    {
-        std::string s = msg.substr(i, msg.find((char)0x00, i + 1) - i + 1);
-        while (s.size() && s[0] == 0x00)
-        {
+    while (i != std::string::npos && i < msg.size()) {
+        std::string s = msg.substr(i, msg.find((char) 0x00, i + 1) - i + 1);
+        while (s.size() && s[0] == 0x00) {
             s.erase(0, 1);
         }
-        if (s.size())
-        {
+        if (s.size()) {
             size_t n = s.find("PROTVER", 0);
-            if (n != std::string::npos)
-            {
+            if (n != std::string::npos) {
                 std::string str = s.substr(7, s.size() - 7);
                 while (str.size() && !isdigit(str[0]))
                     str.erase(0, 1);
                 while (str.size() &&
-                       (str[str.size() - 1] == ' ' || !std::isgraph(static_cast<unsigned char>(str[str.size() - 1]))))
+                       (str[str.size() - 1] == ' ' ||
+                        !std::isgraph(static_cast<unsigned char>(str[str.size() - 1]))))
                     str.erase(str.size() - 1, 1);
                 data.prot = str;
                 auto version = getProtVersion(str);
-                if (logLevel() == LogLevel::Debug && version.has_value())
-                {
+                if (logLevel() == LogLevel::Debug && version.has_value()) {
                     sstr << "caught PROTVER string: '" << str << "'\n";
-                    sstr << "ver: " + std::to_string(version.value().major) + "." + std::to_string(version.value().minor) + "\n";
+                    sstr << "ver: " + std::to_string(version.value().major) + "." +
+                                std::to_string(version.value().minor) + "\n";
                 }
             }
         }
-        i = msg.find((char)0x00, i + 1);
+        i = msg.find((char) 0x00, i + 1);
     }
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         sstr << "*** UBX-MON-VER message:" << '\n';
         sstr << " sw version  : " << data.swString << '\n';
         sstr << " hw version  : " << data.hwString << '\n';
@@ -1200,8 +1127,7 @@ auto MessageProcessor::UBXMonVer(const std::string &msg) -> std::optional<UbxEve
     return data;
 }
 
-auto MessageProcessor::UBXTimTP(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXTimTP(const std::string& msg) -> std::optional<UbxEvent> {
     TimTP data;
     // parse all fields
     // TP time of week, ms
@@ -1220,31 +1146,26 @@ auto MessageProcessor::UBXTimTP(const std::string &msg) -> std::optional<UbxEven
     double sr = data.towMS / 1000.;
     sr = sr - data.towMS / 1000;
 
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
         sstr << "*** UBX-TIM-TP message:" << '\n';
         sstr << " tow s            : " << std::dec << data.towMS / 1000. << " s" << '\n';
         sstr << " tow sub s        : " << std::dec << data.towSubMS << " = ";
-        sstr << (long int)(sr * 1e9 + data.towSubMS + 0.5) << " ns" << '\n';
+        sstr << (long int) (sr * 1e9 + data.towSubMS + 0.5) << " ns" << '\n';
         sstr << " quantization err : " << std::dec << data.qErr << " ps" << '\n';
         sstr << " week nr : " << std::dec << data.week << '\n';
         sstr << " *flags            : ";
-        for (int i = 7; i >= 0; i--)
-        {
-            if (data.flags & 1 << i)
-            {
+        for (int i = 7; i >= 0; i--) {
+            if (data.flags & 1 << i) {
                 sstr << i;
-            }
-            else
-            {
+            } else {
                 sstr << "-";
             }
         }
         sstr << '\n';
         sstr << "  time base     : " << std::string(((data.flags & 1) ? "UTC" : "GNSS")) << '\n';
         sstr << "  UTC available : " << std::string((data.flags & 2) ? "yes" : "no") << '\n';
-        sstr << "  (T)RAIM info  : " << (int)((data.flags & 0x0c) >> 2) << '\n';
+        sstr << "  (T)RAIM info  : " << (int) ((data.flags & 0x0c) >> 2) << '\n';
         sstr << " *refInfo          : ";
         for (int i = 7; i >= 0; i--)
             if (data.refInfo & 1 << i)
@@ -1253,47 +1174,45 @@ auto MessageProcessor::UBXTimTP(const std::string &msg) -> std::optional<UbxEven
                 sstr << "-";
         sstr << '\n';
         std::string gnssRef;
-        switch (data.refInfo & 0x0f)
-        {
-        case 0:
-            gnssRef = "GPS";
-            break;
-        case 1:
-            gnssRef = "GLONASS";
-            break;
-        case 2:
-            gnssRef = "BeiDou";
-            break;
-        default:
-            gnssRef = "unknown";
+        switch (data.refInfo & 0x0f) {
+            case 0:
+                gnssRef = "GPS";
+                break;
+            case 1:
+                gnssRef = "GLONASS";
+                break;
+            case 2:
+                gnssRef = "BeiDou";
+                break;
+            default:
+                gnssRef = "unknown";
         }
         sstr << "  GNSS reference : " << gnssRef << '\n';
         std::string utcStd;
-        switch ((data.refInfo & 0xf0) >> 4)
-        {
-        case 0:
-            utcStd = "n/a";
-            break;
-        case 1:
-            utcStd = "CRL";
-            break;
-        case 2:
-            utcStd = "NIST";
-            break;
-        case 3:
-            utcStd = "USNO";
-            break;
-        case 4:
-            utcStd = "BIPM";
-            break;
-        case 5:
-            utcStd = "EU";
-            break;
-        case 6:
-            utcStd = "SU";
-            break;
-        default:
-            utcStd = "unknown";
+        switch ((data.refInfo & 0xf0) >> 4) {
+            case 0:
+                utcStd = "n/a";
+                break;
+            case 1:
+                utcStd = "CRL";
+                break;
+            case 2:
+                utcStd = "NIST";
+                break;
+            case 3:
+                utcStd = "USNO";
+                break;
+            case 4:
+                utcStd = "BIPM";
+                break;
+            case 5:
+                utcStd = "EU";
+                break;
+            case 6:
+                utcStd = "SU";
+                break;
+            default:
+                utcStd = "unknown";
         }
         sstr << "  UTC standard  : " << utcStd << "\n";
         logDebug(sstr.str());
@@ -1301,8 +1220,7 @@ auto MessageProcessor::UBXTimTP(const std::string &msg) -> std::optional<UbxEven
     return data;
 }
 
-auto MessageProcessor::UBXTimTM2(const std::string &msg) -> std::optional<UbxEvent>
-{
+auto MessageProcessor::UBXTimTM2(const std::string& msg) -> std::optional<UbxEvent> {
     // parse all fields
     // channel
     auto ch{get<std::uint8_t>(msg.begin())};
@@ -1337,32 +1255,27 @@ auto MessageProcessor::UBXTimTM2(const std::string &msg) -> std::optional<UbxEve
     // accuracy (ns), rising edge counter, rising/falling edge (1/0), time valid (GNSS fix)
 
     std::stringstream sstr;
-    if (logLevel() == LogLevel::Debug)
-    {
+    if (logLevel() == LogLevel::Debug) {
         sstr << "*** UBX-TimTM2 message:" << '\n';
-        sstr << " channel         : " << std::dec << (int)ch << '\n';
+        sstr << " channel         : " << std::dec << (int) ch << '\n';
         sstr << " rising edge ctr : " << std::dec << count << '\n';
         sstr << " * last rising edge:" << '\n';
         sstr << "    week nr        : " << std::dec << wnR << '\n';
         sstr << "    tow s          : " << std::dec << towMsR / 1000. << " s" << '\n';
         sstr << "    tow sub s     : " << std::dec << towSubMsR << " = ";
-        sstr << (long int)(sr * 1e9 + towSubMsR) << "ns" << '\n';
+        sstr << (long int) (sr * 1e9 + towSubMsR) << "ns" << '\n';
         sstr << " * last falling edge:" << '\n';
         sstr << "    week nr        : ";
         sstr << std::dec << wnF << '\n';
         sstr << "    tow s          : " << std::dec << towMsF / 1000. << " s" << '\n';
         sstr << "    tow sub s: " << std::dec << towSubMsF << " = ";
-        sstr << (long int)(sf * 1e9 + towSubMsF) << " ns" << '\n';
+        sstr << (long int) (sf * 1e9 + towSubMsF) << " ns" << '\n';
         sstr << " accuracy est: " << std::dec << accEst << " ns" << '\n';
         sstr << " flags             : ";
-        for (int i = 7; i >= 0; i--)
-        {
-            if (flags & 1 << i)
-            {
+        for (int i = 7; i >= 0; i--) {
+            if (flags & 1 << i) {
                 sstr << i;
-            }
-            else
-            {
+            } else {
                 sstr << "-";
             }
         }
@@ -1377,50 +1290,42 @@ auto MessageProcessor::UBXTimTM2(const std::string &msg) -> std::optional<UbxEve
         sstr << "   UTC available        : " << std::string((flags & 0x20) ? "yes" : "no") << '\n';
         sstr << "   time valid (GNSS fix): " << std::string((flags & 0x40) ? "yes" : "no") << '\n';
         std::string timeBase;
-        switch ((flags & 0x18) >> 3)
-        {
-        case 0:
-            timeBase = "receiver time";
-            break;
-        case 1:
-            timeBase = "GNSS";
-            break;
-        case 2:
-            timeBase = "UTC";
-            break;
-        default:
-            timeBase = "unknown";
+        switch ((flags & 0x18) >> 3) {
+            case 0:
+                timeBase = "receiver time";
+                break;
+            case 1:
+                timeBase = "GNSS";
+                break;
+            case 2:
+                timeBase = "UTC";
+                break;
+            default:
+                timeBase = "unknown";
         }
         sstr << "   time base            : " << timeBase << "\n";
         logDebug(sstr.str());
         sstr.clear();
 
-        if (flags & 0x80)
-        {
+        if (flags & 0x80) {
             // if new rising edge
-            sstr << unixtime_from_gps(wnR, towMsR / 1000, (long int)(sr * 1e9 + towSubMsR));
-        }
-        else
-        {
+            sstr << unixtime_from_gps(wnR, towMsR / 1000, (long int) (sr * 1e9 + towSubMsR));
+        } else {
             sstr << ".................... ";
         }
-        if (flags & 0x04)
-        {
+        if (flags & 0x04) {
             // if new falling edge
-            sstr << unixtime_from_gps(wnF, towMsF / 1000, (long int)(sr * 1e9 + towSubMsF));
-        }
-        else
-        {
+            sstr << unixtime_from_gps(wnF, towMsF / 1000, (long int) (sr * 1e9 + towSubMsF));
+        } else {
             sstr << ".................... ";
         }
-        sstr << accEst << " " << count << " " << ((flags & 0x40) >> 6) << " " << std::setfill('0') << std::setw(1)
-            << ((flags & 0x18) >> 3) << " " << ((flags & 0x20) >> 5);
+        sstr << accEst << " " << count << " " << ((flags & 0x40) >> 6) << " " << std::setfill('0')
+             << std::setw(1) << ((flags & 0x18) >> 3) << " " << ((flags & 0x20) >> 5);
         logDebug(sstr.str());
     }
 
-
-    struct timespec ts_r = unixtime_from_gps(wnR, towMsR / 1000, (long int)(sr * 1e9 + towSubMsR));
-    struct timespec ts_f = unixtime_from_gps(wnF, towMsF / 1000, (long int)(sf * 1e9 + towSubMsF));
+    struct timespec ts_r = unixtime_from_gps(wnR, towMsR / 1000, (long int) (sr * 1e9 + towSubMsR));
+    struct timespec ts_f = unixtime_from_gps(wnF, towMsF / 1000, (long int) (sf * 1e9 + towSubMsF));
 
     struct gpsTimestamp ts;
     ts.rising_time = ts_r;
@@ -1432,13 +1337,11 @@ auto MessageProcessor::UBXTimTM2(const std::string &msg) -> std::optional<UbxEve
     ts.accuracy_ns = accEst;
 
     ts.rising = ts.falling = false;
-    if (flags & 0x80)
-    {
+    if (flags & 0x80) {
         // new rising edge detected
         ts.rising = true;
     }
-    if (flags & 0x04)
-    {
+    if (flags & 0x04) {
         // new falling edge detected
         ts.falling = true;
     }
@@ -1458,37 +1361,26 @@ auto MessageProcessor::UBXTimTM2(const std::string &msg) -> std::optional<UbxEve
     tm.evtCounter = count;
 
     // try to recover the timestamp, if one edge is missing
-    if (!tm.risingValid && tm.fallingValid)
-    {
+    if (!tm.risingValid && tm.fallingValid) {
         tm.rising.tv_sec = tm.falling.tv_sec - lastPulseLength / 1000000000;
         tm.rising.tv_nsec = tm.falling.tv_nsec - lastPulseLength % 1000000000;
-        if (tm.rising.tv_nsec >= 1000000000)
-        {
+        if (tm.rising.tv_nsec >= 1000000000) {
             tm.rising.tv_sec += 1;
             tm.rising.tv_nsec -= 1000000000;
-        }
-        else if (tm.rising.tv_nsec < 0)
-        {
+        } else if (tm.rising.tv_nsec < 0) {
             tm.rising.tv_sec -= 1;
             tm.rising.tv_nsec += 1000000000;
         }
-    }
-    else if (!tm.fallingValid && tm.risingValid)
-    {
+    } else if (!tm.fallingValid && tm.risingValid) {
         tm.falling.tv_sec = tm.rising.tv_sec + lastPulseLength / 1000000000;
         tm.falling.tv_nsec = tm.rising.tv_nsec + lastPulseLength % 1000000000;
-        if (tm.falling.tv_nsec >= 1000000000)
-        {
+        if (tm.falling.tv_nsec >= 1000000000) {
             tm.falling.tv_sec += 1;
             tm.falling.tv_nsec -= 1000000000;
         }
-    }
-    else if (!tm.fallingValid && !tm.risingValid)
-    {
+    } else if (!tm.fallingValid && !tm.risingValid) {
         // nothing to recover here; ignore the event
-    }
-    else
-    {
+    } else {
         // the normal case, i.e. both edges are valid
         // calculate the pulse length in this case
         int64_t dts = (tm.falling.tv_sec - tm.rising.tv_sec) * 1.0e9;

@@ -3,8 +3,7 @@
 
 #include <cstdint>
 
-struct Ads1115Event
-{
+struct Ads1115Event {
     std::uint32_t deviceId;
     std::uint8_t channel;
     std::uint16_t rawValue;
