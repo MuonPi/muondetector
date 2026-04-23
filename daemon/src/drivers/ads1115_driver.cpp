@@ -41,7 +41,7 @@ void ADS1115Driver::update() {
 }
 
 void ADS1115Driver::startBurst(const StartBurstSampling& cmd) {
-    interval_ = std::chrono::milliseconds(1000 / cmd.frequency_hz);
+    interval_ = std::chrono::milliseconds(1000 / cmd.frequencyHz);
     remaining_ = cmd.samples;
 
     scheduleBurst();
