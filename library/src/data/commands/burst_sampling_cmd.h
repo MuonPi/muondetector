@@ -2,7 +2,7 @@
 #define BURST_SAMPLING_H
 
 struct StartBurstSampling {
-    std::size_t frequency_hz;
+    std::size_t frequencyHz;
     std::size_t samples;
 };
 

@@ -1,13 +1,56 @@
 commands:
-  - name: UbxRateCmd
-    id: CFG-RATE
+  - name: StartBurstSamplingCapnp
+    fields:
+      - { name: frequencyHz, type: uint32 }
+      - { name: samples, type: uint32 }
+
+  - name: ThresholdSettingsCmdCapnp
+    fields:
+      - { name: channel, type: uint8 }
+      - { name: threshold, type: float }
+
+  - name: UbxMinCnoCmdCapnp
+    fields:
+      - { name: minCNO, type: uint8 }
+
+  - name: UbxMinMaxSvCmdCapnp
+    fields:
+      - { name: minSVs, type: uint8 }
+      - { name: maxSVs, type: uint8 }
+
+  - name: UbxMsgPollCmdCapnp
+    fields:
+      - { name: id, type: uint16 }
+
+  - name: UbxMsgPollRateCmdCapnp
+    fields:
+      - { name: id, type: uint16 }
+
+  - name: UbxMsgRateCmdCapnp
+    fields:
+      - { name: id, type: uint16 }
+      - { name: port, type: uint8 }
+      - { name: rate, type: uint8 }
+
+  - name: UbxProtocolSelectionCmdCapnp
+    fields:
+      - { name: port, type: uint8 }
+      - { name: outProtocolMask, type: uint8 }
+
+  - name: UbxRateCmdCapnp
     fields:
       - { name: measRate, type: uint16 }
-      - { name: navRate,  type: uint16 }
-      - { name: timeRef,  type: uint16 }
+      - { name: navRate, type: uint16 }
 
-  - name: UbxResetCmd
-    id: CFG-RST
+  - name: UbxResetCmdCapnp
     fields:
-      - { name: navBbrMask, type: uint16 }
-      - { name: resetMode,  type: uint8 }
+      - { name: resetFlags, type: uint32 }
+
+  - name: UbxSaveCmdCapnp
+    fields:
+      - { name: devMask, type: uint32 }
+
+  - name: UbxSetAopCmdCapnp
+    fields:
+      - { name: enable, type: bool }
+      - { name: maxOrbErr, type: uint16 }
