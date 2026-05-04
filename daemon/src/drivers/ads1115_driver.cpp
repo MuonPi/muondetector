@@ -4,7 +4,7 @@
 #include "core/event_bus.h"
 #include "core/logging/logger.h"
 #include "core/registries/device_registry.h"
-#include "data/events/ad1115_event.h"
+#include "data/events/ads1115_event.h"
 #include "hardware/devices.h"
 #include "hardware/i2c/ads1115.h"
 #include "hardware/i2cdevice_wrapper.h"

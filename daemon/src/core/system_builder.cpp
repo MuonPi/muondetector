@@ -43,7 +43,7 @@
 #include "sources/tcp_source.h"
 
 // Data
-#include "data/events/ad1115_event.h"
+#include "data/events/ads1115_event.h"
 // #include "data/events/ubx_event.h"
 // #include "data/events/tcp_packet_event.h"
 
@@ -262,7 +262,7 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     auto tcp_sink = SinkFactory::createTcpSink(ctx.sinks);
 
     // make tcp sink send data through tcp connections
-    ctx.bus->subscribe<Ads1115Event>(std::bind(&TcpSink::handle, tcp_sink, std::placeholders::_1));
+    ctx.bus->subscribe<Ads1115Event>([tcp_sink](const auto& ev) { tcp_sink->handle(ev); });
 
     // --- tcp_server ---
     // When server accepts a new TCP connection, call this handler.

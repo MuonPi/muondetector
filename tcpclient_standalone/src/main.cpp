@@ -1,7 +1,7 @@
 #include "core/event_bus.h"
 #include "core/logging/logger.h"
 #include "core/thread_pool.h"
-#include "data/events/ad1115_event.h"
+#include "data/events/ads1115_event.h"
 #include "data/events/tcp_packet_event.h"
 #include "network/tcpconnection.h"
 #include "sinks/tcp_sink.h"
