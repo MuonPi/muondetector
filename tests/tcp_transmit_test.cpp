@@ -1,7 +1,7 @@
-#include "ad1115.capnp.h"
+#include "ads1115.capnp.h"
 #include "core/event_bus.h"
 #include "core/thread_pool.h"
-#include "data/events/ad1115_event.h"
+#include "data/events/ads1115_event.h"
 #include "data/events/tcp_packet_event.h"
 #include "network/tcpserver.h"
 #include "sinks/tcp_sink.h"
@@ -107,7 +107,7 @@ int main() {
     std::memcpy(alignedWords.begin(), clientPacket.payload.data(), clientPacket.payload.size());
 
     capnp::FlatArrayMessageReader reader(alignedWords.asPtr());
-    auto root = reader.getRoot<Ad1115Event>();
+    auto root = reader.getRoot<Ads1115EventCapnp>();
 
     if (root.getDeviceId() != event.deviceId || root.getChannel() != event.channel ||
         root.getRawValue() != event.rawValue || root.getTimestamp() != event.timestamp) {

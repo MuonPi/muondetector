@@ -15,6 +15,7 @@ find_package(Threads REQUIRED)
 
 
 set(MUONDETECTOR_LIBRARY_SOURCE_FILES
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/capnp/capnp_codec.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/config.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network/tcpconnection.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/histogram.cpp"
@@ -25,6 +26,7 @@ set(MUONDETECTOR_LIBRARY_SOURCE_FILES
     )
 
 set(MUONDETECTOR_LIBRARY_HEADER_FILES
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/capnp/capnp_codec.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/gpio_pin_definitions.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/histogram.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network/tcpconnection.h"
@@ -33,7 +35,7 @@ set(MUONDETECTOR_LIBRARY_HEADER_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/ublox/ublox_structs.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/muondetector_structs.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/custom_io_operators.h"
-    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/events/ad1115_event.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/events/ads1115_event.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/events/tcp_packet_event.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/config.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/custom_io_operators.h"

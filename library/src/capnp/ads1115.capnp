@@ -1,6 +1,6 @@
 @0x8c6eda5113c5309f;
 
-struct Ad1115Event {
+struct Ads1115EventCapnp {
   deviceId @0 :UInt32;
   channel @1 :UInt8;
   rawValue @2 :UInt16;

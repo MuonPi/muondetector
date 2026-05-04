@@ -34,11 +34,11 @@ def generate_capnp(data) -> str:
     lines.append("@0xbf5147cbbecf40af;")
     lines.append("")
 
-    commands = data.get("commands", [])
+    messages = data.get("messages", [])
 
-    for cmd in commands:
-        name = cmd["name"]
-        fields = cmd.get("fields", [])
+    for msg in messages:
+        name = msg["name"]
+        fields = msg.get("fields", [])
 
         lines.append(f"struct {name} {{")
 

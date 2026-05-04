@@ -24,6 +24,8 @@
 
 // Devices
 #include "core/component.h"
+#include "drivers/eeprom24aa02_driver.h"
+#include "drivers/gpio_driver.h"
 #include "hardware/devices.h"
 #include "hardware/i2cdevice_wrapper.h"
 #include "hardware/i2cdevices.h"
@@ -43,15 +45,193 @@
 #include "sources/tcp_source.h"
 
 // Data
-#include "data/events/ad1115_event.h"
+#include "data/events/ads1115_event.h"
 // #include "data/events/ubx_event.h"
 // #include "data/events/tcp_packet_event.h"
 
 #include <chrono>
 #include <memory>
 
+Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
+    // First try loading libconfig data
+
+    std::vector<DeviceConfig> deviceConfigurations =
+        SystemBuilder::loadHardwareConfig(config.hardwareConfigPath);
+    std::vector<ComponentConfig> componentConfigurations =
+        SystemBuilder::loadComponentConfig(config.componentConfigPath);
+
+    // Build System
+    Context ctx;
+
+    ctx.io = std::make_shared<boost::asio::io_context>();
+    ctx.registry = std::make_unique<DeviceRegistry>();
+    ctx.components = std::make_unique<ComponentManager>();
+    ctx.sinks = std::make_unique<SinkManager>();
+    ctx.bus = std::make_unique<EventBus>(pool);
+    ctx.scheduler = std::make_unique<Scheduler>(pool);
+    ctx.config = std::make_unique<SystemConfig>(std::move(config));
+
+    // --- hardware ---
+    DeviceFactory::i2cReset();
+    for (auto& d : deviceConfigurations) {
+        ctx.registry->add(d.id, DeviceFactory::create(d));
+    }
+
+    // --- components ---
+    for (auto& c : componentConfigurations) {
+        auto component = ComponentFactory::createComponent(c, ctx);
+        logDebug("Created component " + component->name().value_or("<unknown>"));
+        auto component_as_source = std::dynamic_pointer_cast<Source>(component);
+        if (component_as_source) {
+            std::weak_ptr<Source> weak = component_as_source;
+            if (c.interval) {
+                ctx.scheduler->every(c.interval.value(), [weak]() {
+                    if (auto locked = weak.lock()) {
+                        locked->update();
+                    }
+                });
+            }
+        }
+
+        // Store component in component manager
+        ctx.components->add(component->id(), component);
+    }
+
+    // --- Calibration from EEPROM ---
+    auto eeprom = ctx.components->get<EEPROM24AA02Driver>(Device::EEPROM24AA02_0);
+    if (eeprom != nullptr) {
+        eeprom->update();
+    } // -> Sets MuonPi::Version::hardware
+    else {
+        logWarn("EEPROM not initializing.");
+    }
+
+    // --- GPIO Initialization ---
+    auto gpio_driver = ctx.components->get<GpioDriver>(OtherComponent::GPIO_DRIVER_0);
+    if (gpio_driver != nullptr) {
+        gpio_driver->init(MuonPi::Version::hardware);
+    } else {
+        logWarn("GPIO Driver not initializing.");
+    }
+
+    // TODO: Replace this call with Sink Factory and make each sink subscribe to their events
+    // --- sinks ---
+    auto tcp_sink = SinkFactory::createTcpSink(ctx.sinks);
+
+    // make tcp sink send data through tcp connections
+    ctx.bus->subscribe<Ads1115Event>([tcp_sink](const auto& ev) { tcp_sink->handle(ev); });
+
+    // --- tcp_server ---
+    // When server accepts a new TCP connection, call this handler.
+    ctx.server = std::make_unique<TcpServer>(ctx.io, config.serverPort, tcp_sink);
+
+    ctx.server->addConnectionHandler(
+        [tcp_source = ctx.components->get<TcpSource>(OtherComponent::TCP_SOURCE_0)](
+            const std::shared_ptr<TcpConnection>& connection) {
+            if (tcp_source != nullptr) {
+                tcp_source->registerConnection(connection);
+            } else {
+                logError("Nullpointer in creating connection handler for tcpsource. Make sure "
+                         "components are initialized "
+                         "beforehand.");
+            }
+        });
+
+    // --- maintenance ---
+    ctx.scheduler->every(std::chrono::seconds(5), [server = ctx.server.get()]() {
+        server->heartbeatAndCleanup(std::chrono::seconds(30));
+    });
+
+    // --- GPS default config ---
+
+    // set dynamic model: Stationary
+    logInfo("setting GNSS dynamic model to " +
+            std::to_string(static_cast<unsigned>(config.gnss_dynamic_model)));
+    ctx.bus->publish(UbxDynamicModel::stationary);
+    ctx.bus->publish(UbxProtocolSelectionCmd{1, PROTO_UBX});
+
+    // --- Message Rates ---
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::TIM_TM2, 1, 1});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::TIM_TP, 1, 0});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_TIMEUTC, 1, 131});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_HW, 1, 47});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_HW2, 1, 49});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_POSLLH, 1, 43});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_TIMEGPS, 1, 0});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_STATUS, 1, 71});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_CLOCK, 1, 189});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_RXBUF, 1, 53});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_TXBUF, 1, 51});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_SBAS, 1, 0});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_DOP, 1, 254});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_RXBUF, 1, 53});
+    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_RXBUF, 1, 53});
+    ctx.bus->publish(UbxSetAopCmd{true});
+
+    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_PRT});
+    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::MON_VER});
+    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_GNSS});
+    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_NAVX5});
+    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_ANT});
+    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_TP5});
+    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_PRT});
+    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_PRT});
+
+    std::uint16_t measinterval = 100;
+    ctx.bus->publish(UbxRateCmd{measinterval, 1}); // set rate of messages and nav
+
+    // Enable NAV_SVINFO only for version 0.1 - 15.0
+    // Enable NAV_SAT for version > 15.0
+    ctx.bus->publish(UbxVersionDependentMsgRateCmd{
+        {UbxVersionDependentMsgRateCmd::Entry{Version{0, 1}, Version{15, 0},
+                                              UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 69}},
+         UbxVersionDependentMsgRateCmd::Entry{Version{15, 0},
+                                              Version{std::numeric_limits<unsigned>().max(), 0},
+                                              UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 0}},
+         UbxVersionDependentMsgRateCmd::Entry{Version{15, 0},
+                                              Version{std::numeric_limits<unsigned>().max(), 0},
+                                              UbxMsgRateCmd{UBX_MSG::NAV_SAT, 1, 69}}}});
+
+    // Debug reading version every second // TESTED -> Working!
+    // ctx.scheduler->every(std::chrono::milliseconds(1000),[bus = &(*ctx.bus)](){
+    //     bus->publish(UbxMsgPollCmd{UBX_MSG::MON_VER});
+    // });
+
+    return ctx;
+}
+
+/// LOADING OF CONFIG FILES & PARSING OF CONFIG
+
+auto SystemBuilder::loadHardwareConfig(const std::string& hardwareConfigPath)
+    -> std::vector<DeviceConfig> {
+
+    std::shared_ptr<libconfig::Config> hardwareConfig{nullptr};
+
+    try {
+        hardwareConfig = ConfigParser::loadConfigFile(hardwareConfigPath);
+    } catch (const libconfig::FileIOException& fioex) {
+        logError("Error while reading config file " + hardwareConfigPath);
+    } catch (const libconfig::ParseException& pex) {
+        logError("Parse error at " + std::string(pex.getFile()) + " : line " +
+                 std::to_string(pex.getLine()) + " - " + std::string(pex.getError()));
+        throw pex;
+    }
+
+    try {
+        return SystemBuilder::parseHardwareConfig(*hardwareConfig);
+    } catch (const libconfig::SettingNotFoundException& e) {
+        logWarn(std::string(e.what()) + " in file " + hardwareConfigPath + " " +
+                std::string(e.getPath()));
+    } catch (const libconfig::SettingException& e) {
+        logWarn(std::string(e.what()) + " in file " + hardwareConfigPath + " " +
+                std::string(e.getPath()));
+    }
+    throw std::runtime_error("Could not parse hardware configuration");
+}
+
 auto SystemBuilder::parseHardwareConfig(const libconfig::Config& hardwareConfig)
     -> std::vector<DeviceConfig> {
+
     std::vector<DeviceConfig> result;
 
     const libconfig::Setting& root = hardwareConfig.getRoot();
@@ -141,6 +321,32 @@ auto SystemBuilder::parseHardwareConfig(const libconfig::Config& hardwareConfig)
     return result;
 }
 
+auto SystemBuilder::loadComponentConfig(const std::string& componentConfigPath)
+    -> std::vector<ComponentConfig> {
+
+    std::shared_ptr<libconfig::Config> componentConfig{nullptr};
+    try {
+        componentConfig = ConfigParser::loadConfigFile(componentConfigPath);
+    } catch (const libconfig::FileIOException& fioex) {
+        logError("Error while reading config file " + componentConfigPath);
+    } catch (const libconfig::ParseException& pex) {
+        logError("Parse error at " + std::string(pex.getFile()) + " : line " +
+                 std::to_string(pex.getLine()) + " - " + std::string(pex.getError()));
+        throw pex;
+    }
+
+    try {
+        return SystemBuilder::parseComponentConfig(*componentConfig);
+    } catch (const libconfig::SettingNotFoundException& e) {
+        logWarn(std::string(e.what()) + " in file " + componentConfigPath + " " +
+                std::string(e.getPath()));
+    } catch (const libconfig::SettingException& e) {
+        logWarn(std::string(e.what()) + " in file " + componentConfigPath + " " +
+                std::string(e.getPath()));
+    }
+    throw std::runtime_error("Could not parse component configuration");
+}
+
 auto SystemBuilder::parseComponentConfig(const libconfig::Config& componentConfig)
     -> std::vector<ComponentConfig> {
     std::vector<ComponentConfig> result;
@@ -175,170 +381,4 @@ auto SystemBuilder::parseComponentConfig(const libconfig::Config& componentConfi
         result.push_back(cfg);
     }
     return result;
-}
-
-Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
-    // First try loading libconfig data
-    std::shared_ptr<libconfig::Config> hardwareConfig{nullptr};
-    std::shared_ptr<libconfig::Config> componentConfig{nullptr};
-    try {
-        hardwareConfig = ConfigParser::loadConfigFile(config.hardwareConfigPath);
-    } catch (const libconfig::FileIOException& fioex) {
-        logError("Error while reading config file " + config.hardwareConfigPath);
-    } catch (const libconfig::ParseException& pex) {
-        logError("Parse error at " + std::string(pex.getFile()) + " : line " +
-                 std::to_string(pex.getLine()) + " - " + std::string(pex.getError()));
-        throw pex;
-    }
-    try {
-        componentConfig = ConfigParser::loadConfigFile(config.componentConfigPath);
-    } catch (const libconfig::FileIOException& fioex) {
-        logError("Error while reading config file " + config.componentConfigPath);
-    } catch (const libconfig::ParseException& pex) {
-        logError("Parse error at " + std::string(pex.getFile()) + " : line " +
-                 std::to_string(pex.getLine()) + " - " + std::string(pex.getError()));
-        throw pex;
-    }
-
-    // Build System
-    Context ctx;
-
-    ctx.io = std::make_shared<boost::asio::io_context>();
-    ctx.registry = std::make_unique<DeviceRegistry>();
-    ctx.components = std::make_unique<ComponentManager>();
-    ctx.sinks = std::make_unique<SinkManager>();
-    ctx.bus = std::make_unique<EventBus>(pool);
-    ctx.scheduler = std::make_unique<Scheduler>(pool);
-    ctx.config = std::make_unique<SystemConfig>(std::move(config));
-
-    std::vector<DeviceConfig> deviceConfigurations;
-    try {
-        deviceConfigurations = SystemBuilder::parseHardwareConfig(*hardwareConfig);
-    } catch (const libconfig::SettingNotFoundException& e) {
-        logWarn(std::string(e.what()) + " in file " + config.hardwareConfigPath + " " +
-                std::string(e.getPath()));
-    } catch (const libconfig::SettingException& e) {
-        logWarn(std::string(e.what()) + " in file " + config.hardwareConfigPath + " " +
-                std::string(e.getPath()));
-    }
-    std::vector<ComponentConfig> componentConfigurations;
-    try {
-        componentConfigurations = SystemBuilder::parseComponentConfig(*componentConfig);
-    } catch (const libconfig::SettingNotFoundException& e) {
-        logWarn(std::string(e.what()) + " in file " + config.componentConfigPath + " " +
-                std::string(e.getPath()));
-    } catch (const libconfig::SettingException& e) {
-        logWarn(std::string(e.what()) + " in file " + config.componentConfigPath + " " +
-                std::string(e.getPath()));
-    }
-
-    // --- hardware ---
-    for (auto& d : deviceConfigurations) {
-        ctx.registry->add(d.id, DeviceFactory::create(d));
-    }
-
-    // --- components ---
-    for (auto& c : componentConfigurations) {
-        auto component = ComponentFactory::createComponent(c, ctx);
-        logDebug("Created component " + component->name().value_or("<unknown>"));
-        auto component_as_source = std::dynamic_pointer_cast<Source>(component);
-        if (component_as_source) {
-            std::weak_ptr<Source> weak = component_as_source;
-            if (c.interval) {
-                ctx.scheduler->every(c.interval.value(), [weak]() {
-                    if (auto locked = weak.lock()) {
-                        locked->update();
-                    }
-                });
-            }
-        }
-
-        // Store component in component manager
-        ctx.components->add(component->id(), component);
-    }
-
-    // TODO: Replace this call with Sink Factory and make each sink subscribe to their events
-    // --- sinks ---
-    auto tcp_sink = SinkFactory::createTcpSink(ctx.sinks);
-
-    // make tcp sink send data through tcp connections
-    ctx.bus->subscribe<Ads1115Event>(std::bind(&TcpSink::handle, tcp_sink, std::placeholders::_1));
-
-    // --- tcp_server ---
-    // When server accepts a new TCP connection, call this handler.
-    ctx.server = std::make_unique<TcpServer>(ctx.io, config.serverPort, tcp_sink);
-
-    ctx.server->addConnectionHandler(
-        [tcp_source = ctx.components->get<TcpSource>(OtherComponent::TCP_SOURCE_0)](
-            const std::shared_ptr<TcpConnection>& connection) {
-            if (tcp_source != nullptr) {
-                tcp_source->registerConnection(connection);
-            } else {
-                logError("Nullpointer in creating connection handler for tcpsource. Make sure "
-                         "components are initialized "
-                         "beforehand.");
-            }
-        });
-
-    // --- maintenance ---
-    ctx.scheduler->every(std::chrono::seconds(5), [server = ctx.server.get()]() {
-        server->heartbeatAndCleanup(std::chrono::seconds(30));
-    });
-
-    // --- GPS default config ---
-
-    // set dynamic model: Stationary
-    logInfo("setting GNSS dynamic model to" +
-            std::to_string(static_cast<unsigned>(config.gnss_dynamic_model)));
-    ctx.bus->publish(UbxDynamicModel::stationary);
-    ctx.bus->publish(UbxProtocolSelectionCmd{1, PROTO_UBX});
-
-    // --- Message Rates ---
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::TIM_TM2, 1, 1});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::TIM_TP, 1, 0});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_TIMEUTC, 1, 131});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_HW, 1, 47});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_HW2, 1, 49});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_POSLLH, 1, 43});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_TIMEGPS, 1, 0});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_STATUS, 1, 71});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_CLOCK, 1, 189});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_RXBUF, 1, 53});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_TXBUF, 1, 51});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_SBAS, 1, 0});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_DOP, 1, 254});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_RXBUF, 1, 53});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_RXBUF, 1, 53});
-    ctx.bus->publish(UbxSetAopCmd{true});
-
-    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_PRT});
-    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::MON_VER});
-    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_GNSS});
-    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_NAVX5});
-    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_ANT});
-    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_TP5});
-    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_PRT});
-    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_PRT});
-
-    std::uint16_t measinterval = 100;
-    ctx.bus->publish(UbxRateCmd{measinterval, 1}); // set rate of messages and nav
-
-    // Enable NAV_SVINFO only for version 0.1 - 15.0
-    // Enable NAV_SAT for version > 15.0
-    ctx.bus->publish(UbxVersionDependentMsgRateCmd{
-        {UbxVersionDependentMsgRateCmd::Entry{Version{0, 1}, Version{15, 0},
-                                              UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 69}},
-         UbxVersionDependentMsgRateCmd::Entry{Version{15, 0},
-                                              Version{std::numeric_limits<unsigned>().max(), 0},
-                                              UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 0}},
-         UbxVersionDependentMsgRateCmd::Entry{Version{15, 0},
-                                              Version{std::numeric_limits<unsigned>().max(), 0},
-                                              UbxMsgRateCmd{UBX_MSG::NAV_SAT, 1, 69}}}});
-
-    // Debug reading version every second // TESTED -> Working!
-    // ctx.scheduler->every(std::chrono::milliseconds(1000),[bus = &(*ctx.bus)](){
-    //     bus->publish(UbxMsgPollCmd{UBX_MSG::MON_VER});
-    // });
-
-    return ctx;
 }

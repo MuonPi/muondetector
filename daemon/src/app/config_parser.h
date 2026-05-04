@@ -21,6 +21,7 @@ class ConfigParser {
     struct PresenceFlags {
         bool cliConfigDir{false};
         bool cliGpsDevice{false};
+        bool cliGpioDevice{false};
         bool cliGnssBaud{false};
         bool cliServerAddress{false};
         bool cliServerPort{false};
@@ -37,6 +38,7 @@ class ConfigParser {
 
         bool cfgConfigDir{false};
         bool cfgGpsDevice{false};
+        bool cfgGpioDevice{false};
         bool cfgGnssBaud{false};
         bool cfgServerAddress{false};
         bool cfgServerPort{false};
