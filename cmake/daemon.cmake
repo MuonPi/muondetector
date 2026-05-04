@@ -26,6 +26,10 @@ find_library(RT
     REQUIRED
 )
 
+find_library(GPIOD
+    names gpiod libgpiod
+    REQUIRED
+)
 # set(MUONDETECTOR_SPI_SOURCE_FILES
 #     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/spi/tdc7200.cpp"
 #     )
@@ -75,6 +79,9 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/tcp_source.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/ads1115_driver.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/mcp4728_driver.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/eeprom24aa02_driver.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/gpio_driver.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/calibration.cpp"
 
     "${MUONDETECTOR_I2C_SOURCE_FILES}"
     "${MUONDETECTOR_SPI_SOURCE_FILES}"
@@ -138,6 +145,10 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/tcp_source.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/ads1115_driver.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/mcp4728_driver.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/eeprom24aa02_driver.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/gpio_driver.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/calibration.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/gpio_mapping.h"
 
     "${MUONDETECTOR_I2C_HEADER_FILES}"
     "${MUONDETECTOR_SPI_HEADER_FILES}"
@@ -199,6 +210,7 @@ target_link_libraries(muondetector-daemon PRIVATE
     ${LIBCONFIG}
     ${MOSQUITTO}
     ${CRYPTOPP}
+    ${GPIOD}
     ${RT}
     ${CAPNP_LIBRARIES}
     ${CAPNP_KJ_LIBRARIES}

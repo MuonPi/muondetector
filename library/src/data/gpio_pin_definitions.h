@@ -1,6 +1,7 @@
 #ifndef GPIO_SIGNAL_DEFINITIONS_H
 #define GPIO_SIGNAL_DEFINITIONS_H
 
+#include <gpiod.h>
 #include <map>
 #include <string>
 
@@ -82,5 +83,11 @@ static const std::map<TIMING_MUX_SELECTION, std::string> TIMING_MUX_SIGNAL_NAMES
     //{ TIMING_MUX_SELECTION::IN6, "IN6" },
     {TIMING_MUX_SELECTION::EXT, "EXT"},
     {TIMING_MUX_SELECTION::UNDEFINED, "UNDEFINED"}};
+
+struct LineConfig {
+    SIGNAL_DIRECTION dir = DIR_UNDEFINED;
+    bool initialValue = false;
+    gpiod_line_edge edge = GPIOD_LINE_EDGE_RISING;
+};
 
 #endif // GPIO_SIGNAL_DEFINITIONS_H

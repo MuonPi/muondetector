@@ -5,6 +5,8 @@
 #include "core/component_config.h"
 // #include "core/logging/logger.h"
 #include "drivers/ads1115_driver.h"
+#include "drivers/eeprom24aa02_driver.h"
+#include "drivers/gpio_driver.h"
 #include "drivers/mcp4728_driver.h"
 #include "hardware/ublox/serialublox.h"
 #include "sources/tcp_source.h"
@@ -46,9 +48,14 @@ const std::unordered_map<ComponentId, DeviceComponentCreator>
              return std::make_shared<MCP4728Driver>(Device::MCP4728_0, *ctx.config, *ctx.registry,
                                                     *ctx.bus);
          }},
-        {Device::ADS1115_0, [](Context& ctx) {
+        {Device::ADS1115_0,
+         [](Context& ctx) {
              return std::make_shared<ADS1115Driver>(Device::ADS1115_0, *ctx.registry, *ctx.bus,
                                                     *ctx.io);
+         }},
+        {Device::EEPROM24AA02_0, [](Context& ctx) {
+             return std::make_shared<EEPROM24AA02Driver>(Device::EEPROM24AA02_0, *ctx.registry,
+                                                         *ctx.bus);
          }}};
 
 const std::unordered_map<ComponentId, ComponentCreator> ComponentFactory::componentCreator = {
@@ -56,8 +63,13 @@ const std::unordered_map<ComponentId, ComponentCreator> ComponentFactory::compon
      [](Context& ctx) {
          return std::make_shared<TcpSource>(OtherComponent::TCP_SOURCE_0, *ctx.bus);
      }},
-    {OtherComponent::GPS_DRIVER_0, [](Context& ctx) {
+    {OtherComponent::GPS_DRIVER_0,
+     [](Context& ctx) {
          return std::make_shared<SerialUblox>(OtherComponent::GPS_DRIVER_0, *ctx.io,
                                               ctx.config->gpsdevname, ctx.config->gnss_baudrate,
                                               *ctx.bus);
+     }},
+    {OtherComponent::GPIO_DRIVER_0, [](Context& ctx) {
+         return std::make_shared<GpioDriver>(OtherComponent::GPIO_DRIVER_0, ctx.config->gpiodevname,
+                                             *ctx.bus);
      }}};

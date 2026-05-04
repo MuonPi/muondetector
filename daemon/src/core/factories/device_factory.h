@@ -14,6 +14,7 @@
 using DeviceCreator = std::function<std::unique_ptr<IDevice>(const DeviceConfig&)>;
 class DeviceFactory {
   public:
+    static void i2cReset();
     static auto create(const DeviceConfig& config) -> std::unique_ptr<IDevice>;
     static const std::unordered_map<Device, DeviceCreator> deviceCreator;
 };

@@ -1,4 +1,4 @@
-commands:
+messages:
   - name: StartBurstSamplingCapnp
     fields:
       - { name: frequencyHz, type: uint32 }
@@ -9,6 +9,7 @@ commands:
       - { name: channel, type: uint8 }
       - { name: threshold, type: float }
 
+# UBLOX Commands
   - name: UbxMinCnoCmdCapnp
     fields:
       - { name: minCNO, type: uint8 }

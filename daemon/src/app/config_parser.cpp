@@ -371,6 +371,36 @@ void ConfigParser::apply_defaults() {
         }
     }
 
+    // Load GPIO dev
+    try {
+        m_config.gpiodevname =
+            static_cast<std::string>(m_config.config_file_data->lookup("gpio_device"));
+        m_presence.cfgGpioDevice = true;
+    } catch (const libconfig::SettingTypeException& e) {
+        logWarn("Could not load setting 'gpio_device': " + std::string(e.what()));
+    } catch (const libconfig::SettingException& e) {
+        // fallback logic
+        std::vector<std::string> candidates = {"gpiochip0"};
+        std::vector<std::string> found;
+
+        try {
+            for (const auto& entry : std::filesystem::directory_iterator("/dev")) {
+                std::string name = entry.path().filename().string();
+
+                if (std::find(candidates.begin(), candidates.end(), name) != candidates.end()) {
+                    found.push_back("/dev/" + name);
+                }
+            }
+        } catch (const std::filesystem::filesystem_error& f) {
+            logWarn(std::string("Error accessing /dev while probing GPIO devices: ") + f.what());
+        }
+
+        if (!found.empty()) {
+            m_config.gpiodevname = found.back();
+            logInfo("Detected " + m_config.gpiodevname + " as GPIO device candidate");
+        }
+    }
+
     // Load ublox_baud
     try {
         m_config.gnss_baudrate = m_config.config_file_data->lookup("ublox_baud");
