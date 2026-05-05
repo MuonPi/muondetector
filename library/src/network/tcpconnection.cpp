@@ -1,6 +1,7 @@
 #include "tcpconnection.h"
 
 #include <algorithm>
+#include <iostream>
 #include <utility>
 
 namespace {
@@ -91,6 +92,7 @@ void TcpConnection::do_read() {
     socket_.async_read_some(boost::asio::buffer(readBuffer_),
                             [this, self](boost::system::error_code ec, std::size_t bytesRead) {
                                 if (ec) {
+                                    std::cerr << "async_read_some failed: " << ec.message();
                                     closeWithError(ec);
                                     return;
                                 }
