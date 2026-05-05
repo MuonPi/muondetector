@@ -11,6 +11,7 @@
 #include <chrono>
 #include <functional>
 #include <gpiod.h>
+#include <set>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -18,7 +19,11 @@
 
 class GpioDriver : public Component {
   public:
-    GpioDriver(ComponentId id, const std::string& chip, EventBus& bus);
+    struct GpioLine {
+        gpiod_line_request* req;
+        unsigned int offset;
+    };
+    GpioDriver(ComponentId id, const std::string& chipPath, EventBus& bus);
     ~GpioDriver();
 
     void init(const MuonPi::Version::Version& hardwareVersion);
@@ -29,14 +34,16 @@ class GpioDriver : public Component {
     void eventLoop();
     void start();
     void stop();
-    std::string chipPath;
     gpiod_chip* chip = nullptr;
     EventBus& bus_;
 
     std::map<GPIO_SIGNAL, unsigned int> pinmap_;
     std::map<unsigned int, GPIO_SIGNAL> r_pinmap_;
 
-    std::unordered_map<unsigned int, gpiod_line_request*> requests;
+    std::set<gpiod_line_request*> inputRequests;
+    std::set<gpiod_line_request*> outputRequests;
+    std::map<unsigned int, GpioLine> gpioMap;
+    std::map<int, gpiod_line_request*> fdMap;
 
     std::thread worker;
     std::atomic<bool> running{false};

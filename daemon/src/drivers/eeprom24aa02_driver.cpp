@@ -56,6 +56,6 @@ void EEPROM24AA02Driver::update() {
     unsigned int version = 0;
     ShowerDetectorCalib::getValueFromString(verStruct.value, version);
     MuonPi::Version::hardware.major = version;
-    logInfo("Found HW version " + std::to_string(MuonPi::Version::hardware.major) + "in eeprom");
+    logInfo("Found HW version " + std::to_string(MuonPi::Version::hardware.major) + " in eeprom");
     bus_.publish<ShowerDetectorCalib>(std::move(calib));
 }

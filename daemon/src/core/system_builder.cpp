@@ -102,11 +102,16 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     if (eeprom != nullptr) {
         eeprom->update();
     } // -> Sets MuonPi::Version::hardware
+    else {
+        logWarn("EEPROM not initializing.");
+    }
 
     // --- GPIO Initialization ---
     auto gpio_driver = ctx.components->get<GpioDriver>(OtherComponent::GPIO_DRIVER_0);
     if (gpio_driver != nullptr) {
         gpio_driver->init(MuonPi::Version::hardware);
+    } else {
+        logWarn("GPIO Driver not initializing.");
     }
 
     // TODO: Replace this call with Sink Factory and make each sink subscribe to their events

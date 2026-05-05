@@ -1,6 +1,7 @@
 #ifndef GPIO_SIGNAL_DEFINITIONS_H
 #define GPIO_SIGNAL_DEFINITIONS_H
 
+#include <gpiod.h>
 #include <map>
 #include <string>
 
@@ -95,6 +96,6 @@ struct GpioEvent {
 struct LineConfig {
     SIGNAL_DIRECTION dir = DIR_UNDEFINED;
     bool initialValue = false;
-    bool edgeBoth = false;
+    gpiod_line_edge edge = GPIOD_LINE_EDGE_RISING;
 };
 #endif // GPIO_SIGNAL_DEFINITIONS_H

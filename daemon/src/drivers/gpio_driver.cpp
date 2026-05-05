@@ -1,50 +1,62 @@
 #include "drivers/gpio_driver.h"
 
-#include "config.h"
-#include "core/event_bus.h"
 #include "core/logging/logger.h"
-#include "core/registries/device_registry.h"
-#include "gpio_pin_definitions.h"
-#include "utility/gpio_mapping.h"
 
-#include <cmath>
-#include <config.h>
-#include <exception>
+#include <gpiod.h>
 #include <iostream>
+#include <poll.h>
+#include <set>
 #include <sstream>
-#include <stdexcept>
-#include <sys/time.h>
-#include <time.h>
 
 using namespace std::chrono;
 
 GpioDriver::GpioDriver(ComponentId id, const std::string& chipPath, EventBus& bus)
-    : Component(id), chipPath(std::move(chipPath)), bus_(bus) {
+    : Component(id), bus_(bus) {
+
     chip = gpiod_chip_open(chipPath.c_str());
     if (!chip) {
         throw std::runtime_error("Failed to open gpiochip");
     }
 }
 
-void GpioDriver::init(const MuonPi::Version::Version& hardwareVersion) {
-    pinmap_ = GPIO_PINMAP_VERSIONS[hardwareVersion.major];
+GpioDriver::~GpioDriver() {
+    stop();
 
-    for (auto& [key, value] : pinmap_) {
-        r_pinmap_.emplace(value, key);
+    for (auto req : inputRequests) {
+        gpiod_line_request_release(req);
+    }
+    for (auto req : outputRequests) {
+        gpiod_line_request_release(req);
     }
 
-    // // set up the pin definitions (hw version specific)
-    // GPIO_PINMAP = GPIO_PINMAP_VERSIONS[MuonPi::Version::hardware.major];
+    if (chip)
+        gpiod_chip_close(chip);
+}
+
+void GpioDriver::init(const MuonPi::Version::Version& hardwareVersion) {
+
+    pinmap_ = GPIO_PINMAP_VERSIONS[hardwareVersion.major];
+
+    for (auto& [sig, gpio] : pinmap_) {
+        r_pinmap_[gpio] = sig;
+    }
+
+    std::vector<unsigned int> inputs;
+    std::vector<unsigned int> outputs;
 
     std::stringstream sstr;
-    // print out the current gpio pin mapping
-    // (function, gpio-pin, direction)
     sstr << "GPIO pin mapping:" << std::endl;
+    for (const auto& [sig, desc] : GPIO_SIGNAL_MAP) {
 
-    for (auto signalIt = pinmap_.begin(); signalIt != pinmap_.end(); signalIt++) {
-        const GPIO_SIGNAL signalId = signalIt->first;
-        sstr << GPIO_SIGNAL_MAP.at(signalId).name << " \t: " << std::dec << signalIt->second;
-        switch (GPIO_SIGNAL_MAP.at(signalId).direction) {
+        if (sig == UNDEFINED_SIGNAL)
+            continue;
+
+        auto it = pinmap_.find(sig);
+        if (it == pinmap_.end())
+            continue;
+
+        sstr << desc.name << " \t: " << std::dec << it->second;
+        switch (desc.direction) {
             case DIR_IN:
                 sstr << " (in)";
                 break;
@@ -57,51 +69,18 @@ void GpioDriver::init(const MuonPi::Version::Version& hardwareVersion) {
             default:
                 sstr << " (undef)";
         }
-        sstr << std::endl;
+
+        if (desc.direction == DIR_IN)
+            inputs.push_back(it->second);
+        else if (desc.direction == DIR_OUT)
+            outputs.push_back(it->second);
     }
-    logDebug(sstr.str());
 
-    std::vector<unsigned int> inputs;
-    std::vector<unsigned int> outputs;
-
-    for (const auto& [sig, desc] : GPIO_SIGNAL_MAP) {
-
-        if (sig == UNDEFINED_SIGNAL)
-            continue;
-
-        auto pinIt = pinmap_.find(sig);
-        if (pinIt == pinmap_.end())
-            continue;
-
-        switch (desc.direction) {
-            case DIR_IN:
-                inputs.push_back(pinIt->second);
-                break;
-
-            case DIR_OUT:
-                outputs.push_back(pinIt->second);
-                break;
-
-            default:
-                break;
-        }
-    }
-    configureLines(inputs, {.dir = SIGNAL_DIRECTION::DIR_IN, .edgeBoth = false});
+    configureLines(inputs, {.dir = SIGNAL_DIRECTION::DIR_IN, .edge = GPIOD_LINE_EDGE_BOTH});
 
     configureLines(outputs, {.dir = SIGNAL_DIRECTION::DIR_OUT, .initialValue = false});
 
     start();
-}
-
-GpioDriver::~GpioDriver() {
-    stop();
-
-    for (auto& [gpio, req] : requests) {
-        gpiod_line_request_release(req);
-    }
-
-    if (chip)
-        gpiod_chip_close(chip);
 }
 
 void GpioDriver::start() {
@@ -120,28 +99,45 @@ void GpioDriver::stop() {
 }
 
 void GpioDriver::eventLoop() {
-    gpiod_edge_event_buffer* buffer = gpiod_edge_event_buffer_new(64);
 
+    gpiod_edge_event_buffer* buffer = gpiod_edge_event_buffer_new(128);
+
+    std::vector<struct pollfd> fds;
+
+    // Build fd list once
+    for (auto req : inputRequests) {
+        int fd = gpiod_line_request_get_fd(req);
+        fds.push_back({fd, POLLIN, 0});
+        fdMap[fd] = req;
+    }
+    logDebug("Monitoring " + std::to_string(fds.size()) + " GPIO request fds");
     while (running.load()) {
+        for (auto& p : fds) {
+            p.revents = 0;
+        }
+        int ret = poll(fds.data(), fds.size(), -1); // block
 
-        for (auto& [gpio, req] : requests) {
+        if (ret <= 0)
+            continue;
 
-            int ret = gpiod_line_request_wait_edge_events(req,
-                                                          100000000 // 100 ms in ns
-            );
+        for (auto& p : fds) {
 
-            if (ret <= 0)
+            if (!(p.revents & POLLIN))
                 continue;
 
-            int n = gpiod_line_request_read_edge_events(req, buffer, 64);
+            auto req = fdMap.at(p.fd);
+
+            int n = gpiod_line_request_read_edge_events(req, buffer, 128);
 
             for (int i = 0; i < n; i++) {
 
                 auto* ev = gpiod_edge_event_buffer_get_event(buffer, i);
 
+                unsigned int offset = gpiod_edge_event_get_line_offset(ev);
+
                 GpioEvent out;
-                out.gpio_pin = gpiod_edge_event_get_line_offset(ev);
-                out.gpio_signal = r_pinmap_.at(out.gpio_pin);
+                out.gpio_pin = offset;
+                out.gpio_signal = r_pinmap_.at(offset);
                 out.timestamp = std::chrono::nanoseconds(gpiod_edge_event_get_timestamp_ns(ev));
 
                 out.edge = gpiod_edge_event_get_event_type(ev) == GPIOD_EDGE_EVENT_RISING_EDGE
@@ -149,36 +145,47 @@ void GpioDriver::eventLoop() {
                                : EventEdge::Falling;
 
                 bus_.publish<GpioEvent>(std::move(out));
+                logDebug("GpioEvent: " + std::to_string(out.gpio_pin) +
+                         " edge: " + (out.edge == EventEdge::Rising ? "rising" : "falling"));
             }
         }
     }
 
     gpiod_edge_event_buffer_free(buffer);
+    logDebug("Finished GPIO event loop");
 }
 
 bool GpioDriver::configureLines(const std::vector<unsigned int>& gpios, const LineConfig& cfg) {
-    gpiod_line_settings* settings = gpiod_line_settings_new();
+
+    if (gpios.empty())
+        return true;
+
+    auto* settings = gpiod_line_settings_new();
 
     if (cfg.dir == SIGNAL_DIRECTION::DIR_IN) {
+
         gpiod_line_settings_set_direction(settings, GPIOD_LINE_DIRECTION_INPUT);
 
-        if (cfg.edgeBoth) {
-            gpiod_line_settings_set_edge_detection(settings, GPIOD_LINE_EDGE_BOTH);
-        }
+        gpiod_line_settings_set_edge_detection(settings, cfg.edge);
+
+        // Highly recommended on Pi:
+        gpiod_line_settings_set_bias(settings, GPIOD_LINE_BIAS_PULL_UP);
+
     } else {
+
         gpiod_line_settings_set_direction(settings, GPIOD_LINE_DIRECTION_OUTPUT);
 
         gpiod_line_settings_set_output_value(
             settings, cfg.initialValue ? GPIOD_LINE_VALUE_ACTIVE : GPIOD_LINE_VALUE_INACTIVE);
     }
 
-    gpiod_line_config* line_cfg = gpiod_line_config_new();
+    auto* line_cfg = gpiod_line_config_new();
     gpiod_line_config_add_line_settings(line_cfg, gpios.data(), gpios.size(), settings);
 
-    gpiod_request_config* req_cfg = gpiod_request_config_new();
+    auto* req_cfg = gpiod_request_config_new();
     gpiod_request_config_set_consumer(req_cfg, "muonpi");
 
-    gpiod_line_request* req = gpiod_chip_request_lines(chip, req_cfg, line_cfg);
+    auto* req = gpiod_chip_request_lines(chip, req_cfg, line_cfg);
 
     gpiod_line_settings_free(settings);
     gpiod_line_config_free(line_cfg);
@@ -189,21 +196,28 @@ bool GpioDriver::configureLines(const std::vector<unsigned int>& gpios, const Li
         return false;
     }
 
-    // IMPORTANT: replace old request if needed
+    // Store request once
+    if (cfg.dir == SIGNAL_DIRECTION::DIR_IN) {
+        inputRequests.insert(req);
+    } else {
+        outputRequests.insert(req);
+    }
+
+    // Map each GPIO to (request + offset)
     for (auto gpio : gpios) {
-        auto it = requests.find(gpio);
-        if (it != requests.end()) {
-            gpiod_line_request_release(it->second);
-            requests.erase(it);
-        }
-        requests[gpio] = req;
+        gpioMap[gpio] = {req, gpio};
     }
 
     return true;
 }
 
 bool GpioDriver::write(unsigned int gpio, bool value) {
-    auto it = requests.find(gpio);
-    return gpiod_line_request_set_value(
-               it->second, gpio, value ? GPIOD_LINE_VALUE_ACTIVE : GPIOD_LINE_VALUE_INACTIVE) == 0;
+
+    auto it = gpioMap.find(gpio);
+    if (it == gpioMap.end())
+        return false;
+
+    return gpiod_line_request_set_value(it->second.req, it->second.offset,
+                                        value ? GPIOD_LINE_VALUE_ACTIVE
+                                              : GPIOD_LINE_VALUE_INACTIVE) == 0;
 }
