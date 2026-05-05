@@ -27,7 +27,7 @@ class GpioDriver : public Component {
     ~GpioDriver();
 
     void init(const MuonPi::Version::Version& hardwareVersion);
-    bool write(unsigned int gpio, bool value);
+    bool writeGpio(unsigned int gpio, bool value);
 
   private:
     bool configureLines(const std::vector<unsigned int>& gpios, const LineConfig& cfg);
@@ -46,6 +46,7 @@ class GpioDriver : public Component {
     std::map<int, gpiod_line_request*> fdMap;
 
     std::thread worker;
+    int control_fd{-1};
     std::atomic<bool> running{false};
 };
 

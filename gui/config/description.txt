@@ -1,0 +1,6 @@
+GUI for monitoring and controlling the muondetector-daemon.
+It connects to muondetector-daemon via TCP. It is based on Qt and C++.
+It lets you change the settings for the muondetector hardware and
+uses qml for displaying the current position on the map if connected
+the muondetector-daemon.
+It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).

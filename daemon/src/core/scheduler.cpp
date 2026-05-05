@@ -10,6 +10,7 @@
 #include <functional>
 #include <map>
 #include <mutex>
+#include <pthread.h>
 
 Scheduler::Scheduler(ThreadPool& pool) : threadPool(pool) {
 }
@@ -24,7 +25,15 @@ void Scheduler::start() {
 }
 
 void Scheduler::stop() {
-    running = false;
+    {
+        std::lock_guard lock(mutex);
+
+        running = false;
+
+        decltype(queue) empty;
+        queue.swap(empty);
+    }
+
     cv.notify_all();
 
     if (thread.joinable()) {
@@ -34,6 +43,7 @@ void Scheduler::stop() {
 
 void Scheduler::loop() {
 
+    pthread_setname_np(pthread_self(), "muondet-scheduler");
     std::unique_lock lock(mutex);
 
     while (running) {
@@ -56,10 +66,13 @@ void Scheduler::loop() {
         threadPool.enqueue(next.func);
 
         // reschedule if periodic
-        if (next.interval.count() > 0) {
+        if (running.load() && next.interval.count() > 0) {
             next.time += next.interval;
             queue.push(next);
         }
+    }
+    while (!queue.empty()) {
+        queue.pop();
     }
 }
 

@@ -15,6 +15,7 @@
 #include <config.h>
 #include <csignal>
 #include <gpio_pin_definitions.h>
+#include <pthread.h>
 
 static const std::string CONFIG_FILE = std::string(MuonPi::Config::file);
 static const std::string SETTINGS_FILE =
@@ -122,7 +123,10 @@ int main(int argc, char* argv[]) {
 
     auto context = SystemBuilder::build(pool, config);
     auto work_guard = boost::asio::make_work_guard(context.io);
-    std::thread t1([&] { context.io->run(); });
+    std::thread t1([&] {
+        pthread_setname_np(pthread_self(), "muondet-asio");
+        context.io->run();
+    });
 
     context.scheduler->start();
 
@@ -131,6 +135,7 @@ int main(int argc, char* argv[]) {
     }
 
     context.scheduler->stop();
+    pool.stop();
 
     // stop asio
     work_guard.reset();

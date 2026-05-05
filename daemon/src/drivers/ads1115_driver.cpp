@@ -16,14 +16,14 @@
 ADS1115Driver::ADS1115Driver(ComponentId id, DeviceRegistry& registry, EventBus& bus,
                              boost::asio::io_context& io)
     : Source(id), registry_(registry), bus_(bus), timer_(io) {
+    if (!std::holds_alternative<Device>(id)) {
+        throw std::logic_error("DeviceComponent constructed with non-device ID");
+    }
     bus_.subscribe<StartBurstSampling>([this](const StartBurstSampling& cmd) { startBurst(cmd); });
     bus_.subscribe<StopBurstSampling>([this](const StopBurstSampling&) { stopBurst(); });
 }
 
 void ADS1115Driver::update() {
-    if (!std::holds_alternative<Device>(id())) {
-        throw std::logic_error("DeviceComponent constructed with non-device ID");
-    }
     auto* wrapper = registry_.get<I2CDeviceWrapper<ADS1115>>(std::get<Device>(id()));
     if (!wrapper)
         return;

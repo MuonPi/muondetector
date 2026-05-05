@@ -16,6 +16,7 @@
 #include "data/commands/ubx_version_dependent_msg_rate_cmd.h"
 #include "data/ublox/ublox_messages.h"
 #include "data/ublox/ublox_structs.h"
+#include "events/ubx_event.h"
 #include "hardware/ublox/message_processor.h"
 
 #include <functional>
@@ -38,6 +39,24 @@ SerialUblox::SerialUblox(ComponentId id, boost::asio::io_context& io, const std:
     bus_.subscribe<UbxVersionDependentMsgRateCmd>(
         [this](const UbxVersionDependentMsgRateCmd& cmd) { handle(cmd); });
     bus_.subscribe<GpsVersion>([this](const GpsVersion& gpsVersion) { handle(gpsVersion); });
+
+    bus_.subscribe<UbxAckNak>(
+        [this](const UbxAckNak& event) { msgRateCfgs.emplace(event.msgID, -1); });
+
+    bus_.subscribe<CfgMsg>([this](const CfgMsg& event) {
+        msgRateCfgs.emplace(event.msgID, event.rate);
+        waitingForAppliedMsgRate--;
+        if (waitingForAppliedMsgRate == 0) {
+            UbxMsgRates rates;
+            rates.data.reserve(msgRateCfgs.size());
+
+            for (const auto& [key, value] : msgRateCfgs) {
+                rates.data.push_back({key, value});
+            }
+
+            bus_.publish(std::move(rates));
+        }
+    });
 }
 
 void SerialUblox::makeConnection() {

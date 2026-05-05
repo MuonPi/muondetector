@@ -5,6 +5,9 @@
 #include "tcpconnection.h"
 
 TcpSource::TcpSource(ComponentId id, EventBus& bus) : Source::Source(id), bus_(bus) {
+    if (!std::holds_alternative<OtherComponent>(id)) {
+        throw std::logic_error("NonDeviceSource constructed with device ID");
+    }
 }
 
 void TcpSource::registerConnection(const std::shared_ptr<TcpConnection>& connection) {
@@ -23,7 +26,4 @@ void TcpSource::registerConnection(const std::shared_ptr<TcpConnection>& connect
 }
 
 void TcpSource::update() {
-    if (!std::holds_alternative<OtherComponent>(id())) {
-        throw std::logic_error("NonDeviceSource constructed with device ID");
-    }
 }

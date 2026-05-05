@@ -16,6 +16,7 @@ class ThreadPool {
     ~ThreadPool();
 
     void enqueue(std::function<void()> task);
+    void stop();
 
   private:
     void worker_loop();
