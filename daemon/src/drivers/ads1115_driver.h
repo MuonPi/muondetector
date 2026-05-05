@@ -5,6 +5,7 @@
 #include "core/registries/device_registry.h"
 #include "data/commands/burst_sampling_cmd.h"
 #include "data/events/ads1115_event.h"
+#include "data/muondetector_structs.h"
 #include "hardware/i2c/ads1115.h"
 #include "hardware/i2cdevice_wrapper.h"
 #include "sources/source.h"
@@ -49,6 +50,7 @@ class ADS1115Driver : public Source {
 
     std::chrono::milliseconds interval_;
     int remaining_ = 0;
+    ADC_SAMPLING_MODE adcSamplingMode{ADC_SAMPLING_MODE::PEAK};
 };
 
 #endif // ADS_1115_SOURCE_H

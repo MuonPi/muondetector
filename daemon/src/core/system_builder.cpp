@@ -46,6 +46,7 @@
 
 // Data
 #include "data/events/ads1115_event.h"
+#include "data/events/gpio_event.h"
 // #include "data/events/ubx_event.h"
 // #include "data/events/tcp_packet_event.h"
 
@@ -120,6 +121,8 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
 
     // make tcp sink send data through tcp connections
     ctx.bus->subscribe<Ads1115Event>([tcp_sink](const auto& ev) { tcp_sink->handle(ev); });
+    ctx.bus->subscribe<NavSat>([tcp_sink](const auto& ev) { tcp_sink->handle(ev); });
+    ctx.bus->subscribe<GpioEvent>([tcp_sink](const auto& ev) { tcp_sink->handle(ev); });
 
     // --- tcp_server ---
     // When server accepts a new TCP connection, call this handler.

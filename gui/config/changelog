@@ -1,0 +1,94 @@
+muondetector-gui (2.1.1) ; urgency=low
+
+  * Bugfixes:
+  - Fixed missing includes to work with newer compiler versions
+  - Changed scripts for compatibility with newer raspbian version bookworm
+ -- MuonPi <developer@muonpi.org>  Sat, 8. June 2024 20:00:00 +0200
+
+muondetector-gui (2.1.0) ; urgency=low
+
+  * Updates:
+  - Extended the geographic map feature with position marker (zoom level independent), semitransparent accuracy indicator and info box with current coordinates and position accuracy.
+  - Added daemon hardware and software info under "Parameters" tab.
+  - Added time as scan parameter in "Scans" tab.
+  - Added display of log rotation interval and event log enable flag in "Log" tab.
+  - Fixed bug which prevented auto update of histograms and plots.
+  - Optimized color schemes to give better appearance for dark themes
+  - changed timing input selection from radio button group to drop down menu
+  - Parameters: Added daemon hardware and software information
+  - Scans: Added time as scan parameter
+  - Log: Added display of log rotation interval and event log enable flag
+  - Map: Extensively improved the geographic map
+   - position marker (zoom level independent)
+   - semitransparent accuracy indicator
+   - info box with current coordinates and position accuracy
+   - controls of geo position mode (auto, static, lock-in), static position and lock-in limits
+  - Added many tooltips, accessible on hover
+
+  * Bugfixes:
+  - Fixed bug which prevented auto update of histograms and plots
+  - Rate buffer was sometimes sent with incorrect size when connecting with the GUI leading to occasional crashes
+  
+ -- MuonPi.org <developer@muonpi.org>  Wed, 17. May 2023 10:10:00 +0200
+
+muondetector-gui (2.0.2) ; urgency=low
+
+muondetector-gui (2.0.1) ; urgency=low
+
+  * Improved window resize functionality.
+
+ -- MuonPi.org <developer@muonpi.org>  Fri, 29 Jan 2021 11:07:00 +0100
+
+muondetector-gui (2.0.0) ; urgency=low
+
+  * Updated
+
+ -- MuonPi.org <developer@muonpi.org>  Wed, 16 Dec 2020 22:02:00 +0100
+
+muondetector-gui (1.2.2) ; urgency=low
+
+  * Updated
+
+ -- MuonPi.org <developer@muonpi.org>  Wed, 12 Aug 2020 01:00:00 +0200
+
+muondetector-gui (1.2.1) ; urgency=low
+
+  * Updated
+
+ -- MuonPi.org <developer@muonpi.org>  Mon, 20 Jul 2020 09:00:00 +0200
+
+muondetector-gui (1.2.0) ; urgency=low
+
+  * Updated
+
+ -- MuonPi.org <developer@muonpi.org>  Tue, 16 Jun 2020 22:00:00 +0200
+
+muondetector-gui (1.1.2) ; urgency=low
+
+  * Updated
+
+ -- MuonPi.org <developer@muonpi.org>  Mon, 27 Apr 2020 16:30:00 +0200
+
+muondetector-gui (1.1.1) ; urgency=low
+
+  * Updated
+
+ -- MuonPi.org <developer@muonpi.org>  Mon, 03 Mar 2020 15:00:00 +0100
+
+muondetector-gui (1.1.0) ; urgency=low
+
+  * Updated
+
+ -- MuonPi.org <developer@muonpi.org>  Thu, 22 Aug 2019 14:12:17 +0200
+
+muondetector-gui (1.0.3) ; urgency=low
+
+  * Updated
+
+ -- MuonPi.org <developer@muonpi.org>  Thu, 22 Aug 2019 14:12:17 +0200
+
+muondetector-gui (1.0.1) ; urgency=low
+
+  * Initial release.
+
+ -- MuonPi.org <developer@muonpi.org>  Fri, 26 Oct 2018 15:20:00 +0200

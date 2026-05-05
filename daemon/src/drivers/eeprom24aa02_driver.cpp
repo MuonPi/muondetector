@@ -11,6 +11,7 @@
 #include "hardware/i2cdevice_wrapper.h"
 #include "sources/source.h"
 #include "utility/calibration.h"
+#include "utility/conversion.h"
 
 #include <chrono>
 #include <cstdint>
@@ -20,20 +21,12 @@
 
 EEPROM24AA02Driver::EEPROM24AA02Driver(ComponentId id, DeviceRegistry& registry, EventBus& bus)
     : Source(id), registry_(registry), bus_(bus) {
-}
-
-template <typename T>
-std::string to_hex(T value) {
-    std::ostringstream oss;
-    oss << "0x" << std::hex << std::uppercase << std::setw(sizeof(T) * 2) << std::setfill('0')
-        << static_cast<uint64_t>(value);
-    return oss.str();
+    if (!std::holds_alternative<Device>(id)) {
+        throw std::logic_error("DeviceComponent constructed with non-device ID");
+    }
 }
 
 void EEPROM24AA02Driver::update() {
-    if (!std::holds_alternative<Device>(id())) {
-        throw std::logic_error("DeviceComponent constructed with non-device ID");
-    }
     auto* wrapper = registry_.get<I2CDeviceWrapper<EEPROM24AA02>>(std::get<Device>(id()));
     if (!wrapper) {
         return;

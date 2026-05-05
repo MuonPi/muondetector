@@ -17,6 +17,9 @@ class DeviceFactory {
     static void i2cReset();
     static auto create(const DeviceConfig& config) -> std::unique_ptr<IDevice>;
     static const std::unordered_map<Device, DeviceCreator> deviceCreator;
+
+  private:
+    static void deviceNotFoundError(const std::string& name, std::uint8_t address);
 };
 
 #endif // DEVICE_FACTORY_H

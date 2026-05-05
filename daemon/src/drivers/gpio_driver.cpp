@@ -1,26 +1,41 @@
 #include "drivers/gpio_driver.h"
 
 #include "core/logging/logger.h"
+#include "events/gpio_event.h"
 
 #include <gpiod.h>
 #include <iostream>
 #include <poll.h>
 #include <set>
 #include <sstream>
+#include <sys/eventfd.h>
+#include <unistd.h>
 
 using namespace std::chrono;
 
 GpioDriver::GpioDriver(ComponentId id, const std::string& chipPath, EventBus& bus)
     : Component(id), bus_(bus) {
+    if (!std::holds_alternative<OtherComponent>(id)) {
+        throw std::logic_error("NonDeviceSource constructed with device ID");
+    }
 
     chip = gpiod_chip_open(chipPath.c_str());
     if (!chip) {
         throw std::runtime_error("Failed to open gpiochip");
     }
+
+    control_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+    if (control_fd < 0) {
+        throw std::runtime_error("Failed to create control_fd");
+    }
 }
 
 GpioDriver::~GpioDriver() {
     stop();
+
+    if (control_fd >= 0) {
+        close(control_fd);
+    }
 
     for (auto req : inputRequests) {
         gpiod_line_request_release(req);
@@ -94,6 +109,12 @@ void GpioDriver::stop() {
     if (!running.exchange(false))
         return;
 
+    // wake poll immediately
+    if (control_fd >= 0) {
+        uint64_t one = 1;
+        write(control_fd, &one, sizeof(one));
+    }
+
     if (worker.joinable())
         worker.join();
 }
@@ -111,16 +132,31 @@ void GpioDriver::eventLoop() {
         fdMap[fd] = req;
     }
     logDebug("Monitoring " + std::to_string(fds.size()) + " GPIO request fds");
+
+    // ADD control fd
+    fds.push_back({control_fd, POLLIN, 0});
+
     while (running.load()) {
         for (auto& p : fds) {
             p.revents = 0;
         }
+
         int ret = poll(fds.data(), fds.size(), -1); // block
+
+        if (!running.load())
+            break;
 
         if (ret <= 0)
             continue;
 
         for (auto& p : fds) {
+
+            // CONTROL FD CASE
+            if (p.fd == control_fd && (p.revents & POLLIN)) {
+                uint64_t dummy;
+                read(control_fd, &dummy, sizeof(dummy)); // clear event
+                continue;
+            }
 
             if (!(p.revents & POLLIN))
                 continue;
@@ -211,7 +247,7 @@ bool GpioDriver::configureLines(const std::vector<unsigned int>& gpios, const Li
     return true;
 }
 
-bool GpioDriver::write(unsigned int gpio, bool value) {
+bool GpioDriver::writeGpio(unsigned int gpio, bool value) {
 
     auto it = gpioMap.find(gpio);
     if (it == gpioMap.end())

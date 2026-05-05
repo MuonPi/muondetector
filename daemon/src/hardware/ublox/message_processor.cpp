@@ -164,10 +164,12 @@ auto MessageProcessor::processMessage(const UbxMessage& msg) -> std::optional<Ub
             logWarn(sstr.str());
             return std::nullopt;
         }
-        if (msg.message_id() == 0x00) {
-            // emit UBXReceivedAckNak(msgWaitingForAck->full_id(),
-            //                        (uint16_t)(msgWaitingForAck->payload()[0]) << 8U |
-            //                        msgWaitingForAck->payload()[1]);
+        if (msg.message_id() == 0x00 && msgWaitingForAck) {
+            const auto& arr = msgWaitingForAck.value().payload();
+            std::uint16_t payload = static_cast<std::uint16_t>(arr[0]);
+            payload = payload << 8U;
+            payload |= static_cast<std::uint16_t>(arr[1]);
+            return UbxAckNak{msgWaitingForAck.value().full_id(), payload};
         }
         // ackTimer->stop(); // TODO : implement ack timer logic
         msgWaitingForAck = std::nullopt;
@@ -880,7 +882,7 @@ auto MessageProcessor::UBXCfgMSG(const std::string& msg) -> std::optional<UbxEve
     // and not little (as the default would be using get)
     CfgMsg data;
     data.msgID = get<std::uint16_t, endian::big>(msg.begin());
-    data.rate = get<std::uint8_t>(msg.begin() + 2 + s_default_target);
+    data.rate = static_cast<int>(get<std::uint8_t>(msg.begin() + 2 + s_default_target));
 
     return data;
 }

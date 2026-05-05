@@ -2,6 +2,7 @@
 #define GPIO_MAPPING_H
 #include "data/gpio_pin_definitions.h"
 
+#include <gpiod.h>
 #include <map>
 
 #define MAX_HW_VER 3
@@ -65,13 +66,10 @@ static const std::map<GPIO_SIGNAL, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER
 
 extern std::map<GPIO_SIGNAL, unsigned int> GPIO_PINMAP;
 
-enum class EventEdge { Rising, Falling };
-
-struct GpioEvent {
-    GPIO_SIGNAL gpio_signal;
-    unsigned int gpio_pin;
-    std::chrono::nanoseconds timestamp;
-    EventEdge edge;
+struct LineConfig {
+    SIGNAL_DIRECTION dir = DIR_UNDEFINED;
+    bool initialValue = false;
+    gpiod_line_edge edge = GPIOD_LINE_EDGE_RISING;
 };
 
 // inline GPIO_SIGNAL bcmToGpioSignal(unsigned int bcmGpioNumber)

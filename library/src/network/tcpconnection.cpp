@@ -1,6 +1,9 @@
 #include "tcpconnection.h"
 
+#include "tcpmessage_keys.h"
+
 #include <algorithm>
+#include <iostream>
 #include <utility>
 
 namespace {
@@ -91,6 +94,7 @@ void TcpConnection::do_read() {
     socket_.async_read_some(boost::asio::buffer(readBuffer_),
                             [this, self](boost::system::error_code ec, std::size_t bytesRead) {
                                 if (ec) {
+                                    std::cerr << "async_read_some failed: " << ec.message();
                                     closeWithError(ec);
                                     return;
                                 }
@@ -149,7 +153,10 @@ auto TcpConnection::tryParsePacket() -> bool {
 
     receiveBuffer_.erase(receiveBuffer_.begin(), receiveBuffer_.begin() + frameSize);
 
-    if (packetHandler_) {
+    if (key == static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PING)) {
+        auto pong = static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PONG);
+        sendPacket(pong, std::move(payload));
+    } else if (packetHandler_) {
         packetHandler_(TcpPacket{key, std::move(payload)});
     }
     lastReceivedNanos_.store(nowNanos());

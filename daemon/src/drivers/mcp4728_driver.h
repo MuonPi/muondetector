@@ -6,10 +6,10 @@
 #include "core/event_bus.h"
 #include "core/registries/device_registry.h"
 #include "data/commands/threshold_setting_cmd.h"
-#include "hardware/i2c/mcp4728.h"
-#include "hardware/i2cdevice_wrapper.h"
 
 #include <optional>
+
+class MCP4728;
 
 class MCP4728Driver : public Component {
   public:

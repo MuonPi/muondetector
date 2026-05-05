@@ -6,6 +6,8 @@
 #include "data/commands/threshold_setting_cmd.h"
 #include "data/events/mcp4728_event.h"
 #include "data/events/threshold_setting_event.h"
+#include "hardware/i2c/mcp4728.h"
+#include "hardware/i2cdevice_wrapper.h"
 
 #include <algorithm>
 #include <optional>
@@ -18,6 +20,9 @@ using namespace MuonPi;
 MCP4728Driver::MCP4728Driver(ComponentId id, SystemConfig& systemConfig, DeviceRegistry& registry,
                              EventBus& bus)
     : Component(id), registry_{registry}, bus_{bus} {
+    if (!std::holds_alternative<Device>(id)) {
+        throw std::logic_error("DeviceComponent constructed with non-device ID");
+    }
     bus_.subscribe<ThresholdSettingCmd>(
         ([this](const ThresholdSettingCmd& cmd) { setThreshold(cmd); }));
 
@@ -81,8 +86,6 @@ MCP4728Driver::MCP4728Driver(ComponentId id, SystemConfig& systemConfig, DeviceR
 }
 
 auto MCP4728Driver::dev() -> MCP4728* {
-    if (!std::holds_alternative<Device>(id()))
-        throw std::logic_error("Expected Device id");
     auto* wrapper = registry_.get<I2CDeviceWrapper<MCP4728>>(std::get<Device>(id()));
     if (!wrapper) {
         return nullptr;

@@ -23,6 +23,7 @@
 #include <optional>
 #include <queue>
 #include <string>
+#include <unordered_map>
 
 struct GnssPosStruct;
 struct GnssMonHwStruct;
@@ -82,6 +83,10 @@ class SerialUblox : public Component {
     int timeout_ = 5;
     std::optional<GpsVersion> protocolVersion_;
     std::queue<UbxVersionDependentMsgRateCmd> queuedCmds_;
+
+    // TODO: Move this to some separate processor/storage
+    std::size_t waitingForAppliedMsgRate{0};
+    std::unordered_map<uint16_t, int> msgRateCfgs;
 };
 
 #endif // SERIALUBLOX_H
