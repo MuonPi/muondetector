@@ -11,6 +11,7 @@ struct SystemConfig {
     std::string username;
     std::string password;
     std::string gpsdevname{""};
+    std::string gpiodevname{""};
     std::string logLevel{"Warning"};
     std::uint8_t pcaPortMask{0};
     std::array<float, 2> thresholdVoltage{-1.0F, -1.0F};
