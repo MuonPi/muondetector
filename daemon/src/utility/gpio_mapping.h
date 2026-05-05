@@ -65,6 +65,15 @@ static const std::map<GPIO_SIGNAL, unsigned int> GPIO_PINMAP_VERSIONS[MAX_HW_VER
 
 extern std::map<GPIO_SIGNAL, unsigned int> GPIO_PINMAP;
 
+enum class EventEdge { Rising, Falling };
+
+struct GpioEvent {
+    GPIO_SIGNAL gpio_signal;
+    unsigned int gpio_pin;
+    std::chrono::nanoseconds timestamp;
+    EventEdge edge;
+};
+
 // inline GPIO_SIGNAL bcmToGpioSignal(unsigned int bcmGpioNumber)
 // {
 //     std::map<GPIO_SIGNAL, unsigned int>::const_iterator i = GPIO_PINMAP.cbegin();

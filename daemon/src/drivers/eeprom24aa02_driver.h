@@ -14,14 +14,8 @@ class EEPROM24AA02Driver : public Source {
     void update() override;
 
   private:
-  private:
     DeviceRegistry& registry_;
     EventBus& bus_;
-
-    Device deviceId_;
-
-    std::chrono::milliseconds interval_;
-    int remaining_ = 0;
 };
 
 #endif // EEPROM24AA02_DRIVER_H
