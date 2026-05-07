@@ -85,11 +85,4 @@ static const std::map<TIMING_MUX_SELECTION, std::string> TIMING_MUX_SIGNAL_NAMES
 
 enum class EventEdge { Rising, Falling };
 
-struct GpioEvent {
-    GPIO_SIGNAL gpio_signal;
-    unsigned int gpio_pin;
-    std::chrono::nanoseconds timestamp;
-    EventEdge edge;
-};
-
 #endif // GPIO_SIGNAL_DEFINITIONS_H

@@ -2,8 +2,8 @@
 
 #include "ads1115.capnp.h"
 #include "data/events/ads1115_event.h"
+#include "data/events/gpio_event.h"
 #include "data/events/ubx_event.h"
-#include "data/gpio_pin_definitions.h"
 #include "gpio_event.capnp.h"
 #include "nav_sat.capnp.h"
 #include "network/tcpmessage_keys.h"

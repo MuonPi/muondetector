@@ -1,6 +1,7 @@
 #include "drivers/gpio_driver.h"
 
 #include "core/logging/logger.h"
+#include "events/gpio_event.h"
 
 #include <gpiod.h>
 #include <iostream>

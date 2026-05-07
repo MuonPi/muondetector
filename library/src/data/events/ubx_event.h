@@ -159,7 +159,7 @@ inline void GnssSatellite::Print(int index, bool wHeader) const {
 }
 
 struct UbxDopStruct {
-    uint16_t gDOP = 0, pDOP = 0, tDOP = 0, vDOP = 0, hDOP = 0, nDOP = 0, eDOP = 0;
+    std::uint16_t gDOP = 0, pDOP = 0, tDOP = 0, vDOP = 0, hDOP = 0, nDOP = 0, eDOP = 0;
 };
 
 struct NavStatus {
@@ -294,7 +294,7 @@ struct CfgGNSS {
 
 struct CfgMsg {
     std::uint16_t msgID{0};
-    std::uint8_t rate{0};
+    int rate{0};
 };
 
 struct MonRx {
@@ -368,12 +368,21 @@ struct UbxTimeMarkStruct {
     std::uint8_t timeBase = 0;
     bool utcAvailable = false;
     std::uint8_t flags = 0;
-    uint16_t evtCounter = 0;
+    std::uint16_t evtCounter = 0;
 };
 
-using UbxEvent =
-    std::variant<NavStatus, UbxDopStruct, NavTimeGPS, NavTimeUTC, NavClock, NavSat, GnssPosStruct,
-                 CfgAnt, CfgNavX5, CfgNav5, UbxTimePulseStruct, CfgGNSS, CfgMsg, MonRx, MonTx,
-                 GnssMonHwStruct, GnssMonHw2Struct, GpsVersion, TimTP, UbxTimeMarkStruct>;
+struct UbxAckNak {
+    std::uint16_t msgID{0};
+    std::uint16_t payload{0};
+};
+
+struct UbxMsgRates {
+    std::vector<CfgMsg> data;
+};
+
+using UbxEvent = std::variant<NavStatus, UbxDopStruct, NavTimeGPS, NavTimeUTC, NavClock, NavSat,
+                              GnssPosStruct, CfgAnt, CfgNavX5, CfgNav5, UbxTimePulseStruct, CfgGNSS,
+                              CfgMsg, MonRx, MonTx, GnssMonHwStruct, GnssMonHw2Struct, GpsVersion,
+                              TimTP, UbxTimeMarkStruct, UbxAckNak>;
 
 #endif // UBX_EVENT_H

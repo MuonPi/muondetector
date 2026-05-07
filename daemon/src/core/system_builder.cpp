@@ -46,6 +46,7 @@
 
 // Data
 #include "data/events/ads1115_event.h"
+#include "data/events/gpio_event.h"
 // #include "data/events/ubx_event.h"
 // #include "data/events/tcp_packet_event.h"
 
