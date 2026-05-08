@@ -20,7 +20,11 @@ using ComponentId = std::variant<Device, OtherComponent>;
 inline const std::unordered_map<std::string, ComponentId> componentLookup{
     {"ADC_DRIVER_0", Device::ADS1115_0},
     {"DAC_DRIVER_0", Device::MCP4728_0},
+    {"PCA9536_DRIVER_0", Device::PCA9536_0},
     {"EEPROM_DRIVER_0", Device::EEPROM24AA02_0},
+    {"OLED_DRIVER_0", Device::ADAFRUIT_SSD1306_0},
+    {"TEMP_SOURCE_0", Device::LM75_0},
+    {"TEMP_SOURCE_1", Device::MIC184_0},
     {"GPS_DRIVER_0", OtherComponent::GPS_DRIVER_0},
     {"GPIO_DRIVER_0", OtherComponent::GPIO_DRIVER_0},
     {"TCP_SOURCE_0", OtherComponent::TCP_SOURCE_0},

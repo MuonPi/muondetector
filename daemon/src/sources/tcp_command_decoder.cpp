@@ -35,6 +35,9 @@
 
 TcpCommandDecoder::TcpCommandDecoder(ComponentId id, EventBus& bus) : Component(id), bus_(bus) {
     bus_.subscribe<TcpPacketEvent>([this](const TcpPacketEvent& event) { this->handle(event); });
+    if (!std::holds_alternative<OtherComponent>(id)) {
+        throw std::logic_error("NonDeviceSource constructed with device ID");
+    }
 }
 
 void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
