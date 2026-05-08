@@ -7,6 +7,38 @@
 struct Ads1115Event;
 struct NavSat;
 struct GpioEvent;
+struct AdcTraceEvent;
+struct CalibEvent;
+struct CfgGNSS;
+struct GpioRateEvent;
+struct I2CStatsEvent;
+struct MCP4728Event;
+struct MonRx;
+struct MonTx;
+struct PositionModeConfig;
+struct UbxMsgRates;
+struct UbxTimeMarkStruct;
+struct VersionEvent;
+struct AdcModeEvent;
+struct BiasSwitchEvent;
+struct BiasVoltageEvent;
+struct GainSwitchEvent;
+struct PcaSwitchEvent;
+struct PolaritySwitchEvent;
+struct PreampSwitchEvent;
+struct GpioInhibitEvent;
+struct LM75Event;
+struct MqttStatusEvent;
+struct SPIStatsEvent;
+struct ThresholdSettingEvent;
+struct GnssPosStruct;
+struct GnssMonHwStruct;
+struct GnssMonHw2Struct;
+struct GpsVersion;
+struct NavStatus;
+struct UbxTimePulseStruct;
+struct LogInfoStruct;
+class Histogram;
 
 template <typename T>
 struct CapnpCodec {
@@ -26,24 +58,48 @@ struct CapnpCodec {
     }
 };
 
-template <>
-struct CapnpCodec<Ads1115Event> {
-    static auto encode(const Ads1115Event&) -> std::vector<std::uint8_t>;
-    static auto decode(const std::vector<std::uint8_t>& data) -> Ads1115Event;
-    static auto messageKey() -> std::uint16_t;
-};
+#define DECLARE_CODEC(TYPE)                                                                        \
+    template <>                                                                                    \
+    struct CapnpCodec<TYPE> {                                                                      \
+        static auto encode(const TYPE&) -> std::vector<std::uint8_t>;                              \
+        static auto decode(const std::vector<std::uint8_t>& data) -> TYPE;                         \
+        static auto messageKey() -> std::uint16_t;                                                 \
+    };
 
-template <>
-struct CapnpCodec<NavSat> {
-    static auto encode(const NavSat&) -> std::vector<std::uint8_t>;
-    static auto decode(const std::vector<std::uint8_t>& data) -> NavSat;
-    static auto messageKey() -> std::uint16_t;
-};
-
-template <>
-struct CapnpCodec<GpioEvent> {
-    static auto encode(const GpioEvent&) -> std::vector<std::uint8_t>;
-    static auto decode(const std::vector<std::uint8_t>& data) -> GpioEvent;
-    static auto messageKey() -> std::uint16_t;
-};
+DECLARE_CODEC(Ads1115Event)
+DECLARE_CODEC(NavSat)
+DECLARE_CODEC(GpioEvent)
+DECLARE_CODEC(AdcTraceEvent)
+DECLARE_CODEC(CalibEvent)
+DECLARE_CODEC(CfgGNSS)
+DECLARE_CODEC(GpioRateEvent)
+DECLARE_CODEC(I2CStatsEvent)
+DECLARE_CODEC(MCP4728Event)
+DECLARE_CODEC(MonRx)
+DECLARE_CODEC(MonTx)
+DECLARE_CODEC(PositionModeConfig)
+DECLARE_CODEC(UbxMsgRates)
+DECLARE_CODEC(UbxTimeMarkStruct)
+DECLARE_CODEC(VersionEvent)
+DECLARE_CODEC(AdcModeEvent)
+DECLARE_CODEC(BiasSwitchEvent)
+DECLARE_CODEC(BiasVoltageEvent)
+DECLARE_CODEC(GainSwitchEvent)
+DECLARE_CODEC(PcaSwitchEvent)
+DECLARE_CODEC(PolaritySwitchEvent)
+DECLARE_CODEC(PreampSwitchEvent)
+DECLARE_CODEC(GpioInhibitEvent)
+DECLARE_CODEC(LM75Event)
+DECLARE_CODEC(MqttStatusEvent)
+DECLARE_CODEC(SPIStatsEvent)
+DECLARE_CODEC(ThresholdSettingEvent)
+DECLARE_CODEC(GnssPosStruct)
+DECLARE_CODEC(GnssMonHwStruct)
+DECLARE_CODEC(GnssMonHw2Struct)
+DECLARE_CODEC(GpsVersion)
+DECLARE_CODEC(NavStatus)
+DECLARE_CODEC(UbxTimePulseStruct)
+DECLARE_CODEC(LogInfoStruct)
+DECLARE_CODEC(Histogram)
+#undef DECLARE_CODEC
 #endif // CAPNP_CODEC_H

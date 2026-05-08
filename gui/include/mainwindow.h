@@ -55,7 +55,7 @@ class MainWindow : public QMainWindow {
   signals:
     void addUbxMsgRates(const UbxMsgRates& rates);
     void closeConnection();
-    void gpioRates(quint8 whichrate, std::vector<std::pair<float, float>> rate);
+    void gpioRates(quint8 whichrate, QVector<QPointF> rate);
     void tcpDisconnected();
     void setUiEnabledStates(bool enabled);
     void geodeticPos(const GnssPosStruct& pos);

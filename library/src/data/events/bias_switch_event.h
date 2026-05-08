@@ -1,4 +1,4 @@
-#ifndef BIAS_SWTICH_EVENT_H
+#ifndef BIAS_SWITCH_EVENT_H
 #define BIAS_SWITCH_EVENT_H
 
 struct BiasSwitchEvent {

@@ -1,15 +1,63 @@
 #include "capnp/capnp_codec.h"
 
+#include "adc_trace_event.capnp.h"
+#include "calib_event.capnp.h"
+#include "cfg_gnss.capnp.h"
+#include "gpio_rate_event.capnp.h"
+#include "i2c_stats_event.capnp.h"
+#include "mcp4728_event.capnp.h"
+#include "mon_rx.capnp.h"
+#include "mon_tx.capnp.h"
+#include "position_mode_config.capnp.h"
+#if __has_include("protocol.capnp.h")
+#include "protocol.capnp.h"
+#define MUON_HAS_PROTOCOL_CAPNP 1
+#elif __has_include("build/generated/capnp/protocol.capnp.h")
+#include "build/generated/capnp/protocol.capnp.h"
+#define MUON_HAS_PROTOCOL_CAPNP 1
+#elif __has_include("../../../build/build/generated/capnp/protocol.capnp.h")
+#include "../../../build/build/generated/capnp/protocol.capnp.h"
+#define MUON_HAS_PROTOCOL_CAPNP 1
+#endif
+#ifndef MUON_HAS_PROTOCOL_CAPNP
 #include "ads1115.capnp.h"
-#include "data/events/ads1115_event.h"
-#include "data/events/gpio_event.h"
-#include "data/events/ubx_event.h"
 #include "gpio_event.capnp.h"
+#endif
+#include "data/events/adc_mode_event.h"
+#include "data/events/adc_trace_event.h"
+#include "data/events/ads1115_event.h"
+#include "data/events/bias_switch_event.h"
+#include "data/events/bias_voltage_event.h"
+#include "data/events/calib_event.h"
+#include "data/events/gain_switch_event.h"
+#include "data/events/gpio_event.h"
+#include "data/events/gpio_inhibit_event.h"
+#include "data/events/gpio_rate_event.h"
+#include "data/events/i2c_stats_event.h"
+#include "data/events/lm75_event.h"
+#include "data/events/mcp4728_event.h"
+#include "data/events/mqtt_status_event.h"
+#include "data/events/pca_switch_event.h"
+#include "data/events/polarity_switch_event.h"
+#include "data/events/preamp_switch_event.h"
+#include "data/events/spi_stats_event.h"
+#include "data/events/threshold_setting_event.h"
+#include "data/events/ubx_event.h"
+#include "data/events/version_event.h"
+#include "data/muondetector_structs.h"
 #include "nav_sat.capnp.h"
 #include "network/tcpmessage_keys.h"
+#include "ubx_msg_rates.capnp.h"
+#include "ubx_timemark_struct.capnp.h"
+#include "version_event.capnp.h"
 
+#include <algorithm>
+#include <array>
 #include <capnp/serialize.h>
+#include <chrono>
 #include <cstdint>
+#include <ctime>
+#include <utility>
 #include <vector>
 
 inline capnp::FlatArrayMessageReader makeReader(const std::vector<std::uint8_t>& data) {
@@ -143,4 +191,910 @@ auto CapnpCodec<GpioEvent>::decode(const std::vector<std::uint8_t>& data) -> Gpi
 
 auto CapnpCodec<GpioEvent>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_GPIO_EVENT);
+}
+
+auto CapnpCodec<AdcTraceEvent>::encode(const AdcTraceEvent& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<AdcTraceEventCapnp>();
+    auto samples = root.initAdcSampleBuffer(event.adcSampleBuffer.size());
+    for (std::size_t i = 0; i < event.adcSampleBuffer.size(); ++i) {
+        samples.set(i, event.adcSampleBuffer[i]);
+    }
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<AdcTraceEvent>::decode(const std::vector<std::uint8_t>& data) -> AdcTraceEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<AdcTraceEventCapnp>();
+    AdcTraceEvent event;
+    auto samples = root.getAdcSampleBuffer();
+    event.adcSampleBuffer.reserve(samples.size());
+    for (auto value : samples) {
+        event.adcSampleBuffer.push_back(value);
+    }
+    return event;
+}
+
+auto CapnpCodec<AdcTraceEvent>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_ADC_TRACE);
+}
+
+auto CapnpCodec<CalibEvent>::encode(const CalibEvent& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<CalibEventCapnp>();
+    root.setValid(event.valid);
+    root.setEepromValid(event.eepromValid);
+    root.setId(event.id);
+    auto list = root.initCalibList(event.calibList.size());
+    for (std::size_t i = 0; i < event.calibList.size(); ++i) {
+        auto item = list[i];
+        item.setName(event.calibList[i].name);
+        item.setType(event.calibList[i].type);
+        item.setAddress(event.calibList[i].address);
+        item.setValue(event.calibList[i].value);
+    }
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<CalibEvent>::decode(const std::vector<std::uint8_t>& data) -> CalibEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<CalibEventCapnp>();
+    CalibEvent event;
+    event.valid = root.getValid();
+    event.eepromValid = root.getEepromValid();
+    event.id = root.getId();
+    auto list = root.getCalibList();
+    event.calibList.reserve(list.size());
+    for (auto item : list) {
+        CalibStruct c{};
+        c.name = item.getName().cStr();
+        c.type = item.getType().cStr();
+        c.address = item.getAddress();
+        c.value = item.getValue().cStr();
+        event.calibList.push_back(c);
+    }
+    return event;
+}
+
+auto CapnpCodec<CalibEvent>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_CALIB_SET);
+}
+
+auto CapnpCodec<CfgGNSS>::encode(const CfgGNSS& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<CfgGNSSCapnp>();
+    root.setVersion(event.version);
+    root.setNumTrkChHw(event.numTrkChHw);
+    root.setNumTrkChUse(event.numTrkChUse);
+    root.setNumConfigBlocks(event.numConfigBlocks);
+    auto cfgs = root.initConfigs(event.configs.size());
+    for (std::size_t i = 0; i < event.configs.size(); ++i) {
+        auto cfg = cfgs[i];
+        cfg.setGnssId(event.configs[i].gnssId);
+        cfg.setResTrkCh(event.configs[i].resTrkCh);
+        cfg.setMaxTrkCh(event.configs[i].maxTrkCh);
+        cfg.setFlags(event.configs[i].flags);
+    }
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<CfgGNSS>::decode(const std::vector<std::uint8_t>& data) -> CfgGNSS {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<CfgGNSSCapnp>();
+    CfgGNSS event{};
+    event.version = root.getVersion();
+    event.numTrkChHw = root.getNumTrkChHw();
+    event.numTrkChUse = root.getNumTrkChUse();
+    event.numConfigBlocks = root.getNumConfigBlocks();
+    auto cfgs = root.getConfigs();
+    event.configs.reserve(cfgs.size());
+    for (auto cfg : cfgs) {
+        event.configs.push_back(GnssConfigStruct{cfg.getGnssId(), cfg.getResTrkCh(),
+                                                 cfg.getMaxTrkCh(), cfg.getFlags()});
+    }
+    return event;
+}
+
+auto CapnpCodec<CfgGNSS>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_GNSS_CONFIG);
+}
+
+auto CapnpCodec<GpioRateEvent>::encode(const GpioRateEvent& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<GpioRateEventCapnp>();
+    root.setWhichRate(event.whichRate);
+    auto rates = root.initRate(event.rate.size());
+    for (std::size_t i = 0; i < event.rate.size(); ++i) {
+        rates[i].setFirst(event.rate[i].first);
+        rates[i].setSecond(event.rate[i].second);
+    }
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<GpioRateEvent>::decode(const std::vector<std::uint8_t>& data) -> GpioRateEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<GpioRateEventCapnp>();
+    GpioRateEvent event{};
+    event.whichRate = root.getWhichRate();
+    auto rates = root.getRate();
+    event.rate.reserve(rates.size());
+    for (auto r : rates) {
+        event.rate.emplace_back(r.getFirst(), r.getSecond());
+    }
+    return event;
+}
+
+auto CapnpCodec<GpioRateEvent>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_GPIO_RATE);
+}
+
+auto CapnpCodec<I2CStatsEvent>::encode(const I2CStatsEvent& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<I2cStatsEventCapnp>();
+    root.setNrDevices(event.nrDevices);
+    root.setBytesRead(event.bytesRead);
+    root.setBytesWritten(event.bytesWritten);
+    auto devices = root.initDeviceList(event.deviceList.size());
+    for (std::size_t i = 0; i < event.deviceList.size(); ++i) {
+        auto d = devices[i];
+        d.setAddress(event.deviceList[i].address);
+        d.setName(event.deviceList[i].name);
+        d.setStatus(event.deviceList[i].status);
+        d.setNrBytesWritten(event.deviceList[i].nrBytesWritten);
+        d.setNrBytesRead(event.deviceList[i].nrBytesRead);
+        d.setNrIoErrors(event.deviceList[i].nrIoErrors);
+        d.setLastTransactionTime(event.deviceList[i].lastTransactionTime);
+    }
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<I2CStatsEvent>::decode(const std::vector<std::uint8_t>& data) -> I2CStatsEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<I2cStatsEventCapnp>();
+    I2CStatsEvent event{};
+    event.nrDevices = root.getNrDevices();
+    event.bytesRead = root.getBytesRead();
+    event.bytesWritten = root.getBytesWritten();
+    auto devices = root.getDeviceList();
+    event.deviceList.reserve(devices.size());
+    for (auto d : devices) {
+        event.deviceList.push_back(I2cDeviceEntry{d.getAddress(), d.getName().cStr(), d.getStatus(),
+                                                  d.getNrBytesWritten(), d.getNrBytesRead(),
+                                                  d.getNrIoErrors(), d.getLastTransactionTime()});
+    }
+    return event;
+}
+
+auto CapnpCodec<I2CStatsEvent>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_I2C_STATS);
+}
+
+auto CapnpCodec<MCP4728Event>::encode(const MCP4728Event& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<MCP4728EventCapnp>();
+    auto dacValues = root.initDacValues(event.dacValues.size());
+    std::size_t i = 0;
+    for (const auto& [channel, value] : event.dacValues) {
+        dacValues[i].setChannel(channel);
+        dacValues[i].setValue(value);
+        ++i;
+    }
+    auto eepromValues = root.initEepromValues(event.eepromValues.size());
+    i = 0;
+    for (const auto& [channel, value] : event.eepromValues) {
+        eepromValues[i].setChannel(channel);
+        eepromValues[i].setValue(value);
+        ++i;
+    }
+    auto voltages = root.initVoltages(event.voltages.size());
+    i = 0;
+    for (const auto& [channel, value] : event.voltages) {
+        voltages[i].setChannel(channel);
+        voltages[i].setValue(value);
+        ++i;
+    }
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<MCP4728Event>::decode(const std::vector<std::uint8_t>& data) -> MCP4728Event {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<MCP4728EventCapnp>();
+    MCP4728Event event{};
+    for (auto entry : root.getDacValues()) {
+        event.dacValues[entry.getChannel()] = entry.getValue();
+    }
+    for (auto entry : root.getEepromValues()) {
+        event.eepromValues[entry.getChannel()] = entry.getValue();
+    }
+    for (auto entry : root.getVoltages()) {
+        event.voltages[entry.getChannel()] = entry.getValue();
+    }
+    return event;
+}
+
+auto CapnpCodec<MCP4728Event>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_DAC_READBACK);
+}
+
+template <typename TCapnp, typename TEvent>
+auto encodeMonBuffer(const TEvent& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<TCapnp>();
+    auto pending = root.initPending(event.pending.size());
+    auto usage = root.initUsage(event.usage.size());
+    auto peakUsage = root.initPeakUsage(event.peakUsage.size());
+    for (std::size_t i = 0; i < event.pending.size(); ++i) {
+        pending.set(i, event.pending[i]);
+    }
+    for (std::size_t i = 0; i < event.usage.size(); ++i) {
+        usage.set(i, event.usage[i]);
+    }
+    for (std::size_t i = 0; i < event.peakUsage.size(); ++i) {
+        peakUsage.set(i, event.peakUsage[i]);
+    }
+    root.setTUsage(event.tUsage);
+    root.setTPeakUsage(event.tPeakUsage);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+template <typename TCapnp, typename TEvent>
+auto decodeMonBuffer(const std::vector<std::uint8_t>& data) -> TEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<TCapnp>();
+    TEvent event{};
+    auto pending = root.getPending();
+    auto usage = root.getUsage();
+    auto peakUsage = root.getPeakUsage();
+    for (std::size_t i = 0;
+         i < std::min<std::size_t>(event.pending.size(), static_cast<std::size_t>(pending.size()));
+         ++i) {
+        event.pending[i] = pending[i];
+    }
+    for (std::size_t i = 0;
+         i < std::min<std::size_t>(event.usage.size(), static_cast<std::size_t>(usage.size()));
+         ++i) {
+        event.usage[i] = usage[i];
+    }
+    for (std::size_t i = 0; i < std::min<std::size_t>(event.peakUsage.size(),
+                                                      static_cast<std::size_t>(peakUsage.size()));
+         ++i) {
+        event.peakUsage[i] = peakUsage[i];
+    }
+    event.tUsage = root.getTUsage();
+    event.tPeakUsage = root.getTPeakUsage();
+    return event;
+}
+
+auto CapnpCodec<MonRx>::encode(const MonRx& event) -> std::vector<uint8_t> {
+    return encodeMonBuffer<MonRxCapnp>(event);
+}
+
+auto CapnpCodec<MonRx>::decode(const std::vector<std::uint8_t>& data) -> MonRx {
+    return decodeMonBuffer<MonRxCapnp, MonRx>(data);
+}
+
+auto CapnpCodec<MonRx>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_RXBUF);
+}
+
+auto CapnpCodec<MonTx>::encode(const MonTx& event) -> std::vector<uint8_t> {
+    return encodeMonBuffer<MonTxCapnp>(event);
+}
+
+auto CapnpCodec<MonTx>::decode(const std::vector<std::uint8_t>& data) -> MonTx {
+    return decodeMonBuffer<MonTxCapnp, MonTx>(data);
+}
+
+auto CapnpCodec<MonTx>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_TXBUF);
+}
+
+auto CapnpCodec<PositionModeConfig>::encode(const PositionModeConfig& event)
+    -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<PositionModeConfigCapnp>();
+    root.setMode(static_cast<PositionModeConfigCapnp::Mode>(event.mode));
+    auto pos = root.initStaticPosition();
+    pos.setLongitude(event.static_position.longitude);
+    pos.setLatitude(event.static_position.latitude);
+    pos.setAltitude(event.static_position.altitude);
+    pos.setHorError(event.static_position.hor_error);
+    pos.setVertError(event.static_position.vert_error);
+    root.setLockInMaxDop(event.lock_in_max_dop);
+    root.setLockInMinErrorMeters(event.lock_in_min_error_meters);
+    root.setFilterConfig(static_cast<PositionModeConfigCapnp::FilterType>(event.filter_config));
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<PositionModeConfig>::decode(const std::vector<std::uint8_t>& data)
+    -> PositionModeConfig {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<PositionModeConfigCapnp>();
+    PositionModeConfig event{};
+    event.mode = static_cast<PositionModeConfig::Mode>(root.getMode());
+    auto pos = root.getStaticPosition();
+    event.static_position.longitude = pos.getLongitude();
+    event.static_position.latitude = pos.getLatitude();
+    event.static_position.altitude = pos.getAltitude();
+    event.static_position.hor_error = pos.getHorError();
+    event.static_position.vert_error = pos.getVertError();
+    event.lock_in_max_dop = root.getLockInMaxDop();
+    event.lock_in_min_error_meters = root.getLockInMinErrorMeters();
+    event.filter_config = static_cast<PositionModeConfig::FilterType>(root.getFilterConfig());
+    return event;
+}
+
+auto CapnpCodec<PositionModeConfig>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_POSITION_MODEL);
+}
+
+auto CapnpCodec<UbxMsgRates>::encode(const UbxMsgRates& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<UbxMsgRatesCapnp>();
+    auto data = root.initData(event.data.size());
+    for (std::size_t i = 0; i < event.data.size(); ++i) {
+        data[i].setMsgID(event.data[i].msgID);
+        data[i].setRate(event.data[i].rate);
+    }
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<UbxMsgRates>::decode(const std::vector<std::uint8_t>& data) -> UbxMsgRates {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<UbxMsgRatesCapnp>();
+    UbxMsgRates event{};
+    auto list = root.getData();
+    event.data.reserve(list.size());
+    for (auto item : list) {
+        event.data.push_back(CfgMsg{item.getMsgID(), item.getRate()});
+    }
+    return event;
+}
+
+auto CapnpCodec<UbxMsgRates>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_MSG_RATE);
+}
+
+auto CapnpCodec<UbxTimeMarkStruct>::encode(const UbxTimeMarkStruct& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<UbxTimeMarkStructCapnp>();
+    auto rising = root.initRising();
+    rising.setSeconds(event.rising.tv_sec);
+    rising.setNanoseconds(event.rising.tv_nsec);
+    auto falling = root.initFalling();
+    falling.setSeconds(event.falling.tv_sec);
+    falling.setNanoseconds(event.falling.tv_nsec);
+    root.setRisingValid(event.risingValid);
+    root.setFallingValid(event.fallingValid);
+    root.setAccuracyNs(event.accuracy_ns);
+    root.setValid(event.valid);
+    root.setTimeBase(event.timeBase);
+    root.setUtcAvailable(event.utcAvailable);
+    root.setFlags(event.flags);
+    root.setEvtCounter(event.evtCounter);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<UbxTimeMarkStruct>::decode(const std::vector<std::uint8_t>& data)
+    -> UbxTimeMarkStruct {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<UbxTimeMarkStructCapnp>();
+    UbxTimeMarkStruct event{};
+    auto rising = root.getRising();
+    event.rising.tv_sec = rising.getSeconds();
+    event.rising.tv_nsec = rising.getNanoseconds();
+    auto falling = root.getFalling();
+    event.falling.tv_sec = falling.getSeconds();
+    event.falling.tv_nsec = falling.getNanoseconds();
+    event.risingValid = root.getRisingValid();
+    event.fallingValid = root.getFallingValid();
+    event.accuracy_ns = root.getAccuracyNs();
+    event.valid = root.getValid();
+    event.timeBase = root.getTimeBase();
+    event.utcAvailable = root.getUtcAvailable();
+    event.flags = root.getFlags();
+    event.evtCounter = root.getEvtCounter();
+    return event;
+}
+
+auto CapnpCodec<UbxTimeMarkStruct>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_TIMEMARK);
+}
+
+auto CapnpCodec<VersionEvent>::encode(const VersionEvent& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<VersionEventCapnp>();
+    auto hw = root.initHwVer();
+    hw.setMajor(event.hw_ver.major);
+    hw.setMinor(event.hw_ver.minor);
+    hw.setPatch(event.hw_ver.patch);
+    hw.setAdditional(event.hw_ver.additional);
+    hw.setHash(event.hw_ver.hash);
+    auto sw = root.initSwVer();
+    sw.setMajor(event.sw_ver.major);
+    sw.setMinor(event.sw_ver.minor);
+    sw.setPatch(event.sw_ver.patch);
+    sw.setAdditional(event.sw_ver.additional);
+    sw.setHash(event.sw_ver.hash);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<VersionEvent>::decode(const std::vector<std::uint8_t>& data) -> VersionEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<VersionEventCapnp>();
+    VersionEvent event{};
+    auto hw = root.getHwVer();
+    event.hw_ver.major = hw.getMajor();
+    event.hw_ver.minor = hw.getMinor();
+    event.hw_ver.patch = hw.getPatch();
+    event.hw_ver.additional = hw.getAdditional().cStr();
+    event.hw_ver.hash = hw.getHash().cStr();
+    auto sw = root.getSwVer();
+    event.sw_ver.major = sw.getMajor();
+    event.sw_ver.minor = sw.getMinor();
+    event.sw_ver.patch = sw.getPatch();
+    event.sw_ver.additional = sw.getAdditional().cStr();
+    event.sw_ver.hash = sw.getHash().cStr();
+    return event;
+}
+
+auto CapnpCodec<VersionEvent>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_VERSION);
+}
+
+auto CapnpCodec<AdcModeEvent>::encode(const AdcModeEvent& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<AdcModeEventCapnp>();
+    root.setMode(event.mode);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<AdcModeEvent>::decode(const std::vector<std::uint8_t>& data) -> AdcModeEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<AdcModeEventCapnp>();
+    AdcModeEvent event{};
+    event.mode = root.getMode();
+    return event;
+}
+auto CapnpCodec<AdcModeEvent>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_ADC_MODE);
+}
+
+auto CapnpCodec<BiasSwitchEvent>::encode(const BiasSwitchEvent& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<BiasSwitchEventCapnp>();
+    root.setBiasOn(event.biasOn);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<BiasSwitchEvent>::decode(const std::vector<std::uint8_t>& data) -> BiasSwitchEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<BiasSwitchEventCapnp>();
+    BiasSwitchEvent event{};
+    event.biasOn = root.getBiasOn();
+    return event;
+}
+auto CapnpCodec<BiasSwitchEvent>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_BIAS_SWITCH);
+}
+
+auto CapnpCodec<BiasVoltageEvent>::encode(const BiasVoltageEvent& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<BiasVoltageEventCapnp>();
+    root.setVoltage(event.voltage);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<BiasVoltageEvent>::decode(const std::vector<std::uint8_t>& data)
+    -> BiasVoltageEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<BiasVoltageEventCapnp>();
+    BiasVoltageEvent event{};
+    event.voltage = root.getVoltage();
+    return event;
+}
+auto CapnpCodec<BiasVoltageEvent>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_BIAS_VOLTAGE);
+}
+
+auto CapnpCodec<GainSwitchEvent>::encode(const GainSwitchEvent& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<GainSwitchEventCapnp>();
+    root.setState(event.state);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<GainSwitchEvent>::decode(const std::vector<std::uint8_t>& data) -> GainSwitchEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<GainSwitchEventCapnp>();
+    GainSwitchEvent event{};
+    event.state = root.getState();
+    return event;
+}
+auto CapnpCodec<GainSwitchEvent>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_GAIN_SWITCH);
+}
+
+auto CapnpCodec<PcaSwitchEvent>::encode(const PcaSwitchEvent& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<PcaSwitchEventCapnp>();
+    root.setPcaPortMask(event.pcaPortMask);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<PcaSwitchEvent>::decode(const std::vector<std::uint8_t>& data) -> PcaSwitchEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<PcaSwitchEventCapnp>();
+    PcaSwitchEvent event{};
+    event.pcaPortMask = root.getPcaPortMask();
+    return event;
+}
+auto CapnpCodec<PcaSwitchEvent>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PCA_SWITCH);
+}
+
+auto CapnpCodec<PolaritySwitchEvent>::encode(const PolaritySwitchEvent& event)
+    -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<PolaritySwitchEventCapnp>();
+    root.setPol1(event.pol1);
+    root.setPol2(event.pol2);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<PolaritySwitchEvent>::decode(const std::vector<std::uint8_t>& data)
+    -> PolaritySwitchEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<PolaritySwitchEventCapnp>();
+    return {root.getPol1(), root.getPol2()};
+}
+auto CapnpCodec<PolaritySwitchEvent>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_POLARITY_SWITCH);
+}
+
+auto CapnpCodec<PreampSwitchEvent>::encode(const PreampSwitchEvent& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<PreampSwitchEventCapnp>();
+    root.setChannel(event.channel);
+    root.setState(event.state);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<PreampSwitchEvent>::decode(const std::vector<std::uint8_t>& data)
+    -> PreampSwitchEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<PreampSwitchEventCapnp>();
+    return {root.getChannel(), root.getState()};
+}
+auto CapnpCodec<PreampSwitchEvent>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PREAMP_SWITCH);
+}
+
+auto CapnpCodec<GpioInhibitEvent>::encode(const GpioInhibitEvent& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<GpioInhibitEventCapnp>();
+    root.setInhibit(event.inhibit);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<GpioInhibitEvent>::decode(const std::vector<std::uint8_t>& data)
+    -> GpioInhibitEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<GpioInhibitEventCapnp>();
+    GpioInhibitEvent event{};
+    event.inhibit = root.getInhibit();
+    return event;
+}
+auto CapnpCodec<GpioInhibitEvent>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_GPIO_INHIBIT);
+}
+
+auto CapnpCodec<LM75Event>::encode(const LM75Event& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<LM75EventCapnp>();
+    root.setTemperature(event.temperature);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<LM75Event>::decode(const std::vector<std::uint8_t>& data) -> LM75Event {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<LM75EventCapnp>();
+    LM75Event event{};
+    event.temperature = root.getTemperature();
+    return event;
+}
+auto CapnpCodec<LM75Event>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_TEMPERATURE);
+}
+
+auto CapnpCodec<MqttStatusEvent>::encode(const MqttStatusEvent& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<MqttStatusEventCapnp>();
+    root.setConnected(event.connected);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<MqttStatusEvent>::decode(const std::vector<std::uint8_t>& data) -> MqttStatusEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<MqttStatusEventCapnp>();
+    MqttStatusEvent event{};
+    event.connected = root.getConnected();
+    return event;
+}
+auto CapnpCodec<MqttStatusEvent>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_MQTT_STATUS);
+}
+
+auto CapnpCodec<SPIStatsEvent>::encode(const SPIStatsEvent& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<SPIStatsEventCapnp>();
+    root.setSpiPresent(event.spiPresent);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<SPIStatsEvent>::decode(const std::vector<std::uint8_t>& data) -> SPIStatsEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<SPIStatsEventCapnp>();
+    SPIStatsEvent event{};
+    event.spiPresent = root.getSpiPresent();
+    return event;
+}
+auto CapnpCodec<SPIStatsEvent>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_SPI_STATS);
+}
+
+auto CapnpCodec<ThresholdSettingEvent>::encode(const ThresholdSettingEvent& event)
+    -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<ThresholdSettingEventCapnp>();
+    root.setChannel(event.channel);
+    root.setVoltage(event.voltage);
+    root.setSuccess(event.success);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<ThresholdSettingEvent>::decode(const std::vector<std::uint8_t>& data)
+    -> ThresholdSettingEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<ThresholdSettingEventCapnp>();
+    return {root.getChannel(), root.getVoltage(), root.getSuccess()};
+}
+auto CapnpCodec<ThresholdSettingEvent>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_THRESHOLD);
+}
+
+auto CapnpCodec<GnssPosStruct>::encode(const GnssPosStruct& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<GnssPosStructCapnp>();
+    root.setITOW(event.iTOW);
+    root.setLon(event.lon);
+    root.setLat(event.lat);
+    root.setHeight(event.height);
+    root.setHMSL(event.hMSL);
+    root.setHAcc(event.hAcc);
+    root.setVAcc(event.vAcc);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<GnssPosStruct>::decode(const std::vector<std::uint8_t>& data) -> GnssPosStruct {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<GnssPosStructCapnp>();
+    return {root.getITOW(), root.getLon(),  root.getLat(), root.getHeight(),
+            root.getHMSL(), root.getHAcc(), root.getVAcc()};
+}
+auto CapnpCodec<GnssPosStruct>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_GEO_POS);
+}
+
+auto CapnpCodec<GnssMonHwStruct>::encode(const GnssMonHwStruct& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<GnssMonHwStructCapnp>();
+    root.setNoisePerMS(event.noisePerMS);
+    root.setAgcCnt(event.agcCnt);
+    root.setAntStatus(event.antStatus);
+    root.setAntPower(event.antPower);
+    root.setFlags(event.flags);
+    root.setJamInd(event.jamInd);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<GnssMonHwStruct>::decode(const std::vector<std::uint8_t>& data) -> GnssMonHwStruct {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<GnssMonHwStructCapnp>();
+    return {root.getNoisePerMS(), root.getAgcCnt(), root.getAntStatus(),
+            root.getAntPower(),   root.getFlags(),  root.getJamInd()};
+}
+auto CapnpCodec<GnssMonHwStruct>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_MONHW);
+}
+
+auto CapnpCodec<GnssMonHw2Struct>::encode(const GnssMonHw2Struct& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<GnssMonHw2StructCapnp>();
+    root.setOfsI(event.ofsI);
+    root.setMagI(event.magI);
+    root.setOfsQ(event.ofsQ);
+    root.setMagQ(event.magQ);
+    root.setCfgSrc(event.cfgSrc);
+    root.setPostStatus(event.postStatus);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<GnssMonHw2Struct>::decode(const std::vector<std::uint8_t>& data)
+    -> GnssMonHw2Struct {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<GnssMonHw2StructCapnp>();
+    return {root.getOfsI(), root.getMagI(),   root.getOfsQ(),
+            root.getMagQ(), root.getCfgSrc(), root.getPostStatus()};
+}
+auto CapnpCodec<GnssMonHw2Struct>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_MONHW2);
+}
+
+auto CapnpCodec<GpsVersion>::encode(const GpsVersion& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<GpsVersionCapnp>();
+    root.setHwString(event.hwString);
+    root.setSwString(event.swString);
+    root.setProt(event.prot);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<GpsVersion>::decode(const std::vector<std::uint8_t>& data) -> GpsVersion {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<GpsVersionCapnp>();
+    return {root.getHwString().cStr(), root.getSwString().cStr(), root.getProt().cStr()};
+}
+auto CapnpCodec<GpsVersion>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_VERSION);
+}
+
+auto CapnpCodec<NavStatus>::encode(const NavStatus& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<NavStatusCapnp>();
+    root.setGDOP(static_cast<std::uint16_t>(event.iTOW));
+    root.setPDOP(event.gpsFix);
+    root.setTDOP(event.flags);
+    root.setVDOP(event.flags2);
+    root.setHDOP(static_cast<std::uint16_t>(event.ttff));
+    root.setNDOP(static_cast<std::uint16_t>(event.msss));
+    root.setEDOP(0);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<NavStatus>::decode(const std::vector<std::uint8_t>& data) -> NavStatus {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<NavStatusCapnp>();
+    NavStatus event{};
+    event.iTOW = root.getGDOP();
+    event.gpsFix = static_cast<std::uint8_t>(root.getPDOP());
+    event.flags = static_cast<std::uint8_t>(root.getTDOP());
+    event.flags2 = static_cast<std::uint8_t>(root.getVDOP());
+    event.ttff = root.getHDOP();
+    event.msss = root.getNDOP();
+    return event;
+}
+auto CapnpCodec<NavStatus>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_FIXSTATUS);
+}
+
+auto CapnpCodec<UbxTimePulseStruct>::encode(const UbxTimePulseStruct& event)
+    -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<UbxTimePulseStructCapnp>();
+    root.setTpIndex(event.tpIndex);
+    root.setVersion(event.version);
+    root.setAntCableDelay(event.antCableDelay);
+    root.setRfGroupDelay(event.rfGroupDelay);
+    root.setFreqPeriod(event.freqPeriod);
+    root.setFreqPeriodLock(event.freqPeriodLock);
+    root.setPulseLenRatio(event.pulseLenRatio);
+    root.setPulseLenRatioLock(event.pulseLenRatioLock);
+    root.setUserConfigDelay(event.userConfigDelay);
+    root.setFlags(event.flags);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<UbxTimePulseStruct>::decode(const std::vector<std::uint8_t>& data)
+    -> UbxTimePulseStruct {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<UbxTimePulseStructCapnp>();
+    UbxTimePulseStruct event{};
+    event.tpIndex = root.getTpIndex();
+    event.version = root.getVersion();
+    event.antCableDelay = root.getAntCableDelay();
+    event.rfGroupDelay = root.getRfGroupDelay();
+    event.freqPeriod = root.getFreqPeriod();
+    event.freqPeriodLock = root.getFreqPeriodLock();
+    event.pulseLenRatio = root.getPulseLenRatio();
+    event.pulseLenRatioLock = root.getPulseLenRatioLock();
+    event.userConfigDelay = root.getUserConfigDelay();
+    event.flags = root.getFlags();
+    return event;
+}
+auto CapnpCodec<UbxTimePulseStruct>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_CFG_TP5);
+}
+
+auto CapnpCodec<LogInfoStruct>::encode(const LogInfoStruct& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<LogInfoStructCapnp>();
+    root.setLogFileName(event.logFileName);
+    root.setDataFileName(event.dataFileName);
+    root.setStatus(event.status);
+    root.setLogFileSize(event.logFileSize);
+    root.setDataFileSize(event.dataFileSize);
+    root.setLogAge(event.logAge.count());
+    root.setLogRotationDuration(event.logRotationDuration.count());
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<LogInfoStruct>::decode(const std::vector<std::uint8_t>& data) -> LogInfoStruct {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<LogInfoStructCapnp>();
+    LogInfoStruct event{};
+    event.logFileName = root.getLogFileName().cStr();
+    event.dataFileName = root.getDataFileName().cStr();
+    event.status = static_cast<LogInfoStruct::status_t>(root.getStatus());
+    event.logFileSize = root.getLogFileSize();
+    event.dataFileSize = root.getDataFileSize();
+    event.logAge = std::chrono::seconds(root.getLogAge());
+    event.logRotationDuration = std::chrono::seconds(root.getLogRotationDuration());
+    return event;
+}
+auto CapnpCodec<LogInfoStruct>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_LOG_INFO);
+}
+
+auto CapnpCodec<Histogram>::encode(const Histogram&) -> std::vector<uint8_t> {
+    return {};
+}
+
+auto CapnpCodec<Histogram>::decode(const std::vector<std::uint8_t>&) -> Histogram {
+    return Histogram{};
+}
+
+auto CapnpCodec<Histogram>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_HISTOGRAM);
 }

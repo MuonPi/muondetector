@@ -509,7 +509,13 @@ auto MainWindow::buildDecoderMap()
             {TCP_MSG_KEY::MSG_GPIO_RATE,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<GpioRateEvent>::decode(packet.payload);
-                 emit gpioRates(event.whichRate, std::move(event.rate));
+                 QVector<QPointF> out;
+                 out.reserve(static_cast<int>(event.rate.size()));
+
+                 for (const auto& [x, y] : event.rate) {
+                     out.emplace_back(x, y);
+                 }
+                 emit gpioRates(event.whichRate, std::move(out));
              }},
             {TCP_MSG_KEY::MSG_GEO_POS,
              [this](const TcpPacket& packet) {

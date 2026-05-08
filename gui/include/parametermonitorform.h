@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <gpio_pin_definitions.h>
 #include <muondetector_structs.h>
+#include <vector>
 
 struct CalibStruct;
 struct UbxTimeMarkStruct;
@@ -46,7 +47,7 @@ class ParameterMonitorForm : public QWidget {
     void onGainSwitchReceived(bool state);
     void onTemperatureReceived(float temp);
     void onTimepulseReceived();
-    void onAdcTraceReceived(const QVector<float>& sampleBuffer);
+    void onAdcTraceReceived(const std::vector<float>& sampleBuffer);
     void onTimeAccReceived(quint32 acc);
     void onFreqAccReceived(quint32 acc);
     void onIntCounterReceived(quint32 cnt);

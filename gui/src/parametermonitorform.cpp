@@ -221,7 +221,7 @@ void ParameterMonitorForm::onTimeMarkReceived(const UbxTimeMarkStruct& tm) {
     ui->ubloxCounterLabel->setText(QString::number(tm.evtCounter));
 }
 
-void ParameterMonitorForm::onAdcTraceReceived(const QVector<float>& sampleBuffer) {
+void ParameterMonitorForm::onAdcTraceReceived(const std::vector<float>& sampleBuffer) {
     QVector<QPointF> vec;
     for (int i = 0; i < sampleBuffer.size(); i++) {
         QPointF p1;

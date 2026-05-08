@@ -1,6 +1,7 @@
 #include <i2cform.h>
 #include <muondetector_structs.h>
 #include <ui_i2cform.h>
+#include <vector>
 
 I2cForm::I2cForm(QWidget* parent) : QWidget(parent), ui(new Ui::I2cForm) {
     ui->setupUi(this);
@@ -11,7 +12,7 @@ I2cForm::~I2cForm() {
 }
 
 void I2cForm::onI2cStatsReceived(quint32 bytesRead, quint32 bytesWritten,
-                                 const QVector<I2cDeviceEntry>& deviceList) {
+                                 const std::vector<I2cDeviceEntry>& deviceList) {
     ui->nrDevicesLabel->setText("Nr. of devices: " + QString::number(deviceList.size()));
     ui->bytesReadLabel->setText("total bytes read: " + QString::number(bytesRead));
     ui->bytesWrittenLabel->setText("total bytes written: " + QString::number(bytesWritten));

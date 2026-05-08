@@ -2,8 +2,8 @@
 #define I2CFORM_H
 
 #include <QString>
-#include <QVector>
 #include <QWidget>
+#include <vector>
 
 struct I2cDeviceEntry;
 
@@ -24,7 +24,7 @@ class I2cForm : public QWidget {
 
   public slots:
     void onI2cStatsReceived(quint32 bytesRead, quint32 bytesWritten,
-                            const QVector<I2cDeviceEntry>& deviceList);
+                            const std::vector<I2cDeviceEntry>& deviceList);
     void onUiEnabledStateChange(bool connected);
 
   private slots:
