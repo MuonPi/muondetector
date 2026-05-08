@@ -13,6 +13,24 @@ Adafruit_SSD1306Driver::Adafruit_SSD1306Driver(ComponentId id, SystemConfig& sys
     if (!std::holds_alternative<Device>(id)) {
         throw std::logic_error("DeviceComponent constructed with non-device ID");
     }
+
+    auto device = dev();
+    if (device == nullptr) {
+        return;
+    }
+
+    device->begin();
+    device->clearDisplay();
+
+    // text display tests
+    device->setTextSize(1);
+    device->setTextColor(Adafruit_SSD1306::WHITE);
+    device->setCursor(0, 2);
+    device->print("*Cosmic Shower Det.*\n");
+    device->print("V");
+    device->print(MuonPi::Version::software.string().c_str());
+    device->print("\n");
+    device->display();
 }
 
 auto Adafruit_SSD1306Driver::dev() -> Adafruit_SSD1306* {
