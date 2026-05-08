@@ -11,6 +11,7 @@
 enum class OtherComponent : std::uint32_t {
     GPS_DRIVER_0,
     TCP_SOURCE_0,
+    TCP_COMMAND_DECODER_0,
     GPIO_DRIVER_0,
 };
 
@@ -23,6 +24,7 @@ inline const std::unordered_map<std::string, ComponentId> componentLookup{
     {"GPS_DRIVER_0", OtherComponent::GPS_DRIVER_0},
     {"GPIO_DRIVER_0", OtherComponent::GPIO_DRIVER_0},
     {"TCP_SOURCE_0", OtherComponent::TCP_SOURCE_0},
+    {"TCP_COMMAND_DECODER_0", OtherComponent::TCP_COMMAND_DECODER_0},
 };
 
 class Component {

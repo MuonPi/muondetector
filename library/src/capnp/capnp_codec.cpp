@@ -23,6 +23,39 @@
 #include "ads1115.capnp.h"
 #include "gpio_event.capnp.h"
 #endif
+#include "data/commands/adc_mode_request_cmd.h"
+#include "data/commands/adc_sample_request_cmd.h"
+#include "data/commands/bias_dac_setting_cmd.h"
+#include "data/commands/bias_switch_cmd.h"
+#include "data/commands/burst_sampling_cmd.h"
+#include "data/commands/calibration_cmd.h"
+#include "data/commands/calibration_save_cmd.h"
+#include "data/commands/dac_eeprom_set_cmd.h"
+#include "data/commands/dac_request_cmd.h"
+#include "data/commands/gain_switch_cmd.h"
+#include "data/commands/gpio_rate_request_cmd.h"
+#include "data/commands/gpio_rate_reset_cmd.h"
+#include "data/commands/histogram_clear_cmd.h"
+#include "data/commands/i2c_scan_bus_cmd.h"
+#include "data/commands/i2c_stats_request_cmd.h"
+#include "data/commands/mqtt_inhibit_cmd.h"
+#include "data/commands/pca_switch_cmd.h"
+#include "data/commands/polarity_switch_cmd.h"
+#include "data/commands/preamp_switch_cmd.h"
+#include "data/commands/temperature_request_cmd.h"
+#include "data/commands/threshold_request_cmd.h"
+#include "data/commands/threshold_setting_cmd.h"
+#include "data/commands/ubx_default_config_cmd.h"
+#include "data/commands/ubx_min_cno_cmd.h"
+#include "data/commands/ubx_min_max_sv_cmd.h"
+#include "data/commands/ubx_msg_poll_cmd.h"
+#include "data/commands/ubx_msg_poll_rate_cmd.h"
+#include "data/commands/ubx_msg_rate_cmd.h"
+#include "data/commands/ubx_protocol_selection_cmd.h"
+#include "data/commands/ubx_rate_cmd.h"
+#include "data/commands/ubx_reset_cmd.h"
+#include "data/commands/ubx_save_cmd.h"
+#include "data/commands/ubx_set_aop_cmd.h"
 #include "data/events/adc_mode_event.h"
 #include "data/events/adc_trace_event.h"
 #include "data/events/ads1115_event.h"
@@ -1097,4 +1130,397 @@ auto CapnpCodec<Histogram>::decode(const std::vector<std::uint8_t>&) -> Histogra
 
 auto CapnpCodec<Histogram>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_HISTOGRAM);
+}
+
+auto CapnpCodec<StartBurstSampling>::encode(const StartBurstSampling& cmd) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<StartBurstSamplingCapnp>();
+    root.setFrequencyHz(static_cast<std::uint32_t>(cmd.frequencyHz));
+    root.setSamples(static_cast<std::uint32_t>(cmd.samples));
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<StartBurstSampling>::decode(const std::vector<std::uint8_t>& data)
+    -> StartBurstSampling {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<StartBurstSamplingCapnp>();
+    return StartBurstSampling{root.getFrequencyHz(), root.getSamples()};
+}
+
+auto CapnpCodec<StartBurstSampling>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_RATE_SCAN);
+}
+
+auto CapnpCodec<ThresholdSettingCmd>::encode(const ThresholdSettingCmd& cmd)
+    -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<ThresholdSettingsCmdCapnp>();
+    root.setChannel(cmd.channel);
+    root.setThreshold(cmd.threshold);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<ThresholdSettingCmd>::decode(const std::vector<std::uint8_t>& data)
+    -> ThresholdSettingCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<ThresholdSettingsCmdCapnp>();
+    return ThresholdSettingCmd{root.getChannel(), root.getThreshold()};
+}
+
+auto CapnpCodec<ThresholdSettingCmd>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_THRESHOLD);
+}
+
+auto CapnpCodec<UbxMinCnoCmd>::encode(const UbxMinCnoCmd& cmd) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<UbxMinCnoCmdCapnp>();
+    root.setMinCNO(cmd.minCNO);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<UbxMinCnoCmd>::decode(const std::vector<std::uint8_t>& data) -> UbxMinCnoCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<UbxMinCnoCmdCapnp>();
+    return UbxMinCnoCmd{root.getMinCNO()};
+}
+
+auto CapnpCodec<UbxMinCnoCmd>::messageKey() -> std::uint16_t {
+    return 0;
+}
+
+auto CapnpCodec<UbxMinMaxSvCmd>::encode(const UbxMinMaxSvCmd& cmd) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<UbxMinMaxSvCmdCapnp>();
+    root.setMinSVs(cmd.minSVs);
+    root.setMaxSVs(cmd.maxSVs);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<UbxMinMaxSvCmd>::decode(const std::vector<std::uint8_t>& data) -> UbxMinMaxSvCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<UbxMinMaxSvCmdCapnp>();
+    return UbxMinMaxSvCmd{root.getMinSVs(), root.getMaxSVs()};
+}
+
+auto CapnpCodec<UbxMinMaxSvCmd>::messageKey() -> std::uint16_t {
+    return 0;
+}
+
+auto CapnpCodec<UbxMsgPollCmd>::encode(const UbxMsgPollCmd& cmd) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<UbxMsgPollCmdCapnp>();
+    root.setId(static_cast<std::uint16_t>(cmd.id));
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<UbxMsgPollCmd>::decode(const std::vector<std::uint8_t>& data) -> UbxMsgPollCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<UbxMsgPollCmdCapnp>();
+    return UbxMsgPollCmd{static_cast<UBX_MSG::msg_id>(root.getId())};
+}
+
+auto CapnpCodec<UbxMsgPollCmd>::messageKey() -> std::uint16_t {
+    return 0;
+}
+
+auto CapnpCodec<UbxMsgPollRateCmd>::encode(const UbxMsgPollRateCmd& cmd) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<UbxMsgPollRateCmdCapnp>();
+    root.setId(static_cast<std::uint16_t>(cmd.id));
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<UbxMsgPollRateCmd>::decode(const std::vector<std::uint8_t>& data)
+    -> UbxMsgPollRateCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<UbxMsgPollRateCmdCapnp>();
+    return UbxMsgPollRateCmd{static_cast<UBX_MSG::msg_id>(root.getId())};
+}
+
+auto CapnpCodec<UbxMsgPollRateCmd>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_MSG_RATE_REQUEST);
+}
+
+auto CapnpCodec<UbxMsgRateCmd>::encode(const UbxMsgRateCmd& cmd) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<UbxMsgRateCmdCapnp>();
+    root.setId(static_cast<std::uint16_t>(cmd.id));
+    root.setPort(cmd.port);
+    root.setRate(cmd.rate);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<UbxMsgRateCmd>::decode(const std::vector<std::uint8_t>& data) -> UbxMsgRateCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<UbxMsgRateCmdCapnp>();
+    return UbxMsgRateCmd{static_cast<UBX_MSG::msg_id>(root.getId()), root.getPort(),
+                         root.getRate()};
+}
+
+auto CapnpCodec<UbxMsgRateCmd>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_MSG_RATE);
+}
+
+auto CapnpCodec<UbxProtocolSelectionCmd>::encode(const UbxProtocolSelectionCmd& cmd)
+    -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<UbxProtocolSelectionCmdCapnp>();
+    root.setPort(cmd.port);
+    root.setOutProtocolMask(cmd.outProtocolMask);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<UbxProtocolSelectionCmd>::decode(const std::vector<std::uint8_t>& data)
+    -> UbxProtocolSelectionCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<UbxProtocolSelectionCmdCapnp>();
+    return UbxProtocolSelectionCmd{root.getPort(), root.getOutProtocolMask()};
+}
+
+auto CapnpCodec<UbxProtocolSelectionCmd>::messageKey() -> std::uint16_t {
+    return 0;
+}
+
+auto CapnpCodec<UbxRateCmd>::encode(const UbxRateCmd& cmd) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<UbxRateCmdCapnp>();
+    root.setMeasRate(cmd.measRate);
+    root.setNavRate(cmd.navRate);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<UbxRateCmd>::decode(const std::vector<std::uint8_t>& data) -> UbxRateCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<UbxRateCmdCapnp>();
+    return UbxRateCmd{root.getMeasRate(), root.getNavRate()};
+}
+
+auto CapnpCodec<UbxRateCmd>::messageKey() -> std::uint16_t {
+    return 0;
+}
+
+auto CapnpCodec<UbxResetCmd>::encode(const UbxResetCmd& cmd) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<UbxResetCmdCapnp>();
+    root.setResetFlags(cmd.resetFlags);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<UbxResetCmd>::decode(const std::vector<std::uint8_t>& data) -> UbxResetCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<UbxResetCmdCapnp>();
+    UbxResetCmd cmd{};
+    cmd.resetFlags = root.getResetFlags();
+    return cmd;
+}
+
+auto CapnpCodec<UbxResetCmd>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_RESET);
+}
+
+auto CapnpCodec<UbxSaveCmd>::encode(const UbxSaveCmd& cmd) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<UbxSaveCmdCapnp>();
+    root.setDevMask(cmd.devMask);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<UbxSaveCmd>::decode(const std::vector<std::uint8_t>& data) -> UbxSaveCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<UbxSaveCmdCapnp>();
+    UbxSaveCmd cmd{};
+    cmd.devMask = root.getDevMask();
+    return cmd;
+}
+
+auto CapnpCodec<UbxSaveCmd>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_CFG_SAVE);
+}
+
+auto CapnpCodec<UbxSetAopCmd>::encode(const UbxSetAopCmd& cmd) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<UbxSetAopCmdCapnp>();
+    root.setEnable(cmd.enable);
+    root.setMaxOrbErr(cmd.maxOrbErr);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<UbxSetAopCmd>::decode(const std::vector<std::uint8_t>& data) -> UbxSetAopCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<UbxSetAopCmdCapnp>();
+    return UbxSetAopCmd{root.getEnable(), root.getMaxOrbErr()};
+}
+
+auto CapnpCodec<UbxSetAopCmd>::messageKey() -> std::uint16_t {
+    return 0;
+}
+
+auto CapnpCodec<MqttInhibitCmd>::encode(const MqttInhibitCmd& cmd) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<MqttInhibitCmdCapnp>();
+    root.setInhibit(cmd.inhibit);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+
+auto CapnpCodec<MqttInhibitCmd>::decode(const std::vector<std::uint8_t>& data) -> MqttInhibitCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<MqttInhibitCmdCapnp>();
+    return MqttInhibitCmd{root.getInhibit()};
+}
+
+auto CapnpCodec<MqttInhibitCmd>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_MQTT_INHIBIT);
+}
+
+#define EMPTY_CMD_CODEC(TYPE, CAPNP_TYPE, KEY)                                                     \
+    auto CapnpCodec<TYPE>::encode(const TYPE&) -> std::vector<uint8_t> {                           \
+        capnp::MallocMessageBuilder msg;                                                           \
+        msg.initRoot<CAPNP_TYPE>();                                                                \
+        auto flat = capnp::messageToFlatArray(msg);                                                \
+        auto bytes = flat.asBytes();                                                               \
+        return {bytes.begin(), bytes.end()};                                                       \
+    }                                                                                              \
+    auto CapnpCodec<TYPE>::decode(const std::vector<std::uint8_t>& data) -> TYPE {                 \
+        auto reader = makeReader(data);                                                            \
+        reader.getRoot<CAPNP_TYPE>();                                                              \
+        return TYPE{};                                                                             \
+    }                                                                                              \
+    auto CapnpCodec<TYPE>::messageKey() -> std::uint16_t {                                         \
+        return static_cast<std::uint16_t>(TCP_MSG_KEY::KEY);                                       \
+    }
+
+EMPTY_CMD_CODEC(GpioRateResetCmd, GpioRateResetCmdCapnp, MSG_GPIO_RATE_RESET)
+EMPTY_CMD_CODEC(UbxConfigDefaultCmd, UbxConfigDefaultCmdCapnp, MSG_UBX_CONFIG_DEFAULT)
+EMPTY_CMD_CODEC(I2cStatsRequestCmd, I2cStatsRequestCmdCapnp, MSG_I2C_STATS_REQUEST)
+EMPTY_CMD_CODEC(I2cScanBusCmd, I2cScanBusCmdCapnp, MSG_I2C_SCAN_BUS)
+EMPTY_CMD_CODEC(CalibRequestCmd, CalibRequestCmdCapnp, MSG_CALIB_REQUEST)
+EMPTY_CMD_CODEC(CalibSaveCmd, CalibSaveCmdCapnp, MSG_CALIB_SAVE)
+EMPTY_CMD_CODEC(GainSwitchRequestCmd, GainSwitchRequestCmdCapnp, MSG_GAIN_SWITCH_REQUEST)
+EMPTY_CMD_CODEC(ThresholdRequestCmd, ThresholdRequestCmdCapnp, MSG_THRESHOLD_REQUEST)
+EMPTY_CMD_CODEC(PcaSwitchRequestCmd, PcaSwitchRequestCmdCapnp, MSG_PCA_SWITCH_REQUEST)
+EMPTY_CMD_CODEC(AdcModeRequestCmd, AdcModeRequestCmdCapnp, MSG_ADC_MODE_REQUEST)
+EMPTY_CMD_CODEC(PolaritySwitchRequestCmd, PolaritySwitchRequestCmdCapnp,
+                MSG_POLARITY_SWITCH_REQUEST)
+EMPTY_CMD_CODEC(BiasVoltageRequestCmd, BiasVoltageRequestCmdCapnp, MSG_BIAS_VOLTAGE_REQUEST)
+EMPTY_CMD_CODEC(BiasSwitchRequestCmd, BiasSwitchRequestCmdCapnp, MSG_BIAS_SWITCH_REQUEST)
+EMPTY_CMD_CODEC(TemperatureRequestCmd, TemperatureRequestCmdCapnp, MSG_TEMPERATURE_REQUEST)
+EMPTY_CMD_CODEC(DacEepromSetCmd, DacEepromSetCmdCapnp, MSG_DAC_EEPROM_SET)
+
+#undef EMPTY_CMD_CODEC
+
+auto CapnpCodec<PreampSwitchRequestCmd>::encode(const PreampSwitchRequestCmd& cmd)
+    -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<PreampSwitchRequestCmdCapnp>();
+    root.setChannel(cmd.channel);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<PreampSwitchRequestCmd>::decode(const std::vector<std::uint8_t>& data)
+    -> PreampSwitchRequestCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<PreampSwitchRequestCmdCapnp>();
+    return PreampSwitchRequestCmd{root.getChannel()};
+}
+auto CapnpCodec<PreampSwitchRequestCmd>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PREAMP_SWITCH_REQUEST);
+}
+
+auto CapnpCodec<DacRequestCmd>::encode(const DacRequestCmd& cmd) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<DacRequestCmdCapnp>();
+    root.setChannel(cmd.channel);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<DacRequestCmd>::decode(const std::vector<std::uint8_t>& data) -> DacRequestCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<DacRequestCmdCapnp>();
+    return DacRequestCmd{root.getChannel()};
+}
+auto CapnpCodec<DacRequestCmd>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_DAC_REQUEST);
+}
+
+auto CapnpCodec<AdcSampleRequestCmd>::encode(const AdcSampleRequestCmd& cmd)
+    -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<AdcSampleRequestCmdCapnp>();
+    root.setChannel(cmd.channel);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<AdcSampleRequestCmd>::decode(const std::vector<std::uint8_t>& data)
+    -> AdcSampleRequestCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<AdcSampleRequestCmdCapnp>();
+    return AdcSampleRequestCmd{root.getChannel()};
+}
+auto CapnpCodec<AdcSampleRequestCmd>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_ADC_SAMPLE_REQUEST);
+}
+
+auto CapnpCodec<HistogramClearCmd>::encode(const HistogramClearCmd& cmd) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<HistogramClearCmdCapnp>();
+    root.setHistogramName(cmd.histogramName);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<HistogramClearCmd>::decode(const std::vector<std::uint8_t>& data)
+    -> HistogramClearCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<HistogramClearCmdCapnp>();
+    return HistogramClearCmd{root.getHistogramName().cStr()};
+}
+auto CapnpCodec<HistogramClearCmd>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_HISTOGRAM_CLEAR);
+}
+
+auto CapnpCodec<GpioRateRequestCmd>::encode(const GpioRateRequestCmd& cmd) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<GpioRateRequestCmdCapnp>();
+    root.setWhichRate(cmd.whichRate);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<GpioRateRequestCmd>::decode(const std::vector<std::uint8_t>& data)
+    -> GpioRateRequestCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<GpioRateRequestCmdCapnp>();
+    return GpioRateRequestCmd{root.getWhichRate()};
+}
+auto CapnpCodec<GpioRateRequestCmd>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_GPIO_RATE_REQUEST);
 }

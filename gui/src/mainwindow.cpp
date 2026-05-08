@@ -25,6 +25,33 @@
 #include <QRegularExpression>
 #include <QThread>
 #include <boost/asio.hpp>
+#include <data/commands/adc_mode_request_cmd.h>
+#include <data/commands/adc_sample_request_cmd.h>
+#include <data/commands/bias_dac_setting_cmd.h>
+#include <data/commands/bias_switch_cmd.h>
+#include <data/commands/burst_sampling_cmd.h>
+#include <data/commands/calibration_cmd.h>
+#include <data/commands/calibration_save_cmd.h>
+#include <data/commands/dac_eeprom_set_cmd.h>
+#include <data/commands/dac_request_cmd.h>
+#include <data/commands/gain_switch_cmd.h>
+#include <data/commands/gpio_rate_request_cmd.h>
+#include <data/commands/gpio_rate_reset_cmd.h>
+#include <data/commands/histogram_clear_cmd.h>
+#include <data/commands/i2c_scan_bus_cmd.h>
+#include <data/commands/i2c_stats_request_cmd.h>
+#include <data/commands/mqtt_inhibit_cmd.h>
+#include <data/commands/pca_switch_cmd.h>
+#include <data/commands/polarity_switch_cmd.h>
+#include <data/commands/preamp_switch_cmd.h>
+#include <data/commands/temperature_request_cmd.h>
+#include <data/commands/threshold_request_cmd.h>
+#include <data/commands/threshold_setting_cmd.h>
+#include <data/commands/ubx_default_config_cmd.h>
+#include <data/commands/ubx_msg_poll_rate_cmd.h>
+#include <data/commands/ubx_msg_rate_cmd.h>
+#include <data/commands/ubx_reset_cmd.h>
+#include <data/commands/ubx_save_cmd.h>
 #include <data/events/adc_mode_event.h>
 #include <data/events/adc_trace_event.h>
 #include <data/events/ads1115_event.h>
@@ -67,6 +94,22 @@ QRegularExpression alphabetical("[a-z]+[A-Z]+");
 QRegularExpression specialCharacters(
     // R"([\-`~!@#\$%\^&\*()_—\+=|:;<>«»\?/\{\}'"ß\\]+)"
     QString::fromUtf8("[\\-`~!@#\\$%\\^\\&\\*()_\\—\\+=|:;<>«»\\?/{}\'\"ß\\\\]+"));
+
+namespace {
+void sendPacketIfConnected(const std::shared_ptr<TcpConnection>& conn, TCP_MSG_KEY key,
+                           std::vector<std::uint8_t> payload = {}) {
+    if (!conn || !conn->isOpen()) {
+        return;
+    }
+    conn->sendPacket(static_cast<std::uint16_t>(key), std::move(payload));
+}
+
+template <typename T>
+void sendCmdIfConnected(const std::shared_ptr<TcpConnection>& conn, const T& cmd) {
+    sendPacketIfConnected(conn, static_cast<TCP_MSG_KEY>(CapnpCodec<T>::messageKey()),
+                          CapnpCodec<T>::encode(cmd));
+}
+} // namespace
 
 MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* parent)
     : QMainWindow(parent), decoderMap{buildDecoderMap()}, m_io{io}, ui(new Ui::MainWindow) {
@@ -175,7 +218,7 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
 
     connect(this, &MainWindow::gpioRates, status, &Status::onGpioRatesReceived);
     connect(status, &Status::resetRateClicked, this,
-            [this]() { this->sendRequest(TCP_MSG_KEY::MSG_GPIO_RATE_RESET); });
+            [this]() { sendCmdIfConnected(clientConn, GpioRateResetCmd{}); });
     connect(this, &MainWindow::adcSampleReceived, status, &Status::onAdcSampleReceived);
     connect(this, &MainWindow::dacReadbackReceived, status, &Status::onDacReadbackReceived);
     connect(status, &Status::inputSwitchChanged, this, &MainWindow::sendInputSwitch);
@@ -219,14 +262,14 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
             &MainWindow::sendSetUbxMsgRateChanges);
     connect(settings, &UbloxSettingsForm::sendUbxReset, this, &MainWindow::onSendUbxReset);
     connect(settings, &UbloxSettingsForm::sendUbxConfigDefault, this,
-            [this]() { this->sendRequest(TCP_MSG_KEY::MSG_UBX_CONFIG_DEFAULT); });
+            [this]() { sendCmdIfConnected(clientConn, UbxConfigDefaultCmd{}); });
     connect(this, &MainWindow::gnssConfigsReceived, settings,
             &UbloxSettingsForm::onGnssConfigsReceived);
     connect(settings, &UbloxSettingsForm::setGnssConfigs, this, &MainWindow::onSetGnssConfigs);
     connect(this, &MainWindow::gpsTP5Received, settings, &UbloxSettingsForm::onTP5Received);
     connect(settings, &UbloxSettingsForm::setTP5Config, this, &MainWindow::onSetTP5Config);
     connect(settings, &UbloxSettingsForm::sendUbxSaveCfg, this,
-            [this]() { this->sendRequest(TCP_MSG_KEY::MSG_UBX_CFG_SAVE); });
+            [this]() { sendCmdIfConnected(clientConn, UbxSaveCmd{}); });
 
     ui->tabWidget->addTab(settings, "Ublox Settings");
 
@@ -241,9 +284,9 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
     connect(this, &MainWindow::setUiEnabledStates, i2cTab, &I2cForm::onUiEnabledStateChange);
     connect(this, &MainWindow::i2cStatsReceived, i2cTab, &I2cForm::onI2cStatsReceived);
     connect(i2cTab, &I2cForm::i2cStatsRequest, this,
-            [this]() { this->sendRequest(TCP_MSG_KEY::MSG_I2C_STATS_REQUEST); });
+            [this]() { sendCmdIfConnected(clientConn, I2cStatsRequestCmd{}); });
     connect(i2cTab, &I2cForm::scanI2cBusRequest, this,
-            [this]() { this->sendRequest(TCP_MSG_KEY::MSG_I2C_SCAN_BUS); });
+            [this]() { sendCmdIfConnected(clientConn, I2cScanBusCmd{}); });
 
     ui->tabWidget->addTab(i2cTab, "I2C bus");
 
@@ -251,9 +294,9 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
     connect(this, &MainWindow::setUiEnabledStates, calib, &CalibForm::onUiEnabledStateChange);
     connect(this, &MainWindow::calibReceived, calib, &CalibForm::onCalibReceived);
     connect(calib, &CalibForm::calibRequest, this,
-            [this]() { this->sendRequest(TCP_MSG_KEY::MSG_CALIB_REQUEST); });
+            [this]() { sendCmdIfConnected(clientConn, CalibRequestCmd{}); });
     connect(calib, &CalibForm::writeCalibToEeprom, this,
-            [this]() { this->sendRequest(TCP_MSG_KEY::MSG_CALIB_SAVE); });
+            [this]() { sendCmdIfConnected(clientConn, CalibSaveCmd{}); });
     connect(this, &MainWindow::adcSampleReceived, calib, &CalibForm::onAdcSampleReceived);
     connect(calib, &CalibForm::setBiasDacVoltage, this, &MainWindow::sendSetBiasVoltage);
     connect(calib, &CalibForm::setDacVoltage, this, &MainWindow::sendSetThresh);
@@ -759,133 +802,108 @@ bool MainWindow::eventFilter(QObject* object, QEvent* event) {
     }
 }
 
-void MainWindow::sendRequest(quint16 requestSig) {
-    // TcpMessage tcpMessage(requestSig);
-    // emit sendTcpMessage(tcpMessage);
-}
-
-void MainWindow::sendRequest(TCP_MSG_KEY requestSig) {
-    // TcpMessage tcpMessage(requestSig);
-    // emit sendTcpMessage(tcpMessage);
-}
-
-void MainWindow::sendRequest(quint16 requestSig, quint8 par) {
-    // TcpMessage tcpMessage(requestSig);
-    // *(tcpMessage.dStream) << par;
-    // emit sendTcpMessage(tcpMessage);
-}
-
-void MainWindow::sendRequest(TCP_MSG_KEY requestSig, quint8 par) {
-    // TcpMessage tcpMessage(requestSig);
-    // *(tcpMessage.dStream) << par;
-    // emit sendTcpMessage(tcpMessage);
-}
-
 void MainWindow::sendRequestUbxMsgRates() {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_MSG_RATE_REQUEST);
-    // emit sendTcpMessage(tcpMessage);
+    sendCmdIfConnected(clientConn, UbxMsgPollRateCmd{static_cast<UBX_MSG::msg_id>(0)});
 }
 
 void MainWindow::sendSetBiasVoltage(float voltage) {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_BIAS_VOLTAGE);
-    // *(tcpMessage.dStream) << voltage;
-    // emit sendTcpMessage(tcpMessage);
-    // emit sendRequest(TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST);
+    BiasVoltageEvent cmd{};
+    cmd.voltage = voltage;
+    sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_BIAS_VOLTAGE,
+                          CapnpCodec<BiasVoltageEvent>::encode(cmd));
 }
 
 void MainWindow::sendSetBiasStatus(bool status) {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_BIAS_SWITCH);
-    // *(tcpMessage.dStream) << status;
-    // emit sendTcpMessage(tcpMessage);
+    BiasSwitchEvent cmd{};
+    cmd.biasOn = status;
+    sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_BIAS_SWITCH,
+                          CapnpCodec<BiasSwitchEvent>::encode(cmd));
 }
 
 void MainWindow::sendGainSwitch(bool status) {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GAIN_SWITCH);
-    // *(tcpMessage.dStream) << status;
-    // emit sendTcpMessage(tcpMessage);
+    GainSwitchEvent cmd{};
+    cmd.state = status;
+    sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_GAIN_SWITCH,
+                          CapnpCodec<GainSwitchEvent>::encode(cmd));
 }
 
 void MainWindow::sendPreamp1Switch(bool status) {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_PREAMP_SWITCH);
-    // *(tcpMessage.dStream) << (quint8)0 << status;
-    // emit sendTcpMessage(tcpMessage);
+    PreampSwitchEvent cmd{};
+    cmd.channel = 0;
+    cmd.state = status;
+    sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_PREAMP_SWITCH,
+                          CapnpCodec<PreampSwitchEvent>::encode(cmd));
 }
 
 void MainWindow::sendPreamp2Switch(bool status) {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_PREAMP_SWITCH);
-    // *(tcpMessage.dStream) << (quint8)1 << status;
-    // emit sendTcpMessage(tcpMessage);
+    PreampSwitchEvent cmd{};
+    cmd.channel = 1;
+    cmd.state = status;
+    sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_PREAMP_SWITCH,
+                          CapnpCodec<PreampSwitchEvent>::encode(cmd));
 }
 
 void MainWindow::sendSetThresh(uint8_t channel, float value) {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_THRESHOLD);
-    // *(tcpMessage.dStream) << channel << value;
-    // emit sendTcpMessage(tcpMessage);
-    // emit sendRequest(TCP_MSG_KEY::MSG_THRESHOLD_REQUEST, channel);
+    ThresholdSettingCmd cmd{};
+    cmd.channel = channel;
+    cmd.threshold = value;
+    sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_THRESHOLD,
+                          CapnpCodec<ThresholdSettingCmd>::encode(cmd));
 }
 
 void MainWindow::sendSetUbxMsgRateChanges(QMap<uint16_t, int> changes) {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_MSG_RATE);
-    // *(tcpMessage.dStream) << changes;
-    // emit sendTcpMessage(tcpMessage);
+    for (auto it = changes.begin(); it != changes.end(); ++it) {
+        UbxMsgRateCmd cmd{};
+        cmd.id = static_cast<UBX_MSG::msg_id>(it.key());
+        cmd.port = 1;
+        cmd.rate = static_cast<std::uint8_t>(std::clamp(it.value(), 0, 255));
+        sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_UBX_MSG_RATE,
+                              CapnpCodec<UbxMsgRateCmd>::encode(cmd));
+    }
 }
 
 void MainWindow::onSendUbxReset() {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_RESET);
-    // emit sendTcpMessage(tcpMessage);
+    sendCmdIfConnected(clientConn, UbxResetCmd{});
 }
 
 void MainWindow::onHistogramCleared(QString histogramName) {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_HISTOGRAM_CLEAR);
-    // *(tcpMessage.dStream) << histogramName;
-    // emit sendTcpMessage(tcpMessage);
+    sendCmdIfConnected(clientConn, HistogramClearCmd{histogramName.toStdString()});
 }
 
 void MainWindow::onAdcModeChanged(ADC_SAMPLING_MODE mode) {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_MODE);
-    // *(tcpMessage.dStream) << static_cast<quint8>(mode);
-    // emit sendTcpMessage(tcpMessage);
+    AdcModeEvent cmd{};
+    cmd.mode = static_cast<std::uint8_t>(mode);
+    sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_ADC_MODE,
+                          CapnpCodec<AdcModeEvent>::encode(cmd));
 }
 
 void MainWindow::onRateScanStart(uint8_t ch) {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_RATE_SCAN);
-    // *(tcpMessage.dStream) << (quint8)ch;
-    // emit sendTcpMessage(tcpMessage);
+    Q_UNUSED(ch)
+    sendCmdIfConnected(clientConn, StartBurstSampling{10, 100});
 }
 
 void MainWindow::onSetGnssConfigs(const std::vector<GnssConfigStruct>& configList) {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_GNSS_CONFIG);
-    // int N = configList.size();
-    // *(tcpMessage.dStream) << (int)N;
-    // for (int i = 0; i < N; i++) {
-    //     *(tcpMessage.dStream) << configList[i].gnssId << configList[i].resTrkCh
-    //                           << configList[i].maxTrkCh << configList[i].flags;
-    // }
-    // emit sendTcpMessage(tcpMessage);
+    CfgGNSS cmd{};
+    cmd.numTrkChHw = static_cast<std::uint8_t>(configList.size());
+    cmd.numConfigBlocks = static_cast<std::uint8_t>(configList.size());
+    cmd.configs = configList;
+    sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_UBX_GNSS_CONFIG,
+                          CapnpCodec<CfgGNSS>::encode(cmd));
 }
 
 void MainWindow::onSetTP5Config(const UbxTimePulseStruct& tp) {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_CFG_TP5);
-    // *(tcpMessage.dStream) << tp;
-    // emit sendTcpMessage(tcpMessage);
+    sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_UBX_CFG_TP5,
+                          CapnpCodec<UbxTimePulseStruct>::encode(tp));
 }
 
 void MainWindow::sendRequestGpioRates() {
-    // TcpMessage xorRateRequest(TCP_MSG_KEY::MSG_GPIO_RATE_REQUEST);
-    // *(xorRateRequest.dStream) << (quint16)5 << (quint8)0;
-    // emit sendTcpMessage(xorRateRequest);
-    // TcpMessage andRateRequest(TCP_MSG_KEY::MSG_GPIO_RATE_REQUEST);
-    // *(andRateRequest.dStream) << (quint16)5 << (quint8)1;
-    // emit sendTcpMessage(andRateRequest);
+    sendCmdIfConnected(clientConn, GpioRateRequestCmd{0});
+    sendCmdIfConnected(clientConn, GpioRateRequestCmd{1});
 }
 
 void MainWindow::sendRequestGpioRateBuffer() {
-    // TcpMessage xorRateRequest(TCP_MSG_KEY::MSG_GPIO_RATE_REQUEST);
-    // *(xorRateRequest.dStream) << (quint16)0 << (quint8)0;
-    // emit sendTcpMessage(xorRateRequest);
-    // TcpMessage andRateRequest(TCP_MSG_KEY::MSG_GPIO_RATE_REQUEST);
-    // *(andRateRequest.dStream) << (quint16)0 << (quint8)1;
-    // emit sendTcpMessage(andRateRequest);
+    sendCmdIfConnected(clientConn, GpioRateRequestCmd{0});
+    sendCmdIfConnected(clientConn, GpioRateRequestCmd{1});
 }
 
 void MainWindow::resetAndHit() {
@@ -981,16 +999,16 @@ void MainWindow::connected() {
     saveSettings(addresses);
     uiSetConnectedState();
     sendValueUpdateRequests();
-    sendRequest(TCP_MSG_KEY::MSG_PREAMP_SWITCH_REQUEST, 0);
-    sendRequest(TCP_MSG_KEY::MSG_PREAMP_SWITCH_REQUEST, 1);
-    sendRequest(TCP_MSG_KEY::MSG_GAIN_SWITCH_REQUEST);
-    sendRequest(TCP_MSG_KEY::MSG_THRESHOLD_REQUEST);
-    sendRequest(TCP_MSG_KEY::MSG_PCA_SWITCH_REQUEST);
+    sendCmdIfConnected(clientConn, PreampSwitchRequestCmd{0});
+    sendCmdIfConnected(clientConn, PreampSwitchRequestCmd{1});
+    sendCmdIfConnected(clientConn, GainSwitchRequestCmd{});
+    sendCmdIfConnected(clientConn, ThresholdRequestCmd{});
+    sendCmdIfConnected(clientConn, PcaSwitchRequestCmd{});
     sendRequestUbxMsgRates();
     sendRequestGpioRateBuffer();
-    sendRequest(TCP_MSG_KEY::MSG_CALIB_REQUEST);
-    sendRequest(TCP_MSG_KEY::MSG_ADC_MODE_REQUEST);
-    sendRequest(TCP_MSG_KEY::MSG_POLARITY_SWITCH_REQUEST);
+    sendCmdIfConnected(clientConn, CalibRequestCmd{});
+    sendCmdIfConnected(clientConn, AdcModeRequestCmd{});
+    sendCmdIfConnected(clientConn, PolaritySwitchRequestCmd{});
 }
 
 void MainWindow::connection_info(const QString message) {
@@ -1006,14 +1024,14 @@ void MainWindow::connection_error(int error_code, const QString message) {
 }
 
 void MainWindow::sendValueUpdateRequests() {
-    sendRequest(TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST);
-    sendRequest(TCP_MSG_KEY::MSG_BIAS_SWITCH_REQUEST);
+    sendCmdIfConnected(clientConn, BiasVoltageRequestCmd{});
+    sendCmdIfConnected(clientConn, BiasSwitchRequestCmd{});
     for (int i = 0; i < 4; i++)
-        sendRequest(TCP_MSG_KEY::MSG_DAC_REQUEST, i);
+        sendCmdIfConnected(clientConn, DacRequestCmd{static_cast<std::uint8_t>(i)});
     for (int i = 1; i < 4; i++)
-        sendRequest(TCP_MSG_KEY::MSG_ADC_SAMPLE_REQUEST, i);
-    sendRequest(TCP_MSG_KEY::MSG_TEMPERATURE_REQUEST);
-    sendRequest(TCP_MSG_KEY::MSG_I2C_STATS_REQUEST);
+        sendCmdIfConnected(clientConn, AdcSampleRequestCmd{static_cast<std::uint8_t>(i)});
+    sendCmdIfConnected(clientConn, TemperatureRequestCmd{});
+    sendCmdIfConnected(clientConn, I2cStatsRequestCmd{});
 }
 
 void MainWindow::onIpButtonClicked() {
@@ -1094,8 +1112,7 @@ float MainWindow::parseValue(QString text) {
 }
 
 void MainWindow::on_saveDacButton_clicked() {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_DAC_EEPROM_SET);
-    // emit sendTcpMessage(tcpMessage);
+    sendCmdIfConnected(clientConn, DacEepromSetCmd{});
 }
 
 void MainWindow::on_biasPowerButton_clicked() {
@@ -1103,12 +1120,13 @@ void MainWindow::on_biasPowerButton_clicked() {
 }
 
 void MainWindow::sendInputSwitch(TIMING_MUX_SELECTION sel) {
-    // if (sel == TIMING_MUX_SELECTION::UNDEFINED)
-    //     return;
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_PCA_SWITCH);
-    // *(tcpMessage.dStream) << static_cast<quint8>(sel);
-    // emit sendTcpMessage(tcpMessage);
-    // sendRequest(TCP_MSG_KEY::MSG_PCA_SWITCH_REQUEST);
+    if (sel == TIMING_MUX_SELECTION::UNDEFINED) {
+        return;
+    }
+    PcaSwitchEvent cmd{};
+    cmd.pcaPortMask = static_cast<std::uint8_t>(sel);
+    sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_PCA_SWITCH,
+                          CapnpCodec<PcaSwitchEvent>::encode(cmd));
 }
 
 void MainWindow::on_biasVoltageSlider_sliderReleased() {
@@ -1138,29 +1156,27 @@ void MainWindow::on_biasVoltageSlider_sliderPressed() {
 }
 
 void MainWindow::onCalibUpdated(const std::vector<CalibStruct>& items) {
-    // if (calib == nullptr)
-    //     return;
+    if (calib == nullptr)
+        return;
 
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_CALIB_SET);
-    // if (items.size()) {
-    //     *(tcpMessage.dStream) << (quint8)items.size();
-    //     for (int i = 0; i < items.size(); i++) {
-    //         *(tcpMessage.dStream) << items[i];
-    //     }
-    //     emit sendTcpMessage(tcpMessage);
-    // }
+    if (!items.empty()) {
+        CalibEvent event{};
+        event.calibList = items;
+        sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_CALIB_SET,
+                              CapnpCodec<CalibEvent>::encode(event));
+    }
 
-    // uint8_t flags = calib->getCalibParameter("CALIB_FLAGS").toUInt();
-    // bool calibedBias = false;
-    // if (flags & CalibStruct::CALIBFLAGS_VOLTAGE_COEFFS)
-    //     calibedBias = true;
+    uint8_t flags = calib->getCalibParameter("CALIB_FLAGS").toUInt();
+    bool calibedBias = false;
+    if (flags & CalibStruct::CALIBFLAGS_VOLTAGE_COEFFS)
+        calibedBias = true;
 
-    // const QStandardItemModel* model =
-    // dynamic_cast<QStandardItemModel*>(ui->biasControlTypeComboBox->model()); QStandardItem* item
-    // = model->item(1);
+    const QStandardItemModel* model =
+        dynamic_cast<QStandardItemModel*>(ui->biasControlTypeComboBox->model());
+    QStandardItem* item = model->item(1);
 
-    // item->setEnabled(calibedBias);
-    // ui->biasControlTypeComboBox->setCurrentIndex((calibedBias) ? 1 : 0);
+    item->setEnabled(calibedBias);
+    ui->biasControlTypeComboBox->setCurrentIndex((calibedBias) ? 1 : 0);
 }
 
 void MainWindow::on_biasControlTypeComboBox_currentIndexChanged(int index) {
@@ -1189,7 +1205,7 @@ void MainWindow::on_biasControlTypeComboBox_currentIndexChanged(int index) {
         ui->biasVoltageDoubleSpinBox->setMaximum(maxBiasVoltage);
         ui->biasVoltageDoubleSpinBox->setSingleStep(0.01);
     }
-    sendRequest(TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST);
+    sendCmdIfConnected(clientConn, BiasVoltageRequestCmd{});
 }
 
 void MainWindow::on_biasVoltageDoubleSpinBox_valueChanged(double arg1) {
@@ -1205,27 +1221,28 @@ void MainWindow::on_biasVoltageDoubleSpinBox_valueChanged(double arg1) {
 }
 
 void MainWindow::gpioInhibit(bool inhibit) {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_GPIO_INHIBIT);
-    // *(tcpMessage.dStream) << inhibit;
-    // emit sendTcpMessage(tcpMessage);
+    GpioInhibitEvent cmd{};
+    cmd.inhibit = inhibit;
+    sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_GPIO_INHIBIT,
+                          CapnpCodec<GpioInhibitEvent>::encode(cmd));
 }
 
 void MainWindow::mqttInhibit(bool inhibit) {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_MQTT_INHIBIT);
-    // *(tcpMessage.dStream) << inhibit;
-    // emit sendTcpMessage(tcpMessage);
+    MqttInhibitCmd cmd{};
+    cmd.inhibit = inhibit;
+    sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_MQTT_INHIBIT,
+                          CapnpCodec<MqttInhibitCmd>::encode(cmd));
 }
 
 void MainWindow::onPolarityChanged(bool pol1, bool pol2) {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_POLARITY_SWITCH);
-    // *(tcpMessage.dStream) << pol1 << pol2;
-    // emit sendTcpMessage(tcpMessage);
+    PolaritySwitchEvent cmd{pol1, pol2};
+    sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_POLARITY_SWITCH,
+                          CapnpCodec<PolaritySwitchEvent>::encode(cmd));
 }
 
 void MainWindow::onPosModeConfigChanged(const PositionModeConfig& posconfig) {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_POSITION_MODEL);
-    // *(tcpMessage.dStream) << posconfig;
-    // emit sendTcpMessage(tcpMessage);
+    sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_POSITION_MODEL,
+                          CapnpCodec<PositionModeConfig>::encode(posconfig));
 }
 
 void MainWindow::onDaemonVersionReceived(MuonPi::Version::Version /*hw_ver*/,

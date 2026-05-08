@@ -39,6 +39,39 @@ struct NavStatus;
 struct UbxTimePulseStruct;
 struct LogInfoStruct;
 class Histogram;
+struct StartBurstSampling;
+struct ThresholdSettingCmd;
+struct UbxMinCnoCmd;
+struct UbxMinMaxSvCmd;
+struct UbxMsgPollCmd;
+struct UbxMsgPollRateCmd;
+struct UbxMsgRateCmd;
+struct UbxProtocolSelectionCmd;
+struct UbxRateCmd;
+struct UbxResetCmd;
+struct UbxSaveCmd;
+struct UbxSetAopCmd;
+struct MqttInhibitCmd;
+struct GpioRateResetCmd;
+struct UbxConfigDefaultCmd;
+struct I2cStatsRequestCmd;
+struct I2cScanBusCmd;
+struct CalibRequestCmd;
+struct CalibSaveCmd;
+struct PreampSwitchRequestCmd;
+struct GainSwitchRequestCmd;
+struct ThresholdRequestCmd;
+struct PcaSwitchRequestCmd;
+struct AdcModeRequestCmd;
+struct PolaritySwitchRequestCmd;
+struct BiasVoltageRequestCmd;
+struct BiasSwitchRequestCmd;
+struct DacRequestCmd;
+struct AdcSampleRequestCmd;
+struct TemperatureRequestCmd;
+struct DacEepromSetCmd;
+struct HistogramClearCmd;
+struct GpioRateRequestCmd;
 
 template <typename T>
 struct CapnpCodec {
@@ -101,5 +134,38 @@ DECLARE_CODEC(NavStatus)
 DECLARE_CODEC(UbxTimePulseStruct)
 DECLARE_CODEC(LogInfoStruct)
 DECLARE_CODEC(Histogram)
+DECLARE_CODEC(StartBurstSampling)
+DECLARE_CODEC(ThresholdSettingCmd)
+DECLARE_CODEC(UbxMinCnoCmd)
+DECLARE_CODEC(UbxMinMaxSvCmd)
+DECLARE_CODEC(UbxMsgPollCmd)
+DECLARE_CODEC(UbxMsgPollRateCmd)
+DECLARE_CODEC(UbxMsgRateCmd)
+DECLARE_CODEC(UbxProtocolSelectionCmd)
+DECLARE_CODEC(UbxRateCmd)
+DECLARE_CODEC(UbxResetCmd)
+DECLARE_CODEC(UbxSaveCmd)
+DECLARE_CODEC(UbxSetAopCmd)
+DECLARE_CODEC(MqttInhibitCmd)
+DECLARE_CODEC(GpioRateResetCmd)
+DECLARE_CODEC(UbxConfigDefaultCmd)
+DECLARE_CODEC(I2cStatsRequestCmd)
+DECLARE_CODEC(I2cScanBusCmd)
+DECLARE_CODEC(CalibRequestCmd)
+DECLARE_CODEC(CalibSaveCmd)
+DECLARE_CODEC(PreampSwitchRequestCmd)
+DECLARE_CODEC(GainSwitchRequestCmd)
+DECLARE_CODEC(ThresholdRequestCmd)
+DECLARE_CODEC(PcaSwitchRequestCmd)
+DECLARE_CODEC(AdcModeRequestCmd)
+DECLARE_CODEC(PolaritySwitchRequestCmd)
+DECLARE_CODEC(BiasVoltageRequestCmd)
+DECLARE_CODEC(BiasSwitchRequestCmd)
+DECLARE_CODEC(DacRequestCmd)
+DECLARE_CODEC(AdcSampleRequestCmd)
+DECLARE_CODEC(TemperatureRequestCmd)
+DECLARE_CODEC(DacEepromSetCmd)
+DECLARE_CODEC(HistogramClearCmd)
+DECLARE_CODEC(GpioRateRequestCmd)
 #undef DECLARE_CODEC
 #endif // CAPNP_CODEC_H

@@ -157,11 +157,6 @@ class MainWindow : public QMainWindow {
     void uiSetConnectedState();
     void uiSetDisconnectedState();
     float parseValue(QString text);
-    // ToDo: remove the sendRequest(quint) functions when switch-over to TCP_MSG_KEY is completed
-    void sendRequest(quint16 requestSig);
-    void sendRequest(TCP_MSG_KEY requestSig);
-    void sendRequest(quint16 requestSig, quint8 par);
-    void sendRequest(TCP_MSG_KEY requestSig, quint8 par);
     void sendSetBiasVoltage(float voltage);
     void sendSetThresh(uint8_t channel, float value);
     void setMaxThreshVoltage(float voltage);

@@ -158,6 +158,75 @@ messages:
       - { name: channel, type: uint8 }
       - { name: threshold, type: float }
 
+  - name: MqttInhibitCmdCapnp
+    fields:
+      - { name: inhibit, type: bool }
+
+  - name: GpioRateResetCmdCapnp
+    fields: []
+
+  - name: UbxConfigDefaultCmdCapnp
+    fields: []
+
+  - name: I2cStatsRequestCmdCapnp
+    fields: []
+
+  - name: I2cScanBusCmdCapnp
+    fields: []
+
+  - name: CalibRequestCmdCapnp
+    fields: []
+
+  - name: CalibSaveCmdCapnp
+    fields: []
+
+  - name: PreampSwitchRequestCmdCapnp
+    fields:
+      - { name: channel, type: uint8 }
+
+  - name: GainSwitchRequestCmdCapnp
+    fields: []
+
+  - name: ThresholdRequestCmdCapnp
+    fields: []
+
+  - name: PcaSwitchRequestCmdCapnp
+    fields: []
+
+  - name: AdcModeRequestCmdCapnp
+    fields: []
+
+  - name: PolaritySwitchRequestCmdCapnp
+    fields: []
+
+  - name: BiasVoltageRequestCmdCapnp
+    fields: []
+
+  - name: BiasSwitchRequestCmdCapnp
+    fields: []
+
+  - name: DacRequestCmdCapnp
+    fields:
+      - { name: channel, type: uint8 }
+
+  - name: AdcSampleRequestCmdCapnp
+    fields:
+      - { name: channel, type: uint8 }
+
+  - name: TemperatureRequestCmdCapnp
+    fields: []
+
+  - name: DacEepromSetCmdCapnp
+    fields: []
+
+  - name: HistogramClearCmdCapnp
+    fields:
+      - { name: histogramName, type: string }
+
+  - name: GpioRateRequestCmdCapnp
+    fields:
+      - { name: whichRate, type: uint8 }
+
 # UBLOX Commands
   - name: UbxMinCnoCmdCapnp
     fields:

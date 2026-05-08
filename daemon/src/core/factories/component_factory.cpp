@@ -9,6 +9,7 @@
 #include "drivers/gpio_driver.h"
 #include "drivers/mcp4728_driver.h"
 #include "hardware/ublox/serialublox.h"
+#include "sources/tcp_command_decoder.h"
 #include "sources/tcp_source.h"
 
 #include <memory>
@@ -62,6 +63,11 @@ const std::unordered_map<ComponentId, ComponentCreator> ComponentFactory::compon
     {OtherComponent::TCP_SOURCE_0,
      [](Context& ctx) {
          return std::make_shared<TcpSource>(OtherComponent::TCP_SOURCE_0, *ctx.bus);
+     }},
+    {OtherComponent::TCP_COMMAND_DECODER_0,
+     [](Context& ctx) {
+         return std::make_shared<TcpCommandDecoder>(OtherComponent::TCP_COMMAND_DECODER_0,
+                                                    *ctx.bus);
      }},
     {OtherComponent::GPS_DRIVER_0,
      [](Context& ctx) {
