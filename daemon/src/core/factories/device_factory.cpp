@@ -9,11 +9,36 @@
 
 #include <cstdint>
 #include <memory>
+#include <sstream>
 #include <string>
 
 void DeviceFactory::i2cReset() {
     // reset the I2C bus by issuing a general call reset
     I2cGeneralCall::resetDevices();
+}
+
+void DeviceFactory::i2cInfo() {
+    std::stringstream sstr;
+    sstr << "Nr. of invoked I2C devices (plain count): " << std::dec << i2cDevice::getNrDevices()
+         << std::endl;
+    sstr << "Nr. of invoked I2C devices (gl. device list's size): "
+         << i2cDevice::getGlobalDeviceList().size() << std::endl;
+    sstr << "Nr. of bytes read on I2C bus: " << i2cDevice::getGlobalNrBytesRead() << std::endl;
+    sstr << "Nr. of bytes written on I2C bus: " << i2cDevice::getGlobalNrBytesWritten()
+         << std::endl;
+    sstr << "list of device addresses: " << std::endl;
+    for (uint8_t i = 0; i < i2cDevice::getGlobalDeviceList().size(); i++) {
+        sstr << (int) i + 1 << " 0x" << std::hex
+             << (int) i2cDevice::getGlobalDeviceList()[i]->getAddress() << " "
+             << i2cDevice::getGlobalDeviceList()[i]->getTitle();
+        if (i2cDevice::getGlobalDeviceList()[i]->devicePresent())
+            sstr << " present" << std::endl;
+        else
+            sstr << " missing" << std::endl;
+    }
+    // if (temp_sensor_p)
+    //     dynamic_cast<i2cDevice*>(temp_sensor_p.get())->getCapabilities();
+    logDebug(sstr.str());
 }
 
 auto DeviceFactory::create(const DeviceConfig& config) -> std::unique_ptr<IDevice> {
@@ -105,6 +130,7 @@ const std::unordered_map<Device, DeviceCreator> DeviceFactory::deviceCreator = {
              deviceNotFoundError("Ublox", cfg.address.value());
              return nullptr;
          }
+         device_p->lock();
          logInfo("Ublox device identified at 0x" + to_hex(device_p->getAddress()));
          return std::make_unique<I2CDeviceWrapper<UbloxI2c>>(std::move(device_p));
      }},
