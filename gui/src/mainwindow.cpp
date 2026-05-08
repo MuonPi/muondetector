@@ -208,7 +208,6 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
         ratePollTimer.start();
     }
 
-    connect(this, &MainWindow::daemonVersionReceived, this, &MainWindow::onDaemonVersionReceived);
     connect(this, &MainWindow::biasSwitchReceived, this, &MainWindow::onBiasSwitchReceived);
 
     // set all tabs
@@ -420,12 +419,17 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
 }
 
 MainWindow::~MainWindow() {
-    emit closeConnection();
+    clientConn.reset();
     saveSettings(addresses);
     delete ui;
 }
 
 void MainWindow::makeConnection(QString ipAddress, quint16 port) {
+    if (clientConn != nullptr) {
+        QMessageBox::critical(this, "Connection already established",
+                              "Cannot make connection if connection is already existing");
+        return;
+    }
     tcp::socket clientSocket(*m_io);
     boost::system::error_code ec;
     auto server_ip = boost::asio::ip::make_address_v4(ipAddress.toStdString(), ec);
@@ -443,11 +447,28 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
 
     clientConn = std::make_shared<TcpConnection>(std::move(clientSocket));
     auto weakConn = std::weak_ptr<TcpConnection>(clientConn);
+    clientConn->setDisconnectHandler([this](const boost::system::error_code& code) {
+        QMetaObject::invokeMethod(
+            this,
+            [this, code]() {
+                if (code == boost::asio::error::operation_aborted /* We do clientConn.reset() */
+                    || code == boost::asio::error::eof /* Clean disconnect from server */) {
+                    uiSetDisconnectedState();
+                } else {
+                    connection_error(code.value(), QString::fromStdString(code.message()));
+                }
+                clientConn->setDisconnectHandler(nullptr); // stop disconnect handling after stopped
+                clientConn->setPacketHandler(nullptr); // wait for dangling async read processes...
+                clientConn.reset();
+            },
+            Qt::QueuedConnection);
+    });
     clientConn->setPacketHandler([weakConn, this](const TcpPacket& packet) {
         if (auto conn = weakConn.lock()) {
             decode(packet);
         }
     });
+    connected();
     clientConn->start();
 }
 
@@ -470,7 +491,6 @@ auto MainWindow::buildDecoderMap()
             //     TCP_MSG_KEY::MSG_QUIT_CONNECTION,
             //     [this](const TcpPacket& packet){
             //         auto event = CapnpCodec<>::decode(packet.payload);
-            //         connectedToDemon = false;
             //     }
             // },
             {TCP_MSG_KEY::MSG_GPIO_EVENT,
@@ -488,6 +508,7 @@ auto MainWindow::buildDecoderMap()
                      xorTimer.start();
                  } else if (event.gpio_signal == TIMEPULSE) {
                      emit timepulseReceived();
+                     qDebug() << "timepulse received";
                  }
              }},
             {TCP_MSG_KEY::MSG_UBX_MSG_RATE,
@@ -995,7 +1016,6 @@ void MainWindow::onBiasSwitchReceived(bool biasEnabled) {
 }
 
 void MainWindow::connected() {
-    connectedToDemon = true;
     saveSettings(addresses);
     uiSetConnectedState();
     sendValueUpdateRequests();
@@ -1035,13 +1055,19 @@ void MainWindow::sendValueUpdateRequests() {
 }
 
 void MainWindow::onIpButtonClicked() {
-    if (connectedToDemon) {
+    if (clientConn != nullptr) {
         // it is connected and the button shows "disconnect" -> here comes disconnect code
-        connectedToDemon = false;
-        emit closeConnection();
+        clientConn->stop();                        // safely close async connection without segfault
+        clientConn->setDisconnectHandler(nullptr); // stop disconnect handling after stopped
+        clientConn->setPacketHandler(nullptr);     // wait for dangling async read processes...
+        clientConn.reset();                        // drop last owning shared_ptr
+        emit tcpDisconnected();
         andTimer.stop();
         xorTimer.stop();
-        uiSetDisconnectedState();
+        QTimer::singleShot(0, this, [this]() {
+            // During mouse press event dangerous to start mutating stuff a lot -> defer
+            uiSetDisconnectedState();
+        });
         return;
     }
     QString ipBoxText = ui->ipBox->currentText();
@@ -1243,8 +1269,4 @@ void MainWindow::onPolarityChanged(bool pol1, bool pol2) {
 void MainWindow::onPosModeConfigChanged(const PositionModeConfig& posconfig) {
     sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_POSITION_MODEL,
                           CapnpCodec<PositionModeConfig>::encode(posconfig));
-}
-
-void MainWindow::onDaemonVersionReceived(MuonPi::Version::Version /*hw_ver*/,
-                                         MuonPi::Version::Version /*sw_ver*/) {
 }

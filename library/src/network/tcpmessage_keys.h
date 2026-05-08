@@ -5,6 +5,7 @@
 
 // no specific reason but the codes are all prime numbers :)
 enum class TCP_MSG_KEY : std::uint16_t {
+    MSG_PONG = 1,
     MSG_PING = 2,
     MSG_QUIT_CONNECTION = 3,
     // MSG_PLACEHOLDER_5 = 5,

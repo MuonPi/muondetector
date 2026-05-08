@@ -54,7 +54,6 @@ class MainWindow : public QMainWindow {
 
   signals:
     void addUbxMsgRates(const UbxMsgRates& rates);
-    void closeConnection();
     void gpioRates(quint8 whichrate, QVector<QPointF> rate);
     void tcpDisconnected();
     void setUiEnabledStates(bool enabled);
@@ -145,7 +144,6 @@ class MainWindow : public QMainWindow {
     void onSetTP5Config(const UbxTimePulseStruct& tp);
     void on_biasVoltageDoubleSpinBox_valueChanged(double arg1);
     void on_saveDacButton_clicked();
-    void onDaemonVersionReceived(MuonPi::Version::Version hw_ver, MuonPi::Version::Version sw_ver);
     void onBiasSwitchReceived(bool biasEnabled);
 
   private:
@@ -176,7 +174,6 @@ class MainWindow : public QMainWindow {
     bool saveSettings(QStandardItemModel* model);
     bool loadSettings(QStandardItemModel* model);
     bool eventFilter(QObject* object, QEvent* event);
-    bool connectedToDemon = false;
     bool mouseHold = false;
     bool automaticRatePoll = true;
     QTimer andTimer, xorTimer, ratePollTimer;

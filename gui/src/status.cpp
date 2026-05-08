@@ -258,15 +258,15 @@ void Status::onUiEnabledStateChange(bool connected) {
     } else {
         andSamples.clear();
         xorSamples.clear();
+        timepulseTimer.stop();
+        statusUi->timePulseLabel->setStyleSheet("QLabel {background-color: Window;}");
+        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: Window;}");
+        statusUi->temperatureLabel->setText("Temperature: N/A");
         statusUi->ratePlot->setStatusEnabled(false);
         statusUi->pulseHeightHistogram->clear();
         statusUi->pulseHeightHistogram->setEnabled(false);
         statusUi->triggerSelectionComboBox->setEnabled(false);
         statusUi->timingSelectionComboBox->setEnabled(false);
-        timepulseTimer.stop();
-        statusUi->timePulseLabel->setStyleSheet("QLabel {background-color: Window;}");
-        statusUi->mqttStatusLabel->setStyleSheet("QLabel {background-color: Window;}");
-        statusUi->temperatureLabel->setText("Temperature: N/A");
         statusUi->temperatureLabel->setEnabled(false);
         statusUi->ADCLabel1->setText("Ch1: ");
         statusUi->ADCLabel2->setText("Ch2: ");
