@@ -36,7 +36,7 @@ class ParameterMonitorForm : public QWidget {
 
   public slots:
     void onCalibReceived(bool valid, bool eepromValid, quint64 id,
-                         const QVector<CalibStruct>& calibList);
+                         const std::vector<CalibStruct>& calibList);
     void onAdcSampleReceived(uint8_t channel, float value);
     void onDacReadbackReceived(uint8_t channel, float value);
     void onInputSwitchReceived(TIMING_MUX_SELECTION sel);
@@ -72,7 +72,7 @@ class ParameterMonitorForm : public QWidget {
 
   private:
     Ui::ParameterMonitorForm* ui;
-    QVector<CalibStruct> fCalibList;
+    std::vector<CalibStruct> fCalibList;
 
     double fLastBiasVoltageLo = -999.;
     double fLastBiasVoltageHi = -999.;

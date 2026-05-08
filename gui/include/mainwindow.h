@@ -55,13 +55,13 @@ class MainWindow : public QMainWindow {
   signals:
     void addUbxMsgRates(const UbxMsgRates& rates);
     void closeConnection();
-    void gpioRates(quint8 whichrate, QVector<QPointF> rate);
+    void gpioRates(quint8 whichrate, std::vector<std::pair<float, float>> rate);
     void tcpDisconnected();
     void setUiEnabledStates(bool enabled);
     void geodeticPos(const GnssPosStruct& pos);
     void positionModeConfigReceived(const PositionModeConfig& posconfig);
     void adcSampleReceived(uint8_t channel, float value);
-    void adcTraceReceived(const QVector<float>& sampleBuffer);
+    void adcTraceReceived(const std::vector<float>& sampleBuffer);
     void inputSwitchReceived(TIMING_MUX_SELECTION);
     void dacReadbackReceived(uint8_t channel, float value);
     void biasSwitchReceived(bool state);
@@ -69,10 +69,10 @@ class MainWindow : public QMainWindow {
     void gainSwitchReceived(bool state);
     void temperatureReceived(float temp);
     void i2cStatsReceived(quint32 bytesRead, quint32 bytesWritten,
-                          const QVector<I2cDeviceEntry>& deviceList);
+                          const std::vector<I2cDeviceEntry>& deviceList);
     void spiStatsReceived(bool spiPresent);
     void calibReceived(bool valid, bool eepromValid, quint64 id,
-                       const QVector<CalibStruct>& calibList);
+                       const std::vector<CalibStruct>& calibList);
     void satsReceived(const std::vector<GnssSatellite>& satList);
     void gnssConfigsReceived(quint8 numTrkCh, const std::vector<GnssConfigStruct>& configList);
     void timeAccReceived(quint32 acc);
@@ -139,9 +139,9 @@ class MainWindow : public QMainWindow {
     void on_biasVoltageSlider_sliderReleased();
     void on_biasVoltageSlider_valueChanged(int value);
     void on_biasVoltageSlider_sliderPressed();
-    void onCalibUpdated(const QVector<CalibStruct>& items);
+    void onCalibUpdated(const std::vector<CalibStruct>& items);
     void on_biasControlTypeComboBox_currentIndexChanged(int index);
-    void onSetGnssConfigs(const QVector<GnssConfigStruct>& configList);
+    void onSetGnssConfigs(const std::vector<GnssConfigStruct>& configList);
     void onSetTP5Config(const UbxTimePulseStruct& tp);
     void on_biasVoltageDoubleSpinBox_valueChanged(double arg1);
     void on_saveDacButton_clicked();

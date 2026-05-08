@@ -69,7 +69,7 @@ void GnssInfoForm::changeEvent(QEvent* e) {
     QWidget::changeEvent(e);
 }
 
-void GnssInfoForm::onSatsReceived(const QVector<GnssSatellite>& satlist) {
+void GnssInfoForm::onSatsReceived(const std::vector<GnssSatellite>& satlist) {
     ui->gnssPosWidget->onSatsReceived(satlist);
 
     int nrGoodSats{0};
@@ -289,7 +289,7 @@ void GnssInfoForm::onGeodeticPosReceived(const GnssPosStruct& pos) {
 
 void GnssInfoForm::onUiEnabledStateChange(bool connected) {
     if (!connected) {
-        QVector<GnssSatellite> emptylist;
+        std::vector<GnssSatellite> emptylist;
         onSatsReceived(emptylist);
         iqTrack.clear();
         onGpsMonHW2Received(GnssMonHw2Struct());

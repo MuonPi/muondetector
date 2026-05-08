@@ -25,16 +25,27 @@
 #include <QRegularExpression>
 #include <QThread>
 #include <boost/asio.hpp>
-#include <events/ads1115_event.h>
-#include <events/bias_switch_event.h>
-#include <events/bias_voltage_event.h>
-#include <events/calib_event.h>
-#include <events/gain_switch_event.h>
-#include <events/lm75_event.h>
-#include <events/mcp4728_event.h>
-#include <events/preamp_switch_event.h>
-#include <events/threshold_setting_event.h>
-#include <events/ubx_event.h>
+#include <data/events/adc_mode_event.h>
+#include <data/events/adc_trace_event.h>
+#include <data/events/ads1115_event.h>
+#include <data/events/bias_switch_event.h>
+#include <data/events/bias_voltage_event.h>
+#include <data/events/calib_event.h>
+#include <data/events/gain_switch_event.h>
+#include <data/events/gpio_event.h>
+#include <data/events/gpio_inhibit_event.h>
+#include <data/events/gpio_rate_event.h>
+#include <data/events/i2c_stats_event.h>
+#include <data/events/lm75_event.h>
+#include <data/events/mcp4728_event.h>
+#include <data/events/mqtt_status_event.h>
+#include <data/events/pca_switch_event.h>
+#include <data/events/polarity_switch_event.h>
+#include <data/events/preamp_switch_event.h>
+#include <data/events/spi_stats_event.h>
+#include <data/events/threshold_setting_event.h>
+#include <data/events/ubx_event.h>
+#include <data/events/version_event.h>
 #include <gpio_pin_definitions.h>
 #include <histogram.h>
 #include <iostream>
@@ -445,7 +456,7 @@ auto MainWindow::buildDecoderMap()
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<ThresholdSettingEvent>::decode(packet.payload);
                  quint8 channel = event.channel;
-                 float threshold = event.threshold;
+                 float threshold = event.voltage;
                  if (threshold > maxThreshVoltage) {
                      sendSetThresh(channel, maxThreshVoltage);
                      return;
@@ -475,7 +486,7 @@ auto MainWindow::buildDecoderMap()
             {TCP_MSG_KEY::MSG_GAIN_SWITCH,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<GainSwitchEvent>::decode(packet.payload);
-                 emit gainSwitchReceived(event.channel, event.state);
+                 emit gainSwitchReceived(event.state);
              }},
             {TCP_MSG_KEY::MSG_PCA_SWITCH,
              [this](const TcpPacket& packet) {
@@ -498,22 +509,7 @@ auto MainWindow::buildDecoderMap()
             {TCP_MSG_KEY::MSG_GPIO_RATE,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<GpioRateEvent>::decode(packet.payload);
-                 std::uint8_t whichRate;
-                 std::vector<std::uint8_t> rate;
-                 *(tcpMessage.dStream) >> whichRate >> rate;
-                 float rateYValue;
-                 if (!rate.empty()) {
-                     rateYValue = rate.at(rate.size() - 1).y();
-                 } else {
-                     rateYValue = 0.0;
-                 }
-                 if (whichRate == 0) {
-                     ui->rate1->setText(QString::number(rateYValue, 'g', 3) + "/s");
-                 }
-                 if (whichRate == 1) {
-                     ui->rate2->setText(QString::number(rateYValue, 'g', 3) + "/s");
-                 }
-                 emit gpioRates(whichRate, rate);
+                 emit gpioRates(event.whichRate, std::move(event.rate));
              }},
             {TCP_MSG_KEY::MSG_GEO_POS,
              [this](const TcpPacket& packet) {
@@ -528,43 +524,26 @@ auto MainWindow::buildDecoderMap()
             {TCP_MSG_KEY::MSG_ADC_TRACE,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<AdcTraceEvent>::decode(packet.payload);
-                 emit adcTraceReceived(std::move(event.data));
+                 emit adcTraceReceived(std::move(event.adcSampleBuffer));
              }},
             {TCP_MSG_KEY::MSG_DAC_READBACK,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<MCP4728Event>::decode(packet.payload);
-                 emit dacReadbackReceived(std::move(event.data));
+                 //  emit dacReadbackReceived(std::move(event.data));
              }},
             {TCP_MSG_KEY::MSG_TEMPERATURE,
              [this](const TcpPacket& packet) {
-                 auto event = CapnpCodec<LM74Event>::decode(packet.payload);
+                 auto event = CapnpCodec<LM75Event>::decode(packet.payload);
                  emit temperatureReceived(event.temperature);
              }},
             {TCP_MSG_KEY::MSG_I2C_STATS,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<I2CStatsEvent>::decode(packet.payload);
-                 quint8 nrDevices = 0;
-                 quint32 bytesRead = 0;
-                 quint32 bytesWritten = 0;
-                 *(tcpMessage.dStream) >> nrDevices >> bytesRead >> bytesWritten;
-
-                 QVector<I2cDeviceEntry> deviceList;
-                 for (uint8_t i = 0; i < nrDevices; i++) {
-                     uint8_t addr = 0;
-                     QString title = "none";
-                     uint8_t status = 0;
-                     *(tcpMessage.dStream) >> addr >> title >> status;
-                     I2cDeviceEntry entry;
-                     entry.address = addr;
-                     entry.name = title;
-                     entry.status = status;
-                     deviceList.push_back(entry);
-                 }
-                 emit i2cStatsReceived(bytesRead, bytesWritten, deviceList);
+                 emit i2cStatsReceived(event.bytesRead, event.bytesWritten, event.deviceList);
              }},
             {TCP_MSG_KEY::MSG_SPI_STATS,
              [this](const TcpPacket& packet) {
-                 auto event = CapnpCodec<SPIStatEvent>::decode(packet.payload);
+                 auto event = CapnpCodec<SPIStatsEvent>::decode(packet.payload);
                  emit spiStatsReceived(event.spiPresent);
              }},
             {TCP_MSG_KEY::MSG_CALIB_SET,
@@ -654,7 +633,9 @@ auto MainWindow::buildDecoderMap()
             {TCP_MSG_KEY::MSG_UBX_VERSION,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<GpsVersion>::decode(packet.payload);
-                 emit gpsVersionReceived(event.swString, event.hwString, event.prot);
+                 emit gpsVersionReceived(QString::fromStdString(event.swString),
+                                         QString::fromStdString(event.hwString),
+                                         QString::fromStdString(event.prot));
              }},
             {TCP_MSG_KEY::MSG_UBX_FIXSTATUS,
              [this](const TcpPacket& packet) {
@@ -693,8 +674,8 @@ auto MainWindow::buildDecoderMap()
              }},
             {TCP_MSG_KEY::MSG_VERSION,
              [this](const TcpPacket& packet) {
-                 auto event = CapnpCodec<MuonPi::Version::Version>::decode(packet.payload);
-                 emit daemonVersionReceived(hw_ver, sw_ver);
+                 auto event = CapnpCodec<VersionEvent>::decode(packet.payload);
+                 emit daemonVersionReceived(event.hw_ver, event.sw_ver);
              }},
             {TCP_MSG_KEY::MSG_POSITION_MODEL, [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<PositionModeConfig>::decode(packet.payload);
@@ -866,7 +847,7 @@ void MainWindow::onRateScanStart(uint8_t ch) {
     // emit sendTcpMessage(tcpMessage);
 }
 
-void MainWindow::onSetGnssConfigs(const QVector<GnssConfigStruct>& configList) {
+void MainWindow::onSetGnssConfigs(const std::vector<GnssConfigStruct>& configList) {
     // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_UBX_GNSS_CONFIG);
     // int N = configList.size();
     // *(tcpMessage.dStream) << (int)N;
@@ -1150,7 +1131,7 @@ void MainWindow::on_biasVoltageSlider_sliderPressed() {
     mouseHold = true;
 }
 
-void MainWindow::onCalibUpdated(const QVector<CalibStruct>& items) {
+void MainWindow::onCalibUpdated(const std::vector<CalibStruct>& items) {
     // if (calib == nullptr)
     //     return;
 

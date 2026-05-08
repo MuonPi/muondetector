@@ -403,7 +403,7 @@ void GnssPosWidget::replot() {
     ui->satLabel->setPixmap(satPosPixmap);
 }
 
-void GnssPosWidget::onSatsReceived(const QVector<GnssSatellite>& satlist) {
+void GnssPosWidget::onSatsReceived(const std::vector<GnssSatellite>& satlist) {
     fCurrentSatlist = satlist;
     replot();
 }

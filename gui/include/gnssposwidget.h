@@ -9,6 +9,7 @@
 #include <QPixmap>
 #include <QVector>
 #include <QWidget>
+#include <vector>
 
 class GnssSatellite;
 
@@ -37,7 +38,7 @@ class GnssPosWidget : public QWidget {
     void resizeEvent(QResizeEvent* event);
 
   public slots:
-    void onSatsReceived(const QVector<GnssSatellite>& satlist);
+    void onSatsReceived(const std::vector<GnssSatellite>& satlist);
     void replot();
     void onUiEnabledStateChange(bool connected);
     void changeEvent(QEvent* e);
@@ -50,7 +51,7 @@ class GnssPosWidget : public QWidget {
   private:
     Ui::GnssPosWidget* ui;
     QMap<int, QHash<QPoint, QVector<SatHistoryPoint>>> satTracks;
-    QVector<GnssSatellite> fCurrentSatlist;
+    std::vector<GnssSatellite> fCurrentSatlist;
 
     QPointF polar2cartUnity(const QPointF& pol);
     QPolygonF getPolarUnitPolygon(const QPointF& pos, int controlPoints = DEFAULT_CONTROL_POINTS);

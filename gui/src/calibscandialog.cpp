@@ -6,6 +6,7 @@
 #include <QThread>
 #include <calibform.h>
 #include <muondetector_structs.h>
+#include <vector>
 
 #define calVoltMin 0.3
 #define calVoltMax 2.5
@@ -80,7 +81,7 @@ CalibScanDialog::~CalibScanDialog() {
 }
 
 void CalibScanDialog::onCalibReceived(bool /*valid*/, bool eepromValid, quint64 /*id*/,
-                                      const QVector<CalibStruct>& calibList) {
+                                      const std::vector<CalibStruct>& calibList) {
     if (!eepromValid)
         return;
 

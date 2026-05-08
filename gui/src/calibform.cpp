@@ -29,7 +29,7 @@ CalibForm::~CalibForm() {
 }
 
 void CalibForm::onCalibReceived(bool valid, bool eepromValid, quint64 id,
-                                const QVector<CalibStruct>& calibList) {
+                                const std::vector<CalibStruct>& calibList) {
     calScan->onCalibReceived(valid, eepromValid, id, calibList);
 
     QString str = "invalid";
@@ -70,7 +70,7 @@ void CalibForm::onCalibReceived(bool valid, bool eepromValid, quint64 id,
         fOffs2 = getCalibParameter("COEFF2").toDouble();
     }
     updateCalibTable();
-    QVector<CalibStruct> emptyList;
+    std::vector<CalibStruct> emptyList;
     emit updatedCalib(emptyList);
 }
 
@@ -148,7 +148,7 @@ QString CalibForm::getCalibParameter(const QString& name) {
 
 const CalibStruct& CalibForm::getCalibItem(const QString& name) {
     if (!fCalibList.empty()) {
-        QVector<CalibStruct>::iterator result =
+        std::vector<CalibStruct>::iterator result =
             std::find_if(fCalibList.begin(), fCalibList.end(),
                          [&name](const CalibStruct& s) { return s.name == name.toStdString(); });
         if (result != fCalibList.end()) {
@@ -201,7 +201,7 @@ void CalibForm::on_calibItemTableWidget_cellChanged(int row, int column) {
             return;
         }
         setCalibParameter(name, valstr);
-        QVector<CalibStruct> items;
+        std::vector<CalibStruct> items;
         items.push_back(getCalibItem(name));
         emit updatedCalib(items);
     }

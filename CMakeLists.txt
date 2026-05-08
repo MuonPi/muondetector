@@ -17,7 +17,7 @@ execute_process(COMMAND bash "-c" "git rev-parse --short HEAD | tr -d '\n'"
     OUTPUT_VARIABLE PROJECT_VERSION_HASH)
 
 
-if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "^(armv7|armv6)")
+if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "^(armv7|armv6|aarch64|arm64)")
     set(MUONDETECTOR_BUILD_DAEMON ON)
     set(MUONDETECTOR_ON_RASPBERRYPI ON)
 endif ()

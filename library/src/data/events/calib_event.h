@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <data/muondetector_structs.h>
+#include <vector>
 
 struct CalibEvent {
     bool valid{false};

@@ -275,7 +275,7 @@ void UbloxSettingsForm::on_ubxResetPushButton_clicked() {
 }
 
 void UbloxSettingsForm::writeGnssConfig() {
-    QVector<GnssConfigStruct> configList;
+    std::vector<GnssConfigStruct> configList;
     if (ui->gnssGpsCheckBox->isEnabled()) { // GPS
         GnssConfigStruct config;
         config.gnssId = 0;

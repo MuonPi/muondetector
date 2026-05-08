@@ -23,12 +23,12 @@ class CalibForm : public QWidget {
     void writeCalibToEeprom();
     void setBiasDacVoltage(float val);
     void setDacVoltage(uint8_t ch, float val);
-    void updatedCalib(const QVector<CalibStruct>& items);
+    void updatedCalib(const std::vector<CalibStruct>& items);
     void setBiasSwitch(bool state);
 
   public slots:
     void onCalibReceived(bool valid, bool eepromValid, quint64 id,
-                         const QVector<CalibStruct>& calibList);
+                         const std::vector<CalibStruct>& calibList);
     void onAdcSampleReceived(uint8_t channel, float value);
     QString getCalibParameter(const QString& name);
     const CalibStruct& getCalibItem(const QString& name);
@@ -46,7 +46,7 @@ class CalibForm : public QWidget {
 
   private:
     Ui::CalibForm* ui;
-    QVector<CalibStruct> fCalibList;
+    std::vector<CalibStruct> fCalibList;
     QVector<QPointF> fPoints1, fPoints2, fPoints3;
     double fSlope1 = 0., fOffs1 = 0.;
     double fSlope2 = 0., fOffs2 = 0.;

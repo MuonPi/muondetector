@@ -19,7 +19,7 @@ class CalibScanDialog : public QDialog {
 
   public slots:
     void onCalibReceived(bool valid, bool eepromValid, quint64 id,
-                         const QVector<CalibStruct>& calibList);
+                         const std::vector<CalibStruct>& calibList);
     void onAdcSampleReceived(uint8_t channel, double value);
   private slots:
     void startManualCurrentCalib();
@@ -27,7 +27,7 @@ class CalibScanDialog : public QDialog {
 
   private:
     Ui::CalibScanDialog* ui;
-    QVector<CalibStruct> fCalibList;
+    std::vector<CalibStruct> fCalibList;
     bool fAutoCalibRunning = false;
     uint8_t fCurrentCalibRunning = 0;
     float fCurrBias = 0.;
