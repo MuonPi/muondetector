@@ -284,7 +284,6 @@ struct UbxTimePulseStruct {
 };
 
 struct CfgGNSS {
-
     std::uint8_t version{0};
     std::uint8_t numTrkChHw{0};
     std::uint8_t numTrkChUse{0};

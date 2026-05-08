@@ -1,4 +1,153 @@
 messages:
+
+# Events
+  - name: AdcModeEventCapnp
+    fields:
+      - { name: mode, type: uint8 }
+
+  - name: BiasSwitchEventCapnp
+    fields:
+      - { name: biasOn, type: bool }
+
+  - name: BiasVoltageEventCapnp
+    fields:
+      - { name: voltage, type: float }
+
+  - name: GainSwitchEventCapnp
+    fields:
+      - { name: state, type: bool }
+
+  - name: PcaSwitchEventCapnp
+    fields:
+      - { name: pcaPortMask, type: uint8 }
+
+  - name: PolaritySwitchEventCapnp
+    fields:
+      - { name: pol1, type: bool }
+      - { name: pol2, type: bool }
+
+  - name: PreampSwitchEventCapnp
+    fields:
+      - { name: channel, type: uint8 }
+      - { name: state, type: bool }
+
+  - name: GpioInhibitEventCapnp
+    fields:
+      - { name: inhibit, type: bool }
+
+  - name: LM75EventCapnp
+    fields:
+      - { name: temperature, type: float }
+
+  - name: MqttStatusEventCapnp
+    fields:
+      - { name: connected, type: bool }
+
+  - name: Ads1115EventCapnp
+    fields:
+      - { name: deviceId, type: uint32 }
+      - { name: channel, type: uint8 }
+      - { name: rawValue, type: uint16 }
+      - { name: voltage, type: float }
+      - { name: timestamp, type: uint64 }
+
+  - name: GpioEventCapnp
+    fields:
+      - { name: sig, type: uint8 }
+      - { name: pin, type: uint8 }
+      - { name: timestamp, type: uint64 }
+      - { name: edge, type: uint8 }
+
+  - name: SPIStatsEventCapnp
+    fields:
+      - { name: spiPresent, type: bool }
+
+  - name: ThresholdSettingEventCapnp
+    fields:
+      - { name: channel, type: uint8 }
+      - { name: voltage, type: double }
+      - { name: success, type: bool }
+
+  - name: LogInfoStructCapnp
+    fields:
+      - { name: logFileName, type: string }
+      - { name: dataFileName, type: string }
+      - { name: status, type: uint8 }
+      - { name: logFileSize, type: uint32 }
+      - { name: dataFileSize, type: uint32 }
+      - { name: logAge, type: uint64 }
+      - { name: logRotationDuration, type: uint64 }
+
+
+# UBLOX Events
+  - name: UbxDopStructCapnp
+    fields:
+      - { name: gDOP, type: uint16 }
+      - { name: pDOP, type: uint16 }
+      - { name: tDOP, type: uint16 }
+      - { name: vDOP, type: uint16 }
+      - { name: hDOP, type: uint16 }
+      - { name: nDOP, type: uint16 }
+      - { name: eDOP, type: uint16 }
+
+  - name: NavStatusCapnp
+    fields:
+      - { name: gDOP, type: uint16 }
+      - { name: pDOP, type: uint16 }
+      - { name: tDOP, type: uint16 }
+      - { name: vDOP, type: uint16 }
+      - { name: hDOP, type: uint16 }
+      - { name: nDOP, type: uint16 }
+      - { name: eDOP, type: uint16 }
+
+  - name: GnssPosStructCapnp
+    fields:
+      - { name: iTOW, type: uint32 }
+      - { name: lon, type: int32 }
+      - { name: lat, type: int32 }
+      - { name: height, type: int32 }
+      - { name: hMSL, type: int32 }
+      - { name: hAcc, type: uint32 }
+      - { name: vAcc, type: uint32 }
+
+  - name: GnssMonHwStructCapnp
+    fields:
+      - { name: noisePerMS, type: uint16 }
+      - { name: agcCnt, type: uint16 }
+      - { name: antStatus, type: uint8 }
+      - { name: antPower, type: uint8 }
+      - { name: flags, type: uint8 }
+      - { name: jamInd, type: uint8 }
+
+  - name: GnssMonHw2StructCapnp
+    fields:
+      - { name: ofsI, type: int8 }
+      - { name: magI, type: uint8 }
+      - { name: ofsQ, type: int8 }
+      - { name: magQ, type: uint8 }
+      - { name: cfgSrc, type: uint8 }
+      - { name: postStatus, type: uint32 }
+
+  - name: GpsVersionCapnp
+    fields:
+      - { name: hwString, type: string }
+      - { name: swString, type: string }
+      - { name: prot, type: string }
+
+  - name: UbxTimePulseStructCapnp
+    fields:
+      - { name: tpIndex, type: uint8 }
+      - { name: version, type: uint8 }
+      - { name: antCableDelay, type: int16 }
+      - { name: rfGroupDelay, type: int16 }
+      - { name: freqPeriod, type: uint32 }
+      - { name: freqPeriodLock, type: uint32 }
+      - { name: pulseLenRatio, type: uint32 }
+      - { name: pulseLenRatioLock, type: uint32 }
+      - { name: userConfigDelay, type: int32 }
+      - { name: flags, type: uint32 }
+
+# Commands
   - name: StartBurstSamplingCapnp
     fields:
       - { name: frequencyHz, type: uint32 }
