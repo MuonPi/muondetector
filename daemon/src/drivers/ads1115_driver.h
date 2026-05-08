@@ -41,6 +41,8 @@ class ADS1115Driver : public Source {
     void stopBurst();
 
   private:
+    auto dev() -> ADS1115*;
+    void onSampleReady(ADS1115::Sample sample);
     void scheduleBurst();
     DeviceRegistry& registry_;
     EventBus& bus_;

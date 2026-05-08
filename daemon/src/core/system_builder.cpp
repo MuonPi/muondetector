@@ -47,6 +47,7 @@
 // Data
 #include "data/events/ads1115_event.h"
 #include "data/events/gpio_event.h"
+#include "utility/logparameter.h"
 // #include "data/events/ubx_event.h"
 // #include "data/events/tcp_packet_event.h"
 
@@ -200,6 +201,27 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     //     bus->publish(UbxMsgPollCmd{UBX_MSG::MON_VER});
     // });
 
+    // every once in a while, send data to OLED
+    // ctx.scheduler->every(std::chrono::milliseconds(MuonPi::Config::Hardware::OLED::update_interval),[&ctx](){
+    // ctx.bus->publish(...);
+    // });
+
+    // set up cyclic timer monitoring following operational parameters:
+    // temp, vadc, vbias, ibias
+    // ctx.scheduler->every(std::chrono::milliseconds(Config::Hardware::monitor_interval),[&ctx](){
+    // ctx.bus->publish(...);
+    // });
+    ctx.bus->publish<LogParameter>(LogParameter(
+        "maxGeohashLength", std::to_string(config.maxGeohashLength), LogParameter::LOG_ONCE));
+    ctx.bus->publish<LogParameter>(LogParameter(
+        "softwareVersionString", MuonPi::Version::software.string(), LogParameter::LOG_ONCE));
+    ctx.bus->publish<LogParameter>(LogParameter(
+        "hardwareVersionString", MuonPi::Version::hardware.string(), LogParameter::LOG_ONCE));
+
+    //     m_geopos_manager.set_lockin_ready_callback(std::bind(&Daemon::onGeoPosLockInReady, this,
+    //     std::placeholders::_1));
+    // m_geopos_manager.set_valid_pos_callback(std::bind(&Daemon::onGeoPosValid, this,
+    // std::placeholders::_1)); m_geopos_manager.set_mode_config(config.position_mode_config);
     return ctx;
 }
 
