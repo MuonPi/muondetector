@@ -78,6 +78,9 @@ messages:
       - { name: logAge, type: uint64 }
       - { name: logRotationDuration, type: uint64 }
 
+  - name: EventTriggerEventCapnp
+    fields:
+      - { name: eventTrigger, type: uint8 }
 
 # UBLOX Events
   - name: UbxDopStructCapnp

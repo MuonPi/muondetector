@@ -31,6 +31,7 @@ struct LM75Event;
 struct MqttStatusEvent;
 struct SPIStatsEvent;
 struct ThresholdSettingEvent;
+struct EventTriggerEvent;
 struct GnssPosStruct;
 struct GnssMonHwStruct;
 struct GnssMonHw2Struct;
@@ -126,6 +127,7 @@ DECLARE_CODEC(LM75Event)
 DECLARE_CODEC(MqttStatusEvent)
 DECLARE_CODEC(SPIStatsEvent)
 DECLARE_CODEC(ThresholdSettingEvent)
+DECLARE_CODEC(EventTriggerEvent)
 DECLARE_CODEC(GnssPosStruct)
 DECLARE_CODEC(GnssMonHwStruct)
 DECLARE_CODEC(GnssMonHw2Struct)

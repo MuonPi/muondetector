@@ -62,6 +62,7 @@
 #include "data/events/bias_switch_event.h"
 #include "data/events/bias_voltage_event.h"
 #include "data/events/calib_event.h"
+#include "data/events/event_trigger_event.h"
 #include "data/events/gain_switch_event.h"
 #include "data/events/gpio_event.h"
 #include "data/events/gpio_inhibit_event.h"
@@ -928,6 +929,24 @@ auto CapnpCodec<ThresholdSettingEvent>::decode(const std::vector<std::uint8_t>& 
 }
 auto CapnpCodec<ThresholdSettingEvent>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_THRESHOLD);
+}
+
+auto CapnpCodec<EventTriggerEvent>::encode(const EventTriggerEvent& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<EventTriggerEventCapnp>();
+    root.setEventTrigger(static_cast<std::uint8_t>(event.eventTrigger));
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<EventTriggerEvent>::decode(const std::vector<std::uint8_t>& data)
+    -> EventTriggerEvent {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<EventTriggerEventCapnp>();
+    return {static_cast<GPIO_SIGNAL>(root.getEventTrigger())};
+}
+auto CapnpCodec<EventTriggerEvent>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_EVENTTRIGGER);
 }
 
 auto CapnpCodec<GnssPosStruct>::encode(const GnssPosStruct& event) -> std::vector<uint8_t> {

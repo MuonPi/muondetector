@@ -112,7 +112,7 @@ void sendCmdIfConnected(const std::shared_ptr<TcpConnection>& conn, const T& cmd
 } // namespace
 
 MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* parent)
-    : QMainWindow(parent), decoderMap{buildDecoderMap()}, m_io{io}, ui(new Ui::MainWindow) {
+    : QMainWindow(parent), ui(new Ui::MainWindow), decoderMap{buildDecoderMap()}, m_io{io} {
     qRegisterMetaType<GnssPosStruct>("GnssPosStruct");
     qRegisterMetaType<bool>("bool");
     qRegisterMetaType<I2cDeviceEntry>("I2cDeviceEntry");
