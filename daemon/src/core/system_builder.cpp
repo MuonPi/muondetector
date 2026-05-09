@@ -51,6 +51,9 @@
 // #include "data/events/ubx_event.h"
 // #include "data/events/tcp_packet_event.h"
 
+// Glue
+#include "core/event_bindings.h"
+
 #include <chrono>
 #include <memory>
 
@@ -116,24 +119,21 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
         logWarn("GPIO Driver not initializing.");
     }
 
-    // TODO: Replace this call with Sink Factory and make each sink subscribe to their events
+    // TODO: Replace this call with Sink Factory for all sinks
     // --- sinks ---
     auto tcp_sink = SinkFactory::createTcpSink(ctx.sinks);
-
-    // make tcp sink send data through tcp connections
-    ctx.bus->subscribe<Ads1115Event>([tcp_sink](const auto& ev) { tcp_sink->handle(ev); });
-    ctx.bus->subscribe<NavSat>([tcp_sink](const auto& ev) { tcp_sink->handle(ev); });
-    ctx.bus->subscribe<GpioEvent>([tcp_sink](const auto& ev) { tcp_sink->handle(ev); });
+    EventBindings::setup(*ctx.bus, *tcp_sink);
 
     // --- tcp_server ---
     // When server accepts a new TCP connection, call this handler.
     ctx.server = std::make_unique<TcpServer>(ctx.io, config.serverPort, tcp_sink);
 
     ctx.server->addConnectionHandler(
-        [tcp_source = ctx.components->get<TcpSource>(OtherComponent::TCP_SOURCE_0)](
-            const std::shared_ptr<TcpConnection>& connection) {
+        [tcp_source = ctx.components->get<TcpSource>(OtherComponent::TCP_SOURCE_0),
+         &bus = ctx.bus](const std::shared_ptr<TcpConnection>& connection) {
             if (tcp_source != nullptr) {
                 tcp_source->registerConnection(connection);
+                EventBindings::pollAllUbxMsgRate(*bus);
             } else {
                 logError("Nullpointer in creating connection handler for tcpsource. Make sure "
                          "components are initialized "
@@ -155,31 +155,8 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     ctx.bus->publish(UbxProtocolSelectionCmd{1, PROTO_UBX});
 
     // --- Message Rates ---
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::TIM_TM2, 1, 1});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::TIM_TP, 1, 0});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_TIMEUTC, 1, 131});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_HW, 1, 47});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_HW2, 1, 49});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_POSLLH, 1, 43});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_TIMEGPS, 1, 0});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_STATUS, 1, 71});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_CLOCK, 1, 189});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_RXBUF, 1, 53});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_TXBUF, 1, 51});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_SBAS, 1, 0});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_DOP, 1, 254});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_RXBUF, 1, 53});
-    ctx.bus->publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_RXBUF, 1, 53});
-    ctx.bus->publish(UbxSetAopCmd{true});
-
-    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_PRT});
-    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::MON_VER});
-    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_GNSS});
-    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_NAVX5});
-    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_ANT});
-    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_TP5});
-    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_PRT});
-    ctx.bus->publish(UbxMsgPollCmd{UBX_MSG::CFG_PRT});
+    EventBindings::initAllUbxMsgRate(*ctx.bus);
+    EventBindings::pollAllUbxMsgRate(*ctx.bus);
 
     std::uint16_t measinterval = 100;
     ctx.bus->publish(UbxRateCmd{measinterval, 1}); // set rate of messages and nav

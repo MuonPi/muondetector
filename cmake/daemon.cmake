@@ -157,6 +157,7 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/gpio_driver.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/calibration.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/gpio_mapping.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/logparameter.h"
 
     "${MUONDETECTOR_I2C_HEADER_FILES}"
     "${MUONDETECTOR_SPI_HEADER_FILES}"
