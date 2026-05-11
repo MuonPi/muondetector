@@ -1,7 +1,15 @@
-#include "datastore/log_parameter_processor.h"
+#include "components/log_parameter_processor.h"
 
+#include "core/event_bus.h"
 #include "core/logging/logger.h"
 #include "data/custom_io_operators.h"
+#include "data/events/bias_switch_event.h"
+#include "data/events/event_trigger_event.h"
+#include "data/events/gain_switch_event.h"
+#include "data/events/mcp4728_event.h"
+#include "data/events/polarity_switch_event.h"
+#include "data/events/preamp_switch_event.h"
+#include "data/events/threshold_setting_event.h"
 #include "data/ublox/ublox_messages.h"
 #include "data/ublox/ublox_structs.h"
 #include "utility/logparameter.h"
@@ -54,4 +62,7 @@ void LogParameterProcessor::setup(EventBus& bus) {
                      ")\nmsg: " + tempStream.str());
         }
     });
+}
+
+void LogParameterProcessor::poll(EventBus& bus, const DataStore& datastore) {
 }

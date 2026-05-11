@@ -2,6 +2,7 @@
 #define EVENT_BINDINGS_H
 
 #include "core/event_bus.h"
+#include "core/registries/data_store.h"
 #include "data/events/adc_mode_event.h"
 #include "data/events/adc_trace_event.h"
 #include "data/events/ads1115_event.h"
@@ -23,7 +24,6 @@
 #include "data/events/threshold_setting_event.h"
 #include "data/events/ubx_event.h"
 #include "data/events/version_event.h"
-#include "datastore/datastore.h"
 #include "sinks/tcp_sink.h"
 
 class EventBindings {
@@ -66,7 +66,7 @@ class EventBindings {
         bus.subscribe<VersionEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     }
 
-    inline static void setupDatastore(EventBus& bus, Datastore& datastore) {
+    inline static void setupDatastore(EventBus& bus, DataStore& datastore) {
 
         // just copied from top
         bus.subscribe<AdcTraceEvent>([&datastore](const auto& ev) { datastore.store(ev); });
