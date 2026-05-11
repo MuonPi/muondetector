@@ -18,6 +18,7 @@
 // Registries
 #include "core/event_bus.h"
 #include "core/registries/component_manager.h"
+#include "core/registries/data_store.h"
 #include "core/registries/device_registry.h"
 #include "core/registries/sink_manager.h"
 #include "network/tcpserver.h"
@@ -47,8 +48,8 @@
 // Data
 #include "data/events/ads1115_event.h"
 #include "data/events/gpio_event.h"
+#include "data/events/log_trigger_event.h"
 #include "data/events/status_led_event.h"
-#include "datastore/datastore.h"
 #include "utility/logparameter.h"
 // #include "data/events/ubx_event.h"
 // #include "data/events/tcp_packet_event.h"
@@ -74,7 +75,7 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     ctx.registry = std::make_unique<DeviceRegistry>();
     ctx.components = std::make_unique<ComponentManager>();
     ctx.sinks = std::make_unique<SinkManager>();
-    ctx.datastore = std::make_unique<Datastore>();
+    ctx.datastore = std::make_unique<DataStore>();
     ctx.bus = std::make_unique<EventBus>(pool);
     ctx.scheduler = std::make_unique<Scheduler>(pool);
     ctx.config = std::make_unique<SystemConfig>(std::move(config));
@@ -159,6 +160,9 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     ctx.scheduler->every(std::chrono::seconds(5), [server = ctx.server.get()]() {
         server->heartbeatAndCleanup(std::chrono::seconds(30));
     });
+
+    ctx.scheduler->every(MuonPi::Config::Log::interval,
+                         [bus = ctx.bus.get()]() { bus->publish(LogTriggerEvent{}); });
 
     // --- GPS default config ---
 
