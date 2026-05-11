@@ -4,11 +4,11 @@
 #include "app/system_config.h"
 #include "core/event_bus.h"
 #include "core/registries/component_manager.h"
+#include "core/registries/data_store.h"
 #include "core/registries/device_registry.h"
 #include "core/registries/sink_manager.h"
 #include "core/scheduler.h"
 #include "core/thread_pool.h"
-#include "datastore/datastore.h"
 #include "network/tcpserver.h"
 
 #include <boost/asio.hpp>
@@ -19,7 +19,7 @@ struct Context {
     std::unique_ptr<DeviceRegistry> registry;
     std::unique_ptr<ComponentManager> components;
     std::unique_ptr<SinkManager> sinks;
-    std::unique_ptr<Datastore> datastore;
+    std::unique_ptr<DataStore> datastore;
     std::unique_ptr<EventBus> bus;
     std::unique_ptr<TcpServer> server;
     std::unique_ptr<Scheduler> scheduler;

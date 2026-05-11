@@ -86,7 +86,7 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/adafruit_ssd1306_driver.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/gpio_driver.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/calibration.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/datastore/log_parameter_processor.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/components/log_parameter_processor.cpp"
 
     "${MUONDETECTOR_I2C_SOURCE_FILES}"
     "${MUONDETECTOR_SPI_SOURCE_FILES}"
@@ -159,8 +159,7 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/calibration.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/gpio_mapping.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/logparameter.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/datastore/log_parameter_processor.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/datastore/datastore.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/components/log_parameter_processor.h"
 
     "${MUONDETECTOR_I2C_HEADER_FILES}"
     "${MUONDETECTOR_SPI_HEADER_FILES}"
