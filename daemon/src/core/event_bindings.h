@@ -23,12 +23,13 @@
 #include "data/events/threshold_setting_event.h"
 #include "data/events/ubx_event.h"
 #include "data/events/version_event.h"
+#include "datastore/datastore.h"
 #include "sinks/tcp_sink.h"
 
 class EventBindings {
   public:
     // make tcp sink send data through tcp connections
-    inline static void setup(EventBus& bus, TcpSink& tcp_sink) {
+    inline static void setupTcpSink(EventBus& bus, TcpSink& tcp_sink) {
         bus.subscribe<AdcModeEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
         bus.subscribe<AdcTraceEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
         bus.subscribe<Ads1115Event>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
@@ -63,6 +64,44 @@ class EventBindings {
         bus.subscribe<LogInfoStruct>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
         bus.subscribe<PositionModeConfig>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
         bus.subscribe<VersionEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
+    }
+
+    inline static void setupDatastore(EventBus& bus, Datastore& datastore) {
+
+        // just copied from top
+        bus.subscribe<AdcTraceEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<Ads1115Event>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<BiasSwitchEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<BiasVoltageEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<CalibEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<GainSwitchEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<GpioRateEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<GpioInhibitEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<I2CStatsEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<LM75Event>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<MCP4728Event>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<MqttStatusEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<PcaSwitchEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<PolaritySwitchEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<PreampSwitchEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<SPIStatsEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<GpioEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<ThresholdSettingEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<NavSat>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<UbxMsgRates>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<CfgGNSS>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<UbxTimeMarkStruct>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<MonTx>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<MonRx>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<GnssMonHwStruct>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<GnssMonHw2Struct>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<GpsVersion>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<NavStatus>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<UbxTimePulseStruct>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<Histogram>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<LogInfoStruct>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<PositionModeConfig>([&datastore](const auto& ev) { datastore.store(ev); });
+        bus.subscribe<VersionEvent>([&datastore](const auto& ev) { datastore.store(ev); });
     }
 
     inline static void initAllUbxMsgRate(EventBus& bus) {

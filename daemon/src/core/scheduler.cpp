@@ -84,6 +84,13 @@ void Scheduler::once(std::function<void()> func, time_point time) {
     schedule(func, time);
 }
 
+void Scheduler::once(std::function<void()> func, std::size_t milliseconds) {
+    auto now = used_clock::now();
+    auto time =
+        now + static_cast<used_clock::duration>(milliseconds * static_cast<std::size_t>(1e6));
+    schedule(func, time);
+}
+
 void Scheduler::schedule(std::function<void()> func, time_point time,
                          std::chrono::milliseconds interval) {
     {
