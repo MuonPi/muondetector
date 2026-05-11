@@ -191,7 +191,8 @@ void GpioDriver::eventLoop() {
     logDebug("Finished GPIO event loop");
 }
 
-bool GpioDriver::configureLines(const std::vector<unsigned int>& gpios, const LineConfig& cfg) {
+auto GpioDriver::configureLines(const std::vector<unsigned int>& gpios,
+                                const LineConfig& cfg) -> bool {
 
     if (gpios.empty())
         return true;
@@ -247,7 +248,11 @@ bool GpioDriver::configureLines(const std::vector<unsigned int>& gpios, const Li
     return true;
 }
 
-bool GpioDriver::writeGpio(unsigned int gpio, bool value) {
+auto GpioDriver::writeSignal(GPIO_SIGNAL sig, bool value) -> bool {
+    return writeGpio(pinmap_.at(sig), value);
+}
+
+auto GpioDriver::writeGpio(unsigned int gpio, bool value) -> bool {
 
     auto it = gpioMap.find(gpio);
     if (it == gpioMap.end())
