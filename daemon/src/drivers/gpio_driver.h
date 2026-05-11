@@ -27,13 +27,14 @@ class GpioDriver : public Component {
     ~GpioDriver();
 
     void init(const MuonPi::Version::Version& hardwareVersion);
-    bool writeGpio(unsigned int gpio, bool value);
+    auto writeSignal(GPIO_SIGNAL sig, bool value) -> bool;
 
   private:
-    bool configureLines(const std::vector<unsigned int>& gpios, const LineConfig& cfg);
+    auto configureLines(const std::vector<unsigned int>& gpios, const LineConfig& cfg) -> bool;
     void eventLoop();
     void start();
     void stop();
+    auto writeGpio(unsigned int gpio, bool value) -> bool;
     gpiod_chip* chip = nullptr;
     EventBus& bus_;
 

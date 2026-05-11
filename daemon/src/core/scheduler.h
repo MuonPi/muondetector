@@ -22,6 +22,7 @@ class Scheduler {
 
     void every(std::chrono::milliseconds interval, std::function<void()> func);
     void once(std::function<void()> func, time_point time);
+    void once(std::function<void()> func, std::size_t milliseconds);
 
   private:
     void schedule(std::function<void()> func, time_point time,

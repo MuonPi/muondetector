@@ -47,6 +47,8 @@
 // Data
 #include "data/events/ads1115_event.h"
 #include "data/events/gpio_event.h"
+#include "data/events/status_led_event.h"
+#include "datastore/datastore.h"
 #include "utility/logparameter.h"
 // #include "data/events/ubx_event.h"
 // #include "data/events/tcp_packet_event.h"
@@ -72,6 +74,7 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     ctx.registry = std::make_unique<DeviceRegistry>();
     ctx.components = std::make_unique<ComponentManager>();
     ctx.sinks = std::make_unique<SinkManager>();
+    ctx.datastore = std::make_unique<Datastore>();
     ctx.bus = std::make_unique<EventBus>(pool);
     ctx.scheduler = std::make_unique<Scheduler>(pool);
     ctx.config = std::make_unique<SystemConfig>(std::move(config));
@@ -115,6 +118,17 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     auto gpio_driver = ctx.components->get<GpioDriver>(OtherComponent::GPIO_DRIVER_0);
     if (gpio_driver != nullptr) {
         gpio_driver->init(MuonPi::Version::hardware);
+
+        // Setup status LED timing
+        ctx.bus->subscribe<StatusLedEvent>(
+            [gpio_driver, &scheduler = *ctx.scheduler](const StatusLedEvent& event) {
+                gpio_driver->writeSignal(event.sig, event.on);
+                if (event.durationMillisec >= 0) {
+                    scheduler.once([gpio_driver,
+                                    event]() { gpio_driver->writeSignal(event.sig, !(event.on)); },
+                                   static_cast<std::size_t>(event.durationMillisec));
+                }
+            });
     } else {
         logWarn("GPIO Driver not initializing.");
     }
@@ -122,7 +136,7 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     // TODO: Replace this call with Sink Factory for all sinks
     // --- sinks ---
     auto tcp_sink = SinkFactory::createTcpSink(ctx.sinks);
-    EventBindings::setup(*ctx.bus, *tcp_sink);
+    EventBindings::setupTcpSink(*ctx.bus, *tcp_sink);
 
     // --- tcp_server ---
     // When server accepts a new TCP connection, call this handler.
