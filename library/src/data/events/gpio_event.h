@@ -8,7 +8,7 @@
 struct GpioEvent {
     GPIO_SIGNAL gpio_signal;
     unsigned int gpio_pin;
-    std::chrono::nanoseconds timestamp;
+    std::chrono::steady_clock::time_point timestamp;
     EventEdge edge;
 };
 

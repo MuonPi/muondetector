@@ -4,6 +4,7 @@
 #include "thread_pool.h"
 
 #include <functional>
+#include <mutex>
 #include <typeindex>
 #include <unordered_map>
 
@@ -13,30 +14,43 @@ class EventBus {
     ~EventBus();
 
     template <typename T>
-    void publish(const T& event);
+    void publish(T&& event);
 
     template <typename T>
     void subscribe(std::function<void(const T&)> handler);
 
   private:
+    std::mutex mutex;
     std::unordered_map<std::type_index, std::vector<std::function<void(const void*)>>> subscribers;
     ThreadPool& threadPool;
 };
 
 template <typename T>
-void EventBus::publish(const T& event) {
-    auto it = subscribers.find(typeid(T));
-    if (it == subscribers.end())
-        return;
+void EventBus::publish(T&& event) {
+    using EventType = std::decay_t<T>;
 
-    for (auto& handler : it->second) {
-        T copy = event;
+    std::vector<std::function<void(const void*)>> handlers;
 
-        threadPool.enqueue([handler, copy]() { handler(&copy); });
+    {
+        std::scoped_lock lock{mutex};
+
+        auto it = subscribers.find(typeid(EventType));
+        if (it == subscribers.end())
+            return;
+
+        handlers = it->second;
+    }
+
+    auto shared_event = std::make_shared<EventType>(std::forward<T>(event));
+
+    for (auto& handler : handlers) {
+        threadPool.enqueue([handler, shared_event]() { handler(shared_event.get()); });
     }
 }
+
 template <typename T>
 void EventBus::subscribe(std::function<void(const T&)> handler) {
+    std::lock_guard<std::mutex> lock{mutex};
     subscribers[typeid(T)].push_back(
         [handler](const void* e) { handler(*static_cast<const T*>(e)); });
 }

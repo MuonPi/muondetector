@@ -29,7 +29,13 @@
 
 SerialUblox::SerialUblox(ComponentId id, boost::asio::io_context& io, const std::string& port,
                          unsigned int baud, EventBus& bus)
-    : Component(id), serial_(io), timer_(io), port_(port), baud_(baud), bus_(bus) {
+    : Component(id)
+    , serial_(io)
+    , timer_(io)
+    , strand_(boost::asio::make_strand(io))
+    , port_(port)
+    , baud_(baud)
+    , bus_(bus) {
     makeConnection();
     bus_.subscribe<UbxRateCmd>([this](const UbxRateCmd& cmd) { handle(cmd); });
     bus_.subscribe<UbxMsgPollCmd>([this](const UbxMsgPollCmd& cmd) { handle(cmd); });
@@ -162,32 +168,29 @@ auto SerialUblox::parseStreamForMsg(std::string& buffer)
 }
 
 auto SerialUblox::enqueueMessage(const UbxMessage& msg) -> bool {
-    if (tx_queue_.size() >= maxQueueSize_) {
-        return false; // caller must handle
-    }
-    bool write_in_progress = !tx_queue_.empty();
+    boost::asio::post(strand_, [this, data = msg.raw_message_string()]() mutable {
+        bool write_in_progress = !tx_queue_.empty();
 
-    if (!serial_.is_open()) {
-        logWarn("Serial port not open on enqueuMessage.");
-    }
+        tx_queue_.push(std::move(data));
 
-    tx_queue_.emplace(std::move(msg));
-    if (!write_in_progress) {
-        do_write();
-    }
+        if (!write_in_progress)
+            do_write();
+    });
+
     return true;
 }
 
 void SerialUblox::do_write() {
-    boost::asio::async_write(serial_, boost::asio::buffer(tx_queue_.front().raw_message_string()),
-                             [this](boost::system::error_code ec, std::size_t) {
-                                 if (!ec) {
-                                     tx_queue_.pop();
-                                     if (!tx_queue_.empty()) {
-                                         do_write(); // next write starts AFTER previous finishes
-                                     }
-                                 }
-                             });
+    boost::asio::async_write(
+        serial_, boost::asio::buffer(tx_queue_.front()),
+        boost::asio::bind_executor(strand_, [this](boost::system::error_code ec, std::size_t) {
+            if (!ec) {
+                tx_queue_.pop();
+
+                if (!tx_queue_.empty())
+                    do_write();
+            }
+        }));
 }
 
 void SerialUblox::handle(const UbxRateCmd& cmd) {
