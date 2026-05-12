@@ -46,6 +46,9 @@ constexpr std::chrono::seconds keepalive_interval{45};
 constexpr const char* data_topic{"muonpi/data/"};
 constexpr const char* log_topic{"muonpi/log/"};
 } // namespace MQTT
+namespace Histogram {
+constexpr std::chrono::seconds interval{60};
+} // namespace Histogram
 namespace Log {
 constexpr std::chrono::seconds interval{60};
 constexpr int max_geohash_length_default{6};

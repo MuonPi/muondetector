@@ -3,6 +3,7 @@
 
 #include "core/event_bus.h"
 #include "core/registries/data_store.h"
+#include "data/commands/histogram_request_cmd.h"
 #include "data/events/adc_mode_event.h"
 #include "data/events/adc_trace_event.h"
 #include "data/events/ads1115_event.h"
@@ -67,7 +68,6 @@ class EventBindings {
     }
 
     inline static void setupDatastore(EventBus& bus, DataStore& datastore) {
-
         // just copied from top
         bus.subscribe<AdcTraceEvent>([&datastore](const auto& ev) { datastore.store(ev); });
         bus.subscribe<Ads1115Event>([&datastore](const auto& ev) { datastore.store(ev); });
@@ -102,6 +102,14 @@ class EventBindings {
         bus.subscribe<LogInfoStruct>([&datastore](const auto& ev) { datastore.store(ev); });
         bus.subscribe<PositionModeConfig>([&datastore](const auto& ev) { datastore.store(ev); });
         bus.subscribe<VersionEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+
+        // Send histograms
+        bus.subscribe<HistogramRequestCmd>([&bus, &datastore]([[maybe_unused]] const auto&) {
+            for (const auto& [name, hist] : datastore.allHistos()) {
+                hist->rescale();
+                bus.publish(*hist);
+            }
+        });
     }
 
     inline static void initAllUbxMsgRate(EventBus& bus) {

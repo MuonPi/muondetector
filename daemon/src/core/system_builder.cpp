@@ -33,6 +33,7 @@
 #include "hardware/ublox/serialublox.h"
 
 // Ublox
+#include "data/commands/histogram_clear_cmd.h"
 #include "data/commands/ubx_msg_poll_cmd.h"
 #include "data/commands/ubx_msg_rate_cmd.h"
 #include "data/commands/ubx_protocol_selection_cmd.h"
@@ -81,6 +82,14 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     ctx.bus = std::make_unique<EventBus>(pool);
     ctx.scheduler = std::make_unique<Scheduler>(pool);
     ctx.config = std::make_unique<SystemConfig>(std::move(config));
+
+    // --- datastore ---
+    ctx.datastore->setupHistos();
+    ctx.bus->subscribe<HistogramClearCmd>(
+        [&datastore = *ctx.datastore, &bus = *ctx.bus](const HistogramClearCmd& cmd) {
+            bus.publish(datastore.clearHisto(cmd.histogramName));
+        });
+    // sendHistogram(*m_histo_map[histoName]);
 
     // --- hardware ---
     DeviceFactory::i2cReset();
@@ -170,6 +179,8 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     ctx.scheduler->every(MuonPi::Config::Log::interval,
                          [bus = ctx.bus.get()]() { bus->publish(LogTriggerEvent{}); });
 
+    ctx.scheduler->every(MuonPi::Config::Histogram::interval,
+                         [bus = ctx.bus.get()]() { bus->publish(HistogramRequestCmd{}); });
     // --- GPS default config ---
 
     // set dynamic model: Stationary
