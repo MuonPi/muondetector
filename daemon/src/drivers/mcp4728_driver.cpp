@@ -94,6 +94,7 @@ MCP4728Driver::MCP4728Driver(ComponentId id, SystemConfig& systemConfig, DeviceR
 auto MCP4728Driver::dev() -> MCP4728* {
     auto* wrapper = registry_.get<I2CDeviceWrapper<MCP4728>>(std::get<Device>(id()));
     if (!wrapper) {
+        logWarn("MCP4728 Device not found");
         return nullptr;
     }
 
@@ -132,7 +133,7 @@ auto MCP4728Driver::readAll(MCP4728* dev) -> MCP4728Event {
         std::stringstream sstr;
         sstr << " ch" << static_cast<unsigned>(channel) << ": " << event.dacValues.at(channel)
              << "=" << event.voltages.at(channel) << " V"
-             << "  (stored:" << event.eepromValues.value().at(channel) << "="
+             << "  (stored:" << eepromData.at(channel).value << "="
              << MCP4728::code2voltage(eepromData.at(channel)) << "V)";
         logInfo(sstr.str());
     }
