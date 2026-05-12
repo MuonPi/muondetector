@@ -197,7 +197,9 @@ auto CapnpCodec<GpioEvent>::encode(const GpioEvent& event) -> std::vector<uint8_
 
     root.setSig(static_cast<std::uint8_t>(event.gpio_signal));
     root.setPin(static_cast<std::uint8_t>(event.gpio_pin));
-    root.setTimestamp(static_cast<std::uint8_t>(event.timestamp.count()));
+    root.setTimestamp(static_cast<std::uint64_t>(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(event.timestamp.time_since_epoch())
+            .count()));
     root.setEdge(static_cast<std::uint8_t>(event.edge));
 
     auto flat = capnp::messageToFlatArray(msg);
@@ -215,8 +217,8 @@ auto CapnpCodec<GpioEvent>::decode(const std::vector<std::uint8_t>& data) -> Gpi
     event.gpio_signal = static_cast<GPIO_SIGNAL>(root.getSig());
     event.gpio_pin = static_cast<unsigned int>(root.getPin());
 
-    // WARNING: currently lossy encoding
-    event.timestamp = std::chrono::nanoseconds(root.getTimestamp());
+    event.timestamp =
+        std::chrono::steady_clock::time_point(std::chrono::nanoseconds(root.getTimestamp()));
 
     event.edge = static_cast<EventEdge>(root.getEdge());
 

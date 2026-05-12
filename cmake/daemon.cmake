@@ -76,6 +76,7 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/ublox/serialublox.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/ublox/message_processor.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/tcp_sink.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/mqtt_sink.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/tcp_source.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/temp_source.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/tcp_command_decoder.cpp"
@@ -85,6 +86,7 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/pca9536_driver.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/adafruit_ssd1306_driver.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/gpio_driver.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/gpio_ratebuffer.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/calibration.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/components/log_parameter_processor.cpp"
 
@@ -156,6 +158,7 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/pca9536_driver.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/adafruit_ssd1306_driver.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/drivers/gpio_driver.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/gpio_ratebuffer.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/calibration.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/gpio_mapping.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/logparameter.h"

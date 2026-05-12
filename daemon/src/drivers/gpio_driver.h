@@ -5,6 +5,8 @@
 #include "core/component.h"
 #include "core/event_bus.h"
 #include "core/registries/device_registry.h"
+#include "data/events/gpio_event.h"
+#include "gpio_pin_definitions.h"
 #include "utility/gpio_mapping.h"
 
 #include <atomic>
@@ -17,6 +19,7 @@
 #include <unordered_map>
 #include <vector>
 
+class EventRateBuffer;
 class GpioDriver : public Component {
   public:
     struct GpioLine {
@@ -32,6 +35,7 @@ class GpioDriver : public Component {
   private:
     auto configureLines(const std::vector<unsigned int>& gpios, const LineConfig& cfg) -> bool;
     void eventLoop();
+    void processEvent(GpioEvent&& event);
     void start();
     void stop();
     auto writeGpio(unsigned int gpio, bool value) -> bool;
@@ -45,6 +49,8 @@ class GpioDriver : public Component {
     std::set<gpiod_line_request*> outputRequests;
     std::map<unsigned int, GpioLine> gpioMap;
     std::map<int, gpiod_line_request*> fdMap;
+
+    std::unordered_map<GPIO_SIGNAL, std::shared_ptr<EventRateBuffer>> gpioRatebuffers;
 
     std::thread worker;
     int control_fd{-1};
