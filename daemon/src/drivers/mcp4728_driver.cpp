@@ -133,7 +133,7 @@ auto MCP4728Driver::readAll(MCP4728* dev) -> MCP4728Event {
         std::stringstream sstr;
         sstr << " ch" << static_cast<unsigned>(channel) << ": " << event.dacValues.at(channel)
              << "=" << event.voltages.at(channel) << " V"
-             << "  (stored:" << event.eepromValues.value().at(channel) << "="
+             << "  (stored:" << eepromData.at(channel).value << "="
              << MCP4728::code2voltage(eepromData.at(channel)) << "V)";
         logInfo(sstr.str());
     }
