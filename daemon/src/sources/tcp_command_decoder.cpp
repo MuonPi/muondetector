@@ -9,8 +9,8 @@
 #include "data/commands/burst_sampling_cmd.h"
 #include "data/commands/calibration_cmd.h"
 #include "data/commands/calibration_save_cmd.h"
+#include "data/commands/dac_cmd.h"
 #include "data/commands/dac_eeprom_set_cmd.h"
-#include "data/commands/dac_request_cmd.h"
 #include "data/commands/gain_switch_cmd.h"
 #include "data/commands/gpio_rate_request_cmd.h"
 #include "data/commands/gpio_rate_reset_cmd.h"
@@ -22,7 +22,6 @@
 #include "data/commands/polarity_switch_cmd.h"
 #include "data/commands/preamp_switch_cmd.h"
 #include "data/commands/temperature_request_cmd.h"
-#include "data/commands/threshold_request_cmd.h"
 #include "data/commands/threshold_setting_cmd.h"
 #include "data/commands/ubx_default_config_cmd.h"
 #include "data/commands/ubx_msg_poll_rate_cmd.h"
@@ -45,10 +44,6 @@ void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
 
     try {
         switch (key) {
-            case TCP_MSG_KEY::MSG_THRESHOLD: {
-                bus_.publish(CapnpCodec<ThresholdSettingCmd>::decode(event.packet.payload));
-                break;
-            }
             case TCP_MSG_KEY::MSG_UBX_MSG_RATE: {
                 bus_.publish(CapnpCodec<UbxMsgRateCmd>::decode(event.packet.payload));
                 break;
@@ -97,40 +92,64 @@ void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
                 bus_.publish(CapnpCodec<CalibSaveCmd>::decode(event.packet.payload));
                 break;
             }
+            case TCP_MSG_KEY::MSG_PREAMP_SWITCH: {
+                bus_.publish(CapnpCodec<PreampSwitchCmd>::decode(event.packet.payload));
+                break;
+            }
             case TCP_MSG_KEY::MSG_PREAMP_SWITCH_REQUEST: {
                 bus_.publish(CapnpCodec<PreampSwitchRequestCmd>::decode(event.packet.payload));
+                break;
+            }
+            case TCP_MSG_KEY::MSG_GAIN_SWITCH: {
+                bus_.publish(CapnpCodec<GainSwitchCmd>::decode(event.packet.payload));
                 break;
             }
             case TCP_MSG_KEY::MSG_GAIN_SWITCH_REQUEST: {
                 bus_.publish(CapnpCodec<GainSwitchRequestCmd>::decode(event.packet.payload));
                 break;
             }
-            case TCP_MSG_KEY::MSG_THRESHOLD_REQUEST: {
-                bus_.publish(CapnpCodec<ThresholdRequestCmd>::decode(event.packet.payload));
+            case TCP_MSG_KEY::MSG_THRESHOLD: {
+                bus_.publish(CapnpCodec<ThresholdSettingCmd>::decode(event.packet.payload));
                 break;
             }
-            case TCP_MSG_KEY::MSG_PCA_SWITCH_REQUEST: {
-                bus_.publish(CapnpCodec<PcaSwitchRequestCmd>::decode(event.packet.payload));
+            case TCP_MSG_KEY::MSG_THRESHOLD_REQUEST: {
+                bus_.publish(CapnpCodec<ThresholdSettingRequestCmd>::decode(event.packet.payload));
+                break;
+            }
+            case TCP_MSG_KEY::MSG_PCA_SWITCH: {
+                bus_.publish(CapnpCodec<PcaSwitchCmd>::decode(event.packet.payload));
                 break;
             }
             case TCP_MSG_KEY::MSG_ADC_MODE_REQUEST: {
                 bus_.publish(CapnpCodec<AdcModeRequestCmd>::decode(event.packet.payload));
                 break;
             }
+            case TCP_MSG_KEY::MSG_POLARITY_SWITCH: {
+                bus_.publish(CapnpCodec<PolaritySwitchCmd>::decode(event.packet.payload));
+                break;
+            }
             case TCP_MSG_KEY::MSG_POLARITY_SWITCH_REQUEST: {
                 bus_.publish(CapnpCodec<PolaritySwitchRequestCmd>::decode(event.packet.payload));
                 break;
             }
-            case TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST: {
-                bus_.publish(CapnpCodec<BiasVoltageRequestCmd>::decode(event.packet.payload));
+            case TCP_MSG_KEY::MSG_BIAS_VOLTAGE: {
+                bus_.publish(CapnpCodec<BiasVoltageCmd>::decode(event.packet.payload));
                 break;
             }
             case TCP_MSG_KEY::MSG_BIAS_SWITCH_REQUEST: {
                 bus_.publish(CapnpCodec<BiasSwitchRequestCmd>::decode(event.packet.payload));
                 break;
             }
+            case TCP_MSG_KEY::MSG_DAC_SET: {
+                bus_.publish(CapnpCodec<DacCmd>::decode(event.packet.payload));
+                break;
+            }
             case TCP_MSG_KEY::MSG_DAC_REQUEST: {
                 bus_.publish(CapnpCodec<DacRequestCmd>::decode(event.packet.payload));
+                break;
+            }
+            case TCP_MSG_KEY::MSG_DAC_EEPROM_SET: {
+                bus_.publish(CapnpCodec<DacEepromSetCmd>::decode(event.packet.payload));
                 break;
             }
             case TCP_MSG_KEY::MSG_ADC_SAMPLE_REQUEST: {
@@ -139,10 +158,6 @@ void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
             }
             case TCP_MSG_KEY::MSG_TEMPERATURE_REQUEST: {
                 bus_.publish(CapnpCodec<TemperatureRequestCmd>::decode(event.packet.payload));
-                break;
-            }
-            case TCP_MSG_KEY::MSG_DAC_EEPROM_SET: {
-                bus_.publish(CapnpCodec<DacEepromSetCmd>::decode(event.packet.payload));
                 break;
             }
             case TCP_MSG_KEY::MSG_HISTOGRAM_CLEAR: {

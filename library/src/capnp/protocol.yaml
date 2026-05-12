@@ -156,11 +156,6 @@ messages:
       - { name: frequencyHz, type: uint32 }
       - { name: samples, type: uint32 }
 
-  - name: ThresholdSettingsCmdCapnp
-    fields:
-      - { name: channel, type: uint8 }
-      - { name: threshold, type: float }
-
   - name: MqttInhibitCmdCapnp
     fields:
       - { name: inhibit, type: bool }
@@ -183,15 +178,31 @@ messages:
   - name: CalibSaveCmdCapnp
     fields: []
 
-  - name: PreampSwitchRequestCmdCapnp
+  - name: PreampSwitchCmdCapnp
     fields:
       - { name: channel, type: uint8 }
+
+  - name: PreampSwitchRequestCmdCapnp
+    fields: []
+
+  - name: GainSwitchCmdCapnp
+    fields:
+      - { name: state, type: bool }
 
   - name: GainSwitchRequestCmdCapnp
     fields: []
 
-  - name: ThresholdRequestCmdCapnp
+  - name: ThresholdSettingCmdCapnp
+    fields:
+      - { name: channel, type: uint8 }
+      - { name: threshold, type: float }
+
+  - name: ThresholdSettingRequestCmdCapnp
     fields: []
+
+  - name: PcaSwitchCmdCapnp
+    fields:
+      - { name: pcaPortMask, type: uint8 }
 
   - name: PcaSwitchRequestCmdCapnp
     fields: []
@@ -199,18 +210,36 @@ messages:
   - name: AdcModeRequestCmdCapnp
     fields: []
 
+  - name: PolaritySwitchCmdCapnp
+    fields:
+      - { name: pol1, type: bool }
+      - { name: pol2, type: bool }
+
   - name: PolaritySwitchRequestCmdCapnp
     fields: []
+
+  - name: BiasVoltageCmdCapnp
+    fields:
+      - { name: channel, type: uint8 }
+      - { name: voltage, type: float }
 
   - name: BiasVoltageRequestCmdCapnp
     fields: []
 
+  - name: BiasSwitchCmdCapnp
+    fields:
+      - { name: state, type: bool }
+
   - name: BiasSwitchRequestCmdCapnp
     fields: []
 
-  - name: DacRequestCmdCapnp
+  - name: DacCmdCapnp
     fields:
       - { name: channel, type: uint8 }
+      - { name: value, type: uint8 }
+
+  - name: DacRequestCmdCapnp
+    fields: []
 
   - name: AdcSampleRequestCmdCapnp
     fields:
@@ -228,7 +257,7 @@ messages:
 
   - name: GpioRateRequestCmdCapnp
     fields:
-      - { name: whichRate, type: uint8 }
+      - { name: nPoints, type: uint8 }
 
 # UBLOX Commands
   - name: UbxMinCnoCmdCapnp

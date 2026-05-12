@@ -32,8 +32,8 @@
 #include <data/commands/burst_sampling_cmd.h>
 #include <data/commands/calibration_cmd.h>
 #include <data/commands/calibration_save_cmd.h>
+#include <data/commands/dac_cmd.h>
 #include <data/commands/dac_eeprom_set_cmd.h>
-#include <data/commands/dac_request_cmd.h>
 #include <data/commands/gain_switch_cmd.h>
 #include <data/commands/gpio_rate_request_cmd.h>
 #include <data/commands/gpio_rate_reset_cmd.h>
@@ -45,7 +45,6 @@
 #include <data/commands/polarity_switch_cmd.h>
 #include <data/commands/preamp_switch_cmd.h>
 #include <data/commands/temperature_request_cmd.h>
-#include <data/commands/threshold_request_cmd.h>
 #include <data/commands/threshold_setting_cmd.h>
 #include <data/commands/ubx_default_config_cmd.h>
 #include <data/commands/ubx_msg_poll_rate_cmd.h>
@@ -362,7 +361,7 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
             &ParameterMonitorForm::onTimeMarkReceived);
     connect(this, &MainWindow::daemonVersionReceived, paramTab,
             &ParameterMonitorForm::onDaemonVersionReceived);
-    connect(paramTab, &ParameterMonitorForm::adcModeChanged, this, &MainWindow::onAdcModeChanged);
+    connect(paramTab, &ParameterMonitorForm::setAdcMode, this, &MainWindow::sendSetAdcMode);
     connect(paramTab, &ParameterMonitorForm::setDacVoltage, this, &MainWindow::sendSetThresh);
     connect(paramTab, &ParameterMonitorForm::preamp1EnableChanged, this,
             &MainWindow::sendPreamp1Switch);
@@ -828,40 +827,40 @@ void MainWindow::sendRequestUbxMsgRates() {
 }
 
 void MainWindow::sendSetBiasVoltage(float voltage) {
-    BiasVoltageEvent cmd{};
+    BiasVoltageCmd cmd{};
     cmd.voltage = voltage;
     sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_BIAS_VOLTAGE,
-                          CapnpCodec<BiasVoltageEvent>::encode(cmd));
+                          CapnpCodec<BiasVoltageCmd>::encode(cmd));
 }
 
 void MainWindow::sendSetBiasStatus(bool status) {
-    BiasSwitchEvent cmd{};
-    cmd.biasOn = status;
+    BiasSwitchCmd cmd{};
+    cmd.state = status;
     sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_BIAS_SWITCH,
-                          CapnpCodec<BiasSwitchEvent>::encode(cmd));
+                          CapnpCodec<BiasSwitchCmd>::encode(cmd));
 }
 
 void MainWindow::sendGainSwitch(bool status) {
-    GainSwitchEvent cmd{};
+    GainSwitchCmd cmd{};
     cmd.state = status;
     sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_GAIN_SWITCH,
-                          CapnpCodec<GainSwitchEvent>::encode(cmd));
+                          CapnpCodec<GainSwitchCmd>::encode(cmd));
 }
 
 void MainWindow::sendPreamp1Switch(bool status) {
-    PreampSwitchEvent cmd{};
+    PreampSwitchCmd cmd{};
     cmd.channel = 0;
     cmd.state = status;
     sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_PREAMP_SWITCH,
-                          CapnpCodec<PreampSwitchEvent>::encode(cmd));
+                          CapnpCodec<PreampSwitchCmd>::encode(cmd));
 }
 
 void MainWindow::sendPreamp2Switch(bool status) {
-    PreampSwitchEvent cmd{};
+    PreampSwitchCmd cmd{};
     cmd.channel = 1;
     cmd.state = status;
     sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_PREAMP_SWITCH,
-                          CapnpCodec<PreampSwitchEvent>::encode(cmd));
+                          CapnpCodec<PreampSwitchCmd>::encode(cmd));
 }
 
 void MainWindow::sendSetThresh(uint8_t channel, float value) {
@@ -891,14 +890,14 @@ void MainWindow::onHistogramCleared(QString histogramName) {
     sendCmdIfConnected(clientConn, HistogramClearCmd{histogramName.toStdString()});
 }
 
-void MainWindow::onAdcModeChanged(ADC_SAMPLING_MODE mode) {
+void MainWindow::sendSetAdcMode(ADC_SAMPLING_MODE mode) {
     AdcModeEvent cmd{};
     cmd.mode = static_cast<std::uint8_t>(mode);
     sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_ADC_MODE,
                           CapnpCodec<AdcModeEvent>::encode(cmd));
 }
 
-void MainWindow::onRateScanStart(uint8_t ch) {
+void MainWindow::sendRateScanStart(uint8_t ch) {
     Q_UNUSED(ch)
     sendCmdIfConnected(clientConn, StartBurstSampling{10, 100});
 }
@@ -918,13 +917,11 @@ void MainWindow::onSetTP5Config(const UbxTimePulseStruct& tp) {
 }
 
 void MainWindow::sendRequestGpioRates() {
-    sendCmdIfConnected(clientConn, GpioRateRequestCmd{0});
-    sendCmdIfConnected(clientConn, GpioRateRequestCmd{1});
+    sendCmdIfConnected(clientConn, GpioRateRequestCmd{.n_points = 5});
 }
 
 void MainWindow::sendRequestGpioRateBuffer() {
-    sendCmdIfConnected(clientConn, GpioRateRequestCmd{0});
-    sendCmdIfConnected(clientConn, GpioRateRequestCmd{1});
+    sendCmdIfConnected(clientConn, GpioRateRequestCmd{.n_points = 0});
 }
 
 void MainWindow::resetAndHit() {
@@ -1019,10 +1016,9 @@ void MainWindow::connected() {
     saveSettings(addresses);
     uiSetConnectedState();
     sendValueUpdateRequests();
-    sendCmdIfConnected(clientConn, PreampSwitchRequestCmd{0});
-    sendCmdIfConnected(clientConn, PreampSwitchRequestCmd{1});
+    sendCmdIfConnected(clientConn, PreampSwitchRequestCmd{});
     sendCmdIfConnected(clientConn, GainSwitchRequestCmd{});
-    sendCmdIfConnected(clientConn, ThresholdRequestCmd{});
+    sendCmdIfConnected(clientConn, ThresholdSettingRequestCmd{});
     sendCmdIfConnected(clientConn, PcaSwitchRequestCmd{});
     sendRequestUbxMsgRates();
     sendRequestGpioRateBuffer();
@@ -1046,8 +1042,7 @@ void MainWindow::connection_error(int error_code, const QString message) {
 void MainWindow::sendValueUpdateRequests() {
     sendCmdIfConnected(clientConn, BiasVoltageRequestCmd{});
     sendCmdIfConnected(clientConn, BiasSwitchRequestCmd{});
-    for (int i = 0; i < 4; i++)
-        sendCmdIfConnected(clientConn, DacRequestCmd{static_cast<std::uint8_t>(i)});
+    sendCmdIfConnected(clientConn, DacRequestCmd{});
     for (int i = 1; i < 4; i++)
         sendCmdIfConnected(clientConn, AdcSampleRequestCmd{static_cast<std::uint8_t>(i)});
     sendCmdIfConnected(clientConn, TemperatureRequestCmd{});
@@ -1149,10 +1144,10 @@ void MainWindow::sendInputSwitch(TIMING_MUX_SELECTION sel) {
     if (sel == TIMING_MUX_SELECTION::UNDEFINED) {
         return;
     }
-    PcaSwitchEvent cmd{};
+    PcaSwitchCmd cmd{};
     cmd.pcaPortMask = static_cast<std::uint8_t>(sel);
     sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_PCA_SWITCH,
-                          CapnpCodec<PcaSwitchEvent>::encode(cmd));
+                          CapnpCodec<PcaSwitchCmd>::encode(cmd));
 }
 
 void MainWindow::on_biasVoltageSlider_sliderReleased() {

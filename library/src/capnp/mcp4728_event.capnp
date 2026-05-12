@@ -4,6 +4,7 @@ struct MCP4728EventCapnp {
   dacValues @0 :List(DacEntry);
   eepromValues @1 :List(EepromEntry);
   voltages @2 :List(VoltageEntry);
+  hasEepromValue @3 :Bool;
 }
 
 struct DacEntry {
