@@ -171,7 +171,7 @@ auto SerialUblox::enqueueMessage(const UbxMessage& msg) -> bool {
         logWarn("Serial port not open on enqueuMessage.");
     }
 
-    tx_queue_.emplace(std::move(msg));
+    tx_queue_.push(msg.raw_message_string());
     if (!write_in_progress) {
         do_write();
     }
@@ -179,7 +179,7 @@ auto SerialUblox::enqueueMessage(const UbxMessage& msg) -> bool {
 }
 
 void SerialUblox::do_write() {
-    boost::asio::async_write(serial_, boost::asio::buffer(tx_queue_.front().raw_message_string()),
+    boost::asio::async_write(serial_, boost::asio::buffer(tx_queue_.front()),
                              [this](boost::system::error_code ec, std::size_t) {
                                  if (!ec) {
                                      tx_queue_.pop();
