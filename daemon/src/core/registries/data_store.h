@@ -3,11 +3,13 @@
 
 #include <any>
 #include <chrono>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <typeindex>
 #include <unordered_map>
 
+class Histogram;
 class DataStore {
   private:
     struct Entry {
@@ -59,7 +61,13 @@ class DataStore {
         return std::nullopt;
     }
 
+    void setupHistos();
+    auto clearHisto(const std::string& name) -> std::shared_ptr<Histogram>;
+    auto histo(const std::string& name) -> std::shared_ptr<Histogram>;
+    auto allHistos() const -> const std::unordered_map<std::string, std::shared_ptr<Histogram>>&;
+
   private:
+    std::unordered_map<std::string, std::shared_ptr<Histogram>> m_histo_map{};
     std::unordered_map<std::type_index, Entry> data_;
     mutable std::mutex mutex_;
 };
