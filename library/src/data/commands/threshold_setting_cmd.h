@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+struct ThresholdSettingRequestCmd {};
+
 struct ThresholdSettingCmd {
     std::uint8_t channel;
     float threshold;
