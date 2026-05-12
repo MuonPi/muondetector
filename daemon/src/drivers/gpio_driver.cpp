@@ -1,10 +1,13 @@
 #include "drivers/gpio_driver.h"
 
 #include "core/logging/logger.h"
-#include "events/gpio_event.h"
+#include "data/events/gpio_event.h"
+#include "data/events/gpio_rate_event.h"
+#include "utility/gpio_ratebuffer.h"
 
 #include <gpiod.h>
 #include <iostream>
+#include <optional>
 #include <poll.h>
 #include <set>
 #include <sstream>
@@ -12,6 +15,9 @@
 #include <unistd.h>
 
 using namespace std::chrono;
+
+const std::unordered_map<GPIO_SIGNAL, std::optional<EventEdge>> interruptSignals{
+    {{EVT_AND, EventEdge::Rising}, {EVT_XOR, EventEdge::Rising}, {TIMEPULSE, EventEdge::Rising}}};
 
 GpioDriver::GpioDriver(ComponentId id, const std::string& chipPath, EventBus& bus)
     : Component(id), bus_(bus) {
@@ -46,6 +52,31 @@ GpioDriver::~GpioDriver() {
 
     if (chip)
         gpiod_chip_close(chip);
+}
+
+// WTF is this
+// void Daemon::onRateBufferReminder()
+// {
+//     qreal secsSinceStart = 0.001 * (qreal)msecdiff(lastRateInterval, startOfProgram);
+//     qreal xorRate = getRateFromCounts(XOR_RATE);
+//     qreal andRate = getRateFromCounts(AND_RATE);
+//     QPointF xorPoint(secsSinceStart, xorRate);
+//     QPointF andPoint(secsSinceStart, andRate);
+//     xorRatePoints.append(xorPoint);
+//     andRatePoints.append(andPoint);
+//     sendGpioRatesAverage(XOR_RATE, xorRate);
+//     sendGpioRatesAverage(AND_RATE, andRate);
+//     emit logParameter(LogParameter("rateXOR", QString::number(xorRate) + " Hz",
+//     LogParameter::LOG_AVERAGE)); emit logParameter(LogParameter("rateAND",
+//     QString::number(andRate) + " Hz", LogParameter::LOG_AVERAGE)); while
+//     ((quint32)xorRatePoints.size() > rateMaxShowInterval / rateBufferInterval) {
+//         xorRatePoints.pop_front();
+//     }
+//     while ((quint32)andRatePoints.size() > rateMaxShowInterval / rateBufferInterval) {
+//         andRatePoints.pop_front();
+//     }
+// }
+void GpioDriver::sendGpioRatesAverage() {
 }
 
 void GpioDriver::init(const MuonPi::Version::Version& hardwareVersion) {
@@ -95,7 +126,41 @@ void GpioDriver::init(const MuonPi::Version::Version& hardwareVersion) {
 
     configureLines(outputs, {.dir = SIGNAL_DIRECTION::DIR_OUT, .initialValue = false});
 
+    // set up rate buffers for all GPIO interrupts
+    for (auto [sig, edge] : interruptSignals) {
+        auto ratebuf = std::make_shared<EventRateBuffer>(bus_, edge);
+        // connect(pigHandler, &PigpiodHandler::gpioEvent, ratebuf.get(),
+        // &EventRateBuffer::onEvent); connect(ratebuf.get(), &EventRateBuffer::filteredEvent, this,
+        // &Daemon::sendGpioPinEvent); connect(ratebuf.get(), &EventRateBuffer::filteredEvent, this,
+        // &Daemon::onGpioPinEvent);
+
+        // connect(ratebuf.get(), &EventRateBuffer::eventIntervalSignal, this, [this](unsigned int
+        // gpio, std::chrono::nanoseconds ns) {
+        //     if (m_histo_map.find("gpioEventInterval") != m_histo_map.end()
+        //         && (GPIO_PINMAP[config.eventTrigger] == gpio)) {
+        //         m_histo_map["gpioEventInterval"]->fill(1e-6 * ns.count());
+        //     }
+        // });
+
+        gpioRatebuffers.emplace(sig, ratebuf);
+    }
+
     start();
+}
+
+void GpioDriver::processEvent(GpioEvent&& event) {
+    // could just publish here
+    // bus_.publish<GpioEvent>(event);
+
+    // or do some rate buffering
+
+    auto it = gpioRatebuffers.find(event.gpio_signal);
+    if (it != gpioRatebuffers.end()) {
+        it->second->handle(event);
+        return;
+    }
+    // if not have rate buffer for event, just publish it
+    bus_.publish(event);
 }
 
 void GpioDriver::start() {
@@ -174,13 +239,14 @@ void GpioDriver::eventLoop() {
                 GpioEvent out;
                 out.gpio_pin = offset;
                 out.gpio_signal = r_pinmap_.at(offset);
-                out.timestamp = std::chrono::nanoseconds(gpiod_edge_event_get_timestamp_ns(ev));
+                out.timestamp = std::chrono::steady_clock::time_point(
+                    std::chrono::nanoseconds(gpiod_edge_event_get_timestamp_ns(ev)));
 
                 out.edge = gpiod_edge_event_get_event_type(ev) == GPIOD_EDGE_EVENT_RISING_EDGE
                                ? EventEdge::Rising
                                : EventEdge::Falling;
 
-                bus_.publish<GpioEvent>(std::move(out));
+                processEvent(std::move(out));
                 logDebug("GpioEvent: " + std::to_string(out.gpio_pin) +
                          " edge: " + (out.edge == EventEdge::Rising ? "rising" : "falling"));
             }

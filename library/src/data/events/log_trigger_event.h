@@ -3,4 +3,4 @@
 
 struct LogTriggerEvent {};
 
-#endif LOG_TRIGGER_EVENT_H
+#endif // LOG_TRIGGER_EVENT_H

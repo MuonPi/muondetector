@@ -72,11 +72,12 @@ class SerialUblox : public Component {
     boost::asio::serial_port serial_;
     boost::asio::steady_timer timer_;
     std::size_t maxQueueSize_ = 3000;
-    std::queue<UbxMessage> tx_queue_;
+    std::queue<std::string> tx_queue_;
 
     std::array<char, 1024> buffer_;
     std::string m_buffer = "";
 
+    boost::asio::strand<boost::asio::io_context::executor_type> strand_;
     std::string port_;
     unsigned int baud_;
     EventBus& bus_;

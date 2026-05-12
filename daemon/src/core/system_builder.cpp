@@ -54,6 +54,8 @@
 // #include "data/events/ubx_event.h"
 // #include "data/events/tcp_packet_event.h"
 
+#include "data/commands/gpio_signal_set_cmd.h"
+
 // Glue
 #include "core/event_bindings.h"
 
@@ -130,6 +132,10 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
                                    static_cast<std::size_t>(event.durationMillisec));
                 }
             });
+
+        // every once in a while send gpio average rates to GUI
+        ctx.scheduler->every(std::chrono::seconds(1),
+                             [gpio_driver]() { gpio_driver->sendGpioRatesAverage(); });
     } else {
         logWarn("GPIO Driver not initializing.");
     }
@@ -206,6 +212,7 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     // ctx.scheduler->every(std::chrono::milliseconds(Config::Hardware::monitor_interval),[&ctx](){
     // ctx.bus->publish(...);
     // });
+
     ctx.bus->publish<LogParameter>(LogParameter(
         "maxGeohashLength", std::to_string(config.maxGeohashLength), LogParameter::LOG_ONCE));
     ctx.bus->publish<LogParameter>(LogParameter(
@@ -217,6 +224,16 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     //     std::placeholders::_1));
     // m_geopos_manager.set_valid_pos_callback(std::bind(&Daemon::onGeoPosValid, this,
     // std::placeholders::_1)); m_geopos_manager.set_mode_config(config.position_mode_config);
+
+    // --- Set Gpio Output ---
+    ctx.bus->publish<GpioSignalSetCmd>({UBIAS_EN, true});
+    ctx.bus->publish<GpioSignalSetCmd>({PREAMP_1, config.preamp_enable[0]});
+    ctx.bus->publish<GpioSignalSetCmd>({PREAMP_2, config.preamp_enable[1]});
+    ctx.bus->publish<GpioSignalSetCmd>({GAIN_HL, config.hi_gain});
+    ctx.bus->publish<GpioSignalSetCmd>({STATUS1, false});
+    ctx.bus->publish<GpioSignalSetCmd>({STATUS2, false});
+    ctx.bus->publish<GpioSignalSetCmd>({IN_POL1, config.polarity[0]});
+    ctx.bus->publish<GpioSignalSetCmd>({IN_POL2, config.polarity[1]});
     return ctx;
 }
 
