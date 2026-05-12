@@ -30,6 +30,7 @@ class GpioDriver : public Component {
     ~GpioDriver();
 
     void init(const MuonPi::Version::Version& hardwareVersion);
+    void sendGpioRatesAverage();
     auto writeSignal(GPIO_SIGNAL sig, bool value) -> bool;
 
   private:

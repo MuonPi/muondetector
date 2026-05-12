@@ -1,7 +1,8 @@
 #include "drivers/gpio_driver.h"
 
 #include "core/logging/logger.h"
-#include "events/gpio_event.h"
+#include "data/events/gpio_event.h"
+#include "data/events/gpio_rate_event.h"
 #include "utility/gpio_ratebuffer.h"
 
 #include <gpiod.h>
@@ -51,6 +52,31 @@ GpioDriver::~GpioDriver() {
 
     if (chip)
         gpiod_chip_close(chip);
+}
+
+// WTF is this
+// void Daemon::onRateBufferReminder()
+// {
+//     qreal secsSinceStart = 0.001 * (qreal)msecdiff(lastRateInterval, startOfProgram);
+//     qreal xorRate = getRateFromCounts(XOR_RATE);
+//     qreal andRate = getRateFromCounts(AND_RATE);
+//     QPointF xorPoint(secsSinceStart, xorRate);
+//     QPointF andPoint(secsSinceStart, andRate);
+//     xorRatePoints.append(xorPoint);
+//     andRatePoints.append(andPoint);
+//     sendGpioRatesAverage(XOR_RATE, xorRate);
+//     sendGpioRatesAverage(AND_RATE, andRate);
+//     emit logParameter(LogParameter("rateXOR", QString::number(xorRate) + " Hz",
+//     LogParameter::LOG_AVERAGE)); emit logParameter(LogParameter("rateAND",
+//     QString::number(andRate) + " Hz", LogParameter::LOG_AVERAGE)); while
+//     ((quint32)xorRatePoints.size() > rateMaxShowInterval / rateBufferInterval) {
+//         xorRatePoints.pop_front();
+//     }
+//     while ((quint32)andRatePoints.size() > rateMaxShowInterval / rateBufferInterval) {
+//         andRatePoints.pop_front();
+//     }
+// }
+void GpioDriver::sendGpioRatesAverage() {
 }
 
 void GpioDriver::init(const MuonPi::Version::Version& hardwareVersion) {

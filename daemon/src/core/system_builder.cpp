@@ -132,6 +132,10 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
                                    static_cast<std::size_t>(event.durationMillisec));
                 }
             });
+
+        // every once in a while send gpio average rates to GUI
+        ctx.scheduler->every(std::chrono::seconds(1),
+                             [gpio_driver]() { gpio_driver->sendGpioRatesAverage(); });
     } else {
         logWarn("GPIO Driver not initializing.");
     }
@@ -208,6 +212,7 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     // ctx.scheduler->every(std::chrono::milliseconds(Config::Hardware::monitor_interval),[&ctx](){
     // ctx.bus->publish(...);
     // });
+
     ctx.bus->publish<LogParameter>(LogParameter(
         "maxGeohashLength", std::to_string(config.maxGeohashLength), LogParameter::LOG_ONCE));
     ctx.bus->publish<LogParameter>(LogParameter(

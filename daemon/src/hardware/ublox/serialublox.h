@@ -77,6 +77,7 @@ class SerialUblox : public Component {
     std::array<char, 1024> buffer_;
     std::string m_buffer = "";
 
+    boost::asio::strand<boost::asio::io_context::executor_type> strand_;
     std::string port_;
     unsigned int baud_;
     EventBus& bus_;
