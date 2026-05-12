@@ -3,8 +3,11 @@
 
 #include <cstdint>
 
-struct DacRequestCmd {
-    std::uint8_t channel{0};
+struct DacCmd {
+    std::uint8_t channel;
+    std::uint8_t value;
 };
+
+struct DacRequestCmd {};
 
 #endif // DAC_REQUEST_CMD_H

@@ -24,7 +24,7 @@ class ParameterMonitorForm : public QWidget {
     void setDacVoltage(uint8_t ch, float val);
     void biasVoltageCalculated(float vbias);
     void biasCurrentCalculated(float ibias);
-    void adcModeChanged(ADC_SAMPLING_MODE mode);
+    void setAdcMode(ADC_SAMPLING_MODE mode);
     void gpioInhibitChanged(bool inhibitState);
     void mqttInhibitChanged(bool inhibitState);
     void biasEnableChanged(bool state);

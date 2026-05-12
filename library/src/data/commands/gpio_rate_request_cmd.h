@@ -4,7 +4,8 @@
 #include <cstdint>
 
 struct GpioRateRequestCmd {
-    std::uint8_t whichRate{0};
+    // 0 means "request all"
+    std::uint8_t n_points{0};
 };
 
 #endif // GPIO_RATE_REQUEST_CMD_H

@@ -108,8 +108,8 @@ class MainWindow : public QMainWindow {
     void makeConnection(QString ipAddress, quint16 port);
     void onTriggerSelectionChanged(GPIO_SIGNAL signal);
     void onHistogramCleared(QString histogramName);
-    void onAdcModeChanged(ADC_SAMPLING_MODE mode);
-    void onRateScanStart(uint8_t ch);
+    void sendSetAdcMode(ADC_SAMPLING_MODE mode);
+    void sendRateScanStart(uint8_t ch);
     void gpioInhibit(bool inhibit);
     void mqttInhibit(bool inhibit);
     void onPolarityChanged(bool pol1, bool pol2);

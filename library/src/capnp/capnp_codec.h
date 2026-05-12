@@ -41,7 +41,6 @@ struct UbxTimePulseStruct;
 struct LogInfoStruct;
 class Histogram;
 struct StartBurstSampling;
-struct ThresholdSettingCmd;
 struct UbxMinCnoCmd;
 struct UbxMinMaxSvCmd;
 struct UbxMsgPollCmd;
@@ -59,18 +58,26 @@ struct I2cStatsRequestCmd;
 struct I2cScanBusCmd;
 struct CalibRequestCmd;
 struct CalibSaveCmd;
+struct PreampSwitchCmd;
 struct PreampSwitchRequestCmd;
+struct GainSwitchCmd;
 struct GainSwitchRequestCmd;
-struct ThresholdRequestCmd;
+struct ThresholdSettingCmd;
+struct ThresholdSettingRequestCmd;
+struct PcaSwitchCmd;
 struct PcaSwitchRequestCmd;
 struct AdcModeRequestCmd;
+struct PolaritySwitchCmd;
 struct PolaritySwitchRequestCmd;
+struct BiasVoltageCmd;
 struct BiasVoltageRequestCmd;
+struct BiasSwitchCmd;
 struct BiasSwitchRequestCmd;
+struct DacEepromSetCmd;
+struct DacCmd;
 struct DacRequestCmd;
 struct AdcSampleRequestCmd;
 struct TemperatureRequestCmd;
-struct DacEepromSetCmd;
 struct HistogramClearCmd;
 struct GpioRateRequestCmd;
 
@@ -137,7 +144,6 @@ DECLARE_CODEC(UbxTimePulseStruct)
 DECLARE_CODEC(LogInfoStruct)
 DECLARE_CODEC(Histogram)
 DECLARE_CODEC(StartBurstSampling)
-DECLARE_CODEC(ThresholdSettingCmd)
 DECLARE_CODEC(UbxMinCnoCmd)
 DECLARE_CODEC(UbxMinMaxSvCmd)
 DECLARE_CODEC(UbxMsgPollCmd)
@@ -155,18 +161,26 @@ DECLARE_CODEC(I2cStatsRequestCmd)
 DECLARE_CODEC(I2cScanBusCmd)
 DECLARE_CODEC(CalibRequestCmd)
 DECLARE_CODEC(CalibSaveCmd)
+DECLARE_CODEC(PreampSwitchCmd)
 DECLARE_CODEC(PreampSwitchRequestCmd)
+DECLARE_CODEC(GainSwitchCmd)
 DECLARE_CODEC(GainSwitchRequestCmd)
-DECLARE_CODEC(ThresholdRequestCmd)
+DECLARE_CODEC(ThresholdSettingCmd)
+DECLARE_CODEC(ThresholdSettingRequestCmd)
+DECLARE_CODEC(PcaSwitchCmd)
 DECLARE_CODEC(PcaSwitchRequestCmd)
 DECLARE_CODEC(AdcModeRequestCmd)
+DECLARE_CODEC(PolaritySwitchCmd)
 DECLARE_CODEC(PolaritySwitchRequestCmd)
+DECLARE_CODEC(BiasVoltageCmd)
 DECLARE_CODEC(BiasVoltageRequestCmd)
+DECLARE_CODEC(BiasSwitchCmd)
 DECLARE_CODEC(BiasSwitchRequestCmd)
+DECLARE_CODEC(DacCmd)
 DECLARE_CODEC(DacRequestCmd)
+DECLARE_CODEC(DacEepromSetCmd)
 DECLARE_CODEC(AdcSampleRequestCmd)
 DECLARE_CODEC(TemperatureRequestCmd)
-DECLARE_CODEC(DacEepromSetCmd)
 DECLARE_CODEC(HistogramClearCmd)
 DECLARE_CODEC(GpioRateRequestCmd)
 #undef DECLARE_CODEC
