@@ -102,9 +102,16 @@ QRegularExpression specialCharacters(
 namespace {
 void sendPacketIfConnected(const std::shared_ptr<TcpConnection>& conn, TCP_MSG_KEY key,
                            std::vector<std::uint8_t> payload = {}) {
-    if (!conn || !conn->isOpen()) {
+    if (!conn) {
+        qDebug() << "conn null";
         return;
     }
+
+    if (!conn->isOpen()) {
+        qDebug() << "conn not open";
+        return;
+    }
+    qDebug() << "Send command: " << static_cast<std::uint16_t>(key);
     conn->sendPacket(static_cast<std::uint16_t>(key), std::move(payload));
 }
 
@@ -470,6 +477,7 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
         QMetaObject::invokeMethod(
             this,
             [this, code]() {
+                qDebug() << "Connection closed!";
                 if (code == boost::asio::error::operation_aborted /* We do clientConn.reset() */
                     || code == boost::asio::error::eof /* Clean disconnect from server */) {
                     uiSetDisconnectedState();

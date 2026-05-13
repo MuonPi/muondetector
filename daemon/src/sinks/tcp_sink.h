@@ -35,8 +35,8 @@ void TcpSink::handle(const T& event) {
     std::vector<std::uint8_t> packet = CapnpCodec<T>::encode(event);
     std::uint16_t key = CapnpCodec<T>::messageKey();
 
-    logDebug("TCP Connection: Sending msg " + std::to_string(key) + " to " +
-             std::to_string(conns.size()) + " connection(s)");
+    logWarn("Send event: " + std::to_string(key) + " to " + std::to_string(conns.size()) +
+            " connection(s)");
 
     for (std::size_t i = 0; i < conns.size(); ++i) {
         if (!conns[i])
