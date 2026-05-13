@@ -1,5 +1,7 @@
 #include "logplotswidget.h"
 
+#include "gui/src/ui_logplotswidget.h"
+#include "qwt_plot.h"
 #include "ui_logplotswidget.h"
 
 #include <QDateTime>
@@ -10,6 +12,12 @@
 
 LogPlotsWidget::LogPlotsWidget(QWidget* parent) : QWidget(parent), ui(new Ui::LogPlotsWidget) {
     ui->setupUi(this);
+    connect(ui->tableWidget, &QTableWidget::cellClicked, this,
+            &LogPlotsWidget::onTableWidgetCellClicked);
+    connect(ui->linesCheckBox, &QCheckBox::clicked, this, &LogPlotsWidget::onLinesCheckBoxClicked);
+    connect(ui->pointSizeSpinBox, &QSpinBox::valueChanged, this,
+            &LogPlotsWidget::onPointSizeSpinBoxValueChanged);
+
     ui->logPlot->setAxisScaleDraw(QwtPlot::xBottom, new QwtDateScaleDraw());
     ui->logPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtDateScaleEngine());
     ui->logPlot->setAxisTitle(QwtPlot::xBottom, "time");
@@ -103,13 +111,13 @@ void LogPlotsWidget::updateLogTable() {
     if (!fCurrentLog.isEmpty()) {
         for (int j = 0; j < ui->tableWidget->rowCount(); j++) {
             if (ui->tableWidget->item(j, 0)->text() == fCurrentLog) {
-                on_tableWidget_cellClicked(j, 0);
+                onTableWidgetCellClicked(j, 0);
             }
         }
     }
 }
 
-void LogPlotsWidget::on_tableWidget_cellClicked(int row, int /*column*/) {
+void LogPlotsWidget::onTableWidgetCellClicked(int row, int /*column*/) {
     QString name = ui->tableWidget->item(row, 0)->text();
     auto it = fLogMap.find(name);
     if (it != fLogMap.end()) {
@@ -165,7 +173,7 @@ void LogPlotsWidget::onScalingChanged() {
         QString::number(ui->logPlot->axisInterval(QwtPlot::yLeft).maxValue()));
 }
 
-void LogPlotsWidget::on_linesCheckBox_clicked() {
+void LogPlotsWidget::onLinesCheckBoxClicked() {
     if (ui->linesCheckBox->isChecked())
         ui->logPlot->curve("curve1").setStyle(QwtPlotCurve::Lines);
     else
@@ -173,7 +181,7 @@ void LogPlotsWidget::on_linesCheckBox_clicked() {
     ui->logPlot->replot();
 }
 
-void LogPlotsWidget::on_pointSizeSpinBox_valueChanged(int arg1) {
+void LogPlotsWidget::onPointSizeSpinBoxValueChanged(int arg1) {
     QwtSymbol* sym = new QwtSymbol(QwtSymbol::Rect, QBrush(Qt::blue, Qt::SolidPattern),
                                    QPen(Qt::black), QSize(arg1, arg1));
     ui->logPlot->curve("curve1").setSymbol(sym);

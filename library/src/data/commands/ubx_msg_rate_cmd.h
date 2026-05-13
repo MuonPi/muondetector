@@ -9,4 +9,6 @@ struct UbxMsgRateCmd {
     std::uint8_t rate;
 };
 
+struct UbxMsgRateRequestCmd {};
+
 #endif // UBX_MSG_RATE_CMD_H

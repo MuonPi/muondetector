@@ -1,5 +1,6 @@
 #include "sources/tcp_source.h"
 
+#include "core/logging/logger.h"
 #include "data/events/tcp_packet_event.h"
 #include "sources/source.h"
 #include "tcpconnection.h"
@@ -12,6 +13,7 @@ TcpSource::TcpSource(ComponentId id, EventBus& bus) : Source::Source(id), bus_(b
 
 void TcpSource::registerConnection(const std::shared_ptr<TcpConnection>& connection) {
     if (!connection) {
+        logError("Shared pointer not valid in TcpSource::registerConnection");
         return;
     }
 
@@ -19,6 +21,7 @@ void TcpSource::registerConnection(const std::shared_ptr<TcpConnection>& connect
     connection->setPacketHandler([this, weakConn](const TcpPacket& packet) {
         auto conn = weakConn.lock();
         if (!conn) {
+            logError("Weak pointer not valid in TcpSource::registerConnection");
             return;
         }
         bus_.publish(TcpPacketEvent{conn, packet});

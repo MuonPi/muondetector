@@ -20,7 +20,7 @@ class PlotCustom : public QwtPlot {
 
     const QString title = "Rate Statistics";
   public slots:
-    void setPreset(QString preset = "");
+    void setPreset(const QString& preset = "");
     void setStatusEnabled(bool status);
     void changeEvent(QEvent* e);
 

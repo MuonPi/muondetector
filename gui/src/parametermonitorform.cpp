@@ -10,6 +10,7 @@
 ParameterMonitorForm::ParameterMonitorForm(QWidget* parent)
     : QWidget(parent), ui(new Ui::ParameterMonitorForm) {
     ui->setupUi(this);
+
     qRegisterMetaType<MuonPi::Version::Version>("MuonPi::Version::Version");
     ui->adcTracePlot->setMinimumHeight(30);
     ui->adcTracePlot->setTitle("ADC trace");
@@ -45,6 +46,27 @@ ParameterMonitorForm::ParameterMonitorForm(QWidget* parent)
         emit setAdcMode((checked) ? ADC_SAMPLING_MODE::TRACE : ADC_SAMPLING_MODE::PEAK);
         ui->adcTracePlot->setEnabled(checked);
     });
+
+    connect(ui->dacSpinBox1, &QDoubleSpinBox::valueChanged, this,
+            &ParameterMonitorForm::onDacSpinBox1ValueChanged);
+    connect(ui->dacSpinBox2, &QDoubleSpinBox::valueChanged, this,
+            &ParameterMonitorForm::onDacSpinBox2ValueChanged);
+    connect(ui->dacSpinBox3, &QDoubleSpinBox::valueChanged, this,
+            &ParameterMonitorForm::onDacSpinBox3ValueChanged);
+    connect(ui->dacSpinBox4, &QDoubleSpinBox::valueChanged, this,
+            &ParameterMonitorForm::onDacSpinBox4ValueChanged);
+    connect(ui->dacSlider1, &QSlider::valueChanged, this,
+            &ParameterMonitorForm::onDacSlider1ValueChanged);
+    connect(ui->dacSlider2, &QSlider::valueChanged, this,
+            &ParameterMonitorForm::onDacSlider2ValueChanged);
+    connect(ui->dacSlider3, &QSlider::valueChanged, this,
+            &ParameterMonitorForm::onDacSlider3ValueChanged);
+    connect(ui->dacSlider4, &QSlider::valueChanged, this,
+            &ParameterMonitorForm::onDacSlider4ValueChanged);
+    connect(ui->gpioInhibitCheckBox, &QCheckBox::clicked, this,
+            &ParameterMonitorForm::onGpioInhibitCheckBoxClicked);
+    connect(ui->mqttInhibitCheckBox, &QCheckBox::clicked, this,
+            &ParameterMonitorForm::onMqttInhibitCheckBoxClicked);
     connect(ui->preamp1EnCheckBox, &QCheckBox::clicked, this,
             &ParameterMonitorForm::preamp1EnableChanged);
     connect(ui->preamp2EnCheckBox, &QCheckBox::clicked, this,
@@ -253,38 +275,38 @@ void ParameterMonitorForm::onPolaritySwitchReceived(bool pol1, bool pol2) {
     ui->pol2CheckBox->blockSignals(false);
 }
 
-void ParameterMonitorForm::on_dacSpinBox1_valueChanged(double arg1) {
+void ParameterMonitorForm::onDacSpinBox1ValueChanged(double arg1) {
     emit setDacVoltage(0, arg1);
 }
 
-void ParameterMonitorForm::on_dacSpinBox2_valueChanged(double arg1) {
+void ParameterMonitorForm::onDacSpinBox2ValueChanged(double arg1) {
     emit setDacVoltage(1, arg1);
 }
 
-void ParameterMonitorForm::on_dacSpinBox3_valueChanged(double arg1) {
+void ParameterMonitorForm::onDacSpinBox3ValueChanged(double arg1) {
     emit setDacVoltage(2, arg1);
 }
 
-void ParameterMonitorForm::on_dacSpinBox4_valueChanged(double arg1) {
+void ParameterMonitorForm::onDacSpinBox4ValueChanged(double arg1) {
     emit setDacVoltage(3, arg1);
 }
 
-void ParameterMonitorForm::on_dacSlider1_valueChanged(int value) {
+void ParameterMonitorForm::onDacSlider1ValueChanged(int value) {
     double voltage = value / 1000.;
     emit setDacVoltage(0, voltage);
 }
 
-void ParameterMonitorForm::on_dacSlider2_valueChanged(int value) {
+void ParameterMonitorForm::onDacSlider2ValueChanged(int value) {
     double voltage = value / 1000.;
     emit setDacVoltage(1, voltage);
 }
 
-void ParameterMonitorForm::on_dacSlider3_valueChanged(int value) {
+void ParameterMonitorForm::onDacSlider3ValueChanged(int value) {
     double voltage = value / 1000.;
     emit setDacVoltage(2, voltage);
 }
 
-void ParameterMonitorForm::on_dacSlider4_valueChanged(int value) {
+void ParameterMonitorForm::onDacSlider4ValueChanged(int value) {
     double voltage = value / 1000.;
     emit setDacVoltage(3, voltage);
 }
@@ -308,11 +330,11 @@ bool ParameterMonitorForm::currentCalibValid() {
     return false;
 }
 
-void ParameterMonitorForm::on_gpioInhibitCheckBox_clicked(bool checked) {
+void ParameterMonitorForm::onGpioInhibitCheckBoxClicked(bool checked) {
     emit gpioInhibitChanged(checked);
 }
 
-void ParameterMonitorForm::on_mqttInhibitCheckBox_clicked(bool checked) {
+void ParameterMonitorForm::onMqttInhibitCheckBoxClicked(bool checked) {
     emit mqttInhibitChanged(checked);
 }
 

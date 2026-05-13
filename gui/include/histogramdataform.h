@@ -26,7 +26,7 @@ class histogramDataForm : public QWidget {
   private slots:
     void updateHistoTable();
 
-    void on_tableWidget_cellClicked(int row, int column);
+    void onTableWidgetCellClicked(int row, int column);
 
   private:
     Ui::histogramDataForm* ui;

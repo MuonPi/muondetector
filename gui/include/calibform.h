@@ -39,10 +39,10 @@ class CalibForm : public QWidget {
     void updateCalibTable();
 
   private slots:
-    void on_readCalibPushButton_clicked();
-    void on_writeEepromPushButton_clicked();
+    void onReadCalibPushButtonClicked();
+    void onWriteEepromPushButtonClicked();
     void doFit();
-    void on_calibItemTableWidget_cellChanged(int row, int column);
+    void onCalibItemTableWidgetCellChanged(int row, int column);
 
   private:
     Ui::CalibForm* ui;

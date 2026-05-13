@@ -13,13 +13,14 @@ auto Component::id() const noexcept -> ComponentId {
     return id_;
 }
 
-auto Component::name() const noexcept -> std::optional<std::string> {
+auto Component::name() const -> std::string {
     auto it = std::find_if(componentLookup.begin(), componentLookup.end(),
                            [&](auto&& p) { return p.second == id(); });
     if (it != componentLookup.end()) {
         return it->first;
     }
-    return std::nullopt;
+    return std::visit([](const auto& v) { return std::to_string(static_cast<std::uint8_t>(v)); },
+                      id());
 }
 
 void Component::handleDeviceMissing(const ComponentId id) {

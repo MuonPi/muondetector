@@ -1,10 +1,17 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
+#include "ublox/ublox_structs.h"
+
 #include <QDialog>
 #include <QTableWidget>
-#include <QtWidgets>
+#include <cstdint>
 #include <events/ubx_event.h>
+#include <qabstractbutton.h>
+#include <qmap.h>
+#include <qobject.h>
+#include <qtmetamacros.h>
+#include <qwidget.h>
 #include <vector>
 
 class UbxMsgRateTableItem : public QTableWidgetItem {
@@ -48,27 +55,27 @@ class UbloxSettingsForm : public QDialog {
 
   private slots:
     void onSettingsButtonBoxClicked(QAbstractButton* button);
-    void on_ubxResetPushButton_clicked();
+    void onUbxResetPushButtonClicked();
     void writeGnssConfig();
     void writeTpConfig();
 
-    void on_timeGridComboBox_currentIndexChanged(int index);
+    void onTimeGridComboBoxCurrentIndexChanged(int index);
 
-    void on_freqPeriodLineEdit_editingFinished();
+    void onFreqPeriodLineEditEditingFinished();
 
-    void on_freqPeriodLockLineEdit_editingFinished();
+    void onFreqPeriodLockLineEditEditingFinished();
 
-    void on_pulseLenLineEdit_editingFinished();
+    void onPulseLenLineEditEditingFinished();
 
-    void on_pulseLenLockLineEdit_editingFinished();
+    void onPulseLenLockLineEditEditingFinished();
 
-    void on_antDelayLineEdit_editingFinished();
+    void onAntDelayLineEditEditingFinished();
 
-    void on_groupDelayLineEdit_editingFinished();
+    void onGroupDelayLineEditEditingFinished();
 
-    void on_userDelayLineEdit_editingFinished();
+    void onUserDelayLineEditEditingFinished();
 
-    void on_saveConfigPushButton_clicked();
+    void onSaveConfigPushButtonClicked();
 
   private:
     Ui::UbloxSettingsForm* ui;

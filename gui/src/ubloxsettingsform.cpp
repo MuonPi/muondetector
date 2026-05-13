@@ -1,5 +1,9 @@
+#include "gui/src/ui_ubloxsettingsform.h"
+
 #include <data/ublox/ublox_messages.h>
 #include <events/ubx_event.h>
+#include <qbuttongroup.h>
+#include <qpushbutton.h>
 #include <ubloxsettingsform.h>
 #include <ui_ubloxsettingsform.h>
 #include <vector>
@@ -18,20 +22,6 @@ UbloxSettingsForm::UbloxSettingsForm(QWidget* parent)
     connect(ui->ubloxSignalStates, &QTableWidget::itemChanged, this,
             &UbloxSettingsForm::onItemChanged);
     ui->ubloxSignalStates->blockSignals(true);
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-    connect(ui->gnssConfigButtonGroup,
-            static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this,
-            [this](int) {
-                this->fGnssConfigChanged = true;
-                this->onConfigChanged();
-            });
-    connect(ui->tpConfigButtonGroup,
-            static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this,
-            [this](int) {
-                this->fTpConfigChanged = true;
-                this->onConfigChanged();
-            });
-#else
     connect(ui->gnssConfigButtonGroup,
             static_cast<void (QButtonGroup::*)(int)>(&QButtonGroup::idClicked), this, [this](int) {
                 this->fGnssConfigChanged = true;
@@ -42,7 +32,26 @@ UbloxSettingsForm::UbloxSettingsForm(QWidget* parent)
                 this->fTpConfigChanged = true;
                 this->onConfigChanged();
             });
-#endif
+    connect(ui->ubxResetPushButton, &QPushButton::clicked, this,
+            &UbloxSettingsForm::onUbxResetPushButtonClicked);
+    connect(ui->timeGridComboBox, &QComboBox::currentIndexChanged, this,
+            &UbloxSettingsForm::onTimeGridComboBoxCurrentIndexChanged);
+    connect(ui->freqPeriodLineEdit, &QLineEdit::editingFinished, this,
+            &UbloxSettingsForm::onFreqPeriodLineEditEditingFinished);
+    connect(ui->freqPeriodLockLineEdit, &QLineEdit::editingFinished, this,
+            &UbloxSettingsForm::onFreqPeriodLockLineEditEditingFinished);
+    connect(ui->pulseLenLineEdit, &QLineEdit::editingFinished, this,
+            &UbloxSettingsForm::onPulseLenLineEditEditingFinished);
+    connect(ui->pulseLenLockLineEdit, &QLineEdit::editingFinished, this,
+            &UbloxSettingsForm::onPulseLenLockLineEditEditingFinished);
+    connect(ui->antDelayLineEdit, &QLineEdit::editingFinished, this,
+            &UbloxSettingsForm::onAntDelayLineEditEditingFinished);
+    connect(ui->groupDelayLineEdit, &QLineEdit::editingFinished, this,
+            &UbloxSettingsForm::onGroupDelayLineEditEditingFinished);
+    connect(ui->userDelayLineEdit, &QLineEdit::editingFinished, this,
+            &UbloxSettingsForm::onUserDelayLineEditEditingFinished);
+    connect(ui->saveConfigPushButton, &QPushButton::clicked, this,
+            &UbloxSettingsForm::onSaveConfigPushButtonClicked);
     this->setDisabled(true);
     emit sendRequestUbxMsgRates();
 }
@@ -269,7 +278,7 @@ void UbloxSettingsForm::onTP5Received(const UbxTimePulseStruct& tp) {
     ui->unsyncedPulseGroupBox->blockSignals(false);
 }
 
-void UbloxSettingsForm::on_ubxResetPushButton_clicked() {
+void UbloxSettingsForm::onUbxResetPushButtonClicked() {
     // reset Ublox device
     emit sendUbxReset();
 }
@@ -379,13 +388,13 @@ void UbloxSettingsForm::writeTpConfig() {
     emit setTP5Config(tp);
 }
 
-void UbloxSettingsForm::on_timeGridComboBox_currentIndexChanged(int /*index*/) {
+void UbloxSettingsForm::onTimeGridComboBoxCurrentIndexChanged(int /*index*/) {
     fTpConfigChanged = true;
     ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(false);
     ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(false);
 }
 
-void UbloxSettingsForm::on_freqPeriodLineEdit_editingFinished() {
+void UbloxSettingsForm::onFreqPeriodLineEditEditingFinished() {
     bool ok = false;
     ui->freqPeriodLineEdit->text().toLong(&ok);
     if (!ok)
@@ -396,7 +405,7 @@ void UbloxSettingsForm::on_freqPeriodLineEdit_editingFinished() {
     }
 }
 
-void UbloxSettingsForm::on_freqPeriodLockLineEdit_editingFinished() {
+void UbloxSettingsForm::onFreqPeriodLockLineEditEditingFinished() {
     bool ok = false;
     ui->freqPeriodLockLineEdit->text().toLong(&ok);
     if (!ok)
@@ -407,7 +416,7 @@ void UbloxSettingsForm::on_freqPeriodLockLineEdit_editingFinished() {
     }
 }
 
-void UbloxSettingsForm::on_pulseLenLineEdit_editingFinished() {
+void UbloxSettingsForm::onPulseLenLineEditEditingFinished() {
     bool ok = false;
     ui->pulseLenLineEdit->text().toLong(&ok);
     if (!ok)
@@ -418,7 +427,7 @@ void UbloxSettingsForm::on_pulseLenLineEdit_editingFinished() {
     }
 }
 
-void UbloxSettingsForm::on_pulseLenLockLineEdit_editingFinished() {
+void UbloxSettingsForm::onPulseLenLockLineEditEditingFinished() {
     bool ok = false;
     ui->pulseLenLockLineEdit->text().toLong(&ok);
     if (!ok)
@@ -429,7 +438,7 @@ void UbloxSettingsForm::on_pulseLenLockLineEdit_editingFinished() {
     }
 }
 
-void UbloxSettingsForm::on_antDelayLineEdit_editingFinished() {
+void UbloxSettingsForm::onAntDelayLineEditEditingFinished() {
     bool ok = false;
     ui->antDelayLineEdit->text().toInt(&ok);
     if (!ok)
@@ -440,7 +449,7 @@ void UbloxSettingsForm::on_antDelayLineEdit_editingFinished() {
     }
 }
 
-void UbloxSettingsForm::on_groupDelayLineEdit_editingFinished() {
+void UbloxSettingsForm::onGroupDelayLineEditEditingFinished() {
     bool ok = false;
     ui->groupDelayLineEdit->text().toInt(&ok);
     if (!ok)
@@ -451,7 +460,7 @@ void UbloxSettingsForm::on_groupDelayLineEdit_editingFinished() {
     }
 }
 
-void UbloxSettingsForm::on_userDelayLineEdit_editingFinished() {
+void UbloxSettingsForm::onUserDelayLineEditEditingFinished() {
     bool ok = false;
     ui->userDelayLineEdit->text().toLong(&ok);
     if (!ok)
@@ -462,7 +471,7 @@ void UbloxSettingsForm::on_userDelayLineEdit_editingFinished() {
     }
 }
 
-void UbloxSettingsForm::on_saveConfigPushButton_clicked() {
+void UbloxSettingsForm::onSaveConfigPushButtonClicked() {
     // save config
     emit sendUbxSaveCfg();
 }

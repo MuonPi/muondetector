@@ -61,7 +61,6 @@
 // Commands
 #include "data/commands/bias_switch_cmd.h"
 #include "data/commands/bias_voltage_cmd.h"
-#include "data/commands/dac_cmd.h"
 #include "data/commands/gpio_signal_set_cmd.h"
 #include "data/commands/pca_switch_cmd.h"
 
@@ -92,11 +91,8 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     ctx.config = std::make_unique<SystemConfig>(std::move(config));
 
     // --- datastore ---
-    ctx.datastore->setupHistos();
-    ctx.bus->subscribe<HistogramClearCmd>(
-        [&datastore = *ctx.datastore, &bus = *ctx.bus](const HistogramClearCmd& cmd) {
-            bus.publish(datastore.clearHisto(cmd.histogramName));
-        });
+    EventBindings::setupDatastore(*ctx.bus, *ctx.datastore);
+
     // ctx.bus->subscribe<>(
 
     // )
@@ -111,9 +107,10 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     // --- components ---
     for (auto& c : componentConfigurations) {
         auto component = ComponentFactory::createComponent(c, ctx);
-        logDebug("Created component " + component->name().value_or("<unknown>"));
+        logDebug("Created component " + component->name());
         auto component_as_source = std::dynamic_pointer_cast<Source>(component);
         if (component_as_source) {
+            component_as_source->update(); // Read out data once in the beginning!
             std::weak_ptr<Source> weak = component_as_source;
             if (c.interval) {
                 ctx.scheduler->every(c.interval.value(), [weak]() {
@@ -194,29 +191,32 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
                          [bus = ctx.bus.get()]() { bus->publish(HistogramRequestCmd{}); });
 
     // --- GPS default config ---
-    ctx.bus->publish(UbxProtocolSelectionCmd{1, PROTO_UBX});
-
-    // set dynamic model from config
-    logInfo("setting GNSS dynamic model to " +
-            std::to_string(static_cast<unsigned>(config.gnss_dynamic_model)));
-    ctx.bus->publish(config.gnss_dynamic_model);
-    std::uint16_t measinterval = 100;
-    ctx.bus->publish(UbxRateCmd{measinterval, 1}); // set rate of messages and nav
-    // --- Message Rates ---
-    EventBindings::initAllUbxMsgRate(*ctx.bus);
-    EventBindings::pollAllUbxMsgRate(*ctx.bus);
-
-    // Enable NAV_SVINFO only for version 0.1 - 15.0
-    // Enable NAV_SAT for version > 15.0
-    ctx.bus->publish(UbxVersionDependentCmd{
-        {UbxVersionDependentCmd::Entry{Version{0, 1}, Version{15, 0},
-                                       UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 69}},
-         UbxVersionDependentCmd::Entry{Version{15, 0},
-                                       Version{std::numeric_limits<unsigned>().max(), 0},
-                                       UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 0}},
-         UbxVersionDependentCmd::Entry{Version{15, 0},
-                                       Version{std::numeric_limits<unsigned>().max(), 0},
-                                       UbxMsgRateCmd{UBX_MSG::NAV_SAT, 1, 69}}}});
+    ctx.bus->subscribe<UbxConfigDefaultCmd>(
+        [&bus = *ctx.bus, &config = *ctx.config]([[maybe_unused]] const auto&) {
+            bus.publish(UbxProtocolSelectionCmd{1, PROTO_UBX});
+            logInfo("setting GNSS dynamic model to " +
+                    std::to_string(static_cast<unsigned>(config.gnss_dynamic_model)));
+            bus.publish(config.gnss_dynamic_model);
+            bus.publish(UbxSetAopCmd{true});
+            bus.publish(UbxMsgPollCmd{UBX_MSG::MON_VER});
+            std::uint16_t measinterval = 100;
+            bus.publish(UbxRateCmd{measinterval, 1}); // set rate of messages and nav
+            // --- Message Rates ---
+            EventBindings::initAllUbxMsgRate(bus);
+            // Enable NAV_SVINFO only for version 0.1 - 15.0
+            // Enable NAV_SAT for version > 15.0
+            bus.publish(UbxVersionDependentCmd{
+                {UbxVersionDependentCmd::Entry{Version{0, 1}, Version{15, 0},
+                                               UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 69}},
+                 UbxVersionDependentCmd::Entry{Version{15, 0},
+                                               Version{std::numeric_limits<unsigned>().max(), 0},
+                                               UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 0}}}});
+            bus.publish(UbxVersionDependentCmd{{UbxVersionDependentCmd::Entry{
+                Version{15, 0}, Version{std::numeric_limits<unsigned>().max(), 0},
+                UbxMsgRateCmd{UBX_MSG::NAV_SAT, 1, 69}}}});
+            EventBindings::pollAllUbxMsgRate(bus);
+        });
+    ctx.bus->publish(UbxConfigDefaultCmd{}); // Apply default config
 
     // Debug reading version every second // TESTED -> Working!
     // ctx.scheduler->every(std::chrono::milliseconds(1000),[bus = &(*ctx.bus)](){
@@ -257,32 +257,22 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     ctx.bus->publish<GpioSignalSetCmd>({IN_POL2, config.polarity[1]});
 
     // -- Behaviour on new tcp connection ---
-    ctx.bus->subscribe<ServerConnCountEvent>(
-        [&bus = *ctx.bus, &config = *ctx.config, &datastore = *ctx.datastore](auto& event) {
-            bus.publish(VersionEvent{.hw_ver = MuonPi::Version::hardware,
-                                     .sw_ver = MuonPi::Version::software});
-            if (datastore.lastUpdate<BiasSwitchEvent>().has_value()) {
-                bus.publish(*datastore.get<BiasSwitchEvent>());
-            } else {
-                bus.publish(BiasSwitchRequestCmd{});
-            }
-            if (datastore.lastUpdate<MCP4728Event>().has_value()) {
-                bus.publish(*datastore.get<MCP4728Event>());
-            } else {
-                bus.publish(DacRequestCmd{});
-            }
-            if (datastore.lastUpdate<PcaSwitchEvent>().has_value()) {
-                bus.publish(*datastore.get<PcaSwitchEvent>());
-            } else {
-                bus.publish(PcaSwitchRequestCmd{});
-            }
-            bus.publish(EventTriggerEvent{.eventTrigger = config.eventTrigger});
-            const auto& mode = datastore.geoPosManager().get_mode_config();
-            bus.publish(mode);
-            if (mode.mode == PositionModeConfig::Mode::Static) {
-                bus.publish(datastore.geoPosManager().get_static_position().getPosStruct());
-            }
-        });
+    ctx.bus->subscribe<ServerConnCountEvent>([&bus = *ctx.bus, &config = *ctx.config,
+                                              &datastore = *ctx.datastore]([[maybe_unused]] auto&) {
+        bus.publish(
+            VersionEvent{.hw_ver = MuonPi::Version::hardware, .sw_ver = MuonPi::Version::software});
+        // Where there is already some event for requesting, do so via event bus
+        bus.publish(BiasSwitchRequestCmd{});
+        bus.publish(DacSettingRequestCmd{});
+        bus.publish(PcaSwitchRequestCmd{});
+        bus.publish(EventTriggerRequestCmd{});
+        // Where there is no such thing, request through datastore
+        const auto& mode = datastore.geoPosManager().get_mode_config();
+        bus.publish(mode);
+        if (mode.mode == PositionModeConfig::Mode::Static) {
+            bus.publish(datastore.geoPosManager().get_static_position().getPosStruct());
+        }
+    });
 
     return ctx;
 }

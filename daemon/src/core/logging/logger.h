@@ -19,7 +19,20 @@ class AsyncLogger {
 
     void setMinimumLevel(LogLevel level);
     void setMinimumLevel(const std::string& level);
-    void log(LogLevel level, const std::string& message);
+    template <typename S>
+    void log(LogLevel level, S&& message) {
+        if (static_cast<int>(level) < static_cast<int>(minimumLevel_)) {
+            return;
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+
+            queue_.push(LogEntry{level, std::string(std::forward<S>(message))});
+        }
+
+        cv_.notify_one();
+    }
     auto level() const -> LogLevel;
 
   private:
@@ -42,26 +55,31 @@ class AsyncLogger {
     LogLevel minimumLevel_{LogLevel::Info};
 };
 
+inline auto logLevel() -> LogLevel {
+    return AsyncLogger::instance().level();
+}
+
 inline void setLogLevel(const std::string& level) {
     AsyncLogger::instance().setMinimumLevel(level);
 }
 inline void setLogLevel(LogLevel level) {
     AsyncLogger::instance().setMinimumLevel(level);
 }
-inline auto logLevel() -> LogLevel {
-    return AsyncLogger::instance().level();
-}
-inline void logDebug(const std::string& msg) {
-    AsyncLogger::instance().log(LogLevel::Debug, msg);
-}
-inline void logInfo(const std::string& msg) {
-    AsyncLogger::instance().log(LogLevel::Info, msg);
-}
-inline void logWarn(const std::string& msg) {
-    AsyncLogger::instance().log(LogLevel::Warn, msg);
-}
-inline void logError(const std::string& msg) {
-    AsyncLogger::instance().log(LogLevel::Error, msg);
-}
 
+template <typename S>
+inline void logDebug(S&& msg) {
+    AsyncLogger::instance().log(LogLevel::Debug, std::forward<S>(msg));
+}
+template <typename S>
+inline void logInfo(S&& msg) {
+    AsyncLogger::instance().log(LogLevel::Info, std::forward<S>(msg));
+}
+template <typename S>
+inline void logWarn(S&& msg) {
+    AsyncLogger::instance().log(LogLevel::Warn, std::forward<S>(msg));
+}
+template <typename S>
+inline void logError(S&& msg) {
+    AsyncLogger::instance().log(LogLevel::Error, std::forward<S>(msg));
+}
 #endif // LOGGER_H

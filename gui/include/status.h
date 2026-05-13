@@ -35,7 +35,7 @@ class Status : public QWidget {
     void onAdcSampleReceived(uint8_t channel, float value);
     void onUiEnabledStateChange(bool connected);
     void updatePulseHeightHistogram();
-    void on_histoLogYCheckBox_clicked();
+    void onHistoLogYCheckBoxClicked();
     void onInputSwitchReceived(TIMING_MUX_SELECTION sel);
     void onBiasSwitchReceived(bool state);
     void onGainSwitchReceived(bool state);

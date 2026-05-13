@@ -54,10 +54,10 @@ class LogPlotsWidget : public QWidget {
   private slots:
     void updateLogTable();
 
-    void on_tableWidget_cellClicked(int row, int column);
+    void onTableWidgetCellClicked(int row, int column);
     void onScalingChanged();
-    void on_linesCheckBox_clicked();
-    void on_pointSizeSpinBox_valueChanged(int arg1);
+    void onLinesCheckBoxClicked();
+    void onPointSizeSpinBoxValueChanged(int arg1);
 
   private:
     Ui::LogPlotsWidget* ui;

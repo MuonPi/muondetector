@@ -1,14 +1,18 @@
 #include "histogramdataform.h"
 
+#include "gui/src/ui_histogramdataform.h"
 #include "ui_histogramdataform.h"
 
 #include <histogram.h>
+#include <qtablewidget.h>
 
 histogramDataForm::histogramDataForm(QWidget* parent)
     : QWidget(parent), ui(new Ui::histogramDataForm) {
     ui->setupUi(this);
     connect(ui->histoWidget, &CustomHistogram::histogramCleared,
             [this](const QString histogramName) { emit histogramCleared(histogramName); });
+    connect(ui->tableWidget, &QTableWidget::cellClicked, this,
+            &histogramDataForm::onTableWidgetCellClicked);
 }
 
 histogramDataForm::~histogramDataForm() {
@@ -37,13 +41,13 @@ void histogramDataForm::updateHistoTable() {
     if (fCurrentHisto.size()) {
         for (int j = 0; j < ui->tableWidget->rowCount(); j++) {
             if (ui->tableWidget->item(j, 0)->text() == fCurrentHisto) {
-                on_tableWidget_cellClicked(j, 0);
+                onTableWidgetCellClicked(j, 0);
             }
         }
     }
 }
 
-void histogramDataForm::on_tableWidget_cellClicked(int row, int /*column*/) {
+void histogramDataForm::onTableWidgetCellClicked(int row, int /*column*/) {
     QString name = ui->tableWidget->item(row, 0)->text();
     auto it = fHistoMap.find(name);
     if (it != fHistoMap.end()) {
