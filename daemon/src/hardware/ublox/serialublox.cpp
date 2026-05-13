@@ -3,6 +3,8 @@
 #include "core/component.h"
 #include "core/event_bus.h"
 #include "core/logging/logger.h"
+#include "data/commands/ubx_dynamic_model_cmd.h"
+#include "data/commands/ubx_gnss_config_cmd.h"
 #include "data/commands/ubx_min_cno_cmd.h"
 #include "data/commands/ubx_min_max_sv_cmd.h"
 #include "data/commands/ubx_msg_poll_cmd.h"
@@ -13,7 +15,7 @@
 #include "data/commands/ubx_reset_cmd.h"
 #include "data/commands/ubx_save_cmd.h"
 #include "data/commands/ubx_set_aop_cmd.h"
-#include "data/commands/ubx_version_dependent_msg_rate_cmd.h"
+#include "data/commands/ubx_version_dependent_cmd.h"
 #include "data/ublox/ublox_messages.h"
 #include "data/ublox/ublox_structs.h"
 #include "events/ubx_event.h"
@@ -37,13 +39,15 @@ SerialUblox::SerialUblox(ComponentId id, boost::asio::io_context& io, const std:
     , baud_(baud)
     , bus_(bus) {
     makeConnection();
+
     bus_.subscribe<UbxRateCmd>([this](const UbxRateCmd& cmd) { handle(cmd); });
     bus_.subscribe<UbxMsgPollCmd>([this](const UbxMsgPollCmd& cmd) { handle(cmd); });
     bus_.subscribe<UbxSetAopCmd>([this](const UbxSetAopCmd& cmd) { handle(cmd); });
     bus_.subscribe<UbxProtocolSelectionCmd>(
         [this](const UbxProtocolSelectionCmd& cmd) { handle(cmd); });
-    bus_.subscribe<UbxVersionDependentMsgRateCmd>(
-        [this](const UbxVersionDependentMsgRateCmd& cmd) { handle(cmd); });
+    bus_.subscribe<UbxDynamicModelCmd>([this](const UbxDynamicModelCmd& cmd) { handle(cmd); });
+    bus_.subscribe<UbxVersionDependentCmd>(
+        [this](const UbxVersionDependentCmd& cmd) { handle(cmd); });
     bus_.subscribe<GpsVersion>([this](const GpsVersion& gpsVersion) { handle(gpsVersion); });
 
     bus_.subscribe<UbxAckNak>(
@@ -62,6 +66,22 @@ SerialUblox::SerialUblox(ComponentId id, boost::asio::io_context& io, const std:
 
             bus_.publish(std::move(rates));
         }
+    });
+
+    bus.subscribe<UbxTimePulseStruct>([&bus](const auto& ev) {
+        static uint8_t forceUtcSetCounter = 0;
+        // check here if UTC is selected as time source
+        // this should probably be implemented somewhere else, maybe at ublox init
+        // however, for the timestamping to work correctly, setting the time grid to UTC is
+        // mandatory!
+        int timeGrid = (ev.flags & UbxTimePulseStruct::GRID_UTC_GPS) >> 7;
+        // if (timeGrid != 0 && forceUtcSetCounter++ < 3) {
+        //     UbxTimePulseStruct newTp = ev;
+        //     newTp.flags &= ~static_cast<std::uint32_t>(UbxTimePulseStruct::GRID_UTC_GPS);
+        //     bus.publish(UbxTP5Cmd{newTp});
+        //     logWarn("forced time grid to UTC");
+        //     emit sendPollUbxMsg(UBX_MSG::CFG_TP5);
+        // }
     });
 }
 
@@ -425,15 +445,65 @@ void SerialUblox::processQueuedCmds() {
         auto command = std::move(queuedCmds_.front());
         queuedCmds_.pop();
         for (auto entry : command.config) {
-            if (UbxVersionDependentMsgRateCmd::applies(entry, version.value())) {
-                handle(entry.cmd);
+            if (UbxVersionDependentCmd::applies(entry, version.value())) {
+                std::visit([&](const auto& value) { handle(value); }, entry.cmd);
             }
         }
     }
 }
 
-void SerialUblox::handle(const UbxVersionDependentMsgRateCmd& cmd) {
-    logDebug("Processing UbxVersionDependentMsgRateCmd");
+void SerialUblox::handle(const UbxDynamicModelCmd& cmd) {
+    std::string buf;
+    buf.resize(36);
+    // unsigned char* buf { static_cast<unsigned char*>(calloc(sizeof(unsigned char), 36)) };
+    buf[0] = 0x01;
+    buf[1] = 0x00;
+    buf[2] = static_cast<std::uint8_t>(cmd.model); // dyn Model
+    enqueueMessage(UbxMessage{UBX_MSG::CFG_NAV5, buf});
+}
+
+void SerialUblox::handle(const UbxGnssConfigCmd& cmd) {
+    // If protocol version is not clear yet, delay processing
+    if (protocolVersion_.has_value() == false) {
+        queuedCmds_.emplace(UbxVersionDependentCmd{.config{{Version{0, 1}, Version{99, 0}, cmd}}});
+        processQueuedCmds();
+        return;
+    }
+
+    std::string versionStr = protocolVersion_.value().prot;
+    std::optional<Version> version = MessageProcessor::getProtVersion(versionStr);
+
+    const std::size_t N = cmd.gnssConfigs.size();
+    std::string data;
+    data.resize(4 + 8 * N);
+    // unsigned char* data { static_cast<unsigned char*>(calloc(sizeof(unsigned char), 4 + 8 * N))
+    // };
+    data[0] = 0;
+    data[1] = 0;
+    data[2] = 0xff;
+    data[3] = static_cast<std::uint8_t>(N);
+
+    for (std::size_t i{0}; i < N; i++) {
+        uint32_t flags = cmd.gnssConfigs[i].flags;
+        if (version.value().major >= 15.0) {
+            flags |= 0x0001 << 16;
+            if (cmd.gnssConfigs[i].gnssId == 5)
+                flags |= 0x0004 << 16;
+        }
+        data[4 + 8 * i] = cmd.gnssConfigs[i].gnssId;
+        data[5 + 8 * i] = cmd.gnssConfigs[i].resTrkCh;
+        data[6 + 8 * i] = cmd.gnssConfigs[i].maxTrkCh;
+        data[8 + 8 * i] = flags & 0xff;
+        data[9 + 8 * i] = (flags >> 8) & 0xff;
+        data[10 + 8 * i] = (flags >> 16) & 0xff;
+        data[11 + 8 * i] = (flags >> 24) & 0xff;
+    }
+
+    enqueueMessage(UbxMessage{UBX_MSG::CFG_GNSS, data});
+}
+
+void SerialUblox::handle(const UbxVersionDependentCmd& cmd) {
+    logDebug("Processing UbxVersionDependentCmd");
     queuedCmds_.emplace(cmd);
     processQueuedCmds();
 }
