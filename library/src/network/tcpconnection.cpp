@@ -153,12 +153,7 @@ auto TcpConnection::tryParsePacket() -> bool {
 
     receiveBuffer_.erase(receiveBuffer_.begin(), receiveBuffer_.begin() + frameSize);
 
-    if (key == static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PING)) {
-        auto pong = static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PONG);
-        sendPacket(pong, std::move(payload));
-    } else if (packetHandler_) {
-        packetHandler_(TcpPacket{key, std::move(payload)});
-    }
+    packetHandler_(TcpPacket{key, std::move(payload)});
     lastReceivedNanos_.store(nowNanos());
 
     return true;

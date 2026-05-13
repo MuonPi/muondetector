@@ -20,14 +20,18 @@
 #include "data/commands/mqtt_inhibit_cmd.h"
 #include "data/commands/pca_switch_cmd.h"
 #include "data/commands/polarity_switch_cmd.h"
+#include "data/commands/position_mode_cmd.h"
 #include "data/commands/preamp_switch_cmd.h"
 #include "data/commands/temperature_request_cmd.h"
 #include "data/commands/threshold_setting_cmd.h"
-#include "data/commands/ubx_default_config_cmd.h"
+#include "data/commands/ubx_config_default_cmd.h"
+#include "data/commands/ubx_gnss_config_cmd.h"
+#include "data/commands/ubx_msg_poll_cmd.h"
 #include "data/commands/ubx_msg_poll_rate_cmd.h"
 #include "data/commands/ubx_msg_rate_cmd.h"
 #include "data/commands/ubx_reset_cmd.h"
 #include "data/commands/ubx_save_cmd.h"
+#include "data/commands/ubx_tp5_cmd.h"
 #include "network/tcpmessage_keys.h"
 
 #include <exception>
@@ -47,8 +51,21 @@ void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
 
     try {
         switch (key) {
+            case TCP_MSG_KEY::MSG_UBX_CFG_TP5: {
+                auto tp5 = CapnpCodec<UbxTimePulseStruct>::decode(event.packet.payload);
+                bus_.publish(static_cast<UbxTp5Cmd>(std::move(tp5)));
+                break;
+            }
+            case TCP_MSG_KEY::MSG_UBX_GNSS_CONFIG: {
+                bus_.publish(CapnpCodec<UbxGnssConfigCmd>::decode(event.packet.payload));
+                break;
+            }
             case TCP_MSG_KEY::MSG_UBX_MSG_RATE: {
                 bus_.publish(CapnpCodec<UbxMsgRateCmd>::decode(event.packet.payload));
+                break;
+            }
+            case TCP_MSG_KEY::MSG_UBX_MSG_POLL: {
+                bus_.publish(CapnpCodec<UbxMsgPollCmd>::decode(event.packet.payload));
                 break;
             }
             case TCP_MSG_KEY::MSG_UBX_MSG_RATE_REQUEST: {
@@ -63,6 +80,10 @@ void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
                 bus_.publish(CapnpCodec<UbxSaveCmd>::decode(event.packet.payload));
                 break;
             }
+            case TCP_MSG_KEY::MSG_UBX_CONFIG_DEFAULT: {
+                bus_.publish(CapnpCodec<UbxConfigDefaultCmd>::decode(event.packet.payload));
+                break;
+            }
             case TCP_MSG_KEY::MSG_RATE_SCAN: {
                 bus_.publish(CapnpCodec<StartBurstSampling>::decode(event.packet.payload));
                 break;
@@ -73,10 +94,6 @@ void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
             }
             case TCP_MSG_KEY::MSG_GPIO_RATE_RESET: {
                 bus_.publish(CapnpCodec<GpioRateResetCmd>::decode(event.packet.payload));
-                break;
-            }
-            case TCP_MSG_KEY::MSG_UBX_CONFIG_DEFAULT: {
-                bus_.publish(CapnpCodec<UbxConfigDefaultCmd>::decode(event.packet.payload));
                 break;
             }
             case TCP_MSG_KEY::MSG_I2C_STATS_REQUEST: {
@@ -169,6 +186,11 @@ void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
             }
             case TCP_MSG_KEY::MSG_GPIO_RATE_REQUEST: {
                 bus_.publish(CapnpCodec<GpioRateRequestCmd>::decode(event.packet.payload));
+                break;
+            }
+            case TCP_MSG_KEY::MSG_POSITION_MODEL: {
+                auto cfg = CapnpCodec<PositionModeConfig>::decode(event.packet.payload);
+                bus_.publish(static_cast<PositionModeCmd>(std::move(cfg)));
                 break;
             }
             default:

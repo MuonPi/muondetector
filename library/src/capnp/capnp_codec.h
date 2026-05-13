@@ -41,12 +41,9 @@ struct UbxTimePulseStruct;
 struct LogInfoStruct;
 class Histogram;
 struct StartBurstSampling;
-struct UbxMinCnoCmd;
-struct UbxMinMaxSvCmd;
 struct UbxMsgPollCmd;
 struct UbxMsgPollRateCmd;
 struct UbxMsgRateCmd;
-struct UbxProtocolSelectionCmd;
 struct UbxGnssConfigCmd;
 struct UbxRateCmd;
 struct UbxResetCmd;
@@ -81,6 +78,7 @@ struct AdcSampleRequestCmd;
 struct TemperatureRequestCmd;
 struct HistogramClearCmd;
 struct GpioRateRequestCmd;
+// struct UbxDynamicModelcmd;
 
 template <typename T>
 struct CapnpCodec {
@@ -145,12 +143,9 @@ DECLARE_CODEC(UbxTimePulseStruct)
 DECLARE_CODEC(LogInfoStruct)
 DECLARE_CODEC(Histogram)
 DECLARE_CODEC(StartBurstSampling)
-DECLARE_CODEC(UbxMinCnoCmd)
-DECLARE_CODEC(UbxMinMaxSvCmd)
 DECLARE_CODEC(UbxMsgPollCmd)
 DECLARE_CODEC(UbxMsgPollRateCmd)
 DECLARE_CODEC(UbxMsgRateCmd)
-DECLARE_CODEC(UbxProtocolSelectionCmd)
 DECLARE_CODEC(UbxGnssConfigCmd)
 DECLARE_CODEC(UbxRateCmd)
 DECLARE_CODEC(UbxResetCmd)
@@ -185,5 +180,6 @@ DECLARE_CODEC(AdcSampleRequestCmd)
 DECLARE_CODEC(TemperatureRequestCmd)
 DECLARE_CODEC(HistogramClearCmd)
 DECLARE_CODEC(GpioRateRequestCmd)
+// DECLARE_CODEC(UbxDynamicModelCmd)
 #undef DECLARE_CODEC
 #endif // CAPNP_CODEC_H

@@ -4,6 +4,7 @@
 #include "data/custom_io_operators.h"
 #include "data/ublox/ublox_messages.h"
 #include "data/ublox/ublox_structs.h"
+#include "utility/helper_functions.h"
 #include "utility/unixtime_from_gps.h"
 // #include <custom_io_operators.h>
 
@@ -16,49 +17,6 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
-
-template <class T, class = void>
-struct is_iterator : std::false_type {};
-
-template <class T>
-struct is_iterator<T, std::void_t<typename std::iterator_traits<T>::iterator_category>>
-    : std::true_type {};
-
-enum class endian : bool { big, little };
-
-template <typename T, endian Endian = endian::little, typename It,
-          std::enable_if_t<std::is_integral<T>::value, bool> = true,
-          std::enable_if_t<is_iterator<It>::value, bool> = true>
-[[nodiscard]] auto get(const It& start) -> T {
-    const auto& end{start + sizeof(T)};
-    T value{0};
-    std::size_t shift{(Endian == endian::little) ? 0 : (sizeof(T) - 1) * 8};
-    for (auto it = start; it != end; it++) {
-        value += static_cast<T>(*it) << shift;
-        if (Endian == endian::little) {
-            shift += 8;
-        } else {
-            shift -= 8;
-        }
-    }
-    return value;
-}
-
-template <typename T, endian Endian = endian::little, typename It,
-          std::enable_if_t<std::is_integral<T>::value, bool> = true,
-          std::enable_if_t<is_iterator<It>::value, bool> = true>
-void put(const It& start, const T& value) {
-    const auto& end{start + sizeof(T)};
-    std::size_t shift{(Endian == endian::little) ? 0 : (sizeof(T) - 1) * 8};
-    for (auto it = start; it != end; it++) {
-        *it = static_cast<std::uint8_t>((value >> shift) & 0xff);
-        if (Endian == endian::little) {
-            shift += 8;
-        } else {
-            shift -= 8;
-        }
-    }
-}
 
 std::optional<UbxMessage> MessageProcessor::msgWaitingForAck{std::nullopt};
 std::optional<GpsVersion> MessageProcessor::gpsVersion{std::nullopt};

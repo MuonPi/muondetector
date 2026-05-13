@@ -20,7 +20,9 @@
 #include "data/ublox/ublox_structs.h"
 #include "events/ubx_event.h"
 #include "hardware/ublox/message_processor.h"
+#include "utility/helper_functions.h"
 
+#include <array>
 #include <functional>
 #include <iomanip>
 #include <iostream>
@@ -40,49 +42,28 @@ SerialUblox::SerialUblox(ComponentId id, boost::asio::io_context& io, const std:
     , bus_(bus) {
     makeConnection();
 
-    bus_.subscribe<UbxRateCmd>([this](const UbxRateCmd& cmd) { handle(cmd); });
+    // Command handling
+    bus_.subscribe<UbxDynamicModelCmd>([this](const UbxDynamicModelCmd& cmd) { handle(cmd); });
+    bus_.subscribe<UbxGnssConfigCmd>([this](const UbxGnssConfigCmd& cmd) { handle(cmd); });
+    bus_.subscribe<UbxMinCnoCmd>([this](const UbxMinCnoCmd& cmd) { handle(cmd); });
+    bus_.subscribe<UbxMinMaxSvCmd>([this](const UbxMinMaxSvCmd& cmd) { handle(cmd); });
     bus_.subscribe<UbxMsgPollCmd>([this](const UbxMsgPollCmd& cmd) { handle(cmd); });
-    bus_.subscribe<UbxSetAopCmd>([this](const UbxSetAopCmd& cmd) { handle(cmd); });
+    bus_.subscribe<UbxMsgPollRateCmd>([this](const UbxMsgPollRateCmd& cmd) { handle(cmd); });
+    bus_.subscribe<UbxMsgRateCmd>([this](const UbxMsgRateCmd& cmd) { handle(cmd); });
+    bus_.subscribe<UbxRateCmd>([this](const UbxRateCmd& cmd) { handle(cmd); });
     bus_.subscribe<UbxProtocolSelectionCmd>(
         [this](const UbxProtocolSelectionCmd& cmd) { handle(cmd); });
-    bus_.subscribe<UbxDynamicModelCmd>([this](const UbxDynamicModelCmd& cmd) { handle(cmd); });
+    bus_.subscribe<UbxResetCmd>([this](const UbxResetCmd& cmd) { handle(cmd); });
+    bus_.subscribe<UbxSaveCmd>([this](const UbxSaveCmd& cmd) { handle(cmd); });
+    bus_.subscribe<UbxSetAopCmd>([this](const UbxSetAopCmd& cmd) { handle(cmd); });
     bus_.subscribe<UbxVersionDependentCmd>(
         [this](const UbxVersionDependentCmd& cmd) { handle(cmd); });
-    bus_.subscribe<GpsVersion>([this](const GpsVersion& gpsVersion) { handle(gpsVersion); });
+    bus.subscribe<UbxTp5Cmd>([this](const UbxTp5Cmd& cmd) { handle(cmd); });
 
+    // Internally used events
+    bus_.subscribe<GpsVersion>([this](const GpsVersion& gpsVersion) { handle(gpsVersion); });
     bus_.subscribe<UbxAckNak>(
         [this](const UbxAckNak& event) { msgRateCfgs.emplace(event.msgID, -1); });
-
-    bus_.subscribe<CfgMsg>([this](const CfgMsg& event) {
-        msgRateCfgs.emplace(event.msgID, event.rate);
-        waitingForAppliedMsgRate--;
-        if (waitingForAppliedMsgRate == 0) {
-            UbxMsgRates rates;
-            rates.data.reserve(msgRateCfgs.size());
-
-            for (const auto& [key, value] : msgRateCfgs) {
-                rates.data.push_back({key, value});
-            }
-
-            bus_.publish(std::move(rates));
-        }
-    });
-
-    bus.subscribe<UbxTimePulseStruct>([&bus](const auto& ev) {
-        static uint8_t forceUtcSetCounter = 0;
-        // check here if UTC is selected as time source
-        // this should probably be implemented somewhere else, maybe at ublox init
-        // however, for the timestamping to work correctly, setting the time grid to UTC is
-        // mandatory!
-        int timeGrid = (ev.flags & UbxTimePulseStruct::GRID_UTC_GPS) >> 7;
-        // if (timeGrid != 0 && forceUtcSetCounter++ < 3) {
-        //     UbxTimePulseStruct newTp = ev;
-        //     newTp.flags &= ~static_cast<std::uint32_t>(UbxTimePulseStruct::GRID_UTC_GPS);
-        //     bus.publish(UbxTP5Cmd{newTp});
-        //     logWarn("forced time grid to UTC");
-        //     emit sendPollUbxMsg(UBX_MSG::CFG_TP5);
-        // }
-    });
 }
 
 void SerialUblox::makeConnection() {
@@ -500,6 +481,22 @@ void SerialUblox::handle(const UbxGnssConfigCmd& cmd) {
     }
 
     enqueueMessage(UbxMessage{UBX_MSG::CFG_GNSS, data});
+}
+
+void SerialUblox::handle(const UbxTp5Cmd& tp) {
+
+    std::array<std::uint8_t, 32> buf{0};
+    put<std::uint8_t>(buf.begin(), tp.tpIndex);
+    put<std::uint8_t>(buf.begin() + 1, 0);
+    put<std::uint16_t>(buf.begin() + 4, tp.antCableDelay);
+    put<std::uint16_t>(buf.begin() + 6, tp.rfGroupDelay);
+    put<std::uint32_t>(buf.begin() + 8, tp.freqPeriod);
+    put<std::uint32_t>(buf.begin() + 12, tp.freqPeriodLock);
+    put<std::uint32_t>(buf.begin() + 16, tp.pulseLenRatio);
+    put<std::uint32_t>(buf.begin() + 20, tp.pulseLenRatioLock);
+    put<std::uint32_t>(buf.begin() + 24, tp.userConfigDelay);
+    put<std::uint32_t>(buf.begin() + 28, tp.flags);
+    enqueueMessage(UbxMessage{UBX_MSG::CFG_TP5, std::string(buf.begin(), buf.end())});
 }
 
 void SerialUblox::handle(const UbxVersionDependentCmd& cmd) {

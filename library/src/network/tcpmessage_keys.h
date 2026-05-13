@@ -86,7 +86,8 @@ enum class TCP_MSG_KEY : std::uint16_t {
     MSG_RESERVED2 = 397,
     MSG_RESERVED3 = 401,
     // MSG_PLACEHOLDER_402 = 402
-
+    MSG_UBX_MSG_POLL = 403,
+    // MSG_UBX_DYNAMIC_MODEL = 405,
 };
 
 #endif // TCPMESSAGE_KEYS_H

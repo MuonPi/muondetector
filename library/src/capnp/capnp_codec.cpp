@@ -44,7 +44,7 @@
 #include "data/commands/preamp_switch_cmd.h"
 #include "data/commands/temperature_request_cmd.h"
 #include "data/commands/threshold_setting_cmd.h"
-#include "data/commands/ubx_default_config_cmd.h"
+#include "data/commands/ubx_config_default_cmd.h"
 #include "data/commands/ubx_gnss_config_cmd.h"
 #include "data/commands/ubx_min_cno_cmd.h"
 #include "data/commands/ubx_min_max_sv_cmd.h"
@@ -1247,44 +1247,6 @@ auto CapnpCodec<PcaSwitchCmd>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PCA_SWITCH);
 }
 
-auto CapnpCodec<UbxMinCnoCmd>::encode(const UbxMinCnoCmd& cmd) -> std::vector<uint8_t> {
-    capnp::MallocMessageBuilder msg;
-    auto root = msg.initRoot<UbxMinCnoCmdCapnp>();
-    root.setMinCNO(cmd.minCNO);
-    auto flat = capnp::messageToFlatArray(msg);
-    auto bytes = flat.asBytes();
-    return {bytes.begin(), bytes.end()};
-}
-auto CapnpCodec<UbxMinCnoCmd>::decode(const std::vector<std::uint8_t>& data) -> UbxMinCnoCmd {
-    auto reader = makeReader(data);
-    auto root = reader.getRoot<UbxMinCnoCmdCapnp>();
-    return UbxMinCnoCmd{root.getMinCNO()};
-}
-
-auto CapnpCodec<UbxMinCnoCmd>::messageKey() -> std::uint16_t {
-    return 0;
-}
-
-auto CapnpCodec<UbxMinMaxSvCmd>::encode(const UbxMinMaxSvCmd& cmd) -> std::vector<uint8_t> {
-    capnp::MallocMessageBuilder msg;
-    auto root = msg.initRoot<UbxMinMaxSvCmdCapnp>();
-    root.setMinSVs(cmd.minSVs);
-    root.setMaxSVs(cmd.maxSVs);
-    auto flat = capnp::messageToFlatArray(msg);
-    auto bytes = flat.asBytes();
-    return {bytes.begin(), bytes.end()};
-}
-
-auto CapnpCodec<UbxMinMaxSvCmd>::decode(const std::vector<std::uint8_t>& data) -> UbxMinMaxSvCmd {
-    auto reader = makeReader(data);
-    auto root = reader.getRoot<UbxMinMaxSvCmdCapnp>();
-    return UbxMinMaxSvCmd{root.getMinSVs(), root.getMaxSVs()};
-}
-
-auto CapnpCodec<UbxMinMaxSvCmd>::messageKey() -> std::uint16_t {
-    return 0;
-}
-
 auto CapnpCodec<UbxMsgPollCmd>::encode(const UbxMsgPollCmd& cmd) -> std::vector<uint8_t> {
     capnp::MallocMessageBuilder msg;
     auto root = msg.initRoot<UbxMsgPollCmdCapnp>();
@@ -1301,7 +1263,7 @@ auto CapnpCodec<UbxMsgPollCmd>::decode(const std::vector<std::uint8_t>& data) ->
 }
 
 auto CapnpCodec<UbxMsgPollCmd>::messageKey() -> std::uint16_t {
-    return 0;
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_MSG_POLL);
 }
 
 auto CapnpCodec<UbxMsgPollRateCmd>::encode(const UbxMsgPollRateCmd& cmd) -> std::vector<uint8_t> {
@@ -1344,28 +1306,6 @@ auto CapnpCodec<UbxMsgRateCmd>::decode(const std::vector<std::uint8_t>& data) ->
 
 auto CapnpCodec<UbxMsgRateCmd>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_MSG_RATE);
-}
-
-auto CapnpCodec<UbxProtocolSelectionCmd>::encode(const UbxProtocolSelectionCmd& cmd)
-    -> std::vector<uint8_t> {
-    capnp::MallocMessageBuilder msg;
-    auto root = msg.initRoot<UbxProtocolSelectionCmdCapnp>();
-    root.setPort(cmd.port);
-    root.setOutProtocolMask(cmd.outProtocolMask);
-    auto flat = capnp::messageToFlatArray(msg);
-    auto bytes = flat.asBytes();
-    return {bytes.begin(), bytes.end()};
-}
-
-auto CapnpCodec<UbxProtocolSelectionCmd>::decode(const std::vector<std::uint8_t>& data)
-    -> UbxProtocolSelectionCmd {
-    auto reader = makeReader(data);
-    auto root = reader.getRoot<UbxProtocolSelectionCmdCapnp>();
-    return UbxProtocolSelectionCmd{root.getPort(), root.getOutProtocolMask()};
-}
-
-auto CapnpCodec<UbxProtocolSelectionCmd>::messageKey() -> std::uint16_t {
-    return 0;
 }
 
 auto CapnpCodec<UbxGnssConfigCmd>::encode(const UbxGnssConfigCmd& event) -> std::vector<uint8_t> {

@@ -157,12 +157,10 @@ class EventBindings {
         bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_DOP, 1, 254});
         bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_RXBUF, 1, 53});
         bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_RXBUF, 1, 53});
-        bus.publish(UbxSetAopCmd{true});
     }
 
     inline static void pollAllUbxMsgRate(EventBus& bus) {
         bus.publish(UbxMsgPollCmd{UBX_MSG::CFG_PRT});
-        bus.publish(UbxMsgPollCmd{UBX_MSG::MON_VER});
         bus.publish(UbxMsgPollCmd{UBX_MSG::CFG_GNSS});
         bus.publish(UbxMsgPollCmd{UBX_MSG::CFG_NAVX5});
         bus.publish(UbxMsgPollCmd{UBX_MSG::CFG_ANT});

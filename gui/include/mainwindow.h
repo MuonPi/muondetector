@@ -147,11 +147,11 @@ class MainWindow : public QMainWindow {
     void onBiasSwitchReceived(bool biasEnabled);
 
   private:
-    void decode(const TcpPacket& packet);
+    Ui::MainWindow* ui;
     std::unordered_map<TCP_MSG_KEY, std::function<void(const TcpPacket&)>> decoderMap;
     auto
     buildDecoderMap() -> std::unordered_map<TCP_MSG_KEY, std::function<void(const TcpPacket&)>>;
-    Ui::MainWindow* ui;
+    void decode(const TcpPacket& packet);
     void uiSetConnectedState();
     void uiSetDisconnectedState();
     float parseValue(QString text);

@@ -47,7 +47,8 @@
 #include <data/commands/preamp_switch_cmd.h>
 #include <data/commands/temperature_request_cmd.h>
 #include <data/commands/threshold_setting_cmd.h>
-#include <data/commands/ubx_default_config_cmd.h>
+#include <data/commands/ubx_config_default_cmd.h>
+#include <data/commands/ubx_msg_poll_cmd.h>
 #include <data/commands/ubx_msg_poll_rate_cmd.h>
 #include <data/commands/ubx_msg_rate_cmd.h>
 #include <data/commands/ubx_reset_cmd.h>
@@ -465,6 +466,10 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
     });
     clientConn->setPacketHandler([weakConn, this](const TcpPacket& packet) {
         if (auto conn = weakConn.lock()) {
+            if (static_cast<TCP_MSG_KEY>(packet.key) == TCP_MSG_KEY::MSG_PING) {
+                conn->sendPacket(static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PONG), packet.payload);
+                return;
+            }
             decode(packet);
         }
     });
@@ -488,13 +493,7 @@ void MainWindow::decode(const TcpPacket& packet) {
 
 auto MainWindow::buildDecoderMap()
     -> std::unordered_map<TCP_MSG_KEY, std::function<void(const TcpPacket&)>> {
-    return {// { // TODO: Make quit connection functioning properly
-            //     TCP_MSG_KEY::MSG_QUIT_CONNECTION,
-            //     [this](const TcpPacket& packet){
-            //         auto event = CapnpCodec<>::decode(packet.payload);
-            //     }
-            // },
-            {TCP_MSG_KEY::MSG_GPIO_EVENT,
+    return {{TCP_MSG_KEY::MSG_GPIO_EVENT,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<GpioEvent>::decode(packet.payload);
                  if (event.edge == EventEdge::Falling) {
@@ -1264,3 +1263,8 @@ void MainWindow::onPosModeConfigChanged(const PositionModeConfig& posconfig) {
     sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_POSITION_MODEL,
                           CapnpCodec<PositionModeConfig>::encode(posconfig));
 }
+
+// void MainWindow::onDynamicModelChanged(const UbxDynamicModel& model) {
+//     sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_UBX_DYNAMIC_MODEL,
+//                           CapnpCodec<UbxDynamicModelCmd>::encode(model));
+// }
