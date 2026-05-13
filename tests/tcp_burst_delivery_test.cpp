@@ -38,6 +38,7 @@ int main() {
     auto io = std::make_shared<boost::asio::io_context>();
     auto sink = std::make_shared<TcpSink>();
     TcpServer server(io, 0, sink);
+
     ThreadPool pool(4);
     EventBus bus(pool);
     TcpSource tcpSource(OtherComponent::TCP_SOURCE_0, bus);
