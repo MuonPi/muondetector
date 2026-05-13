@@ -1,13 +1,15 @@
 #include "network/tcpserver.h"
 
+#include "core/event_bus.h"
+#include "data/events/server_conn_count_event.h"
 #include "sinks/tcp_sink.h"
 #include "tcpmessage_keys.h"
 
 using boost::asio::ip::tcp;
 
 TcpServer::TcpServer(std::shared_ptr<boost::asio::io_context> io, std::uint16_t port,
-                     std::shared_ptr<TcpSink> sink)
-    : io_(io), acceptor_(*io_, tcp::endpoint(tcp::v4(), port)), sink_(sink) {
+                     std::shared_ptr<TcpSink> sink, EventBus* bus)
+    : io_(io), acceptor_(*io_, tcp::endpoint(tcp::v4(), port)), sink_(sink), bus_{bus} {
     do_accept();
 }
 
@@ -36,6 +38,7 @@ void TcpServer::heartbeatAndCleanup(std::chrono::steady_clock::duration maxIdle)
         const auto now = std::chrono::steady_clock::now();
         const std::vector<std::uint8_t> heartbeatPayload{};
 
+        bool removedConnections{false};
         for (auto it = sessions_.begin(); it != sessions_.end();) {
             auto& state = it->second;
             auto& conn = state.connection;
@@ -47,6 +50,7 @@ void TcpServer::heartbeatAndCleanup(std::chrono::steady_clock::duration maxIdle)
                     sink_->removeConnection(conn);
                 }
                 it = sessions_.erase(it);
+                removedConnections = true;
                 continue;
             }
 
@@ -54,6 +58,10 @@ void TcpServer::heartbeatAndCleanup(std::chrono::steady_clock::duration maxIdle)
             state.lastHeartbeatSentAt = now;
             state.heartbeatCount++;
             ++it;
+        }
+        if (removedConnections && bus_ != nullptr) {
+            bus_->publish(
+                ServerConnCountEvent{.n_sessions = sessions_.size(), .newlyConnected = false});
         }
 
         sink_->pruneDisconnected();
@@ -75,6 +83,10 @@ void TcpServer::do_accept() {
                 handler(conn);
             }
             conn->start();
+            if (bus_ != nullptr) {
+                bus_->publish(
+                    ServerConnCountEvent{.n_sessions = sessions_.size(), .newlyConnected = true});
+            }
         }
 
         do_accept();

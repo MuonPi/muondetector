@@ -1,6 +1,9 @@
 #ifndef DATA_STORE_H
 #define DATA_STORE_H
 
+#include "utility/geoposmanager.h"
+#include "utility/ublox_ratebuffer.h"
+
 #include <any>
 #include <chrono>
 #include <memory>
@@ -10,7 +13,6 @@
 #include <unordered_map>
 
 class Histogram;
-class GeoPosManager;
 class DataStore {
   private:
     struct Entry {
@@ -75,9 +77,13 @@ class DataStore {
     // GeoPos
     auto geoPosManager() -> GeoPosManager&;
 
+    // Ublox Ratebuffer
+    auto ubloxRateBuffer() -> CounterRateBuffer&;
+
   private:
     std::unordered_map<std::string, std::shared_ptr<Histogram>> m_histo_map;
     std::unique_ptr<GeoPosManager> m_geopos_manager;
+    std::unique_ptr<CounterRateBuffer> m_ublox_ratebuffer;
     std::unordered_map<std::type_index, Entry> data_;
     mutable std::mutex mutex_;
 };

@@ -5,7 +5,7 @@
 #include "core/component.h"
 #include "core/event_bus.h"
 #include "core/registries/device_registry.h"
-#include "data/commands/bias_dac_setting_cmd.h"
+#include "data/commands/bias_voltage_cmd.h"
 #include "data/commands/threshold_setting_cmd.h"
 #include "data/events/mcp4728_event.h"
 

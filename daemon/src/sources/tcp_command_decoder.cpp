@@ -4,8 +4,8 @@
 #include "core/logging/logger.h"
 #include "data/commands/adc_mode_request_cmd.h"
 #include "data/commands/adc_sample_request_cmd.h"
-#include "data/commands/bias_dac_setting_cmd.h"
 #include "data/commands/bias_switch_cmd.h"
+#include "data/commands/bias_voltage_cmd.h"
 #include "data/commands/burst_sampling_cmd.h"
 #include "data/commands/calibration_cmd.h"
 #include "data/commands/calibration_save_cmd.h"
@@ -31,6 +31,7 @@
 #include "network/tcpmessage_keys.h"
 
 #include <exception>
+#include <string>
 
 TcpCommandDecoder::TcpCommandDecoder(ComponentId id, EventBus& bus) : Component(id), bus_(bus) {
     bus_.subscribe<TcpPacketEvent>([this](const TcpPacketEvent& event) { this->handle(event); });
@@ -41,6 +42,8 @@ TcpCommandDecoder::TcpCommandDecoder(ComponentId id, EventBus& bus) : Component(
 
 void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
     const auto key = static_cast<TCP_MSG_KEY>(event.packet.key);
+
+    logDebug("Received command " + std::to_string(event.packet.key));
 
     try {
         switch (key) {

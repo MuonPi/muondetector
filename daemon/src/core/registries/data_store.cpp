@@ -3,9 +3,12 @@
 #include "core/logging/logger.h"
 #include "data/histogram.h"
 #include "utility/geoposmanager.h"
+#include "utility/ublox_ratebuffer.h"
 // #include "data/"
 
-DataStore::DataStore() : m_geopos_manager{std::make_unique<GeoPosManager>()} {
+DataStore::DataStore()
+    : m_geopos_manager{std::make_unique<GeoPosManager>()}
+    , m_ublox_ratebuffer{std::make_unique<CounterRateBuffer>()} {
     // m_geopos_manager.set_lockin_ready_callback(std::bind(&Daemon::onGeoPosLockInReady, this,
     // std::placeholders::_1));
     // m_geopos_manager.set_valid_pos_callback(std::bind(&Daemon::onGeoPosValid, this,
@@ -84,4 +87,12 @@ void DataStore::setupHistos() {
     //     m_histo_map["geoLongitude"],
     //     m_histo_map["geoLatitude"],
     //     m_histo_map["geoHeight"]);
+}
+
+auto DataStore::geoPosManager() -> GeoPosManager& {
+    return *m_geopos_manager;
+}
+
+auto DataStore::ubloxRateBuffer() -> CounterRateBuffer& {
+    return *m_ublox_ratebuffer;
 }

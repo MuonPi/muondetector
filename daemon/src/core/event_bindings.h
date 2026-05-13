@@ -26,6 +26,7 @@
 #include "data/events/ubx_event.h"
 #include "data/events/version_event.h"
 #include "sinks/tcp_sink.h"
+#include "utility/ublox_ratebuffer.h"
 
 class EventBindings {
   public:
@@ -102,6 +103,11 @@ class EventBindings {
         // bus.subscribe<LogInfoStruct>([&datastore](const auto& ev) { datastore.store(ev); });
         // bus.subscribe<PositionModeConfig>([&datastore](const auto& ev) { datastore.store(ev); });
         // bus.subscribe<VersionEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+
+        // set up counter rate buffer for ubx counter
+        datastore.ubloxRateBuffer().setBufferTime(std::chrono::seconds(10));
+        bus.subscribe<UbxTimeMarkStruct>(
+            [&datastore](auto& ev) { datastore.ubloxRateBuffer().onCounterValue(ev.evtCounter); });
 
         // Setup Histograms
         // bus.subscribe<LM75Event>([&datastore](const auto& ev){

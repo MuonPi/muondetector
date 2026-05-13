@@ -4,7 +4,7 @@
 #include "config.h"
 #include "core/logging/logger.h"
 // #include "data/commands/threshold_setting_cmd.h"
-#include "data/commands/bias_dac_setting_cmd.h"
+#include "data/commands/bias_voltage_cmd.h"
 #include "data/commands/dac_cmd.h"
 #include "data/events/bias_voltage_event.h"
 #include "data/events/mcp4728_event.h"

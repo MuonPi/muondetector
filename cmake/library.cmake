@@ -70,7 +70,7 @@ set(MUONDETECTOR_LIBRARY_HEADER_FILES
     )
 
 set(MUONDETECTOR_COMMANDS_HEADER_FILES
-    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/bias_dac_setting_cmd.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/bias_voltage_cmd.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/calibration_save_cmd.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/pca_switch_cmd.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/ubx_default_config_cmd.h"
