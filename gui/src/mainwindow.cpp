@@ -78,6 +78,9 @@
 #include <histogram.h>
 #include <iostream>
 #include <muondetector_structs.h>
+#include <qcompleter.h>
+#include <qdir.h>
+#include <qstandardpaths.h>
 #include <tcpmessage_keys.h>
 #include <unordered_map>
 
@@ -188,6 +191,21 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
 
     // setup signal/slots
     connect(ui->ipButton, &QPushButton::pressed, this, &MainWindow::onIpButtonClicked);
+    connect(ui->biasControlTypeComboBox, &QComboBox::currentIndexChanged, this,
+            &MainWindow::onBiasControlTypeComboBoxCurrentIndexChanged);
+    connect(ui->biasVoltageDoubleSpinBox, &QDoubleSpinBox::valueChanged, this,
+            &MainWindow::onBiasVoltageDoubleSpinBoxValueChanged);
+    connect(ui->discr1Save, &QPushButton::clicked, this, &MainWindow::discr1SaveClicked);
+    connect(ui->discr2Save, &QPushButton::clicked, this, &MainWindow::discr2SaveClicked);
+    connect(ui->biasPowerButton, &QPushButton::clicked, this,
+            &MainWindow::onBiasPowerButtonClicked);
+    connect(ui->biasVoltageSlider, &QSlider::sliderReleased, this,
+            &MainWindow::onBiasVoltageSliderSliderReleased);
+    connect(ui->biasVoltageSlider, &QSlider::valueChanged, this,
+            &MainWindow::onBiasVoltageSliderValueChanged);
+    connect(ui->biasVoltageSlider, &QSlider::sliderPressed, this,
+            &MainWindow::onBiasVoltageSliderSliderPressed);
+    connect(ui->saveDacButton, &QPushButton::clicked, this, &MainWindow::onSaveDacButtonClicked);
 
     // set timer for and/xor label color change after hit
     andTimer.setSingleShot(true);
@@ -665,20 +683,16 @@ auto MainWindow::buildDecoderMap()
                  emit intCounterReceived(event.evtCounter);
                  emit timeMarkReceived(event);
              }},
-            // { // Currently not used
-            //     TCP_MSG_KEY::MSG_UBX_TXBUF,
-            //     [this](const TcpPacket& packet){
-            //         auto event = CapnpCodec<MonTx>::decode(packet.payload);
-            //         emit txBufPeakReceived(event.tPeakUsage);
-            //     }
-            // },
-            // {
-            //     TCP_MSG_KEY::MSG_UBX_RXBUF,
-            //     [this](const TcpPacket& packet){
-            //         auto event = CapnpCodec<MonRx>::decode(packet.payload);
-            //         emit txBufPeakReceived(event.tUsage);
-            //     }
-            // },
+            {TCP_MSG_KEY::MSG_UBX_TXBUF,
+             [this](const TcpPacket& packet) {
+                 auto event = CapnpCodec<MonTx>::decode(packet.payload);
+                 emit txBufReceived(event.tPeakUsage);
+             }},
+            {TCP_MSG_KEY::MSG_UBX_RXBUF,
+             [this](const TcpPacket& packet) {
+                 auto event = CapnpCodec<MonRx>::decode(packet.payload);
+                 emit rxBufReceived(event.tUsage);
+             }},
             {TCP_MSG_KEY::MSG_UBX_TXBUF_PEAK,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<MonTx>::decode(packet.payload);
@@ -687,7 +701,7 @@ auto MainWindow::buildDecoderMap()
             {TCP_MSG_KEY::MSG_UBX_RXBUF_PEAK,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<MonRx>::decode(packet.payload);
-                 emit txBufPeakReceived(event.tPeakUsage);
+                 emit rxBufPeakReceived(event.tPeakUsage);
              }},
             {TCP_MSG_KEY::MSG_UBX_MONHW,
              [this](const TcpPacket& packet) {
@@ -1086,12 +1100,12 @@ void MainWindow::onIpButtonClicked() {
     }
 }
 
-void MainWindow::on_discr1Save_clicked() {
+void MainWindow::discr1SaveClicked() {
     sendSetThresh(0, 1e-3 * ui->discr1Edit->value());
     sliderValuesDirty = true;
 }
 
-void MainWindow::on_discr2Save_clicked() {
+void MainWindow::discr2SaveClicked() {
     sendSetThresh(1, 1e-3 * ui->discr2Edit->value());
     sliderValuesDirty = true;
 }
@@ -1130,11 +1144,11 @@ float MainWindow::parseValue(QString text) {
     return value;
 }
 
-void MainWindow::on_saveDacButton_clicked() {
+void MainWindow::onSaveDacButtonClicked() {
     sendCmdIfConnected(clientConn, DacEepromSetCmd{});
 }
 
-void MainWindow::on_biasPowerButton_clicked() {
+void MainWindow::onBiasPowerButtonClicked() {
     sendSetBiasStatus(!biasON);
 }
 
@@ -1148,12 +1162,12 @@ void MainWindow::sendInputSwitch(TIMING_MUX_SELECTION sel) {
                           CapnpCodec<PcaSwitchCmd>::encode(cmd));
 }
 
-void MainWindow::on_biasVoltageSlider_sliderReleased() {
+void MainWindow::onBiasVoltageSliderSliderReleased() {
     mouseHold = false;
-    on_biasVoltageSlider_valueChanged(ui->biasVoltageSlider->value());
+    onBiasVoltageSliderValueChanged(ui->biasVoltageSlider->value());
 }
 
-void MainWindow::on_biasVoltageSlider_valueChanged(int value) {
+void MainWindow::onBiasVoltageSliderValueChanged(int value) {
     if (!mouseHold) {
         double biasVoltage = (double) value / ui->biasVoltageSlider->maximum() * maxBiasVoltage;
         if (fabs(biasCalibSlope) < 1e-5)
@@ -1170,7 +1184,7 @@ void MainWindow::on_biasVoltageSlider_valueChanged(int value) {
     // (UBias - c0)/c1 = UDac
 }
 
-void MainWindow::on_biasVoltageSlider_sliderPressed() {
+void MainWindow::onBiasVoltageSliderSliderPressed() {
     mouseHold = true;
 }
 
@@ -1198,7 +1212,7 @@ void MainWindow::onCalibUpdated(const std::vector<CalibStruct>& items) {
     ui->biasControlTypeComboBox->setCurrentIndex((calibedBias) ? 1 : 0);
 }
 
-void MainWindow::on_biasControlTypeComboBox_currentIndexChanged(int index) {
+void MainWindow::onBiasControlTypeComboBoxCurrentIndexChanged(int index) {
     if (index == 1) {
         if (calib == nullptr)
             return;
@@ -1227,7 +1241,7 @@ void MainWindow::on_biasControlTypeComboBox_currentIndexChanged(int index) {
     sendCmdIfConnected(clientConn, BiasVoltageRequestCmd{});
 }
 
-void MainWindow::on_biasVoltageDoubleSpinBox_valueChanged(double arg1) {
+void MainWindow::onBiasVoltageDoubleSpinBoxValueChanged(double arg1) {
     double biasVoltage = arg1;
     if (fabs(biasCalibSlope) < 1e-5)
         return;

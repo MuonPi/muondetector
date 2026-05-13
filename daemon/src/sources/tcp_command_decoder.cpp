@@ -11,6 +11,7 @@
 #include "data/commands/calibration_save_cmd.h"
 #include "data/commands/dac_cmd.h"
 #include "data/commands/dac_eeprom_set_cmd.h"
+#include "data/commands/event_trigger_cmd.h"
 #include "data/commands/gain_switch_cmd.h"
 #include "data/commands/gpio_rate_request_cmd.h"
 #include "data/commands/gpio_rate_reset_cmd.h"
@@ -156,6 +157,14 @@ void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
                 bus_.publish(CapnpCodec<BiasVoltageCmd>::decode(event.packet.payload));
                 break;
             }
+            case TCP_MSG_KEY::MSG_BIAS_VOLTAGE_REQUEST: {
+                bus_.publish(CapnpCodec<BiasVoltageRequestCmd>::decode(event.packet.payload));
+                break;
+            }
+            case TCP_MSG_KEY::MSG_BIAS_SWITCH: {
+                bus_.publish(CapnpCodec<BiasSwitchCmd>::decode(event.packet.payload));
+                break;
+            }
             case TCP_MSG_KEY::MSG_BIAS_SWITCH_REQUEST: {
                 bus_.publish(CapnpCodec<BiasSwitchRequestCmd>::decode(event.packet.payload));
                 break;
@@ -191,6 +200,10 @@ void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
             case TCP_MSG_KEY::MSG_POSITION_MODEL: {
                 auto cfg = CapnpCodec<PositionModeConfig>::decode(event.packet.payload);
                 bus_.publish(static_cast<PositionModeCmd>(std::move(cfg)));
+                break;
+            }
+            case TCP_MSG_KEY::MSG_EVENTTRIGGER_REQUEST: {
+                bus_.publish(CapnpCodec<EventTriggerRequestCmd>::decode(event.packet.payload));
                 break;
             }
             default:

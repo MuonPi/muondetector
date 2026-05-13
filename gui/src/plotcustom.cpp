@@ -1,8 +1,18 @@
+#include "qwt_legend_data.h"
+#include "qwt_series_data.h"
+
 #include <QApplication>
 #include <QEvent>
 #include <QTime>
 #include <plotcustom.h>
+#include <qcontainerfwd.h>
+#include <qframe.h>
+#include <qnamespace.h>
+#include <qpalette.h>
 #include <qpen.h>
+#include <qpoint.h>
+#include <qsizepolicy.h>
+#include <qtypes.h>
 #include <qwt.h>
 #include <qwt_legend.h>
 #include <qwt_plot_canvas.h>
@@ -13,9 +23,9 @@ class TimeScaleDraw : public QwtScaleDraw {
   public:
     TimeScaleDraw(const QTime& base, const bool invert = true)
         : invertValues(invert), baseTime(base) {}
-    virtual QwtText label(qreal v) const {
+    virtual auto label(qreal v) const -> QwtText {
         if (invertValues) {
-            QTime upTime = baseTime.addSecs(-(int) v);
+            QTime upTime = baseTime.addSecs(-static_cast<int>(v));
             return QString("- " + upTime.toString());
         } else {
             QTime upTime = baseTime.addSecs((int) v);
@@ -31,7 +41,7 @@ class TimeScaleDraw : public QwtScaleDraw {
 void PlotCustom::initialize() {
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     this->setAutoFillBackground(true);
-    QwtPlotCanvas* canvas = dynamic_cast<QwtPlotCanvas*>(this->canvas());
+    auto* canvas = dynamic_cast<QwtPlotCanvas*>(this->canvas());
     canvas->setFrameStyle(QFrame::NoFrame);
     QPalette pal = palette();
     pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::Base));
@@ -42,7 +52,7 @@ void PlotCustom::initialize() {
     enableAxis(QwtPlot::yRight, true);
     setAxisAutoScale(QwtPlot::yRight, true);
 
-    QwtLegend* legend = new QwtLegend(this);
+    auto* legend = new QwtLegend(this);
     legend->setDefaultItemMode(QwtLegendData::Checkable);
     this->insertLegend(legend, QwtPlot::BottomLegend);
 
@@ -70,7 +80,7 @@ void PlotCustom::initialize() {
     andCurve.setBrush(andCurveColor);
     andCurve.attach(this);
     connect(legend, &QwtLegend::checked, this,
-            [this](const QVariant& itemInfo, bool on, int /*index*/) {
+            [this](const QVariant& itemInfo, bool on, int /*index*/) -> void {
                 if (on) {
                     if (itemInfo == "xor-curve") {
                         xorCurve.show();
@@ -107,8 +117,9 @@ void PlotCustom::changeEvent(QEvent* e) {
 }
 
 void PlotCustom::plotSamples(QVector<QPointF>& samples, QwtPlotCurve& curve) {
-    if (!isEnabled())
+    if (!isEnabled()) {
         return;
+    }
     QVector<QPointF> someSamples;
     for (auto sample : samples) {
         someSamples.push_back(sample);
@@ -116,16 +127,16 @@ void PlotCustom::plotSamples(QVector<QPointF>& samples, QwtPlotCurve& curve) {
     }
 
     qreal xMin = 0.0;
-    qreal xMax = 0.0;
+    const qreal xMax = 0.0;
     if (!someSamples.isEmpty()) {
         xMin = someSamples.first().x();
     }
-    qreal step = (double) (int) ((xMax - xMin) / 6);
+    auto step = static_cast<double>(static_cast<int>((xMax - xMin) / 6));
     if (this->size().width() < 450) {
-        step = (double) (int) ((xMax - xMin) / 3);
+        step = static_cast<double>(static_cast<int>((xMax - xMin) / 3));
     }
     setAxisScale(QwtPlot::xBottom, xMin, xMax, step);
-    QwtPointSeriesData* dat = new QwtPointSeriesData(someSamples);
+    auto* dat = new QwtPointSeriesData(someSamples);
     curve.setData(dat);
     replot();
 }
@@ -140,7 +151,7 @@ void PlotCustom::plotAndSamples(QVector<QPointF>& andSamples) {
     plotSamples(andSamples, andCurve);
 }
 
-void PlotCustom::setPreset(QString preset) {
+void PlotCustom::setPreset(const QString& preset) {
     if (!preset.isEmpty()) {
         xAxisPreset = preset;
     }
@@ -157,7 +168,7 @@ void PlotCustom::setPreset(QString preset) {
 }
 
 void PlotCustom::setStatusEnabled(bool status) {
-    if (status == true) {
+    if (status) {
         xorCurve.attach(this);
         andCurve.attach(this);
         const QPen blackPen(Qt::black);

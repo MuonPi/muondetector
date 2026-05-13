@@ -131,19 +131,19 @@ class MainWindow : public QMainWindow {
     void connection_error(int error_code, const QString message);
     void sendInputSwitch(TIMING_MUX_SELECTION sel);
 
-    void on_discr1Save_clicked();
-    void on_discr2Save_clicked();
+    void discr1SaveClicked();
+    void discr2SaveClicked();
 
-    void on_biasPowerButton_clicked();
-    void on_biasVoltageSlider_sliderReleased();
-    void on_biasVoltageSlider_valueChanged(int value);
-    void on_biasVoltageSlider_sliderPressed();
+    void onBiasPowerButtonClicked();
+    void onBiasVoltageSliderSliderReleased();
+    void onBiasVoltageSliderValueChanged(int value);
+    void onBiasVoltageSliderSliderPressed();
     void onCalibUpdated(const std::vector<CalibStruct>& items);
-    void on_biasControlTypeComboBox_currentIndexChanged(int index);
+    void onBiasControlTypeComboBoxCurrentIndexChanged(int index);
     void onSetGnssConfigs(const std::vector<GnssConfigStruct>& configList);
     void onSetTP5Config(const UbxTimePulseStruct& tp);
-    void on_biasVoltageDoubleSpinBox_valueChanged(double arg1);
-    void on_saveDacButton_clicked();
+    void onBiasVoltageDoubleSpinBoxValueChanged(double arg1);
+    void onSaveDacButtonClicked();
     void onBiasSwitchReceived(bool biasEnabled);
 
   private:

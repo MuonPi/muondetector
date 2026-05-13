@@ -27,7 +27,7 @@ class Map : public QWidget {
     void coordinateQmlSignal(double lat, double lon);
 
   private slots:
-    void on_setConfigPushButton_clicked();
+    void setConfigPushButtclicked();
 
   private:
     QObject* mapComponent = nullptr;

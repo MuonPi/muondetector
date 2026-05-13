@@ -32,6 +32,7 @@
 #include "data/commands/calibration_save_cmd.h"
 #include "data/commands/dac_cmd.h"
 #include "data/commands/dac_eeprom_set_cmd.h"
+#include "data/commands/event_trigger_cmd.h"
 #include "data/commands/gain_switch_cmd.h"
 #include "data/commands/gpio_rate_request_cmd.h"
 #include "data/commands/gpio_rate_reset_cmd.h"
@@ -1623,5 +1624,6 @@ EMPTY_CMD_CODEC(BiasVoltageRequestCmd, BiasVoltageRequestCmdCapnp, MSG_BIAS_VOLT
 EMPTY_CMD_CODEC(BiasSwitchRequestCmd, BiasSwitchRequestCmdCapnp, MSG_BIAS_SWITCH_REQUEST)
 EMPTY_CMD_CODEC(TemperatureRequestCmd, TemperatureRequestCmdCapnp, MSG_TEMPERATURE_REQUEST)
 EMPTY_CMD_CODEC(DacEepromSetCmd, DacEepromSetCmdCapnp, MSG_DAC_EEPROM_SET)
+EMPTY_CMD_CODEC(EventTriggerRequestCmd, EventTriggerRequestCmdCapnp, MSG_EVENTTRIGGER_REQUEST)
 
 #undef EMPTY_CMD_CODEC

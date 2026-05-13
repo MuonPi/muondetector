@@ -251,6 +251,9 @@ messages:
   - name: DacEepromSetCmdCapnp
     fields: []
 
+  - name: EventTriggerRequestCmdCapnp
+    fields: []
+
   - name: HistogramClearCmdCapnp
     fields:
       - { name: histogramName, type: string }

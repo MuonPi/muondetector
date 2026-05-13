@@ -1,5 +1,7 @@
 #include "scanform.h"
 
+#include "gui/src/ui_scanform.h"
+#include "qwt_plot.h"
 #include "ui_scanform.h"
 
 #include <QFileDialog>
@@ -15,6 +17,14 @@ constexpr double EPSILON{1e-9};
 
 ScanForm::ScanForm(QWidget* parent) : QWidget(parent), ui(new Ui::ScanForm) {
     ui->setupUi(this);
+
+    connect(ui->scanStartPushButton, &QPushButton::clicked, this,
+            &ScanForm::onScanStartPushButtonClicked);
+    connect(ui->scanParComboBox, &QComboBox::currentIndexChanged, this,
+            &ScanForm::onScanParComboBoxCurrentIndexChanged);
+    connect(ui->plotDifferentialCheckBox, &QCheckBox::toggled, this,
+            &ScanForm::onPlotDifferentialCheckBoxToggled);
+
     ui->scanParComboBox->clear();
     foreach (QString item, SP_NAMES) {
         ui->scanParComboBox->addItem(item);
@@ -117,7 +127,7 @@ void ScanForm::adjustScanPar(QString scanParName, double value) {
     QThread::msleep(100);
 }
 
-void ScanForm::on_scanParComboBox_currentIndexChanged(int index) {
+void ScanForm::onScanParComboBoxCurrentIndexChanged(int index) {
     if (index < 0 || index >= SP_NAMES.size())
         return;
     if (SP_NAMES[index] == "TIME") {
@@ -136,7 +146,7 @@ void ScanForm::on_scanParComboBox_currentIndexChanged(int index) {
     }
 }
 
-void ScanForm::on_scanStartPushButton_clicked() {
+void ScanForm::onScanStartPushButtonClicked() {
     if (active) {
         finishScan();
         return;
@@ -242,7 +252,7 @@ void ScanForm::updateScanPlot() {
     ui->scanPlot->replot();
 }
 
-void ScanForm::on_plotDifferentialCheckBox_toggled(bool checked) {
+void ScanForm::onPlotDifferentialCheckBoxToggled(bool checked) {
     plotDifferential = checked;
     updateScanPlot();
 }

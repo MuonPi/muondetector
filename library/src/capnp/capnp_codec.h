@@ -78,6 +78,7 @@ struct AdcSampleRequestCmd;
 struct TemperatureRequestCmd;
 struct HistogramClearCmd;
 struct GpioRateRequestCmd;
+struct EventTriggerRequestCmd;
 // struct UbxDynamicModelcmd;
 
 template <typename T>
@@ -180,6 +181,7 @@ DECLARE_CODEC(AdcSampleRequestCmd)
 DECLARE_CODEC(TemperatureRequestCmd)
 DECLARE_CODEC(HistogramClearCmd)
 DECLARE_CODEC(GpioRateRequestCmd)
+DECLARE_CODEC(EventTriggerRequestCmd)
 // DECLARE_CODEC(UbxDynamicModelCmd)
 #undef DECLARE_CODEC
 #endif // CAPNP_CODEC_H
