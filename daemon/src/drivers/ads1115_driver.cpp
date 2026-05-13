@@ -5,6 +5,7 @@
 #include "core/logging/logger.h"
 #include "core/registries/device_registry.h"
 #include "data/events/ads1115_event.h"
+#include "data/events/datastore_store_event.h"
 #include "hardware/devices.h"
 #include "hardware/i2c/ads1115.h"
 #include "hardware/i2cdevice_wrapper.h"
@@ -56,14 +57,17 @@ void ADS1115Driver::update() {
         return;
     }
 
+    DatastoreStoreEvent<std::array<Ads1115Event, 4>> storeEvent;
+
     for (std::size_t channel = 0; channel < 4; ++channel) {
         const auto sample = adc->getSample(channel);
 
-        bus_.publish(
+        storeEvent.data.at(channel) =
             Ads1115Event{adc->getAddress(), static_cast<std::uint8_t>(channel),
                          static_cast<std::uint16_t>(sample.value), sample.voltage,
-                         static_cast<std::uint64_t>(sample.timestamp.time_since_epoch().count())});
+                         static_cast<std::uint64_t>(sample.timestamp.time_since_epoch().count())};
     }
+    bus_.publish(storeEvent); // Will be unpacked later and sent to frontend
 }
 
 void ADS1115Driver::startBurst(const StartBurstSampling& cmd) {

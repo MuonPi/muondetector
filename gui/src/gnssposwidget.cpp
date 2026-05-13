@@ -1,5 +1,6 @@
 #include "gnssposwidget.h"
 
+#include "gui/src/ui_gnssposwidget.h"
 #include "ui_gnssposwidget.h"
 
 #include <QDebug>
@@ -15,6 +16,7 @@
 #include <cmath>
 #include <events/ubx_event.h>
 #include <numeric>
+#include <qspinbox.h>
 #define _USE_MATH_DEFINES
 
 namespace Detail {
@@ -60,6 +62,8 @@ GnssPosWidget::GnssPosWidget(QWidget* parent) : QWidget(parent), ui(new Ui::Gnss
             [this](bool /*checked*/) { resizeEvent(nullptr); });
     connect(ui->cnrRangeSpinBox, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
             this, [this](int) { replot(); });
+    connect(ui->satSizeSpinBox, &QSpinBox::valueChanged, this,
+            &GnssPosWidget::onSatSizeSpinBoxValueChanged);
 }
 
 GnssPosWidget::~GnssPosWidget() {
@@ -408,7 +412,7 @@ void GnssPosWidget::onSatsReceived(const std::vector<GnssSatellite>& satlist) {
     replot();
 }
 
-void GnssPosWidget::on_satSizeSpinBox_valueChanged(int /*arg1*/) {
+void GnssPosWidget::onSatSizeSpinBoxValueChanged(int /*arg1*/) {
     replot();
 }
 

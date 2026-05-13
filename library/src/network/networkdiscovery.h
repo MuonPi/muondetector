@@ -1,26 +1,50 @@
-#ifndef NETWORKDISCOVERY_H
-#define NETWORKDISCOVERY_H
+#ifndef NETWORK_DISCOVERY_H
+#define NETWORK_DISCOVERY_H
 
+#include <atomic>
 #include <cstdint>
+#include <functional>
+#include <string>
+#include <thread>
+#include <vector>
+
+struct DeviceInfo {
+    std::string name;
+    std::string ip;
+    uint16_t port;
+    uint16_t type;
+};
 
 class NetworkDiscovery {
   public:
-    enum class DeviceType { GUI, DAEMON };
+    enum class DeviceType : uint16_t { GUI = 1, DAEMON = 2 };
 
-    explicit NetworkDiscovery(DeviceType f_device_type, std::uint16_t f_port);
+    using Callback = std::function<void(const DeviceInfo&)>;
+
+    NetworkDiscovery(DeviceType type, uint16_t port);
     ~NetworkDiscovery();
 
-    void searchDevices();
-    void readPendingDatagrams();
-    // void foundDevices(const QList<QPair<quint16, QHostAddress>>& devices);
+    void start();
+    void stop();
+
+    void discover(); // broadcast request
+
+    void setCallback(Callback cb);
 
   private:
-    DeviceType m_device_type;
-    std::uint16_t m_port;
-    // QVector<QHostAddress> m_broadcast_address;
-    // QVector<QHostAddress> m_own_ipv4;
-    // QUdpSocket* socket;
-    // QList<QPair<quint16, QHostAddress>> discovered_devices {};
+    void receiverLoop();
+    void sendBroadcast(const std::string& msg);
+    void sendResponse(const std::string& targetIp, const std::string& msg);
+
+  private:
+    int sock;
+    uint16_t port;
+    DeviceType type;
+
+    std::thread rxThread;
+    std::atomic<bool> running{false};
+
+    Callback callback;
 };
 
-#endif // NETWORKDISCOVERY_H
+#endif // NETWORK_DISCOVERY_H

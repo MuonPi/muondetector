@@ -4,6 +4,7 @@
 #include "data/custom_io_operators.h"
 #include "data/ublox/ublox_messages.h"
 #include "data/ublox/ublox_structs.h"
+#include "utility/helper_functions.h"
 #include "utility/unixtime_from_gps.h"
 // #include <custom_io_operators.h>
 
@@ -16,49 +17,6 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
-
-template <class T, class = void>
-struct is_iterator : std::false_type {};
-
-template <class T>
-struct is_iterator<T, std::void_t<typename std::iterator_traits<T>::iterator_category>>
-    : std::true_type {};
-
-enum class endian : bool { big, little };
-
-template <typename T, endian Endian = endian::little, typename It,
-          std::enable_if_t<std::is_integral<T>::value, bool> = true,
-          std::enable_if_t<is_iterator<It>::value, bool> = true>
-[[nodiscard]] auto get(const It& start) -> T {
-    const auto& end{start + sizeof(T)};
-    T value{0};
-    std::size_t shift{(Endian == endian::little) ? 0 : (sizeof(T) - 1) * 8};
-    for (auto it = start; it != end; it++) {
-        value += static_cast<T>(*it) << shift;
-        if (Endian == endian::little) {
-            shift += 8;
-        } else {
-            shift -= 8;
-        }
-    }
-    return value;
-}
-
-template <typename T, endian Endian = endian::little, typename It,
-          std::enable_if_t<std::is_integral<T>::value, bool> = true,
-          std::enable_if_t<is_iterator<It>::value, bool> = true>
-void put(const It& start, const T& value) {
-    const auto& end{start + sizeof(T)};
-    std::size_t shift{(Endian == endian::little) ? 0 : (sizeof(T) - 1) * 8};
-    for (auto it = start; it != end; it++) {
-        *it = static_cast<std::uint8_t>((value >> shift) & 0xff);
-        if (Endian == endian::little) {
-            shift += 8;
-        } else {
-            shift -= 8;
-        }
-    }
-}
 
 std::optional<UbxMessage> MessageProcessor::msgWaitingForAck{std::nullopt};
 std::optional<GpsVersion> MessageProcessor::gpsVersion{std::nullopt};
@@ -319,8 +277,6 @@ auto MessageProcessor::UBXNavTimeGPS(const std::string& msg) -> std::optional<Ub
         sstr << "   tow valid        : " << std::string((data.flags & 1) ? "yes" : "no") << '\n';
         sstr << "   week valid       : " << std::string((data.flags & 2) ? "yes" : "no") << '\n';
         sstr << "   leap sec valid   : " << std::string((data.flags & 4) ? "yes" : "no");
-        logDebug(sstr.str());
-        sstr.clear();
 
         // emit gpsPropertyUpdatedUint32(tAcc, timeAccuracy.updateAge(), 'a');
         // timeAccuracy = tAcc;
@@ -540,13 +496,11 @@ auto MessageProcessor::UBXNavSVinfo(const std::string& msg) -> std::optional<Ubx
         sstr << " global flags  : 0x" << std::hex << (int) data.globFlags.value() << std::dec
              << '\n';
         sstr << " Nr of sats    : " << (int) data.numSvs << "  (nr of sections=" << N << ")\n";
-        logDebug(sstr.str());
-        sstr.clear();
 
-        GnssSatellite::PrintHeader(true);
+        GnssSatellite::PrintHeader(sstr, true);
         for (std::vector<GnssSatellite>::iterator it = data.satellites.begin();
              it != data.satellites.end(); it++) {
-            it->Print(distance(data.satellites.begin(), it), false);
+            it->Print(sstr, distance(data.satellites.begin(), it), false);
         }
         sstr << "   Sat Data :\n";
         sstr << "   --------------------------------------------------------------------\n";
@@ -600,13 +554,11 @@ auto MessageProcessor::UBXNavSat(const std::string& msg) -> std::optional<UbxEve
         std::stringstream sstr;
         sstr << "   --------------------------------------------------------------------\n";
         sstr << " Nr of avail sats : " << (int) data.goodSats << "\n";
-        logDebug(sstr.str());
-        sstr.clear();
 
-        GnssSatellite::PrintHeader(true);
+        GnssSatellite::PrintHeader(sstr, true);
         for (std::vector<GnssSatellite>::iterator it = data.satellites.begin();
              it != data.satellites.end(); it++) {
-            it->Print(distance(data.satellites.begin(), it), false);
+            it->Print(sstr, distance(data.satellites.begin(), it), false);
         }
         sstr << std::setfill(' ') << std::setw(3);
         sstr << "*** UBX-NAV-SAT message:" << '\n';
@@ -636,6 +588,20 @@ auto MessageProcessor::UBXNavPosLLH(const std::string& msg) -> std::optional<Ubx
     pos.hAcc = get<decltype(pos.hAcc)>(msg.begin() + 20);
     // vertical accuracy estimate
     pos.vAcc = get<decltype(pos.vAcc)>(msg.begin() + 24);
+
+    if (logLevel() == LogLevel::Debug) {
+        std::stringstream sstr;
+        sstr << std::setfill(' ') << std::setw(3);
+        sstr << "*** UBX-NAV-POSLLH message:" << '\n';
+        sstr << " iTOW          : " << pos.iTOW / 1000 << " s" << '\n';
+        sstr << " lat           : " << pos.lat << '\n';
+        sstr << " lon           : " << pos.lon << '\n';
+        sstr << " height        : " << pos.height << '\n';
+        sstr << " hMSL          : " << pos.hMSL << '\n';
+        sstr << " hAcc          : " << pos.hAcc << '\n';
+        sstr << " vAcc          : " << pos.vAcc << '\n';
+        logDebug(sstr.str());
+    }
     return pos;
 }
 
@@ -839,8 +805,8 @@ auto MessageProcessor::UBXCfgGNSS(const std::string& msg) -> std::optional<UbxEv
 
     const std::size_t N{(msg.size() - 4) / 8};
 
+    std::stringstream sstr;
     if (logLevel() == LogLevel::Debug) {
-        std::stringstream sstr;
         sstr << "*** UBX CFG-GNSS message:" << '\n';
         sstr << " version                    : " << (int) data.version << '\n';
         sstr << " nr of hw tracking channels : " << (int) data.numTrkChHw << '\n';
@@ -848,7 +814,6 @@ auto MessageProcessor::UBXCfgGNSS(const std::string& msg) -> std::optional<UbxEv
         sstr << " Nr of config blocks        : " << (int) data.numConfigBlocks
              << "  (nr of sections=" << N << ")";
         sstr << "  Config Data :\n";
-        logDebug(sstr.str());
     }
 
     for (std::size_t i = 0; i < N; i++) {
@@ -859,7 +824,6 @@ auto MessageProcessor::UBXCfgGNSS(const std::string& msg) -> std::optional<UbxEv
         config.maxTrkCh = get<decltype(config.maxTrkCh)>(msg.begin() + n + 6);
         config.flags = get<decltype(config.flags)>(msg.begin() + n + 8);
         if (logLevel() == LogLevel::Debug) {
-            std::stringstream sstr;
             sstr << "   " << i << ":   GNSS name : ";
             sstr << std::string(Gnss::Id::name[std::clamp(static_cast<int>(config.gnssId),
                                                           static_cast<int>(Gnss::Id::first),
@@ -868,10 +832,10 @@ auto MessageProcessor::UBXCfgGNSS(const std::string& msg) -> std::optional<UbxEv
             sstr << "      reserved (min)tracking channels  : " << (int) config.resTrkCh << '\n';
             sstr << "      max nr of tracking channels used : " << (int) config.maxTrkCh << '\n';
             sstr << "      flags  : 0x" << std::hex << (int) config.flags << "\n";
-            logDebug(sstr.str());
         }
         data.configs.push_back(std::move(config));
     }
+    logDebug(sstr.str());
     return data;
 }
 
@@ -883,6 +847,14 @@ auto MessageProcessor::UBXCfgMSG(const std::string& msg) -> std::optional<UbxEve
     CfgMsg data;
     data.msgID = get<std::uint16_t, endian::big>(msg.begin());
     data.rate = static_cast<int>(get<std::uint8_t>(msg.begin() + 2 + s_default_target));
+
+    if (logLevel() == LogLevel::Debug) {
+        std::stringstream sstr;
+        sstr << "*** UBX CFG-MSG message:" << '\n';
+        sstr << " msgID                      : " << static_cast<unsigned>(data.msgID) << '\n';
+        sstr << " rate                       : " << static_cast<unsigned>(data.rate) << '\n';
+        logDebug(sstr.str());
+    }
 
     return data;
 }
@@ -1256,8 +1228,8 @@ auto MessageProcessor::UBXTimTM2(const std::string& msg) -> std::optional<UbxEve
     // second in current week (falling), ns of timestamp in current second (falling),
     // accuracy (ns), rising edge counter, rising/falling edge (1/0), time valid (GNSS fix)
 
-    std::stringstream sstr;
     if (logLevel() == LogLevel::Debug) {
+        std::stringstream sstr;
         sstr << "*** UBX-TimTM2 message:" << '\n';
         sstr << " channel         : " << std::dec << (int) ch << '\n';
         sstr << " rising edge ctr : " << std::dec << count << '\n';
@@ -1306,8 +1278,6 @@ auto MessageProcessor::UBXTimTM2(const std::string& msg) -> std::optional<UbxEve
                 timeBase = "unknown";
         }
         sstr << "   time base            : " << timeBase << "\n";
-        logDebug(sstr.str());
-        sstr.clear();
 
         if (flags & 0x80) {
             // if new rising edge

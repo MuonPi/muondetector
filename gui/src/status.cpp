@@ -52,6 +52,8 @@ Status::Status(QWidget* parent) : QWidget(parent), statusUi(new Ui::Status) {
             &Status::onTimingSelectionComboBoxCurrentIndexChanged);
     connect(statusUi->triggerSelectionComboBox, &QComboBox::currentTextChanged, this,
             &Status::onTriggerSelectionComboBoxCurrentIndexChanged);
+    connect(statusUi->histoLogYCheckBox, &QCheckBox::clicked, this,
+            &Status::onHistoLogYCheckBoxClicked);
 
     for (const auto& [mux_signal, mux_name] : TIMING_MUX_SIGNAL_NAMES) {
         if (mux_signal != TIMING_MUX_SELECTION::UNDEFINED) {
@@ -297,7 +299,7 @@ void Status::onUiEnabledStateChange(bool connected) {
     }
 }
 
-void Status::on_histoLogYCheckBox_clicked() {
+void Status::onHistoLogYCheckBoxClicked() {
     statusUi->pulseHeightHistogram->setLogY(statusUi->histoLogYCheckBox->isChecked());
 }
 

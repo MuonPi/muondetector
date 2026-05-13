@@ -5,16 +5,17 @@
 #include "core/logging/logger.h"
 // #include "data/commands/threshold_setting_cmd.h"
 #include "data/commands/bias_voltage_cmd.h"
-#include "data/commands/dac_cmd.h"
-#include "data/events/bias_voltage_event.h"
+#include "data/commands/dac_setting_request_cmd.h"
+#include "data/commands/threshold_setting_cmd.h"
+#include "data/events/datastore_store_event.h"
 #include "data/events/mcp4728_event.h"
-#include "data/events/threshold_setting_event.h"
 #include "hardware/i2c/mcp4728.h"
 #include "hardware/i2cdevice_wrapper.h"
 
 #include <algorithm>
 #include <optional>
 #include <sstream>
+#include <string>
 #include <type_traits>
 #include <variant>
 
@@ -36,7 +37,7 @@ MCP4728Driver::MCP4728Driver(ComponentId id, SystemConfig& systemConfig, DeviceR
     // bus_.subscribe<ThresholdSettingRequestCmd>(
     //     [this](const ThresholdSettingRequestCmd& cmd) { });
 
-    bus_.subscribe<DacRequestCmd>([this]([[maybe_unused]] const DacRequestCmd&) {
+    bus_.subscribe<DacSettingRequestCmd>([this]([[maybe_unused]] const DacSettingRequestCmd&) {
         auto* device = dev();
         if (device == nullptr) {
             return;
@@ -44,7 +45,7 @@ MCP4728Driver::MCP4728Driver(ComponentId id, SystemConfig& systemConfig, DeviceR
         bus_.publish(readDac(device));
     });
     bus_.subscribe<ThresholdSettingCmd>(
-        [this](const ThresholdSettingCmd& cmd) { setThreshold(cmd); });
+        [this](const ThresholdSettingCmd& cmd) { setDacValue(cmd); });
     bus_.subscribe<BiasVoltageCmd>([this](const BiasVoltageCmd& cmd) { setBiasVoltage(cmd); });
 
     auto event = readAll(device);
@@ -88,7 +89,7 @@ MCP4728Driver::MCP4728Driver(ComponentId id, SystemConfig& systemConfig, DeviceR
         device->setVoltage(Config::Hardware::DAC::Channel::bias, systemConfig.biasVoltage);
     }
 
-    bus_.publish(event);
+    bus_.publish(DatastoreStoreEvent<MCP4728Event>{.data = std::move(event)});
 }
 
 auto MCP4728Driver::dev() -> MCP4728* {
@@ -145,24 +146,49 @@ auto MCP4728Driver::readAll(MCP4728* dev) -> MCP4728Event {
     return event;
 }
 
-void MCP4728Driver::setThreshold(const ThresholdSettingCmd& cmd) {
-    if (cmd.channel > 1) {
-        logWarn("Tried to set threshold on not existing channel " + std::to_string(cmd.channel));
+void MCP4728Driver::setDacValue(const ThresholdSettingCmd& cmd) {
+    if (cmd.channel > 3) {
+        logWarn("Tried to set dac on not existing channel " + std::to_string(cmd.channel) +
+                " in device " + name());
         return;
     }
-    if (auto* dac = dev()) {
-        bool success =
-            dac->setVoltage(Config::Hardware::DAC::Channel::threshold[cmd.channel], cmd.threshold);
-        bus_.publish(ThresholdSettingEvent{cmd.channel, cmd.threshold, success});
+    auto* device = dev();
+    if (device == nullptr) {
+        logWarn("Tried to set dac value for device " + name() + " but dac is not initialized");
+        return;
+    }
+
+    auto value = cmd.value;
+
+    if (value < 0) {
+        logWarn("Tried to set threshold value below 0. This is not allowed.");
+        return;
+    }
+
+    if (cmd.channel == Config::Hardware::DAC::Channel::bias ||
+        cmd.channel == Config::Hardware::DAC::Channel::dac4) {
+        device->setVoltage(cmd.channel, value);
+        return;
+    }
+    if (value > 4.095) {
+        value = 4.095;
+    }
+    bool success =
+        device->setVoltage(Config::Hardware::DAC::Channel::threshold[cmd.channel], value);
+    if (success) {
+        bus_.publish(readDac(device));
     }
 }
 
 void MCP4728Driver::setBiasVoltage(const BiasVoltageCmd& cmd) {
-    if (auto* dac = dev()) {
-        bool success = dac->setVoltage(Config::Hardware::DAC::Channel::bias, cmd.voltage);
-        if (success == false) {
-            logWarn("Failed to set bias voltage");
-        }
-        bus_.publish(BiasVoltageEvent{cmd.voltage});
+    auto* device = dev();
+    if (device == nullptr) {
+        logWarn("Tried to set bias voltage for device " + name() + " but dac is not initialized");
+        return;
     }
+    bool success = device->setVoltage(Config::Hardware::DAC::Channel::bias, cmd.voltage);
+    if (success == false) {
+        logWarn("Failed to set bias voltage");
+    }
+    bus_.publish(readDac(device));
 }

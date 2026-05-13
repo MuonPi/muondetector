@@ -3,6 +3,7 @@
 
 #include "core/component.h"
 #include "core/event_bus.h"
+#include "data/commands/ubx_config_default_cmd.h"
 #include "data/commands/ubx_dynamic_model_cmd.h"
 #include "data/commands/ubx_gnss_config_cmd.h"
 #include "data/commands/ubx_min_cno_cmd.h"
@@ -15,6 +16,7 @@
 #include "data/commands/ubx_reset_cmd.h"
 #include "data/commands/ubx_save_cmd.h"
 #include "data/commands/ubx_set_aop_cmd.h"
+#include "data/commands/ubx_tp5_cmd.h"
 #include "data/commands/ubx_version_dependent_cmd.h"
 #include "data/events/ubx_event.h"
 #include "data/ublox/ublox_structs.h"
@@ -43,19 +45,21 @@ class SerialUblox : public Component {
   private:
     void startAsyncRead();
 
-    void handle(const UbxRateCmd&);
-    void handle(const UbxMsgRateCmd&);
-    void handle(const UbxMsgPollCmd&);
-    void handle(const UbxMsgPollRateCmd&);
-    void handle(const UbxProtocolSelectionCmd&);
-    void handle(const UbxSaveCmd&);
-    void handle(const UbxResetCmd&);
-    void handle(const UbxSetAopCmd&);
-    void handle(const UbxMinMaxSvCmd&);
-    void handle(const UbxMinCnoCmd&);
     void handle(const UbxDynamicModelCmd&);
     void handle(const UbxGnssConfigCmd&);
+    void handle(const UbxMinCnoCmd&);
+    void handle(const UbxMinMaxSvCmd&);
+    void handle(const UbxMsgPollCmd&);
+    void handle(const UbxMsgPollRateCmd&);
+    void handle(const UbxMsgRateCmd&);
+    void handle(const UbxRateCmd&);
+    void handle(const UbxProtocolSelectionCmd&);
+    void handle(const UbxResetCmd&);
+    void handle(const UbxSaveCmd&);
+    void handle(const UbxSetAopCmd&);
+    void handle(const UbxTp5Cmd&); // Set time pulse config (TP5)
     void handle(const UbxVersionDependentCmd&);
+
     void handle(const GpsVersion&);
 
     void processQueuedCmds();

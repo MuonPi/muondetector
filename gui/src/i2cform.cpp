@@ -1,3 +1,5 @@
+#include "gui/src/ui_i2cform.h"
+
 #include <i2cform.h>
 #include <muondetector_structs.h>
 #include <ui_i2cform.h>
@@ -5,6 +7,10 @@
 
 I2cForm::I2cForm(QWidget* parent) : QWidget(parent), ui(new Ui::I2cForm) {
     ui->setupUi(this);
+    connect(ui->statsQueryPushButton, &QPushButton::clicked, this,
+            &I2cForm::onStatsQueryPushButtonClicked);
+    connect(ui->scanBusPushButton, &QPushButton::clicked, this,
+            &I2cForm::onScanBusPushButtonClicked);
 }
 
 I2cForm::~I2cForm() {
@@ -78,10 +84,10 @@ void I2cForm::onUiEnabledStateChange(bool connected) {
     this->setEnabled(connected);
 }
 
-void I2cForm::on_statsQueryPushButton_clicked() {
+void I2cForm::onStatsQueryPushButtonClicked() {
     emit i2cStatsRequest();
 }
 
-void I2cForm::on_scanBusPushButton_clicked() {
+void I2cForm::onScanBusPushButtonClicked() {
     emit scanI2cBusRequest();
 }

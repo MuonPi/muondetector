@@ -39,6 +39,10 @@ messages:
     fields:
       - { name: temperature, type: float }
 
+  - name: MqttInhibitEventCapnp
+    fields:
+      - { name: inhibit, type: bool }
+
   - name: MqttStatusEventCapnp
     fields:
       - { name: connected, type: bool }
@@ -62,6 +66,9 @@ messages:
     fields:
       - { name: spiPresent, type: bool }
 
+  - name: SpiStatsRequestCmdCapnp
+    fields: []
+
   - name: ThresholdSettingEventCapnp
     fields:
       - { name: channel, type: uint8 }
@@ -80,7 +87,7 @@ messages:
 
   - name: EventTriggerEventCapnp
     fields:
-      - { name: eventTrigger, type: uint8 }
+      - { name: signal, type: uint8 }
 
 # UBLOX Events
   - name: UbxDopStructCapnp
@@ -192,10 +199,13 @@ messages:
   - name: GainSwitchRequestCmdCapnp
     fields: []
 
-  - name: ThresholdSettingCmdCapnp
+  - name: DacSettingCmdCapnp
     fields:
       - { name: channel, type: uint8 }
-      - { name: threshold, type: float }
+      - { name: value, type: float }
+
+  - name: DacSettingRequestCmdCapnp
+    fields: []
 
   - name: ThresholdSettingRequestCmdCapnp
     fields: []
@@ -233,14 +243,6 @@ messages:
   - name: BiasSwitchRequestCmdCapnp
     fields: []
 
-  - name: DacCmdCapnp
-    fields:
-      - { name: channel, type: uint8 }
-      - { name: value, type: uint8 }
-
-  - name: DacRequestCmdCapnp
-    fields: []
-
   - name: AdcSampleRequestCmdCapnp
     fields:
       - { name: channel, type: uint8 }
@@ -249,6 +251,13 @@ messages:
     fields: []
 
   - name: DacEepromSetCmdCapnp
+    fields: []
+
+  - name: EventTriggerCmdCapnp
+    fields:
+      - { name: signal, type: uint8 }
+
+  - name: EventTriggerRequestCmdCapnp
     fields: []
 
   - name: HistogramClearCmdCapnp
@@ -273,9 +282,8 @@ messages:
     fields:
       - { name: id, type: uint16 }
 
-  - name: UbxMsgPollRateCmdCapnp
-    fields:
-      - { name: id, type: uint16 }
+  - name: UbxMsgRateRequestCmdCapnp
+    fields: []
 
   - name: UbxMsgRateCmdCapnp
     fields:

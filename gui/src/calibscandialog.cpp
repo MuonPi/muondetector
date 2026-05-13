@@ -1,11 +1,13 @@
 #include "calibscandialog.h"
 
+#include "gui/src/ui_calibscandialog.h"
 #include "ui_calibscandialog.h"
 
 #include <QMessageBox>
 #include <QThread>
 #include <calibform.h>
 #include <muondetector_structs.h>
+#include <qpushbutton.h>
 #include <vector>
 
 #define calVoltMin 0.3

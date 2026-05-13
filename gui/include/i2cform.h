@@ -28,9 +28,9 @@ class I2cForm : public QWidget {
     void onUiEnabledStateChange(bool connected);
 
   private slots:
-    void on_statsQueryPushButton_clicked();
+    void onStatsQueryPushButtonClicked();
 
-    void on_scanBusPushButton_clicked();
+    void onScanBusPushButtonClicked();
 
   private:
     Ui::I2cForm* ui;

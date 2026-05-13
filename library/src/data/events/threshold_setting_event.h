@@ -6,7 +6,6 @@
 struct ThresholdSettingEvent {
     std::uint8_t channel;
     double voltage;
-    bool success;
 };
 
 #endif // THRESHOLD_SETTING_EVENT_H

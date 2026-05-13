@@ -41,13 +41,13 @@ class ScanForm : public QWidget {
     void onDacReadbackReceived(uint8_t channel, float value);
 
   private slots:
-    void on_scanStartPushButton_clicked();
-    void on_scanParComboBox_currentIndexChanged(int index);
+    void onScanStartPushButtonClicked();
+    void onScanParComboBoxCurrentIndexChanged(int index);
     void scanParIteration();
     void adjustScanPar(QString scanParName, double value);
     void finishScan();
     void updateScanPlot();
-    void on_plotDifferentialCheckBox_toggled(bool checked);
+    void onPlotDifferentialCheckBoxToggled(bool checked);
     void exportData();
 
   private:

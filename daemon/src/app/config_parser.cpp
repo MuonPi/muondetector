@@ -287,6 +287,22 @@ void ConfigParser::parse(int argc, char* argv[]) {
     }
 }
 
+inline bool readBoolFlexible(const libconfig::Setting& setting) {
+    switch (setting.getType()) {
+        case libconfig::Setting::TypeBoolean:
+            return static_cast<bool>(setting);
+
+        case libconfig::Setting::TypeInt:
+            return static_cast<int>(setting) != 0;
+
+        case libconfig::Setting::TypeInt64:
+            return static_cast<long long>(setting) != 0;
+
+        default:
+            throw libconfig::SettingTypeException(setting);
+    }
+}
+
 void ConfigParser::apply_defaults() {
 
     // Read defaults from SystemConfig
@@ -447,8 +463,8 @@ void ConfigParser::apply_defaults() {
 
     // Load biasPowerCfg
     try {
-        m_config.bias_ON = static_cast<bool>(m_config.config_file_data->lookup("bias_switch"));
-        m_presence.cfgBias = true;
+        m_config.bias_ON = readBoolFlexible(m_config.config_file_data->lookup("bias_switch"));
+        m_presence.cfgPreamp1 = true;
     } catch (const libconfig::SettingNotFoundException&) {
     } catch (const libconfig::SettingException& e) {
         logWarn("Could not load setting 'bias_switch': " + std::string(e.what()));
@@ -456,7 +472,7 @@ void ConfigParser::apply_defaults() {
 
     try {
         m_config.preamp_enable[0] =
-            static_cast<bool>(m_config.config_file_data->lookup("preamp1_switch"));
+            readBoolFlexible(m_config.config_file_data->lookup("preamp1_switch"));
         m_presence.cfgPreamp1 = true;
     } catch (const libconfig::SettingNotFoundException&) {
     } catch (const libconfig::SettingException& e) {
@@ -465,7 +481,7 @@ void ConfigParser::apply_defaults() {
 
     try {
         m_config.preamp_enable[1] =
-            static_cast<bool>(m_config.config_file_data->lookup("preamp2_switch"));
+            readBoolFlexible(m_config.config_file_data->lookup("preamp2_switch"));
         m_presence.cfgPreamp2 = true;
     } catch (const libconfig::SettingNotFoundException&) {
     } catch (const libconfig::SettingException& e) {
@@ -473,7 +489,7 @@ void ConfigParser::apply_defaults() {
     }
 
     try {
-        m_config.hi_gain = m_config.config_file_data->lookup("gain_switch");
+        m_config.hi_gain = readBoolFlexible(m_config.config_file_data->lookup("gain_switch"));
         m_presence.cfgGain = true;
     } catch (const libconfig::SettingNotFoundException&) {
     } catch (const libconfig::SettingException& e) {
@@ -508,7 +524,8 @@ void ConfigParser::apply_defaults() {
 
     // Load pol1Cfg
     try {
-        m_config.polarity[0] = m_config.config_file_data->lookup("input1_polarity");
+        m_config.polarity[0] =
+            readBoolFlexible(m_config.config_file_data->lookup("input1_polarity"));
         m_presence.cfgPolarity1 = true;
     } catch (const libconfig::SettingNotFoundException&) {
     } catch (const libconfig::SettingException& e) {
@@ -517,7 +534,8 @@ void ConfigParser::apply_defaults() {
 
     // Load pol2Cfg
     try {
-        m_config.polarity[1] = m_config.config_file_data->lookup("input2_polarity");
+        m_config.polarity[1] =
+            readBoolFlexible(m_config.config_file_data->lookup("input2_polarity"));
         m_presence.cfgPolarity2 = true;
     } catch (const libconfig::SettingNotFoundException&) {
     } catch (const libconfig::SettingException& e) {

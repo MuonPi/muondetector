@@ -14,6 +14,9 @@ Map::Map(QWidget* parent) : QWidget(parent), mapUi(new Ui::Map) {
     QVariantMap parameters;
     mapUi->setupUi(this);
 
+    connect(mapUi->setConfigPushButton, &QPushButton::clicked, this,
+            &Map::setConfigPushButtclicked);
+
     for (const auto& item : PositionModeConfig::mode_name) {
         mapUi->modeComboBox->addItem(QString::fromLocal8Bit(item));
     }
@@ -87,7 +90,7 @@ void Map::onUiEnabledStateChange(bool connected) {
     }
 }
 
-void Map::on_setConfigPushButton_clicked() {
+void Map::setConfigPushButtclicked() {
     PositionModeConfig posconfig{};
     posconfig.mode = static_cast<PositionModeConfig::Mode>(mapUi->modeComboBox->currentIndex());
     posconfig.filter_config =

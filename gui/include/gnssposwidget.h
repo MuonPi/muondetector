@@ -44,7 +44,7 @@ class GnssPosWidget : public QWidget {
     void changeEvent(QEvent* e);
 
   private slots:
-    void on_satSizeSpinBox_valueChanged(int arg1);
+    void onSatSizeSpinBoxValueChanged(int arg1);
     void popUpMenu(const QPoint&);
     void exportToFile();
 

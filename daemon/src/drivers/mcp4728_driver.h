@@ -6,6 +6,7 @@
 #include "core/event_bus.h"
 #include "core/registries/device_registry.h"
 #include "data/commands/bias_voltage_cmd.h"
+#include "data/commands/dac_setting_request_cmd.h"
 #include "data/commands/threshold_setting_cmd.h"
 #include "data/events/mcp4728_event.h"
 
@@ -26,7 +27,7 @@ class MCP4728Driver : public Component {
     static auto readEeprom(MCP4728* dev) -> std::unordered_map<std::uint8_t, MCP4728::DacChannel>;
     static auto readDac(MCP4728* dev) -> MCP4728Event;
     static auto readAll(MCP4728* dev) -> MCP4728Event;
-    void setThreshold(const ThresholdSettingCmd& cmd);
+    void setDacValue(const ThresholdSettingCmd& cmd);
     void setBiasVoltage(const BiasVoltageCmd& cmd);
     DeviceRegistry& registry_;
     EventBus& bus_;

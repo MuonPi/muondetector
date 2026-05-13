@@ -5,6 +5,7 @@
 #include "core/event_bus.h"
 #include "core/logging/logger.h"
 #include "core/registries/device_registry.h"
+#include "data/events/datastore_store_event.h"
 #include "hardware/devices.h"
 #include "hardware/i2c/eeprom24aa02.h"
 #include "hardware/i2c/i2cutil.h"
@@ -50,5 +51,5 @@ void EEPROM24AA02Driver::update() {
     ShowerDetectorCalib::getValueFromString(verStruct.value, version);
     MuonPi::Version::hardware.major = version;
     logInfo("Found HW version " + std::to_string(MuonPi::Version::hardware.major) + " in eeprom");
-    bus_.publish<ShowerDetectorCalib>(std::move(calib));
+    bus_.publish(DatastoreStoreEvent<ShowerDetectorCalib>{.data = std::move(calib)});
 }

@@ -57,16 +57,16 @@ class ParameterMonitorForm : public QWidget {
     void onDaemonVersionReceived(MuonPi::Version::Version hw_ver, MuonPi::Version::Version sw_ver);
 
   private slots:
-    void on_dacSpinBox1_valueChanged(double arg1);
-    void on_dacSpinBox2_valueChanged(double arg1);
-    void on_dacSpinBox3_valueChanged(double arg1);
-    void on_dacSpinBox4_valueChanged(double arg1);
-    void on_dacSlider1_valueChanged(int value);
-    void on_dacSlider2_valueChanged(int value);
-    void on_dacSlider3_valueChanged(int value);
-    void on_dacSlider4_valueChanged(int value);
-    void on_gpioInhibitCheckBox_clicked(bool checked);
-    void on_mqttInhibitCheckBox_clicked(bool checked);
+    void onDacSpinBox1ValueChanged(double arg1);
+    void onDacSpinBox2ValueChanged(double arg1);
+    void onDacSpinBox3ValueChanged(double arg1);
+    void onDacSpinBox4ValueChanged(double arg1);
+    void onDacSlider1ValueChanged(int value);
+    void onDacSlider2ValueChanged(int value);
+    void onDacSlider3ValueChanged(int value);
+    void onDacSlider4ValueChanged(int value);
+    void onGpioInhibitCheckBoxClicked(bool checked);
+    void onMqttInhibitCheckBoxClicked(bool checked);
     void onPolarityCheckBoxClicked(bool checked);
     void onTimingSelectionComboBoxCurrentIndexChanged(int index);
     void onAdcTriggerSelectionComboBoxCurrentIndexChanged(int index);

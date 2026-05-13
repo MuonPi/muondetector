@@ -1,6 +1,7 @@
 #include "calibform.h"
 
 #include "calibscandialog.h"
+#include "gui/src/ui_calibform.h"
 #include "ui_calibform.h"
 
 #include <QThread>
@@ -14,14 +15,20 @@ const static CalibStruct invalidCalibItem;
 
 CalibForm::CalibForm(QWidget* parent) : QWidget(parent), ui(new Ui::CalibForm) {
     ui->setupUi(this);
+    connect(ui->calibrationScanPushButton, &QPushButton::clicked, this,
+            [this]() { this->calScan->show(); });
+    connect(ui->calibItemTableWidget, &QTableWidget::cellChanged, this,
+            &CalibForm::onCalibItemTableWidgetCellChanged);
+    connect(ui->readCalibPushButton, &QPushButton::clicked, this,
+            &CalibForm::onReadCalibPushButtonClicked);
+    connect(ui->writeEepromPushButton, &QPushButton::clicked, this,
+            &CalibForm::onWriteEepromPushButtonClicked);
+
     ui->calibItemTableWidget->resizeColumnsToContents();
 
     calScan = new CalibScanDialog(this);
     calScan->setWindowTitle("Calibration Scan");
     calScan->hide();
-
-    connect(ui->calibrationScanPushButton, &QPushButton::clicked, this,
-            [this]() { this->calScan->show(); });
 }
 
 CalibForm::~CalibForm() {
@@ -109,12 +116,12 @@ void CalibForm::onAdcSampleReceived(uint8_t channel, float value) {
     calScan->onAdcSampleReceived(channel, value);
 }
 
-void CalibForm::on_readCalibPushButton_clicked() {
+void CalibForm::onReadCalibPushButtonClicked() {
     // calib reread triggered
     emit calibRequest();
 }
 
-void CalibForm::on_writeEepromPushButton_clicked() {
+void CalibForm::onWriteEepromPushButtonClicked() {
     // write eeprom clicked
     emit updatedCalib(fCalibList);
     emit writeCalibToEeprom();
@@ -186,7 +193,7 @@ void CalibForm::onUiEnabledStateChange(bool connected) {
     ui->calibrationScanPushButton->setEnabled(connected);
 }
 
-void CalibForm::on_calibItemTableWidget_cellChanged(int row, int column) {
+void CalibForm::onCalibItemTableWidgetCellChanged(int row, int column) {
     if (column == 2) {
         QString name = ui->calibItemTableWidget->item(row, 0)->text();
         QString valstr = ui->calibItemTableWidget->item(row, 2)->text();
