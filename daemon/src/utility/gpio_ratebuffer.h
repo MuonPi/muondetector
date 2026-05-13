@@ -20,41 +20,9 @@ constexpr std::chrono::microseconds MAX_DEADTIME{static_cast<unsigned long>(1e+6
 constexpr std::chrono::microseconds DEADTIME_INCREMENT{50};
 constexpr std::chrono::microseconds COINCIDENCE_WINDOW{50};
 
-// class CounterRateBuffer {
-
-// public:
-//     CounterRateBuffer(unsigned int counter_mask = static_cast<unsigned
-//     int>(std::numeric_limits<std::uint16_t>::max())); ~CounterRateBuffer() = default; void
-//     clear();
-
-//     [[nodiscard]] auto avgRate() const -> double;
-//     [[nodiscard]] auto lastEventTime() const -> EventTime;
-//     void setBufferTime(std::chrono::seconds buftime) {
-// 		m_buffer_time = std::chrono::duration_cast<std::chrono::microseconds>(buftime);
-// 	}
-
-//     void onCounterValue(uint16_t value);
-
-// private:
-//     unsigned int m_counter_mask {};
-//     std::chrono::microseconds m_buffer_time { MAX_BUFFER_TIME };
-//     std::list<std::pair<EventTime, std::uint16_t>> m_countbuffer {};
-//     std::chrono::nanoseconds m_last_interval { 0 };
-//     EventTime m_instance_start {};
-// };
-
 class EventRateBuffer {
 
   public:
-    /*
-    struct RateItem {
-        double avg_rate { 0. };
-        double std_dev { 0. };
-        std::chrono::milliseconds interval {};
-        EventTime time {};
-        std::chrono::microseconds deadtime {};
-    };
-    */
     EventRateBuffer(EventBus& bus, std::optional<EventEdge> filterEdge = std::nullopt);
     ~EventRateBuffer() = default;
     void setRateLimit(double max_cps);
@@ -69,7 +37,7 @@ class EventRateBuffer {
         m_buffer_time = std::chrono::duration_cast<std::chrono::microseconds>(buftime);
     }
 
-    void handle(const GpioEvent& event);
+    virtual void handle(const GpioEvent& event);
 
   protected:
     EventBus& bus_;
@@ -83,21 +51,20 @@ class EventRateBuffer {
     EventTime m_instance_start{};
 };
 
-// class CoincidenceEventBuffer {
+class CoincidenceEventBuffer : public EventRateBuffer {
 
-// public:
-//     CoincidenceEventBuffer(GPIO_SIGNAL event_sig, EventEdge filterEdge, GPIO_SIGNAL coinc_sig,
-//     bool anti_coinc = false); ~CoincidenceEventBuffer() = default; void clear();
+  public:
+    CoincidenceEventBuffer(EventBus& bus, std::optional<EventEdge> filterEdge,
+                           GPIO_SIGNAL coinc_sig, bool anti_coinc = false);
+    ~CoincidenceEventBuffer() = default;
+    void clear();
 
-//     //[[nodiscard]] auto lastEventTime() const -> EventTime;
+    void handle(const GpioEvent& event) override;
 
-//     void onEvent(GPIO_SIGNAL sig, EventTime event_time, EventEdge edge);
-
-// protected:
-//     uint8_t m_coinc_sig { 255 };
-//     bool m_is_veto { false };
-//     EventTime m_last_coinc_event {};
-
-// };
+  protected:
+    uint8_t m_coinc_sig{255};
+    bool m_is_veto{false};
+    EventTime m_last_coinc_event{};
+};
 
 #endif // GPIO_RATEBUFFER_H

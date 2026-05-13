@@ -49,14 +49,21 @@
 
 // Data
 #include "data/events/ads1115_event.h"
+#include "data/events/event_trigger_event.h"
 #include "data/events/gpio_event.h"
 #include "data/events/log_trigger_event.h"
+#include "data/events/server_conn_count_event.h"
 #include "data/events/status_led_event.h"
 #include "utility/logparameter.h"
 // #include "data/events/ubx_event.h"
 // #include "data/events/tcp_packet_event.h"
 
+// Commands
+#include "data/commands/bias_switch_cmd.h"
+#include "data/commands/bias_voltage_cmd.h"
+#include "data/commands/dac_cmd.h"
 #include "data/commands/gpio_signal_set_cmd.h"
+#include "data/commands/pca_switch_cmd.h"
 
 // Glue
 #include "core/event_bindings.h"
@@ -160,7 +167,7 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
 
     // --- tcp_server ---
     // When server accepts a new TCP connection, call this handler.
-    ctx.server = std::make_unique<TcpServer>(ctx.io, config.serverPort, tcp_sink);
+    ctx.server = std::make_unique<TcpServer>(ctx.io, config.serverPort, tcp_sink, ctx.bus.get());
 
     ctx.server->addConnectionHandler(
         [tcp_source = ctx.components->get<TcpSource>(OtherComponent::TCP_SOURCE_0),
@@ -248,6 +255,35 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     ctx.bus->publish<GpioSignalSetCmd>({STATUS2, false});
     ctx.bus->publish<GpioSignalSetCmd>({IN_POL1, config.polarity[0]});
     ctx.bus->publish<GpioSignalSetCmd>({IN_POL2, config.polarity[1]});
+
+    // -- Behaviour on new tcp connection ---
+    ctx.bus->subscribe<ServerConnCountEvent>(
+        [&bus = *ctx.bus, &config = *ctx.config, &datastore = *ctx.datastore](auto& event) {
+            bus.publish(VersionEvent{.hw_ver = MuonPi::Version::hardware,
+                                     .sw_ver = MuonPi::Version::software});
+            if (datastore.lastUpdate<BiasSwitchEvent>().has_value()) {
+                bus.publish(*datastore.get<BiasSwitchEvent>());
+            } else {
+                bus.publish(BiasSwitchRequestCmd{});
+            }
+            if (datastore.lastUpdate<MCP4728Event>().has_value()) {
+                bus.publish(*datastore.get<MCP4728Event>());
+            } else {
+                bus.publish(DacRequestCmd{});
+            }
+            if (datastore.lastUpdate<PcaSwitchEvent>().has_value()) {
+                bus.publish(*datastore.get<PcaSwitchEvent>());
+            } else {
+                bus.publish(PcaSwitchRequestCmd{});
+            }
+            bus.publish(EventTriggerEvent{.eventTrigger = config.eventTrigger});
+            const auto& mode = datastore.geoPosManager().get_mode_config();
+            bus.publish(mode);
+            if (mode.mode == PositionModeConfig::Mode::Static) {
+                bus.publish(datastore.geoPosManager().get_static_position().getPosStruct());
+            }
+        });
+
     return ctx;
 }
 

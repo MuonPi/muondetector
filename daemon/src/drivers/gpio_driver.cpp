@@ -16,9 +16,6 @@
 
 using namespace std::chrono;
 
-const std::unordered_map<GPIO_SIGNAL, std::optional<EventEdge>> interruptSignals{
-    {{EVT_AND, EventEdge::Rising}, {EVT_XOR, EventEdge::Rising}, {TIMEPULSE, EventEdge::Rising}}};
-
 GpioDriver::GpioDriver(ComponentId id, const std::string& chipPath, EventBus& bus)
     : Component(id), bus_(bus) {
     if (!std::holds_alternative<OtherComponent>(id)) {
@@ -127,23 +124,13 @@ void GpioDriver::init(const MuonPi::Version::Version& hardwareVersion) {
     configureLines(outputs, {.dir = SIGNAL_DIRECTION::DIR_OUT, .initialValue = false});
 
     // set up rate buffers for all GPIO interrupts
-    for (auto [sig, edge] : interruptSignals) {
-        auto ratebuf = std::make_shared<EventRateBuffer>(bus_, edge);
-        // connect(pigHandler, &PigpiodHandler::gpioEvent, ratebuf.get(),
-        // &EventRateBuffer::onEvent); connect(ratebuf.get(), &EventRateBuffer::filteredEvent, this,
-        // &Daemon::sendGpioPinEvent); connect(ratebuf.get(), &EventRateBuffer::filteredEvent, this,
-        // &Daemon::onGpioPinEvent);
-
-        // connect(ratebuf.get(), &EventRateBuffer::eventIntervalSignal, this, [this](unsigned int
-        // gpio, std::chrono::nanoseconds ns) {
-        //     if (m_histo_map.find("gpioEventInterval") != m_histo_map.end()
-        //         && (GPIO_PINMAP[config.eventTrigger] == gpio)) {
-        //         m_histo_map["gpioEventInterval"]->fill(1e-6 * ns.count());
-        //     }
-        // });
-
-        gpioRatebuffers.emplace(sig, ratebuf);
-    }
+    gpioRatebuffers.emplace(EVT_AND, std::make_shared<EventRateBuffer>(bus_, EventEdge::Rising));
+    // gpioRatebuffers.emplace(EVT_XOR, std::make_shared<EventRateBuffer>(bus_, EventEdge::Rising));
+    auto vetoRateBuffer =
+        std::make_shared<CoincidenceEventBuffer>(bus_, EventEdge::Rising, TIME_MEAS_OUT, true);
+    auto rateBufferTime = std::chrono::seconds(10);
+    vetoRateBuffer->setBufferTime(rateBufferTime);
+    gpioRatebuffers.emplace(EVT_XOR, vetoRateBuffer);
 
     start();
 }

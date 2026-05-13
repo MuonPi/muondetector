@@ -25,8 +25,8 @@
 #endif
 #include "data/commands/adc_mode_request_cmd.h"
 #include "data/commands/adc_sample_request_cmd.h"
-#include "data/commands/bias_dac_setting_cmd.h"
 #include "data/commands/bias_switch_cmd.h"
+#include "data/commands/bias_voltage_cmd.h"
 #include "data/commands/burst_sampling_cmd.h"
 #include "data/commands/calibration_cmd.h"
 #include "data/commands/calibration_save_cmd.h"

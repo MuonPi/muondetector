@@ -1,6 +1,7 @@
 #ifndef TCPSERVER_H
 #define TCPSERVER_H
 
+#include "core/event_bus.h"
 #include "sinks/tcp_sink.h"
 #include "tcpconnection.h"
 
@@ -27,7 +28,7 @@ class TcpServer {
     };
 
     TcpServer(std::shared_ptr<boost::asio::io_context> io, std::uint16_t port,
-              std::shared_ptr<TcpSink> sink);
+              std::shared_ptr<TcpSink> sink, EventBus* bus = nullptr);
     std::uint16_t port() const;
     void addConnectionHandler(ConnectionHandler handler);
     void heartbeatAndCleanup(std::chrono::steady_clock::duration maxIdle);
@@ -39,7 +40,8 @@ class TcpServer {
     std::shared_ptr<boost::asio::io_context> io_;
     tcp::acceptor acceptor_;
     std::shared_ptr<TcpSink> sink_;
-    std::unordered_map<SessionId, SessionState> sessions_;
+    EventBus* bus_;
+    std::unordered_map<SessionId, SessionState> sessions_{};
     std::vector<ConnectionHandler> connectionHandlers_{};
     SessionId nextSessionId_{1};
 };

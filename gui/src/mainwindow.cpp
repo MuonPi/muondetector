@@ -28,8 +28,8 @@
 #include <boost/asio.hpp>
 #include <data/commands/adc_mode_request_cmd.h>
 #include <data/commands/adc_sample_request_cmd.h>
-#include <data/commands/bias_dac_setting_cmd.h>
 #include <data/commands/bias_switch_cmd.h>
+#include <data/commands/bias_voltage_cmd.h>
 #include <data/commands/burst_sampling_cmd.h>
 #include <data/commands/calibration_cmd.h>
 #include <data/commands/calibration_save_cmd.h>
@@ -473,6 +473,7 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
 }
 
 void MainWindow::decode(const TcpPacket& packet) {
+    qDebug() << "Received event: " << packet.key;
     auto it = decoderMap.find(static_cast<TCP_MSG_KEY>(packet.key));
 
     if (it != decoderMap.end()) {
@@ -508,7 +509,6 @@ auto MainWindow::buildDecoderMap()
                      xorTimer.start();
                  } else if (event.gpio_signal == TIMEPULSE) {
                      emit timepulseReceived();
-                     qDebug() << "timepulse received";
                  }
              }},
             {TCP_MSG_KEY::MSG_UBX_MSG_RATE,
