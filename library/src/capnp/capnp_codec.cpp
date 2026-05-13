@@ -45,6 +45,7 @@
 #include "data/commands/temperature_request_cmd.h"
 #include "data/commands/threshold_setting_cmd.h"
 #include "data/commands/ubx_default_config_cmd.h"
+#include "data/commands/ubx_gnss_config_cmd.h"
 #include "data/commands/ubx_min_cno_cmd.h"
 #include "data/commands/ubx_min_max_sv_cmd.h"
 #include "data/commands/ubx_msg_poll_cmd.h"
@@ -150,7 +151,14 @@ auto CapnpCodec<NavSat>::encode(const NavSat& event) -> std::vector<uint8_t> {
     root.setNumSvs(event.numSvs);
     root.setGoodSats(event.goodSats);
 
-    /// TODO: Add Satellites
+    auto satellites = root.initSatellites(static_cast<capnp::uint>(event.satellites.size()));
+    for (capnp::uint i = 0, size = satellites.size(); i < size; ++i) {
+        const auto& satellite = event.satellites[i];
+        auto satelliteRoot = satellites[i];
+        satelliteRoot.setGnssId(satellite.GnssId);
+        satelliteRoot.setSvId(satellite.SatId);
+        satelliteRoot.setCno(satellite.Cnr);
+    }
 
     auto flat = capnp::messageToFlatArray(msg);
     auto bytes = flat.asBytes();
@@ -181,8 +189,15 @@ auto CapnpCodec<NavSat>::decode(const std::vector<std::uint8_t>& data) -> NavSat
     event.numSvs = root.getNumSvs();
     event.goodSats = root.getGoodSats();
 
-    // TODO: satellites if needed
-
+    auto list = root.getSatellites();
+    event.satellites.reserve(list.size());
+    for (auto item : list) {
+        GnssSatellite s{};
+        s.GnssId = item.getGnssId();
+        s.SatId = item.getSvId();
+        s.Cnr = item.getCno();
+        event.satellites.push_back(std::move(s));
+    }
     return event;
 }
 
@@ -318,7 +333,6 @@ auto CapnpCodec<CfgGNSS>::encode(const CfgGNSS& event) -> std::vector<uint8_t> {
     auto bytes = flat.asBytes();
     return {bytes.begin(), bytes.end()};
 }
-
 auto CapnpCodec<CfgGNSS>::decode(const std::vector<std::uint8_t>& data) -> CfgGNSS {
     auto reader = makeReader(data);
     auto root = reader.getRoot<CfgGNSSCapnp>();
@@ -335,7 +349,6 @@ auto CapnpCodec<CfgGNSS>::decode(const std::vector<std::uint8_t>& data) -> CfgGN
     }
     return event;
 }
-
 auto CapnpCodec<CfgGNSS>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_GNSS_CONFIG);
 }
@@ -1353,6 +1366,38 @@ auto CapnpCodec<UbxProtocolSelectionCmd>::decode(const std::vector<std::uint8_t>
 
 auto CapnpCodec<UbxProtocolSelectionCmd>::messageKey() -> std::uint16_t {
     return 0;
+}
+
+auto CapnpCodec<UbxGnssConfigCmd>::encode(const UbxGnssConfigCmd& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<UbxGnssConfigCmdCapnp>();
+    auto cfgs = root.initConfigs(event.gnssConfigs.size());
+    for (std::size_t i = 0; i < event.gnssConfigs.size(); ++i) {
+        auto cfg = cfgs[i];
+        cfg.setGnssId(event.gnssConfigs[i].gnssId);
+        cfg.setResTrkCh(event.gnssConfigs[i].resTrkCh);
+        cfg.setMaxTrkCh(event.gnssConfigs[i].maxTrkCh);
+        cfg.setFlags(event.gnssConfigs[i].flags);
+    }
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<UbxGnssConfigCmd>::decode(const std::vector<std::uint8_t>& data)
+    -> UbxGnssConfigCmd {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<UbxGnssConfigCmdCapnp>();
+    UbxGnssConfigCmd event{};
+    auto cfgs = root.getConfigs();
+    event.gnssConfigs.reserve(cfgs.size());
+    for (auto cfg : cfgs) {
+        event.gnssConfigs.push_back(GnssConfigStruct{cfg.getGnssId(), cfg.getResTrkCh(),
+                                                     cfg.getMaxTrkCh(), cfg.getFlags()});
+    }
+    return event;
+}
+auto CapnpCodec<UbxGnssConfigCmd>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_GNSS_CONFIG);
 }
 
 auto CapnpCodec<UbxRateCmd>::encode(const UbxRateCmd& cmd) -> std::vector<uint8_t> {

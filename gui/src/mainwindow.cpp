@@ -3,6 +3,7 @@
 #include "calibform.h"
 #include "calibscandialog.h"
 #include "capnp/capnp_codec.h"
+#include "data/commands/ubx_gnss_config_cmd.h"
 #include "gnssinfoform.h"
 #include "gui/src/ui_mainwindow.h"
 #include "histogramdataform.h"
@@ -903,12 +904,10 @@ void MainWindow::sendRateScanStart(uint8_t ch) {
 }
 
 void MainWindow::onSetGnssConfigs(const std::vector<GnssConfigStruct>& configList) {
-    CfgGNSS cmd{};
-    cmd.numTrkChHw = static_cast<std::uint8_t>(configList.size());
-    cmd.numConfigBlocks = static_cast<std::uint8_t>(configList.size());
-    cmd.configs = configList;
+    UbxGnssConfigCmd cmd{};
+    cmd.gnssConfigs = configList;
     sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_UBX_GNSS_CONFIG,
-                          CapnpCodec<CfgGNSS>::encode(cmd));
+                          CapnpCodec<UbxGnssConfigCmd>::encode(cmd));
 }
 
 void MainWindow::onSetTP5Config(const UbxTimePulseStruct& tp) {

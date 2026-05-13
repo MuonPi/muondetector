@@ -1,7 +1,19 @@
 #include "core/registries/data_store.h"
 
+#include "core/logging/logger.h"
 #include "data/histogram.h"
+#include "utility/geoposmanager.h"
 // #include "data/"
+
+DataStore::DataStore() : m_geopos_manager{std::make_unique<GeoPosManager>()} {
+    // m_geopos_manager.set_lockin_ready_callback(std::bind(&Daemon::onGeoPosLockInReady, this,
+    // std::placeholders::_1));
+    // m_geopos_manager.set_valid_pos_callback(std::bind(&Daemon::onGeoPosValid, this,
+    // std::placeholders::_1)); m_geopos_manager.set_mode_config(config.position_mode_config);
+}
+
+DataStore::~DataStore() {
+}
 
 auto DataStore::histo(const std::string& histoName) -> std::shared_ptr<Histogram> {
     auto it = m_histo_map.find(histoName);
@@ -18,6 +30,15 @@ auto DataStore::clearHisto(const std::string& histoName) -> std::shared_ptr<Hist
         return it->second;
     }
     return nullptr;
+}
+
+void DataStore::fillHisto(const std::string& histoName, double value) {
+    auto it = m_histo_map.find(histoName);
+    if (it == m_histo_map.end()) {
+        logWarn("Failed to fill histogram " + histoName + ". Not Found!");
+        return;
+    }
+    it->second->fill(value);
 }
 
 auto DataStore::allHistos() const

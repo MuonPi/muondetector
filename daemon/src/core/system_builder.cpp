@@ -34,12 +34,13 @@
 
 // Ublox
 #include "data/commands/histogram_clear_cmd.h"
+#include "data/commands/ubx_dynamic_model_cmd.h"
 #include "data/commands/ubx_msg_poll_cmd.h"
 #include "data/commands/ubx_msg_rate_cmd.h"
 #include "data/commands/ubx_protocol_selection_cmd.h"
 #include "data/commands/ubx_rate_cmd.h"
 #include "data/commands/ubx_set_aop_cmd.h"
-#include "data/commands/ubx_version_dependent_msg_rate_cmd.h"
+#include "data/commands/ubx_version_dependent_cmd.h"
 #include "data/ublox/ublox_messages.h"
 
 // Sources
@@ -89,6 +90,9 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
         [&datastore = *ctx.datastore, &bus = *ctx.bus](const HistogramClearCmd& cmd) {
             bus.publish(datastore.clearHisto(cmd.histogramName));
         });
+    // ctx.bus->subscribe<>(
+
+    // )
     // sendHistogram(*m_histo_map[histoName]);
 
     // --- hardware ---
@@ -181,32 +185,31 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
 
     ctx.scheduler->every(MuonPi::Config::Histogram::interval,
                          [bus = ctx.bus.get()]() { bus->publish(HistogramRequestCmd{}); });
-    // --- GPS default config ---
 
-    // set dynamic model: Stationary
-    logInfo("setting GNSS dynamic model to " +
-            std::to_string(static_cast<unsigned>(config.gnss_dynamic_model)));
-    ctx.bus->publish(UbxDynamicModel::stationary);
+    // --- GPS default config ---
     ctx.bus->publish(UbxProtocolSelectionCmd{1, PROTO_UBX});
 
+    // set dynamic model from config
+    logInfo("setting GNSS dynamic model to " +
+            std::to_string(static_cast<unsigned>(config.gnss_dynamic_model)));
+    ctx.bus->publish(config.gnss_dynamic_model);
+    std::uint16_t measinterval = 100;
+    ctx.bus->publish(UbxRateCmd{measinterval, 1}); // set rate of messages and nav
     // --- Message Rates ---
     EventBindings::initAllUbxMsgRate(*ctx.bus);
     EventBindings::pollAllUbxMsgRate(*ctx.bus);
 
-    std::uint16_t measinterval = 100;
-    ctx.bus->publish(UbxRateCmd{measinterval, 1}); // set rate of messages and nav
-
     // Enable NAV_SVINFO only for version 0.1 - 15.0
     // Enable NAV_SAT for version > 15.0
-    ctx.bus->publish(UbxVersionDependentMsgRateCmd{
-        {UbxVersionDependentMsgRateCmd::Entry{Version{0, 1}, Version{15, 0},
-                                              UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 69}},
-         UbxVersionDependentMsgRateCmd::Entry{Version{15, 0},
-                                              Version{std::numeric_limits<unsigned>().max(), 0},
-                                              UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 0}},
-         UbxVersionDependentMsgRateCmd::Entry{Version{15, 0},
-                                              Version{std::numeric_limits<unsigned>().max(), 0},
-                                              UbxMsgRateCmd{UBX_MSG::NAV_SAT, 1, 69}}}});
+    ctx.bus->publish(UbxVersionDependentCmd{
+        {UbxVersionDependentCmd::Entry{Version{0, 1}, Version{15, 0},
+                                       UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 69}},
+         UbxVersionDependentCmd::Entry{Version{15, 0},
+                                       Version{std::numeric_limits<unsigned>().max(), 0},
+                                       UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 0}},
+         UbxVersionDependentCmd::Entry{Version{15, 0},
+                                       Version{std::numeric_limits<unsigned>().max(), 0},
+                                       UbxMsgRateCmd{UBX_MSG::NAV_SAT, 1, 69}}}});
 
     // Debug reading version every second // TESTED -> Working!
     // ctx.scheduler->every(std::chrono::milliseconds(1000),[bus = &(*ctx.bus)](){
