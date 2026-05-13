@@ -47,6 +47,7 @@ struct UbxMsgPollCmd;
 struct UbxMsgPollRateCmd;
 struct UbxMsgRateCmd;
 struct UbxProtocolSelectionCmd;
+struct UbxGnssConfigCmd;
 struct UbxRateCmd;
 struct UbxResetCmd;
 struct UbxSaveCmd;
@@ -150,6 +151,7 @@ DECLARE_CODEC(UbxMsgPollCmd)
 DECLARE_CODEC(UbxMsgPollRateCmd)
 DECLARE_CODEC(UbxMsgRateCmd)
 DECLARE_CODEC(UbxProtocolSelectionCmd)
+DECLARE_CODEC(UbxGnssConfigCmd)
 DECLARE_CODEC(UbxRateCmd)
 DECLARE_CODEC(UbxResetCmd)
 DECLARE_CODEC(UbxSaveCmd)

@@ -69,39 +69,62 @@ class EventBindings {
 
     inline static void setupDatastore(EventBus& bus, DataStore& datastore) {
         // just copied from top
-        bus.subscribe<AdcTraceEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<Ads1115Event>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<BiasSwitchEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<BiasVoltageEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<CalibEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<GainSwitchEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<GpioRateEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<GpioInhibitEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<I2CStatsEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<LM75Event>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<MCP4728Event>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<MqttStatusEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<PcaSwitchEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<PolaritySwitchEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<PreampSwitchEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<SPIStatsEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<GpioEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<ThresholdSettingEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<NavSat>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<UbxMsgRates>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<CfgGNSS>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<UbxTimeMarkStruct>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<MonTx>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<MonRx>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<GnssMonHwStruct>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<GnssMonHw2Struct>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<GpsVersion>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<NavStatus>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<UbxTimePulseStruct>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<Histogram>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<LogInfoStruct>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<PositionModeConfig>([&datastore](const auto& ev) { datastore.store(ev); });
-        bus.subscribe<VersionEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<AdcTraceEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<Ads1115Event>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<BiasSwitchEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<BiasVoltageEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<CalibEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<GainSwitchEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<GpioRateEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<GpioInhibitEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<I2CStatsEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<LM75Event>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<MCP4728Event>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<MqttStatusEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<PcaSwitchEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<PolaritySwitchEvent>([&datastore](const auto& ev) { datastore.store(ev);
+        // }); bus.subscribe<PreampSwitchEvent>([&datastore](const auto& ev) { datastore.store(ev);
+        // }); bus.subscribe<SPIStatsEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<GpioEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<ThresholdSettingEvent>([&datastore](const auto& ev) { datastore.store(ev);
+        // }); bus.subscribe<NavSat>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<UbxMsgRates>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<CfgGNSS>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<UbxTimeMarkStruct>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<MonTx>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<MonRx>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<GnssMonHwStruct>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<GnssMonHw2Struct>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<GpsVersion>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<NavStatus>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<UbxTimePulseStruct>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<Histogram>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<LogInfoStruct>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<PositionModeConfig>([&datastore](const auto& ev) { datastore.store(ev); });
+        // bus.subscribe<VersionEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+
+        // Setup Histograms
+        // bus.subscribe<LM75Event>([&datastore](const auto& ev){
+        //     datastore.fill()
+        // });
+        bus.subscribe<UbxDopStruct>(
+            [&datastore](const auto& ev) { datastore.fillHisto("pDOP", 1e-2 * ev.pDOP); });
+        //     connect(qtGps, &QtSerialUblox::UBXReceivedDops, this, [this](const UbxDopStruct&
+        //     dops) {
+        // currentDOP = dops;
+        // emit logParameter(LogParameter("positionDOP", QString::number(dops.pDOP / 100.),
+        // LogParameter::LOG_AVERAGE)); emit logParameter(LogParameter("timeDOP",
+        // QString::number(dops.tDOP / 100.), LogParameter::LOG_AVERAGE)); if
+        // (m_histo_map.find("pDOP") != m_histo_map.end()) {
+        //     m_histo_map["pDOP"]->fill(1e-2 * dops.pDOP);
+        // }
+        // if (m_histo_map.find("tDOP") != m_histo_map.end()) {
+        //     m_histo_map["tDOP"]->fill(1e-2 * dops.tDOP);
+        // }
+        // });
+
+        // GeoPosManager
+        // bus.subscribe<
 
         // Send histograms
         bus.subscribe<HistogramRequestCmd>([&bus, &datastore]([[maybe_unused]] const auto&) {

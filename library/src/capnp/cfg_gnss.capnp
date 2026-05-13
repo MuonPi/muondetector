@@ -14,3 +14,7 @@ struct CfgGNSSCapnp {
   numConfigBlocks @3 :UInt8 = 0;
   configs @4 :List(GnssConfigStructCapnp);
 }
+
+struct UbxGnssConfigCmdCapnp {
+  configs @0 :List(GnssConfigStructCapnp);
+}

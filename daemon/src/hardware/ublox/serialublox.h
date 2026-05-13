@@ -3,6 +3,8 @@
 
 #include "core/component.h"
 #include "core/event_bus.h"
+#include "data/commands/ubx_dynamic_model_cmd.h"
+#include "data/commands/ubx_gnss_config_cmd.h"
 #include "data/commands/ubx_min_cno_cmd.h"
 #include "data/commands/ubx_min_max_sv_cmd.h"
 #include "data/commands/ubx_msg_poll_cmd.h"
@@ -13,7 +15,7 @@
 #include "data/commands/ubx_reset_cmd.h"
 #include "data/commands/ubx_save_cmd.h"
 #include "data/commands/ubx_set_aop_cmd.h"
-#include "data/commands/ubx_version_dependent_msg_rate_cmd.h"
+#include "data/commands/ubx_version_dependent_cmd.h"
 #include "data/events/ubx_event.h"
 #include "data/ublox/ublox_structs.h"
 
@@ -51,7 +53,9 @@ class SerialUblox : public Component {
     void handle(const UbxSetAopCmd&);
     void handle(const UbxMinMaxSvCmd&);
     void handle(const UbxMinCnoCmd&);
-    void handle(const UbxVersionDependentMsgRateCmd&);
+    void handle(const UbxDynamicModelCmd&);
+    void handle(const UbxGnssConfigCmd&);
+    void handle(const UbxVersionDependentCmd&);
     void handle(const GpsVersion&);
 
     void processQueuedCmds();
@@ -83,7 +87,7 @@ class SerialUblox : public Component {
     EventBus& bus_;
     int timeout_ = 5;
     std::optional<GpsVersion> protocolVersion_;
-    std::queue<UbxVersionDependentMsgRateCmd> queuedCmds_;
+    std::queue<UbxVersionDependentCmd> queuedCmds_;
 
     // TODO: Move this to some separate processor/storage
     std::size_t waitingForAppliedMsgRate{0};

@@ -10,6 +10,7 @@
 #include <unordered_map>
 
 class Histogram;
+class GeoPosManager;
 class DataStore {
   private:
     struct Entry {
@@ -18,6 +19,9 @@ class DataStore {
     };
 
   public:
+    DataStore();
+    ~DataStore();
+
     template <typename T>
     void store(const T& value) {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -61,13 +65,19 @@ class DataStore {
         return std::nullopt;
     }
 
+    // Histograms
     void setupHistos();
-    auto clearHisto(const std::string& name) -> std::shared_ptr<Histogram>;
-    auto histo(const std::string& name) -> std::shared_ptr<Histogram>;
+    auto clearHisto(const std::string& histoName) -> std::shared_ptr<Histogram>;
+    void fillHisto(const std::string& histoName, double value);
+    auto histo(const std::string& histoName) -> std::shared_ptr<Histogram>;
     auto allHistos() const -> const std::unordered_map<std::string, std::shared_ptr<Histogram>>&;
 
+    // GeoPos
+    auto geoPosManager() -> GeoPosManager&;
+
   private:
-    std::unordered_map<std::string, std::shared_ptr<Histogram>> m_histo_map{};
+    std::unordered_map<std::string, std::shared_ptr<Histogram>> m_histo_map;
+    std::unique_ptr<GeoPosManager> m_geopos_manager;
     std::unordered_map<std::type_index, Entry> data_;
     mutable std::mutex mutex_;
 };
