@@ -1,9 +1,10 @@
-#include "ads1115.capnp.h"
+#include "capnp/capnp_codec.h"
 #include "core/event_bus.h"
 #include "core/thread_pool.h"
-#include "data/events/ads1115_event.h"
+#include "data/events/gpio_event.h"
 #include "data/events/tcp_packet_event.h"
 #include "network/tcpserver.h"
+#include "protocol.capnp.h"
 #include "sinks/tcp_sink.h"
 #include "sources/tcp_source.h"
 #include "tcpmessage_keys.h"
@@ -81,7 +82,17 @@ int main() {
 
     // Server -> client path: publish ADC event via sink and verify decoded payload.
     const auto now = std::chrono::steady_clock::now().time_since_epoch().count();
-    Ads1115Event event{0x48, 2, 1234, 1.2345f, static_cast<std::uint64_t>(now)};
+
+    GpioEvent event{.gpio_signal = GPIO_SIGNAL::UNDEFINED_SIGNAL,
+                    .gpio_pin = 42,
+                    .timestamp = std::chrono::steady_clock::now(),
+                    .edge = EventEdge::Falling};
+
+    std::cout << "GPIO-Event sent:\n"
+              << event.gpio_signal << "\n"
+              << event.timestamp.time_since_epoch().count() << "\n"
+              << event.gpio_pin << "\n"
+              << std::flush;
 
     sink->handle(event);
 
@@ -93,24 +104,22 @@ int main() {
     }
 
     TcpPacket clientPacket = clientPacketFuture.get();
-    if (clientPacket.key != static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_ADC_SAMPLE)) {
+    if (clientPacket.key != static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_GPIO_EVENT)) {
         std::cerr << "unexpected packet key from server: " << clientPacket.key << "\n";
         io->stop();
         ioThread.join();
         return 1;
     }
+    auto received = CapnpCodec<GpioEvent>::decode(clientPacket.payload);
 
-    const std::size_t wordCount =
-        (clientPacket.payload.size() + sizeof(capnp::word) - 1) / sizeof(capnp::word);
-    auto alignedWords = kj::heapArray<capnp::word>(wordCount);
-    std::memset(alignedWords.begin(), 0, wordCount * sizeof(capnp::word));
-    std::memcpy(alignedWords.begin(), clientPacket.payload.data(), clientPacket.payload.size());
+    std::cout << "GPIO-Event Received:\n"
+              << received.gpio_signal << "\n"
+              << received.timestamp.time_since_epoch().count() << "\n"
+              << received.gpio_pin << "\n"
+              << std::flush;
 
-    capnp::FlatArrayMessageReader reader(alignedWords.asPtr());
-    auto root = reader.getRoot<Ads1115EventCapnp>();
-
-    if (root.getDeviceId() != event.deviceId || root.getChannel() != event.channel ||
-        root.getRawValue() != event.rawValue || root.getTimestamp() != event.timestamp) {
+    if (received.gpio_signal != event.gpio_signal || received.edge != event.edge ||
+        received.timestamp != event.timestamp || received.gpio_pin != event.gpio_pin) {
         std::cerr << "decoded payload does not match source event\n";
         io->stop();
         ioThread.join();
