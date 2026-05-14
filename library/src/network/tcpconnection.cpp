@@ -94,7 +94,8 @@ void TcpConnection::do_read() {
     socket_.async_read_some(boost::asio::buffer(readBuffer_),
                             [this, self](boost::system::error_code ec, std::size_t bytesRead) {
                                 if (ec) {
-                                    std::cerr << "async_read_some failed: " << ec.message();
+                                    std::cout << "async_read_some failed: " << ec.message()
+                                              << std::endl;
                                     closeWithError(ec);
                                     return;
                                 }

@@ -7,8 +7,8 @@
 enum class TCP_MSG_KEY : std::uint16_t {
     MSG_PONG = 1,
     MSG_PING = 2,
-    MSG_QUIT_CONNECTION = 3,
-    // MSG_PLACEHOLDER_5 = 5,
+    // MSG_QUIT_CONNECTION = 3, // unused
+    // MSG_TIMEOUT = 5, // unused
     MSG_THRESHOLD = 7,
     MSG_THRESHOLD_REQUEST = 11,
     MSG_UBX_MSG_RATE_REQUEST = 13,
@@ -22,7 +22,7 @@ enum class TCP_MSG_KEY : std::uint16_t {
     MSG_PCA_SWITCH_REQUEST = 43,
     MSG_GPIO_RATE_REQUEST = 47,
     MSG_GPIO_RATE = 53,
-    // MSG_PLACEHOLDER_59 = 59,
+    // MSG_GPIO_RATE_CFG = 59,
     MSG_GEO_POS = 61,
     MSG_ADC_SAMPLE = 67,
     MSG_ADC_SAMPLE_REQUEST = 71,
@@ -80,7 +80,7 @@ enum class TCP_MSG_KEY : std::uint16_t {
     MSG_POLARITY_SWITCH_REQUEST = 359,
     MSG_MQTT_INHIBIT = 367,
     MSG_VERSION = 373,
-    // MSG_PLACEHOLDER_379 = 379,
+    // MSG_SYSTEM_INFO = 379,
     MSG_DAC_SET = 383,
     MSG_POSITION_MODEL = 389,
     MSG_RESERVED2 = 397,

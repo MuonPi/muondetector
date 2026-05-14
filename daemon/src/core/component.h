@@ -36,7 +36,7 @@ class Component {
     Component(const ComponentId id);
     virtual ~Component() = default;
     auto id() const noexcept -> ComponentId;
-    auto name() const noexcept -> std::optional<std::string>;
+    auto name() const -> std::string;
 
     static void handleDeviceMissing(const ComponentId id);
 

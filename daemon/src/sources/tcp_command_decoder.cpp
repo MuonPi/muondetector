@@ -9,8 +9,8 @@
 #include "data/commands/burst_sampling_cmd.h"
 #include "data/commands/calibration_cmd.h"
 #include "data/commands/calibration_save_cmd.h"
-#include "data/commands/dac_cmd.h"
 #include "data/commands/dac_eeprom_set_cmd.h"
+#include "data/commands/dac_setting_request_cmd.h"
 #include "data/commands/event_trigger_cmd.h"
 #include "data/commands/gain_switch_cmd.h"
 #include "data/commands/gpio_rate_request_cmd.h"
@@ -99,11 +99,11 @@ void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
                 break;
             }
             case TCP_MSG_KEY::MSG_I2C_STATS_REQUEST: {
-                bus_.publish(CapnpCodec<I2cStatsRequestCmd>::decode(event.packet.payload));
+                bus_.publish(CapnpCodec<I2CStatsRequestCmd>::decode(event.packet.payload));
                 break;
             }
             case TCP_MSG_KEY::MSG_I2C_SCAN_BUS: {
-                bus_.publish(CapnpCodec<I2cScanBusCmd>::decode(event.packet.payload));
+                bus_.publish(CapnpCodec<I2CScanBusCmd>::decode(event.packet.payload));
                 break;
             }
             case TCP_MSG_KEY::MSG_CALIB_REQUEST: {
@@ -170,12 +170,8 @@ void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
                 bus_.publish(CapnpCodec<BiasSwitchRequestCmd>::decode(event.packet.payload));
                 break;
             }
-            case TCP_MSG_KEY::MSG_DAC_SET: {
-                bus_.publish(CapnpCodec<DacCmd>::decode(event.packet.payload));
-                break;
-            }
             case TCP_MSG_KEY::MSG_DAC_REQUEST: {
-                bus_.publish(CapnpCodec<DacRequestCmd>::decode(event.packet.payload));
+                bus_.publish(CapnpCodec<DacSettingRequestCmd>::decode(event.packet.payload));
                 break;
             }
             case TCP_MSG_KEY::MSG_DAC_EEPROM_SET: {

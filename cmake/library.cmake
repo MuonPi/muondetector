@@ -18,11 +18,11 @@ set(MUONDETECTOR_LIBRARY_SOURCE_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/capnp/capnp_codec.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/config.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network/tcpconnection.cpp"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/network/networkdiscovery.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/histogram.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/custom_io_operators.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/ublox/ublox_structs.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/custom_io_operators.cpp"
-    "${MUONDETECTOR_LIBRARY_SRC_DIR}/network/networkdiscovery.cpp"
     )
 
 set(MUONDETECTOR_LIBRARY_EVENT_FILES
@@ -60,13 +60,13 @@ set(MUONDETECTOR_LIBRARY_HEADER_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/histogram.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network/tcpconnection.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network/tcpmessage_keys.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/network/networkdiscovery.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/ublox/ublox_messages.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/ublox/ublox_structs.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/muondetector_structs.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/custom_io_operators.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/config.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/custom_io_operators.h"
-    "${MUONDETECTOR_LIBRARY_SRC_DIR}/network/networkdiscovery.h"
     )
 
 set(MUONDETECTOR_COMMANDS_HEADER_FILES

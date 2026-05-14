@@ -4,6 +4,7 @@
 #include "calibscandialog.h"
 #include "capnp/capnp_codec.h"
 #include "data/commands/ubx_gnss_config_cmd.h"
+#include "data/events/event_trigger_event.h"
 #include "gnssinfoform.h"
 #include "gui/src/ui_mainwindow.h"
 #include "histogramdataform.h"
@@ -33,8 +34,9 @@
 #include <data/commands/burst_sampling_cmd.h>
 #include <data/commands/calibration_cmd.h>
 #include <data/commands/calibration_save_cmd.h>
-#include <data/commands/dac_cmd.h>
 #include <data/commands/dac_eeprom_set_cmd.h>
+#include <data/commands/dac_setting_request_cmd.h>
+#include <data/commands/event_trigger_cmd.h>
 #include <data/commands/gain_switch_cmd.h>
 #include <data/commands/gpio_rate_request_cmd.h>
 #include <data/commands/gpio_rate_reset_cmd.h>
@@ -66,6 +68,7 @@
 #include <data/events/i2c_stats_event.h>
 #include <data/events/lm75_event.h>
 #include <data/events/mcp4728_event.h>
+#include <data/events/mqtt_inhibit_event.h>
 #include <data/events/mqtt_status_event.h>
 #include <data/events/pca_switch_event.h>
 #include <data/events/polarity_switch_event.h>
@@ -102,13 +105,7 @@ QRegularExpression specialCharacters(
 namespace {
 void sendPacketIfConnected(const std::shared_ptr<TcpConnection>& conn, TCP_MSG_KEY key,
                            std::vector<std::uint8_t> payload = {}) {
-    if (!conn) {
-        qDebug() << "conn null";
-        return;
-    }
-
-    if (!conn->isOpen()) {
-        qDebug() << "conn not open";
+    if (!conn || !conn->isOpen()) {
         return;
     }
     qDebug() << "Send command: " << static_cast<std::uint16_t>(key);
@@ -309,9 +306,9 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
     connect(this, &MainWindow::setUiEnabledStates, i2cTab, &I2cForm::onUiEnabledStateChange);
     connect(this, &MainWindow::i2cStatsReceived, i2cTab, &I2cForm::onI2cStatsReceived);
     connect(i2cTab, &I2cForm::i2cStatsRequest, this,
-            [this]() { sendCmdIfConnected(clientConn, I2cStatsRequestCmd{}); });
+            [this]() { sendCmdIfConnected(clientConn, I2CStatsRequestCmd{}); });
     connect(i2cTab, &I2cForm::scanI2cBusRequest, this,
-            [this]() { sendCmdIfConnected(clientConn, I2cScanBusCmd{}); });
+            [this]() { sendCmdIfConnected(clientConn, I2CScanBusCmd{}); });
 
     ui->tabWidget->addTab(i2cTab, "I2C bus");
 
@@ -591,9 +588,8 @@ auto MainWindow::buildDecoderMap()
              }},
             {TCP_MSG_KEY::MSG_EVENTTRIGGER,
              [this](const TcpPacket& packet) {
-                 // TODO: Understand what happens here logically
-                 // auto event = CapnpCodec<EventTriggerEvent>::decode(packet.payload);
-                 // emit triggerSelectionReceived(event.signal);
+                 auto event = CapnpCodec<EventTriggerEvent>::decode(packet.payload);
+                 emit triggerSelectionReceived(event.signal);
              }},
             {TCP_MSG_KEY::MSG_GPIO_RATE,
              [this](const TcpPacket& packet) {
@@ -624,7 +620,9 @@ auto MainWindow::buildDecoderMap()
             {TCP_MSG_KEY::MSG_DAC_READBACK,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<MCP4728Event>::decode(packet.payload);
-                 //  emit dacReadbackReceived(std::move(event.data));
+                 for (auto& [channel, voltage] : event.voltages) {
+                     emit dacReadbackReceived(channel, voltage);
+                 }
              }},
             {TCP_MSG_KEY::MSG_TEMPERATURE,
              [this](const TcpPacket& packet) {
@@ -763,6 +761,11 @@ auto MainWindow::buildDecoderMap()
                  auto event = CapnpCodec<GpioInhibitEvent>::decode(packet.payload);
                  emit gpioInhibitReceived(event.inhibit);
              }},
+            {TCP_MSG_KEY::MSG_MQTT_INHIBIT,
+             [this](const TcpPacket& packet) {
+                 auto event = CapnpCodec<MqttInhibitEvent>::decode(packet.payload);
+                 emit mqttInhibitReceived(event.inhibit);
+             }},
             {TCP_MSG_KEY::MSG_VERSION,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<VersionEvent>::decode(packet.payload);
@@ -775,10 +778,7 @@ auto MainWindow::buildDecoderMap()
 }
 
 void MainWindow::onTriggerSelectionChanged(GPIO_SIGNAL signal) {
-    // TcpMessage tcpMessage(TCP_MSG_KEY::MSG_EVENTTRIGGER);
-    // *(tcpMessage.dStream) << signal;
-    // emit sendTcpMessage(tcpMessage);
-    // sendRequest(TCP_MSG_KEY::MSG_EVENTTRIGGER_REQUEST);
+    sendCmdIfConnected(clientConn, EventTriggerCmd{.signal = signal});
 }
 
 bool MainWindow::saveSettings(QStandardItemModel* model) {
@@ -888,7 +888,7 @@ void MainWindow::sendPreamp2Switch(bool status) {
 void MainWindow::sendSetThresh(uint8_t channel, float value) {
     ThresholdSettingCmd cmd{};
     cmd.channel = channel;
-    cmd.threshold = value;
+    cmd.value = value;
     sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_THRESHOLD,
                           CapnpCodec<ThresholdSettingCmd>::encode(cmd));
 }
@@ -1062,11 +1062,11 @@ void MainWindow::connection_error(int error_code, const QString message) {
 void MainWindow::sendValueUpdateRequests() {
     sendCmdIfConnected(clientConn, BiasVoltageRequestCmd{});
     sendCmdIfConnected(clientConn, BiasSwitchRequestCmd{});
-    sendCmdIfConnected(clientConn, DacRequestCmd{});
+    sendCmdIfConnected(clientConn, DacSettingRequestCmd{});
     for (int i = 1; i < 4; i++)
         sendCmdIfConnected(clientConn, AdcSampleRequestCmd{static_cast<std::uint8_t>(i)});
     sendCmdIfConnected(clientConn, TemperatureRequestCmd{});
-    sendCmdIfConnected(clientConn, I2cStatsRequestCmd{});
+    sendCmdIfConnected(clientConn, I2CStatsRequestCmd{});
 }
 
 void MainWindow::onIpButtonClicked() {

@@ -61,7 +61,6 @@
 // Commands
 #include "data/commands/bias_switch_cmd.h"
 #include "data/commands/bias_voltage_cmd.h"
-#include "data/commands/dac_cmd.h"
 #include "data/commands/gpio_signal_set_cmd.h"
 #include "data/commands/pca_switch_cmd.h"
 
@@ -92,11 +91,8 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     ctx.config = std::make_unique<SystemConfig>(std::move(config));
 
     // --- datastore ---
-    ctx.datastore->setupHistos();
-    ctx.bus->subscribe<HistogramClearCmd>(
-        [&datastore = *ctx.datastore, &bus = *ctx.bus](const HistogramClearCmd& cmd) {
-            bus.publish(datastore.clearHisto(cmd.histogramName));
-        });
+    EventBindings::setupDatastore(*ctx.bus, *ctx.datastore);
+
     // ctx.bus->subscribe<>(
 
     // )
@@ -111,9 +107,10 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     // --- components ---
     for (auto& c : componentConfigurations) {
         auto component = ComponentFactory::createComponent(c, ctx);
-        logDebug("Created component " + component->name().value_or("<unknown>"));
+        logDebug("Created component " + component->name());
         auto component_as_source = std::dynamic_pointer_cast<Source>(component);
         if (component_as_source) {
+            component_as_source->update(); // Read out data once in the beginning!
             std::weak_ptr<Source> weak = component_as_source;
             if (c.interval) {
                 ctx.scheduler->every(c.interval.value(), [weak]() {
@@ -264,22 +261,12 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
         [&bus = *ctx.bus, &config = *ctx.config, &datastore = *ctx.datastore](auto& event) {
             bus.publish(VersionEvent{.hw_ver = MuonPi::Version::hardware,
                                      .sw_ver = MuonPi::Version::software});
-            if (datastore.lastUpdate<BiasSwitchEvent>().has_value()) {
-                bus.publish(*datastore.get<BiasSwitchEvent>());
-            } else {
-                bus.publish(BiasSwitchRequestCmd{});
-            }
-            if (datastore.lastUpdate<MCP4728Event>().has_value()) {
-                bus.publish(*datastore.get<MCP4728Event>());
-            } else {
-                bus.publish(DacRequestCmd{});
-            }
-            if (datastore.lastUpdate<PcaSwitchEvent>().has_value()) {
-                bus.publish(*datastore.get<PcaSwitchEvent>());
-            } else {
-                bus.publish(PcaSwitchRequestCmd{});
-            }
-            bus.publish(EventTriggerEvent{.eventTrigger = config.eventTrigger});
+            // Where there is already some event for requesting, do so via event bus
+            bus.publish(BiasSwitchRequestCmd{});
+            bus.publish(DacSettingRequestCmd{});
+            bus.publish(PcaSwitchRequestCmd{});
+            bus.publish(EventTriggerRequestCmd{});
+            // Where there is no such thing, request through datastore
             const auto& mode = datastore.geoPosManager().get_mode_config();
             bus.publish(mode);
             if (mode.mode == PositionModeConfig::Mode::Static) {

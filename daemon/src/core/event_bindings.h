@@ -3,13 +3,26 @@
 
 #include "core/event_bus.h"
 #include "core/registries/data_store.h"
+#include "data/commands/adc_sample_request_cmd.h"
+#include "data/commands/calibration_cmd.h"
+#include "data/commands/dac_setting_request_cmd.h"
+#include "data/commands/event_trigger_cmd.h"
+#include "data/commands/gain_switch_cmd.h"
+#include "data/commands/gpio_rate_request_cmd.h"
 #include "data/commands/histogram_request_cmd.h"
+#include "data/commands/i2c_stats_request_cmd.h"
+#include "data/commands/polarity_switch_cmd.h"
+#include "data/commands/preamp_switch_cmd.h"
+#include "data/commands/spi_stats_request_cmd.h"
+#include "data/commands/temperature_request_cmd.h"
+#include "data/commands/threshold_setting_cmd.h"
 #include "data/events/adc_mode_event.h"
 #include "data/events/adc_trace_event.h"
 #include "data/events/ads1115_event.h"
 #include "data/events/bias_switch_event.h"
 #include "data/events/bias_voltage_event.h"
 #include "data/events/calib_event.h"
+#include "data/events/datastore_store_event.h"
 #include "data/events/gain_switch_event.h"
 #include "data/events/gpio_event.h"
 #include "data/events/gpio_inhibit_event.h"
@@ -27,6 +40,8 @@
 #include "data/events/version_event.h"
 #include "sinks/tcp_sink.h"
 #include "utility/ublox_ratebuffer.h"
+
+#include <type_traits>
 
 class EventBindings {
   public:
@@ -68,41 +83,215 @@ class EventBindings {
         bus.subscribe<VersionEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     }
 
+    // All Events are either published wrapped inside of DataStoreStoreEvent or "normally"
+    // If published wrapped, can also contain arrays of Events (for example for threshold events)
+    // The array is stored in storage as std::array<event, x> and fan out here by iterating
+    // So both stored and not stored events are always sent out to tcp connection
+    // IMPORTANT: Never publish both DatastoreStoreEvent<some_event> and some_event because it will
+    // be published twice to GUI.
+    template <typename T, typename = void>
+    struct is_iterable : std::false_type {};
+
+    template <typename T>
+    struct is_iterable<T, std::void_t<decltype(std::begin(std::declval<T>())),
+                                      decltype(std::end(std::declval<T>()))>> : std::true_type {};
+
+    template <typename T>
+    inline static void subscribe_one(EventBus& bus, DataStore& datastore) {
+        bus.subscribe<DatastoreStoreEvent<T>>([&datastore, &bus](const DatastoreStoreEvent<T>& ev) {
+            datastore.store(ev.data);
+            if constexpr (is_iterable<T>::value && !std::is_same_v<T, std::string>) {
+                for (const auto& item : ev.data) {
+                    bus.publish(item);
+                }
+            } else {
+                bus.publish(ev.data);
+            }
+        });
+    }
+
+    template <typename... Ts>
+    inline static void subscribe_all(EventBus& bus, DataStore& datastore) {
+        (subscribe_one<Ts>(bus, datastore), ...);
+    }
+
     inline static void setupDatastore(EventBus& bus, DataStore& datastore) {
-        // just copied from top
-        // bus.subscribe<AdcTraceEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<Ads1115Event>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<BiasSwitchEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<BiasVoltageEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<CalibEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<GainSwitchEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<GpioRateEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<GpioInhibitEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<I2CStatsEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<LM75Event>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<MCP4728Event>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<MqttStatusEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<PcaSwitchEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<PolaritySwitchEvent>([&datastore](const auto& ev) { datastore.store(ev);
-        // }); bus.subscribe<PreampSwitchEvent>([&datastore](const auto& ev) { datastore.store(ev);
-        // }); bus.subscribe<SPIStatsEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        // Currently can only store one event at a time therefore those make no sense
         // bus.subscribe<GpioEvent>([&datastore](const auto& ev) { datastore.store(ev); });
         // bus.subscribe<ThresholdSettingEvent>([&datastore](const auto& ev) { datastore.store(ev);
-        // }); bus.subscribe<NavSat>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<UbxMsgRates>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<CfgGNSS>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<UbxTimeMarkStruct>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<MonTx>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<MonRx>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<GnssMonHwStruct>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<GnssMonHw2Struct>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<GpsVersion>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<NavStatus>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<UbxTimePulseStruct>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<Histogram>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<LogInfoStruct>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<PositionModeConfig>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<VersionEvent>([&datastore](const auto& ev) { datastore.store(ev); });
+        // });
+
+        // All events which should be stored are defined here
+        // All events with DataStoreStoreEvent<BiasVoltageEvent> ...
+        // will be sent to datastore and also sent to GUI via TCP as long as there is a Capnp Codec
+        // for it.
+        subscribe_all<BiasVoltageEvent, MqttStatusEvent, AdcTraceEvent, Ads1115Event,
+                      BiasSwitchEvent, CalibEvent, GainSwitchEvent, GpioRateEvent, GpioInhibitEvent,
+                      I2CStatsEvent, LM75Event, MCP4728Event, PcaSwitchEvent, PolaritySwitchEvent,
+                      PreampSwitchEvent, SPIStatsEvent, NavSat, UbxMsgRates, MonTx, MonRx,
+                      GnssMonHwStruct, GnssMonHw2Struct, GpsVersion, NavStatus, UbxTimePulseStruct,
+                      LogInfoStruct, PositionModeConfig, VersionEvent>(bus, datastore);
+
+        // Message Requests will be answered directly from datastore
+        bus.subscribe<ThresholdSettingRequestCmd>([&datastore, &bus](const auto& cmd) {
+            if (datastore.lastUpdate<MCP4728Event>().has_value()) {
+                const auto& value = *datastore.get<MCP4728Event>();
+                bus.publish(ThresholdSettingEvent{
+                    .channel = 0,
+                    .voltage =
+                        value.voltages.at(MuonPi::Config::Hardware::DAC::Channel::threshold[0])});
+                bus.publish(ThresholdSettingEvent{
+                    .channel = 1,
+                    .voltage =
+                        value.voltages.at(MuonPi::Config::Hardware::DAC::Channel::threshold[1])});
+            } else {
+                logWarn("Received ThresholdSettingRequestCmd but datastore does not have data for "
+                        "type ThresholdSettingEvent.");
+            }
+        });
+
+        bus.subscribe<BiasVoltageRequestCmd>([&datastore, &bus](const auto& cmd) {
+            if (datastore.lastUpdate<MCP4728Event>().has_value()) {
+                const auto& value = *datastore.get<MCP4728Event>();
+                bus.publish(BiasVoltageEvent{
+                    .voltage = value.voltages.at(MuonPi::Config::Hardware::DAC::Channel::bias)});
+            } else {
+                logWarn("Received BiasVoltageRequestCmd but datastore does not have data for type "
+                        "MCP4728Event.");
+            }
+        });
+
+        bus.subscribe<PcaSwitchRequestCmd>([&datastore, &bus](const auto& cmd) {
+            if (datastore.lastUpdate<PcaSwitchEvent>().has_value()) {
+                bus.publish(*datastore.get<PcaSwitchEvent>());
+            } else {
+                logWarn("Received PcaSwitchRequestCmd but datastore does not have data for type "
+                        "PcaSwitchEvent.");
+            }
+        });
+
+        bus.subscribe<BiasSwitchRequestCmd>([&datastore, &bus](const auto& cmd) {
+            if (datastore.lastUpdate<BiasSwitchEvent>().has_value()) {
+                bus.publish(*datastore.get<BiasSwitchEvent>());
+            } else {
+                logWarn("Received BiasSwitchRequestCmd but datastore does not have data for type "
+                        "BiasSwitchEvent.");
+            }
+        });
+
+        bus.subscribe<PolaritySwitchRequestCmd>([&datastore, &bus](const auto& cmd) {
+            if (datastore.lastUpdate<PolaritySwitchEvent>().has_value()) {
+                bus.publish(*datastore.get<PolaritySwitchEvent>());
+            } else {
+                logWarn("Received PolaritySwitchRequestCmd but datastore does not have data for "
+                        "type PolaritySwitchEvent.");
+            }
+        });
+
+        bus.subscribe<GainSwitchRequestCmd>([&datastore, &bus](const auto& cmd) {
+            if (datastore.lastUpdate<GainSwitchEvent>().has_value()) {
+                bus.publish(*datastore.get<GainSwitchEvent>());
+            } else {
+                logWarn("Received GainSwitchRequestCmd but datastore does not have data for type "
+                        "GainSwitchEvent.");
+            }
+        });
+
+        bus.subscribe<PreampSwitchRequestCmd>([&datastore, &bus](const auto& cmd) {
+            if (datastore.lastUpdate<PreampSwitchEvent>().has_value()) {
+                bus.publish(*datastore.get<PreampSwitchEvent>());
+            } else {
+                logWarn("Received PreampSwitchRequestCmd but datastore does not have data for type "
+                        "PreampSwitchEvent.");
+            }
+        });
+
+        bus.subscribe<GpioRateRequestCmd>([&datastore, &bus](const auto& cmd) {
+            if (datastore.lastUpdate<GpioRateEvent>().has_value()) {
+                bus.publish(*datastore.get<GpioRateEvent>());
+            } else {
+                logWarn("Received GpioRateRequestCmd but datastore does not have data for type "
+                        "GpioRateEvent");
+            }
+        });
+
+        bus.subscribe<TemperatureRequestCmd>([&datastore, &bus](const auto& cmd) {
+            if (datastore.lastUpdate<LM75Event>().has_value()) {
+                bus.publish(*datastore.get<LM75Event>());
+            } else {
+                logWarn("Received GpioRateRequestCmd but datastore does not have data for type "
+                        "GpioRateEvent");
+            }
+        });
+
+        bus.subscribe<AdcSampleRequestCmd>([&datastore, &bus](const auto& cmd) {
+            if (datastore.lastUpdate<std::array<Ads1115Event, 4>>().has_value()) {
+                const auto& data = *datastore.get<std::array<Ads1115Event, 4>>();
+                bus.publish(data.at(cmd.channel));
+            } else {
+                logWarn("Received AdcSampleRequestCmd but datastore does not have data for type "
+                        "std::array<Ads1115Event, 4>.");
+            }
+        });
+
+        bus.subscribe<CalibRequestCmd>([&datastore, &bus](const auto& cmd) {
+            if (datastore.lastUpdate<CalibEvent>().has_value()) {
+                bus.publish(*datastore.get<CalibEvent>());
+            } else {
+                logWarn("Received CalibRequestCmd but datastore does not have data for type "
+                        "CalibEvent");
+            }
+        });
+
+        bus.subscribe<I2CStatsRequestCmd>([&datastore, &bus](const auto& cmd) {
+            if (datastore.lastUpdate<I2CStatsEvent>().has_value()) {
+                bus.publish(*datastore.get<I2CStatsEvent>());
+            } else {
+                logWarn("Received I2cStatsRequestCmd but datastore does not have data for type "
+                        "I2CStatsEvent");
+            }
+        });
+
+        bus.subscribe<SPIStatsRequestCmd>([&datastore, &bus](const auto& cmd) {
+            if (datastore.lastUpdate<SPIStatsEvent>().has_value()) {
+                bus.publish(*datastore.get<SPIStatsEvent>());
+            } else {
+                logWarn("Received SPIStatsRequestCmd but datastore does not have data for type "
+                        "SPIStatsEvent");
+            }
+        });
+
+        bus.subscribe<EventTriggerRequestCmd>([&datastore, &bus](const auto& cmd) {
+            if (datastore.lastUpdate<EventTriggerEvent>().has_value()) {
+                bus.publish(*datastore.get<EventTriggerEvent>());
+            } else {
+                logWarn("Received EventTriggerRequestCmd but datastore does not have data for type "
+                        "EventTriggerEvent");
+            }
+        });
+
+        bus.subscribe<DacSettingRequestCmd>([&datastore, &bus](const auto& cmd) {
+            if (datastore.lastUpdate<MCP4728Event>().has_value()) {
+                bus.publish(*datastore.get<MCP4728Event>());
+            } else {
+                logWarn("Received DacSettingRequestCmd but datastore does not have data for type "
+                        "MCP4728Event");
+            }
+        });
+
+        // Convert MCP4728Event to BiasVoltageEvent etc.
+        bus.subscribe<MCP4728Event>([&bus](const MCP4728Event& event) {
+            bus.publish(ThresholdSettingEvent{
+                .channel = 0,
+                .voltage =
+                    event.voltages.at(MuonPi::Config::Hardware::DAC::Channel::threshold[0])});
+            bus.publish(ThresholdSettingEvent{
+                .channel = 1,
+                .voltage =
+                    event.voltages.at(MuonPi::Config::Hardware::DAC::Channel::threshold[1])});
+            bus.publish(BiasVoltageEvent{
+                .voltage = event.voltages.at(MuonPi::Config::Hardware::DAC::Channel::bias)});
+        });
 
         // set up counter rate buffer for ubx counter
         datastore.ubloxRateBuffer().setBufferTime(std::chrono::seconds(10));
@@ -132,7 +321,11 @@ class EventBindings {
         // GeoPosManager
         // bus.subscribe<
 
-        // Send histograms
+        // Histograms
+        datastore.setupHistos();
+        bus.subscribe<HistogramClearCmd>([&datastore, &bus](const HistogramClearCmd& cmd) {
+            bus.publish(datastore.clearHisto(cmd.histogramName));
+        });
         bus.subscribe<HistogramRequestCmd>([&bus, &datastore]([[maybe_unused]] const auto&) {
             for (const auto& [name, hist] : datastore.allHistos()) {
                 hist->rescale();

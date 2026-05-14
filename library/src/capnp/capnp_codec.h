@@ -27,6 +27,7 @@ struct PcaSwitchEvent;
 struct PolaritySwitchEvent;
 struct PreampSwitchEvent;
 struct GpioInhibitEvent;
+struct MqttInhibitEvent;
 struct LM75Event;
 struct MqttStatusEvent;
 struct SPIStatsEvent;
@@ -52,8 +53,9 @@ struct UbxSetAopCmd;
 struct MqttInhibitCmd;
 struct GpioRateResetCmd;
 struct UbxConfigDefaultCmd;
-struct I2cStatsRequestCmd;
-struct I2cScanBusCmd;
+struct I2CStatsRequestCmd;
+struct SPIStatsRequestCmd;
+struct I2CScanBusCmd;
 struct CalibRequestCmd;
 struct CalibSaveCmd;
 struct PreampSwitchCmd;
@@ -61,6 +63,7 @@ struct PreampSwitchRequestCmd;
 struct GainSwitchCmd;
 struct GainSwitchRequestCmd;
 struct ThresholdSettingCmd;
+struct DacSettingRequestCmd;
 struct ThresholdSettingRequestCmd;
 struct PcaSwitchCmd;
 struct PcaSwitchRequestCmd;
@@ -72,12 +75,11 @@ struct BiasVoltageRequestCmd;
 struct BiasSwitchCmd;
 struct BiasSwitchRequestCmd;
 struct DacEepromSetCmd;
-struct DacCmd;
-struct DacRequestCmd;
 struct AdcSampleRequestCmd;
 struct TemperatureRequestCmd;
 struct HistogramClearCmd;
 struct GpioRateRequestCmd;
+struct EventTriggerCmd;
 struct EventTriggerRequestCmd;
 // struct UbxDynamicModelcmd;
 
@@ -115,6 +117,7 @@ DECLARE_CODEC(CalibEvent)
 DECLARE_CODEC(CfgGNSS)
 DECLARE_CODEC(GpioRateEvent)
 DECLARE_CODEC(I2CStatsEvent)
+DECLARE_CODEC(SPIStatsRequestCmd)
 DECLARE_CODEC(MCP4728Event)
 DECLARE_CODEC(MonRx)
 DECLARE_CODEC(MonTx)
@@ -130,6 +133,7 @@ DECLARE_CODEC(PcaSwitchEvent)
 DECLARE_CODEC(PolaritySwitchEvent)
 DECLARE_CODEC(PreampSwitchEvent)
 DECLARE_CODEC(GpioInhibitEvent)
+DECLARE_CODEC(MqttInhibitEvent)
 DECLARE_CODEC(LM75Event)
 DECLARE_CODEC(MqttStatusEvent)
 DECLARE_CODEC(SPIStatsEvent)
@@ -155,8 +159,8 @@ DECLARE_CODEC(UbxSetAopCmd)
 DECLARE_CODEC(MqttInhibitCmd)
 DECLARE_CODEC(GpioRateResetCmd)
 DECLARE_CODEC(UbxConfigDefaultCmd)
-DECLARE_CODEC(I2cStatsRequestCmd)
-DECLARE_CODEC(I2cScanBusCmd)
+DECLARE_CODEC(I2CStatsRequestCmd)
+DECLARE_CODEC(I2CScanBusCmd)
 DECLARE_CODEC(CalibRequestCmd)
 DECLARE_CODEC(CalibSaveCmd)
 DECLARE_CODEC(PreampSwitchCmd)
@@ -164,6 +168,7 @@ DECLARE_CODEC(PreampSwitchRequestCmd)
 DECLARE_CODEC(GainSwitchCmd)
 DECLARE_CODEC(GainSwitchRequestCmd)
 DECLARE_CODEC(ThresholdSettingCmd)
+DECLARE_CODEC(DacSettingRequestCmd)
 DECLARE_CODEC(ThresholdSettingRequestCmd)
 DECLARE_CODEC(PcaSwitchCmd)
 DECLARE_CODEC(PcaSwitchRequestCmd)
@@ -174,13 +179,12 @@ DECLARE_CODEC(BiasVoltageCmd)
 DECLARE_CODEC(BiasVoltageRequestCmd)
 DECLARE_CODEC(BiasSwitchCmd)
 DECLARE_CODEC(BiasSwitchRequestCmd)
-DECLARE_CODEC(DacCmd)
-DECLARE_CODEC(DacRequestCmd)
 DECLARE_CODEC(DacEepromSetCmd)
 DECLARE_CODEC(AdcSampleRequestCmd)
 DECLARE_CODEC(TemperatureRequestCmd)
 DECLARE_CODEC(HistogramClearCmd)
 DECLARE_CODEC(GpioRateRequestCmd)
+DECLARE_CODEC(EventTriggerCmd)
 DECLARE_CODEC(EventTriggerRequestCmd)
 // DECLARE_CODEC(UbxDynamicModelCmd)
 #undef DECLARE_CODEC

@@ -4,7 +4,7 @@
 #include "data/gpio_pin_definitions.h"
 
 struct EventTriggerEvent {
-    GPIO_SIGNAL eventTrigger{EVT_XOR};
+    GPIO_SIGNAL signal{EVT_XOR};
 };
 
 #endif // EVENT_TRIGGER_EVENT_H
