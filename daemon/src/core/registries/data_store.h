@@ -13,6 +13,8 @@
 #include <unordered_map>
 
 class Histogram;
+struct GnssPosStruct;
+struct UbxTimeMarkStruct;
 class DataStore {
   private:
     struct Entry {
@@ -27,7 +29,11 @@ class DataStore {
     template <typename T>
     void store(const T& value) {
         std::lock_guard<std::mutex> lock(mutex_);
+        // fillHisto(value);
 
+        if constexpr (has_histo_filler_v<T>) {
+            fillhHisto(value);
+        }
         data_[std::type_index(typeid(T))] = Entry{value, std::chrono::system_clock::now()};
     }
 
@@ -70,7 +76,35 @@ class DataStore {
     // Histograms
     void setupHistos();
     auto clearHisto(const std::string& histoName) -> std::shared_ptr<Histogram>;
-    void fillHisto(const std::string& histoName, double value);
+
+    template <typename... Ts>
+    struct type_list {};
+
+    template <typename T, typename List>
+    struct contains;
+
+    template <typename T, typename... Ts>
+    struct contains<T, type_list<Ts...>> : std::bool_constant<(std::is_same_v<T, Ts> || ...)> {};
+
+    // Define here which messages will be used to fill histograms with data
+    // For each type in the list there must be a specialization in data_store.cpp
+    using histo_enabled_types = type_list<GnssPosStruct, UbxTimeMarkStruct
+                                          // AdcTraceEvent,
+                                          // Ads1115Event,
+                                          // NavSat,
+                                          // UbxMsgRates
+                                          >;
+
+    template <typename T>
+    inline static constexpr bool has_histo_filler_v = contains<T, histo_enabled_types>::value;
+
+    // Prevent definition in list "histo_enabled_types" but no specialization
+    // -> default template function static_assert
+    template <typename T>
+    void fillHisto(const T&) {
+        static_assert(sizeof(T) == 0, "No specialization for function 'fillHisto' for this type");
+    }
+
     auto histo(const std::string& histoName) -> std::shared_ptr<Histogram>;
     auto allHistos() const -> const std::unordered_map<std::string, std::shared_ptr<Histogram>>&;
 

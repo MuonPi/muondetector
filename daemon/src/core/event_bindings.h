@@ -307,26 +307,6 @@ class EventBindings {
         bus.subscribe<UbxTimeMarkStruct>(
             [&datastore](auto& ev) { datastore.ubloxRateBuffer().onCounterValue(ev.evtCounter); });
 
-        // Setup Histograms
-        // bus.subscribe<LM75Event>([&datastore](const auto& ev){
-        //     datastore.fill()
-        // });
-        bus.subscribe<UbxDopStruct>(
-            [&datastore](const auto& ev) { datastore.fillHisto("pDOP", 1e-2 * ev.pDOP); });
-        //     connect(qtGps, &QtSerialUblox::UBXReceivedDops, this, [this](const UbxDopStruct&
-        //     dops) {
-        // currentDOP = dops;
-        // emit logParameter(LogParameter("positionDOP", QString::number(dops.pDOP / 100.),
-        // LogParameter::LOG_AVERAGE)); emit logParameter(LogParameter("timeDOP",
-        // QString::number(dops.tDOP / 100.), LogParameter::LOG_AVERAGE)); if
-        // (m_histo_map.find("pDOP") != m_histo_map.end()) {
-        //     m_histo_map["pDOP"]->fill(1e-2 * dops.pDOP);
-        // }
-        // if (m_histo_map.find("tDOP") != m_histo_map.end()) {
-        //     m_histo_map["tDOP"]->fill(1e-2 * dops.tDOP);
-        // }
-        // });
-
         // GeoPosManager
         // bus.subscribe<
 
