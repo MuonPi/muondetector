@@ -2,6 +2,7 @@
 
 #include "core/logging/logger.h"
 #include "data/histogram.h"
+#include "data/ublox/ublox_messages.h"
 #include "utility/geoposmanager.h"
 #include "utility/ublox_ratebuffer.h"
 // #include "data/"
@@ -33,15 +34,6 @@ auto DataStore::clearHisto(const std::string& histoName) -> std::shared_ptr<Hist
         return it->second;
     }
     return nullptr;
-}
-
-void DataStore::fillHisto(const std::string& histoName, double value) {
-    auto it = m_histo_map.find(histoName);
-    if (it == m_histo_map.end()) {
-        logWarn("Failed to fill histogram " + histoName + ". Not Found!");
-        return;
-    }
-    it->second->fill(value);
 }
 
 auto DataStore::allHistos() const
@@ -83,10 +75,33 @@ void DataStore::setupHistos() {
     m_histo_map.emplace("pDOP", std::make_shared<Histogram>("pDOP", 200, 0., 10., true));
     m_histo_map.emplace("tDOP", std::make_shared<Histogram>("tDOP", 200, 0., 10., true));
 
-    // m_geopos_manager.set_histos(
-    //     m_histo_map["geoLongitude"],
-    //     m_histo_map["geoLatitude"],
-    //     m_histo_map["geoHeight"]);
+    m_geopos_manager->set_histos(m_histo_map["geoLongitude"], m_histo_map["geoLatitude"],
+                                 m_histo_map["geoHeight"]);
+}
+
+template <>
+void DataStore::fillHisto(const GnssPosStruct& event) {
+    m_histo_map["geoLatitude"]->fill(event.lat);
+    m_histo_map["geoLongitude"]->fill(event.lon);
+    m_histo_map["geoHeight"]->fill(event.height);
+}
+
+template <>
+void DataStore::fillHisto(const UbxTimeMarkStruct& tm) {
+    static UbxTimeMarkStruct lastTimeMark{};
+
+    long double dts = (tm.falling.tv_sec - tm.rising.tv_sec) * 1.0e9L;
+    dts += (tm.falling.tv_nsec - tm.rising.tv_nsec);
+    if ((dts > 0.0L) && tm.fallingValid) {
+        m_histo_map["UbxEventLength"]->fill(static_cast<double>(dts));
+    }
+    long double interval = (tm.rising.tv_sec - lastTimeMark.rising.tv_sec) * 1.0e9L;
+    interval += (tm.rising.tv_nsec - lastTimeMark.rising.tv_nsec);
+    if (interval < 1e12)
+        m_histo_map["UbxEventInterval"]->fill(static_cast<double>(1.0e-6L * interval));
+    // uint16_t diffCount = tm.evtCounter - lastTimeMark.evtCounter;
+    // emit timeMarkIntervalCountUpdate(diffCount, static_cast<double>(interval * 1.0e-9L));
+    lastTimeMark = tm;
 }
 
 auto DataStore::geoPosManager() -> GeoPosManager& {
