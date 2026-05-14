@@ -3,6 +3,8 @@
 
 #include "data/ublox/ublox_structs.h"
 
+#include <sstream>
+
 class GnssSatellite {
   public:
     GnssSatellite() = default;
@@ -37,9 +39,9 @@ class GnssSatellite {
 
     ~GnssSatellite() {}
 
-    static void PrintHeader(bool wIndex);
-    void Print(bool wHeader) const;
-    void Print(int index, bool wHeader) const;
+    static void PrintHeader(std::stringstream& sstr, bool wIndex);
+    void Print(std::stringstream& sstr, bool wHeader) const;
+    void Print(std::stringstream& sstr, int index, bool wHeader) const;
 
     static bool sortByCnr(const GnssSatellite& sat1, const GnssSatellite& sat2) {
         return sat1.Cnr > sat2.Cnr;
@@ -84,78 +86,68 @@ enum UbxDynamicModel {
     bike = 10
 };
 
-inline void GnssSatellite::PrintHeader(bool wIndex) {
+inline void GnssSatellite::PrintHeader(std::stringstream& sstr, bool wIndex) {
     if (wIndex) {
-        std::cout
-            << "   "
-               "----------------------------------------------------------------------------------"
-            << std::endl;
-        std::cout << "   Nr   Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth "
-                     "DiffCorr"
-                  << std::endl;
-        std::cout
-            << "   "
-               "----------------------------------------------------------------------------------"
-            << std::endl;
+        sstr << "   "
+                "----------------------------------------------------------------------------------"
+             << std::endl;
+        sstr << "   Nr   Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth "
+                "DiffCorr"
+             << std::endl;
+        sstr << "   "
+                "----------------------------------------------------------------------------------"
+             << std::endl;
     } else {
-        std::cout << "   -----------------------------------------------------------------"
-                  << std::endl;
-        std::cout
-            << "    Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth DiffCorr"
-            << std::endl;
-        std::cout << "   -----------------------------------------------------------------"
-                  << std::endl;
+        sstr << "   -----------------------------------------------------------------" << std::endl;
+        sstr << "    Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth DiffCorr"
+             << std::endl;
+        sstr << "   -----------------------------------------------------------------" << std::endl;
     }
 }
 
-inline void GnssSatellite::Print(bool wHeader) const {
+inline void GnssSatellite::Print(std::stringstream& sstr, bool wHeader) const {
     if (wHeader) {
-        std::cout
-            << "   ------------------------------------------------------------------------------"
-            << std::endl;
-        std::cout
-            << "    Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth DiffCorr"
-            << std::endl;
-        std::cout
-            << "   ------------------------------------------------------------------------------"
-            << std::endl;
+        sstr << "   ------------------------------------------------------------------------------"
+             << std::endl;
+        sstr << "    Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth DiffCorr"
+             << std::endl;
+        sstr << "   ------------------------------------------------------------------------------"
+             << std::endl;
     }
-    std::cout << "   " << std::dec << "  " << Gnss::Id::name[static_cast<int>(GnssId)] << "   "
-              << std::setw(3) << (int) SatId << "    ";
-    std::cout << std::setw(3) << (int) Cnr << "      " << std::setw(3) << (int) Elev << "       "
-              << std::setw(3) << (int) Azim;
-    std::cout << "   " << std::setw(6) << PrRes << "    " << Quality << "   "
-              << std::string((Used) ? "Y" : "N");
-    std::cout << "    " << Health << "   " << OrbitSource << "   " << (int) Smoothed << "    "
-              << (int) DiffCorr;
-    std::cout << std::endl;
+    sstr << "   " << std::dec << "  " << Gnss::Id::name[static_cast<int>(GnssId)] << "   "
+         << std::setw(3) << (int) SatId << "    ";
+    sstr << std::setw(3) << (int) Cnr << "      " << std::setw(3) << (int) Elev << "       "
+         << std::setw(3) << (int) Azim;
+    sstr << "   " << std::setw(6) << PrRes << "    " << Quality << "   "
+         << std::string((Used) ? "Y" : "N");
+    sstr << "    " << Health << "   " << OrbitSource << "   " << (int) Smoothed << "    "
+         << (int) DiffCorr;
+    sstr << std::endl;
 }
 
-inline void GnssSatellite::Print(int index, bool wHeader) const {
+inline void GnssSatellite::Print(std::stringstream& sstr, int index, bool wHeader) const {
     if (wHeader) {
-        std::cout
-            << "   "
-               "----------------------------------------------------------------------------------"
-            << std::endl;
-        std::cout << "   Nr   Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth "
-                     "DiffCorr"
-                  << std::endl;
-        std::cout
-            << "   "
-               "----------------------------------------------------------------------------------"
-            << std::endl;
+        sstr << "   "
+                "----------------------------------------------------------------------------------"
+             << std::endl;
+        sstr << "   Nr   Sys    ID   S/N(dB)  El(deg)  Az(deg)  Res(m) Qlty Use Hlth Src Smth "
+                "DiffCorr"
+             << std::endl;
+        sstr << "   "
+                "----------------------------------------------------------------------------------"
+             << std::endl;
     }
-    std::cout << "   " << std::dec << std::setw(2) << index + 1 << "  "
-              << Gnss::Id::name[static_cast<int>(GnssId)] << "   " << std::setw(3) << (int) SatId
-              << "    ";
-    std::cout << std::setw(3) << (int) Cnr << "      " << std::setw(3) << (int) Elev << "       "
-              << std::setw(3) << (int) Azim;
-    std::cout << "   " << std::setw(6) << PrRes << "    " << Quality << "   "
-              << std::string((Used) ? "Y" : "N");
-    std::cout << "    " << Health << "   " << OrbitSource << "   " << (int) Smoothed << "    "
-              << (int) DiffCorr;
+    sstr << "   " << std::dec << std::setw(2) << index + 1 << "  "
+         << Gnss::Id::name[static_cast<int>(GnssId)] << "   " << std::setw(3) << (int) SatId
+         << "    ";
+    sstr << std::setw(3) << (int) Cnr << "      " << std::setw(3) << (int) Elev << "       "
+         << std::setw(3) << (int) Azim;
+    sstr << "   " << std::setw(6) << PrRes << "    " << Quality << "   "
+         << std::string((Used) ? "Y" : "N");
+    sstr << "    " << Health << "   " << OrbitSource << "   " << (int) Smoothed << "    "
+         << (int) DiffCorr;
     ;
-    std::cout << std::endl;
+    sstr << std::endl;
 }
 
 struct UbxDopStruct {

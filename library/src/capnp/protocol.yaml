@@ -282,9 +282,8 @@ messages:
     fields:
       - { name: id, type: uint16 }
 
-  - name: UbxMsgPollRateCmdCapnp
-    fields:
-      - { name: id, type: uint16 }
+  - name: UbxMsgRateRequestCmdCapnp
+    fields: []
 
   - name: UbxMsgRateCmdCapnp
     fields:

@@ -43,7 +43,7 @@ struct LogInfoStruct;
 class Histogram;
 struct StartBurstSampling;
 struct UbxMsgPollCmd;
-struct UbxMsgPollRateCmd;
+struct UbxMsgRateRequestCmd;
 struct UbxMsgRateCmd;
 struct UbxGnssConfigCmd;
 struct UbxRateCmd;
@@ -149,7 +149,7 @@ DECLARE_CODEC(LogInfoStruct)
 DECLARE_CODEC(Histogram)
 DECLARE_CODEC(StartBurstSampling)
 DECLARE_CODEC(UbxMsgPollCmd)
-DECLARE_CODEC(UbxMsgPollRateCmd)
+DECLARE_CODEC(UbxMsgRateRequestCmd)
 DECLARE_CODEC(UbxMsgRateCmd)
 DECLARE_CODEC(UbxGnssConfigCmd)
 DECLARE_CODEC(UbxRateCmd)

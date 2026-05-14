@@ -46,15 +46,6 @@ void AsyncLogger::setMinimumLevel(const std::string& level) {
     }
 }
 
-void AsyncLogger::log(LogLevel level, const std::string& message) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (static_cast<int>(level) < static_cast<int>(minimumLevel_)) {
-        return;
-    }
-    queue_.push(LogEntry{level, message});
-    cv_.notify_one();
-}
-
 auto AsyncLogger::level() const -> LogLevel {
     return minimumLevel_;
 }

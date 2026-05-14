@@ -16,9 +16,10 @@
 #include "data/commands/ubx_save_cmd.h"
 #include "data/commands/ubx_set_aop_cmd.h"
 #include "data/commands/ubx_version_dependent_cmd.h"
+#include "data/events/datastore_store_event.h"
+#include "data/events/ubx_event.h"
 #include "data/ublox/ublox_messages.h"
 #include "data/ublox/ublox_structs.h"
-#include "events/ubx_event.h"
 #include "hardware/ublox/message_processor.h"
 #include "utility/helper_functions.h"
 
@@ -94,7 +95,8 @@ void SerialUblox::startAsyncRead() {
                     if (auto parsed = MessageProcessor::processMessage(msgCandidate.value())) {
                         std::visit(
                             [this](auto&& msg) {
-                                bus_.publish(msg); // typed publish
+                                using T = std::decay_t<decltype(msg)>;
+                                bus_.publish(DatastoreStoreEvent<T>{.data = msg}); // typed publish
                             },
                             parsed.value());
                     }
@@ -224,7 +226,7 @@ void SerialUblox::handle(const UbxRateCmd& cmd) {
 void SerialUblox::handle(const UbxMsgRateCmd& cmd) {
     // set message rate on port. (rate 1 means every intervall the messages is sent)
     // if port = -1 set all ports
-    logDebug("Processing UbxMsgRateCmd");
+    logDebug("Processing UbxMsgRateCmd for message " + std::to_string(cmd.id));
 
     std::array<std::uint8_t, 8> data;
     if (cmd.port > 6) {
@@ -245,7 +247,7 @@ void SerialUblox::handle(const UbxMsgRateCmd& cmd) {
 }
 
 void SerialUblox::handle(const UbxMsgPollCmd& cmd) {
-    logDebug("Processing UbxMsgPollCmd");
+    logDebug("Processing UbxMsgPollCmd for message " + std::to_string(cmd.id));
     UbxMessage msg;
     std::array<std::uint8_t, 1> data;
     switch (cmd.id) {
@@ -267,7 +269,7 @@ void SerialUblox::handle(const UbxMsgPollCmd& cmd) {
 }
 
 void SerialUblox::handle(const UbxMsgPollRateCmd& cmd) {
-    logDebug("Processing UbxMsgPollRateCmd");
+    logDebug("Processing UbxMsgPollRateCmd for message " + std::to_string(cmd.id));
     std::array<std::uint8_t, 2> data;
     data[0] = static_cast<std::uint8_t>((cmd.id >> 8) & 0xff);
     data[1] = static_cast<std::uint8_t>(cmd.id & 0xff);

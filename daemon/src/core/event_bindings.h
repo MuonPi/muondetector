@@ -133,7 +133,7 @@ class EventBindings {
                       LogInfoStruct, PositionModeConfig, VersionEvent>(bus, datastore);
 
         // Message Requests will be answered directly from datastore
-        bus.subscribe<ThresholdSettingRequestCmd>([&datastore, &bus](const auto& cmd) {
+        bus.subscribe<ThresholdSettingRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<MCP4728Event>().has_value()) {
                 const auto& value = *datastore.get<MCP4728Event>();
                 bus.publish(ThresholdSettingEvent{
@@ -150,7 +150,7 @@ class EventBindings {
             }
         });
 
-        bus.subscribe<BiasVoltageRequestCmd>([&datastore, &bus](const auto& cmd) {
+        bus.subscribe<BiasVoltageRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<MCP4728Event>().has_value()) {
                 const auto& value = *datastore.get<MCP4728Event>();
                 bus.publish(BiasVoltageEvent{
@@ -161,7 +161,7 @@ class EventBindings {
             }
         });
 
-        bus.subscribe<PcaSwitchRequestCmd>([&datastore, &bus](const auto& cmd) {
+        bus.subscribe<PcaSwitchRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<PcaSwitchEvent>().has_value()) {
                 bus.publish(*datastore.get<PcaSwitchEvent>());
             } else {
@@ -170,7 +170,7 @@ class EventBindings {
             }
         });
 
-        bus.subscribe<BiasSwitchRequestCmd>([&datastore, &bus](const auto& cmd) {
+        bus.subscribe<BiasSwitchRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<BiasSwitchEvent>().has_value()) {
                 bus.publish(*datastore.get<BiasSwitchEvent>());
             } else {
@@ -179,7 +179,7 @@ class EventBindings {
             }
         });
 
-        bus.subscribe<PolaritySwitchRequestCmd>([&datastore, &bus](const auto& cmd) {
+        bus.subscribe<PolaritySwitchRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<PolaritySwitchEvent>().has_value()) {
                 bus.publish(*datastore.get<PolaritySwitchEvent>());
             } else {
@@ -188,7 +188,7 @@ class EventBindings {
             }
         });
 
-        bus.subscribe<GainSwitchRequestCmd>([&datastore, &bus](const auto& cmd) {
+        bus.subscribe<GainSwitchRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<GainSwitchEvent>().has_value()) {
                 bus.publish(*datastore.get<GainSwitchEvent>());
             } else {
@@ -197,7 +197,7 @@ class EventBindings {
             }
         });
 
-        bus.subscribe<PreampSwitchRequestCmd>([&datastore, &bus](const auto& cmd) {
+        bus.subscribe<PreampSwitchRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<PreampSwitchEvent>().has_value()) {
                 bus.publish(*datastore.get<PreampSwitchEvent>());
             } else {
@@ -206,7 +206,7 @@ class EventBindings {
             }
         });
 
-        bus.subscribe<GpioRateRequestCmd>([&datastore, &bus](const auto& cmd) {
+        bus.subscribe<GpioRateRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<GpioRateEvent>().has_value()) {
                 bus.publish(*datastore.get<GpioRateEvent>());
             } else {
@@ -215,7 +215,7 @@ class EventBindings {
             }
         });
 
-        bus.subscribe<TemperatureRequestCmd>([&datastore, &bus](const auto& cmd) {
+        bus.subscribe<TemperatureRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<LM75Event>().has_value()) {
                 bus.publish(*datastore.get<LM75Event>());
             } else {
@@ -234,7 +234,7 @@ class EventBindings {
             }
         });
 
-        bus.subscribe<CalibRequestCmd>([&datastore, &bus](const auto& cmd) {
+        bus.subscribe<CalibRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<CalibEvent>().has_value()) {
                 bus.publish(*datastore.get<CalibEvent>());
             } else {
@@ -243,7 +243,7 @@ class EventBindings {
             }
         });
 
-        bus.subscribe<I2CStatsRequestCmd>([&datastore, &bus](const auto& cmd) {
+        bus.subscribe<I2CStatsRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<I2CStatsEvent>().has_value()) {
                 bus.publish(*datastore.get<I2CStatsEvent>());
             } else {
@@ -252,7 +252,7 @@ class EventBindings {
             }
         });
 
-        bus.subscribe<SPIStatsRequestCmd>([&datastore, &bus](const auto& cmd) {
+        bus.subscribe<SPIStatsRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<SPIStatsEvent>().has_value()) {
                 bus.publish(*datastore.get<SPIStatsEvent>());
             } else {
@@ -261,7 +261,7 @@ class EventBindings {
             }
         });
 
-        bus.subscribe<EventTriggerRequestCmd>([&datastore, &bus](const auto& cmd) {
+        bus.subscribe<EventTriggerRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<EventTriggerEvent>().has_value()) {
                 bus.publish(*datastore.get<EventTriggerEvent>());
             } else {
@@ -270,12 +270,21 @@ class EventBindings {
             }
         });
 
-        bus.subscribe<DacSettingRequestCmd>([&datastore, &bus](const auto& cmd) {
+        bus.subscribe<DacSettingRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<MCP4728Event>().has_value()) {
                 bus.publish(*datastore.get<MCP4728Event>());
             } else {
                 logWarn("Received DacSettingRequestCmd but datastore does not have data for type "
                         "MCP4728Event");
+            }
+        });
+
+        bus.subscribe<UbxMsgRateRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
+            if (datastore.lastUpdate<UbxMsgRates>().has_value()) {
+                bus.publish(*datastore.get<UbxMsgRates>());
+            } else {
+                logWarn("Received UbxMsgRateRequestCmd but datastore does not have data for type "
+                        "UbxMsgRates");
             }
         });
 
@@ -353,13 +362,19 @@ class EventBindings {
     }
 
     inline static void pollAllUbxMsgRate(EventBus& bus) {
-        bus.publish(UbxMsgPollCmd{UBX_MSG::CFG_PRT});
-        bus.publish(UbxMsgPollCmd{UBX_MSG::CFG_GNSS});
-        bus.publish(UbxMsgPollCmd{UBX_MSG::CFG_NAVX5});
-        bus.publish(UbxMsgPollCmd{UBX_MSG::CFG_ANT});
-        bus.publish(UbxMsgPollCmd{UBX_MSG::CFG_TP5});
-        bus.publish(UbxMsgPollCmd{UBX_MSG::CFG_PRT});
-        bus.publish(UbxMsgPollCmd{UBX_MSG::CFG_PRT});
+
+        const std::vector<UBX_MSG::msg_id> allMsgCfgID{
+            {UBX_MSG::TIM_TM2,     UBX_MSG::TIM_TP,        UBX_MSG::NAV_CLOCK,
+             UBX_MSG::NAV_DGPS,    UBX_MSG::NAV_AOPSTATUS, UBX_MSG::NAV_DOP,
+             UBX_MSG::NAV_POSECEF, UBX_MSG::NAV_POSLLH,    UBX_MSG::NAV_PVT,
+             UBX_MSG::NAV_SBAS,    UBX_MSG::NAV_SOL,       UBX_MSG::NAV_STATUS,
+             UBX_MSG::NAV_SVINFO,  UBX_MSG::NAV_TIMEGPS,   UBX_MSG::NAV_TIMEUTC,
+             UBX_MSG::NAV_VELECEF, UBX_MSG::NAV_VELNED,    UBX_MSG::MON_HW,
+             UBX_MSG::MON_HW2,     UBX_MSG::MON_IO,        UBX_MSG::MON_MSGPP,
+             UBX_MSG::MON_RXBUF,   UBX_MSG::MON_RXR,       UBX_MSG::MON_TXBUF}};
+        for (auto msgID : allMsgCfgID) {
+            bus.publish(UbxMsgPollRateCmd{msgID});
+        }
     }
 
   private:

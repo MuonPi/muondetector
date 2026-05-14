@@ -50,8 +50,7 @@
 #include <data/commands/temperature_request_cmd.h>
 #include <data/commands/threshold_setting_cmd.h>
 #include <data/commands/ubx_config_default_cmd.h>
-#include <data/commands/ubx_msg_poll_cmd.h>
-#include <data/commands/ubx_msg_poll_rate_cmd.h>
+// #include <data/commands/ubx_msg_poll_cmd.h> // If ever msg needs to be actively polled
 #include <data/commands/ubx_msg_rate_cmd.h>
 #include <data/commands/ubx_reset_cmd.h>
 #include <data/commands/ubx_save_cmd.h>
@@ -845,7 +844,7 @@ bool MainWindow::eventFilter(QObject* object, QEvent* event) {
 }
 
 void MainWindow::sendRequestUbxMsgRates() {
-    sendCmdIfConnected(clientConn, UbxMsgPollRateCmd{static_cast<UBX_MSG::msg_id>(0)});
+    sendCmdIfConnected(clientConn, UbxMsgRateRequestCmd{});
 }
 
 void MainWindow::sendSetBiasVoltage(float voltage) {

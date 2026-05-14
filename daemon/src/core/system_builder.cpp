@@ -257,22 +257,22 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     ctx.bus->publish<GpioSignalSetCmd>({IN_POL2, config.polarity[1]});
 
     // -- Behaviour on new tcp connection ---
-    ctx.bus->subscribe<ServerConnCountEvent>(
-        [&bus = *ctx.bus, &config = *ctx.config, &datastore = *ctx.datastore](auto& event) {
-            bus.publish(VersionEvent{.hw_ver = MuonPi::Version::hardware,
-                                     .sw_ver = MuonPi::Version::software});
-            // Where there is already some event for requesting, do so via event bus
-            bus.publish(BiasSwitchRequestCmd{});
-            bus.publish(DacSettingRequestCmd{});
-            bus.publish(PcaSwitchRequestCmd{});
-            bus.publish(EventTriggerRequestCmd{});
-            // Where there is no such thing, request through datastore
-            const auto& mode = datastore.geoPosManager().get_mode_config();
-            bus.publish(mode);
-            if (mode.mode == PositionModeConfig::Mode::Static) {
-                bus.publish(datastore.geoPosManager().get_static_position().getPosStruct());
-            }
-        });
+    ctx.bus->subscribe<ServerConnCountEvent>([&bus = *ctx.bus, &config = *ctx.config,
+                                              &datastore = *ctx.datastore]([[maybe_unused]] auto&) {
+        bus.publish(
+            VersionEvent{.hw_ver = MuonPi::Version::hardware, .sw_ver = MuonPi::Version::software});
+        // Where there is already some event for requesting, do so via event bus
+        bus.publish(BiasSwitchRequestCmd{});
+        bus.publish(DacSettingRequestCmd{});
+        bus.publish(PcaSwitchRequestCmd{});
+        bus.publish(EventTriggerRequestCmd{});
+        // Where there is no such thing, request through datastore
+        const auto& mode = datastore.geoPosManager().get_mode_config();
+        bus.publish(mode);
+        if (mode.mode == PositionModeConfig::Mode::Static) {
+            bus.publish(datastore.geoPosManager().get_static_position().getPosStruct());
+        }
+    });
 
     return ctx;
 }

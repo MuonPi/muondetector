@@ -71,7 +71,7 @@ void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
                 break;
             }
             case TCP_MSG_KEY::MSG_UBX_MSG_RATE_REQUEST: {
-                bus_.publish(CapnpCodec<UbxMsgPollRateCmd>::decode(event.packet.payload));
+                bus_.publish(CapnpCodec<UbxMsgRateRequestCmd>::decode(event.packet.payload));
                 break;
             }
             case TCP_MSG_KEY::MSG_UBX_RESET: {

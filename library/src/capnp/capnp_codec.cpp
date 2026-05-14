@@ -51,7 +51,6 @@
 #include "data/commands/ubx_min_cno_cmd.h"
 #include "data/commands/ubx_min_max_sv_cmd.h"
 #include "data/commands/ubx_msg_poll_cmd.h"
-#include "data/commands/ubx_msg_poll_rate_cmd.h"
 #include "data/commands/ubx_msg_rate_cmd.h"
 #include "data/commands/ubx_protocol_selection_cmd.h"
 #include "data/commands/ubx_rate_cmd.h"
@@ -1288,26 +1287,6 @@ auto CapnpCodec<UbxMsgPollCmd>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_MSG_POLL);
 }
 
-auto CapnpCodec<UbxMsgPollRateCmd>::encode(const UbxMsgPollRateCmd& cmd) -> std::vector<uint8_t> {
-    capnp::MallocMessageBuilder msg;
-    auto root = msg.initRoot<UbxMsgPollRateCmdCapnp>();
-    root.setId(static_cast<std::uint16_t>(cmd.id));
-    auto flat = capnp::messageToFlatArray(msg);
-    auto bytes = flat.asBytes();
-    return {bytes.begin(), bytes.end()};
-}
-
-auto CapnpCodec<UbxMsgPollRateCmd>::decode(const std::vector<std::uint8_t>& data)
-    -> UbxMsgPollRateCmd {
-    auto reader = makeReader(data);
-    auto root = reader.getRoot<UbxMsgPollRateCmdCapnp>();
-    return UbxMsgPollRateCmd{static_cast<UBX_MSG::msg_id>(root.getId())};
-}
-
-auto CapnpCodec<UbxMsgPollRateCmd>::messageKey() -> std::uint16_t {
-    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_MSG_RATE_REQUEST);
-}
-
 auto CapnpCodec<UbxMsgRateCmd>::encode(const UbxMsgRateCmd& cmd) -> std::vector<uint8_t> {
     capnp::MallocMessageBuilder msg;
     auto root = msg.initRoot<UbxMsgRateCmdCapnp>();
@@ -1646,5 +1625,6 @@ EMPTY_CMD_CODEC(BiasSwitchRequestCmd, BiasSwitchRequestCmdCapnp, MSG_BIAS_SWITCH
 EMPTY_CMD_CODEC(TemperatureRequestCmd, TemperatureRequestCmdCapnp, MSG_TEMPERATURE_REQUEST)
 EMPTY_CMD_CODEC(DacEepromSetCmd, DacEepromSetCmdCapnp, MSG_DAC_EEPROM_SET)
 EMPTY_CMD_CODEC(EventTriggerRequestCmd, EventTriggerRequestCmdCapnp, MSG_EVENTTRIGGER_REQUEST)
+EMPTY_CMD_CODEC(UbxMsgRateRequestCmd, UbxMsgRateRequestCmdCapnp, MSG_UBX_MSG_RATE_REQUEST)
 
 #undef EMPTY_CMD_CODEC
