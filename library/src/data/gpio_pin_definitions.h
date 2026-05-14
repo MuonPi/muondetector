@@ -1,6 +1,7 @@
 #ifndef GPIO_SIGNAL_DEFINITIONS_H
 #define GPIO_SIGNAL_DEFINITIONS_H
 
+#include <cstdint>
 #include <map>
 #include <string>
 
@@ -60,7 +61,7 @@ static const std::map<GPIO_SIGNAL, GpioSignalDescriptor> GPIO_SIGNAL_MAP = {
     {IN_POL2, {"IN_POL2", DIR_OUT}},
     {UNDEFINED_SIGNAL, {"UNDEFINED_SIGNAL", DIR_UNDEFINED}}};
 
-enum class TIMING_MUX_SELECTION : uint8_t {
+enum class TIMING_MUX_SELECTION : std::uint8_t {
     AND = 0,
     XOR = 1,
     DISCR1 = 2,
