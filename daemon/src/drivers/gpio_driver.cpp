@@ -111,6 +111,7 @@ GpioDriver::GpioDriver(ComponentId id, const std::string& chipPath, EventBus& bu
                 break;
             case GAIN_HL:
                 bus_.publish(DatastoreStoreEvent{GainSwitchEvent{.state = cmd.on}});
+                break;
             case STATUS1:
                 bus_.publish(DatastoreStoreEvent{StatusLedEvent{
                     .sig = cmd.sig, .durationMillisec = milliseconds, .on = cmd.on}});
