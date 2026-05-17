@@ -6,6 +6,9 @@
 #include "hardware/i2c/eeprom24aa02.h"
 #include "hardware/i2cdevice_wrapper.h"
 #include "sources/source.h"
+#include "utility/calibration.h"
+
+#include <memory>
 
 class EEPROM24AA02Driver : public Source {
   public:
@@ -16,6 +19,7 @@ class EEPROM24AA02Driver : public Source {
   private:
     DeviceRegistry& registry_;
     EventBus& bus_;
+    std::unique_ptr<ShowerDetectorCalib> calib{nullptr};
 };
 
 #endif // EEPROM24AA02_DRIVER_H
