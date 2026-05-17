@@ -21,7 +21,7 @@ class NetworkDiscovery {
 
     using Callback = std::function<void(const DeviceInfo&)>;
 
-    NetworkDiscovery(DeviceType type, uint16_t port);
+    NetworkDiscovery(DeviceType type, uint16_t port = 45454);
     ~NetworkDiscovery();
 
     void start();
@@ -33,8 +33,6 @@ class NetworkDiscovery {
 
   private:
     void receiverLoop();
-    void sendBroadcast(const std::string& msg);
-    void sendResponse(const std::string& targetIp, const std::string& msg);
 
   private:
     int sock;

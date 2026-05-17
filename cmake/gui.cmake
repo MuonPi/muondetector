@@ -36,6 +36,7 @@ set(MUONDETECTOR_GUI_SOURCE_FILES
     "${MUONDETECTOR_GUI_SOURCE_DIR}/ubloxsettingsform.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/spiform.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/status.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/delegates/itemdeletedelegate.cpp"
     )
 
 set(MUONDETECTOR_GUI_HEADER_FILES
@@ -56,6 +57,7 @@ set(MUONDETECTOR_GUI_HEADER_FILES
     "${MUONDETECTOR_GUI_HEADER_DIR}/ubloxsettingsform.h"
     "${MUONDETECTOR_GUI_HEADER_DIR}/spiform.h"
     "${MUONDETECTOR_GUI_HEADER_DIR}/status.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/delegates/itemdeletedelegate.h"
     )
 set(MUONDETECTOR_GUI_UI_FILES
     "${MUONDETECTOR_GUI_UI_DIR}/calibform.ui"
