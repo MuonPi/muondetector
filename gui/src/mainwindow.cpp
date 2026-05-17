@@ -1077,7 +1077,7 @@ void MainWindow::connection_error(int error_code, const QString message) {
 void MainWindow::sendValueUpdateRequests() {
     sendCmdIfConnected(clientConn, BiasVoltageRequestCmd{});
     sendCmdIfConnected(clientConn, BiasSwitchRequestCmd{});
-    sendCmdIfConnected(clientConn, DacSettingRequestCmd{});
+    // sendCmdIfConnected(clientConn, DacSettingRequestCmd{});
     for (int i = 1; i < 4; i++)
         sendCmdIfConnected(clientConn, AdcSampleRequestCmd{static_cast<std::uint8_t>(i)});
     sendCmdIfConnected(clientConn, TemperatureRequestCmd{});
