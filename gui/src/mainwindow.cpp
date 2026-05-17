@@ -5,6 +5,7 @@
 #include "capnp/capnp_codec.h"
 #include "data/commands/ubx_gnss_config_cmd.h"
 #include "data/events/event_trigger_event.h"
+#include "delegates/itemdeletedelegate.h"
 #include "gnssinfoform.h"
 #include "gui/src/ui_mainwindow.h"
 #include "histogramdataform.h"
@@ -158,31 +159,46 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
     ui->ipBox->setModel(addresses);
     ui->ipBox->setCompleter(new QCompleter{});
     ui->ipBox->setEditable(true);
+    auto* delegate = new DeleteItemDelegate(this);
+    ui->ipBox->view()->setItemDelegate(delegate);
 
     // setup network discovery service
-    auto networkDiscovery =
-        new NetworkDiscovery(NetworkDiscovery::DeviceType::GUI, MuonPi::Settings::gui.port);
-    connect(ui->networkSearchButton, &QPushButton::clicked, this, [this, networkDiscovery]() {
-        const QList<QPair<quint16, QHostAddress>> devices;
-        // TODO: Add result of network discovery items here
-        if (addresses == nullptr) {
+    m_networkDiscovery = std::make_shared<NetworkDiscovery>(NetworkDiscovery::DeviceType::GUI);
+    m_networkDiscovery->setCallback([this](const DeviceInfo& info) {
+        // if device type is GUI -> ignore
+        if (info.type == static_cast<std::uint16_t>(NetworkDiscovery::DeviceType::GUI)) {
             return;
         }
-        unsigned device_counter{};
-        for (auto device : devices) {
-            // check if device is not a GUI (might show other GUIs later on)
-            if (device.first == static_cast<quint16>(NetworkDiscovery::DeviceType::GUI)) {
-                continue;
-            }
-            device_counter++;
-            // append to addresses if not already there
-            if (addresses->findItems(device.second.toString()).isEmpty()) {
-                auto row = new QStandardItem(device.second.toString());
-                addresses->appendRow(row);
-            }
+        // send to other thread -> new IP address found
+        emit deviceDiscovered(QString::fromStdString(info.ip));
+    });
+    connect(this, &MainWindow::deviceDiscovered, this, [this](const QString& ip) {
+        if (!addresses)
+            return;
+
+        device_counter++;
+        if (device_counter == 1) {
+            connection_info("NetworkDiscovery: added " + ip + ". Found " +
+                            QString::number(device_counter) + " device(s).");
+        } else {
+            connection_info("NetworkDiscovery: Found " + QString::number(device_counter) +
+                            " device(s).");
         }
-        connection_info("NetworkDiscovery (experimental): Found " +
-                        QString::number(device_counter) + " devices");
+        if (addresses->findItems(ip).empty() == false) {
+            // If address already in list -> return
+            return;
+        }
+        auto* row = new QStandardItem(ip);
+        addresses->appendRow(row);
+    });
+    m_networkDiscovery->start();
+    connect(ui->networkSearchButton, &QPushButton::clicked, this, [this]() {
+        const QList<QPair<quint16, QHostAddress>> devices;
+        if (addresses == nullptr || m_networkDiscovery == nullptr) {
+            return;
+        }
+        device_counter = 0;
+        m_networkDiscovery->discover();
     });
 
     // setup colors

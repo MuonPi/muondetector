@@ -31,6 +31,7 @@ NetworkDiscovery::NetworkDiscovery(DeviceType t, uint16_t p) : port(p), type(t) 
 }
 
 NetworkDiscovery::~NetworkDiscovery() {
+    shutdown(sock, SHUT_RDWR);
     stop();
     close(sock);
 }
@@ -59,35 +60,60 @@ void NetworkDiscovery::discover() {
 
 void NetworkDiscovery::receiverLoop() {
     while (running) {
+
         Packet p{};
         sockaddr_in sender{};
         socklen_t len = sizeof(sender);
 
         int r = recvfrom(sock, &p, sizeof(p), 0, (sockaddr*) &sender, &len);
 
-        if (r <= 0)
+        if (!running)
+            break;
+
+        if (r < 0) {
+            continue;
+        }
+        if (r != sizeof(Packet))
             continue;
 
         if (p.magic != MAGIC)
             continue;
+
         if (p.version != VERSION)
             continue;
 
-        char ip[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &sender.sin_addr, ip, sizeof(ip));
+        DeviceType senderType = static_cast<DeviceType>(p.type);
 
-        if (p.type == static_cast<uint16_t>(type)) {
-            continue; // ignore self-type echo (simple filter)
+        //
+        // GUI asking for daemons
+        //
+        if (type == DeviceType::DAEMON && senderType == DeviceType::GUI) {
+
+            Packet response{MAGIC, VERSION, static_cast<uint16_t>(DeviceType::DAEMON), p.requestId};
+
+            sendto(sock, &response, sizeof(response), 0, (sockaddr*) &sender, sizeof(sender));
+
+            continue;
         }
 
-        if (callback) {
-            DeviceInfo info;
-            info.ip = ip;
-            info.port = ntohs(sender.sin_port);
-            info.type = p.type;
-            info.name = "daemon";
+        //
+        // GUI receives daemon response
+        //
+        if (type == DeviceType::GUI && senderType == DeviceType::DAEMON) {
 
-            callback(info);
+            char ip[INET_ADDRSTRLEN];
+
+            inet_ntop(AF_INET, &sender.sin_addr, ip, sizeof(ip));
+
+            if (callback) {
+                DeviceInfo info;
+                info.ip = ip;
+                info.port = ntohs(sender.sin_port);
+                info.type = p.type;
+                info.name = "daemon";
+
+                callback(info);
+            }
         }
     }
 }

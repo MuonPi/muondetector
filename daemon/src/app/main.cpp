@@ -4,6 +4,7 @@
 #include "core/scheduler.h"
 #include "core/system_builder.h"
 #include "core/thread_pool.h"
+#include "network/networkdiscovery.h"
 #include "system_config.h"
 
 #include <cstdio>
@@ -130,6 +131,10 @@ int main(int argc, char* argv[]) {
 
     context.scheduler->start();
 
+    auto networkDiscovery =
+        std::make_unique<NetworkDiscovery>(NetworkDiscovery::DeviceType::DAEMON);
+    networkDiscovery->start();
+
     while (Runtime::g_running) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
@@ -144,5 +149,6 @@ int main(int argc, char* argv[]) {
     // wait for io thread
     t1.join();
 
+    networkDiscovery.reset();
     return EXIT_SUCCESS;
 }

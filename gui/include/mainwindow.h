@@ -32,6 +32,7 @@ struct GnssMonHw2Struct;
 struct LogInfoStruct;
 struct UbxTimeMarkStruct;
 class TcpConnection;
+class NetworkDiscovery;
 enum class ADC_SAMPLING_MODE;
 enum class TCP_MSG_KEY : quint16;
 
@@ -100,6 +101,7 @@ class MainWindow : public QMainWindow {
     void gpioInhibitReceived(bool inhibit);
     void mqttInhibitReceived(bool inhibit);
     void daemonVersionReceived(MuonPi::Version::Version hw_ver, MuonPi::Version::Version sw_ver);
+    void deviceDiscovered(QString ip);
 
   public slots:
     void sendRequestUbxMsgRates();
@@ -186,6 +188,8 @@ class MainWindow : public QMainWindow {
     QTimer m_connection_timeout{};
     std::shared_ptr<boost::asio::io_context> m_io{nullptr};
     std::shared_ptr<TcpConnection> clientConn{nullptr};
+    std::size_t device_counter{0};
+    std::shared_ptr<NetworkDiscovery> m_networkDiscovery{nullptr};
 };
 
 #endif // MAINWINDOW_H
