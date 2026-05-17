@@ -29,6 +29,11 @@ class GeoPosManager {
     void set_lockin_ready_callback(std::function<void(GeoPosition)> func);
     void set_valid_pos_callback(std::function<void(GeoPosition)> func);
 
+    void set_fix_status(std::uint8_t gpsFix);
+    void set_time_accuracy(std::uint32_t tAcc);
+    Property<Gnss::FixType>& fix_status();
+    Property<std::chrono::nanoseconds> time_precision();
+
   private:
     GeoPosition get_pos_from_histos() const;
     void check_for_lockin_reached(const GeoPosition& preliminary_pos);
@@ -42,6 +47,8 @@ class GeoPosManager {
     std::shared_ptr<Histogram> m_lon_histo;
     std::shared_ptr<Histogram> m_lat_histo;
     std::shared_ptr<Histogram> m_height_histo;
+    Property<Gnss::FixType> m_fix_status{};
+    Property<std::chrono::nanoseconds> m_time_precision{};
 };
 
 #endif // GEOPOSMANAGER_H

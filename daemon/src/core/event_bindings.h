@@ -125,6 +125,38 @@ class EventBindings {
     }
 
     inline static void setupDatastore(EventBus& bus, DataStore& datastore) {
+        // GeoPosManager
+        bus.subscribe<NavClock>([&datastore](const NavClock& event) {
+            GeoPosManager& geoPosManager = datastore.geoPosManager();
+            geoPosManager.set_time_accuracy(event.tAcc);
+        });
+        bus.subscribe<NavStatus>([&datastore](const NavStatus& event) {
+            GeoPosManager& geoPosManager = datastore.geoPosManager();
+            geoPosManager.set_fix_status(event.gpsFix);
+        });
+        // Special Case GnssPosStruct -> do not automatically store this but use custom storage /
+        // transformation
+        bus.subscribe<DatastoreStoreEvent<GnssPosStruct>>([&bus, &datastore](const auto& event) {
+            const auto& pos = event.data;
+            datastore.fillHisto(pos);
+            GnssPosStruct new_pos_struct{pos};
+            GeoPosManager& geoPosManager = datastore.geoPosManager();
+
+            // set correct position errors in case no fix is available (ublox bug?)
+            if (geoPosManager.fix_status()().value < Gnss::FixType::Fix2d &&
+                geoPosManager.time_precision().age() < std::chrono::seconds(60)) {
+                constexpr double c_vacuum{0.3};
+                new_pos_struct.hAcc = new_pos_struct.vAcc =
+                    c_vacuum * geoPosManager.time_precision()().count() * 1e3;
+            }
+
+            geoPosManager.new_position({new_pos_struct.lon * 1e-7, new_pos_struct.lat * 1e-7,
+                                        1e-3 * new_pos_struct.hMSL, 1e-3 * new_pos_struct.hAcc,
+                                        1e-3 * new_pos_struct.vAcc});
+            datastore.store(new_pos_struct);
+            bus.publish(new_pos_struct);
+        });
+
         // Currently can only store one event at a time therefore those make no sense
         // bus.subscribe<GpioEvent>([&datastore](const auto& ev) { datastore.store(ev); });
         // bus.subscribe<ThresholdSettingEvent>([&datastore](const auto& ev) { datastore.store(ev);
@@ -134,11 +166,12 @@ class EventBindings {
         // All events with DataStoreStoreEvent<BiasVoltageEvent> ...
         // will be sent to datastore and also sent to GUI via TCP as long as there is a Capnp Codec
         // for it.
-        subscribe_all<BiasVoltageEvent, MqttStatusEvent, AdcTraceEvent, std::array<Ads1115Event, 4>,
+        subscribe_all<CfgGNSS, NavSat, MonTx, MonRx, NavStatus, NavClock, UbxTimeMarkStruct,
+                      UbxTimePulseStruct, GnssMonHwStruct, GnssMonHw2Struct, NavTimeGPS, NavTimeUTC,
+                      BiasVoltageEvent, MqttStatusEvent, AdcTraceEvent, std::array<Ads1115Event, 4>,
                       BiasSwitchEvent, CalibEvent, GainSwitchEvent, GpioRateEvent, GpioInhibitEvent,
-                      LM75Event, MCP4728Event, PcaSwitchEvent, PolaritySwitchEvent, NavSat, MonTx,
-                      MonRx, GnssMonHwStruct, GnssMonHw2Struct, GpsVersion, NavStatus,
-                      UbxTimePulseStruct, LogInfoStruct, PositionModeConfig, VersionEvent>(
+                      LM75Event, MCP4728Event, PcaSwitchEvent, PolaritySwitchEvent, GpsVersion,
+                      EventTriggerEvent, LogInfoStruct, PositionModeConfig, VersionEvent>(
             bus, datastore);
 
         // Message Requests will be answered directly from datastore
@@ -348,8 +381,25 @@ class EventBindings {
         bus.subscribe<UbxTimeMarkStruct>(
             [&datastore](auto& ev) { datastore.ubloxRateBuffer().onCounterValue(ev.evtCounter); });
 
-        // GeoPosManager
-        // bus.subscribe<
+        // m_geopos_manager.set_lockin_ready_callback(std::bind(&Daemon::onGeoPosLockInReady, this,
+        // std::placeholders::_1));
+        // m_geopos_manager.set_valid_pos_callback(std::bind(&Daemon::onGeoPosValid, this,
+        // std::placeholders::_1)); m_geopos_manager.set_mode_config(config.position_mode_config);
+
+        // void Daemon::onGeoPosLockInReady(GeoPosition pos)
+        // {
+        //     qDebug() << "GeoPosition lock-in finished";
+        //     sendGeodeticPos(pos.getPosStruct());
+        //     sendPositionModel(m_geopos_manager.get_mode_config());
+
+        //     qInfo() << "concluded geo pos lock-in and fixed position: lat=" << pos.latitude
+        //             << "lon=" << pos.longitude
+        //             << "(err=" << pos.hor_error << "m)"
+        //             << "alt=" << pos.altitude
+        //             << "(err=" << pos.vert_error << "m)";
+
+        //     writeSettingsToFile();
+        // }
 
         // Histograms
         datastore.setupHistos();

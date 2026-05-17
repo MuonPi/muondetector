@@ -6,6 +6,8 @@
 
 struct Ads1115Event;
 struct NavSat;
+struct NavClock;
+struct NavStatus;
 struct GpioEvent;
 struct AdcTraceEvent;
 struct CalibEvent;
@@ -37,7 +39,6 @@ struct GnssPosStruct;
 struct GnssMonHwStruct;
 struct GnssMonHw2Struct;
 struct GpsVersion;
-struct NavStatus;
 struct UbxTimePulseStruct;
 struct LogInfoStruct;
 class Histogram;
@@ -111,6 +112,8 @@ struct CapnpCodec {
 
 DECLARE_CODEC(Ads1115Event)
 DECLARE_CODEC(NavSat)
+DECLARE_CODEC(NavClock)
+DECLARE_CODEC(NavStatus)
 DECLARE_CODEC(GpioEvent)
 DECLARE_CODEC(AdcTraceEvent)
 DECLARE_CODEC(CalibEvent)
@@ -143,7 +146,6 @@ DECLARE_CODEC(GnssPosStruct)
 DECLARE_CODEC(GnssMonHwStruct)
 DECLARE_CODEC(GnssMonHw2Struct)
 DECLARE_CODEC(GpsVersion)
-DECLARE_CODEC(NavStatus)
 DECLARE_CODEC(UbxTimePulseStruct)
 DECLARE_CODEC(LogInfoStruct)
 DECLARE_CODEC(Histogram)

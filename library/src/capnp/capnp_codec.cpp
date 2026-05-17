@@ -1081,6 +1081,33 @@ auto CapnpCodec<GpsVersion>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_VERSION);
 }
 
+auto CapnpCodec<NavClock>::encode(const NavClock& event) -> std::vector<uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<NavClockCapnp>();
+    root.setITOW(event.iTOW);
+    root.setClkB(event.clkB);
+    root.setClkD(event.clkD);
+    root.setTAcc(event.tAcc);
+    root.setFAcc(event.fAcc);
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+    return {bytes.begin(), bytes.end()};
+}
+auto CapnpCodec<NavClock>::decode(const std::vector<std::uint8_t>& data) -> NavClock {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<NavClockCapnp>();
+    return NavClock{
+        .iTOW = root.getITOW(),
+        .clkB = root.getClkB(),
+        .clkD = root.getClkD(),
+        .tAcc = root.getTAcc(),
+        .fAcc = root.getFAcc(),
+    };
+}
+auto CapnpCodec<NavClock>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_NAVCLOCK);
+}
+
 auto CapnpCodec<NavStatus>::encode(const NavStatus& event) -> std::vector<uint8_t> {
     capnp::MallocMessageBuilder msg;
     auto root = msg.initRoot<NavStatusCapnp>();
@@ -1108,7 +1135,7 @@ auto CapnpCodec<NavStatus>::decode(const std::vector<std::uint8_t>& data) -> Nav
     return event;
 }
 auto CapnpCodec<NavStatus>::messageKey() -> std::uint16_t {
-    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_FIXSTATUS);
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_NAVSTATUS);
 }
 
 auto CapnpCodec<UbxTimePulseStruct>::encode(const UbxTimePulseStruct& event)

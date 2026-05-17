@@ -190,3 +190,20 @@ void GeoPosManager::set_lockin_ready_callback(std::function<void(GeoPosition)> f
 void GeoPosManager::set_valid_pos_callback(std::function<void(GeoPosition)> func) {
     m_valid_pos_fn = func;
 }
+
+void GeoPosManager::set_fix_status(std::uint8_t gpsFix) {
+    m_fix_status = Property<Gnss::FixType>("fixStatus", {gpsFix});
+}
+
+Property<Gnss::FixType>& GeoPosManager::fix_status() {
+    return m_fix_status;
+}
+
+void GeoPosManager::set_time_accuracy(std::uint32_t tAcc) {
+    m_time_precision =
+        Property<std::chrono::nanoseconds>("timeAccuracy", std::chrono::nanoseconds(tAcc));
+}
+
+Property<std::chrono::nanoseconds> GeoPosManager::time_precision() {
+    return m_time_precision;
+}
