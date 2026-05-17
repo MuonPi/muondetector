@@ -58,9 +58,13 @@ const std::unordered_map<ComponentId, DeviceComponentCreator>
                                                     *ctx.bus);
          }},
         {Device::MIC184_0,
-         [](Context& ctx) { return std::make_shared<TempSource>(Device::MIC184_0, *ctx.bus); }},
+         [](Context& ctx) {
+             return std::make_shared<TempSource>(Device::MIC184_0, *ctx.registry, *ctx.bus);
+         }},
         {Device::LM75_0,
-         [](Context& ctx) { return std::make_shared<TempSource>(Device::LM75_0, *ctx.bus); }},
+         [](Context& ctx) {
+             return std::make_shared<TempSource>(Device::LM75_0, *ctx.registry, *ctx.bus);
+         }},
         {Device::PCA9536_0,
          [](Context& ctx) {
              return std::make_shared<PCA9536Driver>(Device::PCA9536_0, *ctx.config, *ctx.registry,

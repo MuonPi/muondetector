@@ -29,14 +29,14 @@ class DataStore {
     template <typename T>
     void store(const T& value) {
         std::lock_guard<std::mutex> lock(mutex_);
-        // fillHisto(value);
 
         if constexpr (has_histo_filler_v<T>) {
-            fillhHisto(value);
+            fillHisto(value);
         }
         data_[std::type_index(typeid(T))] = Entry{value, std::chrono::system_clock::now()};
     }
 
+    // TODO: Replace any_cast with std::optional !
     template <typename T>
     const T* get() const {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -88,12 +88,11 @@ class DataStore {
 
     // Define here which messages will be used to fill histograms with data
     // For each type in the list there must be a specialization in data_store.cpp
-    using histo_enabled_types = type_list<GnssPosStruct, UbxTimeMarkStruct
-                                          // AdcTraceEvent,
-                                          // Ads1115Event,
-                                          // NavSat,
-                                          // UbxMsgRates
-                                          >;
+    using histo_enabled_types = type_list<GnssPosStruct, UbxTimeMarkStruct>;
+    // AdcTraceEvent,
+    // Ads1115Event,
+    // NavSat,
+    // UbxMsgRates
 
     template <typename T>
     inline static constexpr bool has_histo_filler_v = contains<T, histo_enabled_types>::value;
@@ -121,5 +120,11 @@ class DataStore {
     std::unordered_map<std::type_index, Entry> data_;
     mutable std::mutex mutex_;
 };
+
+template <>
+void DataStore::fillHisto(const GnssPosStruct& pos);
+
+template <>
+void DataStore::fillHisto(const UbxTimeMarkStruct& tm);
 
 #endif // DATASTORE_H

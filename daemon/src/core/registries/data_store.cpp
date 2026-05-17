@@ -80,10 +80,32 @@ void DataStore::setupHistos() {
 }
 
 template <>
-void DataStore::fillHisto(const GnssPosStruct& event) {
-    m_histo_map["geoLatitude"]->fill(event.lat);
-    m_histo_map["geoLongitude"]->fill(event.lon);
-    m_histo_map["geoHeight"]->fill(event.height);
+void DataStore::fillHisto(const GnssPosStruct& pos) {
+    // auto currentDop = get<UbxDopStruct>(); // do not use get here! this will cause deadlock
+    auto it = data_.find(std::type_index(typeid(UbxDopStruct)));
+    if (it == data_.end()) {
+        return;
+    }
+
+    auto currentDop = std::any_cast<UbxDopStruct>(&it->second.value);
+
+    if (1e-3 * pos.vAcc < 100.) {
+        if (m_geopos_manager->get_mode() != PositionModeConfig::Mode::LockIn ||
+            currentDop->vDOP / 100. < m_geopos_manager->get_mode_config().lock_in_max_dop) {
+            m_histo_map["geoHeight"]->fill(1e-3 * pos.hMSL);
+
+            if (currentDop->vDOP > 0) {
+                const double heightWeight = 100. / currentDop->vDOP;
+                m_histo_map["weightedGeoHeight"]->fill(1e-3 * pos.hMSL, heightWeight);
+            }
+        }
+    }
+    if (1e-3 * pos.hAcc < 100.) {
+        if (currentDop->hDOP / 100. < m_geopos_manager->get_mode_config().lock_in_max_dop) {
+            m_histo_map["geoLongitude"]->fill(1e-7 * pos.lon);
+            m_histo_map["geoLatitude"]->fill(1e-7 * pos.lat);
+        }
+    }
 }
 
 template <>
