@@ -272,10 +272,10 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     // std::placeholders::_1)); m_geopos_manager.set_mode_config(config.position_mode_config);
 
     // --- Set Gpio Output ---
-    ctx.bus->publish<GpioSignalSetCmd>({UBIAS_EN, true});
-    ctx.bus->publish<GpioSignalSetCmd>({PREAMP_1, config.preamp_enable[0]});
-    ctx.bus->publish<GpioSignalSetCmd>({PREAMP_2, config.preamp_enable[1]});
-    ctx.bus->publish<GpioSignalSetCmd>({GAIN_HL, config.hi_gain});
+    ctx.bus->publish<BiasSwitchCmd>({true});
+    ctx.bus->publish<PreampSwitchCmd>({0, config.preamp_enable[0]});
+    ctx.bus->publish<PreampSwitchCmd>({1, config.preamp_enable[1]});
+    ctx.bus->publish<GainSwitchCmd>({config.hi_gain});
     ctx.bus->publish<GpioSignalSetCmd>({STATUS1, false});
     ctx.bus->publish<GpioSignalSetCmd>({STATUS2, false});
     ctx.bus->publish(PolaritySwitchCmd{.pol1 = config.polarity[0], .pol2 = config.polarity[1]});
