@@ -37,28 +37,11 @@ class DataStore {
     }
 
     // TODO: Replace any_cast with std::optional !
+
     template <typename T>
     const T* get() const {
         std::lock_guard<std::mutex> lock(mutex_);
-
-        auto it = data_.find(std::type_index(typeid(T)));
-        if (it != data_.end()) {
-            return std::any_cast<T>(&it->second.value);
-        }
-
-        return nullptr;
-    }
-
-    template <typename T>
-    const T* getEntry() const {
-        std::lock_guard<std::mutex> lock(mutex_);
-
-        auto it = data_.find(std::type_index(typeid(T)));
-        if (it != data_.end()) {
-            return &it;
-        }
-
-        return nullptr;
+        return getUnlocked<T>();
     }
 
     template <typename T>
@@ -114,6 +97,14 @@ class DataStore {
     auto ubloxRateBuffer() -> CounterRateBuffer&;
 
   private:
+    template <typename T>
+    const T* getUnlocked() const {
+        auto it = data_.find(std::type_index(typeid(T)));
+        if (it != data_.end()) {
+            return std::any_cast<T>(&it->second.value);
+        }
+        return nullptr;
+    }
     std::unordered_map<std::string, std::shared_ptr<Histogram>> m_histo_map;
     std::unique_ptr<GeoPosManager> m_geopos_manager;
     std::unique_ptr<CounterRateBuffer> m_ublox_ratebuffer;

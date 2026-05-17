@@ -157,6 +157,16 @@ class EventBindings {
             bus.publish(new_pos_struct);
         });
 
+        // Convert NavSVIinfo to NavSat (compatibility with older Ublox chips) an publish
+        bus.subscribe<NavSVinfo>([&bus](const NavSVinfo& event) {
+            bus.publish(NavSat{.iTOW = event.iTOW,
+                               .version = std::nullopt,
+                               .globFlags = std::nullopt,
+                               .numSvs = event.numSvs,
+                               .goodSats = event.goodSats,
+                               .satellites = std::move(event.satellites)});
+        });
+
         // Currently can only store one event at a time therefore those make no sense
         // bus.subscribe<GpioEvent>([&datastore](const auto& ev) { datastore.store(ev); });
         // bus.subscribe<ThresholdSettingEvent>([&datastore](const auto& ev) { datastore.store(ev);
@@ -166,13 +176,13 @@ class EventBindings {
         // All events with DataStoreStoreEvent<BiasVoltageEvent> ...
         // will be sent to datastore and also sent to GUI via TCP as long as there is a Capnp Codec
         // for it.
-        subscribe_all<CfgGNSS, NavSat, MonTx, MonRx, NavStatus, NavClock, UbxTimeMarkStruct,
-                      UbxTimePulseStruct, GnssMonHwStruct, GnssMonHw2Struct, NavTimeGPS, NavTimeUTC,
-                      BiasVoltageEvent, MqttStatusEvent, AdcTraceEvent, std::array<Ads1115Event, 4>,
-                      BiasSwitchEvent, CalibEvent, GainSwitchEvent, GpioRateEvent, GpioInhibitEvent,
-                      LM75Event, MCP4728Event, PcaSwitchEvent, PolaritySwitchEvent, GpsVersion,
-                      EventTriggerEvent, LogInfoStruct, PositionModeConfig, VersionEvent>(
-            bus, datastore);
+        subscribe_all<CfgGNSS, NavSat, NavSVinfo, MonTx, MonRx, NavStatus, NavClock,
+                      UbxTimeMarkStruct, UbxTimePulseStruct, GnssMonHwStruct, GnssMonHw2Struct,
+                      NavTimeGPS, NavTimeUTC, BiasVoltageEvent, MqttStatusEvent, AdcTraceEvent,
+                      std::array<Ads1115Event, 4>, BiasSwitchEvent, CalibEvent, GainSwitchEvent,
+                      GpioRateEvent, GpioInhibitEvent, LM75Event, MCP4728Event, PcaSwitchEvent,
+                      PolaritySwitchEvent, GpsVersion, EventTriggerEvent, LogInfoStruct,
+                      PositionModeConfig, VersionEvent>(bus, datastore);
 
         // Message Requests will be answered directly from datastore
         bus.subscribe<ThresholdSettingRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
