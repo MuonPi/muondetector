@@ -43,7 +43,7 @@ MCP4728Driver::MCP4728Driver(ComponentId id, SystemConfig& systemConfig, DeviceR
         if (device == nullptr) {
             return;
         }
-        bus_.publish(readDac(device));
+        bus_.publish(DatastoreStoreEvent{readDac(device)});
     });
     bus_.subscribe<ThresholdSettingCmd>(
         [this](const ThresholdSettingCmd& cmd) { setDacValue(cmd); });
@@ -179,7 +179,7 @@ void MCP4728Driver::setDacValue(const ThresholdSettingCmd& cmd) {
     bool success =
         device->setVoltage(Config::Hardware::DAC::Channel::threshold[cmd.channel], value);
     if (success) {
-        bus_.publish(readDac(device));
+        bus_.publish(DatastoreStoreEvent{readDac(device)});
     }
 }
 
@@ -206,5 +206,5 @@ void MCP4728Driver::setBiasVoltage(const BiasVoltageCmd& cmd) {
     if (success == false) {
         logWarn("Failed to set bias voltage");
     }
-    bus_.publish(readDac(device));
+    bus_.publish(DatastoreStoreEvent{readDac(device)});
 }

@@ -20,23 +20,6 @@ class ADS1115Driver : public Source {
     void update() override;
 
   private:
-    void readAllChannels() {
-        auto* wrapper = registry_.get<I2CDeviceWrapper<ADS1115>>(deviceId_);
-        if (!wrapper)
-            return;
-
-        auto& adc = wrapper->device();
-
-        for (std::size_t channel = 0; channel < 4; ++channel) {
-            const auto sample = adc.getSample(channel);
-
-            bus_.publish(
-                Ads1115Event{adc.getAddress(), static_cast<uint8_t>(channel),
-                             static_cast<uint16_t>(sample.value), sample.voltage,
-                             static_cast<uint64_t>(sample.timestamp.time_since_epoch().count())});
-        }
-    }
-
     void startBurst(const StartBurstSampling& cmd);
     void stopBurst();
 

@@ -85,7 +85,7 @@ void ADS1115Driver::scheduleBurst() {
     if (remaining_ == 0)
         return;
 
-    readAllChannels(); // reuse same logic
+    // readAllChannels(); // reuse same logic
 
     --remaining_;
 
