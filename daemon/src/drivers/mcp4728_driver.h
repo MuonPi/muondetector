@@ -28,6 +28,7 @@ class MCP4728Driver : public Component {
     static auto readDac(MCP4728* dev) -> MCP4728Event;
     static auto readAll(MCP4728* dev) -> MCP4728Event;
     void setDacValue(const ThresholdSettingCmd& cmd);
+    void saveDacValuesToEeprom();
     void setBiasVoltage(const BiasVoltageCmd& cmd);
     DeviceRegistry& registry_;
     EventBus& bus_;

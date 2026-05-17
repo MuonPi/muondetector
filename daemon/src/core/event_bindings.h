@@ -41,7 +41,16 @@
 #include "sinks/tcp_sink.h"
 #include "utility/ublox_ratebuffer.h"
 
+#include <array>
 #include <type_traits>
+
+const std::vector<UBX_MSG::msg_id> allMsgCfgID{
+    {UBX_MSG::TIM_TM2,       UBX_MSG::TIM_TP,      UBX_MSG::NAV_CLOCK,   UBX_MSG::NAV_DGPS,
+     UBX_MSG::NAV_AOPSTATUS, UBX_MSG::NAV_DOP,     UBX_MSG::NAV_POSECEF, UBX_MSG::NAV_POSLLH,
+     UBX_MSG::NAV_PVT,       UBX_MSG::NAV_SBAS,    UBX_MSG::NAV_SOL,     UBX_MSG::NAV_STATUS,
+     UBX_MSG::NAV_SVINFO,    UBX_MSG::NAV_TIMEGPS, UBX_MSG::NAV_TIMEUTC, UBX_MSG::NAV_VELECEF,
+     UBX_MSG::NAV_VELNED,    UBX_MSG::MON_HW,      UBX_MSG::MON_HW2,     UBX_MSG::MON_IO,
+     UBX_MSG::MON_MSGPP,     UBX_MSG::MON_RXBUF,   UBX_MSG::MON_RXR,     UBX_MSG::MON_TXBUF}};
 
 class EventBindings {
   public:
@@ -125,12 +134,13 @@ class EventBindings {
         // All events with DataStoreStoreEvent<BiasVoltageEvent> ...
         // will be sent to datastore and also sent to GUI via TCP as long as there is a Capnp Codec
         // for it.
-        subscribe_all<BiasVoltageEvent, MqttStatusEvent, AdcTraceEvent, Ads1115Event,
+        subscribe_all<BiasVoltageEvent, MqttStatusEvent, AdcTraceEvent, std::array<Ads1115Event, 4>,
                       BiasSwitchEvent, CalibEvent, GainSwitchEvent, GpioRateEvent, GpioInhibitEvent,
-                      I2CStatsEvent, LM75Event, MCP4728Event, PcaSwitchEvent, PolaritySwitchEvent,
-                      PreampSwitchEvent, SPIStatsEvent, NavSat, UbxMsgRates, MonTx, MonRx,
-                      GnssMonHwStruct, GnssMonHw2Struct, GpsVersion, NavStatus, UbxTimePulseStruct,
-                      LogInfoStruct, PositionModeConfig, VersionEvent>(bus, datastore);
+                      LM75Event, MCP4728Event, PcaSwitchEvent, PolaritySwitchEvent,
+                      PreampSwitchEvent, NavSat, std::unordered_map<std::uint16_t, CfgMsg>, MonTx,
+                      MonRx, GnssMonHwStruct, GnssMonHw2Struct, GpsVersion, NavStatus,
+                      UbxTimePulseStruct, LogInfoStruct, PositionModeConfig, VersionEvent>(
+            bus, datastore);
 
         // Message Requests will be answered directly from datastore
         bus.subscribe<ThresholdSettingRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
@@ -243,15 +253,6 @@ class EventBindings {
             }
         });
 
-        bus.subscribe<I2CStatsRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
-            if (datastore.lastUpdate<I2CStatsEvent>().has_value()) {
-                bus.publish(*datastore.get<I2CStatsEvent>());
-            } else {
-                logWarn("Received I2cStatsRequestCmd but datastore does not have data for type "
-                        "I2CStatsEvent");
-            }
-        });
-
         bus.subscribe<SPIStatsRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<SPIStatsEvent>().has_value()) {
                 bus.publish(*datastore.get<SPIStatsEvent>());
@@ -285,6 +286,34 @@ class EventBindings {
             } else {
                 logWarn("Received UbxMsgRateRequestCmd but datastore does not have data for type "
                         "UbxMsgRates");
+            }
+        });
+
+        bus.subscribe<UbxMsgRateRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
+            if (datastore.lastUpdate<std::unordered_map<std::uint16_t, CfgMsg>>().has_value()) {
+                const auto& data = *datastore.get<std::unordered_map<std::uint16_t, CfgMsg>>();
+                UbxMsgRates out{};
+                out.data.reserve(data.size());
+                for (const auto& [key, entry] : data) {
+                    out.data.push_back(entry);
+                }
+                bus.publish(out);
+            } else {
+                logWarn("Received UbxMsgRateRequestCmd but datastore does not have data for type "
+                        "UbxMsgRates");
+            }
+        });
+
+        // Collect CfgMsg events and update datastore, then on UbxMsgRateRequestCmd build it
+        bus.subscribe<CfgMsg>([&datastore](const CfgMsg& msg) {
+            auto* data_p = datastore.get<std::unordered_map<std::uint16_t, CfgMsg>>();
+            // If no data already in the datastore, create new unordered map and store it
+            if (datastore.lastUpdate<std::unordered_map<std::uint16_t, CfgMsg>>().has_value()) {
+                auto data = *datastore.get<std::unordered_map<std::uint16_t, CfgMsg>>();
+                data.emplace(msg.msgID, msg);
+                datastore.store(std::move(data));
+            } else {
+                datastore.store(std::unordered_map<std::uint16_t, CfgMsg>{{msg.msgID, msg}});
             }
         });
 
@@ -323,6 +352,34 @@ class EventBindings {
         });
     }
 
+    inline static void pollDatastore(EventBus& bus) {
+        // This will be called on new connected tcp client like a GUI
+        // Sends out all data which is needed on a new connection
+        // Gets data preferrably from cached datastore
+        bus.publish(BiasSwitchRequestCmd{});
+        bus.publish(DacSettingRequestCmd{});
+        bus.publish(PcaSwitchRequestCmd{});
+        bus.publish(EventTriggerRequestCmd{});
+        // bus.publish(MqttStatusRequestCmd{});
+        bus.publish(AdcSampleRequestCmd{});
+        bus.publish(CalibRequestCmd{});
+        bus.publish(GainSwitchRequestCmd{});
+        bus.publish(GpioRateRequestCmd{});
+        bus.publish(TemperatureRequestCmd{});
+        bus.publish(I2CStatsRequestCmd{});
+        bus.publish(SPIStatsRequestCmd{});
+        bus.publish(PolaritySwitchRequestCmd{});
+        bus.publish(PreampSwitchRequestCmd{});
+
+        bus.publish(UbxMsgRateRequestCmd{});
+
+        // poll all data from Ubx
+        // TODO: Retrieve those from datastore instead
+        for (auto msgID : allMsgCfgID) {
+            bus.publish(UbxMsgPollCmd{msgID});
+        }
+    }
+
     inline static void initAllUbxMsgRate(EventBus& bus) {
         bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::TIM_TM2, 1, 1});
         bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::TIM_TP, 1, 0});
@@ -342,16 +399,6 @@ class EventBindings {
     }
 
     inline static void pollAllUbxMsgRate(EventBus& bus) {
-
-        const std::vector<UBX_MSG::msg_id> allMsgCfgID{
-            {UBX_MSG::TIM_TM2,     UBX_MSG::TIM_TP,        UBX_MSG::NAV_CLOCK,
-             UBX_MSG::NAV_DGPS,    UBX_MSG::NAV_AOPSTATUS, UBX_MSG::NAV_DOP,
-             UBX_MSG::NAV_POSECEF, UBX_MSG::NAV_POSLLH,    UBX_MSG::NAV_PVT,
-             UBX_MSG::NAV_SBAS,    UBX_MSG::NAV_SOL,       UBX_MSG::NAV_STATUS,
-             UBX_MSG::NAV_SVINFO,  UBX_MSG::NAV_TIMEGPS,   UBX_MSG::NAV_TIMEUTC,
-             UBX_MSG::NAV_VELECEF, UBX_MSG::NAV_VELNED,    UBX_MSG::MON_HW,
-             UBX_MSG::MON_HW2,     UBX_MSG::MON_IO,        UBX_MSG::MON_MSGPP,
-             UBX_MSG::MON_RXBUF,   UBX_MSG::MON_RXR,       UBX_MSG::MON_TXBUF}};
         for (auto msgID : allMsgCfgID) {
             bus.publish(UbxMsgPollRateCmd{msgID});
         }

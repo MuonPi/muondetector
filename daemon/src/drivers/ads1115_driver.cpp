@@ -42,6 +42,7 @@ ADS1115Driver::ADS1115Driver(ComponentId id, DeviceRegistry& registry, EventBus&
 auto ADS1115Driver::dev() -> ADS1115* {
     auto* wrapper = registry_.get<I2CDeviceWrapper<ADS1115>>(std::get<Device>(id()));
     if (!wrapper) {
+        logWarn("ADS1115 Device not found");
         return nullptr;
     }
 

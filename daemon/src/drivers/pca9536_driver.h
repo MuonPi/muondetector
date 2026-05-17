@@ -16,6 +16,7 @@ class PCA9536Driver : public Component {
 
   private:
     auto dev() -> PCA9536*;
+    void setOutputState(std::uint8_t pcaPortMask);
     DeviceRegistry& registry_;
     EventBus& bus_;
 };

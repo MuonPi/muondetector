@@ -1,8 +1,16 @@
 #include "drivers/gpio_driver.h"
 
 #include "core/logging/logger.h"
+#include "data/commands/gpio_signal_set_cmd.h"
+#include "data/commands/polarity_switch_cmd.h"
+#include "data/events/bias_switch_event.h"
+#include "data/events/datastore_store_event.h"
+#include "data/events/gain_switch_event.h"
 #include "data/events/gpio_event.h"
 #include "data/events/gpio_rate_event.h"
+#include "data/events/polarity_switch_event.h"
+#include "data/events/preamp_switch_event.h"
+#include "data/events/status_led_event.h"
 #include "utility/gpio_ratebuffer.h"
 
 #include <gpiod.h>
@@ -31,6 +39,65 @@ GpioDriver::GpioDriver(ComponentId id, const std::string& chipPath, EventBus& bu
     if (control_fd < 0) {
         throw std::runtime_error("Failed to create control_fd");
     }
+
+    // For all set commands we can also have some attached events
+    // For example: BiasSwitchEvent should be triggered if the bias switch state changes
+    // DatastoreStoreEvent will make sure that this state is stored in the datastore before fanned
+    // out to Tcp Connection etc.
+    bus_.subscribe<PolaritySwitchCmd>([this](const PolaritySwitchCmd& cmd) {
+        bool ok{false};
+        ok = writeSignal(IN_POL1, cmd.pol1);
+        if (!ok) {
+            return;
+        }
+        ok = writeSignal(IN_POL2, cmd.pol2);
+        if (!ok) {
+            return;
+        }
+        bus_.publish(DatastoreStoreEvent{PolaritySwitchEvent{.pol1 = cmd.pol1, .pol2 = cmd.pol2}});
+    });
+    bus_.subscribe<GpioSignalSetCmd>([this](const GpioSignalSetCmd& cmd) {
+        auto ok = writeSignal(cmd.sig, cmd.on);
+        if (!ok) {
+            return;
+        }
+        constexpr int milliseconds{20};
+        switch (cmd.sig) {
+            case UBIAS_EN:
+                bus_.publish(DatastoreStoreEvent{BiasSwitchEvent{.biasOn = cmd.on}});
+                break;
+            case PREAMP_1:
+                bus_.publish(DatastoreStoreEvent{PreampSwitchEvent{.channel = 0, .state = cmd.on}});
+                break;
+            case PREAMP_2:
+                bus_.publish(DatastoreStoreEvent{PreampSwitchEvent{.channel = 1, .state = cmd.on}});
+                break;
+            case IN_POL1:
+            case IN_POL2:
+                logError("Unexpected gpio signal " +
+                         std::to_string(static_cast<unsigned>(cmd.sig)) +
+                         ". Please use PolaritySwitchCmd for setting polarity switch setting, not "
+                         "GpioSignalSetCmd directly. " +
+                         "Current implementation prevents forwarding state changes to event bus.");
+                break;
+            case GAIN_HL:
+                bus_.publish(DatastoreStoreEvent{GainSwitchEvent{.state = cmd.on}});
+            case STATUS1:
+                bus_.publish(DatastoreStoreEvent{StatusLedEvent{
+                    .sig = cmd.sig, .durationMillisec = milliseconds, .on = cmd.on}});
+                break;
+            case STATUS2:
+                bus_.publish(DatastoreStoreEvent{StatusLedEvent{
+                    .sig = cmd.sig, .durationMillisec = milliseconds, .on = cmd.on}});
+                break;
+            case STATUS3:
+                bus_.publish(DatastoreStoreEvent{StatusLedEvent{
+                    .sig = cmd.sig, .durationMillisec = milliseconds, .on = cmd.on}});
+                break;
+            default:
+                break;
+        }
+    });
 }
 
 GpioDriver::~GpioDriver() {
@@ -302,7 +369,17 @@ auto GpioDriver::configureLines(const std::vector<unsigned int>& gpios,
 }
 
 auto GpioDriver::writeSignal(GPIO_SIGNAL sig, bool value) -> bool {
-    return writeGpio(pinmap_.at(sig), value);
+    auto ok = writeGpio(pinmap_.at(sig), value);
+    if (ok) {
+        bus_.publish(GpioEvent{.gpio_signal = sig,
+                               .gpio_pin = pinmap_.at(sig),
+                               .timestamp = EventTime::clock().now(),
+                               .edge = value ? EventEdge::Rising : EventEdge::Falling});
+    } else {
+        logError("Failed to write signal " + std::to_string(static_cast<unsigned>(sig)) + " gpio " +
+                 std::to_string(pinmap_.at(sig)));
+    }
+    return ok;
 }
 
 auto GpioDriver::writeGpio(unsigned int gpio, bool value) -> bool {
