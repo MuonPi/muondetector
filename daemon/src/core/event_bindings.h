@@ -137,10 +137,9 @@ class EventBindings {
         subscribe_all<BiasVoltageEvent, MqttStatusEvent, AdcTraceEvent, std::array<Ads1115Event, 4>,
                       BiasSwitchEvent, CalibEvent, GainSwitchEvent, GpioRateEvent, GpioInhibitEvent,
                       LM75Event, MCP4728Event, PcaSwitchEvent, PolaritySwitchEvent,
-                      PreampSwitchEvent, NavSat, std::unordered_map<std::uint16_t, CfgMsg>, MonTx,
-                      MonRx, GnssMonHwStruct, GnssMonHw2Struct, GpsVersion, NavStatus,
-                      UbxTimePulseStruct, LogInfoStruct, PositionModeConfig, VersionEvent>(
-            bus, datastore);
+                      PreampSwitchEvent, NavSat, MonTx, MonRx, GnssMonHwStruct, GnssMonHw2Struct,
+                      GpsVersion, NavStatus, UbxTimePulseStruct, LogInfoStruct, PositionModeConfig,
+                      VersionEvent>(bus, datastore);
 
         // Message Requests will be answered directly from datastore
         bus.subscribe<ThresholdSettingRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
@@ -281,15 +280,6 @@ class EventBindings {
         });
 
         bus.subscribe<UbxMsgRateRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
-            if (datastore.lastUpdate<UbxMsgRates>().has_value()) {
-                bus.publish(*datastore.get<UbxMsgRates>());
-            } else {
-                logWarn("Received UbxMsgRateRequestCmd but datastore does not have data for type "
-                        "UbxMsgRates");
-            }
-        });
-
-        bus.subscribe<UbxMsgRateRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<std::unordered_map<std::uint16_t, CfgMsg>>().has_value()) {
                 const auto& data = *datastore.get<std::unordered_map<std::uint16_t, CfgMsg>>();
                 UbxMsgRates out{};
@@ -306,7 +296,7 @@ class EventBindings {
 
         // Collect CfgMsg events and update datastore, then on UbxMsgRateRequestCmd build it
         bus.subscribe<CfgMsg>([&datastore](const CfgMsg& msg) {
-            auto* data_p = datastore.get<std::unordered_map<std::uint16_t, CfgMsg>>();
+            logWarn("Storing CfgMsg for ubx message " + std::to_string(msg.msgID));
             // If no data already in the datastore, create new unordered map and store it
             if (datastore.lastUpdate<std::unordered_map<std::uint16_t, CfgMsg>>().has_value()) {
                 auto data = *datastore.get<std::unordered_map<std::uint16_t, CfgMsg>>();
