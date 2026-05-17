@@ -577,6 +577,7 @@ auto MainWindow::buildDecoderMap()
             {TCP_MSG_KEY::MSG_BIAS_SWITCH,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<BiasSwitchEvent>::decode(packet.payload);
+                 biasON = event.biasOn;
                  emit biasSwitchReceived(event.biasOn);
              }},
             {TCP_MSG_KEY::MSG_PREAMP_SWITCH,

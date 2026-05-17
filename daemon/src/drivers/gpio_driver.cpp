@@ -136,6 +136,25 @@ GpioDriver::~GpioDriver() {
         close(control_fd);
     }
 
+    // reset states
+    for (const auto& [sig, desc] : GPIO_SIGNAL_MAP) {
+
+        if (sig == UNDEFINED_SIGNAL)
+            continue;
+
+        auto it = pinmap_.find(sig);
+        if (it == pinmap_.end())
+            continue;
+
+        if (desc.direction == DIR_OUT) {
+            bool value = false;
+            if (sig == UBIAS_EN) {
+                value = biasInverted ? true : false;
+            }
+            writeGpio(it->second, value);
+        }
+    }
+
     for (auto req : inputRequests) {
         gpiod_line_request_release(req);
     }

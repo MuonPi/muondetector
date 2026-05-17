@@ -24,7 +24,7 @@ class EventRateBuffer {
 
   public:
     EventRateBuffer(EventBus& bus, std::optional<EventEdge> filterEdge = std::nullopt);
-    ~EventRateBuffer() = default;
+    virtual ~EventRateBuffer() = default;
     void setRateLimit(double max_cps);
     [[nodiscard]] auto currentRateLimit() const -> double { return fRateLimit; }
     void clear();
