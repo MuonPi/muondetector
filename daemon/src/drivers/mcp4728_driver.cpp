@@ -5,6 +5,7 @@
 #include "core/logging/logger.h"
 // #include "data/commands/threshold_setting_cmd.h"
 #include "data/commands/bias_voltage_cmd.h"
+#include "data/commands/dac_eeprom_set_cmd.h"
 #include "data/commands/dac_setting_request_cmd.h"
 #include "data/commands/threshold_setting_cmd.h"
 #include "data/events/datastore_store_event.h"
@@ -46,6 +47,8 @@ MCP4728Driver::MCP4728Driver(ComponentId id, SystemConfig& systemConfig, DeviceR
     });
     bus_.subscribe<ThresholdSettingCmd>(
         [this](const ThresholdSettingCmd& cmd) { setDacValue(cmd); });
+    bus_.subscribe<DacEepromSetCmd>(
+        [this]([[maybe_unused]] const auto&) { saveDacValuesToEeprom(); });
     bus_.subscribe<BiasVoltageCmd>([this](const BiasVoltageCmd& cmd) { setBiasVoltage(cmd); });
 
     auto event = readAll(device);
@@ -177,6 +180,19 @@ void MCP4728Driver::setDacValue(const ThresholdSettingCmd& cmd) {
         device->setVoltage(Config::Hardware::DAC::Channel::threshold[cmd.channel], value);
     if (success) {
         bus_.publish(readDac(device));
+    }
+}
+
+void MCP4728Driver::saveDacValuesToEeprom() {
+    auto* device = dev();
+    if (device == nullptr) {
+        logWarn("Tried to save dac values to eeprom for device " + name() +
+                " but dac is not initialized");
+        return;
+    }
+    bool ok = device->storeSettings();
+    if (!ok) {
+        logError("error writing DAC eeprom");
     }
 }
 

@@ -5,6 +5,9 @@
 #include "core/event_bus.h"
 #include "core/logging/logger.h"
 #include "core/registries/device_registry.h"
+#include "data/commands/pca_switch_cmd.h"
+#include "data/events/datastore_store_event.h"
+#include "data/events/pca_switch_event.h"
 #include "hardware/i2c/pca9536.h"
 #include "hardware/i2cdevice_wrapper.h"
 #include "utility/conversion.h"
@@ -21,8 +24,6 @@ PCA9536Driver::PCA9536Driver(ComponentId id, SystemConfig& systemConfig, DeviceR
         return;
     }
 
-    // bus_.subscribe<SetPca
-
     device->setOutputPorts(0b00000111);
 
     auto channel = systemConfig.pcaPortMask;
@@ -30,11 +31,11 @@ PCA9536Driver::PCA9536Driver(ComponentId id, SystemConfig& systemConfig, DeviceR
         logWarn("invalid PCA channel selection: ch" + std::to_string(channel) + "...ignoring");
         return;
     }
-    logDebug("changed pcaPortMask to" + std::to_string(channel));
-    systemConfig.pcaPortMask = channel;
-    device->setOutputState(channel);
-    bus_.publish<LogParameter>(LogParameter(
-        "ubxInputSwitch", "0x" + to_hex(systemConfig.pcaPortMask), LogParameter::LOG_EVERY));
+    logDebug("changed pcaPortMask to " + std::to_string(channel));
+    // systemConfig.pcaPortMask = channel;
+    setOutputState(channel);
+    bus_.subscribe<PcaSwitchCmd>(
+        [this](const PcaSwitchCmd& cmd) { setOutputState(cmd.pcaPortMask); });
 }
 
 auto PCA9536Driver::dev() -> PCA9536* {
@@ -44,4 +45,15 @@ auto PCA9536Driver::dev() -> PCA9536* {
     }
 
     return &wrapper->device();
+}
+
+void PCA9536Driver::setOutputState(std::uint8_t pcaPortMask) {
+    auto* device = dev();
+    if (device == nullptr) {
+        return;
+    }
+    device->setOutputState(pcaPortMask);
+    bus_.publish(DatastoreStoreEvent{PcaSwitchEvent{.pcaPortMask = pcaPortMask}});
+    bus_.publish<LogParameter>(
+        LogParameter("ubxInputSwitch", "0x" + to_hex(pcaPortMask), LogParameter::LOG_EVERY));
 }

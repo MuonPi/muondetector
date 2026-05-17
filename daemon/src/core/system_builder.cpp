@@ -104,6 +104,29 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
         ctx.registry->add(d.id, DeviceFactory::create(d));
     }
 
+    // Make sure I2C Stats are emitted correctly
+    ctx.bus->subscribe<I2CStatsRequestCmd>([&bus = *ctx.bus]([[maybe_unused]] const auto&) {
+        I2CStatsEvent event{.nrDevices =
+                                static_cast<std::uint8_t>(i2cDevice::getGlobalDeviceList().size()),
+                            .bytesRead = i2cDevice::getGlobalNrBytesRead(),
+                            .bytesWritten = i2cDevice::getGlobalNrBytesWritten()};
+        event.deviceList.reserve(i2cDevice::getGlobalDeviceList().size());
+
+        for (std::size_t i = 0; i < i2cDevice::getGlobalDeviceList().size(); i++) {
+            I2cDeviceEntry entry{
+                .address = i2cDevice::getGlobalDeviceList()[i]->getAddress(),
+                .name = i2cDevice::getGlobalDeviceList()[i]->getTitle(),
+                .status = i2cDevice::getGlobalDeviceList()[i]->getStatus(),
+                .nrBytesWritten = i2cDevice::getGlobalDeviceList()[i]->getNrBytesWritten(),
+                .nrBytesRead = i2cDevice::getGlobalDeviceList()[i]->getNrBytesRead(),
+                .nrIoErrors = i2cDevice::getGlobalDeviceList()[i]->getNrIOErrors(),
+                .lastTransactionTime = static_cast<std::uint32_t>(
+                    i2cDevice::getGlobalDeviceList()[i]->getLastTimeInterval())};
+            event.deviceList.push_back(std::move(entry));
+        }
+        bus.publish(std::move(event));
+    });
+
     // --- components ---
     for (auto& c : componentConfigurations) {
         auto component = ComponentFactory::createComponent(c, ctx);
@@ -139,10 +162,12 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     if (gpio_driver != nullptr) {
         gpio_driver->init(MuonPi::Version::hardware);
 
-        // Setup status LED timing
+        // Setup status LED timing -> after some time the status led should turn off
         ctx.bus->subscribe<StatusLedEvent>(
             [gpio_driver, &scheduler = *ctx.scheduler](const StatusLedEvent& event) {
-                gpio_driver->writeSignal(event.sig, event.on);
+                if (event.on == false) {
+                    return;
+                }
                 if (event.durationMillisec >= 0) {
                     scheduler.once([gpio_driver,
                                     event]() { gpio_driver->writeSignal(event.sig, !(event.on)); },
@@ -253,26 +278,26 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     ctx.bus->publish<GpioSignalSetCmd>({GAIN_HL, config.hi_gain});
     ctx.bus->publish<GpioSignalSetCmd>({STATUS1, false});
     ctx.bus->publish<GpioSignalSetCmd>({STATUS2, false});
-    ctx.bus->publish<GpioSignalSetCmd>({IN_POL1, config.polarity[0]});
-    ctx.bus->publish<GpioSignalSetCmd>({IN_POL2, config.polarity[1]});
+    ctx.bus->publish(PolaritySwitchCmd{.pol1 = config.polarity[0], .pol2 = config.polarity[1]});
 
     // -- Behaviour on new tcp connection ---
-    ctx.bus->subscribe<ServerConnCountEvent>([&bus = *ctx.bus, &config = *ctx.config,
-                                              &datastore = *ctx.datastore]([[maybe_unused]] auto&) {
-        bus.publish(
-            VersionEvent{.hw_ver = MuonPi::Version::hardware, .sw_ver = MuonPi::Version::software});
-        // Where there is already some event for requesting, do so via event bus
-        bus.publish(BiasSwitchRequestCmd{});
-        bus.publish(DacSettingRequestCmd{});
-        bus.publish(PcaSwitchRequestCmd{});
-        bus.publish(EventTriggerRequestCmd{});
-        // Where there is no such thing, request through datastore
-        const auto& mode = datastore.geoPosManager().get_mode_config();
-        bus.publish(mode);
-        if (mode.mode == PositionModeConfig::Mode::Static) {
-            bus.publish(datastore.geoPosManager().get_static_position().getPosStruct());
-        }
-    });
+    ctx.bus->subscribe<ServerConnCountEvent>(
+        [&bus = *ctx.bus, &config = *ctx.config, &datastore = *ctx.datastore](const auto& event) {
+            if (event.newlyConnected == false) {
+                // no need to send new data
+                return;
+            }
+            bus.publish(VersionEvent{.hw_ver = MuonPi::Version::hardware,
+                                     .sw_ver = MuonPi::Version::software});
+            // Where there is already some event for requesting, do so via event bus
+            EventBindings::pollDatastore(bus);
+            // Where there is no such thing, request through datastore
+            const auto& mode = datastore.geoPosManager().get_mode_config();
+            bus.publish(mode);
+            if (mode.mode == PositionModeConfig::Mode::Static) {
+                bus.publish(datastore.geoPosManager().get_static_position().getPosStruct());
+            }
+        });
 
     return ctx;
 }
