@@ -742,7 +742,12 @@ auto MainWindow::buildDecoderMap()
                                          QString::fromStdString(event.hwString),
                                          QString::fromStdString(event.prot));
              }},
-            {TCP_MSG_KEY::MSG_UBX_FIXSTATUS,
+            {TCP_MSG_KEY::MSG_UBX_NAVCLOCK,
+             [this](const TcpPacket& packet) {
+                 auto event = CapnpCodec<NavClock>::decode(packet.payload);
+                 emit timeAccReceived(event.tAcc);
+             }},
+            {TCP_MSG_KEY::MSG_UBX_NAVSTATUS,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<NavStatus>::decode(packet.payload);
                  emit gpsFixReceived(event.gpsFix);
