@@ -335,12 +335,15 @@ void Status::onGainSwitchReceived(bool state) {
 
 void Status::onPreampSwitchReceived(uint8_t channel, bool state) {
     if (channel == 0) {
-        if (!statusUi->preamp1CheckBox->isEnabled())
+        if (!statusUi->preamp1CheckBox->isEnabled()) {
             statusUi->preamp1CheckBox->setEnabled(true);
+        }
         statusUi->preamp1CheckBox->setChecked(state);
-    } else if (channel == 1) {
-        if (!statusUi->preamp2CheckBox->isEnabled())
+    }
+    if (channel == 1) {
+        if (!statusUi->preamp2CheckBox->isEnabled()) {
             statusUi->preamp2CheckBox->setEnabled(true);
+        }
         statusUi->preamp2CheckBox->setChecked(state);
     }
 }

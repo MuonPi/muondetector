@@ -136,10 +136,10 @@ class EventBindings {
         // for it.
         subscribe_all<BiasVoltageEvent, MqttStatusEvent, AdcTraceEvent, std::array<Ads1115Event, 4>,
                       BiasSwitchEvent, CalibEvent, GainSwitchEvent, GpioRateEvent, GpioInhibitEvent,
-                      LM75Event, MCP4728Event, PcaSwitchEvent, PolaritySwitchEvent,
-                      PreampSwitchEvent, NavSat, MonTx, MonRx, GnssMonHwStruct, GnssMonHw2Struct,
-                      GpsVersion, NavStatus, UbxTimePulseStruct, LogInfoStruct, PositionModeConfig,
-                      VersionEvent>(bus, datastore);
+                      LM75Event, MCP4728Event, PcaSwitchEvent, PolaritySwitchEvent, NavSat, MonTx,
+                      MonRx, GnssMonHwStruct, GnssMonHw2Struct, GpsVersion, NavStatus,
+                      UbxTimePulseStruct, LogInfoStruct, PositionModeConfig, VersionEvent>(
+            bus, datastore);
 
         // Message Requests will be answered directly from datastore
         bus.subscribe<ThresholdSettingRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
@@ -206,15 +206,6 @@ class EventBindings {
             }
         });
 
-        bus.subscribe<PreampSwitchRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
-            if (datastore.lastUpdate<PreampSwitchEvent>().has_value()) {
-                bus.publish(*datastore.get<PreampSwitchEvent>());
-            } else {
-                logWarn("Received PreampSwitchRequestCmd but datastore does not have data for type "
-                        "PreampSwitchEvent.");
-            }
-        });
-
         bus.subscribe<GpioRateRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<GpioRateEvent>().has_value()) {
                 bus.publish(*datastore.get<GpioRateEvent>());
@@ -278,6 +269,37 @@ class EventBindings {
                         "MCP4728Event");
             }
         });
+
+        bus.subscribe<PreampSwitchRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
+            if (datastore.lastUpdate<std::array<PreampSwitchEvent, 2>>().has_value()) {
+                auto data = *datastore.get<std::array<PreampSwitchEvent, 2>>();
+                bus.publish(data[0]);
+                bus.publish(data[1]);
+            } else {
+                logWarn("Received PreampSwitchRequestCmd but datastore does not have data for type "
+                        "std::array<PreampSwitchEvent, 2>.");
+            }
+        });
+
+        // For PreampSwitchEvent: grab Store event and update std::array<PreampSwitchEvent, 2> and
+        // convert
+        bus.subscribe<DatastoreStoreEvent<PreampSwitchEvent>>(
+            [&datastore, &bus](const auto& event) {
+                if (event.data.channel > 1) {
+                    logError("Invalid Preamp Switch channel " + std::to_string(event.data.channel));
+                    return;
+                }
+                if (datastore.lastUpdate<std::array<PreampSwitchEvent, 2>>().has_value()) {
+                    auto data = *datastore.get<std::array<PreampSwitchEvent, 2>>();
+                    data[event.data.channel] = event.data;
+                    datastore.store(data);
+                    bus.publish(PreampSwitchRequestCmd{});
+                } else {
+                    std::array<PreampSwitchEvent, 2> data{};
+                    data[event.data.channel] = event.data;
+                    datastore.store(data);
+                }
+            });
 
         bus.subscribe<UbxMsgRateRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<std::unordered_map<std::uint16_t, CfgMsg>>().has_value()) {
