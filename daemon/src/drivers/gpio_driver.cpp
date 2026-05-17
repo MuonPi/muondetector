@@ -1,8 +1,11 @@
 #include "drivers/gpio_driver.h"
 
 #include "core/logging/logger.h"
+#include "data/commands/bias_switch_cmd.h"
+#include "data/commands/gain_switch_cmd.h"
 #include "data/commands/gpio_signal_set_cmd.h"
 #include "data/commands/polarity_switch_cmd.h"
+#include "data/commands/preamp_switch_cmd.h"
 #include "data/events/bias_switch_event.h"
 #include "data/events/datastore_store_event.h"
 #include "data/events/gain_switch_event.h"
@@ -56,15 +59,41 @@ GpioDriver::GpioDriver(ComponentId id, const std::string& chipPath, EventBus& bu
         }
         bus_.publish(DatastoreStoreEvent{PolaritySwitchEvent{.pol1 = cmd.pol1, .pol2 = cmd.pol2}});
     });
-    bus_.subscribe<GpioSignalSetCmd>([this](const GpioSignalSetCmd& cmd) {
-        auto ok = writeSignal(cmd.sig, cmd.on);
-        if (!ok) {
+    bus_.subscribe<BiasSwitchCmd>([this](const BiasSwitchCmd& cmd) {
+        bus_.publish(
+            GpioSignalSetCmd{.sig = UBIAS_EN, .on = biasInverted ? !cmd.state : cmd.state});
+    });
+    bus_.subscribe<PreampSwitchCmd>([this](const PreampSwitchCmd& cmd) {
+        GPIO_SIGNAL signal;
+        if (cmd.channel == 0) {
+            signal = PREAMP_1;
+        } else if (cmd.channel == 1) {
+            signal = PREAMP_2;
+        } else {
+            logError("Tried to write to not existing preamp switch " + std::to_string(cmd.channel));
             return;
         }
+        bus_.publish(GpioSignalSetCmd{.sig = signal, .on = cmd.state});
+    });
+    bus_.subscribe<GainSwitchCmd>([this](const GainSwitchCmd& cmd) {
+        bus_.publish(GpioSignalSetCmd{.sig = GAIN_HL, .on = cmd.state});
+    });
+    bus_.subscribe<GpioSignalSetCmd>([this](const GpioSignalSetCmd& cmd) {
+        auto ok = writeSignal(cmd.sig, cmd.on);
+        std::stringstream sstr;
+        sstr << "Write GPIO signal " << std::to_string(static_cast<std::uint16_t>(cmd.sig));
+        if (!ok) {
+            sstr << "...failed!";
+            logError(sstr.str());
+            return;
+        }
+        sstr << "...success!";
+        logDebug(sstr.str());
         constexpr int milliseconds{20};
         switch (cmd.sig) {
             case UBIAS_EN:
-                bus_.publish(DatastoreStoreEvent{BiasSwitchEvent{.biasOn = cmd.on}});
+                bus_.publish(DatastoreStoreEvent{
+                    BiasSwitchEvent{.biasOn = biasInverted ? !cmd.on : cmd.on}});
                 break;
             case PREAMP_1:
                 bus_.publish(DatastoreStoreEvent{PreampSwitchEvent{.channel = 0, .state = cmd.on}});
@@ -145,6 +174,7 @@ void GpioDriver::sendGpioRatesAverage() {
 
 void GpioDriver::init(const MuonPi::Version::Version& hardwareVersion) {
 
+    biasInverted = (MuonPi::Version::hardware.major == 1) ? false : true;
     pinmap_ = GPIO_PINMAP_VERSIONS[hardwareVersion.major];
 
     for (auto& [sig, gpio] : pinmap_) {

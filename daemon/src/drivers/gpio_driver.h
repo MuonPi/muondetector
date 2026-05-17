@@ -56,6 +56,7 @@ class GpioDriver : public Component {
     std::thread worker;
     int control_fd{-1};
     std::atomic<bool> running{false};
+    bool biasInverted{false};
 };
 
 #endif // GPIO_DRIVER_H
