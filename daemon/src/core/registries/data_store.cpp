@@ -82,12 +82,10 @@ void DataStore::setupHistos() {
 template <>
 void DataStore::fillHisto(const GnssPosStruct& pos) {
     // auto currentDop = get<UbxDopStruct>(); // do not use get here! this will cause deadlock
-    auto it = data_.find(std::type_index(typeid(UbxDopStruct)));
-    if (it == data_.end()) {
+    auto* currentDop = getUnlocked<UbxDopStruct>();
+    if (currentDop == nullptr) {
         return;
     }
-
-    auto currentDop = std::any_cast<UbxDopStruct>(&it->second.value);
 
     if (1e-3 * pos.vAcc < 100.) {
         if (m_geopos_manager->get_mode() != PositionModeConfig::Mode::LockIn ||
