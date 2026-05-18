@@ -193,10 +193,10 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
 
     ctx.server->addConnectionHandler(
         [tcp_source = ctx.components->get<TcpSource>(OtherComponent::TCP_SOURCE_0),
-         &bus = ctx.bus](const std::shared_ptr<TcpConnection>& connection) {
+         &bus = *ctx.bus](const std::shared_ptr<TcpConnection>& connection) {
             if (tcp_source != nullptr) {
                 tcp_source->registerConnection(connection);
-                EventBindings::pollAllUbxMsgRate(*bus);
+                EventBindings::pollAllUbxMsgRate(bus);
             } else {
                 logError("Nullpointer in creating connection handler for tcpsource. Make sure "
                          "components are initialized "
@@ -290,7 +290,7 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
             bus.publish(VersionEvent{.hw_ver = MuonPi::Version::hardware,
                                      .sw_ver = MuonPi::Version::software});
             // Where there is already some event for requesting, do so via event bus
-            EventBindings::pollDatastore(bus);
+            EventBindings::pollDatastore(bus, datastore);
             // Where there is no such thing, request through datastore
             const auto& mode = datastore.geoPosManager().get_mode_config();
             bus.publish(mode);
