@@ -3,6 +3,7 @@
 
 #include "core/event_bus.h"
 #include "data/events/gpio_event.h"
+#include "data/events/interval_event.h"
 
 #include <chrono>
 #include <limits>
@@ -20,51 +21,116 @@ constexpr std::chrono::microseconds MAX_DEADTIME{static_cast<unsigned long>(1e+6
 constexpr std::chrono::microseconds DEADTIME_INCREMENT{50};
 constexpr std::chrono::microseconds COINCIDENCE_WINDOW{50};
 
-class EventRateBuffer {
+constexpr auto invalid_time = TimestampClockType::time_point::min();
 
-  public:
-    EventRateBuffer(EventBus& bus, std::optional<EventEdge> filterEdge = std::nullopt);
-    virtual ~EventRateBuffer() = default;
-    void setRateLimit(double max_cps);
-    [[nodiscard]] auto currentRateLimit() const -> double { return fRateLimit; }
-    void clear();
-
-    [[nodiscard]] auto avgRate() const -> double;
-    [[nodiscard]] auto currentDeadtime() const -> std::chrono::microseconds;
-    [[nodiscard]] auto lastInterval() const -> std::chrono::nanoseconds;
-    [[nodiscard]] auto lastEventTime() const -> EventTime;
-    void setBufferTime(std::chrono::seconds buftime) {
-        m_buffer_time = std::chrono::duration_cast<std::chrono::microseconds>(buftime);
-    }
-
-    virtual void handle(const GpioEvent& event);
-
-  protected:
-    EventBus& bus_;
-    double fRateLimit{MAX_AVG_RATE};
-    uint8_t m_sig{255};
-    std::optional<EventEdge> m_filterEdge{std::nullopt};
-    std::chrono::microseconds m_buffer_time{MAX_BUFFER_TIME};
-    std::deque<EventTime> m_eventbuffer{};
-    std::chrono::microseconds m_current_deadtime{0};
-    std::chrono::nanoseconds m_last_interval{0};
-    EventTime m_instance_start{};
+struct RateSample {
+    EventTime timestamp;
+    double rate_hz;
 };
 
-class CoincidenceEventBuffer : public EventRateBuffer {
-
+class EdgeFilter {
   public:
-    CoincidenceEventBuffer(EventBus& bus, std::optional<EventEdge> filterEdge,
-                           GPIO_SIGNAL coinc_sig, bool anti_coinc = false);
-    ~CoincidenceEventBuffer() = default;
+    EdgeFilter(const std::optional<EventEdge>& filter_edge);
+    ~EdgeFilter() = default;
+    auto accept(const GpioEvent& event) -> bool;
+
+  private:
+    std::optional<EventEdge> m_filter_edge;
+};
+
+class DeadtimeFilter {
+  public:
+    DeadtimeFilter(std::chrono::microseconds deadtime);
+    ~DeadtimeFilter() = default;
+    auto accept(EventTime ts) -> bool;
+
+    void reset();
+
+  private:
+    EventTime m_lastAccepted = invalid_time;
+    std::chrono::microseconds m_deadtime;
+};
+
+class SlidingRateEstimator {
+  public:
+    SlidingRateEstimator(const std::chrono::seconds window);
+
+    void add(EventTime ts);
+
+    void cleanup(EventTime now);
+
+    double currentRateHz(EventTime now) const;
+
     void clear();
 
-    void handle(const GpioEvent& event) override;
+  private:
+    std::deque<EventTime> m_snapshot;
+    std::deque<EventTime> m_events;
 
-  protected:
-    uint8_t m_coinc_sig{255};
+    std::chrono::seconds m_window;
+};
+
+class RateHistory {
+  public:
+    void addSample(EventTime ts, double rate);
+
+    auto samples() const -> const std::deque<RateSample>&;
+
+    auto startTime() const -> EventTime;
+
+    void clear();
+
+    // auto begin() const { return m_samples.begin(); }
+    // auto end()   const { return m_samples.end(); }
+
+  private:
+    std::deque<RateSample> m_samples;
+    std::chrono::hours m_historyLength{2};
+};
+
+class EventRateBuffer {
+  public:
+    EventRateBuffer(const std::optional<EventEdge>& filterEdge = std::nullopt,
+                    const std::chrono::seconds& slidingWindow = 5s,
+                    const std::chrono::microseconds& deadtime = 0us);
+    ~EventRateBuffer() = default;
+
+    [[nodiscard]]
+    auto handle(const GpioEvent&) -> std::pair<bool, std::optional<IntervalEvent>>;
+
+    [[nodiscard]]
+    auto rateSamples() const -> const std::deque<RateSample>&;
+
+    auto sampleAndRetrieve(const EventTime& now) -> std::vector<std::pair<float, float>>;
+
+    void clear();
+
+  private:
+    auto timeSinceStart(const EventTime& tp) const -> double;
+    std::optional<GPIO_SIGNAL> m_coincSig{std::nullopt};
+    EventTime m_lastCoincidenceEvent{invalid_time};
     bool m_is_veto{false};
-    EventTime m_last_coinc_event{};
+
+    EdgeFilter m_edgeFilter;
+    SlidingRateEstimator m_rateEstimator;
+    DeadtimeFilter m_deadtime;
+    RateHistory m_rateHistory;
+
+    // // deadtime state
+    EventTime m_lastAcceptedEvent{invalid_time};
+
+    std::chrono::nanoseconds m_lastInterval{0};
+
+    // bookkeeping
+    EventTime m_lastRateSample{invalid_time};
+
+    // statistics
+    // uint64_t m_totalEvents{0};
+    // uint64_t m_acceptedEvents{0};
+    uint64_t m_rejectedDeadtime{0};
+    uint64_t m_rejectedCoincidence{0};
+    EventTime m_startTime;
+    EventTime m_latestSampleTime;
 };
 
 #endif // GPIO_RATEBUFFER_H

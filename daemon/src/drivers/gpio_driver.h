@@ -31,9 +31,12 @@ class GpioDriver : public Component {
 
     void init(const MuonPi::Version::Version& hardwareVersion);
     void sendGpioRatesAverage();
+    // void sendGpioRates(std::size_t number, GPIO_SIGNAL whichRate );
     auto writeSignal(GPIO_SIGNAL sig, bool value) -> bool;
 
   private:
+    // void rateCounterIntervalActualisation();
+    // auto getRateFromCounts(GPIO_SIGNAL which_rate) -> double;
     auto configureLines(const std::vector<unsigned int>& gpios, const LineConfig& cfg) -> bool;
     void eventLoop();
     void processEvent(GpioEvent&& event);

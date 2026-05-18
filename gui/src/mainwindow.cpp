@@ -108,7 +108,7 @@ void sendPacketIfConnected(const std::shared_ptr<TcpConnection>& conn, TCP_MSG_K
     if (!conn || !conn->isOpen()) {
         return;
     }
-    qDebug() << "Send command: " << static_cast<std::uint16_t>(key);
+    // qDebug() << "Send command: " << static_cast<std::uint16_t>(key);
     conn->sendPacket(static_cast<std::uint16_t>(key), std::move(payload));
 }
 
@@ -129,6 +129,7 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
     qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");
     qRegisterMetaType<UbxTimePulseStruct>("UbxTimePulseStruct");
     qRegisterMetaType<GPIO_SIGNAL>("GPIO_SIGNAL");
+    qRegisterMetaType<EventEdge>("EventEdge");
     qRegisterMetaType<GnssMonHwStruct>("GnssMonHwStruct");
     qRegisterMetaType<GnssMonHw2Struct>("GnssMonHw2Struct");
     qRegisterMetaType<UbxTimeMarkStruct>("UbxTimeMarkStruct");
@@ -172,6 +173,21 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
         // send to other thread -> new IP address found
         emit deviceDiscovered(QString::fromStdString(info.ip));
     });
+    connect(this, &MainWindow::gpioEventReceived, this,
+            [this](GPIO_SIGNAL gpio_signal, EventEdge edge) {
+                if (edge == EventEdge::Rising) {
+                    return;
+                }
+                if (gpio_signal == EVT_AND) {
+                    ui->ANDHit->setStyleSheet("QLabel {background-color: darkGreen;}");
+                    andTimer.start();
+                } else if (gpio_signal == EVT_XOR) {
+                    ui->XORHit->setStyleSheet("QLabel {background-color: darkGreen;}");
+                    xorTimer.start();
+                } else if (gpio_signal == TIMEPULSE) {
+                    emit timepulseReceived();
+                }
+            });
     connect(this, &MainWindow::deviceDiscovered, this, [this](const QString& ip) {
         if (!addresses)
             return;
@@ -516,7 +532,7 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
 }
 
 void MainWindow::decode(const TcpPacket& packet) {
-    qDebug() << "Received event: " << packet.key;
+    // qDebug() << "Received event: " << packet.key;
     auto it = decoderMap.find(static_cast<TCP_MSG_KEY>(packet.key));
 
     if (it != decoderMap.end()) {
@@ -534,19 +550,7 @@ auto MainWindow::buildDecoderMap()
     return {{TCP_MSG_KEY::MSG_GPIO_EVENT,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<GpioEvent>::decode(packet.payload);
-                 if (event.edge == EventEdge::Falling) {
-                     return;
-                 }
-
-                 if (event.gpio_signal == EVT_AND) {
-                     ui->ANDHit->setStyleSheet("QLabel {background-color: darkGreen;}");
-                     andTimer.start();
-                 } else if (event.gpio_signal == EVT_XOR) {
-                     ui->XORHit->setStyleSheet("QLabel {background-color: darkGreen;}");
-                     xorTimer.start();
-                 } else if (event.gpio_signal == TIMEPULSE) {
-                     emit timepulseReceived();
-                 }
+                 emit gpioEventReceived(event.gpio_signal, event.edge);
              }},
             {TCP_MSG_KEY::MSG_UBX_MSG_RATE,
              [this](const TcpPacket& packet) {

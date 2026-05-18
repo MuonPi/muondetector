@@ -230,7 +230,7 @@ void SerialUblox::handle(const UbxMsgRateCmd& cmd) {
 
     std::array<std::uint8_t, 8> data;
     if (cmd.port > 6) {
-        logWarn("port > 5 is not possible, port: " + std::to_string(cmd.port));
+        logWarn("port > 6 is not possible, port: " + std::to_string(cmd.port));
     }
     data[0] = static_cast<std::uint8_t>((cmd.id >> 8) & 0xff);
     data[1] = cmd.id & 0xff;

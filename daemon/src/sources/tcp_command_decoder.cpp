@@ -49,7 +49,7 @@ TcpCommandDecoder::TcpCommandDecoder(ComponentId id, EventBus& bus) : Component(
 void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
     const auto key = static_cast<TCP_MSG_KEY>(event.packet.key);
 
-    logWarn("Received command: " + std::to_string(event.packet.key));
+    // logWarn("Received command: " + std::to_string(event.packet.key));
 
     try {
         switch (key) {

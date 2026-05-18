@@ -102,6 +102,7 @@ class MainWindow : public QMainWindow {
     void mqttInhibitReceived(bool inhibit);
     void daemonVersionReceived(MuonPi::Version::Version hw_ver, MuonPi::Version::Version sw_ver);
     void deviceDiscovered(QString ip);
+    void gpioEventReceived(GPIO_SIGNAL, EventEdge);
 
   public slots:
     void sendRequestUbxMsgRates();
@@ -177,7 +178,7 @@ class MainWindow : public QMainWindow {
     bool loadSettings(QStandardItemModel* model);
     bool eventFilter(QObject* object, QEvent* event);
     bool mouseHold = false;
-    bool automaticRatePoll = true;
+    bool automaticRatePoll = false;
     QTimer andTimer, xorTimer, ratePollTimer;
     CalibForm* calib = nullptr;
     CalibScanDialog* calibscandialog = nullptr;
