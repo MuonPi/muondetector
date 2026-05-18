@@ -167,29 +167,19 @@ GpioDriver::~GpioDriver() {
         gpiod_chip_close(chip);
 }
 
-// WTF is this
-// void Daemon::onRateBufferReminder()
-// {
-//     qreal secsSinceStart = 0.001 * (qreal)msecdiff(lastRateInterval, startOfProgram);
-//     qreal xorRate = getRateFromCounts(XOR_RATE);
-//     qreal andRate = getRateFromCounts(AND_RATE);
-//     QPointF xorPoint(secsSinceStart, xorRate);
-//     QPointF andPoint(secsSinceStart, andRate);
-//     xorRatePoints.append(xorPoint);
-//     andRatePoints.append(andPoint);
-//     sendGpioRatesAverage(XOR_RATE, xorRate);
-//     sendGpioRatesAverage(AND_RATE, andRate);
-//     emit logParameter(LogParameter("rateXOR", QString::number(xorRate) + " Hz",
-//     LogParameter::LOG_AVERAGE)); emit logParameter(LogParameter("rateAND",
-//     QString::number(andRate) + " Hz", LogParameter::LOG_AVERAGE)); while
-//     ((quint32)xorRatePoints.size() > rateMaxShowInterval / rateBufferInterval) {
-//         xorRatePoints.pop_front();
-//     }
-//     while ((quint32)andRatePoints.size() > rateMaxShowInterval / rateBufferInterval) {
-//         andRatePoints.pop_front();
-//     }
-// }
 void GpioDriver::sendGpioRatesAverage() {
+    auto now = EventTime::clock::now();
+    for (auto& [sig, ratebuffer] : gpioRatebuffers) {
+        std::uint8_t whichRate = 2;
+        if (sig == EVT_AND) {
+            whichRate = 1;
+        }
+        if (sig == EVT_XOR) {
+            whichRate = 0;
+        }
+        bus_.publish(DatastoreStoreEvent{
+            GpioRateEvent{.whichRate = whichRate, .rate = ratebuffer->sampleAndRetrieve(now)}});
+    }
 }
 
 void GpioDriver::init(const MuonPi::Version::Version& hardwareVersion) {
@@ -241,13 +231,8 @@ void GpioDriver::init(const MuonPi::Version::Version& hardwareVersion) {
     configureLines(outputs, {.dir = SIGNAL_DIRECTION::DIR_OUT, .initialValue = false});
 
     // set up rate buffers for all GPIO interrupts
-    gpioRatebuffers.emplace(EVT_AND, std::make_shared<EventRateBuffer>(bus_, EventEdge::Rising));
-    // gpioRatebuffers.emplace(EVT_XOR, std::make_shared<EventRateBuffer>(bus_, EventEdge::Rising));
-    auto vetoRateBuffer =
-        std::make_shared<CoincidenceEventBuffer>(bus_, EventEdge::Rising, TIME_MEAS_OUT, true);
-    auto rateBufferTime = std::chrono::seconds(10);
-    vetoRateBuffer->setBufferTime(rateBufferTime);
-    gpioRatebuffers.emplace(EVT_XOR, vetoRateBuffer);
+    gpioRatebuffers.emplace(EVT_AND, std::make_shared<EventRateBuffer>());
+    gpioRatebuffers.emplace(EVT_XOR, std::make_shared<EventRateBuffer>());
 
     start();
 }
@@ -259,12 +244,19 @@ void GpioDriver::processEvent(GpioEvent&& event) {
     // or do some rate buffering
 
     auto it = gpioRatebuffers.find(event.gpio_signal);
-    if (it != gpioRatebuffers.end()) {
-        it->second->handle(event);
+    if (it == gpioRatebuffers.end()) {
+        // if not have rate buffer for event, just publish it
+        bus_.publish(std::move(event));
         return;
     }
-    // if not have rate buffer for event, just publish it
-    bus_.publish(event);
+    EventRateBuffer& buffer = *it->second;
+    auto data = buffer.handle(event);
+    if (data.first) {
+        bus_.publish(std::move(event));
+    }
+    if (data.second.has_value()) {
+        bus_.publish(std::move(data.second));
+    }
 }
 
 void GpioDriver::start() {
@@ -343,8 +335,8 @@ void GpioDriver::eventLoop() {
                 GpioEvent out;
                 out.gpio_pin = offset;
                 out.gpio_signal = r_pinmap_.at(offset);
-                out.timestamp = std::chrono::steady_clock::time_point(
-                    std::chrono::nanoseconds(gpiod_edge_event_get_timestamp_ns(ev)));
+                out.timestamp =
+                    EventTime(std::chrono::nanoseconds(gpiod_edge_event_get_timestamp_ns(ev)));
 
                 out.edge = gpiod_edge_event_get_event_type(ev) == GPIOD_EDGE_EVENT_RISING_EDGE
                                ? EventEdge::Rising
