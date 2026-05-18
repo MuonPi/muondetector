@@ -323,9 +323,9 @@ struct GnssMonHw2Struct {
 };
 
 struct GpsVersion {
-    std::string hwString{0};
-    std::string swString{0};
-    std::string prot{0};
+    std::string hwString{};
+    std::string swString{};
+    std::string prot{};
 };
 
 struct TimTP {
