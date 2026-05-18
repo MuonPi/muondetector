@@ -50,7 +50,8 @@ const std::vector<UBX_MSG::msg_id> allMsgCfgID{
      UBX_MSG::NAV_PVT,       UBX_MSG::NAV_SBAS,    UBX_MSG::NAV_SOL,     UBX_MSG::NAV_STATUS,
      UBX_MSG::NAV_SVINFO,    UBX_MSG::NAV_TIMEGPS, UBX_MSG::NAV_TIMEUTC, UBX_MSG::NAV_VELECEF,
      UBX_MSG::NAV_VELNED,    UBX_MSG::MON_HW,      UBX_MSG::MON_HW2,     UBX_MSG::MON_IO,
-     UBX_MSG::MON_MSGPP,     UBX_MSG::MON_RXBUF,   UBX_MSG::MON_RXR,     UBX_MSG::MON_TXBUF}};
+     UBX_MSG::MON_MSGPP,     UBX_MSG::MON_RXBUF,   UBX_MSG::MON_RXR,     UBX_MSG::MON_TXBUF,
+     UBX_MSG::MON_VER}};
 
 class EventBindings {
   public:
@@ -157,16 +158,6 @@ class EventBindings {
             bus.publish(new_pos_struct);
         });
 
-        // Convert NavSVIinfo to NavSat (compatibility with older Ublox chips) an publish
-        bus.subscribe<NavSVinfo>([&bus](const NavSVinfo& event) {
-            bus.publish(NavSat{.iTOW = event.iTOW,
-                               .version = std::nullopt,
-                               .globFlags = std::nullopt,
-                               .numSvs = event.numSvs,
-                               .goodSats = event.goodSats,
-                               .satellites = std::move(event.satellites)});
-        });
-
         // Currently can only store one event at a time therefore those make no sense
         // bus.subscribe<GpioEvent>([&datastore](const auto& ev) { datastore.store(ev); });
         // bus.subscribe<ThresholdSettingEvent>([&datastore](const auto& ev) { datastore.store(ev);
@@ -176,13 +167,13 @@ class EventBindings {
         // All events with DataStoreStoreEvent<BiasVoltageEvent> ...
         // will be sent to datastore and also sent to GUI via TCP as long as there is a Capnp Codec
         // for it.
-        subscribe_all<CfgGNSS, NavSat, NavSVinfo, MonTx, MonRx, NavStatus, NavClock,
-                      UbxTimeMarkStruct, UbxTimePulseStruct, GnssMonHwStruct, GnssMonHw2Struct,
-                      NavTimeGPS, NavTimeUTC, BiasVoltageEvent, MqttStatusEvent, AdcTraceEvent,
-                      std::array<Ads1115Event, 4>, BiasSwitchEvent, CalibEvent, GainSwitchEvent,
-                      GpioRateEvent, GpioInhibitEvent, LM75Event, MCP4728Event, PcaSwitchEvent,
-                      PolaritySwitchEvent, GpsVersion, EventTriggerEvent, LogInfoStruct,
-                      PositionModeConfig, VersionEvent>(bus, datastore);
+        subscribe_all<CfgGNSS, NavSat, MonTx, MonRx, NavStatus, NavClock, UbxTimeMarkStruct,
+                      UbxTimePulseStruct, GnssMonHwStruct, GnssMonHw2Struct, NavTimeGPS, NavTimeUTC,
+                      BiasVoltageEvent, MqttStatusEvent, AdcTraceEvent, std::array<Ads1115Event, 4>,
+                      BiasSwitchEvent, CalibEvent, GainSwitchEvent, GpioRateEvent, GpioInhibitEvent,
+                      LM75Event, MCP4728Event, PcaSwitchEvent, PolaritySwitchEvent, GpsVersion,
+                      EventTriggerEvent, LogInfoStruct, PositionModeConfig, VersionEvent>(
+            bus, datastore);
 
         // Message Requests will be answered directly from datastore
         bus.subscribe<ThresholdSettingRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
@@ -424,7 +415,7 @@ class EventBindings {
         });
     }
 
-    inline static void pollDatastore(EventBus& bus) {
+    inline static void pollDatastore(EventBus& bus, DataStore& datastore) {
         // This will be called on new connected tcp client like a GUI
         // Sends out all data which is needed on a new connection
         // Gets data preferrably from cached datastore
@@ -446,6 +437,12 @@ class EventBindings {
         bus.publish(UbxMsgRateRequestCmd{});
 
         // poll all data from Ubx
+        if (datastore.lastUpdate<GpsVersion>().has_value()) {
+            bus.publish(*datastore.get<GpsVersion>());
+        } else {
+            logWarn("Datastore does not have data for type "
+                    "GpsVersion in pollDatastore function");
+        }
         // TODO: Retrieve those from datastore instead
         for (auto msgID : allMsgCfgID) {
             bus.publish(UbxMsgPollCmd{msgID});
