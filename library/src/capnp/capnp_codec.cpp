@@ -158,8 +158,17 @@ auto CapnpCodec<NavSat>::encode(const NavSat& event) -> std::vector<uint8_t> {
         const auto& satellite = event.satellites[i];
         auto satelliteRoot = satellites[i];
         satelliteRoot.setGnssId(satellite.GnssId);
-        satelliteRoot.setSvId(satellite.SatId);
-        satelliteRoot.setCno(satellite.Cnr);
+        satelliteRoot.setSatId(satellite.SatId);
+        satelliteRoot.setCnr(satellite.Cnr);
+        satelliteRoot.setElev(satellite.Elev);
+        satelliteRoot.setAzim(satellite.Azim);
+        satelliteRoot.setPrRes(satellite.PrRes);
+        satelliteRoot.setQuality(satellite.Quality);
+        satelliteRoot.setHealth(satellite.Health);
+        satelliteRoot.setOrbitSource(satellite.OrbitSource);
+        satelliteRoot.setUsed(satellite.Used);
+        satelliteRoot.setDiffCorr(satellite.DiffCorr);
+        satelliteRoot.setSmoothed(satellite.Smoothed);
     }
 
     auto flat = capnp::messageToFlatArray(msg);
@@ -196,8 +205,17 @@ auto CapnpCodec<NavSat>::decode(const std::vector<std::uint8_t>& data) -> NavSat
     for (auto item : list) {
         GnssSatellite s{};
         s.GnssId = item.getGnssId();
-        s.SatId = item.getSvId();
-        s.Cnr = item.getCno();
+        s.SatId = item.getSatId();
+        s.Cnr = item.getCnr();
+        s.Elev = item.getElev();
+        s.Azim = item.getAzim();
+        s.PrRes = item.getPrRes();
+        s.Quality = item.getQuality();
+        s.Health = item.getHealth();
+        s.OrbitSource = item.getOrbitSource();
+        s.Used = item.getUsed();
+        s.DiffCorr = item.getDiffCorr();
+        s.Smoothed = item.getSmoothed();
         event.satellites.push_back(std::move(s));
     }
     return event;

@@ -670,21 +670,21 @@ auto MainWindow::buildDecoderMap()
                  auto event = CapnpCodec<CfgGNSS>::decode(packet.payload);
                  emit gnssConfigsReceived(event.numTrkChHw, event.configs);
              }},
-            // { // TODO: Build processor for time accuracy, frequency accuracy and uptime
+            // { // Deprecated since sent through MSG_UBX_NAVCLOCK
             //     TCP_MSG_KEY::MSG_UBX_TIME_ACCURACY,
             //     [this](const TcpPacket& packet){
             //         auto event = CapnpCodec<>::decode(packet.payload);
             //         emit timeAccReceived(event.tAcc);
             //     }
             // },
-            // {
+            // { // Deprecated since sent through MSG_UBX_NAVCLOCK
             //     TCP_MSG_KEY::MSG_UBX_FREQ_ACCURACY,
             //     [this](const TcpPacket& packet){
             //         auto event = CapnpCodec<>::decode(packet.payload);
             //         emit freqAccReceived(event.fAcc);
             //     }
             // },
-            // {
+            // { // TODO: Provide uptime information
             //     TCP_MSG_KEY::MSG_UBX_UPTIME,
             //     [this](const TcpPacket& packet){
             //         auto event = CapnpCodec<>::decode(packet.payload);
@@ -745,6 +745,7 @@ auto MainWindow::buildDecoderMap()
             {TCP_MSG_KEY::MSG_UBX_NAVCLOCK,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<NavClock>::decode(packet.payload);
+                 emit freqAccReceived(event.fAcc);
                  emit timeAccReceived(event.tAcc);
              }},
             {TCP_MSG_KEY::MSG_UBX_NAVSTATUS,
