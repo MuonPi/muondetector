@@ -5,7 +5,6 @@
 #include "core/logging/logger.h"
 #include "core/registries/device_registry.h"
 #include "data/events/ads1115_event.h"
-#include "data/events/datastore_store_event.h"
 #include "hardware/devices.h"
 #include "hardware/i2c/ads1115.h"
 #include "hardware/i2cdevice_wrapper.h"
@@ -50,6 +49,59 @@ auto ADS1115Driver::dev() -> ADS1115* {
 }
 
 void ADS1115Driver::onSampleReady(ADS1115::Sample sample) {
+    const uint8_t channel = sample.channel;
+    float voltage = sample.voltage;
+    if (channel != 0) {
+        bus_.publish(Ads1115Event{
+            .deviceId = static_cast<std::uint32_t>(deviceId_),
+            .channel = channel,
+            .rawValue = static_cast<std::uint16_t>(sample.value),
+            .voltage = voltage,
+            .timestamp =
+                static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                               sample.timestamp.time_since_epoch())
+                                               .count()),
+            // .samplingMode = ADC_SAMPLING_MODE::PEAK
+        });
+    }
+    //  else {
+    //     if (adcSamplingMode == ADC_SAMPLING_MODE::TRACE) {
+    //         adcSamplesBuffer.push_back(voltage);
+    //         if (adcSamplesBuffer.size() > Config::Hardware::ADC::buffer_size) {
+    //             adcSamplesBuffer.pop_front();
+    //         }
+    //         if (currentAdcSampleIndex == 0) {
+    //             TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_SAMPLE);
+    //             *(tcpMessage.dStream) << (quint8)channel << voltage;
+    //             emit sendTcpMessage(tcpMessage);
+    //             m_histo_map["pulseHeight"]->fill(voltage);
+    //         }
+    //         if (currentAdcSampleIndex >= 0) {
+    //             currentAdcSampleIndex++;
+    //             if (currentAdcSampleIndex >= static_cast<int>(Config::Hardware::ADC::buffer_size
+    //             - Config::Hardware::ADC::pretrigger)) {
+    //                 TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_TRACE);
+    //                 *(tcpMessage.dStream) << (quint16)adcSamplesBuffer.size();
+    //                 for (auto adc_sample : adcSamplesBuffer) {
+    //                     *(tcpMessage.dStream) << adc_sample;
+    //                 }
+    //                 emit sendTcpMessage(tcpMessage);
+    //                 currentAdcSampleIndex = -1;
+    //             }
+    //         }
+    //     } else if (adcSamplingMode == ADC_SAMPLING_MODE::PEAK) {
+    //         TcpMessage tcpMessage(TCP_MSG_KEY::MSG_ADC_SAMPLE);
+    //         *(tcpMessage.dStream) << (quint8)channel << voltage;
+    //         emit sendTcpMessage(tcpMessage);
+    //         m_histo_map["pulseHeight"]->fill(voltage);
+    //         currentAdcSampleIndex = 0;
+    //     }
+    // }
+    // if (adc_p) {
+    //     emit logParameter(LogParameter("adcSamplingTime",
+    //     QString::number(adc_p->getLastConvTime()) + " ms", LogParameter::LOG_AVERAGE));
+    //     m_histo_map["adcSampleTime"]->fill(adc_p->getLastConvTime());
+    // }
 }
 
 void ADS1115Driver::update() {
@@ -58,17 +110,9 @@ void ADS1115Driver::update() {
         return;
     }
 
-    DatastoreStoreEvent<std::array<Ads1115Event, 4>> storeEvent;
-
     for (std::size_t channel = 0; channel < 4; ++channel) {
-        const auto sample = adc->getSample(channel);
-
-        storeEvent.data.at(channel) =
-            Ads1115Event{adc->getAddress(), static_cast<std::uint8_t>(channel),
-                         static_cast<std::uint16_t>(sample.value), sample.voltage,
-                         static_cast<std::uint64_t>(sample.timestamp.time_since_epoch().count())};
+        adc->getSample(channel); // triggers function "onSampleReady"
     }
-    bus_.publish(storeEvent); // Will be unpacked later and sent to frontend
 }
 
 void ADS1115Driver::startBurst(const StartBurstSampling& cmd) {

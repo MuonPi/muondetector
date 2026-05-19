@@ -252,7 +252,7 @@ messages:
   - name: BiasSwitchRequestCmdCapnp
     fields: []
 
-  - name: AdcSampleRequestCmdCapnp
+  - name: AdcSampleTriggerCmdCapnp
     fields:
       - { name: channel, type: uint8 }
 

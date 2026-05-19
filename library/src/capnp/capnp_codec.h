@@ -76,7 +76,7 @@ struct BiasVoltageRequestCmd;
 struct BiasSwitchCmd;
 struct BiasSwitchRequestCmd;
 struct DacEepromSetCmd;
-struct AdcSampleRequestCmd;
+struct AdcSampleTriggerCmd;
 struct TemperatureRequestCmd;
 struct HistogramClearCmd;
 struct GpioRateRequestCmd;
@@ -182,7 +182,7 @@ DECLARE_CODEC(BiasVoltageRequestCmd)
 DECLARE_CODEC(BiasSwitchCmd)
 DECLARE_CODEC(BiasSwitchRequestCmd)
 DECLARE_CODEC(DacEepromSetCmd)
-DECLARE_CODEC(AdcSampleRequestCmd)
+DECLARE_CODEC(AdcSampleTriggerCmd)
 DECLARE_CODEC(TemperatureRequestCmd)
 DECLARE_CODEC(HistogramClearCmd)
 DECLARE_CODEC(GpioRateRequestCmd)

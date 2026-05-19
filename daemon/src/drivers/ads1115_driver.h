@@ -35,7 +35,7 @@ class ADS1115Driver : public Source {
 
     std::chrono::milliseconds interval_;
     int remaining_ = 0;
-    ADC_SAMPLING_MODE adcSamplingMode{ADC_SAMPLING_MODE::PEAK};
+    // ADC_SAMPLING_MODE adcSamplingMode{ADC_SAMPLING_MODE::PEAK};
 };
 
 #endif // ADS_1115_SOURCE_H

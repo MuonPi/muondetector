@@ -203,7 +203,10 @@ void UbloxSettingsForm::onUiEnabledStateChange(bool connected) {
 }
 
 void UbloxSettingsForm::onTxBufReceived(quint8 val) {
-    ui->txBufProgressBar->setValue(val);
+    if (val > 100) {
+        val = 100;
+    }
+    ui->txBufProgressBar->setValue(static_cast<int>(val));
 }
 
 void UbloxSettingsForm::onTxBufPeakReceived(quint8 val) {
@@ -211,7 +214,10 @@ void UbloxSettingsForm::onTxBufPeakReceived(quint8 val) {
 }
 
 void UbloxSettingsForm::onRxBufReceived(quint8 val) {
-    ui->rxBufProgressBar->setValue(val);
+    if (val > 100) {
+        val = 100;
+    }
+    ui->rxBufProgressBar->setValue(static_cast<int>(val));
 }
 
 void UbloxSettingsForm::onRxBufPeakReceived(quint8 val) {
