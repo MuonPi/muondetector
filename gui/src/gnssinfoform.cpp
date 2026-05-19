@@ -75,6 +75,7 @@ void GnssInfoForm::onSatsReceived(const std::vector<GnssSatellite>& satlist) {
     int nrGoodSats{0};
     ui->satsTableWidget->clearContents();
     ui->satsTableWidget->setRowCount(0);
+    ui->satsTableWidget->verticalHeader()->setDefaultSectionSize(24);
     for (const auto& current_sat : satlist) {
         if (current_sat.Cnr > 0) {
             nrGoodSats++;
@@ -84,50 +85,55 @@ void GnssInfoForm::onSatsReceived(const std::vector<GnssSatellite>& satlist) {
         ui->satsTableWidget->insertRow(ui->satsTableWidget->rowCount());
         QTableWidgetItem* newItem1 = new QTableWidgetItem;
         newItem1->setData(Qt::DisplayRole, current_sat.SatId);
-        newItem1->setSizeHint(QSize(30, 24));
-        newItem1->setTextAlignment(Qt::AlignHCenter);
+        newItem1->setSizeHint(QSize(30, 20));
+        newItem1->setTextAlignment(Qt::AlignCenter);
         ui->satsTableWidget->setItem(ui->satsTableWidget->rowCount() - 1, 0, newItem1);
 
         QTableWidgetItem* newItem2 =
             new QTableWidgetItem(QString::fromLocal8Bit(Gnss::Id::name[std::clamp(
                 static_cast<int>(current_sat.GnssId), static_cast<int>(Gnss::Id::first),
                 static_cast<int>(Gnss::Id::last))]));
-        newItem2->setSizeHint(QSize(50, 24));
-        newItem2->setTextAlignment(Qt::AlignHCenter);
+        newItem2->setSizeHint(QSize(50, 20));
+        newItem2->setTextAlignment(Qt::AlignCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 1, newItem2);
 
         QTableWidgetItem* newItem3 = new QTableWidgetItem;
         newItem3->setData(Qt::DisplayRole, current_sat.Cnr);
-        newItem3->setSizeHint(QSize(50, 24));
-        newItem3->setTextAlignment(Qt::AlignHCenter);
+        newItem3->setSizeHint(QSize(50, 20));
+        newItem3->setTextAlignment(Qt::AlignCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 2, newItem3);
 
         QTableWidgetItem* newItem4 = new QTableWidgetItem;
         newItem4->setData(Qt::DisplayRole, current_sat.Azim);
-        newItem4->setSizeHint(QSize(60, 24));
-        newItem4->setTextAlignment(Qt::AlignHCenter);
+        newItem4->setSizeHint(QSize(60, 20));
+        newItem4->setTextAlignment(Qt::AlignCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 3, newItem4);
 
         QTableWidgetItem* newItem5 = new QTableWidgetItem;
         newItem5->setData(Qt::DisplayRole, current_sat.Elev);
-        newItem5->setSizeHint(QSize(60, 24));
-        newItem5->setTextAlignment(Qt::AlignHCenter);
+        newItem5->setSizeHint(QSize(60, 20));
+        newItem5->setTextAlignment(Qt::AlignCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 4, newItem5);
 
         QTableWidgetItem* newItem6 = new QTableWidgetItem;
         newItem6->setData(Qt::DisplayRole, current_sat.PrRes);
-        newItem6->setSizeHint(QSize(60, 24));
-        newItem6->setTextAlignment(Qt::AlignHCenter);
+        newItem6->setSizeHint(QSize(60, 20));
+        newItem6->setTextAlignment(Qt::AlignCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 5, newItem6);
 
         QTableWidgetItem* newItem7 = new QTableWidgetItem;
         newItem7->setData(Qt::DisplayRole, current_sat.Quality);
         QColor color{Qt::green};
         double transp{std::clamp(0.166 * (current_sat.Quality - 1), 0., 1.)};
+        if (transp > 0.5) {
+            newItem7->setForeground(Qt::black);
+        } else {
+            newItem7->setForeground(ui->satsTableWidget->palette().color(QPalette::WindowText));
+        }
         color.setAlphaF(transp);
         newItem7->setBackground(color);
-        newItem7->setSizeHint(QSize(25, 24));
-        newItem7->setTextAlignment(Qt::AlignHCenter);
+        newItem7->setSizeHint(QSize(25, 20));
+        newItem7->setTextAlignment(Qt::AlignCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 6, newItem7);
 
         QString str{"n/a"};
@@ -142,8 +148,8 @@ void GnssInfoForm::onSatsReceived(const std::vector<GnssSatellite>& satlist) {
             color = Qt::red;
         }
         QTableWidgetItem* newItem8 = new QTableWidgetItem(str);
-        newItem8->setSizeHint(QSize(25, 24));
-        newItem8->setTextAlignment(Qt::AlignHCenter);
+        newItem8->setSizeHint(QSize(25, 20));
+        newItem8->setTextAlignment(Qt::AlignCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 7, newItem8);
 
         int orbSrc{std::clamp(static_cast<int>(current_sat.OrbitSource),
@@ -151,8 +157,8 @@ void GnssInfoForm::onSatsReceived(const std::vector<GnssSatellite>& satlist) {
                               static_cast<int>(Gnss::OrbitSource::last))};
         QTableWidgetItem* newItem9 =
             new QTableWidgetItem(QString::fromLocal8Bit(Gnss::OrbitSource::name[orbSrc]));
-        newItem9->setSizeHint(QSize(40, 24));
-        newItem9->setTextAlignment(Qt::AlignHCenter);
+        newItem9->setSizeHint(QSize(40, 20));
+        newItem9->setTextAlignment(Qt::AlignCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 8, newItem9);
 
         QTableWidgetItem* newItem10 = new QTableWidgetItem();
@@ -161,8 +167,8 @@ void GnssInfoForm::onSatsReceived(const std::vector<GnssSatellite>& satlist) {
         newItem10->setFlags(newItem10->flags() &
                             (~Qt::ItemIsUserCheckable)); // disables checkbox edit from user
         newItem10->setFlags(newItem10->flags() & (~Qt::ItemIsEditable));
-        newItem10->setSizeHint(QSize(20, 24));
-        newItem10->setTextAlignment(Qt::AlignHCenter);
+        newItem10->setSizeHint(QSize(20, 20));
+        newItem10->setTextAlignment(Qt::AlignCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 9, newItem10);
 
         QTableWidgetItem* newItem11 = new QTableWidgetItem();
@@ -171,8 +177,8 @@ void GnssInfoForm::onSatsReceived(const std::vector<GnssSatellite>& satlist) {
         newItem11->setFlags(newItem11->flags() &
                             (~Qt::ItemIsUserCheckable)); // disables checkbox edit from user
         newItem11->setFlags(newItem11->flags() & (~Qt::ItemIsEditable));
-        newItem11->setSizeHint(QSize(20, 24));
-        newItem11->setTextAlignment(Qt::AlignHCenter);
+        newItem11->setSizeHint(QSize(20, 20));
+        newItem11->setTextAlignment(Qt::AlignCenter);
         ui->satsTableWidget->setItem(newItem1->row(), 10, newItem11);
     }
     ui->nrSatsLabel->setText(QString::number(nrGoodSats) + "/" + QString::number(satlist.size()));
@@ -271,13 +277,14 @@ void GnssInfoForm::onGpsFixReceived(quint8 val) {
     if (val < Gnss::FixType::name.size())
         fixType = QString::fromLocal8Bit(Gnss::FixType::name[val]);
     if (val < Gnss::FixType::Fix2d)
-        ui->fixTypeLabel->setStyleSheet("QLabel { background-color : red }");
+        ui->fixTypeLabel->setStyleSheet("QLabel { background-color : red; color: black; }");
     else if (val == Gnss::FixType::Fix2d)
-        ui->fixTypeLabel->setStyleSheet("QLabel { background-color : lightgreen }");
-    else if (val > Gnss::FixType::Fix3d)
-        ui->fixTypeLabel->setStyleSheet("QLabel { background-color : green }");
+        ui->fixTypeLabel->setStyleSheet("QLabel { background-color : lightgreen; color: black; }");
+    else if (val == Gnss::FixType::Fix3d)
+        ui->fixTypeLabel->setStyleSheet("QLabel { background-color : green; color: window-text; }");
     else
-        ui->fixTypeLabel->setStyleSheet("QLabel { background-color : Window }");
+        ui->fixTypeLabel->setStyleSheet(
+            "QLabel { background-color : Window; color: window-text; }");
     ui->fixTypeLabel->setText(fixType);
 }
 

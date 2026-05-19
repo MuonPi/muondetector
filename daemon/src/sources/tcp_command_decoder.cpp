@@ -3,7 +3,7 @@
 #include "capnp/capnp_codec.h"
 #include "core/logging/logger.h"
 #include "data/commands/adc_mode_request_cmd.h"
-#include "data/commands/adc_sample_request_cmd.h"
+#include "data/commands/adc_sample_trigger_cmd.h"
 #include "data/commands/bias_switch_cmd.h"
 #include "data/commands/bias_voltage_cmd.h"
 #include "data/commands/burst_sampling_cmd.h"
@@ -179,7 +179,7 @@ void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
                 break;
             }
             case TCP_MSG_KEY::MSG_ADC_SAMPLE_REQUEST: {
-                bus_.publish(CapnpCodec<AdcSampleRequestCmd>::decode(event.packet.payload));
+                bus_.publish(CapnpCodec<AdcSampleTriggerCmd>::decode(event.packet.payload));
                 break;
             }
             case TCP_MSG_KEY::MSG_TEMPERATURE_REQUEST: {

@@ -24,7 +24,7 @@
 #include "gpio_event.capnp.h"
 #endif
 #include "data/commands/adc_mode_request_cmd.h"
-#include "data/commands/adc_sample_request_cmd.h"
+#include "data/commands/adc_sample_trigger_cmd.h"
 #include "data/commands/bias_switch_cmd.h"
 #include "data/commands/bias_voltage_cmd.h"
 #include "data/commands/burst_sampling_cmd.h"
@@ -1561,22 +1561,22 @@ auto CapnpCodec<PreampSwitchCmd>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PREAMP_SWITCH);
 }
 
-auto CapnpCodec<AdcSampleRequestCmd>::encode(const AdcSampleRequestCmd& cmd)
+auto CapnpCodec<AdcSampleTriggerCmd>::encode(const AdcSampleTriggerCmd& cmd)
     -> std::vector<uint8_t> {
     capnp::MallocMessageBuilder msg;
-    auto root = msg.initRoot<AdcSampleRequestCmdCapnp>();
+    auto root = msg.initRoot<AdcSampleTriggerCmdCapnp>();
     root.setChannel(cmd.channel);
     auto flat = capnp::messageToFlatArray(msg);
     auto bytes = flat.asBytes();
     return {bytes.begin(), bytes.end()};
 }
-auto CapnpCodec<AdcSampleRequestCmd>::decode(const std::vector<std::uint8_t>& data)
-    -> AdcSampleRequestCmd {
+auto CapnpCodec<AdcSampleTriggerCmd>::decode(const std::vector<std::uint8_t>& data)
+    -> AdcSampleTriggerCmd {
     auto reader = makeReader(data);
-    auto root = reader.getRoot<AdcSampleRequestCmdCapnp>();
-    return AdcSampleRequestCmd{root.getChannel()};
+    auto root = reader.getRoot<AdcSampleTriggerCmdCapnp>();
+    return AdcSampleTriggerCmd{root.getChannel()};
 }
-auto CapnpCodec<AdcSampleRequestCmd>::messageKey() -> std::uint16_t {
+auto CapnpCodec<AdcSampleTriggerCmd>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_ADC_SAMPLE_REQUEST);
 }
 
