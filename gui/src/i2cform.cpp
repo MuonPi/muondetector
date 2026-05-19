@@ -24,7 +24,7 @@ void I2cForm::onI2cStatsReceived(quint32 bytesRead, quint32 bytesWritten,
     ui->bytesWrittenLabel->setText("total bytes written: " + QString::number(bytesWritten));
 
     ui->devicesTableWidget->setRowCount(deviceList.size());
-    for (int i = 0; i < deviceList.size(); i++) {
+    for (qsizetype i = 0; i < deviceList.size(); i++) {
         QTableWidgetItem* newItem1 = new QTableWidgetItem(
             "0x" + QString("%1").arg(deviceList[i].address, 2, 16, QChar('0')));
         newItem1->setSizeHint(QSize(120, 24));

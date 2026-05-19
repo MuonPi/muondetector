@@ -239,6 +239,7 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
                 Version{15, 0}, Version{std::numeric_limits<unsigned>().max(), 0},
                 UbxMsgRateCmd{UBX_MSG::NAV_SAT, 1, 69}}}});
             EventBindings::pollAllUbxMsgRate(bus);
+            EventBindings::pollAllUbxMsg(bus);
         });
     ctx.bus->publish(UbxConfigDefaultCmd{}); // Apply default config
 

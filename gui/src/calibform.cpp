@@ -50,7 +50,7 @@ void CalibForm::onCalibReceived(bool valid, bool eepromValid, quint64 id,
     ui->idLineEdit->setText(QString::number(id, 16));
 
     fCalibList.clear();
-    for (int i = 0; i < calibList.size(); i++) {
+    for (qsizetype i = 0; i < calibList.size(); i++) {
         fCalibList.push_back(calibList[i]);
     }
 
@@ -83,7 +83,7 @@ void CalibForm::onCalibReceived(bool valid, bool eepromValid, quint64 id,
 
 void CalibForm::updateCalibTable() {
     ui->calibItemTableWidget->setRowCount(fCalibList.size());
-    for (int i = 0; i < fCalibList.size(); i++) {
+    for (qsizetype i = 0; i < fCalibList.size(); i++) {
         QTableWidgetItem* newItem1 =
             new QTableWidgetItem(QString::fromStdString(fCalibList[i].name));
         newItem1->setSizeHint(QSize(90, 20));

@@ -94,7 +94,6 @@ class SerialUblox : public Component {
     std::queue<UbxVersionDependentCmd> queuedCmds_;
 
     // TODO: Move this to some separate processor/storage
-    std::size_t waitingForAppliedMsgRate{0};
     std::unordered_map<uint16_t, int> msgRateCfgs;
 };
 

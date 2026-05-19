@@ -18,69 +18,43 @@
 #include <string_view>
 #include <type_traits>
 
-std::optional<UbxMessage> MessageProcessor::msgWaitingForAck{std::nullopt};
+std::unordered_multimap<std::uint16_t, UbxMessage> MessageProcessor::msgWaitingForAck;
+std::mutex MessageProcessor::msgWaitingForAckMutex;
 std::optional<GpsVersion> MessageProcessor::gpsVersion{std::nullopt};
 
+const std::unordered_map<std::uint8_t, const char*> MessageProcessor::ubx_class_names{
+    {0x01, "UBX-NAV"}, {0x02, "UBX-RXM"}, {0x04, "UBX-INF"}, {0x05, "UBX-ACK"}, {0x06, "UBX-CFG"},
+    {0x09, "UBX-UPD"}, {0x10, "UBX-ESF"}, {0x13, "UBX-MGA"}, {0x0a, "UBX-MON"}, {0x0b, "UBX-AID"},
+    {0x0d, "UBX-TIM"}, {0x21, "UBX-LOG"}, {0x27, "UBX-SEC"}, {0x28, "UBX-HNR"}};
+
+const std::unordered_map<std::uint16_t,
+                         std::pair<std::optional<UbxEvent> (*)(const std::string&), std::string>>
+    MessageProcessor::handlerLookup = {{UBX_MSG::NAV_STATUS, {UBXNavStatus, "UBX-NAV-STATUS"}},
+                                       {UBX_MSG::NAV_DOP, {UBXNavDOP, "UBX-NAV-DOP"}},
+                                       {UBX_MSG::NAV_TIMEGPS, {UBXNavTimeGPS, "UBX-NAV-TIMEGPS"}},
+                                       {UBX_MSG::NAV_TIMEUTC, {UBXNavTimeUTC, "UBX-NAV-TIMEUTC"}},
+                                       {UBX_MSG::NAV_CLOCK, {UBXNavClock, "UBX-NAV-CLOCK"}},
+                                       {UBX_MSG::NAV_SVINFO, {UBXNavSVinfo, "UBX-NAV-SVINFO"}},
+                                       {UBX_MSG::NAV_SAT, {UBXNavSat, "UBX-NAV-SAT"}},
+                                       {UBX_MSG::NAV_POSLLH, {UBXNavPosLLH, "UBX-NAV-POSLLH"}},
+                                       {UBX_MSG::CFG_ANT, {UBXCfgAnt, "UBX-CFG-ANT"}},
+                                       {UBX_MSG::CFG_NAVX5, {UBXCfgNavX5, "UBX-CFG-NAVX5"}},
+                                       {UBX_MSG::CFG_NAV5, {UBXCfgNav5, "UBX-CFG-NAV5"}},
+                                       {UBX_MSG::CFG_TP5, {UBXCfgTP5, "UBX-CFG-TP5"}},
+                                       {UBX_MSG::CFG_GNSS, {UBXCfgGNSS, "UBX-CFG-GNSS"}},
+                                       {UBX_MSG::CFG_MSG, {UBXCfgMSG, "UBX-CFG-MSG"}},
+                                       {UBX_MSG::MON_RXBUF, {UBXMonRx, "UBX-MON-RXBUF"}},
+                                       {UBX_MSG::MON_TXBUF, {UBXMonTx, "UBX-MON-TXBUF"}},
+                                       {UBX_MSG::MON_HW, {UBXMonHW, "UBX-MON-HW"}},
+                                       {UBX_MSG::MON_HW2, {UBXMonHW2, "UBX-MON-HW2"}},
+                                       {UBX_MSG::MON_VER, {UBXMonVer, "UBX-MON-VER"}},
+                                       {UBX_MSG::TIM_TP, {UBXTimTP, "UBX-TIM-TP"}},
+                                       {UBX_MSG::TIM_TM2, {UBXTimTM2, "UBX-TIM-TM2"}}};
+
 auto MessageProcessor::processMessage(const UbxMessage& msg) -> std::optional<UbxEvent> {
-    static const std::map<std::uint8_t, const char*> ubx_class_names{
-        {0x01, "UBX-NAV"}, {0x02, "UBX-RXM"}, {0x04, "UBX-INF"}, {0x05, "UBX-ACK"},
-        {0x06, "UBX-CFG"}, {0x09, "UBX-UPD"}, {0x10, "UBX-ESF"}, {0x13, "UBX-MGA"},
-        {0x0a, "UBX-MON"}, {0x0b, "UBX-AID"}, {0x0d, "UBX-TIM"}, {0x21, "UBX-LOG"},
-        {0x27, "UBX-SEC"}, {0x28, "UBX-HNR"}};
-
-    const std::map<uint16_t, std::pair<std::function<std::optional<UbxEvent>()>, std::string>>
-        handlerLookup{
-            {{UBX_MSG::NAV_STATUS,
-              std::make_pair([&] { return UBXNavStatus(msg.payload()); }, "UBX-NAV-STATUS")},
-             {UBX_MSG::NAV_DOP,
-              std::make_pair([&] { return UBXNavDOP(msg.payload()); }, "UBX-NAV-DOP")},
-             {UBX_MSG::NAV_TIMEGPS,
-              std::make_pair([&] { return UBXNavTimeGPS(msg.payload()); }, "UBX-NAV-TIMEGPS")},
-             {UBX_MSG::NAV_TIMEUTC,
-              std::make_pair([&] { return UBXNavTimeUTC(msg.payload()); }, "UBX-NAV-TIMEUTC")},
-             {UBX_MSG::NAV_CLOCK,
-              std::make_pair([&] { return UBXNavClock(msg.payload()); }, "UBX-NAV-CLOCK")},
-             {UBX_MSG::NAV_SVINFO,
-              std::make_pair([&] { return UBXNavSVinfo(msg.payload()); }, "UBX-NAV-SVINFO")},
-             {UBX_MSG::NAV_SAT,
-              std::make_pair([&] { return UBXNavSat(msg.payload()); }, "UBX-NAV-SAT")},
-             {UBX_MSG::NAV_POSLLH,
-              std::make_pair([&] { return UBXNavPosLLH(msg.payload()); }, "UBX-NAV-POSLLH")}
-
-             ,
-             {UBX_MSG::CFG_ANT,
-              std::make_pair([&] { return UBXCfgAnt(msg.payload()); }, "UBX-CFG-ANT")},
-             {UBX_MSG::CFG_NAVX5,
-              std::make_pair([&] { return UBXCfgNavX5(msg.payload()); }, "UBX-CFG-NAVX5")},
-             {UBX_MSG::CFG_NAV5,
-              std::make_pair([&] { return UBXCfgNav5(msg.payload()); }, "UBX-CFG-NAV5")},
-             {UBX_MSG::CFG_TP5,
-              std::make_pair([&] { return UBXCfgTP5(msg.payload()); }, "UBX-CFG-TP5")},
-             {UBX_MSG::CFG_GNSS,
-              std::make_pair([&] { return UBXCfgGNSS(msg.payload()); }, "UBX-CFG-GNSS")},
-             {UBX_MSG::CFG_MSG,
-              std::make_pair([&] { return UBXCfgMSG(msg.payload()); }, "UBX-CFG-MSG")}
-
-             ,
-             {UBX_MSG::MON_RXBUF,
-              std::make_pair([&] { return UBXMonRx(msg.payload()); }, "UBX-MON-RXBUF")},
-             {UBX_MSG::MON_TXBUF,
-              std::make_pair([&] { return UBXMonTx(msg.payload()); }, "UBX-MON-TXBUF")},
-             {UBX_MSG::MON_HW,
-              std::make_pair([&] { return UBXMonHW(msg.payload()); }, "UBX-MON-HW")},
-             {UBX_MSG::MON_HW2,
-              std::make_pair([&] { return UBXMonHW2(msg.payload()); }, "UBX-MON-HW2")},
-             {UBX_MSG::MON_VER,
-              std::make_pair([&] { return UBXMonVer(msg.payload()); }, "UBX-MON-VER")}
-
-             ,
-             {UBX_MSG::TIM_TP,
-              std::make_pair([&] { return UBXTimTP(msg.payload()); }, "UBX-TIM-TP")},
-             {UBX_MSG::TIM_TM2,
-              std::make_pair([&] { return UBXTimTM2(msg.payload()); }, "UBX-TIM-TM2")}}};
-
-    if (handlerLookup.count(msg.full_id()) > 0) {
-        const auto& [handle, name] = handlerLookup.at(msg.full_id());
+    auto it = handlerLookup.find(msg.full_id());
+    if (it != handlerLookup.end()) {
+        const auto& [handle, name] = it->second;
         if (logLevel() == LogLevel::Debug) {
             std::stringstream sstr{};
             sstr << "received " << name << " message (0x" << std::hex << std::setfill('0')
@@ -88,60 +62,94 @@ auto MessageProcessor::processMessage(const UbxMessage& msg) -> std::optional<Ub
                  << static_cast<unsigned>(msg.message_id()) << ")";
             logInfo(sstr.str());
         }
-        return handle();
+        return handle(msg.payload());
     } else if (msg.class_id() == 0x05) {
-        // Handle acknowledge messages
-        if (msg.payload().size() < 2) {
-            logWarn("received UBX-ACK message but data is corrupted");
-            return std::nullopt;
-        }
-        if (msgWaitingForAck.has_value() == false) {
-            // Got acknowledge message from ublox without requesting anything
-            std::stringstream sstr{};
-            sstr << "received ACK message but no message is waiting for Ack (msgID: 0x";
-            sstr << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[0] << " 0x"
-                 << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[1]
-                 << ")\n";
-            logWarn(sstr.str());
-            return std::nullopt;
-        }
-        if (logLevel() == LogLevel::Debug) {
-            std::stringstream sstr{};
-            sstr << "received UBX-ACK-ACK message about msgID: 0x";
-            sstr << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[0] << " 0x"
-                 << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[1];
-            logInfo(sstr.str());
-        }
-
-        auto ackedMsgID = (uint16_t) (msg.payload()[0]) << 8U | msg.payload()[1];
-        if (ackedMsgID != msgWaitingForAck.value().full_id()) {
-            std::stringstream sstr{};
-            sstr << "received unexpected UBX-ACK message about msgID: 0x";
-            sstr << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[0] << " 0x"
-                 << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[1] << "\n";
-            logWarn(sstr.str());
-            return std::nullopt;
-        }
-        if (msg.message_id() == 0x00 && msgWaitingForAck) {
-            const auto& arr = msgWaitingForAck.value().payload();
-            std::uint16_t payload = static_cast<std::uint16_t>(arr[0]);
-            payload = payload << 8U;
-            payload |= static_cast<std::uint16_t>(arr[1]);
-            return UbxAckNak{msgWaitingForAck.value().full_id(), payload};
-        }
-        // ackTimer->stop(); // TODO : implement ack timer logic
-        msgWaitingForAck = std::nullopt;
-        if (logLevel() == LogLevel::Debug) {
-            logInfo("processMessage: deleted message after ACK/NACK");
-        }
+        return UBXAck(msg);
     } else {
-        unhandled(msg, ubx_class_names);
+        unhandled(msg);
     }
     return std::nullopt;
 }
 
-void MessageProcessor::unhandled(const UbxMessage& msg,
-                                 const std::map<std::uint8_t, const char*> ubx_class_names) {
+void MessageProcessor::trackMessageWaitingForAck(const UbxMessage& msg) {
+    std::lock_guard lock{msgWaitingForAckMutex};
+    msgWaitingForAck.emplace(msg.full_id(), msg);
+}
+
+auto MessageProcessor::UBXAck(const UbxMessage& msg) -> std::optional<UbxEvent> {
+    // Handle acknowledge messages
+    if (msg.payload().size() < 2) {
+        logWarn("received UBX-ACK message but data is corrupted");
+        return std::nullopt;
+    }
+
+    const bool isNak = msg.message_id() == 0x00;
+    std::uint16_t ackedMsgID = static_cast<std::uint16_t>(msg.payload()[0]) << 8U;
+    ackedMsgID |= static_cast<std::uint16_t>(msg.payload()[1]);
+
+    const auto nameIt = UBX_MSG::msg_string.find(static_cast<UBX_MSG::msg_id>(ackedMsgID));
+    const std::string msgName = nameIt != UBX_MSG::msg_string.end() ? nameIt->second : "unknown";
+
+    if (isNak) {
+        std::stringstream sstr{};
+        sstr << "received UBX-ACK-NAK for " << msgName << " (msgID: 0x" << std::setfill('0')
+             << std::setw(2) << std::hex << static_cast<int>(msg.payload()[0]) << " 0x"
+             << std::setw(2) << std::hex << static_cast<int>(msg.payload()[1]) << ")";
+        logWarn(sstr.str());
+    }
+
+    if (logLevel() == LogLevel::Debug) {
+        std::stringstream sstr{};
+        sstr << "received " << (isNak ? "UBX-ACK-NAK" : "UBX-ACK-ACK") << " message about "
+             << msgName << " (msgID: 0x";
+        sstr << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[0] << " 0x"
+             << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[1] << ")";
+        logInfo(sstr.str());
+    }
+
+    std::lock_guard lock{msgWaitingForAckMutex};
+    if (msgWaitingForAck.empty()) {
+        // Got acknowledge message from ublox without requesting anything
+        std::stringstream sstr{};
+        sstr << "received " << (isNak ? "ACK-NAK" : "ACK-ACK")
+             << " but no message is waiting for ACK (msgID: 0x";
+        sstr << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[0] << " 0x"
+             << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[1] << ")\n";
+        logWarn(sstr.str());
+        return std::nullopt;
+    }
+
+    auto range = msgWaitingForAck.equal_range(ackedMsgID);
+    if (range.first == range.second) {
+        // no message to be acknowledged
+        std::stringstream sstr{};
+        sstr << "received unexpected " << (isNak ? "UBX-ACK-NAK" : "UBX-ACK-ACK")
+             << " message about " << msgName << " (msgID: 0x";
+        sstr << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[0] << " 0x"
+             << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[1] << ")\n";
+        logWarn(sstr.str());
+        return std::nullopt;
+    }
+    if (isNak) {
+        const auto& arr = range.first->second.payload();
+        std::uint16_t payload{0};
+        if (arr.size() >= 2) {
+            payload = static_cast<std::uint16_t>(arr[0]);
+            payload = payload << 8U;
+            payload |= static_cast<std::uint16_t>(arr[1]);
+        }
+        msgWaitingForAck.erase(range.first); // removes ONE element
+        return UbxAckNak{ackedMsgID, payload};
+    }
+    // ackTimer->stop(); // TODO : implement ack timer logic
+    if (logLevel() == LogLevel::Debug) {
+        logInfo("processMessage: deleted message after ACK/NACK");
+    }
+    msgWaitingForAck.erase(range.first); // removes ONE element
+    return std::nullopt;
+}
+
+void MessageProcessor::unhandled(const UbxMessage& msg) {
 
     if (msg.class_id() == 0x06) {
         if (logLevel() == LogLevel::Debug) {
@@ -156,8 +164,9 @@ void MessageProcessor::unhandled(const UbxMessage& msg,
     } else {
         if (logLevel() == LogLevel::Debug) {
             std::stringstream sstr{};
-            if (ubx_class_names.count(msg.class_id()) > 0) {
-                sstr << "received unhandled " << ubx_class_names.at(msg.class_id()) << " message"
+            if (MessageProcessor::ubx_class_names.count(msg.class_id()) > 0) {
+                sstr << "received unhandled "
+                     << MessageProcessor::ubx_class_names.at(msg.class_id()) << " message"
                      << " (0x" << std::hex << std::setfill('0') << std::setw(2)
                      << (int) msg.class_id() << " 0x" << std::hex << (int) msg.message_id() << ")";
             } else {

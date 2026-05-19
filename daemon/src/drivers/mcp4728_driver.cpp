@@ -98,7 +98,7 @@ MCP4728Driver::MCP4728Driver(ComponentId id, SystemConfig& systemConfig, DeviceR
 auto MCP4728Driver::dev() -> MCP4728* {
     auto* wrapper = registry_.get<I2CDeviceWrapper<MCP4728>>(std::get<Device>(id()));
     if (!wrapper) {
-        logWarn("MCP4728 Device not found");
+        logError("MCP4728 Device not found");
         return nullptr;
     }
 

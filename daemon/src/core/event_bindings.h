@@ -43,14 +43,13 @@
 #include <array>
 #include <type_traits>
 
-const std::vector<UBX_MSG::msg_id> allMsgCfgID{
+const std::vector<UBX_MSG::msg_id> rateCfgMsgID{
     {UBX_MSG::TIM_TM2,       UBX_MSG::TIM_TP,      UBX_MSG::NAV_CLOCK,   UBX_MSG::NAV_DGPS,
      UBX_MSG::NAV_AOPSTATUS, UBX_MSG::NAV_DOP,     UBX_MSG::NAV_POSECEF, UBX_MSG::NAV_POSLLH,
      UBX_MSG::NAV_PVT,       UBX_MSG::NAV_SBAS,    UBX_MSG::NAV_SOL,     UBX_MSG::NAV_STATUS,
      UBX_MSG::NAV_SVINFO,    UBX_MSG::NAV_TIMEGPS, UBX_MSG::NAV_TIMEUTC, UBX_MSG::NAV_VELECEF,
      UBX_MSG::NAV_VELNED,    UBX_MSG::MON_HW,      UBX_MSG::MON_HW2,     UBX_MSG::MON_IO,
-     UBX_MSG::MON_MSGPP,     UBX_MSG::MON_RXBUF,   UBX_MSG::MON_RXR,     UBX_MSG::MON_TXBUF,
-     UBX_MSG::MON_VER}};
+     UBX_MSG::MON_MSGPP,     UBX_MSG::MON_RXBUF,   UBX_MSG::MON_RXR,     UBX_MSG::MON_TXBUF}};
 
 class EventBindings {
   public:
@@ -563,8 +562,16 @@ class EventBindings {
     }
 
     inline static void pollAllUbxMsgRate(EventBus& bus) {
-        for (auto msgID : allMsgCfgID) {
+        for (auto msgID : rateCfgMsgID) {
             bus.publish(UbxMsgPollRateCmd{msgID});
+        }
+    }
+    inline static void pollAllUbxMsg(EventBus& bus) {
+        // Not rate configurable
+        bus.publish(UbxMsgPollCmd{UBX_MSG::MON_VER});
+        // Rate configurable:
+        for (auto msgID : rateCfgMsgID) {
+            bus.publish(UbxMsgPollCmd{msgID});
         }
     }
 

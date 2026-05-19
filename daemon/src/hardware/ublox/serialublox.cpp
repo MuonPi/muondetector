@@ -44,27 +44,33 @@ SerialUblox::SerialUblox(ComponentId id, boost::asio::io_context& io, const std:
     makeConnection();
 
     // Command handling
-    bus_.subscribe<UbxDynamicModelCmd>([this](const UbxDynamicModelCmd& cmd) { handle(cmd); });
-    bus_.subscribe<UbxGnssConfigCmd>([this](const UbxGnssConfigCmd& cmd) { handle(cmd); });
-    bus_.subscribe<UbxMinCnoCmd>([this](const UbxMinCnoCmd& cmd) { handle(cmd); });
-    bus_.subscribe<UbxMinMaxSvCmd>([this](const UbxMinMaxSvCmd& cmd) { handle(cmd); });
-    bus_.subscribe<UbxMsgPollCmd>([this](const UbxMsgPollCmd& cmd) { handle(cmd); });
-    bus_.subscribe<UbxMsgPollRateCmd>([this](const UbxMsgPollRateCmd& cmd) { handle(cmd); });
-    bus_.subscribe<UbxMsgRateCmd>([this](const UbxMsgRateCmd& cmd) { handle(cmd); });
-    bus_.subscribe<UbxRateCmd>([this](const UbxRateCmd& cmd) { handle(cmd); });
-    bus_.subscribe<UbxProtocolSelectionCmd>(
-        [this](const UbxProtocolSelectionCmd& cmd) { handle(cmd); });
-    bus_.subscribe<UbxResetCmd>([this](const UbxResetCmd& cmd) { handle(cmd); });
-    bus_.subscribe<UbxSaveCmd>([this](const UbxSaveCmd& cmd) { handle(cmd); });
-    bus_.subscribe<UbxSetAopCmd>([this](const UbxSetAopCmd& cmd) { handle(cmd); });
-    bus_.subscribe<UbxVersionDependentCmd>(
-        [this](const UbxVersionDependentCmd& cmd) { handle(cmd); });
-    bus.subscribe<UbxTp5Cmd>([this](const UbxTp5Cmd& cmd) { handle(cmd); });
+    auto subscribeOnStrand = [this]<typename T>() {
+        bus_.subscribe<T>(
+            [this](const T& cmd) { boost::asio::post(strand_, [this, cmd]() { handle(cmd); }); });
+    };
+
+    subscribeOnStrand.template operator()<UbxDynamicModelCmd>();
+    subscribeOnStrand.template operator()<UbxGnssConfigCmd>();
+    subscribeOnStrand.template operator()<UbxMinCnoCmd>();
+    subscribeOnStrand.template operator()<UbxMinMaxSvCmd>();
+    subscribeOnStrand.template operator()<UbxMsgPollCmd>();
+    subscribeOnStrand.template operator()<UbxMsgPollRateCmd>();
+    subscribeOnStrand.template operator()<UbxMsgRateCmd>();
+    subscribeOnStrand.template operator()<UbxRateCmd>();
+    subscribeOnStrand.template operator()<UbxProtocolSelectionCmd>();
+    subscribeOnStrand.template operator()<UbxResetCmd>();
+    subscribeOnStrand.template operator()<UbxSaveCmd>();
+    subscribeOnStrand.template operator()<UbxSetAopCmd>();
+    subscribeOnStrand.template operator()<UbxVersionDependentCmd>();
+    subscribeOnStrand.template operator()<UbxTp5Cmd>();
 
     // Internally used events
-    bus_.subscribe<GpsVersion>([this](const GpsVersion& gpsVersion) { handle(gpsVersion); });
-    bus_.subscribe<UbxAckNak>(
-        [this](const UbxAckNak& event) { msgRateCfgs.emplace(event.msgID, -1); });
+    bus_.subscribe<GpsVersion>([this](const GpsVersion& gpsVersion) {
+        boost::asio::post(strand_, [this, gpsVersion]() { handle(gpsVersion); });
+    });
+    bus_.subscribe<UbxAckNak>([this](const UbxAckNak& event) {
+        boost::asio::post(strand_, [this, event]() { msgRateCfgs.emplace(event.msgID, -1); });
+    });
 }
 
 void SerialUblox::makeConnection() {
@@ -82,7 +88,9 @@ void SerialUblox::makeConnection() {
 
 void SerialUblox::startAsyncRead() {
     serial_.async_read_some(
-        boost::asio::buffer(buffer_), [this](boost::system::error_code ec, std::size_t length) {
+        boost::asio::buffer(buffer_),
+        boost::asio::bind_executor(strand_, [this](boost::system::error_code ec,
+                                                   std::size_t length) {
             if (ec) {
                 handleError("read", ec);
                 retryLater();
@@ -103,7 +111,7 @@ void SerialUblox::startAsyncRead() {
                 }
             } while (msgCandidate.has_value());
             startAsyncRead(); // continue reading
-        });
+        }));
 }
 
 auto SerialUblox::parseStreamForMsg(std::string& buffer)
@@ -171,6 +179,7 @@ auto SerialUblox::parseStreamForMsg(std::string& buffer)
 }
 
 auto SerialUblox::enqueueMessage(const UbxMessage& msg) -> bool {
+    MessageProcessor::trackMessageWaitingForAck(msg);
     boost::asio::post(strand_, [this, data = msg.raw_message_string()]() mutable {
         bool write_in_progress = !tx_queue_.empty();
 
@@ -228,7 +237,7 @@ void SerialUblox::handle(const UbxMsgRateCmd& cmd) {
     // if port = -1 set all ports
     logDebug("Processing UbxMsgRateCmd for message " + std::to_string(cmd.id));
 
-    std::array<std::uint8_t, 8> data;
+    std::array<std::uint8_t, 8> data{};
     if (cmd.port > 6) {
         logWarn("port > 6 is not possible, port: " + std::to_string(cmd.port));
     }
@@ -249,7 +258,7 @@ void SerialUblox::handle(const UbxMsgRateCmd& cmd) {
 void SerialUblox::handle(const UbxMsgPollCmd& cmd) {
     logDebug("Processing UbxMsgPollCmd for message " + std::to_string(cmd.id));
     UbxMessage msg;
-    std::array<std::uint8_t, 1> data;
+    std::array<std::uint8_t, 1> data{};
     switch (cmd.id) {
         case UBX_MSG::CFG_PRT: // CFG-PRT
             // in this special case "rate" is the port ID
@@ -270,7 +279,7 @@ void SerialUblox::handle(const UbxMsgPollCmd& cmd) {
 
 void SerialUblox::handle(const UbxMsgPollRateCmd& cmd) {
     logDebug("Processing UbxMsgPollRateCmd for message " + std::to_string(cmd.id));
-    std::array<std::uint8_t, 2> data;
+    std::array<std::uint8_t, 2> data{};
     data[0] = static_cast<std::uint8_t>((cmd.id >> 8) & 0xff);
     data[1] = static_cast<std::uint8_t>(cmd.id & 0xff);
     UbxMessage msg{UBX_MSG::CFG_MSG,
@@ -280,7 +289,7 @@ void SerialUblox::handle(const UbxMsgPollRateCmd& cmd) {
 
 void SerialUblox::handle(const UbxSetAopCmd& cmd) {
     logDebug("Processing UbxSetAopCmd");
-    std::array<std::uint8_t, 40> data;
+    std::array<std::uint8_t, 40> data{};
     data[2] = 0x00; // aop flag in mask 2
     data[3] = 0x40; // all other flags are zero
     data[4] = 0;
@@ -298,7 +307,7 @@ void SerialUblox::handle(const UbxSetAopCmd& cmd) {
 
 void SerialUblox::handle(const UbxMinMaxSvCmd& cmd) {
     logDebug("Processing UbxMinMaxSvCmd");
-    std::array<std::uint8_t, 40> data;
+    std::array<std::uint8_t, 40> data{};
     data[2] = 0x04; // MinMax flag in mask 1
     data[3] = 0x00; // all other flags are zero
     data[4] = 0;
@@ -315,7 +324,7 @@ void SerialUblox::handle(const UbxMinMaxSvCmd& cmd) {
 
 void SerialUblox::handle(const UbxMinCnoCmd& cmd) {
     logDebug("Processing UbxMinCnoCmd");
-    std::array<std::uint8_t, 40> data;
+    std::array<std::uint8_t, 40> data{};
     data[2] = 0x08; // minCNO flag in mask 1
     data[3] = 0x00; // all other flags are zero
     data[4] = 0;
@@ -337,7 +346,7 @@ void SerialUblox::handle(const UbxProtocolSelectionCmd& cmd) {
         return;
     }
 
-    std::array<std::uint8_t, 20> data;
+    std::array<std::uint8_t, 20> data{};
     if (cmd.port == 1) {
         // port 1 is UART port, payload for other ports may differ
         // setup payload. Bit masks are set up byte wise from lowest to highest byte
@@ -373,6 +382,8 @@ void SerialUblox::handle(const UbxProtocolSelectionCmd& cmd) {
         data[18] = 0;
         data[19] = 0; // reserved
     }
+    logDebug("UbxprotocolSelectionCmd port: " + std::to_string(cmd.port) +
+             " mask: " + std::to_string(cmd.outProtocolMask));
     UbxMessage msg{UBX_MSG::CFG_PRT,
                    std::string(reinterpret_cast<const char*>(data.data()), data.size())};
     enqueueMessage(std::move(msg));
@@ -380,7 +391,7 @@ void SerialUblox::handle(const UbxProtocolSelectionCmd& cmd) {
 
 void SerialUblox::handle(const UbxSaveCmd& cmd) {
     logDebug("Processing UbxSaveCmd");
-    std::array<std::uint8_t, 13> data;
+    std::array<std::uint8_t, 13> data{};
     // select the following sections to save:
     // ioPort, msgCfg, navCfg, rxmCfg, antConf
     uint32_t sectionMask = 0x01 | 0x02 | 0x08 | 0x10 | 0x400;
@@ -402,7 +413,7 @@ void SerialUblox::handle(const UbxResetCmd& cmd) {
     logDebug("Processing UbxResetCmd");
     uint16_t navBbrMask = static_cast<std::uint16_t>((cmd.resetFlags >> 16) & 0xffff);
     uint8_t resetMode = static_cast<std::uint8_t>(cmd.resetFlags & 0xff);
-    std::array<std::uint8_t, 4> data;
+    std::array<std::uint8_t, 4> data{};
     data[0] = static_cast<std::uint8_t>(navBbrMask & 0xff);
     data[1] = static_cast<std::uint8_t>((navBbrMask >> 8) & 0xff);
     data[2] = resetMode;

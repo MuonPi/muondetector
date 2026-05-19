@@ -31,7 +31,7 @@ ADS1115Driver::ADS1115Driver(ComponentId id, DeviceRegistry& registry, EventBus&
     device->setRate(ADS1115::SPS860); // set sampling rate to the maximum of 860 samples per second
     device->setAGC(false);            // turn AGC off for all channels
     if (!device->setDataReadyPinMode()) {
-        logWarn("error: failed setting data ready pin mode (setting thresh regs)");
+        logError("error: failed setting data ready pin mode (setting thresh regs)");
     }
 
     device->registerConversionReadyCallback(
@@ -41,7 +41,7 @@ ADS1115Driver::ADS1115Driver(ComponentId id, DeviceRegistry& registry, EventBus&
 auto ADS1115Driver::dev() -> ADS1115* {
     auto* wrapper = registry_.get<I2CDeviceWrapper<ADS1115>>(std::get<Device>(id()));
     if (!wrapper) {
-        logWarn("ADS1115 Device not found");
+        logError("ADS1115 Device not found");
         return nullptr;
     }
 

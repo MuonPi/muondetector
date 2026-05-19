@@ -111,7 +111,7 @@ ParameterMonitorForm::~ParameterMonitorForm() {
 void ParameterMonitorForm::onCalibReceived(bool /*valid*/, bool /*eepromValid*/, quint64 /*id*/,
                                            const std::vector<CalibStruct>& calibList) {
     fCalibList.clear();
-    for (int i = 0; i < calibList.size(); i++) {
+    for (qsizetype i = 0; i < calibList.size(); i++) {
         fCalibList.push_back(calibList[i]);
     }
 }
