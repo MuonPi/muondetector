@@ -73,13 +73,17 @@ add_compile_options(
     -Wextra
     -Wshadow
     -Wpedantic
+    -Wno-psabi # Do not warn about this. Only important if linking against external prebuilt C++ libs
+    -ggdb # TODO: Remove
+    -fno-omit-frame-pointer # TODO: Remove
 )
 
 # Build mode optimization
 if(BUILD_TIDY)
     add_compile_options(-O0 -g)
 else()
-    add_compile_options(-O3)
+    # add_compile_options(-O3)
+    add_compile_options(-O1)
 endif()
 
 if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")

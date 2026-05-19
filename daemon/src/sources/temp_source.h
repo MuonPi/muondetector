@@ -3,11 +3,13 @@
 
 #include "core/event_bus.h"
 #include "core/registries/device_registry.h"
+#include "hardware/device_types.h"
 #include "sources/source.h"
 
 #include <memory>
 
 class LM75;
+class MIC184;
 class TempSource : public Source {
   public:
     explicit TempSource(ComponentId id, DeviceRegistry& registry, EventBus& bus);
@@ -15,7 +17,7 @@ class TempSource : public Source {
     void update() override;
 
   private:
-    auto dev() -> LM75*;
+    auto dev() -> DeviceFunction<DeviceType::TEMP>*;
     DeviceRegistry& registry_;
     EventBus& bus_;
 };

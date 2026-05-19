@@ -111,7 +111,7 @@ ParameterMonitorForm::~ParameterMonitorForm() {
 void ParameterMonitorForm::onCalibReceived(bool /*valid*/, bool /*eepromValid*/, quint64 /*id*/,
                                            const std::vector<CalibStruct>& calibList) {
     fCalibList.clear();
-    for (int i = 0; i < calibList.size(); i++) {
+    for (std::size_t i = 0; i < calibList.size(); i++) {
         fCalibList.push_back(calibList[i]);
     }
 }
@@ -245,7 +245,7 @@ void ParameterMonitorForm::onTimeMarkReceived(const UbxTimeMarkStruct& tm) {
 
 void ParameterMonitorForm::onAdcTraceReceived(const std::vector<float>& sampleBuffer) {
     QVector<QPointF> vec;
-    for (int i = 0; i < sampleBuffer.size(); i++) {
+    for (std::size_t i = 0; i < sampleBuffer.size(); i++) {
         QPointF p1;
         p1.rx() = i - 9;
         p1.ry() = sampleBuffer[i];

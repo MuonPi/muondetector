@@ -228,7 +228,7 @@ void UbloxSettingsForm::onGnssConfigsReceived(quint8 numTrkCh,
                                               const std::vector<GnssConfigStruct>& configList) {
     ui->gnssConfigButtonGroup->blockSignals(true);
     ui->numTrkChannelsLabel->setText(QString::number(numTrkCh));
-    for (int i = 0; i < configList.size(); i++) {
+    for (std::size_t i = 0; i < configList.size(); i++) {
         if (configList[i].gnssId == 0) { // GPS
             ui->gnssGpsCheckBox->setEnabled(true);
             ui->gnssGpsCheckBox->setChecked(configList[i].flags & 0x01);

@@ -11,7 +11,6 @@
 #include "data/commands/ubx_msg_poll_cmd.h"
 #include "data/commands/ubx_msg_poll_rate_cmd.h"
 #include "data/commands/ubx_msg_rate_cmd.h"
-#include "data/commands/ubx_protocol_selection_cmd.h"
 #include "data/commands/ubx_rate_cmd.h"
 #include "data/commands/ubx_reset_cmd.h"
 #include "data/commands/ubx_save_cmd.h"
@@ -20,8 +19,10 @@
 #include "data/commands/ubx_version_dependent_cmd.h"
 #include "data/events/ubx_event.h"
 #include "data/ublox/ublox_structs.h"
+#include "hardware/ublox/ubx_parser.h"
 
 #include <boost/asio.hpp>
+#include <future>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -37,13 +38,34 @@ struct UbxTimeMarkStruct;
 class SerialUblox : public Component {
   public:
     SerialUblox(ComponentId id, boost::asio::io_context& io, const std::string& port,
-                unsigned int baud, EventBus& bus);
+                unsigned int baud, UbxDynamicModel gnss_dynamic_model, EventBus& bus);
 
-    void makeConnection();
-    auto enqueueMessage(const UbxMessage& msg) -> bool;
+    std::uint8_t uart_port = 1;
+    std::uint8_t outProtocolMask = PROTO_UBX;
+    std::uint16_t measRate = 100;
+    std::uint16_t navRate = 1;
 
   private:
+    enum class InitState { Connecting, ReceivedProtoAck, ReceivedRateAck, Ready };
+
+    struct PendingMsg {
+        UbxMessage msg;
+        std::chrono::steady_clock::time_point last_send;
+    };
+    std::unordered_multimap<std::uint16_t, PendingMsg> pending_;
+    std::unordered_map<std::uint16_t, PendingMsg> pending_cfg_msg_;
+    std::atomic<InitState> init_state_{InitState::Connecting};
+
+    void makeConnection();
     void startAsyncRead();
+    void send(const UbxMessage& msg, bool trackAck = true);
+    void enqueueMessage(const UbxMessage& msg, bool trackAck = true);
+
+    void initAllUbxMsgRate();
+    void pollAllUbxMsgRate();
+    void pollAllUbxMsg();
+    auto protSelCmd() -> UbxMessage;
+    auto rateSelCmd() -> UbxMessage;
 
     void handle(const UbxDynamicModelCmd&);
     void handle(const UbxGnssConfigCmd&);
@@ -52,15 +74,17 @@ class SerialUblox : public Component {
     void handle(const UbxMsgPollCmd&);
     void handle(const UbxMsgPollRateCmd&);
     void handle(const UbxMsgRateCmd&);
-    void handle(const UbxRateCmd&);
-    void handle(const UbxProtocolSelectionCmd&);
     void handle(const UbxResetCmd&);
     void handle(const UbxSaveCmd&);
     void handle(const UbxSetAopCmd&);
     void handle(const UbxTp5Cmd&); // Set time pulse config (TP5)
     void handle(const UbxVersionDependentCmd&);
+    void handle(const UbxConfigDefaultCmd&);
 
     void handle(const GpsVersion&);
+
+    void handle(const UbxAckAck& ack);
+    void handle(const UbxAckNak& ackNak);
 
     void processQueuedCmds();
 
@@ -79,23 +103,22 @@ class SerialUblox : public Component {
 
     boost::asio::serial_port serial_;
     boost::asio::steady_timer timer_;
-    std::size_t maxQueueSize_ = 3000;
     std::queue<std::string> tx_queue_;
 
     std::array<char, 1024> buffer_;
-    std::string m_buffer = "";
+    UbxParser ubxParser;
 
-    boost::asio::strand<boost::asio::io_context::executor_type> strand_;
+    boost::asio::strand<boost::asio::io_context::executor_type> tx_strand_;
+    boost::asio::strand<boost::asio::io_context::executor_type> rx_strand_;
+    boost::asio::strand<boost::asio::io_context::executor_type> protocol_strand_;
     std::string port_;
     unsigned int baud_;
+    UbxDynamicModel default_gnss_dynamic_model;
     EventBus& bus_;
     int timeout_ = 5;
     std::optional<GpsVersion> protocolVersion_;
+    // std::queue<UbxMessage> deferredCmds_;
     std::queue<UbxVersionDependentCmd> queuedCmds_;
-
-    // TODO: Move this to some separate processor/storage
-    std::size_t waitingForAppliedMsgRate{0};
-    std::unordered_map<uint16_t, int> msgRateCfgs;
 };
 
 #endif // SERIALUBLOX_H

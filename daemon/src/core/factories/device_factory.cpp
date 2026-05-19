@@ -51,7 +51,7 @@ auto DeviceFactory::create(const DeviceConfig& config) -> std::unique_ptr<IDevic
 }
 
 void DeviceFactory::deviceNotFoundError(const std::string& name, std::uint8_t address) {
-    logError(name + " device NOT found! Address: " + std::to_string(address));
+    logWarn(name + " device NOT found! Address: " + std::to_string(address));
 }
 
 const std::unordered_map<Device, DeviceCreator> DeviceFactory::deviceCreator = {

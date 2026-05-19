@@ -52,7 +52,6 @@
 #include "data/commands/ubx_min_max_sv_cmd.h"
 #include "data/commands/ubx_msg_poll_cmd.h"
 #include "data/commands/ubx_msg_rate_cmd.h"
-#include "data/commands/ubx_protocol_selection_cmd.h"
 #include "data/commands/ubx_rate_cmd.h"
 #include "data/commands/ubx_reset_cmd.h"
 #include "data/commands/ubx_save_cmd.h"

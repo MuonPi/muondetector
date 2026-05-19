@@ -5,6 +5,7 @@
 #include "data/ublox/ublox_messages.h"
 
 #include <functional>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -25,8 +26,12 @@ class MessageProcessor {
     static auto getProtVersion(std::string_view text) -> std::optional<Version>;
 
   private:
-    static void unhandled(const UbxMessage& msg,
-                          const std::map<std::uint8_t, const char*> ubx_class_names);
+    static const std::unordered_map<std::uint8_t, const char*> ubx_class_names;
+    static const std::unordered_map<
+        std::uint16_t, std::pair<std::optional<UbxEvent> (*)(const std::string&), std::string>>
+        handlerLookup;
+    static auto UBXAck(const UbxMessage& msg) -> std::optional<UbxEvent>;
+    static void unhandled(const UbxMessage& msg);
     static auto UBXNavStatus(const std::string& msg) -> std::optional<UbxEvent>;
     static auto UBXNavDOP(const std::string& msg) -> std::optional<UbxEvent>;
     static auto UBXNavTimeGPS(const std::string& msg) -> std::optional<UbxEvent>;
@@ -49,7 +54,6 @@ class MessageProcessor {
     static auto UBXTimTP(const std::string& msg) -> std::optional<UbxEvent>;
     static auto UBXTimTM2(const std::string& msg) -> std::optional<UbxEvent>;
     static std::optional<GpsVersion> gpsVersion;
-    static std::optional<UbxMessage> msgWaitingForAck;
 };
 
 #endif // MESSAGE_PROCESSOR_H

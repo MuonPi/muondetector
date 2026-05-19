@@ -33,6 +33,7 @@
 #include "data/commands/ubx_reset_cmd.h"
 #include "data/commands/ubx_save_cmd.h"
 #include "data/commands/ubx_tp5_cmd.h"
+#include "data/events/gpio_inhibit_event.h"
 #include "network/tcpmessage_keys.h"
 
 #include <exception>
@@ -92,6 +93,10 @@ void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
             }
             case TCP_MSG_KEY::MSG_MQTT_INHIBIT: {
                 bus_.publish(CapnpCodec<MqttInhibitCmd>::decode(event.packet.payload));
+                break;
+            }
+            case TCP_MSG_KEY::MSG_GPIO_INHIBIT: {
+                bus_.publish(CapnpCodec<GpioInhibitEvent>::decode(event.packet.payload));
                 break;
             }
             case TCP_MSG_KEY::MSG_GPIO_RATE_RESET: {

@@ -77,7 +77,7 @@ const std::unordered_map<ComponentId, DeviceComponentCreator>
          }},
         {Device::ADAFRUIT_SSD1306_0, [](Context& ctx) {
              return std::make_shared<Adafruit_SSD1306Driver>(Device::ADAFRUIT_SSD1306_0,
-                                                             *ctx.config, *ctx.registry, *ctx.bus);
+                                                             *ctx.registry, *ctx.bus);
          }}};
 
 const std::unordered_map<ComponentId, ComponentCreator> ComponentFactory::componentCreator = {
@@ -94,7 +94,7 @@ const std::unordered_map<ComponentId, ComponentCreator> ComponentFactory::compon
      [](Context& ctx) {
          return std::make_shared<SerialUblox>(OtherComponent::GPS_DRIVER_0, *ctx.io,
                                               ctx.config->gpsdevname, ctx.config->gnss_baudrate,
-                                              *ctx.bus);
+                                              ctx.config->gnss_dynamic_model, *ctx.bus);
      }},
     {OtherComponent::GPIO_DRIVER_0, [](Context& ctx) {
          return std::make_shared<GpioDriver>(OtherComponent::GPIO_DRIVER_0, ctx.config->gpiodevname,
