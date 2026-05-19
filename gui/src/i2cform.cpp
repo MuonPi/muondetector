@@ -67,6 +67,17 @@ void I2cForm::onI2cStatsReceived(quint32 bytesRead, quint32 bytesWritten,
         }
 
         QTableWidgetItem* newItem3 = new QTableWidgetItem(str);
+
+        QColor bgColor = brush.color();
+
+        newItem3->setBackground(bgColor);
+
+        // Dark backgrounds -> white text
+        // Light backgrounds -> black text
+        if (bgColor.lightness() < 128)
+            newItem3->setForeground(Qt::white);
+        else
+            newItem3->setForeground(Qt::black);
         newItem3->setBackground(brush);
         newItem3->setSizeHint(QSize(140, 24));
         newItem3->setTextAlignment(Qt::AlignCenter);

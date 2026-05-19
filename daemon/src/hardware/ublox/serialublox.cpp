@@ -415,6 +415,9 @@ void SerialUblox::handle(const UbxResetCmd& cmd) {
 
 void SerialUblox::processQueuedCmds() {
     if (protocolVersion_.has_value() == false) {
+        // If no protocol version was polled yet, poll it now!
+        // (And with now we always mean asynchronously through event queue)
+        bus_.publish(UbxMsgPollCmd{UBX_MSG::MON_VER});
         return;
     }
     // If protocol was received, go through stored version dependent commands

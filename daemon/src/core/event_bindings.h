@@ -3,7 +3,6 @@
 
 #include "core/event_bus.h"
 #include "core/registries/data_store.h"
-#include "data/commands/adc_sample_request_cmd.h"
 #include "data/commands/calibration_cmd.h"
 #include "data/commands/dac_setting_request_cmd.h"
 #include "data/commands/event_trigger_cmd.h"
@@ -86,6 +85,7 @@ class EventBindings {
         bus.subscribe<GnssMonHw2Struct>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
         bus.subscribe<GpsVersion>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
         bus.subscribe<NavStatus>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
+        bus.subscribe<NavClock>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
         bus.subscribe<UbxTimePulseStruct>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
         bus.subscribe<Histogram>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
         bus.subscribe<LogInfoStruct>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
@@ -169,7 +169,8 @@ class EventBindings {
         // for it.
         subscribe_all<CfgGNSS, NavSat, MonTx, MonRx, NavStatus, NavClock, UbxTimeMarkStruct,
                       UbxTimePulseStruct, GnssMonHwStruct, GnssMonHw2Struct, NavTimeGPS, NavTimeUTC,
-                      BiasVoltageEvent, MqttStatusEvent, AdcTraceEvent, std::array<Ads1115Event, 4>,
+                      BiasVoltageEvent, MqttStatusEvent,
+                      AdcTraceEvent, // std::array<Ads1115Event, 4>, // This is deprecated
                       BiasSwitchEvent, CalibEvent, GainSwitchEvent, GpioRateEvent, GpioInhibitEvent,
                       LM75Event, MCP4728Event, PcaSwitchEvent, PolaritySwitchEvent, GpsVersion,
                       EventTriggerEvent, LogInfoStruct, PositionModeConfig, VersionEvent>(
@@ -258,15 +259,16 @@ class EventBindings {
             }
         });
 
-        bus.subscribe<AdcSampleRequestCmd>([&datastore, &bus](const auto& cmd) {
-            if (datastore.lastUpdate<std::array<Ads1115Event, 4>>().has_value()) {
-                const auto& data = *datastore.get<std::array<Ads1115Event, 4>>();
-                bus.publish(data.at(cmd.channel));
-            } else {
-                logWarn("Received AdcSampleRequestCmd but datastore does not have data for type "
-                        "std::array<Ads1115Event, 4>.");
-            }
-        });
+        // Deprecated: No storing of recent ads1115 events anymore!
+        // bus.subscribe<AdcSampleRequestCmd>([&datastore, &bus](const auto& cmd) {
+        //     if (datastore.lastUpdate<std::array<Ads1115Event, 4>>().has_value()) {
+        //         const auto& data = *datastore.get<std::array<Ads1115Event, 4>>();
+        //         bus.publish(data.at(cmd.channel));
+        //     } else {
+        //         logWarn("Received AdcSampleRequestCmd but datastore does not have data for type "
+        //                 "std::array<Ads1115Event, 4>.");
+        //     }
+        // });
 
         bus.subscribe<CalibRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<CalibEvent>().has_value()) {
@@ -424,7 +426,6 @@ class EventBindings {
         bus.publish(PcaSwitchRequestCmd{});
         bus.publish(EventTriggerRequestCmd{});
         // bus.publish(MqttStatusRequestCmd{});
-        bus.publish(AdcSampleRequestCmd{});
         bus.publish(CalibRequestCmd{});
         bus.publish(GainSwitchRequestCmd{});
         bus.publish(GpioRateRequestCmd{});
@@ -436,17 +437,111 @@ class EventBindings {
 
         bus.publish(UbxMsgRateRequestCmd{});
 
-        // poll all data from Ubx
+        // poll all data from Ubx where there is no RequestCmd:
         if (datastore.lastUpdate<GpsVersion>().has_value()) {
             bus.publish(*datastore.get<GpsVersion>());
         } else {
             logWarn("Datastore does not have data for type "
                     "GpsVersion in pollDatastore function");
         }
-        // TODO: Retrieve those from datastore instead
-        for (auto msgID : allMsgCfgID) {
-            bus.publish(UbxMsgPollCmd{msgID});
+        if (datastore.lastUpdate<CfgGNSS>().has_value()) {
+            bus.publish(*datastore.get<CfgGNSS>());
+        } else {
+            logWarn("Datastore does not have data for type "
+                    "CfgGNSS in pollDatastore function");
         }
+        if (datastore.lastUpdate<NavSat>().has_value()) {
+            bus.publish(*datastore.get<NavSat>());
+        } else {
+            logWarn("Datastore does not have data for type "
+                    "NavSat in pollDatastore function");
+        }
+        if (datastore.lastUpdate<MonTx>().has_value()) {
+            bus.publish(*datastore.get<MonTx>());
+        } else {
+            logWarn("Datastore does not have data for type "
+                    "MonTx in pollDatastore function");
+        }
+        if (datastore.lastUpdate<MonRx>().has_value()) {
+            bus.publish(*datastore.get<MonRx>());
+        } else {
+            logWarn("Datastore does not have data for type "
+                    "MonRx in pollDatastore function");
+        }
+        if (datastore.lastUpdate<NavStatus>().has_value()) {
+            bus.publish(*datastore.get<NavStatus>());
+        } else {
+            logWarn("Datastore does not have data for type "
+                    "NavStatus in pollDatastore function");
+        }
+        if (datastore.lastUpdate<NavClock>().has_value()) {
+            bus.publish(*datastore.get<NavClock>());
+        } else {
+            logWarn("Datastore does not have data for type "
+                    "NavClock in pollDatastore function");
+        }
+        if (datastore.lastUpdate<UbxTimePulseStruct>().has_value()) {
+            bus.publish(*datastore.get<UbxTimePulseStruct>());
+        } else {
+            logWarn("Datastore does not have data for type "
+                    "UbxTimePulseStruct in pollDatastore function");
+        }
+        if (datastore.lastUpdate<GnssMonHwStruct>().has_value()) {
+            bus.publish(*datastore.get<GnssMonHwStruct>());
+        } else {
+            logWarn("Datastore does not have data for type "
+                    "GnssMonHwStruct in pollDatastore function");
+        }
+        if (datastore.lastUpdate<GnssMonHw2Struct>().has_value()) {
+            bus.publish(*datastore.get<GnssMonHw2Struct>());
+        } else {
+            logWarn("Datastore does not have data for type "
+                    "GnssMonHw2Struct in pollDatastore function");
+        }
+        if (datastore.lastUpdate<MqttStatusEvent>().has_value()) {
+            bus.publish(*datastore.get<MqttStatusEvent>());
+        } else {
+            logWarn("Datastore does not have data for type "
+                    "MqttStatusEvent in pollDatastore function");
+        }
+        if (datastore.lastUpdate<GpioInhibitEvent>().has_value()) {
+            bus.publish(*datastore.get<GpioInhibitEvent>());
+        } else {
+            logWarn("Datastore does not have data for type "
+                    "GpioInhibitEvent in pollDatastore function");
+        }
+        if (datastore.lastUpdate<LM75Event>().has_value()) {
+            bus.publish(*datastore.get<LM75Event>());
+        } else {
+            logWarn("Datastore does not have data for type "
+                    "LM75Event in pollDatastore function");
+        }
+        if (datastore.lastUpdate<PositionModeConfig>().has_value()) {
+            bus.publish(*datastore.get<PositionModeConfig>());
+        } else {
+            logWarn("Datastore does not have data for type "
+                    "PositionModeConfig in pollDatastore function");
+        }
+        if (datastore.lastUpdate<VersionEvent>().has_value()) {
+            bus.publish(*datastore.get<VersionEvent>());
+        } else {
+            logWarn("Datastore does not have data for type "
+                    "VersionEvent in pollDatastore function");
+        }
+
+        // NOT USED BY GUI:
+        // if (datastore.lastUpdate<NavTimeGPS>().has_value()) {
+        //     bus.publish(*datastore.get<NavTimeGPS>());
+        // } else {
+        //     logWarn("Datastore does not have data for type "
+        //             "NavTimeGPS in pollDatastore function");
+        // }
+        // if (datastore.lastUpdate<NavTimeUTC>().has_value()) {
+        //     bus.publish(*datastore.get<NavTimeUTC>());
+        // } else {
+        //     logWarn("Datastore does not have data for type "
+        //             "NavTimeUTC in pollDatastore function");
+        // }
     }
 
     inline static void initAllUbxMsgRate(EventBus& bus) {

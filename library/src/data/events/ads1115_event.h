@@ -9,6 +9,7 @@ struct Ads1115Event {
     std::uint16_t rawValue;
     float voltage;
     std::uint64_t timestamp;
+    // ADC_SAMPLING_MODE samplingMode{ADC_SAMPLING_MODE::PEAK};
 };
 
 #endif // ADS1115_EVENT_H

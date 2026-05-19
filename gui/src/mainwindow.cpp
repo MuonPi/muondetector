@@ -29,7 +29,7 @@
 #include <QThread>
 #include <boost/asio.hpp>
 #include <data/commands/adc_mode_request_cmd.h>
-#include <data/commands/adc_sample_request_cmd.h>
+#include <data/commands/adc_sample_trigger_cmd.h>
 #include <data/commands/bias_switch_cmd.h>
 #include <data/commands/bias_voltage_cmd.h>
 #include <data/commands/burst_sampling_cmd.h>
@@ -712,18 +712,21 @@ auto MainWindow::buildDecoderMap()
             {TCP_MSG_KEY::MSG_UBX_TXBUF,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<MonTx>::decode(packet.payload);
-                 emit txBufReceived(event.tPeakUsage);
+                 emit txBufReceived(event.tUsage);
+                 emit txBufPeakReceived(event.tPeakUsage);
              }},
             {TCP_MSG_KEY::MSG_UBX_RXBUF,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<MonRx>::decode(packet.payload);
                  emit rxBufReceived(event.tUsage);
+                 emit rxBufPeakReceived(event.tPeakUsage);
              }},
-            {TCP_MSG_KEY::MSG_UBX_TXBUF_PEAK,
-             [this](const TcpPacket& packet) {
-                 auto event = CapnpCodec<MonTx>::decode(packet.payload);
-                 emit txBufPeakReceived(event.tUsage);
-             }},
+            // Deprecated sice sent through MSG_TXBUF
+            // {TCP_MSG_KEY::MSG_UBX_TXBUF_PEAK,
+            //  [this](const TcpPacket& packet) {
+            //      auto event = CapnpCodec<MonTx>::decode(packet.payload);
+            //      emit txBufPeakReceived(event.tUsage);
+            //  }},
             {TCP_MSG_KEY::MSG_UBX_RXBUF_PEAK,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<MonRx>::decode(packet.payload);
@@ -755,6 +758,7 @@ auto MainWindow::buildDecoderMap()
             {TCP_MSG_KEY::MSG_UBX_NAVSTATUS,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<NavStatus>::decode(packet.payload);
+                 emit ubxUptimeReceived(event.msss / 1000);
                  emit gpsFixReceived(event.gpsFix);
              }},
             {TCP_MSG_KEY::MSG_UBX_CFG_TP5,
@@ -1090,7 +1094,7 @@ void MainWindow::sendValueUpdateRequests() {
     sendCmdIfConnected(clientConn, BiasSwitchRequestCmd{});
     // sendCmdIfConnected(clientConn, DacSettingRequestCmd{});
     for (int i = 1; i < 4; i++)
-        sendCmdIfConnected(clientConn, AdcSampleRequestCmd{static_cast<std::uint8_t>(i)});
+        sendCmdIfConnected(clientConn, AdcSampleTriggerCmd{static_cast<std::uint8_t>(i)});
     sendCmdIfConnected(clientConn, TemperatureRequestCmd{});
     sendCmdIfConnected(clientConn, I2CStatsRequestCmd{});
 }

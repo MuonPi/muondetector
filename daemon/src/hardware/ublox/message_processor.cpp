@@ -973,27 +973,25 @@ auto MessageProcessor::UBXMonHW(const std::string& msg) -> std::optional<UbxEven
 }
 
 auto MessageProcessor::UBXMonHW2(const std::string& msg) -> std::optional<UbxEvent> {
-    GnssMonHw2Struct data;
     // parse all fields
     // I/Q offset and magnitude information of front-end
-    auto ofsI{get<int8_t>(msg.begin())};
-    auto magI{get<std::uint8_t>(msg.begin() + 1)};
-    auto ofsQ{get<int8_t>(msg.begin() + 2)};
-    auto magQ{get<std::uint8_t>(msg.begin() + 3)};
-
-    auto cfgSrc{get<std::uint8_t>(msg.begin() + 4)};
-    // auto lowLevCfg { get<uint32_t>(msg.begin() + 8) };
-    auto postStatus{get<uint32_t>(msg.begin() + 20)};
+    GnssMonHw2Struct data{.ofsI = get<int8_t>(msg.begin()),
+                          .magI = get<std::uint8_t>(msg.begin() + 1),
+                          .ofsQ = get<int8_t>(msg.begin() + 2),
+                          .magQ = get<std::uint8_t>(msg.begin() + 3),
+                          .cfgSrc = get<std::uint8_t>(msg.begin() + 4),
+                          .postStatus = get<uint32_t>(msg.begin() + 20)};
 
     if (logLevel() == LogLevel::Debug) {
         std::stringstream sstr;
         sstr << "*** UBX-MON-HW2 message:" << '\n';
-        sstr << " I offset         : " << (int) ofsI << '\n';
-        sstr << " I magnitude      : " << (int) magI << '\n';
-        sstr << " Q offset         : " << (int) ofsQ << '\n';
-        sstr << " Q magnitude      : " << (int) magQ << '\n';
-        sstr << " config source    : " << std::hex << (int) cfgSrc << '\n';
-        sstr << " POST status word : " << std::hex << postStatus << std::dec << '\n';
+        sstr << " I offset         : " << static_cast<int>(data.ofsI) << '\n';
+        sstr << " I magnitude      : " << static_cast<int>(data.magI) << '\n';
+        sstr << " Q offset         : " << static_cast<int>(data.ofsQ) << '\n';
+        sstr << " Q magnitude      : " << static_cast<int>(data.magQ) << '\n';
+        sstr << " config source    : " << std::hex << static_cast<unsigned>(data.cfgSrc) << '\n';
+        sstr << " POST status word : " << std::hex << static_cast<unsigned>(data.postStatus)
+             << std::dec << '\n';
         logDebug(sstr.str());
     }
     return data;

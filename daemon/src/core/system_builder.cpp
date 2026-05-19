@@ -223,7 +223,6 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
                     std::to_string(static_cast<unsigned>(config.gnss_dynamic_model)));
             bus.publish(config.gnss_dynamic_model);
             bus.publish(UbxSetAopCmd{true});
-            bus.publish(UbxMsgPollCmd{UBX_MSG::MON_VER});
             std::uint16_t measinterval = 100;
             bus.publish(UbxRateCmd{measinterval, 1}); // set rate of messages and nav
             // --- Message Rates ---
