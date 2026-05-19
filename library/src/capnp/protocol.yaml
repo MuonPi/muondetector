@@ -300,11 +300,6 @@ messages:
       - { name: port, type: uint8 }
       - { name: rate, type: uint8 }
 
-  - name: UbxProtocolSelectionCmdCapnp
-    fields:
-      - { name: port, type: uint8 }
-      - { name: outProtocolMask, type: uint8 }
-
   - name: UbxRateCmdCapnp
     fields:
       - { name: measRate, type: uint16 }

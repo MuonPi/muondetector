@@ -38,7 +38,7 @@ bool calcLinearCoefficients(const QVector<QPointF>& points, double* offs, double
     double sumx2 = 0.0; /* sum of x**2                   */
     double sumxy = 0.0; /* sum of x * y                  */
     double sumy = 0.0;  /* sum of y                      */
-    double sumy2 = 0.0; /* sum of y**2                   */
+    // double sumy2 = 0.0; /* sum of y**2                   */
 
     double offsx = 0;
     double offsy = 0;
@@ -48,7 +48,7 @@ bool calcLinearCoefficients(const QVector<QPointF>& points, double* offs, double
         sumx2 += sqr(points[i].x() - offsx);
         sumxy += (points[i].x() - offsx) * (points[i].y() - offsy);
         sumy += (points[i].y() - offsy);
-        sumy2 += sqr(points[i].y() - offsy);
+        // sumy2 += sqr(points[i].y() - offsy);
     }
 
     double denom = (n * sumx2 - sqr(sumx));
@@ -88,7 +88,7 @@ void CalibScanDialog::onCalibReceived(bool /*valid*/, bool eepromValid, quint64 
         return;
 
     fCalibList.clear();
-    for (int i = 0; i < calibList.size(); i++) {
+    for (std::size_t i = 0; i < calibList.size(); i++) {
         fCalibList.push_back(calibList[i]);
     }
     fSlope1 = getCalibParameter("COEFF1").toDouble();

@@ -11,8 +11,7 @@ class Adafruit_SSD1306;
 
 class Adafruit_SSD1306Driver : public Component {
   public:
-    Adafruit_SSD1306Driver(ComponentId id, SystemConfig& systemConfig, DeviceRegistry& registry,
-                           EventBus& bus);
+    Adafruit_SSD1306Driver(ComponentId id, DeviceRegistry& registry, EventBus& bus);
     void update(const OledEvent& event);
 
   private:

@@ -5,6 +5,7 @@
 #include "data/events/datastore_store_event.h"
 #include "data/events/lm75_event.h"
 #include "hardware/i2c/lm75.h"
+#include "hardware/i2c/mic184.h"
 #include "hardware/i2cdevice_wrapper.h"
 
 #include <stdexcept>
@@ -24,12 +25,16 @@ void TempSource::update() {
     bus_.publish(DatastoreStoreEvent{LM75Event{device->getTemperature()}});
 }
 
-auto TempSource::dev() -> LM75* {
-    auto* wrapper = registry_.get<I2CDeviceWrapper<LM75>>(std::get<Device>(id()));
-    if (!wrapper) {
-        logWarn("LM75 Device not found");
-        return nullptr;
+auto TempSource::dev() -> DeviceFunction<DeviceType::TEMP>* {
+    const auto deviceId = std::get<Device>(id());
+    if (auto* wrapper = registry_.get<I2CDeviceWrapper<LM75>>(deviceId)) {
+        return &wrapper->device();
     }
 
-    return &wrapper->device();
+    if (auto* wrapper = registry_.get<I2CDeviceWrapper<MIC184>>(deviceId)) {
+        return &wrapper->device();
+    }
+
+    logError("Temperature device not found");
+    return nullptr;
 }

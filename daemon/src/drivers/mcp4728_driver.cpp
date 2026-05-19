@@ -39,11 +39,11 @@ MCP4728Driver::MCP4728Driver(ComponentId id, SystemConfig& systemConfig, DeviceR
     //     [this](const ThresholdSettingRequestCmd& cmd) { });
 
     bus_.subscribe<DacSettingRequestCmd>([this]([[maybe_unused]] const DacSettingRequestCmd&) {
-        auto* device = dev();
-        if (device == nullptr) {
+        auto* device_ = dev();
+        if (device_ == nullptr) {
             return;
         }
-        bus_.publish(DatastoreStoreEvent{readDac(device)});
+        bus_.publish(DatastoreStoreEvent{readDac(device_)});
     });
     bus_.subscribe<ThresholdSettingCmd>(
         [this](const ThresholdSettingCmd& cmd) { setDacValue(cmd); });
@@ -98,7 +98,7 @@ MCP4728Driver::MCP4728Driver(ComponentId id, SystemConfig& systemConfig, DeviceR
 auto MCP4728Driver::dev() -> MCP4728* {
     auto* wrapper = registry_.get<I2CDeviceWrapper<MCP4728>>(std::get<Device>(id()));
     if (!wrapper) {
-        logWarn("MCP4728 Device not found");
+        logError("MCP4728 Device not found");
         return nullptr;
     }
 

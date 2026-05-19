@@ -11,10 +11,13 @@
 #include "data/commands/histogram_request_cmd.h"
 #include "data/commands/i2c_stats_request_cmd.h"
 #include "data/commands/polarity_switch_cmd.h"
+#include "data/commands/position_mode_cmd.h"
 #include "data/commands/preamp_switch_cmd.h"
 #include "data/commands/spi_stats_request_cmd.h"
 #include "data/commands/temperature_request_cmd.h"
 #include "data/commands/threshold_setting_cmd.h"
+#include "data/commands/ubx_config_default_cmd.h"
+#include "data/commands/ubx_msg_rate_cmd.h"
 #include "data/events/adc_mode_event.h"
 #include "data/events/adc_trace_event.h"
 #include "data/events/ads1115_event.h"
@@ -42,15 +45,6 @@
 
 #include <array>
 #include <type_traits>
-
-const std::vector<UBX_MSG::msg_id> allMsgCfgID{
-    {UBX_MSG::TIM_TM2,       UBX_MSG::TIM_TP,      UBX_MSG::NAV_CLOCK,   UBX_MSG::NAV_DGPS,
-     UBX_MSG::NAV_AOPSTATUS, UBX_MSG::NAV_DOP,     UBX_MSG::NAV_POSECEF, UBX_MSG::NAV_POSLLH,
-     UBX_MSG::NAV_PVT,       UBX_MSG::NAV_SBAS,    UBX_MSG::NAV_SOL,     UBX_MSG::NAV_STATUS,
-     UBX_MSG::NAV_SVINFO,    UBX_MSG::NAV_TIMEGPS, UBX_MSG::NAV_TIMEUTC, UBX_MSG::NAV_VELECEF,
-     UBX_MSG::NAV_VELNED,    UBX_MSG::MON_HW,      UBX_MSG::MON_HW2,     UBX_MSG::MON_IO,
-     UBX_MSG::MON_MSGPP,     UBX_MSG::MON_RXBUF,   UBX_MSG::MON_RXR,     UBX_MSG::MON_TXBUF,
-     UBX_MSG::MON_VER}};
 
 class EventBindings {
   public:
@@ -109,7 +103,7 @@ class EventBindings {
     template <typename T>
     inline static void subscribe_one(EventBus& bus, DataStore& datastore) {
         bus.subscribe<DatastoreStoreEvent<T>>([&datastore, &bus](const DatastoreStoreEvent<T>& ev) {
-            datastore.store(ev.data);
+            // datastore.store(ev.data);
             if constexpr (is_iterable<T>::value && !std::is_same_v<T, std::string>) {
                 for (const auto& item : ev.data) {
                     bus.publish(item);
@@ -117,6 +111,7 @@ class EventBindings {
             } else {
                 bus.publish(ev.data);
             }
+            bus.publish(ev.data);
         });
     }
 
@@ -127,41 +122,33 @@ class EventBindings {
 
     inline static void setupDatastore(EventBus& bus, DataStore& datastore) {
         // GeoPosManager
-        bus.subscribe<NavClock>([&datastore](const NavClock& event) {
-            GeoPosManager& geoPosManager = datastore.geoPosManager();
+        GeoPosManager& geoPosManager = datastore.geoPosManager();
+        bus.subscribe<PositionModeCmd>([&bus, &geoPosManager](const PositionModeCmd& cmd) {
+            geoPosManager.set_mode_config(static_cast<PositionModeConfig>(cmd));
+            bus.publish(geoPosManager.get_mode_config());
+        });
+        bus.subscribe<NavClock>([&geoPosManager](const NavClock& event) {
             geoPosManager.set_time_accuracy(event.tAcc);
         });
-        bus.subscribe<NavStatus>([&datastore](const NavStatus& event) {
-            GeoPosManager& geoPosManager = datastore.geoPosManager();
+        bus.subscribe<NavStatus>([&geoPosManager](const NavStatus& event) {
             geoPosManager.set_fix_status(event.gpsFix);
         });
+
         // Special Case GnssPosStruct -> do not automatically store this but use custom storage /
         // transformation
-        bus.subscribe<DatastoreStoreEvent<GnssPosStruct>>([&bus, &datastore](const auto& event) {
-            const auto& pos = event.data;
-            datastore.fillHisto(pos);
-            GnssPosStruct new_pos_struct{pos};
-            GeoPosManager& geoPosManager = datastore.geoPosManager();
+        // Do not publish DatastoreStoreEvent<GnssPosStruct>. For this case GeoPosManager
+        // has absolute truth of current position
+        geoPosManager.set_lockin_ready_callback(
+            [&bus](const GeoPosition& pos) { bus.publish(pos.getPosStruct()); });
+        geoPosManager.set_valid_pos_callback(
+            [&bus](const GeoPosition& pos) { bus.publish(pos.getPosStruct()); });
 
-            // set correct position errors in case no fix is available (ublox bug?)
-            if (geoPosManager.fix_status()().value < Gnss::FixType::Fix2d &&
-                geoPosManager.time_precision().age() < std::chrono::seconds(60)) {
-                constexpr double c_vacuum{0.3};
-                new_pos_struct.hAcc = new_pos_struct.vAcc =
-                    c_vacuum * geoPosManager.time_precision()().count() * 1e3;
-            }
-
-            geoPosManager.new_position({new_pos_struct.lon * 1e-7, new_pos_struct.lat * 1e-7,
-                                        1e-3 * new_pos_struct.hMSL, 1e-3 * new_pos_struct.hAcc,
-                                        1e-3 * new_pos_struct.vAcc});
-            datastore.store(new_pos_struct);
-            bus.publish(new_pos_struct);
+        bus.subscribe<DatastoreStoreEvent<GnssPosStruct>>([&geoPosManager](const auto& event) {
+            geoPosManager.fill_from_gps(event.data);
+            // DO NOT PUBLISH EVENTS HERE!
+            // This will trigger infinite loop because geoPosManager will publish
+            // data through DatastoreStoreEvent
         });
-
-        // Currently can only store one event at a time therefore those make no sense
-        // bus.subscribe<GpioEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<ThresholdSettingEvent>([&datastore](const auto& ev) { datastore.store(ev);
-        // });
 
         // All events which should be stored are defined here
         // All events with DataStoreStoreEvent<BiasVoltageEvent> ...
@@ -259,17 +246,6 @@ class EventBindings {
             }
         });
 
-        // Deprecated: No storing of recent ads1115 events anymore!
-        // bus.subscribe<AdcSampleRequestCmd>([&datastore, &bus](const auto& cmd) {
-        //     if (datastore.lastUpdate<std::array<Ads1115Event, 4>>().has_value()) {
-        //         const auto& data = *datastore.get<std::array<Ads1115Event, 4>>();
-        //         bus.publish(data.at(cmd.channel));
-        //     } else {
-        //         logWarn("Received AdcSampleRequestCmd but datastore does not have data for type "
-        //                 "std::array<Ads1115Event, 4>.");
-        //     }
-        // });
-
         bus.subscribe<CalibRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
             if (datastore.lastUpdate<CalibEvent>().has_value()) {
                 bus.publish(*datastore.get<CalibEvent>());
@@ -353,12 +329,11 @@ class EventBindings {
         });
 
         // Collect CfgMsg events and update datastore, then on UbxMsgRateRequestCmd build it
-        bus.subscribe<CfgMsg>([&datastore](const CfgMsg& msg) {
-            logWarn("Storing CfgMsg for ubx message " + std::to_string(msg.msgID));
-            // If no data already in the datastore, create new unordered map and store it
+        bus.subscribe<DatastoreStoreEvent<CfgMsg>>([&datastore](const auto& event) {
+            const auto& msg = event.data;
             if (datastore.lastUpdate<std::unordered_map<std::uint16_t, CfgMsg>>().has_value()) {
                 auto data = *datastore.get<std::unordered_map<std::uint16_t, CfgMsg>>();
-                data.emplace(msg.msgID, msg);
+                data.insert_or_assign(msg.msgID, msg);
                 datastore.store(std::move(data));
             } else {
                 datastore.store(std::unordered_map<std::uint16_t, CfgMsg>{{msg.msgID, msg}});
@@ -383,26 +358,6 @@ class EventBindings {
         datastore.ubloxRateBuffer().setBufferTime(std::chrono::seconds(10));
         bus.subscribe<UbxTimeMarkStruct>(
             [&datastore](auto& ev) { datastore.ubloxRateBuffer().onCounterValue(ev.evtCounter); });
-
-        // m_geopos_manager.set_lockin_ready_callback(std::bind(&Daemon::onGeoPosLockInReady, this,
-        // std::placeholders::_1));
-        // m_geopos_manager.set_valid_pos_callback(std::bind(&Daemon::onGeoPosValid, this,
-        // std::placeholders::_1)); m_geopos_manager.set_mode_config(config.position_mode_config);
-
-        // void Daemon::onGeoPosLockInReady(GeoPosition pos)
-        // {
-        //     qDebug() << "GeoPosition lock-in finished";
-        //     sendGeodeticPos(pos.getPosStruct());
-        //     sendPositionModel(m_geopos_manager.get_mode_config());
-
-        //     qInfo() << "concluded geo pos lock-in and fixed position: lat=" << pos.latitude
-        //             << "lon=" << pos.longitude
-        //             << "(err=" << pos.hor_error << "m)"
-        //             << "alt=" << pos.altitude
-        //             << "(err=" << pos.vert_error << "m)";
-
-        //     writeSettingsToFile();
-        // }
 
         // Histograms
         datastore.setupHistos();
@@ -434,8 +389,6 @@ class EventBindings {
         bus.publish(SPIStatsRequestCmd{});
         bus.publish(PolaritySwitchRequestCmd{});
         bus.publish(PreampSwitchRequestCmd{});
-
-        bus.publish(UbxMsgRateRequestCmd{});
 
         // poll all data from Ubx where there is no RequestCmd:
         if (datastore.lastUpdate<GpsVersion>().has_value()) {
@@ -542,30 +495,6 @@ class EventBindings {
         //     logWarn("Datastore does not have data for type "
         //             "NavTimeUTC in pollDatastore function");
         // }
-    }
-
-    inline static void initAllUbxMsgRate(EventBus& bus) {
-        bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::TIM_TM2, 1, 1});
-        bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::TIM_TP, 1, 0});
-        bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_TIMEUTC, 1, 131});
-        bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_HW, 1, 47});
-        bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_HW2, 1, 49});
-        bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_POSLLH, 1, 43});
-        bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_TIMEGPS, 1, 0});
-        bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_STATUS, 1, 71});
-        bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_CLOCK, 1, 189});
-        bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_RXBUF, 1, 53});
-        bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_TXBUF, 1, 51});
-        bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_SBAS, 1, 0});
-        bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::NAV_DOP, 1, 254});
-        bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_RXBUF, 1, 53});
-        bus.publish(UbxMsgRateCmd{UBX_MSG::msg_id::MON_RXBUF, 1, 53});
-    }
-
-    inline static void pollAllUbxMsgRate(EventBus& bus) {
-        for (auto msgID : allMsgCfgID) {
-            bus.publish(UbxMsgPollRateCmd{msgID});
-        }
     }
 
   private:
