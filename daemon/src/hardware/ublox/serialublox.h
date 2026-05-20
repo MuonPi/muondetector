@@ -19,6 +19,7 @@
 #include "data/commands/ubx_version_dependent_cmd.h"
 #include "data/events/ubx_event.h"
 #include "data/ublox/ublox_structs.h"
+#include "hardware/ublox/ubx_parser.h"
 
 #include <boost/asio.hpp>
 #include <future>
@@ -81,6 +82,9 @@ class SerialUblox : public Component {
 
     void handle(const GpsVersion&);
 
+    void handle(const UbxAckAck& ack);
+    void handle(const UbxAckNak& ackNak);
+
     void initCmdHandlers();
     void processQueuedCmds();
 
@@ -97,21 +101,16 @@ class SerialUblox : public Component {
 
     void do_write();
 
-    // void flushDeferredQueue();
-
-    void handleAck(const UbxAckAck& ack);
-    void handleNak(const UbxAckNak& ackNak);
-
     boost::asio::serial_port serial_;
     boost::asio::steady_timer timer_;
     std::queue<std::string> tx_queue_;
 
     std::array<char, 1024> buffer_;
-    std::string m_buffer = "";
+    UbxParser ubxParser;
 
-    // boost::asio::strand<boost::asio::io_context::executor_type> tx_strand_;
+    boost::asio::strand<boost::asio::io_context::executor_type> tx_strand_;
     boost::asio::strand<boost::asio::io_context::executor_type> rx_strand_;
-    // boost::asio::strand<boost::asio::io_context::executor_type> protocol_strand_;
+    boost::asio::strand<boost::asio::io_context::executor_type> protocol_strand_;
     std::string port_;
     unsigned int baud_;
     UbxDynamicModel default_gnss_dynamic_model;
