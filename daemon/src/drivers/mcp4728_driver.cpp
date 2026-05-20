@@ -39,11 +39,11 @@ MCP4728Driver::MCP4728Driver(ComponentId id, SystemConfig& systemConfig, DeviceR
     //     [this](const ThresholdSettingRequestCmd& cmd) { });
 
     bus_.subscribe<DacSettingRequestCmd>([this]([[maybe_unused]] const DacSettingRequestCmd&) {
-        auto* device = dev();
-        if (device == nullptr) {
+        auto* device_ = dev();
+        if (device_ == nullptr) {
             return;
         }
-        bus_.publish(DatastoreStoreEvent{readDac(device)});
+        bus_.publish(DatastoreStoreEvent{readDac(device_)});
     });
     bus_.subscribe<ThresholdSettingCmd>(
         [this](const ThresholdSettingCmd& cmd) { setDacValue(cmd); });

@@ -24,11 +24,8 @@ class MessageProcessor {
         handler;
 
     static auto getProtVersion(std::string_view text) -> std::optional<Version>;
-    static void trackMessageWaitingForAck(const UbxMessage& msg);
 
   private:
-    static std::unordered_multimap<std::uint16_t, UbxMessage> msgWaitingForAck;
-    static std::mutex msgWaitingForAckMutex;
     static const std::unordered_map<std::uint8_t, const char*> ubx_class_names;
     static const std::unordered_map<
         std::uint16_t, std::pair<std::optional<UbxEvent> (*)(const std::string&), std::string>>

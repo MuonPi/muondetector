@@ -18,8 +18,6 @@
 #include <string_view>
 #include <type_traits>
 
-std::unordered_multimap<std::uint16_t, UbxMessage> MessageProcessor::msgWaitingForAck;
-std::mutex MessageProcessor::msgWaitingForAckMutex;
 std::optional<GpsVersion> MessageProcessor::gpsVersion{std::nullopt};
 
 const std::unordered_map<std::uint8_t, const char*> MessageProcessor::ubx_class_names{
@@ -71,11 +69,6 @@ auto MessageProcessor::processMessage(const UbxMessage& msg) -> std::optional<Ub
     return std::nullopt;
 }
 
-void MessageProcessor::trackMessageWaitingForAck(const UbxMessage& msg) {
-    std::lock_guard lock{msgWaitingForAckMutex};
-    msgWaitingForAck.emplace(msg.full_id(), msg);
-}
-
 auto MessageProcessor::UBXAck(const UbxMessage& msg) -> std::optional<UbxEvent> {
     // Handle acknowledge messages
     if (msg.payload().size() < 2) {
@@ -107,46 +100,10 @@ auto MessageProcessor::UBXAck(const UbxMessage& msg) -> std::optional<UbxEvent> 
         logInfo(sstr.str());
     }
 
-    std::lock_guard lock{msgWaitingForAckMutex};
-    if (msgWaitingForAck.empty()) {
-        // Got acknowledge message from ublox without requesting anything
-        std::stringstream sstr{};
-        sstr << "received " << (isNak ? "ACK-NAK" : "ACK-ACK")
-             << " but no message is waiting for ACK (msgID: 0x";
-        sstr << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[0] << " 0x"
-             << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[1] << ")\n";
-        logWarn(sstr.str());
-        return std::nullopt;
-    }
-
-    auto range = msgWaitingForAck.equal_range(ackedMsgID);
-    if (range.first == range.second) {
-        // no message to be acknowledged
-        std::stringstream sstr{};
-        sstr << "received unexpected " << (isNak ? "UBX-ACK-NAK" : "UBX-ACK-ACK")
-             << " message about " << msgName << " (msgID: 0x";
-        sstr << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[0] << " 0x"
-             << std::setfill('0') << std::setw(2) << std::hex << (int) msg.payload()[1] << ")\n";
-        logWarn(sstr.str());
-        return std::nullopt;
-    }
     if (isNak) {
-        const auto& arr = range.first->second.payload();
-        std::uint16_t payload{0};
-        if (arr.size() >= 2) {
-            payload = static_cast<std::uint16_t>(arr[0]);
-            payload = payload << 8U;
-            payload |= static_cast<std::uint16_t>(arr[1]);
-        }
-        msgWaitingForAck.erase(range.first); // removes ONE element
-        return UbxAckNak{ackedMsgID, payload};
+        return UbxAckNak{ackedMsgID};
     }
-    // ackTimer->stop(); // TODO : implement ack timer logic
-    if (logLevel() == LogLevel::Debug) {
-        logInfo("processMessage: deleted message after ACK/NACK");
-    }
-    msgWaitingForAck.erase(range.first); // removes ONE element
-    return std::nullopt;
+    return UbxAckAck{ackedMsgID};
 }
 
 void MessageProcessor::unhandled(const UbxMessage& msg) {

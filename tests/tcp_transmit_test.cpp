@@ -81,7 +81,6 @@ int main() {
     }
 
     // Server -> client path: publish ADC event via sink and verify decoded payload.
-    const auto now = std::chrono::steady_clock::now().time_since_epoch().count();
 
     GpioEvent event{.gpio_signal = GPIO_SIGNAL::UNDEFINED_SIGNAL,
                     .gpio_pin = 42,

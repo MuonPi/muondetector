@@ -10,8 +10,8 @@
 
 #define DEGREE_CHARCODE 248
 
-Adafruit_SSD1306Driver::Adafruit_SSD1306Driver(ComponentId id, SystemConfig& systemConfig,
-                                               DeviceRegistry& registry, EventBus& bus)
+Adafruit_SSD1306Driver::Adafruit_SSD1306Driver(ComponentId id, DeviceRegistry& registry,
+                                               EventBus& bus)
     : Component(id), registry_(registry), bus_(bus) {
     if (!std::holds_alternative<Device>(id)) {
         throw std::logic_error("DeviceComponent constructed with non-device ID");

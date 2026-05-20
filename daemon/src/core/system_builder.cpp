@@ -30,17 +30,9 @@
 #include "hardware/devices.h"
 #include "hardware/i2cdevice_wrapper.h"
 #include "hardware/i2cdevices.h"
-#include "hardware/ublox/serialublox.h"
 
 // Ublox
 #include "data/commands/histogram_clear_cmd.h"
-#include "data/commands/ubx_dynamic_model_cmd.h"
-#include "data/commands/ubx_msg_poll_cmd.h"
-#include "data/commands/ubx_msg_rate_cmd.h"
-#include "data/commands/ubx_protocol_selection_cmd.h"
-#include "data/commands/ubx_rate_cmd.h"
-#include "data/commands/ubx_set_aop_cmd.h"
-#include "data/commands/ubx_version_dependent_cmd.h"
 #include "data/ublox/ublox_messages.h"
 
 // Sources
@@ -51,12 +43,13 @@
 #include "data/events/ads1115_event.h"
 #include "data/events/event_trigger_event.h"
 #include "data/events/gpio_event.h"
+#include "data/events/gpio_inhibit_event.h"
 #include "data/events/log_trigger_event.h"
+#include "data/events/mqtt_status_event.h"
 #include "data/events/server_conn_count_event.h"
 #include "data/events/status_led_event.h"
+#include "data/events/version_event.h"
 #include "utility/logparameter.h"
-// #include "data/events/ubx_event.h"
-// #include "data/events/tcp_packet_event.h"
 
 // Commands
 #include "data/commands/bias_switch_cmd.h"
@@ -92,11 +85,13 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
 
     // --- datastore ---
     EventBindings::setupDatastore(*ctx.bus, *ctx.datastore);
-
-    // ctx.bus->subscribe<>(
-
-    // )
-    // sendHistogram(*m_histo_map[histoName]);
+    ctx.datastore->geoPosManager().set_mode_config(ctx.config->position_mode_config);
+    ctx.datastore->store(ctx.config->position_mode_config);
+    ctx.datastore->store(
+        VersionEvent{.hw_ver = MuonPi::Version::hardware, .sw_ver = MuonPi::Version::software});
+    ctx.datastore->store(EventTriggerEvent{.signal = ctx.config->eventTrigger});
+    ctx.datastore->store(GpioInhibitEvent{.inhibit = false});
+    ctx.datastore->store(MqttStatusEvent{.connected = false});
 
     // --- hardware ---
     DeviceFactory::i2cReset();
@@ -196,7 +191,6 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
          &bus = *ctx.bus](const std::shared_ptr<TcpConnection>& connection) {
             if (tcp_source != nullptr) {
                 tcp_source->registerConnection(connection);
-                EventBindings::pollAllUbxMsgRate(bus);
             } else {
                 logError("Nullpointer in creating connection handler for tcpsource. Make sure "
                          "components are initialized "
@@ -214,39 +208,6 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
 
     ctx.scheduler->every(MuonPi::Config::Histogram::interval,
                          [bus = ctx.bus.get()]() { bus->publish(HistogramRequestCmd{}); });
-
-    // --- GPS default config ---
-    ctx.bus->subscribe<UbxConfigDefaultCmd>(
-        [&bus = *ctx.bus, &config = *ctx.config]([[maybe_unused]] const auto&) {
-            bus.publish(UbxProtocolSelectionCmd{1, PROTO_UBX});
-            logInfo("setting GNSS dynamic model to " +
-                    std::to_string(static_cast<unsigned>(config.gnss_dynamic_model)));
-            bus.publish(config.gnss_dynamic_model);
-            bus.publish(UbxSetAopCmd{true});
-            std::uint16_t measinterval = 100;
-            bus.publish(UbxRateCmd{measinterval, 1}); // set rate of messages and nav
-            // --- Message Rates ---
-            EventBindings::initAllUbxMsgRate(bus);
-            // Enable NAV_SVINFO only for version 0.1 - 15.0
-            // Enable NAV_SAT for version > 15.0
-            bus.publish(UbxVersionDependentCmd{
-                {UbxVersionDependentCmd::Entry{Version{0, 1}, Version{15, 0},
-                                               UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 69}},
-                 UbxVersionDependentCmd::Entry{Version{15, 0},
-                                               Version{std::numeric_limits<unsigned>().max(), 0},
-                                               UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 0}}}});
-            bus.publish(UbxVersionDependentCmd{{UbxVersionDependentCmd::Entry{
-                Version{15, 0}, Version{std::numeric_limits<unsigned>().max(), 0},
-                UbxMsgRateCmd{UBX_MSG::NAV_SAT, 1, 69}}}});
-            EventBindings::pollAllUbxMsgRate(bus);
-            EventBindings::pollAllUbxMsg(bus);
-        });
-    ctx.bus->publish(UbxConfigDefaultCmd{}); // Apply default config
-
-    // Debug reading version every second // TESTED -> Working!
-    // ctx.scheduler->every(std::chrono::milliseconds(1000),[bus = &(*ctx.bus)](){
-    //     bus->publish(UbxMsgPollCmd{UBX_MSG::MON_VER});
-    // });
 
     // every once in a while, send data to OLED
     // ctx.scheduler->every(std::chrono::milliseconds(MuonPi::Config::Hardware::OLED::update_interval),[&ctx](){
@@ -266,18 +227,16 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     ctx.bus->publish<LogParameter>(LogParameter(
         "hardwareVersionString", MuonPi::Version::hardware.string(), LogParameter::LOG_ONCE));
 
-    //     m_geopos_manager.set_lockin_ready_callback(std::bind(&Daemon::onGeoPosLockInReady, this,
-    //     std::placeholders::_1));
-    // m_geopos_manager.set_valid_pos_callback(std::bind(&Daemon::onGeoPosValid, this,
-    // std::placeholders::_1)); m_geopos_manager.set_mode_config(config.position_mode_config);
-
     // --- Set Gpio Output ---
-    ctx.bus->publish<BiasSwitchCmd>({true});
-    ctx.bus->publish<PreampSwitchCmd>({0, config.preamp_enable[0]});
-    ctx.bus->publish<PreampSwitchCmd>({1, config.preamp_enable[1]});
-    ctx.bus->publish<GainSwitchCmd>({config.hi_gain});
-    ctx.bus->publish<GpioSignalSetCmd>({STATUS1, false});
-    ctx.bus->publish<GpioSignalSetCmd>({STATUS2, false});
+    ctx.bus->publish(BiasSwitchCmd{true});
+    ctx.bus->publish(PreampSwitchCmd{0, config.preamp_enable[0]});
+    ctx.bus->publish(PreampSwitchCmd{1, config.preamp_enable[1]});
+    ctx.bus->publish(GainSwitchCmd{config.hi_gain});
+    ctx.bus->publish(GpioSignalSetCmd{STATUS1, false});
+    ctx.bus->publish(GpioSignalSetCmd{STATUS2, false});
+    ctx.bus->publish(EventTriggerCmd{config.eventTrigger});
+
+    // --- Set other config defaults ---
     ctx.bus->publish(PolaritySwitchCmd{.pol1 = config.polarity[0], .pol2 = config.polarity[1]});
 
     // -- Behaviour on new tcp connection ---
@@ -287,13 +246,10 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
                 // no need to send new data
                 return;
             }
-            bus.publish(VersionEvent{.hw_ver = MuonPi::Version::hardware,
-                                     .sw_ver = MuonPi::Version::software});
             // Where there is already some event for requesting, do so via event bus
             EventBindings::pollDatastore(bus, datastore);
             // Where there is no such thing, request through datastore
             const auto& mode = datastore.geoPosManager().get_mode_config();
-            bus.publish(mode);
             if (mode.mode == PositionModeConfig::Mode::Static) {
                 bus.publish(datastore.geoPosManager().get_static_position().getPosStruct());
             }

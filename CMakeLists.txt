@@ -73,6 +73,7 @@ add_compile_options(
     -Wextra
     -Wshadow
     -Wpedantic
+    -Wno-psabi # Do not warn about this. Only important if linking against external prebuilt C++ libs
 )
 
 # Build mode optimization

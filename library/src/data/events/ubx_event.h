@@ -362,18 +362,22 @@ struct UbxTimeMarkStruct {
     std::uint16_t evtCounter = 0;
 };
 
+struct UbxMsgRates {
+    std::vector<CfgMsg> data;
+};
+
 struct UbxAckNak {
     std::uint16_t msgID{0};
     std::uint16_t payload{0};
 };
 
-struct UbxMsgRates {
-    std::vector<CfgMsg> data;
+struct UbxAckAck {
+    std::uint16_t msgID{0};
 };
 
 using UbxEvent = std::variant<NavStatus, UbxDopStruct, NavTimeGPS, NavTimeUTC, NavClock, NavSat,
                               GnssPosStruct, CfgAnt, CfgNavX5, CfgNav5, UbxTimePulseStruct, CfgGNSS,
                               CfgMsg, MonRx, MonTx, GnssMonHwStruct, GnssMonHw2Struct, GpsVersion,
-                              TimTP, UbxTimeMarkStruct, UbxAckNak>;
+                              TimTP, UbxTimeMarkStruct, UbxAckNak, UbxAckAck>;
 
 #endif // UBX_EVENT_H
