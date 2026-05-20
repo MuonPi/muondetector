@@ -74,6 +74,8 @@ add_compile_options(
     -Wshadow
     -Wpedantic
     -Wno-psabi # Do not warn about this. Only important if linking against external prebuilt C++ libs
+    -ggdb # TODO: Remove
+    -fno-omit-frame-pointer # TODO: Remove
 )
 
 # Build mode optimization
