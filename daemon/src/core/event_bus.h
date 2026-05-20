@@ -38,14 +38,17 @@ void EventBus::publish(T&& event) {
         if (it == subscribers.end())
             return;
 
-        handlers = it->second;
+        handlers = it->second; // snapshot
     }
 
-    auto shared_event = std::make_shared<EventType>(std::forward<T>(event));
+    EventType event_copy = std::forward<T>(event);
 
-    for (auto& handler : handlers) {
-        threadPool.enqueue([handler, shared_event]() { handler(shared_event.get()); });
-    }
+    threadPool.enqueue(
+        [handlers = std::move(handlers), event_copy = std::move(event_copy)]() mutable {
+            for (auto& handler : handlers) {
+                handler(&event_copy);
+            }
+        });
 }
 
 template <typename T>
