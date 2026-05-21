@@ -14,27 +14,41 @@ class GeoPosManager {
     GeoPosManager() = default;
     GeoPosManager(const PositionModeConfig& mode_config);
     ~GeoPosManager() = default;
+
+    // Used to fill new positional data from GPS
+    void fill_from_gps(const GnssPosStruct& event);
+
+    // Fill in status data from GPS
+    void set_fix_status(std::uint8_t gpsFix);
+    void set_time_accuracy(std::uint32_t tAcc);
+
+    // Fill in / retrieve configuration from UI / settings file
     void set_mode_config(const PositionModeConfig& mode_config);
     auto get_mode_config() const -> const PositionModeConfig&;
-    void set_histos(std::shared_ptr<Histogram> lon, std::shared_ptr<Histogram> lat,
-                    std::shared_ptr<Histogram> height);
-    void new_position(const GeoPosition& new_pos);
-    const GeoPosition& get_current_position() const;
-    void set_static_position(const GeoPosition& pos);
-    const GeoPosition& get_static_position() const;
-    void set_mode(PositionModeConfig::Mode mode);
     auto get_mode() const -> PositionModeConfig::Mode;
-    void set_filter(PositionModeConfig::FilterType filter);
-    auto get_filter() const -> PositionModeConfig::FilterType;
+
+    // Set callback for lockin ready and valid pos
     void set_lockin_ready_callback(std::function<void(GeoPosition)> func);
     void set_valid_pos_callback(std::function<void(GeoPosition)> func);
 
-    void set_fix_status(std::uint8_t gpsFix);
-    void set_time_accuracy(std::uint32_t tAcc);
+    // Direct access to currently stored position data
+    void set_static_position(const GeoPosition& pos);
+    const GeoPosition& get_current_position() const;
+    const GeoPosition& get_static_position() const;
+
+    // Used by datastore
+    void set_histos(std::shared_ptr<Histogram> lon, std::shared_ptr<Histogram> lat,
+                    std::shared_ptr<Histogram> height);
+
+  private:
+    void new_position(const GeoPosition& new_pos);
+    void set_mode(PositionModeConfig::Mode mode);
+    void set_filter(PositionModeConfig::FilterType filter);
+    auto get_filter() const -> PositionModeConfig::FilterType;
+
     Property<Gnss::FixType>& fix_status();
     Property<std::chrono::nanoseconds> time_precision();
 
-  private:
     GeoPosition get_pos_from_histos() const;
     void check_for_lockin_reached(const GeoPosition& preliminary_pos);
 

@@ -82,7 +82,8 @@ add_compile_options(
 if(BUILD_TIDY)
     add_compile_options(-O0 -g)
 else()
-    add_compile_options(-O3)
+    # add_compile_options(-O3)
+    add_compile_options(-O1)
 endif()
 
 if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")

@@ -55,10 +55,41 @@ SerialUblox::SerialUblox(ComponentId id, boost::asio::io_context& io, const std:
     , bus_(bus) {
     makeConnection();
 
-    bus_.subscribe<UbxAckAck>([this](const auto& cmd) { handle(cmd); });
-    bus_.subscribe<UbxAckNak>([this](const auto& cmd) { handle(cmd); });
-    bus_.subscribe<UbxConfigDefaultCmd>([this](const auto& cmd) { handle(cmd); });
-    bus_.publish(UbxConfigDefaultCmd{});
+    // Command handling
+    auto subscribeOnStrand = [this]<typename T>() {
+        bus_.subscribe<T>([this](const T& cmd) {
+            boost::asio::post(protocol_strand_, [this, cmd]() { handle(cmd); });
+        });
+    };
+
+    bus_.subscribe<DatastoreStoreEvent<UbxAckAck>>(
+        [this](const DatastoreStoreEvent<UbxAckAck>& event) {
+            boost::asio::post(protocol_strand_, [this, &event]() { handle(event.data); });
+        });
+
+    bus_.subscribe<DatastoreStoreEvent<UbxAckNak>>(
+        [this](const DatastoreStoreEvent<UbxAckNak>& event) {
+            boost::asio::post(protocol_strand_, [this, &event]() { handle(event.data); });
+        });
+
+    subscribeOnStrand.template operator()<UbxDynamicModelCmd>();
+    subscribeOnStrand.template operator()<UbxGnssConfigCmd>();
+    subscribeOnStrand.template operator()<UbxMinCnoCmd>();
+    subscribeOnStrand.template operator()<UbxMinMaxSvCmd>();
+    subscribeOnStrand.template operator()<UbxMsgPollCmd>();
+    subscribeOnStrand.template operator()<UbxMsgPollRateCmd>();
+    // subscribeOnStrand.template operator()<UbxMsgRateCmd>();
+    // subscribeOnStrand.template operator()<UbxRateCmd>();
+    subscribeOnStrand.template operator()<UbxResetCmd>();
+    subscribeOnStrand.template operator()<UbxSaveCmd>();
+    subscribeOnStrand.template operator()<UbxSetAopCmd>();
+    subscribeOnStrand.template operator()<UbxVersionDependentCmd>();
+    subscribeOnStrand.template operator()<UbxTp5Cmd>();
+
+    subscribeOnStrand.template operator()<UbxConfigDefaultCmd>();
+
+    // Internally used events
+    subscribeOnStrand.template operator()<GpsVersion>();
 }
 
 void SerialUblox::makeConnection() {
@@ -75,6 +106,7 @@ void SerialUblox::makeConnection() {
     tcflush(fd, TCIOFLUSH);
 
     startAsyncRead();
+    enqueueMessage(protSelCmd());
 }
 
 void SerialUblox::startAsyncRead() {
@@ -190,82 +222,6 @@ auto SerialUblox::parseStreamForMsg(std::string& buffer) -> std::optional<UbxMes
     return message;
 }
 
-// auto SerialUblox::parseStreamForMsg(std::string& buffer)
-//     -> std::optional<UbxMessage> { // gets the (maybe not finished) buffer and checks for
-//     messages
-//                                    // in it that make sense
-//     static size_t lastSize = 0;
-//     if (buffer.size() == lastSize) {
-//         logWarn("BUFFER NOT SHRINKING");
-//     }
-//     lastSize = buffer.size();
-//     if (buffer.size() < 9) {
-//         return std::nullopt;
-//     }
-//     // refstr are the first two hex numbers defining the header of an ubx message
-//     const std::string refstr{static_cast<char>(0xb5), static_cast<char>(0x62)};
-//     std::size_t found = buffer.find(refstr);
-//     if (found == std::string::npos) {
-//         // discard everything before the start of a NMEA message, too
-//         // to ensure that buffer won't grow too big
-//         std::string beginNMEA = "$";
-//         found = 0;
-//         while (found != std::string::npos) {
-//             found = buffer.find(beginNMEA);
-//             if (found == std::string::npos) {
-//                 break;
-//             }
-//             buffer.erase(0, found + 1);
-//         }
-
-//         return std::nullopt;
-//     }
-
-//     const std::string message_raw_data{buffer.substr(found, buffer.size())};
-//     // discard everything before start of the message
-//     buffer.erase(0, found);
-
-//     if (message_raw_data.size() < 8)
-//         return std::nullopt;
-//     std::uint16_t len =
-//     static_cast<std::uint16_t>(static_cast<std::uint8_t>(message_raw_data[4])); len |=
-//     static_cast<uint16_t>(message_raw_data[5]) << 8; if (len > 4096) {
-//         logWarn("Invalid UBX length");
-//         buffer.erase(0, 2);
-//         return std::nullopt;
-//     }
-//     if ((message_raw_data.size() - 8u) < len) {
-//         found = buffer.find(refstr, 2);
-//         if (found != std::string::npos) {
-//             if (logLevel() == LogLevel::Debug) {
-//                 std::stringstream sstr;
-//                 sstr << "received faulty UBX string:\n " << std::dec;
-//                 for (std::string::size_type i = 0; i < found; i++) {
-//                     sstr << std::setw(2) << std::hex << "0x" << static_cast<unsigned>(buffer[i])
-//                          << " ";
-//                 }
-//                 sstr << std::endl;
-//                 logInfo(sstr.str());
-//             }
-//             buffer.erase(0, found);
-//         }
-//         return std::nullopt;
-//     }
-//     buffer.erase(0, len + 8);
-
-//     std::uint16_t msg_id =
-//     (static_cast<uint8_t>(message_raw_data[2]) << 8) |
-//      static_cast<uint8_t>(message_raw_data[3]);
-
-//     UbxMessage message{msg_id, message_raw_data.substr(6, len)};
-//     auto checksum{message.check_sum()};
-//     if ((checksum & 0xff) == message_raw_data[len + 6] &&
-//         (checksum >> 8) == message_raw_data[len + 7]) {
-//         return message;
-//     }
-//     return std::nullopt;
-// }
-
 void SerialUblox::enqueueMessage(const UbxMessage& msg, bool trackAck) {
     bool is_allowed =
         init_state_ == InitState::Ready ||
@@ -282,24 +238,23 @@ void SerialUblox::enqueueMessage(const UbxMessage& msg, bool trackAck) {
 
 void SerialUblox::send(const UbxMessage& msg, bool trackAck) {
     if (trackAck) {
-        // pending_.emplace(msg.full_id(),
-        //                  PendingMsg{.msg = msg, .last_send = std::chrono::steady_clock::now()});
+        pending_.emplace(msg.full_id(),
+                         PendingMsg{.msg = msg, .last_send = std::chrono::steady_clock::now()});
     }
     logInfo("Send message " + std::to_string(msg.full_id()));
-    // boost::asio::post(tx_strand_, [this, data = msg.raw_message_string()]() {
-    bool write_in_progress = !tx_queue_.empty();
+    boost::asio::post(tx_strand_, [this, data = msg.raw_message_string()]() {
+        bool write_in_progress = !tx_queue_.empty();
 
-    tx_queue_.push(msg.raw_message_string());
+        tx_queue_.push(data);
 
-    if (!write_in_progress)
-        do_write();
-    // });
+        if (!write_in_progress) {
+            do_write();
+        }
+    });
 }
 
 void SerialUblox::do_write() {
     boost::asio::async_write(
-        // serial_, boost::asio::buffer(tx_queue_.front()), [this](boost::system::error_code ec,
-        // std::size_t) {
         serial_, boost::asio::buffer(tx_queue_.front()),
         boost::asio::bind_executor(tx_strand_, [this](boost::system::error_code ec, std::size_t) {
             if (ec) {
@@ -312,48 +267,40 @@ void SerialUblox::do_write() {
                 do_write();
             }
         }));
-    //  });
 }
 
 void SerialUblox::handle(const UbxAckAck& ack) {
     logInfo("Got AckAck " + std::to_string(ack.msgID));
 
-    // boost::asio::post(protocol_strand_, [this, ack]() {
+    boost::asio::post(protocol_strand_, [this, ack]() {
+        auto range = pending_.equal_range(ack.msgID);
+        if (range.first == range.second) {
+            // Got acknowledge message from ublox without requesting anything
+            const auto nameIt = UBX_MSG::msg_string.find(static_cast<UBX_MSG::msg_id>(ack.msgID));
+            const std::string msgName =
+                nameIt != UBX_MSG::msg_string.end() ? nameIt->second : "unknown";
+            std::stringstream sstr{};
+            sstr << "received unexpected " << "UBX-ACK-ACK"
+                 << " message about " << msgName << " (msgID: 0x" << std::hex << ack.msgID;
+            logWarn(sstr.str());
+        } else {
+            pending_.erase(range.first); // removes ONE element
+        }
 
-    // auto range = pending_.equal_range(ack.msgID);
-    // if (range.first == range.second) {
-    //     // Got acknowledge message from ublox without requesting anything
-    //     const auto nameIt = UBX_MSG::msg_string.find(static_cast<UBX_MSG::msg_id>(ack.msgID));
-    //     const std::string msgName =
-    //         nameIt != UBX_MSG::msg_string.end() ? nameIt->second : "unknown";
-    //     std::stringstream sstr{};
-    //     sstr << "received unexpected " << "UBX-ACK-ACK"
-    //          << " message about " << msgName << " (msgID: 0x" << std::hex << ack.msgID;
-    //     logWarn(sstr.str());
-    // } else {
-    //     pending_.erase(range.first); // removes ONE element
-    // }
-    // const auto& arr = range.first->second.payload();
-    // std::uint16_t payload{0};
-    // if (arr.size() >= 2) {
-    //     payload = static_cast<std::uint16_t>(arr[0]);
-    //     payload = payload << 8U;
-    //     payload |= static_cast<std::uint16_t>(arr[1]);
-    // }
-    if (init_state_ == InitState::Ready) {
-        return;
-    }
+        if (init_state_ == InitState::Ready) {
+            return;
+        }
 
-    if (ack.msgID == UBX_MSG::CFG_PRT) {
-        init_state_ = InitState::ReceivedProtoAck;
-        bus_.publish(UbxConfigDefaultCmd{});
-        return;
-    }
-    if (ack.msgID == UBX_MSG::CFG_RATE) {
-        init_state_ = InitState::ReceivedRateAck;
-        bus_.publish(UbxConfigDefaultCmd{});
-    }
-    // });
+        if (ack.msgID == UBX_MSG::CFG_PRT) {
+            init_state_ = InitState::ReceivedProtoAck;
+            bus_.publish(UbxConfigDefaultCmd{});
+            return;
+        }
+        if (ack.msgID == UBX_MSG::CFG_RATE) {
+            init_state_ = InitState::ReceivedRateAck;
+            bus_.publish(UbxConfigDefaultCmd{});
+        }
+    });
 }
 
 void SerialUblox::handle(const UbxAckNak& ackNak) {
@@ -361,31 +308,23 @@ void SerialUblox::handle(const UbxAckNak& ackNak) {
 
     bus_.publish(DatastoreStoreEvent{CfgMsg{ackNak.msgID, -1}});
 
-    // boost::asio::post(protocol_strand_, [this, ackNak]() {
-
-    // auto range = pending_.equal_range(ackNak.msgID);
-    // if (range.first == range.second) {
-    //     // Got acknowledge message from ublox without requesting anything
-    //     const auto nameIt =
-    //         UBX_MSG::msg_string.find(static_cast<UBX_MSG::msg_id>(ackNak.msgID));
-    //     const std::string msgName =
-    //         nameIt != UBX_MSG::msg_string.end() ? nameIt->second : "unknown";
-    //     std::stringstream sstr{};
-    //     sstr << "received unexpected " << "UBX-ACK-NAK"
-    //          << " message about " << msgName << " (msgID: 0x" << std::hex << ackNak.msgID;
-    //     logWarn(sstr.str());
-    // } else {
-    //     pending_.erase(range.first); // removes ONE element
-    // }
-    // });
+    boost::asio::post(protocol_strand_, [this, ackNak]() {
+        auto range = pending_.equal_range(ackNak.msgID);
+        if (range.first == range.second) {
+            // Got acknowledge message from ublox without requesting anything
+            const auto nameIt =
+                UBX_MSG::msg_string.find(static_cast<UBX_MSG::msg_id>(ackNak.msgID));
+            const std::string msgName =
+                nameIt != UBX_MSG::msg_string.end() ? nameIt->second : "unknown";
+            std::stringstream sstr{};
+            sstr << "received unexpected " << "UBX-ACK-NAK"
+                 << " message about " << msgName << " (msgID: 0x" << std::hex << ackNak.msgID;
+            logWarn(sstr.str());
+        } else {
+            pending_.erase(range.first); // removes ONE element
+        }
+    });
 }
-
-// void SerialUblox::flushDeferredQueue() {
-//     while (deferredCmds_.empty() == false) {
-//         send(std::move(deferredCmds_.front()));
-//         deferredCmds_.pop();
-//     }
-// }
 
 void SerialUblox::handle(const UbxMsgRateCmd& cmd) {
     // set message rate on port. (rate 1 means every intervall the messages is sent)
@@ -573,6 +512,9 @@ void SerialUblox::handle(const UbxDynamicModelCmd& cmd) {
     buf[0] = 0x01;
     buf[1] = 0x00;
     buf[2] = static_cast<std::uint8_t>(cmd.model); // dyn Model
+
+    logInfo("setting GNSS dynamic model to " + std::to_string(static_cast<unsigned>(cmd.model)));
+
     enqueueMessage(UbxMessage{UBX_MSG::CFG_NAV5, buf});
 }
 
@@ -648,15 +590,17 @@ void SerialUblox::handle(const GpsVersion& protocolVersion) {
 
 void SerialUblox::handle([[maybe_unused]] const UbxConfigDefaultCmd&) {
     if (init_state_ == InitState::Connecting) {
+        logInfo("Called UbxConfigDefaultCmd sending prot sel cmd");
         enqueueMessage(protSelCmd());
     }
     if (init_state_ == InitState::ReceivedProtoAck) {
+        logInfo("Called UbxConfigDefaultCmd sending rate sel cmd");
         enqueueMessage(rateSelCmd());
     }
     if (init_state_ == InitState::ReceivedRateAck) {
         init_state_ = InitState::Ready;
-        logInfo("setting GNSS dynamic model to " +
-                std::to_string(static_cast<unsigned>(default_gnss_dynamic_model)));
+        logInfo("Called UbxConfigDefaultCmd sending setiü");
+
         handle(UbxDynamicModelCmd{default_gnss_dynamic_model});
         handle(UbxSetAopCmd{true});
         // --- Message Rates ---
@@ -664,7 +608,7 @@ void SerialUblox::handle([[maybe_unused]] const UbxConfigDefaultCmd&) {
         // Enable NAV_SVINFO only for version 0.1 - 15.0
         // Enable NAV_SAT for version > 15.0
         // pollAllUbxMsgRate();
-        pollAllUbxMsg();
+        // pollAllUbxMsg();
         handle(UbxVersionDependentCmd{
             {UbxVersionDependentCmd::Entry{Version{0, 1}, Version{15, 0},
                                            UbxMsgRateCmd{UBX_MSG::NAV_SVINFO, 1, 69}},
@@ -674,8 +618,6 @@ void SerialUblox::handle([[maybe_unused]] const UbxConfigDefaultCmd&) {
         handle(UbxVersionDependentCmd{{UbxVersionDependentCmd::Entry{
             Version{15, 0}, Version{std::numeric_limits<unsigned>().max(), 0},
             UbxMsgRateCmd{UBX_MSG::NAV_SAT, 1, 69}}}});
-
-        initCmdHandlers();
     }
 }
 
@@ -777,52 +719,4 @@ auto SerialUblox::rateSelCmd() -> UbxMessage {
     UbxMessage msg{UBX_MSG::CFG_RATE,
                    std::string(reinterpret_cast<const char*>(data.data()), data.size())};
     return msg;
-}
-
-void SerialUblox::initCmdHandlers() {
-
-    // Command handling
-    auto subscribeOnStrand = [this]<typename T>() {
-        bus_.subscribe<T>([this](const T& cmd) {
-            boost::asio::post(tx_strand_, [this, cmd]() { handle(cmd); });
-        });
-    };
-    // bus_.subscribe<UbxDynamicModelCmd>([this](const UbxDynamicModelCmd& cmd) { handle(cmd); });
-    // bus_.subscribe<UbxGnssConfigCmd>([this](const UbxGnssConfigCmd& cmd) { handle(cmd); });
-    // bus_.subscribe<UbxMinCnoCmd>([this](const UbxMinCnoCmd& cmd) { handle(cmd); });
-    // bus_.subscribe<UbxMinMaxSvCmd>([this](const UbxMinMaxSvCmd& cmd) { handle(cmd); });
-    // bus_.subscribe<UbxMsgPollCmd>([this](const UbxMsgPollCmd& cmd) { handle(cmd); });
-    // bus_.subscribe<UbxMsgPollRateCmd>([this](const UbxMsgPollRateCmd& cmd) { handle(cmd); });
-    // bus_.subscribe<UbxMsgRateCmd>([this](const UbxMsgRateCmd& cmd) { handle(cmd); });
-    // // bus_.subscribe<UbxRateCmd>([this](const UbxRateCmd& cmd) { handle(cmd); });
-    // // bus_.subscribe<UbxProtocolSelectionCmd>(
-    // //     [this](const UbxProtocolSelectionCmd& cmd) { handle(cmd); });
-    // bus_.subscribe<UbxResetCmd>([this](const UbxResetCmd& cmd) { handle(cmd); });
-    // bus_.subscribe<UbxSaveCmd>([this](const UbxSaveCmd& cmd) { handle(cmd); });
-    // bus_.subscribe<UbxSetAopCmd>([this](const UbxSetAopCmd& cmd) { handle(cmd); });
-    // bus_.subscribe<UbxVersionDependentCmd>(
-    //     [this](const UbxVersionDependentCmd& cmd) { handle(cmd); });
-    // bus_.subscribe<UbxTp5Cmd>([this](const UbxTp5Cmd& cmd) { handle(cmd); });
-
-    subscribeOnStrand.template operator()<UbxDynamicModelCmd>();
-    subscribeOnStrand.template operator()<UbxGnssConfigCmd>();
-    subscribeOnStrand.template operator()<UbxMinCnoCmd>();
-    subscribeOnStrand.template operator()<UbxMinMaxSvCmd>();
-    subscribeOnStrand.template operator()<UbxMsgPollCmd>();
-    subscribeOnStrand.template operator()<UbxMsgPollRateCmd>();
-    // subscribeOnStrand.template operator()<UbxMsgRateCmd>();
-    // subscribeOnStrand.template operator()<UbxRateCmd>();
-    subscribeOnStrand.template operator()<UbxResetCmd>();
-    subscribeOnStrand.template operator()<UbxSaveCmd>();
-    subscribeOnStrand.template operator()<UbxSetAopCmd>();
-    subscribeOnStrand.template operator()<UbxVersionDependentCmd>();
-    subscribeOnStrand.template operator()<UbxTp5Cmd>();
-
-    subscribeOnStrand.template operator()<UbxConfigDefaultCmd>();
-
-    // Internally used events
-    // bus_.subscribe<GpsVersion>([this](const GpsVersion& gpsVersion) { handle(gpsVersion); });
-    bus_.subscribe<GpsVersion>([this](const GpsVersion& gpsVersion) {
-        boost::asio::post(tx_strand_, [this, gpsVersion]() { handle(gpsVersion); });
-    });
 }

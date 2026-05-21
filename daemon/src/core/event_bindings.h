@@ -16,6 +16,7 @@
 #include "data/commands/spi_stats_request_cmd.h"
 #include "data/commands/temperature_request_cmd.h"
 #include "data/commands/threshold_setting_cmd.h"
+#include "data/commands/ubx_config_default_cmd.h"
 #include "data/commands/ubx_msg_rate_cmd.h"
 #include "data/events/adc_mode_event.h"
 #include "data/events/adc_trace_event.h"
@@ -102,7 +103,7 @@ class EventBindings {
     template <typename T>
     inline static void subscribe_one(EventBus& bus, DataStore& datastore) {
         bus.subscribe<DatastoreStoreEvent<T>>([&datastore, &bus](const DatastoreStoreEvent<T>& ev) {
-            datastore.store(ev.data);
+            // datastore.store(ev.data);
             if constexpr (is_iterable<T>::value && !std::is_same_v<T, std::string>) {
                 for (const auto& item : ev.data) {
                     bus.publish(item);
@@ -110,6 +111,7 @@ class EventBindings {
             } else {
                 bus.publish(ev.data);
             }
+            bus.publish(ev.data);
         });
     }
 
@@ -132,40 +134,21 @@ class EventBindings {
             geoPosManager.set_fix_status(event.gpsFix);
         });
 
-        geoPosManager.set_lockin_ready_callback([&bus](const GeoPosition& pos) {
-            bus.publish(DatastoreStoreEvent{pos.getPosStruct()});
-        });
-        geoPosManager.set_valid_pos_callback([&bus](const GeoPosition& pos) {
-            bus.publish(DatastoreStoreEvent{pos.getPosStruct()});
-        });
-
         // Special Case GnssPosStruct -> do not automatically store this but use custom storage /
         // transformation
-        bus.subscribe<DatastoreStoreEvent<GnssPosStruct>>(
-            [&bus, &datastore, &geoPosManager](const auto& event) {
-                const auto& pos = event.data;
-                datastore.fillHisto(pos);
-                GnssPosStruct new_pos_struct{pos};
+        // Do not publish DatastoreStoreEvent<GnssPosStruct>. For this case GeoPosManager
+        // has absolute truth of current position
+        geoPosManager.set_lockin_ready_callback(
+            [&bus](const GeoPosition& pos) { bus.publish(pos.getPosStruct()); });
+        geoPosManager.set_valid_pos_callback(
+            [&bus](const GeoPosition& pos) { bus.publish(pos.getPosStruct()); });
 
-                // set correct position errors in case no fix is available (ublox bug?)
-                if (geoPosManager.fix_status()().value < Gnss::FixType::Fix2d &&
-                    geoPosManager.time_precision().age() < std::chrono::seconds(60)) {
-                    constexpr double c_vacuum{0.3};
-                    new_pos_struct.hAcc = new_pos_struct.vAcc =
-                        c_vacuum * geoPosManager.time_precision()().count() * 1e3;
-                }
-
-                geoPosManager.new_position({new_pos_struct.lon * 1e-7, new_pos_struct.lat * 1e-7,
-                                            1e-3 * new_pos_struct.hMSL, 1e-3 * new_pos_struct.hAcc,
-                                            1e-3 * new_pos_struct.vAcc});
-                datastore.store(new_pos_struct);
-                bus.publish(new_pos_struct);
-            });
-
-        // Currently can only store one event at a time therefore those make no sense
-        // bus.subscribe<GpioEvent>([&datastore](const auto& ev) { datastore.store(ev); });
-        // bus.subscribe<ThresholdSettingEvent>([&datastore](const auto& ev) { datastore.store(ev);
-        // });
+        bus.subscribe<DatastoreStoreEvent<GnssPosStruct>>([&geoPosManager](const auto& event) {
+            geoPosManager.fill_from_gps(event.data);
+            // DO NOT PUBLISH EVENTS HERE!
+            // This will trigger infinite loop because geoPosManager will publish
+            // data through DatastoreStoreEvent
+        });
 
         // All events which should be stored are defined here
         // All events with DataStoreStoreEvent<BiasVoltageEvent> ...

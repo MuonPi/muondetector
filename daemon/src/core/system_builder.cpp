@@ -256,6 +256,9 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
         });
 
     return ctx;
+
+    // Trigger Ublox device configuration
+    ctx.bus->publish(UbxConfigDefaultCmd{});
 }
 
 /// LOADING OF CONFIG FILES & PARSING OF CONFIG

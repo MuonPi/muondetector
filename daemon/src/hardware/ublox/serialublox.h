@@ -48,11 +48,12 @@ class SerialUblox : public Component {
   private:
     enum class InitState { Connecting, ReceivedProtoAck, ReceivedRateAck, Ready };
 
-    // struct PendingMsg {
-    //     UbxMessage msg;
-    //     std::chrono::steady_clock::time_point last_send;
-    // };
-    // std::unordered_multimap<std::uint16_t, PendingMsg> pending_;
+    struct PendingMsg {
+        UbxMessage msg;
+        std::chrono::steady_clock::time_point last_send;
+    };
+    std::unordered_multimap<std::uint16_t, PendingMsg> pending_;
+    std::unordered_map<std::uint16_t, PendingMsg> pending_cfg_msg_;
     std::atomic<InitState> init_state_{InitState::Connecting};
 
     void makeConnection();
@@ -85,7 +86,6 @@ class SerialUblox : public Component {
     void handle(const UbxAckAck& ack);
     void handle(const UbxAckNak& ackNak);
 
-    void initCmdHandlers();
     void processQueuedCmds();
 
     void retryLater() {

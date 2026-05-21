@@ -1,6 +1,7 @@
 #include "geoposmanager.h"
 
 #include "core/logging/logger.h"
+#include "data/ublox/ublox_messages.h"
 
 static constexpr double pi() {
     return 3.14159265358979;
@@ -12,6 +13,20 @@ static double sqr(double x) {
 constexpr size_t MIN_HISTO_ENTRIES{10};
 
 GeoPosManager::GeoPosManager(const PositionModeConfig& mode_config) : m_mode_config(mode_config) {
+}
+
+void GeoPosManager::fill_from_gps(const GnssPosStruct& event) {
+    GnssPosStruct pos = event;
+
+    // set correct position errors in case no fix is available (ublox bug?)
+    if (m_fix_status().value < Gnss::FixType::Fix2d &&
+        m_time_precision.age() < std::chrono::seconds(60)) {
+        constexpr double c_vacuum{0.3};
+        pos.hAcc = pos.vAcc = c_vacuum * m_time_precision().count() * 1e3;
+    }
+
+    new_position(
+        {pos.lon * 1e-7, pos.lat * 1e-7, 1e-3 * pos.hMSL, 1e-3 * pos.hAcc, 1e-3 * pos.vAcc});
 }
 
 void GeoPosManager::set_mode_config(const PositionModeConfig& mode_config) {
