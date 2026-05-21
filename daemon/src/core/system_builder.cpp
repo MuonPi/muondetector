@@ -30,6 +30,7 @@
 #include "hardware/devices.h"
 #include "hardware/i2cdevice_wrapper.h"
 #include "hardware/i2cdevices.h"
+#include "hardware/ublox/serialublox.h"
 
 // Ublox
 #include "data/commands/histogram_clear_cmd.h"
@@ -54,8 +55,17 @@
 // Commands
 #include "data/commands/bias_switch_cmd.h"
 #include "data/commands/bias_voltage_cmd.h"
+#include "data/commands/event_trigger_cmd.h"
+#include "data/commands/gain_switch_cmd.h"
 #include "data/commands/gpio_signal_set_cmd.h"
+#include "data/commands/histogram_request_cmd.h"
+#include "data/commands/i2c_stats_request_cmd.h"
 #include "data/commands/pca_switch_cmd.h"
+#include "data/commands/polarity_switch_cmd.h"
+#include "data/commands/preamp_switch_cmd.h"
+
+// Events
+#include "data/events/i2c_stats_event.h"
 
 // Glue
 #include "core/event_bindings.h"
@@ -259,6 +269,16 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
 
     // Trigger Ublox device configuration
     ctx.bus->publish(UbxConfigDefaultCmd{});
+
+    // Register callback for re-triggering poll commands
+    std::weak_ptr<SerialUblox> serialublox =
+        ctx.components->getWeak<SerialUblox>(OtherComponent::GPS_DRIVER_0);
+    if (serialublox.expired() == false) {
+        ctx.scheduler->every(std::chrono::seconds{2},
+                             [&datastore = *ctx.datastore, &bus = *ctx.bus, serialublox] {
+                                 EventBindings::datastoreMaintenance(bus, datastore, serialublox);
+                             });
+    }
 }
 
 /// LOADING OF CONFIG FILES & PARSING OF CONFIG
