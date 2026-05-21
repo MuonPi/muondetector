@@ -97,8 +97,6 @@ class SerialUblox : public Component {
         std::cerr << "Error in " << where << ": " << ec.message() << std::endl;
     }
 
-    auto parseStreamForMsg(std::string& buffer) -> std::optional<UbxMessage>;
-
     void do_write();
 
     boost::asio::serial_port serial_;
@@ -117,7 +115,6 @@ class SerialUblox : public Component {
     EventBus& bus_;
     int timeout_ = 5;
     std::optional<GpsVersion> protocolVersion_;
-    // std::queue<UbxMessage> deferredCmds_;
     std::queue<UbxVersionDependentCmd> queuedCmds_;
 };
 
