@@ -70,6 +70,9 @@
 // Glue
 #include "core/event_bindings.h"
 
+// Maintenance
+#include "core/maintenance.h"
+
 #include <chrono>
 #include <memory>
 
@@ -144,7 +147,9 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
                 ctx.scheduler->every(c.interval.value(), [weak]() {
                     if (auto locked = weak.lock()) {
                         locked->update();
+                        return true;
                     }
+                    return false; // Stop scheduling if source weak pointer is invalid
                 });
             }
         }
@@ -174,15 +179,20 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
                     return;
                 }
                 if (event.durationMillisec >= 0) {
-                    scheduler.once([gpio_driver,
-                                    event]() { gpio_driver->writeSignal(event.sig, !(event.on)); },
-                                   static_cast<std::size_t>(event.durationMillisec));
+                    scheduler.once(
+                        [gpio_driver, event]() {
+                            gpio_driver->writeSignal(event.sig, !(event.on));
+                            return true;
+                        },
+                        static_cast<std::size_t>(event.durationMillisec));
                 }
             });
 
         // every once in a while send gpio average rates to GUI
-        ctx.scheduler->every(std::chrono::seconds(1),
-                             [gpio_driver]() { gpio_driver->sendGpioRatesAverage(); });
+        ctx.scheduler->every(std::chrono::seconds(1), [gpio_driver]() {
+            gpio_driver->sendGpioRatesAverage();
+            return true;
+        });
     } else {
         logWarn("GPIO Driver not initializing.");
     }
@@ -208,16 +218,21 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
             }
         });
 
-    // --- maintenance ---
+    // --- tcp server maintenance ---
     ctx.scheduler->every(std::chrono::seconds(5), [server = ctx.server.get()]() {
         server->heartbeatAndCleanup(std::chrono::seconds(30));
+        return true; // re-schedule
     });
 
-    ctx.scheduler->every(MuonPi::Config::Log::interval,
-                         [bus = ctx.bus.get()]() { bus->publish(LogTriggerEvent{}); });
+    ctx.scheduler->every(MuonPi::Config::Log::interval, [bus = ctx.bus.get()]() {
+        bus->publish(LogTriggerEvent{});
+        return true;
+    });
 
-    ctx.scheduler->every(MuonPi::Config::Histogram::interval,
-                         [bus = ctx.bus.get()]() { bus->publish(HistogramRequestCmd{}); });
+    ctx.scheduler->every(MuonPi::Config::Histogram::interval, [bus = ctx.bus.get()]() {
+        bus->publish(HistogramRequestCmd{});
+        return true;
+    });
 
     // every once in a while, send data to OLED
     // ctx.scheduler->every(std::chrono::milliseconds(MuonPi::Config::Hardware::OLED::update_interval),[&ctx](){
@@ -264,21 +279,21 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
                 bus.publish(datastore.geoPosManager().get_static_position().getPosStruct());
             }
         });
-
-    return ctx;
-
     // Trigger Ublox device configuration
     ctx.bus->publish(UbxConfigDefaultCmd{});
 
     // Register callback for re-triggering poll commands
-    std::weak_ptr<SerialUblox> serialublox =
-        ctx.components->getWeak<SerialUblox>(OtherComponent::GPS_DRIVER_0);
-    if (serialublox.expired() == false) {
-        ctx.scheduler->every(std::chrono::seconds{2},
-                             [&datastore = *ctx.datastore, &bus = *ctx.bus, serialublox] {
-                                 EventBindings::datastoreMaintenance(bus, datastore, serialublox);
-                             });
+    logInfo(ctx.components->report());
+    if (ctx.components->contains(OtherComponent::GPS_DRIVER_0)) {
+        Maintenance::registerEnsureData(*ctx.bus, *ctx.datastore, *ctx.scheduler);
     }
+
+    logInfo("Registering datastore maintenance:");
+    ctx.scheduler->every(std::chrono::seconds{2}, [&datastore = *ctx.datastore, &bus = *ctx.bus] {
+        Maintenance::datastoreMaintenance(bus, datastore);
+        return true;
+    });
+    return ctx;
 }
 
 /// LOADING OF CONFIG FILES & PARSING OF CONFIG

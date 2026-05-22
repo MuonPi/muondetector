@@ -1,9 +1,13 @@
 #ifndef UBX_EVENT_H
 #define UBX_EVENT_H
 
+#include "data/ublox/ublox_messages.h"
 #include "data/ublox/ublox_structs.h"
 
 #include <sstream>
+
+template <typename T>
+struct MsgId;
 
 class GnssSatellite {
   public:
@@ -153,6 +157,10 @@ inline void GnssSatellite::Print(std::stringstream& sstr, int index, bool wHeade
 struct UbxDopStruct {
     std::uint16_t gDOP = 0, pDOP = 0, tDOP = 0, vDOP = 0, hDOP = 0, nDOP = 0, eDOP = 0;
 };
+template <>
+struct MsgId<UbxDopStruct> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::NAV_DOP;
+};
 
 struct NavStatus {
     std::uint32_t iTOW{0};
@@ -161,6 +169,10 @@ struct NavStatus {
     std::uint8_t flags2{0};
     std::uint32_t ttff{0};
     std::uint32_t msss{0};
+};
+template <>
+struct MsgId<NavStatus> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::NAV_STATUS;
 };
 
 struct NavTimeGPS {
@@ -172,6 +184,11 @@ struct NavTimeGPS {
 
     // time accuracy estimate
     std::uint32_t tAcc{0};
+};
+
+template <>
+struct MsgId<NavTimeGPS> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::NAV_TIMEGPS;
 };
 
 struct NavTimeUTC {
@@ -186,6 +203,10 @@ struct NavTimeUTC {
     std::uint16_t sec{0};
     std::uint8_t flags{0};
 };
+template <>
+struct MsgId<NavTimeUTC> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::NAV_TIMEUTC;
+};
 
 struct NavClock {
     std::uint32_t iTOW{0};
@@ -196,6 +217,10 @@ struct NavClock {
     std::uint32_t tAcc{0};
     std::uint32_t fAcc{0};
 };
+template <>
+struct MsgId<NavClock> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::NAV_CLOCK;
+};
 
 struct NavSVinfo {
     std::uint32_t iTOW{0};
@@ -203,6 +228,10 @@ struct NavSVinfo {
     std::uint8_t globFlags{0};
     std::size_t goodSats{0};
     std::vector<GnssSatellite> satellites{0};
+};
+template <>
+struct MsgId<NavSVinfo> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::NAV_SVINFO;
 };
 
 struct NavSat {
@@ -212,6 +241,10 @@ struct NavSat {
     std::uint8_t numSvs{0};
     std::size_t goodSats{0};
     std::vector<GnssSatellite> satellites{};
+};
+template <>
+struct MsgId<NavSat> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::NAV_SAT;
 };
 
 struct GnssPosStruct {
@@ -223,10 +256,18 @@ struct GnssPosStruct {
     std::uint32_t hAcc{0};  // horizontal accuracy estimate
     std::uint32_t vAcc{0};  // vertical accuracy estimate
 };
+template <>
+struct MsgId<GnssPosStruct> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::NAV_POSLLH;
+};
 
 struct CfgAnt {
     std::uint16_t flags{0};
     std::uint16_t pins{0};
+};
+template <>
+struct MsgId<CfgAnt> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::CFG_ANT;
 };
 
 struct CfgNavX5 {
@@ -240,6 +281,10 @@ struct CfgNavX5 {
     std::uint8_t aopCfg{0};
     std::uint16_t aopOrbMaxErr{0};
 };
+template <>
+struct MsgId<CfgNavX5> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::CFG_NAVX5;
+};
 
 struct CfgNav5 {
     std::uint16_t mask{0};
@@ -250,6 +295,10 @@ struct CfgNav5 {
     std::int8_t minElev{0};
     std::uint8_t cnoThreshNumSVs{0};
     std::uint8_t cnoThresh{0};
+};
+template <>
+struct MsgId<CfgNav5> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::CFG_NAV5;
 };
 
 struct UbxTimePulseStruct {
@@ -274,6 +323,10 @@ struct UbxTimePulseStruct {
     std::int32_t userConfigDelay{0};
     std::uint32_t flags{0};
 };
+template <>
+struct MsgId<UbxTimePulseStruct> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::CFG_TP5;
+};
 
 struct CfgGNSS {
     std::uint8_t version{0};
@@ -282,10 +335,18 @@ struct CfgGNSS {
     std::uint8_t numConfigBlocks{0};
     std::vector<GnssConfigStruct> configs;
 };
+template <>
+struct MsgId<CfgGNSS> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::CFG_GNSS;
+};
 
 struct CfgMsg {
     std::uint16_t msgID{0};
     int rate{0};
+};
+template <>
+struct MsgId<CfgMsg> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::CFG_MSG;
 };
 
 struct MonRx {
@@ -295,6 +356,10 @@ struct MonRx {
     std::uint8_t tUsage{0};
     std::uint8_t tPeakUsage{0};
 };
+template <>
+struct MsgId<MonRx> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::MON_RXBUF;
+};
 
 struct MonTx {
     std::array<std::uint16_t, s_nr_targets> pending{};
@@ -302,6 +367,10 @@ struct MonTx {
     std::array<std::uint8_t, s_nr_targets> peakUsage{};
     std::uint8_t tUsage{0};
     std::uint8_t tPeakUsage{0};
+};
+template <>
+struct MsgId<MonTx> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::MON_TXBUF;
 };
 
 struct GnssMonHwStruct {
@@ -312,6 +381,10 @@ struct GnssMonHwStruct {
     std::uint8_t flags{0};
     std::uint8_t jamInd{0};
 };
+template <>
+struct MsgId<GnssMonHwStruct> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::MON_HW;
+};
 
 struct GnssMonHw2Struct {
     std::int8_t ofsI{0};
@@ -321,11 +394,19 @@ struct GnssMonHw2Struct {
     std::uint8_t cfgSrc{0};
     std::uint32_t postStatus{0};
 };
+template <>
+struct MsgId<GnssMonHw2Struct> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::MON_HW2;
+};
 
 struct GpsVersion {
     std::string hwString{};
     std::string swString{};
     std::string prot{};
+};
+template <>
+struct MsgId<GpsVersion> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::MON_VER;
 };
 
 struct TimTP {
@@ -341,6 +422,10 @@ struct TimTP {
     std::uint8_t flags{0};
     // ref info
     std::uint8_t refInfo{0};
+};
+template <>
+struct MsgId<TimTP> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::TIM_TP;
 };
 
 struct UbxTimeMarkStruct {
@@ -360,6 +445,10 @@ struct UbxTimeMarkStruct {
     bool utcAvailable = false;
     std::uint8_t flags = 0;
     std::uint16_t evtCounter = 0;
+};
+template <>
+struct MsgId<UbxTimeMarkStruct> {
+    static constexpr UBX_MSG::msg_id value = UBX_MSG::TIM_TM2;
 };
 
 struct UbxMsgRates {
