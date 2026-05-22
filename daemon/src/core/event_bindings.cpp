@@ -120,14 +120,13 @@ void EventBindings::setupDatastore(EventBus& bus, DataStore& datastore) {
     // All events with DataStoreStoreEvent<BiasVoltageEvent> ...
     // will be sent to datastore and also sent to GUI via TCP as long as there is a Capnp Codec
     // for it.
-    subscribe_all<CfgGNSS, NavSat, MonTx, MonRx, NavStatus, NavClock, UbxTimeMarkStruct,
-                  UbxTimePulseStruct, GnssMonHwStruct, GnssMonHw2Struct, NavTimeGPS, NavTimeUTC,
-                  BiasVoltageEvent, MqttStatusEvent,
-                  AdcTraceEvent, // std::array<Ads1115Event, 4>, // This is deprecated
-                  BiasSwitchEvent, CalibEvent, GainSwitchEvent, GpioRateEvent, GpioInhibitEvent,
-                  LM75Event, MCP4728Event, PcaSwitchEvent, PolaritySwitchEvent, GpsVersion,
-                  EventTriggerEvent, LogInfoStruct, PositionModeConfig, VersionEvent>(bus,
-                                                                                      datastore);
+    subscribe_all<CfgGNSS, CfgAnt, CfgNavX5, CfgNav5, NavSat, MonTx, MonRx, NavStatus, NavClock,
+                  UbxTimeMarkStruct, UbxTimePulseStruct, GnssMonHwStruct, GnssMonHw2Struct,
+                  NavTimeGPS, NavTimeUTC, BiasVoltageEvent, MqttStatusEvent, UbxDopStruct,
+                  AdcTraceEvent, BiasSwitchEvent, CalibEvent, GainSwitchEvent, GpioRateEvent,
+                  GpioInhibitEvent, LM75Event, MCP4728Event, PcaSwitchEvent, PolaritySwitchEvent,
+                  GpsVersion, EventTriggerEvent, LogInfoStruct, PositionModeConfig, VersionEvent>(
+        bus, datastore);
 
     // Message Requests will be answered directly from datastore
     bus.subscribe<ThresholdSettingRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {

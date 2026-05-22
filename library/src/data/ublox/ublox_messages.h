@@ -4,15 +4,18 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 #define UBLOX_VERSION 7
 // not in this list are all msg of types: LOG, AID and INF
 
-struct Version {
+struct UbxProtVersion {
     unsigned major;
     unsigned minor;
 
-    bool operator<(const Version& other) const {
+    bool operator<(const UbxProtVersion& other) const {
         if (major != other.major)
             return major < other.major;
         return minor < other.minor;
@@ -275,6 +278,37 @@ const static std::map<msg_id, std::string> msg_string{{ACK, "ACK-ACK"},
                                                       {TRK_SFRBX, "TRK-SFRBX"}};
 } // namespace UBX_MSG
 
+// All ids of rate configurable messages which we want to configure
+inline const std::vector<UBX_MSG::msg_id> rateCfgMsgID{
+    {UBX_MSG::TIM_TM2,       UBX_MSG::TIM_TP,      UBX_MSG::NAV_CLOCK,   UBX_MSG::NAV_DGPS,
+     UBX_MSG::NAV_AOPSTATUS, UBX_MSG::NAV_DOP,     UBX_MSG::NAV_POSECEF, UBX_MSG::NAV_POSLLH,
+     UBX_MSG::NAV_PVT,       UBX_MSG::NAV_SBAS,    UBX_MSG::NAV_SOL,     UBX_MSG::NAV_STATUS,
+     UBX_MSG::NAV_SVINFO,    UBX_MSG::NAV_TIMEGPS, UBX_MSG::NAV_TIMEUTC, UBX_MSG::NAV_VELECEF,
+     UBX_MSG::NAV_VELNED,    UBX_MSG::MON_HW,      UBX_MSG::MON_HW2,     UBX_MSG::MON_IO,
+     UBX_MSG::MON_MSGPP,     UBX_MSG::MON_RXBUF,   UBX_MSG::MON_RXR,     UBX_MSG::MON_TXBUF}};
+
+// All CMD commands expect ack, others dont
+inline const std::unordered_set<UBX_MSG::msg_id> idsExpectedAck{
+    UBX_MSG::CFG_ANT,     UBX_MSG::CFG_CFG,    UBX_MSG::CFG_DAT,     UBX_MSG::CFG_DOSC,
+    UBX_MSG::CFG_DYNSEED, UBX_MSG::CFG_ESRC,   UBX_MSG::CFG_FIXSEED, UBX_MSG::CFG_GEOFENCE,
+    UBX_MSG::CFG_GNSS,    UBX_MSG::CFG_INF,    UBX_MSG::CFG_ITFM,    UBX_MSG::CFG_LOGFILTER,
+    UBX_MSG::CFG_MSG,     UBX_MSG::CFG_NAV5,   UBX_MSG::CFG_NAVX5,   UBX_MSG::CFG_NMEA,
+    UBX_MSG::CFG_ODO,     UBX_MSG::CFG_PM2,    UBX_MSG::CFG_PMS,     UBX_MSG::CFG_PRT,
+    UBX_MSG::CFG_PWR,     UBX_MSG::CFG_RATE,   UBX_MSG::CFG_RINV,    UBX_MSG::CFG_RST,
+    UBX_MSG::CFG_RXM,     UBX_MSG::CFG_SBAS,   UBX_MSG::CFG_SMGR,    UBX_MSG::CFG_TMODE2,
+    UBX_MSG::CFG_TP5,     UBX_MSG::CFG_TXSLOT, UBX_MSG::CFG_USB};
+
+// Rates as they will be set at initialization
+inline const std::unordered_map<UBX_MSG::msg_id, std::pair<std::uint8_t, std::uint8_t>>
+    defaultRates{
+        {UBX_MSG::TIM_TM2, {1, 1}},       {UBX_MSG::TIM_TP, {1, 0}},
+        {UBX_MSG::NAV_TIMEUTC, {1, 131}}, {UBX_MSG::MON_HW, {1, 47}},
+        {UBX_MSG::MON_HW2, {1, 49}},      {UBX_MSG::NAV_POSLLH, {1, 43}},
+        {UBX_MSG::NAV_TIMEGPS, {1, 0}},   {UBX_MSG::NAV_STATUS, {1, 71}},
+        {UBX_MSG::NAV_CLOCK, {1, 189}},   {UBX_MSG::MON_RXBUF, {1, 53}},
+        {UBX_MSG::MON_TXBUF, {1, 51}},    {UBX_MSG::NAV_SBAS, {1, 0}},
+        {UBX_MSG::NAV_DOP, {1, 254}},
+    };
 // proto is the shortcut for protocol and
 // is defined as the correct bitmask for one
 // protocol

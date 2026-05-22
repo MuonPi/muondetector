@@ -35,6 +35,17 @@ class DataStore {
         }
         data_[std::type_index(typeid(T))] = Entry{value, std::chrono::system_clock::now()};
     }
+    template <typename T>
+    void store_if_empty(const T& value) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (data_.contains(std::type_index(typeid(T)))) {
+            return;
+        }
+        if constexpr (has_histo_filler_v<T>) {
+            fillHisto(value);
+        }
+        data_[std::type_index(typeid(T))] = Entry{value, std::chrono::system_clock::now()};
+    }
 
     // TODO: Replace any_cast with std::optional !
 

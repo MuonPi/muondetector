@@ -11,6 +11,8 @@
 #include <mutex>
 #include <queue>
 #include <thread>
+#include <unordered_map>
+#include <unordered_set>
 
 class Scheduler {
   public:
@@ -19,14 +21,15 @@ class Scheduler {
 
     void start();
     void stop();
+    void cancel(std::size_t id);
 
-    void every(std::chrono::milliseconds interval, std::function<void()> func);
-    void once(std::function<void()> func, time_point time);
-    void once(std::function<void()> func, std::size_t milliseconds);
+    auto every(std::chrono::milliseconds interval, std::function<bool()> func) -> std::size_t;
+    auto once(std::function<bool()> func, time_point time) -> std::size_t;
+    auto once(std::function<bool()> func, std::size_t milliseconds) -> std::size_t;
 
   private:
-    void schedule(std::function<void()> func, time_point time,
-                  std::chrono::milliseconds interval = std::chrono::milliseconds{0});
+    auto schedule(std::function<bool()> func, time_point time,
+                  std::chrono::milliseconds interval = std::chrono::milliseconds{0}) -> std::size_t;
     void loop();
 
     ThreadPool& threadPool;
@@ -36,6 +39,8 @@ class Scheduler {
     std::condition_variable cv;
     std::thread thread;
     std::atomic<bool> running{false};
+    std::unordered_set<std::size_t> cancelled;
+    std::atomic<std::size_t> next_id{1};
 };
 
 #endif // SCHEDULER_H
