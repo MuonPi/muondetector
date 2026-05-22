@@ -4,11 +4,9 @@
 #include "core/event_bus.h"
 #include "core/registries/data_store.h"
 #include "data/events/datastore_store_event.h"
-#include "hardware/ublox/serialublox.h"
 #include "sinks/tcp_sink.h"
 
 #include <array>
-#include <memory>
 #include <type_traits>
 
 class EventBindings {
@@ -48,8 +46,6 @@ class EventBindings {
         (subscribe_one<Ts>(bus, datastore), ...);
     }
     static void pollDatastore(EventBus& bus, DataStore& datastore);
-    static void datastoreMaintenance(EventBus& bus, DataStore& datastore,
-                                     std::weak_ptr<SerialUblox> serialublox);
     static void setupDatastore(EventBus& bus, DataStore& datastore);
 
   private:

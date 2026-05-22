@@ -23,7 +23,7 @@ class MessageProcessor {
         UBX_MSG::msg_id, std::pair<std::function<std::optional<UbxEvent>()>, std::string>>
         handler;
 
-    static auto getProtVersion(std::string_view text) -> std::optional<Version>;
+    static auto getProtVersion(std::string_view text) -> std::optional<UbxProtVersion>;
 
   private:
     static const std::unordered_map<std::uint8_t, const char*> ubx_class_names;

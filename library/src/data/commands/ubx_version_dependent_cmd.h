@@ -13,14 +13,14 @@
 
 struct UbxVersionDependentCmd {
     struct Entry {
-        Version min;
-        Version max;
+        UbxProtVersion min;
+        UbxProtVersion max;
         std::variant<UbxMsgRateCmd, UbxGnssConfigCmd> cmd;
     };
 
     std::vector<Entry> config;
 
-    inline static auto applies(const Entry& e, const Version& v) -> bool {
+    inline static auto applies(const Entry& e, const UbxProtVersion& v) -> bool {
         return !(v < e.min) && !(e.max < v);
     }
 };

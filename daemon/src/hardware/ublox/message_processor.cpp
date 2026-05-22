@@ -969,7 +969,7 @@ auto MessageProcessor::UBXMonHW2(const std::string& msg) -> std::optional<UbxEve
 // "18"
 // "  23.01 "
 // Returns std::nullopt on invalid input.
-auto MessageProcessor::getProtVersion(std::string_view text) -> std::optional<Version> {
+auto MessageProcessor::getProtVersion(std::string_view text) -> std::optional<UbxProtVersion> {
     // trim whitespace
     while (!text.empty() && std::isspace(static_cast<unsigned char>(text.front())))
         text.remove_prefix(1);
@@ -980,7 +980,7 @@ auto MessageProcessor::getProtVersion(std::string_view text) -> std::optional<Ve
     if (text.empty())
         return std::nullopt;
 
-    Version v{};
+    UbxProtVersion v{};
 
     auto dotPos = text.find('.');
 
