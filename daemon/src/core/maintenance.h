@@ -27,7 +27,7 @@ class Maintenance {
             return false; // cancels re-scheduling because data exists now
         }
 
-        logInfo("Polling UBX message " + std::to_string(static_cast<unsigned>(MsgId<T>::value)));
+        logDebug("Polling UBX message " + std::to_string(static_cast<unsigned>(MsgId<T>::value)));
 
         bus.publish(UbxMsgPollCmd{MsgId<T>::value});
         return true;

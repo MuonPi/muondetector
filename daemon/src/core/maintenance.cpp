@@ -84,7 +84,7 @@ void Maintenance::registerEnsureData(EventBus& bus, DataStore& datastore, Schedu
         for (const auto& [key, entry] : defaultRates) {
             if (existing.contains(key) == false) {
                 all_exist = false;
-                logInfo("Polling UBX message rate " + std::to_string(static_cast<unsigned>(key)));
+                logDebug("Polling UBX message rate " + std::to_string(static_cast<unsigned>(key)));
 
                 bus.publish(UbxMsgPollRateCmd{key});
             }

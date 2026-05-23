@@ -451,10 +451,6 @@ struct MsgId<UbxTimeMarkStruct> {
     static constexpr UBX_MSG::msg_id value = UBX_MSG::TIM_TM2;
 };
 
-struct UbxMsgRates {
-    std::vector<CfgMsg> data;
-};
-
 struct UbxAckNak {
     std::uint16_t msgID{0};
     std::uint16_t payload{0};
