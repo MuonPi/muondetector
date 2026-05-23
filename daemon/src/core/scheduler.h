@@ -2,7 +2,6 @@
 #define SCHEDULER_H
 
 #include "task.h"
-#include "thread_pool.h"
 
 #include <atomic>
 #include <chrono>
@@ -16,7 +15,7 @@
 
 class Scheduler {
   public:
-    explicit Scheduler(ThreadPool& pool);
+    explicit Scheduler();
     ~Scheduler();
 
     void start();
@@ -31,8 +30,6 @@ class Scheduler {
     auto schedule(std::function<bool()> func, time_point time,
                   std::chrono::milliseconds interval = std::chrono::milliseconds{0}) -> std::size_t;
     void loop();
-
-    ThreadPool& threadPool;
 
     std::priority_queue<Task> queue;
     std::mutex mutex;

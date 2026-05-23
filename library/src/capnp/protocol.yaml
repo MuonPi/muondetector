@@ -146,6 +146,11 @@ messages:
       - { name: magQ, type: uint8 }
       - { name: cfgSrc, type: uint8 }
       - { name: postStatus, type: uint32 }
+  
+  - name: CfgMsgCapnp
+    fields:
+      - { name: msgID, type: uint16 }
+      - { name: rate, type: int32 }
 
   - name: GpsVersionCapnp
     fields:

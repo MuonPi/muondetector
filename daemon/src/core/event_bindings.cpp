@@ -71,8 +71,9 @@ void EventBindings::setupTcpSink(EventBus& bus, TcpSink& tcp_sink) {
     bus.subscribe<GpioEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<ThresholdSettingEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<NavSat>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
-    bus.subscribe<UbxMsgRates>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
+    bus.subscribe<CfgMsg>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<CfgGNSS>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
+    bus.subscribe<GnssPosStruct>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<UbxTimeMarkStruct>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<MonTx>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<MonRx>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
@@ -220,15 +221,6 @@ void EventBindings::setupDatastore(EventBus& bus, DataStore& datastore) {
         }
     });
 
-    bus.subscribe<SPIStatsRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
-        if (datastore.lastUpdate<SPIStatsEvent>().has_value()) {
-            bus.publish(*datastore.get<SPIStatsEvent>());
-        } else {
-            logWarn("Received SPIStatsRequestCmd but datastore does not have data for type "
-                    "SPIStatsEvent");
-        }
-    });
-
     bus.subscribe<EventTriggerRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
         if (datastore.lastUpdate<EventTriggerEvent>().has_value()) {
             bus.publish(*datastore.get<EventTriggerEvent>());
@@ -280,12 +272,9 @@ void EventBindings::setupDatastore(EventBus& bus, DataStore& datastore) {
     bus.subscribe<UbxMsgRateRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
         if (datastore.lastUpdate<std::unordered_map<std::uint16_t, CfgMsg>>().has_value()) {
             const auto& data = *datastore.get<std::unordered_map<std::uint16_t, CfgMsg>>();
-            UbxMsgRates out{};
-            out.data.reserve(data.size());
             for (const auto& [key, entry] : data) {
-                out.data.push_back(entry);
+                bus.publish(entry);
             }
-            bus.publish(out);
         } else {
             logWarn("Received UbxMsgRateRequestCmd but datastore does not have data for type "
                     "UbxMsgRates");
@@ -293,14 +282,19 @@ void EventBindings::setupDatastore(EventBus& bus, DataStore& datastore) {
     });
 
     // Collect CfgMsg events and update datastore, then on UbxMsgRateRequestCmd build it
-    bus.subscribe<DatastoreStoreEvent<CfgMsg>>([&datastore](const auto& event) {
+    bus.subscribe<DatastoreStoreEvent<CfgMsg>>([&datastore, &bus](const auto& event) {
         const auto& msg = event.data;
         if (datastore.lastUpdate<std::unordered_map<std::uint16_t, CfgMsg>>().has_value()) {
             auto data = *datastore.get<std::unordered_map<std::uint16_t, CfgMsg>>();
+            auto prev = data.at(msg.msgID);
             data.insert_or_assign(msg.msgID, msg);
             datastore.store(std::move(data));
+            if (prev.rate != msg.rate) {
+                bus.publish(msg);
+            }
         } else {
             datastore.store(std::unordered_map<std::uint16_t, CfgMsg>{{msg.msgID, msg}});
+            bus.publish(msg);
         }
     });
 
@@ -347,8 +341,6 @@ void EventBindings::pollDatastore(EventBus& bus, DataStore& datastore) {
     bus.publish(GainSwitchRequestCmd{});
     bus.publish(GpioRateRequestCmd{});
     bus.publish(TemperatureRequestCmd{});
-    bus.publish(I2CStatsRequestCmd{});
-    bus.publish(SPIStatsRequestCmd{});
     bus.publish(PolaritySwitchRequestCmd{});
     bus.publish(PreampSwitchRequestCmd{});
 

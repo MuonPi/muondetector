@@ -12,7 +12,7 @@
 #include <mutex>
 #include <pthread.h>
 
-Scheduler::Scheduler(ThreadPool& pool) : threadPool(pool) {
+Scheduler::Scheduler() {
 }
 
 Scheduler::~Scheduler() {

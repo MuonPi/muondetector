@@ -45,9 +45,11 @@
 #include "data/events/event_trigger_event.h"
 #include "data/events/gpio_event.h"
 #include "data/events/gpio_inhibit_event.h"
+#include "data/events/i2c_stats_event.h"
 #include "data/events/log_trigger_event.h"
 #include "data/events/mqtt_status_event.h"
 #include "data/events/server_conn_count_event.h"
+#include "data/events/spi_stats_event.h"
 #include "data/events/status_led_event.h"
 #include "data/events/version_event.h"
 #include "utility/logparameter.h"
@@ -63,6 +65,7 @@
 #include "data/commands/pca_switch_cmd.h"
 #include "data/commands/polarity_switch_cmd.h"
 #include "data/commands/preamp_switch_cmd.h"
+#include "data/commands/spi_stats_request_cmd.h"
 
 // Events
 #include "data/events/i2c_stats_event.h"
@@ -93,7 +96,7 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     ctx.sinks = std::make_unique<SinkManager>();
     ctx.datastore = std::make_unique<DataStore>();
     ctx.bus = std::make_unique<EventBus>(pool);
-    ctx.scheduler = std::make_unique<Scheduler>(pool);
+    ctx.scheduler = std::make_unique<Scheduler>();
     ctx.config = std::make_unique<SystemConfig>(std::move(config));
 
     // --- datastore ---
@@ -134,6 +137,10 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
         }
         bus.publish(std::move(event));
     });
+
+    // Make sure SPI Stats are emitted correctly
+    ctx.bus->subscribe<SPIStatsRequestCmd>(
+        [&bus = *ctx.bus]([[maybe_unused]] const auto&) { bus.publish(SPIStatsEvent{false}); });
 
     // --- components ---
     for (auto& c : componentConfigurations) {

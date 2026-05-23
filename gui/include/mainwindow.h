@@ -54,7 +54,7 @@ class MainWindow : public QMainWindow {
     ~MainWindow();
 
   signals:
-    void addUbxMsgRates(const UbxMsgRates& rates);
+    void addCfgMsgRate(const CfgMsg& rates);
     void gpioRates(quint8 whichrate, QVector<QPointF> rate);
     void tcpDisconnected();
     void setUiEnabledStates(bool enabled);
@@ -105,8 +105,8 @@ class MainWindow : public QMainWindow {
     void gpioEventReceived(GPIO_SIGNAL, EventEdge);
 
   public slots:
-    void sendRequestUbxMsgRates();
-    void sendSetUbxMsgRateChanges(QMap<uint16_t, int> changes);
+    void sendRequestCfgMsgRates();
+    void sendSetCfgMsgRateChange(uint16_t key, int rate);
     void onSendUbxReset();
     void makeConnection(QString ipAddress, quint16 port);
     void onTriggerSelectionChanged(GPIO_SIGNAL signal);

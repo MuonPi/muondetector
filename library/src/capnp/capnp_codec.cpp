@@ -82,7 +82,6 @@
 #include "data/muondetector_structs.h"
 #include "nav_sat.capnp.h"
 #include "network/tcpmessage_keys.h"
-#include "ubx_msg_rates.capnp.h"
 #include "ubx_timemark_struct.capnp.h"
 #include "version_event.capnp.h"
 
@@ -618,32 +617,23 @@ auto CapnpCodec<PositionModeConfig>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_POSITION_MODEL);
 }
 
-auto CapnpCodec<UbxMsgRates>::encode(const UbxMsgRates& event) -> std::vector<uint8_t> {
+auto CapnpCodec<CfgMsg>::encode(const CfgMsg& event) -> std::vector<uint8_t> {
     capnp::MallocMessageBuilder msg;
-    auto root = msg.initRoot<UbxMsgRatesCapnp>();
-    auto data = root.initData(event.data.size());
-    for (std::size_t i = 0; i < event.data.size(); ++i) {
-        data[i].setMsgID(event.data[i].msgID);
-        data[i].setRate(event.data[i].rate);
-    }
+    auto root = msg.initRoot<CfgMsgCapnp>();
+    root.setMsgID(event.msgID);
+    root.setRate(event.rate);
     auto flat = capnp::messageToFlatArray(msg);
     auto bytes = flat.asBytes();
     return {bytes.begin(), bytes.end()};
 }
 
-auto CapnpCodec<UbxMsgRates>::decode(const std::vector<std::uint8_t>& data) -> UbxMsgRates {
+auto CapnpCodec<CfgMsg>::decode(const std::vector<std::uint8_t>& data) -> CfgMsg {
     auto reader = makeReader(data);
-    auto root = reader.getRoot<UbxMsgRatesCapnp>();
-    UbxMsgRates event{};
-    auto list = root.getData();
-    event.data.reserve(list.size());
-    for (auto item : list) {
-        event.data.push_back(CfgMsg{item.getMsgID(), item.getRate()});
-    }
-    return event;
+    auto root = reader.getRoot<CfgMsgCapnp>();
+    return CfgMsg{.msgID = root.getMsgID(), .rate = root.getRate()};
 }
 
-auto CapnpCodec<UbxMsgRates>::messageKey() -> std::uint16_t {
+auto CapnpCodec<CfgMsg>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_UBX_MSG_RATE);
 }
 
