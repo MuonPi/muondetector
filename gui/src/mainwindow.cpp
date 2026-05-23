@@ -144,7 +144,7 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
     qRegisterMetaType<timespec>("timespec");
     qRegisterMetaType<ADC_SAMPLING_MODE>("ADC_SAMPLING_MODE");
     qRegisterMetaType<PositionModeConfig>("PositionModeConfig");
-    qRegisterMetaType<UbxMsgRates>("UbxMsgRates");
+    qRegisterMetaType<CfgMsg>("CfgMsg");
 
     ui->setupUi(this);
     this->setWindowTitle(
@@ -308,11 +308,11 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
     connect(this, &MainWindow::rxBufReceived, settings, &UbloxSettingsForm::onRxBufReceived);
     connect(this, &MainWindow::rxBufPeakReceived, settings,
             &UbloxSettingsForm::onRxBufPeakReceived);
-    connect(this, &MainWindow::addUbxMsgRates, settings, &UbloxSettingsForm::addUbxMsgRates);
-    connect(settings, &UbloxSettingsForm::sendRequestUbxMsgRates, this,
-            &MainWindow::sendRequestUbxMsgRates);
-    connect(settings, &UbloxSettingsForm::sendSetUbxMsgRateChanges, this,
-            &MainWindow::sendSetUbxMsgRateChanges);
+    connect(this, &MainWindow::addCfgMsgRate, settings, &UbloxSettingsForm::addCfgMsgRate);
+    connect(settings, &UbloxSettingsForm::sendRequestCfgMsgRates, this,
+            &MainWindow::sendRequestCfgMsgRates);
+    connect(settings, &UbloxSettingsForm::sendSetCfgMsgRateChange, this,
+            &MainWindow::sendSetCfgMsgRateChange);
     connect(settings, &UbloxSettingsForm::sendUbxReset, this, &MainWindow::onSendUbxReset);
     connect(settings, &UbloxSettingsForm::sendUbxConfigDefault, this,
             [this]() { sendCmdIfConnected(clientConn, UbxConfigDefaultCmd{}); });
@@ -554,8 +554,8 @@ auto MainWindow::buildDecoderMap()
              }},
             {TCP_MSG_KEY::MSG_UBX_MSG_RATE,
              [this](const TcpPacket& packet) {
-                 auto event = CapnpCodec<UbxMsgRates>::decode(packet.payload);
-                 addUbxMsgRates(event);
+                 auto event = CapnpCodec<CfgMsg>::decode(packet.payload);
+                 addCfgMsgRate(event);
              }},
             {TCP_MSG_KEY::MSG_THRESHOLD,
              [this](const TcpPacket& packet) {
@@ -625,6 +625,7 @@ auto MainWindow::buildDecoderMap()
             {TCP_MSG_KEY::MSG_GEO_POS,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<GnssPosStruct>::decode(packet.payload);
+                 qDebug() << "Received GnssPosStruct lat: " << event.lat << " lon: " << event.lon;
                  emit geodeticPos(event);
              }},
             {TCP_MSG_KEY::MSG_ADC_SAMPLE,
@@ -874,7 +875,7 @@ bool MainWindow::eventFilter(QObject* object, QEvent* event) {
     }
 }
 
-void MainWindow::sendRequestUbxMsgRates() {
+void MainWindow::sendRequestCfgMsgRates() {
     sendCmdIfConnected(clientConn, UbxMsgRateRequestCmd{});
 }
 
@@ -923,15 +924,13 @@ void MainWindow::sendSetThresh(uint8_t channel, float value) {
                           CapnpCodec<ThresholdSettingCmd>::encode(cmd));
 }
 
-void MainWindow::sendSetUbxMsgRateChanges(QMap<uint16_t, int> changes) {
-    for (auto it = changes.begin(); it != changes.end(); ++it) {
-        UbxMsgRateCmd cmd{};
-        cmd.id = static_cast<UBX_MSG::msg_id>(it.key());
-        cmd.port = 1;
-        cmd.rate = static_cast<std::uint8_t>(std::clamp(it.value(), 0, 255));
-        sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_UBX_MSG_RATE,
-                              CapnpCodec<UbxMsgRateCmd>::encode(cmd));
-    }
+void MainWindow::sendSetCfgMsgRateChange(uint16_t key, int rate) {
+    UbxMsgRateCmd cmd{};
+    cmd.id = static_cast<UBX_MSG::msg_id>(key);
+    cmd.port = 1;
+    cmd.rate = static_cast<std::uint8_t>(std::clamp(rate, 0, 255));
+    sendPacketIfConnected(clientConn, TCP_MSG_KEY::MSG_UBX_MSG_RATE,
+                          CapnpCodec<UbxMsgRateCmd>::encode(cmd));
 }
 
 void MainWindow::onSendUbxReset() {
@@ -1070,7 +1069,7 @@ void MainWindow::connected() {
     sendCmdIfConnected(clientConn, GainSwitchRequestCmd{});
     sendCmdIfConnected(clientConn, ThresholdSettingRequestCmd{});
     sendCmdIfConnected(clientConn, PcaSwitchRequestCmd{});
-    sendRequestUbxMsgRates();
+    sendRequestCfgMsgRates();
     sendRequestGpioRateBuffer();
     sendCmdIfConnected(clientConn, CalibRequestCmd{});
     sendCmdIfConnected(clientConn, AdcModeRequestCmd{});

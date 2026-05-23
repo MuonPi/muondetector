@@ -53,7 +53,7 @@ UbloxSettingsForm::UbloxSettingsForm(QWidget* parent)
     connect(ui->saveConfigPushButton, &QPushButton::clicked, this,
             &UbloxSettingsForm::onSaveConfigPushButtonClicked);
     this->setDisabled(true);
-    emit sendRequestUbxMsgRates();
+    emit sendRequestCfgMsgRates();
 }
 
 void UbloxSettingsForm::onConfigChanged() {
@@ -79,11 +79,11 @@ void UbloxSettingsForm::onItemChanged(QTableWidgetItem* item) {
     }
 }
 
-void UbloxSettingsForm::addUbxMsgRates(const UbxMsgRates& rates) {
-    QMap<uint16_t, int> ubxMsgRates;
-    for (const auto& entry : rates.data) {
-        ubxMsgRates.insert(entry.msgID, entry.rate);
-    }
+void UbloxSettingsForm::addCfgMsgRate(const CfgMsg& rate) {
+    QMap<uint16_t, int> ubxMsgRates = oldSettings;
+
+    ubxMsgRates.insert(rate.msgID, rate.rate);
+
     if (ubxMsgRates.isEmpty())
         return;
     ui->ubloxSignalStates->clearContents();
@@ -143,7 +143,10 @@ void UbloxSettingsForm::onSettingsButtonBoxClicked(QAbstractButton* button) {
             }
         }
         if (changedSettings.size() > 0) {
-            emit sendSetUbxMsgRateChanges(changedSettings);
+            oldSettings.clear();
+            for (auto it = changedSettings.begin(); it != changedSettings.end(); ++it) {
+                emit sendSetCfgMsgRateChange(it.key(), it.value());
+            }
         } else if (fGnssConfigChanged) {
             fGnssConfigChanged = false;
             writeGnssConfig();
@@ -158,7 +161,7 @@ void UbloxSettingsForm::onSettingsButtonBoxClicked(QAbstractButton* button) {
     if (button == ui->settingsButtonBox->button(QDialogButtonBox::Discard)) {
         onTP5Received(fTpConfig);
         ui->ubloxSignalStates->blockSignals(true);
-        emit sendRequestUbxMsgRates();
+        emit sendRequestCfgMsgRates();
         ui->settingsButtonBox->button(QDialogButtonBox::Apply)->setDisabled(true);
         ui->settingsButtonBox->button(QDialogButtonBox::Discard)->setDisabled(true);
     }

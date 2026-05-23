@@ -33,8 +33,8 @@ class UbloxSettingsForm : public QDialog {
     explicit UbloxSettingsForm(QWidget* parent = nullptr);
 
   signals:
-    void sendSetUbxMsgRateChanges(QMap<uint16_t, int> ubxMsgRateChanges);
-    void sendRequestUbxMsgRates();
+    void sendSetCfgMsgRateChange(uint16_t msgID, int rate);
+    void sendRequestCfgMsgRates();
     void sendUbxReset();
     void sendUbxConfigDefault();
     void setGnssConfigs(const std::vector<GnssConfigStruct>& configList);
@@ -42,7 +42,7 @@ class UbloxSettingsForm : public QDialog {
     void sendUbxSaveCfg();
 
   public slots:
-    void addUbxMsgRates(const UbxMsgRates& rates);
+    void addCfgMsgRate(const CfgMsg& rate);
     void onItemChanged(QTableWidgetItem* item);
     void onUiEnabledStateChange(bool connected);
     void onTxBufReceived(quint8 val);

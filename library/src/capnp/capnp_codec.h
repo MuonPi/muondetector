@@ -18,7 +18,7 @@ struct MCP4728Event;
 struct MonRx;
 struct MonTx;
 struct PositionModeConfig;
-struct UbxMsgRates;
+struct CfgMsg;
 struct UbxTimeMarkStruct;
 struct VersionEvent;
 struct AdcModeEvent;
@@ -125,7 +125,7 @@ DECLARE_CODEC(MCP4728Event)
 DECLARE_CODEC(MonRx)
 DECLARE_CODEC(MonTx)
 DECLARE_CODEC(PositionModeConfig)
-DECLARE_CODEC(UbxMsgRates)
+DECLARE_CODEC(CfgMsg)
 DECLARE_CODEC(UbxTimeMarkStruct)
 DECLARE_CODEC(VersionEvent)
 DECLARE_CODEC(AdcModeEvent)

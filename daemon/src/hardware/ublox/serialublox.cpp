@@ -147,7 +147,7 @@ void SerialUblox::send(const UbxMessage& msg, bool trackAck) {
         pending_.emplace(msg.full_id(),
                          PendingMsg{.msg = msg, .last_send = std::chrono::steady_clock::now()});
     }
-    logInfo("Send message " + std::to_string(msg.full_id()));
+    logDebug("Send message " + std::to_string(msg.full_id()));
     boost::asio::post(tx_strand_, [this, data = msg.raw_message_string()]() {
         bool write_in_progress = !tx_queue_.empty();
 
@@ -176,7 +176,7 @@ void SerialUblox::do_write() {
 }
 
 void SerialUblox::handle(const UbxAckAck& ack) {
-    logInfo("Got AckAck " + std::to_string(ack.msgID));
+    logDebug("Got AckAck " + std::to_string(ack.msgID));
 
     boost::asio::post(protocol_strand_, [this, ack]() {
         auto range = pending_.equal_range(ack.msgID);
@@ -210,7 +210,7 @@ void SerialUblox::handle(const UbxAckAck& ack) {
 }
 
 void SerialUblox::handle(const UbxAckNak& ackNak) {
-    logInfo("Got AckNak " + std::to_string(ackNak.msgID));
+    logDebug("Got AckNak " + std::to_string(ackNak.msgID));
 
     bus_.publish(DatastoreStoreEvent{CfgMsg{ackNak.msgID, -1}});
 
@@ -268,7 +268,7 @@ void SerialUblox::handle(const UbxMsgPollCmd& cmd) {
                 enqueueMessage(
                     UbxMessage{cmd.id, std::string(reinterpret_cast<const char*>(data.data()),
                                                    data.size())},
-                    false);
+                    true);
                 break;
             case UBX_MSG::MON_VER:
                 // the VER message apparently does not confirm reception with an ACK
@@ -279,7 +279,7 @@ void SerialUblox::handle(const UbxMsgPollCmd& cmd) {
                 enqueueMessage(
                     UbxMessage{cmd.id, std::string(reinterpret_cast<const char*>(data.data()),
                                                    data.size())},
-                    false);
+                    true);
                 break;
             default:
                 // for most messages the poll msg is just the message without payload
