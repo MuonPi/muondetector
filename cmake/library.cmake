@@ -38,7 +38,7 @@ set(MUONDETECTOR_LIBRARY_EVENT_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/events/gpio_inhibit_event.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/events/gpio_rate_event.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/events/i2c_stats_event.h"
-    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/events/lm75_event.h"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/events/temperature_event.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/events/mqtt_status_event.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/events/pca_switch_event.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/events/polarity_switch_event.h"
@@ -96,30 +96,6 @@ set(MUONDETECTOR_COMMANDS_HEADER_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/commands/ubx_version_dependent_msg_rate_cmd.h"
 )
 
-if (MUONDETECTOR_BUILD_DAEMON)
-set(MUONDETECTOR_LIBRARY_MQTT_SOURCE_FILES
-    "${MUONDETECTOR_LIBRARY_SRC_DIR}/mqtt/mqtthandler.cpp"
-    )
-set(MUONDETECTOR_LIBRARY_MQTT_HEADER_FILES
-    "${MUONDETECTOR_LIBRARY_SRC_DIR}/mqtt/mqtthandler.h"
-    )
-
-add_library(muondetector-shared-mqtt OBJECT ${MUONDETECTOR_LIBRARY_MQTT_SOURCE_FILES} ${MUONDETECTOR_LIBRARY_MQTT_HEADER_FILES} ${MUONDETECTOR_LIBRARY_EVENT_FILES} ${MUONDETECTOR_LIBRARY_CMD_FILES})
-target_compile_definitions(muondetector-shared-mqtt PUBLIC MUONDETECTOR_LIBRARY_EXPORT)
-set_target_properties(muondetector-shared-mqtt PROPERTIES POSITION_INDEPENDENT_CODE 1)
-target_include_directories(muondetector-shared-mqtt PUBLIC
-    "${MUONDETECTOR_LIBRARY_DIR}"
-    "${MUONDETECTOR_LIBRARY_SRC_DIR}"
-    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data"
-    "${MUONDETECTOR_LIBRARY_SRC_DIR}/mqtt"
-    "${MUONDETECTOR_LIBRARY_SRC_DIR}/network"
-    "${MUONDETECTOR_LIBRARY_BINARY_DIR}"
-    "${Boost_INCLUDE_DIRS}"
-    )
-    
-target_link_libraries(muondetector-shared-mqtt PUBLIC muondetector-protocol)
-endif ()
-
 add_library(muondetector-shared OBJECT ${MUONDETECTOR_LIBRARY_SOURCE_FILES} ${MUONDETECTOR_LIBRARY_HEADER_FILES})
 target_compile_definitions(muondetector-shared PUBLIC MUONDETECTOR_LIBRARY_EXPORT)
 set_target_properties(muondetector-shared PROPERTIES POSITION_INDEPENDENT_CODE 1)
@@ -127,7 +103,6 @@ target_include_directories(muondetector-shared PUBLIC
     "${MUONDETECTOR_LIBRARY_DIR}"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data"
-    "${MUONDETECTOR_LIBRARY_SRC_DIR}/mqtt"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network"
     "${MUONDETECTOR_LIBRARY_BINARY_DIR}"
     "${Boost_INCLUDE_DIRS}"

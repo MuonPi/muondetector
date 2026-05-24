@@ -17,10 +17,11 @@ find_library(MOSQUITTO
     names mosquitto
     REQUIRED
 )
-find_library(CRYPTOPP
-    names cryptopp crypto++
-    REQUIRED
-)
+# Not required anymore
+# find_library(CRYPTOPP
+#     names cryptopp crypto++
+#     REQUIRED
+# )
 find_library(RT
     NAMES rt
     REQUIRED
@@ -211,7 +212,7 @@ configure_file(
 
 # target_link_libraries(muondetector-login
 #     Qt5::Network Qt5::SerialPort
-#     crypto++
+# #     crypto++
 #     mosquitto
 #     muondetector-shared
 #     muondetector-shared-mqtt
@@ -235,13 +236,13 @@ target_include_directories(muondetector-daemon PUBLIC
 target_link_libraries(muondetector-daemon PRIVATE
     ${LIBCONFIG}
     ${MOSQUITTO}
-    ${CRYPTOPP}
+    # ${CRYPTOPP}
     ${GPIOD}
     ${RT}
     ${CAPNP_LIBRARIES}
     ${CAPNP_KJ_LIBRARIES}
     muondetector-shared
-    muondetector-shared-mqtt
+    # muondetector-shared-mqtt
     muondetector-protocol
     Threads::Threads
 )

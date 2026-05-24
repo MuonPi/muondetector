@@ -68,7 +68,6 @@
 #include "data/events/gpio_inhibit_event.h"
 #include "data/events/gpio_rate_event.h"
 #include "data/events/i2c_stats_event.h"
-#include "data/events/lm75_event.h"
 #include "data/events/mcp4728_event.h"
 #include "data/events/mqtt_inhibit_event.h"
 #include "data/events/mqtt_status_event.h"
@@ -76,6 +75,7 @@
 #include "data/events/polarity_switch_event.h"
 #include "data/events/preamp_switch_event.h"
 #include "data/events/spi_stats_event.h"
+#include "data/events/temperature_event.h"
 #include "data/events/threshold_setting_event.h"
 #include "data/events/ubx_event.h"
 #include "data/events/version_event.h"
@@ -903,7 +903,7 @@ auto CapnpCodec<MqttInhibitEvent>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_MQTT_INHIBIT);
 }
 
-auto CapnpCodec<LM75Event>::encode(const LM75Event& event) -> std::vector<uint8_t> {
+auto CapnpCodec<TemperatureEvent>::encode(const TemperatureEvent& event) -> std::vector<uint8_t> {
     capnp::MallocMessageBuilder msg;
     auto root = msg.initRoot<LM75EventCapnp>();
     root.setTemperature(event.temperature);
@@ -911,21 +911,23 @@ auto CapnpCodec<LM75Event>::encode(const LM75Event& event) -> std::vector<uint8_
     auto bytes = flat.asBytes();
     return {bytes.begin(), bytes.end()};
 }
-auto CapnpCodec<LM75Event>::decode(const std::vector<std::uint8_t>& data) -> LM75Event {
+auto CapnpCodec<TemperatureEvent>::decode(const std::vector<std::uint8_t>& data)
+    -> TemperatureEvent {
     auto reader = makeReader(data);
     auto root = reader.getRoot<LM75EventCapnp>();
-    LM75Event event{};
+    TemperatureEvent event{};
     event.temperature = root.getTemperature();
     return event;
 }
-auto CapnpCodec<LM75Event>::messageKey() -> std::uint16_t {
+auto CapnpCodec<TemperatureEvent>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_TEMPERATURE);
 }
 
 auto CapnpCodec<MqttStatusEvent>::encode(const MqttStatusEvent& event) -> std::vector<uint8_t> {
     capnp::MallocMessageBuilder msg;
     auto root = msg.initRoot<MqttStatusEventCapnp>();
-    root.setConnected(event.connected);
+    root.setStatus(static_cast<std::uint8_t>(event.status));
+    root.setText(event.text);
     auto flat = capnp::messageToFlatArray(msg);
     auto bytes = flat.asBytes();
     return {bytes.begin(), bytes.end()};
@@ -933,9 +935,8 @@ auto CapnpCodec<MqttStatusEvent>::encode(const MqttStatusEvent& event) -> std::v
 auto CapnpCodec<MqttStatusEvent>::decode(const std::vector<std::uint8_t>& data) -> MqttStatusEvent {
     auto reader = makeReader(data);
     auto root = reader.getRoot<MqttStatusEventCapnp>();
-    MqttStatusEvent event{};
-    event.connected = root.getConnected();
-    return event;
+    return MqttStatusEvent{.status = static_cast<MqttStatusEvent::Status>(root.getStatus()),
+                           .text = root.getText()};
 }
 auto CapnpCodec<MqttStatusEvent>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_MQTT_STATUS);
