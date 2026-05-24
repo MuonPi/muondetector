@@ -1,5 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
+
+#include "data/events/mqtt_status_event.h"
+
 #include <QErrorMessage>
 #include <QMainWindow>
 #include <QStandardItemModel>
@@ -13,7 +16,6 @@
 #include <events/ubx_event.h>
 #include <functional>
 #include <gpio_pin_definitions.h>
-#include <mqtthandler.h>
 #include <sys/types.h>
 #include <unordered_map>
 
@@ -95,7 +97,7 @@ class MainWindow : public QMainWindow {
     void adcModeReceived(quint8 mode);
     void logInfoReceived(const LogInfoStruct& lis);
     void mqttStatusChanged(bool connected);
-    void mqttStatusChanged(MuonPi::MqttHandler::Status status);
+    void mqttStatusChanged(const MqttStatusEvent& status);
     void timeMarkReceived(const UbxTimeMarkStruct&);
     void polaritySwitchReceived(bool pol1, bool pol2);
     void gpioInhibitReceived(bool inhibit);

@@ -47,7 +47,6 @@ target_link_libraries(tcpclient PRIVATE
     ${CAPNP_LIBRARIES}
     ${CAPNP_KJ_LIBRARIES}
     muondetector-shared
-    muondetector-shared-mqtt
     muondetector-protocol
     Threads::Threads
 )

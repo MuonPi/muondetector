@@ -45,7 +45,8 @@ messages:
 
   - name: MqttStatusEventCapnp
     fields:
-      - { name: connected, type: bool }
+      - { name: status, type: uint8 }
+      - { name: text, type: string }
 
   - name: Ads1115EventCapnp
     fields:

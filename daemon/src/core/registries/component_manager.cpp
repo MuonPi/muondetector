@@ -19,10 +19,15 @@ auto ComponentManager::contains(ComponentId id) -> bool {
 }
 
 auto ComponentManager::report() -> std::string {
+    if (m_components.empty()) {
+        return "Components registered: (empty)";
+    }
     std::stringstream sstr;
     sstr << "Components registered:\n";
     for (auto& [key, value] : m_components) {
-        sstr << value->name() << "\n";
+        sstr << value->name() << '\n';
     }
-    return sstr.str();
+    std::string str = sstr.str();
+    str.pop_back(); // removes trailing '\n'
+    return str;
 }

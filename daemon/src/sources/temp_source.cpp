@@ -3,7 +3,7 @@
 #include "core/logging/logger.h"
 #include "core/registries/device_registry.h"
 #include "data/events/datastore_store_event.h"
-#include "data/events/lm75_event.h"
+#include "data/events/temperature_event.h"
 #include "hardware/i2c/lm75.h"
 #include "hardware/i2c/mic184.h"
 #include "hardware/i2cdevice_wrapper.h"
@@ -22,7 +22,7 @@ void TempSource::update() {
     if (device == nullptr) {
         return;
     }
-    bus_.publish(DatastoreStoreEvent{LM75Event{device->getTemperature()}});
+    bus_.publish(DatastoreStoreEvent{TemperatureEvent{device->getTemperature()}});
 }
 
 auto TempSource::dev() -> DeviceFunction<DeviceType::TEMP>* {

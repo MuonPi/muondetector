@@ -30,7 +30,7 @@ struct PolaritySwitchEvent;
 struct PreampSwitchEvent;
 struct GpioInhibitEvent;
 struct MqttInhibitEvent;
-struct LM75Event;
+struct TemperatureEvent;
 struct MqttStatusEvent;
 struct SPIStatsEvent;
 struct ThresholdSettingEvent;
@@ -137,7 +137,7 @@ DECLARE_CODEC(PolaritySwitchEvent)
 DECLARE_CODEC(PreampSwitchEvent)
 DECLARE_CODEC(GpioInhibitEvent)
 DECLARE_CODEC(MqttInhibitEvent)
-DECLARE_CODEC(LM75Event)
+DECLARE_CODEC(TemperatureEvent)
 DECLARE_CODEC(MqttStatusEvent)
 DECLARE_CODEC(SPIStatsEvent)
 DECLARE_CODEC(ThresholdSettingEvent)
