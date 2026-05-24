@@ -107,7 +107,7 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
         VersionEvent{.hw_ver = MuonPi::Version::hardware, .sw_ver = MuonPi::Version::software});
     ctx.datastore->store(EventTriggerEvent{.signal = ctx.config->eventTrigger});
     ctx.datastore->store(GpioInhibitEvent{.inhibit = false});
-    ctx.datastore->store(MqttStatusEvent{.connected = false});
+    ctx.datastore->store(MqttStatusEvent{.status = MqttStatusEvent::Status::Connecting});
 
     // --- hardware ---
     DeviceFactory::i2cReset();
@@ -145,21 +145,36 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     // --- components ---
     for (auto& c : componentConfigurations) {
         auto component = ComponentFactory::createComponent(c, ctx);
-        logDebug("Created component " + component->name());
+        std::stringstream sstream{};
+        sstream << "Created component " << component->name() << " - ";
         auto component_as_source = std::dynamic_pointer_cast<Source>(component);
         if (component_as_source) {
             component_as_source->update(); // Read out data once in the beginning!
             std::weak_ptr<Source> weak = component_as_source;
-            if (c.interval) {
+            sstream << "interval: "
+                    << (c.interval.has_value() ? (std::to_string(c.interval.value().count()) + "ms")
+                                               : "false")
+                    << " - ";
+            if (c.interval.has_value()) {
                 ctx.scheduler->every(c.interval.value(), [weak]() {
+                    std::stringstream sstr;
+                    sstr << "Reading source: ";
                     if (auto locked = weak.lock()) {
+                        sstr << locked->name();
                         locked->update();
+                        logDebug(sstr.str());
                         return true;
+                    } else {
+                        sstr << "unknown";
                     }
+                    logDebug(sstr.str());
                     return false; // Stop scheduling if source weak pointer is invalid
                 });
             }
+        } else {
+            sstream << "Component is not a source.";
         }
+        logInfo(sstream.str());
 
         // Store component in component manager
         ctx.components->add(component->id(), component);
@@ -480,6 +495,9 @@ auto SystemBuilder::parseComponentConfig(const libconfig::Config& componentConfi
             if (deviceId != deviceLookup.end()) {
                 cfg.deviceId = deviceId->second;
             }
+        }
+        if (int every_ms = 0; s.lookupValue("every", every_ms)) {
+            cfg.interval = std::chrono::milliseconds{every_ms};
         }
         result.push_back(cfg);
     }

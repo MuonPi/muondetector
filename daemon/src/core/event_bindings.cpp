@@ -34,13 +34,13 @@
 #include "data/events/gpio_inhibit_event.h"
 #include "data/events/gpio_rate_event.h"
 #include "data/events/i2c_stats_event.h"
-#include "data/events/lm75_event.h"
 #include "data/events/mcp4728_event.h"
 #include "data/events/mqtt_status_event.h"
 #include "data/events/pca_switch_event.h"
 #include "data/events/polarity_switch_event.h"
 #include "data/events/preamp_switch_event.h"
 #include "data/events/spi_stats_event.h"
+#include "data/events/temperature_event.h"
 #include "data/events/threshold_setting_event.h"
 #include "data/events/ubx_event.h"
 #include "data/events/version_event.h"
@@ -61,7 +61,7 @@ void EventBindings::setupTcpSink(EventBus& bus, TcpSink& tcp_sink) {
     bus.subscribe<GpioRateEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<GpioInhibitEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<I2CStatsEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
-    bus.subscribe<LM75Event>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
+    bus.subscribe<TemperatureEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<MCP4728Event>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<MqttStatusEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<PcaSwitchEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
@@ -125,9 +125,9 @@ void EventBindings::setupDatastore(EventBus& bus, DataStore& datastore) {
                   UbxTimeMarkStruct, UbxTimePulseStruct, GnssMonHwStruct, GnssMonHw2Struct,
                   NavTimeGPS, NavTimeUTC, BiasVoltageEvent, MqttStatusEvent, UbxDopStruct,
                   AdcTraceEvent, BiasSwitchEvent, CalibEvent, GainSwitchEvent, GpioRateEvent,
-                  GpioInhibitEvent, LM75Event, MCP4728Event, PcaSwitchEvent, PolaritySwitchEvent,
-                  GpsVersion, EventTriggerEvent, LogInfoStruct, PositionModeConfig, VersionEvent>(
-        bus, datastore);
+                  GpioInhibitEvent, TemperatureEvent, MCP4728Event, PcaSwitchEvent,
+                  PolaritySwitchEvent, GpsVersion, EventTriggerEvent, LogInfoStruct,
+                  PositionModeConfig, VersionEvent>(bus, datastore);
 
     // Message Requests will be answered directly from datastore
     bus.subscribe<ThresholdSettingRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
@@ -204,8 +204,8 @@ void EventBindings::setupDatastore(EventBus& bus, DataStore& datastore) {
     });
 
     bus.subscribe<TemperatureRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
-        if (datastore.lastUpdate<LM75Event>().has_value()) {
-            bus.publish(*datastore.get<LM75Event>());
+        if (datastore.lastUpdate<TemperatureEvent>().has_value()) {
+            bus.publish(*datastore.get<TemperatureEvent>());
         } else {
             logWarn("Received GpioRateRequestCmd but datastore does not have data for type "
                     "GpioRateEvent");
@@ -273,7 +273,7 @@ void EventBindings::setupDatastore(EventBus& bus, DataStore& datastore) {
         if (datastore.lastUpdate<std::unordered_map<std::uint16_t, CfgMsg>>().has_value()) {
             const auto& data = *datastore.get<std::unordered_map<std::uint16_t, CfgMsg>>();
             for (const auto& [key, entry] : data) {
-                bus.publish(entry);
+                bus.publish<CfgMsg>(CfgMsg{entry});
             }
         } else {
             logWarn("Received UbxMsgRateRequestCmd but datastore does not have data for type "
@@ -286,11 +286,20 @@ void EventBindings::setupDatastore(EventBus& bus, DataStore& datastore) {
         const auto& msg = event.data;
         if (datastore.lastUpdate<std::unordered_map<std::uint16_t, CfgMsg>>().has_value()) {
             auto data = *datastore.get<std::unordered_map<std::uint16_t, CfgMsg>>();
-            auto prev = data.at(msg.msgID);
+
+            auto it = data.find(msg.msgID);
+            bool changed = true;
+
+            if (it != data.end()) {
+                changed = (it->second.rate != msg.rate);
+            }
+
             data.insert_or_assign(msg.msgID, msg);
+
             datastore.store(std::move(data));
-            if (prev.rate != msg.rate) {
-                bus.publish(msg);
+
+            if (changed) {
+                bus.publish<CfgMsg>(CfgMsg{msg});
             }
         } else {
             datastore.store(std::unordered_map<std::uint16_t, CfgMsg>{{msg.msgID, msg}});
@@ -417,11 +426,11 @@ void EventBindings::pollDatastore(EventBus& bus, DataStore& datastore) {
         logWarn("Datastore does not have data for type "
                 "GpioInhibitEvent in pollDatastore function");
     }
-    if (datastore.lastUpdate<LM75Event>().has_value()) {
-        bus.publish(*datastore.get<LM75Event>());
+    if (datastore.lastUpdate<TemperatureEvent>().has_value()) {
+        bus.publish(*datastore.get<TemperatureEvent>());
     } else {
         logWarn("Datastore does not have data for type "
-                "LM75Event in pollDatastore function");
+                "TemperatureEvent in pollDatastore function");
     }
     if (datastore.lastUpdate<PositionModeConfig>().has_value()) {
         bus.publish(*datastore.get<PositionModeConfig>());

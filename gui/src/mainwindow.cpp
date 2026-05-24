@@ -66,7 +66,6 @@
 #include <data/events/gpio_inhibit_event.h>
 #include <data/events/gpio_rate_event.h>
 #include <data/events/i2c_stats_event.h>
-#include <data/events/lm75_event.h>
 #include <data/events/mcp4728_event.h>
 #include <data/events/mqtt_inhibit_event.h>
 #include <data/events/mqtt_status_event.h>
@@ -74,6 +73,7 @@
 #include <data/events/polarity_switch_event.h>
 #include <data/events/preamp_switch_event.h>
 #include <data/events/spi_stats_event.h>
+#include <data/events/temperature_event.h>
 #include <data/events/threshold_setting_event.h>
 #include <data/events/ubx_event.h>
 #include <data/events/version_event.h>
@@ -292,10 +292,9 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
             static_cast<void (Status::*)(bool)>(&Status::onMqttStatusChanged));
     connect(
         this,
-        static_cast<void (MainWindow::*)(MuonPi::MqttHandler::Status)>(
-            &MainWindow::mqttStatusChanged),
+        static_cast<void (MainWindow::*)(const MqttStatusEvent&)>(&MainWindow::mqttStatusChanged),
         status,
-        static_cast<void (Status::*)(MuonPi::MqttHandler::Status)>(&Status::onMqttStatusChanged));
+        static_cast<void (Status::*)(const MqttStatusEvent&)>(&Status::onMqttStatusChanged));
 
     ui->tabWidget->addTab(status, "Overview");
 
@@ -625,7 +624,6 @@ auto MainWindow::buildDecoderMap()
             {TCP_MSG_KEY::MSG_GEO_POS,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<GnssPosStruct>::decode(packet.payload);
-                 qDebug() << "Received GnssPosStruct lat: " << event.lat << " lon: " << event.lon;
                  emit geodeticPos(event);
              }},
             {TCP_MSG_KEY::MSG_ADC_SAMPLE,
@@ -647,7 +645,7 @@ auto MainWindow::buildDecoderMap()
              }},
             {TCP_MSG_KEY::MSG_TEMPERATURE,
              [this](const TcpPacket& packet) {
-                 auto event = CapnpCodec<LM75Event>::decode(packet.payload);
+                 auto event = CapnpCodec<TemperatureEvent>::decode(packet.payload);
                  emit temperatureReceived(event.temperature);
              }},
             {TCP_MSG_KEY::MSG_I2C_STATS,
@@ -785,7 +783,7 @@ auto MainWindow::buildDecoderMap()
             {TCP_MSG_KEY::MSG_MQTT_STATUS,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<MqttStatusEvent>::decode(packet.payload);
-                 emit mqttStatusChanged(event.connected);
+                 emit mqttStatusChanged(event.status == MqttStatusEvent::Status::Connected);
              }},
             {TCP_MSG_KEY::MSG_GPIO_INHIBIT,
              [this](const TcpPacket& packet) {

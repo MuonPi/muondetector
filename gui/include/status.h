@@ -1,6 +1,8 @@
 #ifndef STATUS_H
 #define STATUS_H
 
+#include "data/events/mqtt_status_event.h"
+
 #include <QButtonGroup>
 #include <QMap>
 #include <QPointF>
@@ -8,7 +10,6 @@
 #include <QVector>
 #include <QWidget>
 #include <gpio_pin_definitions.h>
-#include <mqtthandler.h>
 
 namespace Ui {
 class Status;
@@ -47,7 +48,7 @@ class Status : public QWidget {
     void onTriggerSelectionReceived(GPIO_SIGNAL signal);
     void onTimepulseReceived();
     void onMqttStatusChanged(bool connected);
-    void onMqttStatusChanged(MuonPi::MqttHandler::Status status);
+    void onMqttStatusChanged(const MqttStatusEvent& event);
 
   private slots:
     void setRateSecondsBuffered(const QString& bufferTime);

@@ -516,7 +516,7 @@ void SerialUblox::handle([[maybe_unused]] const UbxConfigDefaultCmd&) {
     }
     if (init_state_ == InitState::ReceivedRateAck) {
         init_state_ = InitState::Ready;
-        logInfo("Called UbxConfigDefaultCmd sending setiü");
+        logInfo("Called UbxConfigDefaultCmd");
 
         handle(UbxDynamicModelCmd{default_gnss_dynamic_model});
         handle(UbxSetAopCmd{true});
