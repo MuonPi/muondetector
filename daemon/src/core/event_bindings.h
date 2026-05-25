@@ -4,6 +4,7 @@
 #include "core/event_bus.h"
 #include "core/registries/data_store.h"
 #include "data/events/datastore_store_event.h"
+#include "sinks/mqtt_sink.h"
 #include "sinks/tcp_sink.h"
 
 #include <array>
@@ -13,6 +14,8 @@ class EventBindings {
   public:
     // make tcp sink send data through tcp connections
     static void setupTcpSink(EventBus& bus, TcpSink& tcp_sink);
+
+    static void setupMqttSink(EventBus& bus, MqttSink& mqtt_sink);
 
     // All Events are either published wrapped inside of DataStoreStoreEvent or "normally"
     // If published wrapped, can also contain arrays of Events (for example for threshold events)

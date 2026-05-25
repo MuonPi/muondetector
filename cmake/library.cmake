@@ -9,12 +9,19 @@ configure_file(
     )
 
 
+find_package(PkgConfig REQUIRED)
+
+pkg_check_modules(GLIB REQUIRED IMPORTED_TARGET glib-2.0)
+pkg_check_modules(LIBSECRET REQUIRED IMPORTED_TARGET libsecret-1)
+
+
 # Add Boost
 find_package(Boost CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 
 
 set(MUONDETECTOR_LIBRARY_SOURCE_FILES
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/libsecret/credentials.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/capnp/capnp_codec.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/config.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network/tcpconnection.cpp"
@@ -55,6 +62,7 @@ set(MUONDETECTOR_LIBRARY_CMD_FILES
 )
 
 set(MUONDETECTOR_LIBRARY_HEADER_FILES
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/libsecret/credentials.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/capnp/capnp_codec.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/gpio_pin_definitions.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/histogram.h"
@@ -108,4 +116,8 @@ target_include_directories(muondetector-shared PUBLIC
     "${Boost_INCLUDE_DIRS}"
     )
 
-target_link_libraries(muondetector-shared PUBLIC muondetector-protocol)
+target_link_libraries(muondetector-shared PUBLIC
+    muondetector-protocol
+    PkgConfig::LIBSECRET
+    PkgConfig::GLIB
+)

@@ -1,459 +1,410 @@
-#include "utility/filehandler.h"
+#include "sinks/file_sink.h"
 
-#include <QByteArray>
-#include <QCryptographicHash>
-#include <QDebug>
-#include <QDir>
-#include <QFile>
-#include <QNetworkConfigurationManager>
-#include <QNetworkInterface>
-#include <QNetworkSession>
-#include <QProcess>
-#include <QTextStream>
-#include <QThread>
-#include <QTimer>
-#include <QtGlobal>
-#include <crypto++/aes.h>
-#include <crypto++/filters.h>
-#include <crypto++/hex.h>
-#include <crypto++/modes.h>
-#include <crypto++/osrng.h>
-#include <crypto++/sha.h>
+#include "core/logging/logger.h"
+#include "custom_io_operators.h"
+#include "data/events/file_log_event.h"
+#include "data/events/ubx_event.h"
+#include "utility/conversion.h"
+
+#include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 #include <sys/syscall.h>
 #include <unistd.h>
 
-using namespace CryptoPP;
+using namespace std::literals;
 
-static std::string SHA256HashString(std::string aString) {
-    std::string digest;
-    CryptoPP::SHA256 hash;
-
-    CryptoPP::StringSource foo(aString, true,
-                               new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(digest)));
-    return digest;
-}
-
-static QString getMacAddress() {
-    QNetworkConfiguration nc;
-    QNetworkConfigurationManager ncm;
-    QList<QNetworkConfiguration> configsForEth, configsForWLAN, allConfigs;
-    // getting all the configs we can
-    foreach (nc, ncm.allConfigurations(QNetworkConfiguration::Active)) {
-        if (nc.type() == QNetworkConfiguration::InternetAccessPoint) {
-            // selecting the bearer type here
-            if (nc.bearerType() == QNetworkConfiguration::BearerWLAN) {
-                configsForWLAN.append(nc);
-            }
-            if (nc.bearerType() == QNetworkConfiguration::BearerEthernet) {
-                configsForEth.append(nc);
-            }
-        }
-    }
-    // further in the code WLAN's and Eth's were treated differently
-    allConfigs.append(configsForWLAN);
-    allConfigs.append(configsForEth);
-    QString MAC;
-    foreach (nc, allConfigs) {
-        QNetworkSession networkSession(nc);
-        QNetworkInterface netInterface = networkSession.interface();
-        // these last two conditions are for omiting the virtual machines' MAC
-        // works pretty good since no one changes their adapter name
-        if (!(netInterface.flags() & QNetworkInterface::IsLoopBack) &&
-            !netInterface.humanReadableName().toLower().contains("vmware") &&
-            !netInterface.humanReadableName().toLower().contains("virtual")) {
-            MAC = QString(netInterface.hardwareAddress());
-            break;
-        }
-    }
-    return MAC;
-}
-
-static QByteArray getMacAddressByteArray() {
-    QString mac = getMacAddress();
-    QByteArray byteArray;
-    byteArray.append(mac);
-    return byteArray;
-}
-
-static QString dateStringNow() {
-    return QDateTime::currentDateTimeUtc().toString("yyyy-MM-dd_hh-mm-ss");
-}
-
-FileHandler::FileHandler(const QString& username, const QString& password, quint32 fileSizeMB,
-                         QObject* parent)
-    : QObject(parent) {
-    lastUploadDateTime = QDateTime(QDate::currentDate(), QTime(0, 0, 0, 0), Qt::TimeSpec::UTC);
-    dailyUploadTime = QTime(11, 11, 11, 111);
-    fileSize = fileSizeMB;
-    QDir temp;
-    QString fullPath{MuonPi::Config::data_path};
+FileSink::FileSink(std::uint32_t fileSizeMB)
+    : m_fileSizeMB{fileSizeMB}
+    , dailyUploadTime{11h + 11min + 11s}
+    , lastRotationDateTime{std::chrono::floor<std::chrono::days>(std::chrono::system_clock::now())}
+    , nextRotationTime{generateNextDailyTime(dailyUploadTime)} {
+    std::string fullPath{MuonPi::Config::data_path};
     configPath = fullPath + "/";
     configFilePath = fullPath + "/currentWorkingFileInformation.conf";
-    loginDataFilePath = fullPath + "/loginData.save";
     dataFolderPath = fullPath + "/data/";
-    if (!temp.exists(dataFolderPath)) {
-        temp.mkpath(dataFolderPath);
-        if (!temp.exists(dataFolderPath)) {
-            qDebug() << "could not create folder " << dataFolderPath;
-        }
-    }
-    bool rewrite_login = false;
-    if (!readLoginData()) {
-        qDebug() << "could not read login data from file";
-    }
-    if (username != "" || password != "") {
-        m_username = username;
-        m_password = password;
-        rewrite_login = true;
-    }
-    if (rewrite_login) {
-        if (!saveLoginData(username, password)) {
-            qDebug() << "could not save login data";
-        }
-    }
+    std::filesystem::create_directories(dataFolderPath);
+    start();
 }
 
-QString FileHandler::getCurrentDataFileName() const {
-    if (dataFile == nullptr)
-        return "";
-    QFileInfo fi(*dataFile);
-    return fi.absoluteFilePath();
+FileSink::~FileSink() {
+    std::scoped_lock lock{m_mutex};
+    closeFiles();
 }
 
-QString FileHandler::getCurrentLogFileName() const {
-    if (logFile == nullptr)
-        return "";
-    QFileInfo fi(*logFile);
-    return fi.absoluteFilePath();
+void FileSink::handle(const UbxTimeMarkStruct& tm) {
+    std::stringstream sstr;
+    sstr << tm.rising << tm.falling << tm.accuracy_ns << " " << tm.evtCounter << " "
+         << static_cast<short>(tm.valid) << " " << static_cast<short>(tm.timeBase) << " "
+         << static_cast<short>(tm.utcAvailable);
+    writeToDataFile(sstr.str());
 }
 
-QFileInfo FileHandler::dataFileInfo() const {
-    if (dataFile == nullptr)
-        return QFileInfo();
-    QFileInfo fi(*dataFile);
-    return fi;
+void FileSink::handle(const FileLogEvent& event) {
+    writeToLogFile(event.msg);
 }
 
-QFileInfo FileHandler::logFileInfo() const {
-    if (logFile == nullptr)
-        return QFileInfo();
-    QFileInfo fi(*logFile);
-    return fi;
+auto FileSink::generateNextDailyTime(std::chrono::system_clock::duration offset)
+    -> std::chrono::system_clock::time_point {
+    auto now = std::chrono::system_clock::now();
+
+    auto today = floor<std::chrono::days>(now);
+    auto candidate = today + offset;
+
+    if (candidate <= now)
+        candidate += std::chrono::days(1);
+
+    return candidate;
+}
+
+std::string FileSink::getCurrentDataFileName() const {
+    std::scoped_lock lock{m_mutex};
+    return currentWorkingFilePath.empty() ? std::string{} : currentWorkingFilePath.string();
+}
+
+std::string FileSink::getCurrentLogFileName() const {
+    std::scoped_lock lock{m_mutex};
+    return currentWorkingLogPath.empty() ? std::string{} : currentWorkingLogPath.string();
+}
+
+auto FileSink::dataFileInfo() const -> FileSink::FileInfo {
+    std::scoped_lock lock{m_mutex};
+    namespace fs = std::filesystem;
+
+    FileInfo info;
+    info.path = currentWorkingFilePath;
+
+    std::error_code ec;
+
+    info.size = fs::file_size(currentWorkingFilePath, ec);
+    if (ec)
+        info.size = 0;
+
+    info.modified = fs::last_write_time(currentWorkingFilePath, ec);
+
+    return info;
+}
+
+auto FileSink::logFileInfo() const -> FileSink::FileInfo {
+    namespace fs = std::filesystem;
+
+    FileInfo info;
+    info.path = currentWorkingLogPath;
+
+    std::error_code ec;
+
+    info.size = fs::file_size(currentWorkingLogPath, ec);
+    if (ec)
+        info.size = 0;
+
+    info.modified = fs::last_write_time(currentWorkingLogPath, ec);
+
+    return info;
 }
 
 // return current log file age in s
-std::chrono::seconds FileHandler::currentLogAge() {
-    if (dataFile == nullptr || configFilePath == "")
-        return std::chrono::seconds{-1};
-    QDateTime now = QDateTime::currentDateTime();
-    QFileInfo fi(configFilePath);
-#if QT_VERSION >= 0x050a00
-    qint64 difftime = -now.secsTo(dataFile->fileTime(QFileDevice::FileBirthTime));
-#else
-    qint64 difftime = -now.secsTo(fi.created());
-#endif
+auto FileSink::currentLogAge() -> std::chrono::seconds {
+    std::scoped_lock lock{m_mutex};
+    namespace fs = std::filesystem;
+    using namespace std::chrono;
 
-    return std::chrono::seconds{difftime};
+    if (!dataFile.is_open())
+        return seconds{-1};
+
+    if (configFilePath.empty())
+        return seconds{-1};
+
+    std::error_code ec;
+
+    auto ftime = fs::last_write_time(configFilePath, ec);
+    if (ec)
+        return seconds{-1};
+
+    auto now = fs::file_time_type::clock::now();
+
+    auto age = duration_cast<seconds>(now - ftime);
+
+    return age;
 }
 
-LogInfoStruct::status_t FileHandler::getStatus() {
-    LogInfoStruct::status_t status{LogInfoStruct::status_t::ERROR};
-    if (dataFileInfo().exists() && logFileInfo().exists()) {
-        status = LogInfoStruct::status_t::NORMAL;
+LogInfoStruct::status_t FileSink::getStatus() {
+    std::scoped_lock lock{m_mutex};
+    LogInfoStruct::status_t status{LogInfoStruct::status_t::NORMAL};
+    if (std::filesystem::exists(currentWorkingFilePath) == false) {
+        status = LogInfoStruct::status_t::ERROR;
+    }
+    if (dataFile.is_open() == false) {
+        status = LogInfoStruct::status_t::ERROR;
+    }
+    if (std::filesystem::exists(currentWorkingLogPath) == false) {
+        status = LogInfoStruct::status_t::ERROR;
+    }
+    if (logFile.is_open() == false) {
+        status = LogInfoStruct::status_t::ERROR;
     }
     return status;
 }
 
-LogInfoStruct FileHandler::getInfo() {
-    LogInfoStruct lis;
+LogInfoStruct FileSink::getInfo() {
+    std::scoped_lock lock{m_mutex};
+    LogInfoStruct lis{};
+
     lis.logFileName = getCurrentLogFileName();
     lis.dataFileName = getCurrentDataFileName();
     lis.status = getStatus();
-    lis.logFileSize = logFileInfo().size();
-    lis.dataFileSize = dataFileInfo().size();
+
+    try {
+        lis.logFileSize = std::filesystem::file_size(currentWorkingLogPath);
+    } catch (const std::filesystem::filesystem_error&) {
+        lis.logFileSize = 0;
+    }
+
+    try {
+        lis.dataFileSize = std::filesystem::file_size(currentWorkingFilePath);
+    } catch (const std::filesystem::filesystem_error&) {
+        lis.dataFileSize = 0;
+    }
+
     lis.logAge = currentLogAge();
     lis.logRotationDuration = logRotatePeriod();
     lis.logEnabled = true;
+
     return lis;
 }
 
-void FileHandler::start() {
-    // set upload reminder
-    QTimer* uploadReminder = new QTimer(this);
-    uploadReminder->setInterval(1000 * (MuonPi::Config::Log::interval.count() + 1UL));
-    uploadReminder->setSingleShot(false);
-    connect(uploadReminder, &QTimer::timeout, this, &FileHandler::onUploadRemind);
-    uploadReminder->start();
+void FileSink::start() {
     // open files that are currently written
     openFiles();
-    emit mqttConnect(m_username, m_password);
-    qDebug() << "sent mqttConnect";
 }
 
 // SLOTS
-void FileHandler::onUploadRemind() {
-    if (dataFile == nullptr) {
+void FileSink::onRotationRemind() {
+    std::scoped_lock lock{m_mutex};
+    try {
+        if (std::filesystem::file_size(currentWorkingFilePath) > (1024 * 1024 * m_fileSizeMB)) {
+            rotateFiles();
+        }
+    } catch (const std::filesystem::filesystem_error&) {
+        logWarn("Cold not read file size: " + currentWorkingFilePath.string());
+    }
+
+    try {
+        if (std::filesystem::file_size(currentWorkingLogPath) > (1024 * 1024 * m_fileSizeMB)) {
+            rotateFiles();
+        }
+    } catch (const std::filesystem::filesystem_error&) {
+        logWarn("Cold not read file size: " + currentWorkingLogPath.string());
+    }
+
+    auto now = std::chrono::system_clock::now();
+    if (now < nextRotationTime) {
         return;
     }
-
-    QDateTime todaysRegularUploadTime =
-        QDateTime(QDate::currentDate(), dailyUploadTime, Qt::TimeSpec::UTC);
-    if (dataFile->size() > (1024 * 1024 * fileSize)) {
-        rotateFiles();
-    }
-    if (logFile->size() > (1024 * 1024 * fileSize)) {
-        rotateFiles();
-    }
-    if (lastUploadDateTime < todaysRegularUploadTime &&
-        QDateTime::currentDateTimeUtc() > todaysRegularUploadTime) {
-        rotateFiles();
-        lastUploadDateTime = QDateTime::currentDateTimeUtc();
-    }
+    rotateFiles();
 }
 
-// DATA SAVING
-bool FileHandler::openFiles(bool writeHeader) {
-    if (dataFile != nullptr || logFile != nullptr) {
-        closeFiles();
+auto FileSink::makeBasePaths() -> std::pair<std::filesystem::path, std::filesystem::path> {
+    std::string fileName = createFileName();
+
+    return {dataFolderPath / ("data_" + fileName), dataFolderPath / ("log_" + fileName)};
+}
+
+auto FileSink::resolveUniquePaths(std::filesystem::path baseData, std::filesystem::path baseLog)
+    -> std::pair<std::filesystem::path, std::filesystem::path> {
+    namespace fs = std::filesystem;
+
+    auto data = baseData;
+    auto log = baseLog;
+
+    for (size_t i = 0; i < 1000; ++i) {
+        if (!fs::exists(data) && !fs::exists(log))
+            return {data, log};
+
+        data = baseData;
+        log = baseLog;
+
+        data += "." + std::to_string(i);
+        log += "." + std::to_string(i);
     }
-    if (currentWorkingFilePath == "" || currentWorkingLogPath == "") {
-        readFileInformation();
-        writeHeader = true;
-        QString fileNamePart = createFileName();
-        currentWorkingFilePath = dataFolderPath + "data_" + fileNamePart;
-        currentWorkingLogPath = dataFolderPath + "log_" + fileNamePart;
-        while (m_filename_list.contains(QFileInfo(currentWorkingFilePath).fileName())) {
-            fileNamePart = createFileName();
-            currentWorkingFilePath = dataFolderPath + "data_" + fileNamePart;
-            currentWorkingLogPath = dataFolderPath + "log_" + fileNamePart;
-        }
-        writeConfigFile();
-    }
-    dataFile = new QFile(currentWorkingFilePath);
-    dataFile->setPermissions(defaultPermissions);
-    if (!dataFile->open(QIODevice::ReadWrite | QIODevice::Append)) {
-        qDebug() << "file open failed in 'ReadWrite' mode at location " << currentWorkingFilePath;
-        // the following return statement induced wrong behavior:
-        // in case the data file couldn't be opened, the log file QFile object would never be
-        // instantiated this would prevent local logging
-    }
-    logFile = new QFile(currentWorkingLogPath);
-    logFile->setPermissions(defaultPermissions);
-    if (!logFile->open(QIODevice::ReadWrite | QIODevice::Append)) {
-        qDebug() << "file open failed in 'ReadWrite' mode at location " << currentWorkingLogPath;
-    }
-    if (!dataFile->isOpen() || !logFile->isOpen())
+
+    return {data, log}; // fallback
+}
+
+auto FileSink::openFilesAtPaths(bool writeHeader) -> bool {
+    closeFiles();
+
+    dataFile.open(currentWorkingFilePath, std::ios::app);
+    logFile.open(currentWorkingLogPath, std::ios::app);
+
+    if (!dataFile.is_open() || !logFile.is_open())
         return false;
-    // write header
+
     if (writeHeader) {
-        QTextStream dataOut(dataFile);
-        dataOut << "#unix_timestamp_rising(s) unix_timestamp_trailing(s) time_accuracy(ns) valid "
-                   "timebase(0=gps,2=utc) utc_available\n";
-        QTextStream logOut(logFile);
-        logOut << "#time<YYYY-MM-DD_hh-mm-ss> parname value unit\n";
+        dataFile << "#unix_timestamp_rising(s) unix_timestamp_trailing(s) "
+                    "time_accuracy(ns) valid timebase(0=gps,2=utc) utc_available\n";
+
+        logFile << "#time<YYYY-MM-DD_hh-mm-ss> parname value unit\n";
     }
-    emit logRotateSignal();
+
     return true;
 }
 
-void FileHandler::closeFiles() {
-    if (dataFile != nullptr) {
-        if (dataFile->isOpen()) {
-            dataFile->close();
-        }
-        delete dataFile;
-        dataFile = nullptr;
-    }
-    if (logFile != nullptr) {
-        if (logFile->isOpen()) {
-            logFile->close();
-        }
-        delete logFile;
-        logFile = nullptr;
-    }
+auto FileSink::openFiles(bool writeHeader) -> bool {
+    std::scoped_lock lock{m_mutex};
+    readConfigFile();
+
+    auto [baseData, baseLog] = makeBasePaths();
+    auto [data, log] = resolveUniquePaths(baseData, baseLog);
+
+    currentWorkingFilePath = data;
+    currentWorkingLogPath = log;
+
+    writeConfigFile();
+
+    return openFilesAtPaths(writeHeader);
 }
 
-bool FileHandler::writeConfigFile() {
-    QFile configFile(configFilePath);
-    if (!configFile.open(QIODevice::ReadWrite | QIODevice::Truncate)) {
-        qDebug() << "file open failed in 'ReadWrite' mode at location " << configFilePath;
+auto FileSink::rotateFiles() -> bool {
+    closeFiles();
+    readConfigFile();
+    removeOldFiles();
+
+    auto [baseData, baseLog] = makeBasePaths();
+    auto [data, log] = resolveUniquePaths(baseData, baseLog);
+
+    currentWorkingFilePath = data;
+    currentWorkingLogPath = log;
+
+    lastRotationDateTime = std::chrono::system_clock::now();
+    nextRotationTime = generateNextDailyTime(dailyUploadTime);
+
+    writeConfigFile();
+
+    return openFilesAtPaths(true);
+}
+
+void FileSink::closeFiles() {
+    dataFile.close();
+    logFile.close();
+}
+
+auto FileSink::writeConfigFile() -> bool {
+    std::filesystem::create_directories(configFilePath.parent_path());
+
+    std::ofstream configFile(configFilePath, std::ios::trunc);
+    if (!configFile) {
+        logWarn(std::string("file open failed at location ") + configFilePath.string());
         return false;
     }
-    configFile.resize(0);
-    QTextStream out(&configFile);
-    out << currentWorkingFilePath << endl << currentWorkingLogPath << endl;
+
+    configFile << currentWorkingFilePath << '\n' << currentWorkingLogPath << '\n';
+
     return true;
 }
 
-bool FileHandler::removeOldFiles() {
-    bool ok{true};
+auto FileSink::removeOldFiles() -> bool {
+    namespace fs = std::filesystem;
 
-    for (auto& fileName : m_filename_list) {
-        QString filePath = dataFolderPath + fileName;
-        if (filePath != currentWorkingFilePath && filePath != currentWorkingLogPath) {
-            QFileInfo fileInfo(filePath);
-            qint64 fileAgeSecs =
-                QDateTime::currentSecsSinceEpoch() - fileInfo.lastModified().toSecsSinceEpoch();
-            if (fileAgeSecs > m_logrotate_period.count()) {
-                qDebug() << "trying to delete file" << filePath << "( file age = " << fileAgeSecs
-                         << "s)";
-                ok = ok && QFile::remove(filePath);
-            }
+    bool ok = true;
+
+    const auto now = std::chrono::system_clock::now();
+
+    for (const auto& fileName : m_filename_list) {
+        fs::path filePath = dataFolderPath / fileName;
+
+        if (filePath == currentWorkingFilePath || filePath == currentWorkingLogPath) {
+            continue;
+        }
+
+        std::error_code ec;
+        auto ftime = fs::last_write_time(filePath, ec);
+
+        if (ec) {
+            continue; // skip unreadable file
+        }
+
+        auto sctp = std::chrono::clock_cast<std::chrono::system_clock>(ftime);
+        auto age = std::chrono::duration_cast<std::chrono::seconds>(now - sctp).count();
+
+        if (age > m_logrotate_period.count()) {
+            logDebug("removing file " + filePath.string() + " (age = " + std::to_string(age) +
+                     "s)");
+
+            ok = ok && fs::remove(filePath, ec);
+
+            if (ec)
+                ok = false;
         }
     }
+
     return ok;
 }
 
-bool FileHandler::rotateFiles() {
-    closeFiles();
-    readFileInformation();
-    removeOldFiles();
-    QString fileNamePart = createFileName();
-    currentWorkingFilePath = dataFolderPath + "data_" + fileNamePart;
-    currentWorkingLogPath = dataFolderPath + "log_" + fileNamePart;
-    auto currentWorkingFilePathCandidate = currentWorkingFilePath;
-    auto currentWorkingLogPathCandidate = currentWorkingLogPath;
-    for (size_t i = 0; i < 1000ul; i++) {
-        if (QFile::exists(currentWorkingFilePathCandidate) ||
-            QFile::exists(currentWorkingLogPathCandidate)) {
-            qDebug() << currentWorkingFilePathCandidate << " exists or";
-            qDebug() << currentWorkingLogPathCandidate << " exists.";
-            currentWorkingFilePathCandidate = currentWorkingFilePath + "." + QString::number(i);
-            currentWorkingLogPathCandidate = currentWorkingLogPath + "." + QString::number(i);
-        } else {
-            currentWorkingFilePath = currentWorkingFilePathCandidate;
-            currentWorkingLogPath = currentWorkingLogPathCandidate;
-            break;
+auto FileSink::readConfigFile() -> bool {
+    namespace fs = std::filesystem;
+
+    // 1. collect .dat files
+    m_filename_list.clear();
+
+    for (const auto& entry : fs::directory_iterator(dataFolderPath)) {
+        if (!entry.is_regular_file())
+            continue;
+
+        if (entry.path().extension() == ".dat") {
+            m_filename_list.push_back(entry.path().filename().string());
         }
     }
-    writeConfigFile();
-    if (!openFiles(true)) {
-        closeFiles();
-        return false;
-    }
-    return true;
-}
 
-bool FileHandler::readFileInformation() {
-    QDir directory(dataFolderPath);
-    m_filename_list = directory.entryList(QStringList() << "*.dat", QDir::Files);
-    QFile configFile(configFilePath);
-    if (!configFile.open(QIODevice::ReadWrite)) {
-        qDebug() << "file open failed in 'ReadWrite' mode at location " << configFilePath;
+    // 2. open config file
+    std::ifstream configFile(configFilePath);
+    if (!configFile.is_open()) {
+        logWarn("failed to open config file: " + configFilePath.string());
         return false;
     }
-    QTextStream in(&configFile);
-    if (configFile.size() == 0) {
+
+    // 3. empty file case
+    if (configFile.peek() == std::ifstream::traits_type::eof()) {
         return true;
     }
-    if (!in.atEnd()) {
-        currentWorkingFilePath = in.readLine();
-    }
-    if (!in.atEnd()) {
-        currentWorkingLogPath = in.readLine();
-    }
+
+    // 4. read paths
+    std::string line;
+
+    if (std::getline(configFile, line))
+        currentWorkingFilePath = fs::path(line);
+
+    if (std::getline(configFile, line))
+        currentWorkingLogPath = fs::path(line);
+
     return true;
 }
 
-void FileHandler::writeToDataFile(const QString& data) {
-    if (dataFile == nullptr) {
+void FileSink::writeToDataFile(const std::string& data) {
+    std::scoped_lock lock{m_mutex};
+    if (dataFile.is_open() == false) {
+        logWarn("Could not write to data file");
         return;
     }
-    QTextStream out(dataFile);
-    out << data << "\n";
+    dataFile << data << "\n";
 }
 
-void FileHandler::writeToLogFile(const QString& log) {
-    if (logFile == nullptr) {
+void FileSink::writeToLogFile(const std::string& log) {
+    std::scoped_lock lock{m_mutex};
+    if (logFile.is_open() == false) {
+        logWarn("Could not write to log file");
         return;
     }
-    QTextStream out(logFile);
-    out << log << "\n";
+    logFile << log << "\n";
 }
 
-QString FileHandler::createFileName() {
+auto FileSink::createFileName() -> std::string {
     // creates a fileName based on date time and mac address
     if (dataFolderPath == "") {
-        qDebug() << "could not open data folder";
+        logWarn("could not open data folder");
         return "";
     }
-    QString fileName = dateStringNow();
+    std::string fileName = dateStringNow();
     fileName = fileName + ".dat";
     return fileName;
-}
-
-// crypto related stuff
-
-bool FileHandler::saveLoginData(QString username, QString password) {
-    QFile loginDataFile(loginDataFilePath);
-    loginDataFile.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner);
-    if (!loginDataFile.open(QIODevice::ReadWrite)) {
-        qDebug() << "could not open login data save file";
-        return false;
-    }
-    loginDataFile.resize(0);
-
-    AutoSeededRandomPool rnd;
-    std::string plainText = QString(username + ";" + password).toStdString();
-    std::string keyText;
-    std::string encrypted;
-
-    keyText = SHA256HashString(getMacAddress().toStdString());
-    SecByteBlock key((const byte*) keyText.data(), keyText.size());
-
-    // Generate a random IV
-    SecByteBlock iv(AES::BLOCKSIZE);
-    rnd.GenerateBlock(iv, iv.size());
-
-    // Encrypt
-
-    CFB_Mode<AES>::Encryption cfbEncryption;
-    cfbEncryption.SetKeyWithIV(key, key.size(), iv, iv.size());
-
-    StringSource encryptor(
-        plainText, true, new StreamTransformationFilter(cfbEncryption, new StringSink(encrypted)));
-    loginDataFile.write((const char*) iv.data(), iv.size());
-    loginDataFile.write(encrypted.c_str());
-    return true;
-}
-
-bool FileHandler::readLoginData() {
-    QFile loginDataFile(loginDataFilePath);
-    if (!loginDataFile.open(QIODevice::ReadWrite)) {
-        qDebug() << "could not open login data save file";
-        return false;
-    }
-
-    std::string keyText;
-    std::string encrypted;
-    std::string recovered;
-
-    keyText = SHA256HashString(getMacAddress().toStdString());
-    SecByteBlock key((const byte*) keyText.data(), keyText.size());
-
-    // read encrypted message and IV from file
-    SecByteBlock iv(AES::BLOCKSIZE);
-    char ivData[AES::BLOCKSIZE];
-    if (int read = loginDataFile.read(ivData, AES::BLOCKSIZE) != AES::BLOCKSIZE) {
-        qDebug() << "read " << read << " bytes but should read " << AES::BLOCKSIZE << " bytes";
-        return false;
-    }
-    iv.Assign((byte*) ivData, AES::BLOCKSIZE);
-    QByteArray data = loginDataFile.readAll();
-    encrypted = std::string(data.constData(), data.length()); // <-- right :)
-
-    // Decrypt
-    CFB_Mode<AES>::Decryption cfbDecryption;
-    cfbDecryption.SetKeyWithIV(key, key.size(), iv, iv.size());
-
-    StringSource decryptor(
-        encrypted, true, new StreamTransformationFilter(cfbDecryption, new StringSink(recovered)));
-    QString recoverdQString = QString::fromStdString(recovered);
-    QStringList loginData = recoverdQString.split(';', QString::SkipEmptyParts);
-    if (loginData.size() < 2) {
-        return false;
-    }
-    m_username = loginData.at(0);
-    m_password = loginData.at(1);
-    return true;
 }

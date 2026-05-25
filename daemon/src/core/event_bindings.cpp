@@ -35,6 +35,7 @@
 #include "data/events/gpio_rate_event.h"
 #include "data/events/i2c_stats_event.h"
 #include "data/events/mcp4728_event.h"
+#include "data/events/mqtt_log_event.h"
 #include "data/events/mqtt_status_event.h"
 #include "data/events/pca_switch_event.h"
 #include "data/events/polarity_switch_event.h"
@@ -44,6 +45,7 @@
 #include "data/events/threshold_setting_event.h"
 #include "data/events/ubx_event.h"
 #include "data/events/version_event.h"
+#include "sinks/mqtt_sink.h"
 #include "sinks/tcp_sink.h"
 #include "utility/ublox_ratebuffer.h"
 
@@ -87,6 +89,13 @@ void EventBindings::setupTcpSink(EventBus& bus, TcpSink& tcp_sink) {
     bus.subscribe<LogInfoStruct>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<PositionModeConfig>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<VersionEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
+}
+
+void EventBindings::setupMqttSink(EventBus& bus, MqttSink& mqtt_sink) {
+    bus.subscribe<UbxTimeMarkStruct>(
+        [&mqtt_sink](const UbxTimeMarkStruct& event) { mqtt_sink.handle(event); });
+    bus.subscribe<MqttLogEvent>(
+        [&mqtt_sink](const MqttLogEvent& event) { mqtt_sink.handle(event); });
 }
 
 void EventBindings::setupDatastore(EventBus& bus, DataStore& datastore) {
