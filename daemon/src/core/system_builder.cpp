@@ -43,6 +43,7 @@
 // Data
 #include "data/events/ads1115_event.h"
 #include "data/events/event_trigger_event.h"
+#include "data/events/file_log_event.h"
 #include "data/events/gpio_event.h"
 #include "data/events/gpio_inhibit_event.h"
 #include "data/events/i2c_stats_event.h"
@@ -224,6 +225,34 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     auto tcp_sink = SinkFactory::createTcpSink(ctx.sinks);
     EventBindings::setupTcpSink(*ctx.bus, *tcp_sink);
 
+    auto mqtt_sink = SinkFactory::createMqttSink(*ctx.bus, ctx.sinks, ctx.config->station_ID);
+    EventBindings::setupMqttSink(*ctx.bus, *mqtt_sink);
+
+    auto file_sink = SinkFactory::createFileSink(ctx.sinks);
+
+    ctx.bus->subscribe<UbxTimeMarkStruct>(
+        [file_sink_weak = std::weak_ptr<FileSink>{file_sink}](const UbxTimeMarkStruct& event) {
+            if (auto weak = file_sink_weak.lock()) {
+                weak->handle(event);
+            }
+        });
+
+    ctx.bus->subscribe<FileLogEvent>(
+        [file_sink_weak = std::weak_ptr<FileSink>{file_sink}](const FileLogEvent& event) {
+            if (auto weak = file_sink_weak.lock()) {
+                weak->handle(event);
+            }
+        });
+
+    ctx.scheduler->every(
+        std::chrono::minutes(1), [file_sink_weak = std::weak_ptr<FileSink>{file_sink}]() -> bool {
+            if (auto weak = file_sink_weak.lock()) {
+                weak->onRotationRemind();
+                return true;
+            }
+            return false; // stop scheduling if underlying object does not exist anymore
+        });
+
     // --- tcp_server ---
     // When server accepts a new TCP connection, call this handler.
     ctx.server = std::make_unique<TcpServer>(ctx.io, config.serverPort, tcp_sink, ctx.bus.get());
@@ -255,7 +284,6 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
         bus->publish(HistogramRequestCmd{});
         return true;
     });
-
     // every once in a while, send data to OLED
     // ctx.scheduler->every(std::chrono::milliseconds(MuonPi::Config::Hardware::OLED::update_interval),[&ctx](){
     // ctx.bus->publish(...);

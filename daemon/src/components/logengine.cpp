@@ -3,8 +3,9 @@
 #include "core/event_bus.h"
 #include "data/events/file_message_event.h"
 #include "data/events/log_trigger_event.h"
-#include "data/events/mqtt_message_event.h"
+#include "data/events/mqtt_log_event.h"
 #include "logparameter.h"
+#include "utility/conversion.h"
 
 #include <chrono>
 #include <config.h>
@@ -17,12 +18,6 @@ static inline std::string_view last_token(std::string_view s) {
     if (pos == std::string_view::npos)
         return s;
     return s.substr(pos + 1);
-}
-
-static std::string dateStringNow() {
-    auto now = std::chrono::system_clock::now();
-
-    return std::format("{:%Y-%m-%d_%H-%M-%S}", now);
 }
 
 LogEngine::LogEngine(EventBus& bus) : bus_(bus) {
@@ -42,7 +37,7 @@ void LogEngine::onLogParameterReceived(const LogParameter& logpar) {
         // no need to store in buffer, just return after logging
 
         std::string msg{dateStringNow() + " " + logpar.name() + " " + logpar.value()};
-        bus_.publish(MqttMessageEvent{.msg = msg});
+        bus_.publish(MqttLogEvent{.msg = msg});
         bus_.publish(FileMessageEvent{.msg = msg});
         // reset already existing entries but preserve logType attribute
         if (logData.find(logpar.name()) != logData.end()) {
@@ -83,7 +78,7 @@ void LogEngine::onLogInterval() {
         if (list.back().logType() == LogParameter::LOG_LATEST) {
             // easy to write only the last value to file
             std::string msg{ts + " " + name + " " + list.back().value()};
-            bus_.publish(MqttMessageEvent{.msg = msg});
+            bus_.publish(MqttLogEvent{.msg = msg});
             bus_.publish(FileMessageEvent{.msg = std::move(msg)});
             it = logData.erase(it);
         } else if (list.back().logType() == LogParameter::LOG_AVERAGE) {
@@ -117,7 +112,7 @@ void LogEngine::onLogInterval() {
 
                 std::string msg = ts + " " + std::format("{} {:.7f} {}", name, sum, unitString);
 
-                bus_.publish(MqttMessageEvent{.msg = msg});
+                bus_.publish(MqttLogEvent{.msg = msg});
                 bus_.publish(FileMessageEvent{.msg = std::move(msg)});
             }
 
@@ -126,7 +121,7 @@ void LogEngine::onLogInterval() {
             // we want to log only one time per daemon lifetime || file change
             if (onceLogFlag || list.front().updatedRecently()) {
                 std::string msg{ts + " " + name + " " + list.back().value()};
-                bus_.publish(MqttMessageEvent{.msg = msg});
+                bus_.publish(MqttLogEvent{.msg = msg});
                 bus_.publish(FileMessageEvent{.msg = std::move(msg)});
             }
             while (list.size() > 2) {
@@ -145,7 +140,7 @@ void LogEngine::onLogInterval() {
 
                 std::string msg = ts + " " + name + " " + list.back().value();
 
-                bus_.publish(MqttMessageEvent{.msg = msg});
+                bus_.publish(MqttLogEvent{.msg = msg});
                 bus_.publish(FileMessageEvent{.msg = std::move(msg)});
             } else {
 
@@ -155,7 +150,7 @@ void LogEngine::onLogInterval() {
 
                         std::string msg = ts + " " + name + " " + it->value();
 
-                        bus_.publish(MqttMessageEvent{.msg = msg});
+                        bus_.publish(MqttLogEvent{.msg = msg});
                         bus_.publish(FileMessageEvent{.msg = std::move(msg)});
 
                         // replace reference value
