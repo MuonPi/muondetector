@@ -8,7 +8,6 @@ configure_file(
     "${MUONDETECTOR_DAEMON_BINARY_DIR}/version.h"
     )
 
-
 find_library(LIBCONFIG
     names libconfig++ libconfigpp config++ configpp libconfig config
     REQUIRED
@@ -17,11 +16,7 @@ find_library(MOSQUITTO
     names mosquitto
     REQUIRED
 )
-# Not required anymore
-# find_library(CRYPTOPP
-#     names cryptopp crypto++
-#     REQUIRED
-# )
+
 find_library(RT
     NAMES rt
     REQUIRED
@@ -31,9 +26,6 @@ find_library(GPIOD
     names gpiod libgpiod
     REQUIRED
 )
-# set(MUONDETECTOR_SPI_SOURCE_FILES
-#     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/spi/tdc7200.cpp"
-#     )
 
 set(MUONDETECTOR_I2C_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/Adafruit_GFX.cpp"
@@ -80,6 +72,7 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/ublox/ubx_parser.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/ublox/message_processor.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/tcp_sink.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/file_sink.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/mqtt_sink.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/tcp_source.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/temp_source.cpp"
@@ -157,6 +150,7 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/ublox/message_processor.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/sink.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/tcp_sink.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/file_sink.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/mqtt_sink.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/source.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sources/tcp_source.h"
@@ -230,23 +224,21 @@ target_include_directories(muondetector-daemon PUBLIC
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
     $<BUILD_INTERFACE:${CAPNP_INCLUDE_DIRS}>
     $<BUILD_INTERFACE:${Boost_INCLUDE_DIRS}>
+    # $<BUILD_INTERFACE:${SECRET_INCLUDE_DIR}/libsecret-1>
+    # $<BUILD_INTERFACE:${GLIB_INCLUDE_DIR}/glib-2.0>
 )
-
 
 target_link_libraries(muondetector-daemon PRIVATE
     ${LIBCONFIG}
     ${MOSQUITTO}
-    # ${CRYPTOPP}
     ${GPIOD}
     ${RT}
     ${CAPNP_LIBRARIES}
     ${CAPNP_KJ_LIBRARIES}
     muondetector-shared
-    # muondetector-shared-mqtt
     muondetector-protocol
     Threads::Threads
 )
-
 
 if (CMAKE_BUILD_TYPE STREQUAL Release)
     add_custom_command(TARGET muondetector-daemon POST_BUILD

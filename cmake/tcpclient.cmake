@@ -40,7 +40,6 @@ target_include_directories(tcpclient PUBLIC
 
 
 target_link_libraries(tcpclient PRIVATE
-    # ${LIBCONFIG}
     ${MOSQUITTO}
     ${CRYPTOPP}
     # ${RT}

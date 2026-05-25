@@ -1,8 +1,10 @@
 #include "sinks/mqtt_sink.h"
 
 #include "core/logging/logger.h"
-#include "data/events/mqtt_message_event.h"
+#include "custom_io_operators.h"
+#include "data/events/mqtt_log_event.h"
 #include "data/events/mqtt_status_event.h"
+#include "data/events/ubx_event.h"
 
 #ifdef Q_OS_UNIX
 #include <sys/syscall.h>
@@ -45,7 +47,17 @@ MqttSink::~MqttSink() {
     cleanup();
 }
 
-void MqttSink::handle(const MqttMessageEvent& event) {
+void MqttSink::handle(const UbxTimeMarkStruct& tm) {
+    // output is: rising falling timeAcc valid timeBase utcAvailable
+    std::stringstream sstr;
+    sstr << tm.rising << tm.falling << tm.accuracy_ns << " " << tm.evtCounter << " "
+         << static_cast<short>(tm.valid) << " " << static_cast<short>(tm.timeBase) << " "
+         << static_cast<short>(tm.utcAvailable);
+    publish(MuonPi::Config::MQTT::data_topic, sstr.str());
+}
+
+void MqttSink::handle(const MqttLogEvent& event) {
+    publish(MuonPi::Config::MQTT::log_topic, event.msg);
 }
 
 void wrapper_callback_connected(mosquitto* /*mqtt*/, void* object, int result) {

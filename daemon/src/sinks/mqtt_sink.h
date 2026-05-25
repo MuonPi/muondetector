@@ -3,8 +3,9 @@
 
 #include "config.h"
 #include "core/event_bus.h"
-#include "data/events/mqtt_message_event.h"
+#include "data/events/mqtt_log_event.h"
 #include "data/events/mqtt_status_event.h"
+#include "data/events/ubx_event.h"
 #include "sinks/sink.h"
 
 class mosquitto;
@@ -15,12 +16,13 @@ class MqttSink : public Sink {
     ~MqttSink();
 
     bool isInhibited();
-    void handle(const MqttMessageEvent& event);
+    void handle(const UbxTimeMarkStruct& tm);
+    void handle(const MqttLogEvent& event);
 
   private:
     void start(const std::string& username, const std::string& password);
     [[nodiscard]] auto connected() -> bool;
-    [[nodiscard]] auto publish(const std::string& topic, const std::string& content) -> bool;
+    auto publish(const std::string& topic, const std::string& content) -> bool;
 
     void initialise(const std::string& client_id);
 
