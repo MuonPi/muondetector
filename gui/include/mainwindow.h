@@ -45,7 +45,10 @@ class MainWindow;
 namespace boost {
 namespace asio {
 class io_context;
+namespace tcp {
+class socket;
 }
+} // namespace asio
 } // namespace boost
 
 class MainWindow : public QMainWindow {
@@ -123,6 +126,7 @@ class MainWindow : public QMainWindow {
   private slots:
     void resetAndHit();
     void resetXorHit();
+    void cancelConnection();
     void sendRequestGpioRates();
     void sendRequestGpioRateBuffer();
     void sendValueUpdateRequests();
@@ -158,6 +162,7 @@ class MainWindow : public QMainWindow {
     buildDecoderMap() -> std::unordered_map<TCP_MSG_KEY, std::function<void(const TcpPacket&)>>;
     void decode(const TcpPacket& packet);
     void uiSetConnectedState();
+    void uiSetConnectingState();
     void uiSetDisconnectedState();
     float parseValue(QString text);
     void sendSetBiasVoltage(float voltage);
@@ -166,6 +171,7 @@ class MainWindow : public QMainWindow {
     void sendGainSwitch(bool status);
 
     void updateUiProperties();
+    int connectProgress_ = 100;
     int verbose = 0;
     float biasDacVoltage = 0.;
     bool biasON, uiValuesUpToDate = false;
@@ -188,11 +194,14 @@ class MainWindow : public QMainWindow {
     double biasCalibSlope = 1.;
     double minBiasVoltage = 0.;
     double maxBiasVoltage = 3.3;
-    QTimer m_connection_timeout{};
+    // QTimer m_connection_timeout{};
+    std::shared_ptr<tcp::socket> clientSocket_{nullptr};
     std::shared_ptr<boost::asio::io_context> m_io{nullptr};
     std::shared_ptr<TcpConnection> clientConn{nullptr};
     std::size_t device_counter{0};
     std::shared_ptr<NetworkDiscovery> m_networkDiscovery{nullptr};
+    std::unique_ptr<QTimer> connectTimer_{nullptr};
+    bool connecting_{false};
 };
 
 #endif // MAINWINDOW_H
