@@ -3,12 +3,13 @@
 
 #include <cstdint>
 
-struct Ads1115Event {
+struct ADS1115Event {
     std::uint32_t deviceId;
     std::uint8_t channel;
     std::uint16_t rawValue;
     float voltage;
     std::uint64_t timestamp;
+    double convTime;
     // ADC_SAMPLING_MODE samplingMode{ADC_SAMPLING_MODE::PEAK};
 };
 

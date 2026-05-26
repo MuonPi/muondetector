@@ -51,8 +51,13 @@ auto ADS1115Driver::dev() -> ADS1115* {
 void ADS1115Driver::onSampleReady(ADS1115::Sample sample) {
     const uint8_t channel = sample.channel;
     float voltage = sample.voltage;
+    auto* adc = dev();
+    double convTime{0.};
+    if (adc != nullptr) {
+        convTime = adc->getLastConvTime();
+    }
     if (channel != 0) {
-        bus_.publish(Ads1115Event{
+        bus_.publish(ADS1115Event{
             .deviceId = static_cast<std::uint32_t>(deviceId_),
             .channel = channel,
             .rawValue = static_cast<std::uint16_t>(sample.value),
@@ -61,6 +66,7 @@ void ADS1115Driver::onSampleReady(ADS1115::Sample sample) {
                 static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(
                                                sample.timestamp.time_since_epoch())
                                                .count()),
+            .convTime = convTime,
             // .samplingMode = ADC_SAMPLING_MODE::PEAK
         });
     }
@@ -113,6 +119,16 @@ void ADS1115Driver::update() {
     for (std::size_t channel = 0; channel < 4; ++channel) {
         adc->getSample(channel); // triggers function "onSampleReady"
     }
+}
+
+auto ADS1115Driver::getVoltage(std::uint8_t channel, bool& ok) -> double {
+    auto* adc = dev();
+    if (adc == nullptr) {
+        ok = false;
+        return -1.;
+    }
+    ok = true;
+    return adc->getVoltage(channel);
 }
 
 void ADS1115Driver::startBurst(const StartBurstSampling& cmd) {

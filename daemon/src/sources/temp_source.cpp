@@ -22,7 +22,7 @@ void TempSource::update() {
     if (device == nullptr) {
         return;
     }
-    bus_.publish(DatastoreStoreEvent{TemperatureEvent{device->getTemperature()}});
+    bus_.publish(DatastoreStoreEvent{TemperatureEvent{name(), device->getTemperature()}});
 }
 
 auto TempSource::dev() -> DeviceFunction<DeviceType::TEMP>* {

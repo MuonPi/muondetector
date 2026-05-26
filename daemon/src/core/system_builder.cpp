@@ -41,7 +41,6 @@
 #include "sources/tcp_source.h"
 
 // Data
-#include "data/events/ads1115_event.h"
 #include "data/events/event_trigger_event.h"
 #include "data/events/file_log_event.h"
 #include "data/events/gpio_event.h"
@@ -73,6 +72,10 @@
 
 // Glue
 #include "core/event_bindings.h"
+
+// Log Engine & Processing
+#include "components/log_parameter_processor.h"
+#include "components/logengine.h"
 
 // Maintenance
 #include "core/maintenance.h"
@@ -180,6 +183,10 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
         // Store component in component manager
         ctx.components->add(component->id(), component);
     }
+
+    // --- Log Parameter Processor ---
+    // transform other events to Logging
+    LogParameterProcessor::setup(*ctx.bus, *ctx.datastore);
 
     // --- Calibration from EEPROM ---
     auto eeprom = ctx.components->get<EEPROM24AA02Driver>(Device::EEPROM24AA02_0);
@@ -339,8 +346,15 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     }
 
     logInfo("Registering datastore maintenance:");
-    ctx.scheduler->every(std::chrono::seconds{2}, [&datastore = *ctx.datastore, &bus = *ctx.bus] {
+    ctx.scheduler->every(std::chrono::seconds{2}, [&datastore = *ctx.datastore, &bus = *ctx.bus]() {
         Maintenance::datastoreMaintenance(bus, datastore);
+        return true;
+    });
+
+    // Poll data from cpu info and calibrated adc voltage readout
+    ctx.scheduler->every(std::chrono::seconds(2), [&bus = *ctx.bus, &datastore = *ctx.datastore,
+                                                   &components = *ctx.components]() {
+        LogParameterProcessor::poll(bus, datastore, components);
         return true;
     });
     return ctx;

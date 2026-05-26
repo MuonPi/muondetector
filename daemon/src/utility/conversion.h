@@ -1,6 +1,8 @@
 #ifndef CONVERSION_H
 #define CONVERSION_H
 
+#include <iomanip>
+#include <ostream>
 #include <string>
 
 template <typename T>

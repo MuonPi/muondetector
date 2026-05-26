@@ -40,24 +40,24 @@ EEPROM24AA02Driver::EEPROM24AA02Driver(ComponentId id, DeviceRegistry& registry,
 
     // Read the eeprom
     // // EEPROM 24AA02 type
-    calib = std::make_unique<ShowerDetectorCalib>(eep24aa02);
-    calib->readFromEeprom();
-    std::string hwIdStr = to_hex(calib->getSerialID());
-    // logParameter(LogParameter("uniqueId", hwIdStr, LogParameter::LOG_ONCE));
+    auto ptr = std::make_shared<ShowerDetectorCalib>(eep24aa02);
+    ptr->readFromEeprom();
+    std::string hwIdStr = to_hex(ptr->getSerialID());
     logInfo("EEP unique ID: " + hwIdStr);
-    CalibStruct verStruct = calib->getCalibItem("VERSION");
+    CalibStruct verStruct = ptr->getCalibItem("VERSION");
     unsigned int version = 0;
     ShowerDetectorCalib::getValueFromString(verStruct.value, version);
     MuonPi::Version::hardware.major = version;
     logInfo("Found HW version " + std::to_string(MuonPi::Version::hardware.major) + " in eeprom");
+    calib = std::weak_ptr<ShowerDetectorCalib>(ptr);
+    bus_.publish(DatastoreStoreEvent(std::move(ptr)));
 }
 
 void EEPROM24AA02Driver::update() {
-    if (calib == nullptr) {
-        return;
+    if (auto weak = calib.lock()) {
+        bus_.publish(DatastoreStoreEvent{CalibEvent{.valid = weak->isValid(),
+                                                    .eepromValid = weak->isEepromValid(),
+                                                    .id = weak->getSerialID(),
+                                                    .calibList = weak->getCalibList()}});
     }
-    bus_.publish(DatastoreStoreEvent{CalibEvent{.valid = calib->isValid(),
-                                                .eepromValid = calib->isEepromValid(),
-                                                .id = calib->getSerialID(),
-                                                .calibList = calib->getCalibList()}});
 }

@@ -3,23 +3,21 @@
 
 #include "config.h"
 #include "core/event_bus.h"
+#include "sources/source.h"
 #include "utility/logparameter.h"
 
 #include <list>
 #include <string>
 #include <unordered_map>
 
-class LogEngine {
+class LogEngine : public Source {
 
   public:
-    LogEngine(EventBus& bus);
+    LogEngine(ComponentId id, EventBus& bus);
     ~LogEngine();
 
-    void sendLogString(const std::string& str);
-    void logIntervalSignal();
-
     void onLogParameterReceived(const LogParameter& logpar);
-    void onLogInterval();
+    void update();
     void onOnceLogTrigger() { onceLogFlag = true; }
 
   private:
