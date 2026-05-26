@@ -101,7 +101,7 @@ inline capnp::FlatArrayMessageReader makeReader(const std::vector<std::uint8_t>&
     return capnp::FlatArrayMessageReader(kj::ArrayPtr<const capnp::word>(wordPtr, wordCount));
 }
 
-auto CapnpCodec<Ads1115Event>::encode(const Ads1115Event& event) -> std::vector<uint8_t> {
+auto CapnpCodec<ADS1115Event>::encode(const ADS1115Event& event) -> std::vector<uint8_t> {
     capnp::MallocMessageBuilder msg;
     auto root = msg.initRoot<Ads1115EventCapnp>();
 
@@ -117,11 +117,11 @@ auto CapnpCodec<Ads1115Event>::encode(const Ads1115Event& event) -> std::vector<
     return std::vector<std::uint8_t>(bytes.begin(), bytes.end());
 }
 
-auto CapnpCodec<Ads1115Event>::decode(const std::vector<std::uint8_t>& data) -> Ads1115Event {
+auto CapnpCodec<ADS1115Event>::decode(const std::vector<std::uint8_t>& data) -> ADS1115Event {
     auto reader = makeReader(data);
     auto root = reader.getRoot<Ads1115EventCapnp>();
 
-    Ads1115Event event;
+    ADS1115Event event;
     event.deviceId = root.getDeviceId();
     event.channel = root.getChannel();
     event.rawValue = root.getRawValue();
@@ -131,7 +131,7 @@ auto CapnpCodec<Ads1115Event>::decode(const std::vector<std::uint8_t>& data) -> 
     return event;
 }
 
-auto CapnpCodec<Ads1115Event>::messageKey() -> std::uint16_t {
+auto CapnpCodec<ADS1115Event>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_ADC_SAMPLE);
 }
 

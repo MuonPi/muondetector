@@ -628,7 +628,7 @@ auto MainWindow::buildDecoderMap()
              }},
             {TCP_MSG_KEY::MSG_ADC_SAMPLE,
              [this](const TcpPacket& packet) {
-                 auto event = CapnpCodec<Ads1115Event>::decode(packet.payload);
+                 auto event = CapnpCodec<ADS1115Event>::decode(packet.payload);
                  emit adcSampleReceived(event.channel, event.voltage);
              }},
             {TCP_MSG_KEY::MSG_ADC_TRACE,

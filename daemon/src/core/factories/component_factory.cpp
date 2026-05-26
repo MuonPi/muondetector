@@ -4,6 +4,7 @@
 // #include "hardware/devices.h"
 #include "core/component_config.h"
 // #include "core/logging/logger.h"
+#include "components/logengine.h"
 #include "drivers/adafruit_ssd1306_driver.h"
 #include "drivers/ads1115_driver.h"
 #include "drivers/eeprom24aa02_driver.h"
@@ -96,7 +97,11 @@ const std::unordered_map<ComponentId, ComponentCreator> ComponentFactory::compon
                                               ctx.config->gpsdevname, ctx.config->gnss_baudrate,
                                               ctx.config->gnss_dynamic_model, *ctx.bus);
      }},
-    {OtherComponent::GPIO_DRIVER_0, [](Context& ctx) {
+    {OtherComponent::GPIO_DRIVER_0,
+     [](Context& ctx) {
          return std::make_shared<GpioDriver>(OtherComponent::GPIO_DRIVER_0, ctx.config->gpiodevname,
                                              *ctx.bus);
+     }},
+    {OtherComponent::LOG_ENGINE_0, [](Context& ctx) {
+         return std::make_shared<LogEngine>(OtherComponent::LOG_ENGINE_0, *ctx.bus);
      }}};

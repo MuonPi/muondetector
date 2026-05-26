@@ -15,6 +15,7 @@
 class Histogram;
 struct GnssPosStruct;
 struct UbxTimeMarkStruct;
+struct BiasCurrentEvent;
 class DataStore {
   private:
     struct Entry {
@@ -84,7 +85,7 @@ class DataStore {
     // For each type in the list there must be a specialization in data_store.cpp
     using histo_enabled_types = type_list<GnssPosStruct, UbxTimeMarkStruct>;
     // AdcTraceEvent,
-    // Ads1115Event,
+    // ADS1115Event,
     // NavSat,
     // UbxMsgRates
 
@@ -128,5 +129,8 @@ void DataStore::fillHisto(const GnssPosStruct& pos);
 
 template <>
 void DataStore::fillHisto(const UbxTimeMarkStruct& tm);
+
+template <>
+void DataStore::fillHisto(const BiasCurrentEvent& event);
 
 #endif // DATASTORE_H

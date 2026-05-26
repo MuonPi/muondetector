@@ -2,6 +2,7 @@
 #define EVENT_BINDINGS_H
 
 #include "core/event_bus.h"
+#include "core/registries/component_manager.h"
 #include "core/registries/data_store.h"
 #include "data/events/datastore_store_event.h"
 #include "sinks/mqtt_sink.h"
@@ -50,8 +51,10 @@ class EventBindings {
     }
     static void pollDatastore(EventBus& bus, DataStore& datastore);
     static void setupDatastore(EventBus& bus, DataStore& datastore);
+    static void setupLogging(EventBus& bus, DataStore& datastore, ComponentManager& components);
 
   private:
     EventBindings() = delete;
+    static void processGeoPos(EventBus& bus, DataStore& datastore, const GeoPosition& pos);
 };
 #endif // EVENT_BINDINGS_H

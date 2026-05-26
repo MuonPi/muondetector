@@ -1,6 +1,8 @@
 #include "core/registries/data_store.h"
 
 #include "core/logging/logger.h"
+#include "data/events/bias_current_event.h"
+#include "data/events/ubx_event.h"
 #include "data/histogram.h"
 #include "data/ublox/ublox_messages.h"
 #include "utility/geoposmanager.h"
@@ -122,6 +124,11 @@ void DataStore::fillHisto(const UbxTimeMarkStruct& tm) {
     // uint16_t diffCount = tm.evtCounter - lastTimeMark.evtCounter;
     // emit timeMarkIntervalCountUpdate(diffCount, static_cast<double>(interval * 1.0e-9L));
     lastTimeMark = tm;
+}
+
+template <>
+void DataStore::fillHisto(const BiasCurrentEvent& event) {
+    m_histo_map["Bias Current"]->fill(event.ibias);
 }
 
 auto DataStore::geoPosManager() -> GeoPosManager& {
