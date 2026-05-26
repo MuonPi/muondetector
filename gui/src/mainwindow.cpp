@@ -94,7 +94,7 @@ constexpr std::chrono::milliseconds gpioRateHoldInterval{50};
 /// automatic rate poll interval
 constexpr std::chrono::seconds gpioRatePollInterval{3};
 /// TCP socket connection timeout
-constexpr std::chrono::seconds CONNECTION_TIMEOUT{10};
+constexpr std::chrono::milliseconds CONNECTION_TIMEOUT_MS{2000};
 
 QRegularExpression alphabetical("[a-z]+[A-Z]+");
 
@@ -147,6 +147,7 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
     qRegisterMetaType<CfgMsg>("CfgMsg");
 
     ui->setupUi(this);
+    ui->progressBar->hide();
     this->setWindowTitle(
         QString("muondetector-gui  " + QString::fromStdString(MuonPi::Version::software.string())));
 
@@ -463,11 +464,6 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
     QStandardItem* item = model->item(1);
     item->setEnabled(false);
 
-    m_connection_timeout.setSingleShot(true);
-    m_connection_timeout.setInterval(CONNECTION_TIMEOUT);
-    connect(&m_connection_timeout, &QTimer::timeout, this,
-            [this]() { this->connection_error(255, QString("connection timeout")); });
-    // initialise all ui elements that will be inactive at start
     uiSetDisconnectedState();
 }
 
@@ -483,51 +479,153 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
                               "Cannot make connection if connection is already existing");
         return;
     }
-    tcp::socket clientSocket(*m_io);
     boost::system::error_code ec;
+    clientSocket_ = std::make_shared<tcp::socket>(*m_io);
     auto server_ip = boost::asio::ip::make_address_v4(ipAddress.toStdString(), ec);
     if (ec) {
         QMessageBox::critical(this, "Connection Failed",
                               "Invalid IP: " + QString::fromStdString(ec.message()));
-    }
-    tcp::endpoint endpoint(server_ip, port);
-    clientSocket.connect(endpoint, ec);
-    if (ec) {
-        QMessageBox::critical(this, "Connection Failed",
-                              "client connect failed: " + QString::fromStdString(ec.message()));
         return;
     }
+    tcp::endpoint endpoint(server_ip, port);
 
-    clientConn = std::make_shared<TcpConnection>(std::move(clientSocket));
-    auto weakConn = std::weak_ptr<TcpConnection>(clientConn);
-    clientConn->setDisconnectHandler([this](const boost::system::error_code& code) {
-        QMetaObject::invokeMethod(
-            this,
-            [this, code]() {
-                qDebug() << "Connection closed!";
-                if (code == boost::asio::error::operation_aborted /* We do clientConn.reset() */
-                    || code == boost::asio::error::eof /* Clean disconnect from server */) {
-                    uiSetDisconnectedState();
-                } else {
-                    connection_error(code.value(), QString::fromStdString(code.message()));
-                }
-                clientConn->setDisconnectHandler(nullptr); // stop disconnect handling after stopped
-                clientConn->setPacketHandler(nullptr); // wait for dangling async read processes...
-                clientConn.reset();
-            },
-            Qt::QueuedConnection);
+    uiSetConnectingState();
+
+    ui->ipStatusLabel->setText("connecting");
+    int timeout_ms = CONNECTION_TIMEOUT_MS.count();
+    connectProgress_ = -timeout_ms;
+    ui->progressBar->setMinimum(-timeout_ms);
+    ui->progressBar->setMaximum(0);
+    ui->progressBar->setValue(-timeout_ms);
+    ui->progressBar->show();
+
+    connectTimer_ = std::make_unique<QTimer>();
+    connectTimer_->setParent(this);
+    connectTimer_->setInterval(50); // smooth animation (20 FPS)
+    connect(connectTimer_.get(), &QTimer::timeout, this, [this]() mutable {
+        connectProgress_ += 50;
+
+        if (connectProgress_ > 0) {
+            connectProgress_ = 0;
+            connectTimer_->stop();
+            connectTimer_->disconnect();
+            connectTimer_->deleteLater();
+            connectTimer_ = nullptr;
+        }
+
+        ui->progressBar->setValue(connectProgress_);
     });
-    clientConn->setPacketHandler([weakConn, this](const TcpPacket& packet) {
-        if (auto conn = weakConn.lock()) {
-            if (static_cast<TCP_MSG_KEY>(packet.key) == TCP_MSG_KEY::MSG_PING) {
-                conn->sendPacket(static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PONG), packet.payload);
+    connecting_ = true;
+    connectTimer_->start(50);
+
+    auto timer = std::make_shared<boost::asio::steady_timer>(*m_io);
+    timer->expires_after(std::chrono::milliseconds(CONNECTION_TIMEOUT_MS));
+    timer->async_wait([this](const boost::system::error_code& ec) {
+        if (ec == boost::asio::error::operation_aborted) {
+            return; // timer was cancelled normally
+        }
+        if (!ec) {
+            boost::system::error_code ignored;
+            clientSocket_->close(ignored);
+            clientSocket_.reset();
+        }
+        connecting_ = false;
+        qDebug() << "timeout";
+        QMetaObject::invokeMethod(
+            this, [this]() { uiSetDisconnectedState(); }, Qt::QueuedConnection);
+    });
+
+    clientSocket_->async_connect(endpoint, [this, timer](const boost::system::error_code& ec) {
+        qDebug() << "time cancel";
+        timer->cancel();
+
+        if (ec) {
+            QString msg;
+            if (!connecting_) {
+                QMetaObject::invokeMethod(
+                    this, [this]() { uiSetDisconnectedState(); }, Qt::QueuedConnection);
                 return;
             }
-            decode(packet);
+
+            if (ec == boost::asio::error::operation_aborted ||
+                ec == boost::asio::error::bad_descriptor) {
+                msg = "Connection timeout";
+            } else {
+                msg = QString::fromStdString(ec.message());
+            }
+
+            QMessageBox::critical(this, "Connection Failed", msg);
+            QMetaObject::invokeMethod(
+                this, [this]() { uiSetDisconnectedState(); }, Qt::QueuedConnection);
+            return;
         }
+
+        connecting_ = false;
+        auto socket = std::move(clientSocket_);
+        clientSocket_.reset();
+        clientConn = std::make_shared<TcpConnection>(std::move(*socket));
+
+        auto weakConn = std::weak_ptr<TcpConnection>(clientConn);
+        clientConn->setDisconnectHandler([this](const boost::system::error_code& code) {
+            QMetaObject::invokeMethod(
+                this,
+                [this, code]() {
+                    qDebug() << "Connection closed!";
+                    if (code == boost::asio::error::operation_aborted /* We do clientConn.reset() */
+                        || code == boost::asio::error::eof /* Clean disconnect from server */) {
+                        QMetaObject::invokeMethod(
+                            this, [this]() { uiSetDisconnectedState(); }, Qt::QueuedConnection);
+                    } else {
+                        connection_error(code.value(), QString::fromStdString(code.message()));
+                    }
+                    clientConn->setDisconnectHandler(
+                        nullptr); // stop disconnect handling after stopped
+                    clientConn->setPacketHandler(
+                        nullptr); // wait for dangling async read processes...
+                    clientConn.reset();
+                },
+                Qt::QueuedConnection);
+        });
+        clientConn->setPacketHandler([weakConn, this](const TcpPacket& packet) {
+            if (auto conn = weakConn.lock()) {
+                if (static_cast<TCP_MSG_KEY>(packet.key) == TCP_MSG_KEY::MSG_PING) {
+                    conn->sendPacket(static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PONG),
+                                     packet.payload);
+                    return;
+                }
+                decode(packet);
+            }
+        });
+        QMetaObject::invokeMethod(this, [this]() { connected(); }, Qt::QueuedConnection);
+        clientConn->start();
     });
-    connected();
-    clientConn->start();
+}
+
+void MainWindow::cancelConnection() {
+    if (!connecting_)
+        return;
+
+    connecting_ = false;
+
+    // 1. stop UI timer
+    if (connectTimer_) {
+        connectTimer_->stop();
+    }
+
+    // 2. cancel socket connect
+    if (clientSocket_) {
+        boost::system::error_code ec;
+        clientSocket_->cancel(ec); // interrupts async_connect
+        clientSocket_->close(ec);  // ensures full abort
+        clientSocket_.reset();
+        connectTimer_->stop();
+        connectTimer_->disconnect();
+        connectTimer_->deleteLater();
+        connectTimer_ = nullptr;
+    }
+
+    // 3. restore UI
+    uiSetDisconnectedState();
 }
 
 void MainWindow::decode(const TcpPacket& packet) {
@@ -979,6 +1077,7 @@ void MainWindow::resetXorHit() {
 }
 
 void MainWindow::uiSetDisconnectedState() {
+    qDebug() << "ui set disconnected";
     sliderValuesDirty = true;
     // set button and color of label
     ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGray;}");
@@ -986,6 +1085,7 @@ void MainWindow::uiSetDisconnectedState() {
     ui->ipButton->setText("connect");
     ui->ipButton->setEnabled(true);
     ui->ipBox->setEnabled(true);
+    ui->progressBar->hide();
     // disable all relevant objects of mainwindow
     ui->discr1Slider->setValue(0);
     ui->discr1Edit->clear();
@@ -996,10 +1096,20 @@ void MainWindow::uiSetDisconnectedState() {
     ui->controlWidget->setEnabled(false);
     // disable other widgets
     emit setUiEnabledStates(false);
-    m_connection_timeout.stop();
+    // m_connection_timeout.stop();
+}
+
+void MainWindow::uiSetConnectingState() {
+    qDebug() << "ui set connecting";
+    ui->ipButton->setEnabled(true);
+    ui->ipBox->setEnabled(false);
+    ui->progressBar->show();
+    ui->ipButton->setText("cancel");
+    ui->ipStatusLabel->setText("connecting");
 }
 
 void MainWindow::uiSetConnectedState() {
+    qDebug() << "ui set connected";
     sliderValuesDirty = true;
     // change color and text of labels and buttons
     ui->tabWidget->setEnabled(true);
@@ -1009,6 +1119,7 @@ void MainWindow::uiSetConnectedState() {
     ui->ipButton->setText("disconnect");
     ui->ipButton->setEnabled(true);
     ui->ipBox->setDisabled(true);
+    ui->progressBar->hide();
     // enable other widgets
     emit setUiEnabledStates(true);
 }
@@ -1097,6 +1208,10 @@ void MainWindow::sendValueUpdateRequests() {
 }
 
 void MainWindow::onIpButtonClicked() {
+    if (connecting_) {
+        cancelConnection();
+        return;
+    }
     if (clientConn != nullptr) {
         // it is connected and the button shows "disconnect" -> here comes disconnect code
         clientConn->stop();                        // safely close async connection without segfault

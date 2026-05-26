@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>588</width>
-    <height>619</height>
+    <width>646</width>
+    <height>656</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -45,7 +45,7 @@
          </size>
         </property>
         <property name="focusPolicy">
-         <enum>Qt::WheelFocus</enum>
+         <enum>Qt::FocusPolicy::WheelFocus</enum>
         </property>
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter the hostname or IP adress of your MuonPi.&lt;br/&gt;&lt;br/&gt;Recent and found devices are shown in the drop-down menu.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -60,7 +60,7 @@
          <string notr="true"/>
         </property>
         <property name="insertPolicy">
-         <enum>QComboBox::InsertAlphabetically</enum>
+         <enum>QComboBox::InsertPolicy::InsertAlphabetically</enum>
         </property>
         <property name="minimumContentsLength">
          <number>1</number>
@@ -70,10 +70,10 @@
       <item>
        <spacer name="horizontalSpacer_2">
         <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+         <enum>Qt::Orientation::Horizontal</enum>
         </property>
         <property name="sizeType">
-         <enum>QSizePolicy::Fixed</enum>
+         <enum>QSizePolicy::Policy::Fixed</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
@@ -93,10 +93,10 @@
       <item>
        <spacer name="horizontalSpacer_4">
         <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+         <enum>Qt::Orientation::Horizontal</enum>
         </property>
         <property name="sizeType">
-         <enum>QSizePolicy::Fixed</enum>
+         <enum>QSizePolicy::Policy::Fixed</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
@@ -108,18 +108,24 @@
       </item>
       <item>
        <widget class="QLabel" name="ipStatusLabel">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>1</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>not connected</string>
         </property>
         <property name="alignment">
-         <set>Qt::AlignCenter</set>
+         <set>Qt::AlignmentFlag::AlignCenter</set>
         </property>
        </widget>
       </item>
       <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+         <enum>Qt::Orientation::Horizontal</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
@@ -128,6 +134,34 @@
          </size>
         </property>
        </spacer>
+      </item>
+      <item>
+       <widget class="QProgressBar" name="progressBar">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>7</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimum">
+         <number>-1000</number>
+        </property>
+        <property name="maximum">
+         <number>0</number>
+        </property>
+        <property name="value">
+         <number>-200</number>
+        </property>
+        <property name="invertedAppearance">
+         <bool>false</bool>
+        </property>
+        <property name="format">
+         <string>%v  ms</string>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QPushButton" name="networkSearchButton">
@@ -187,7 +221,7 @@
                 <UInt>2000</UInt>
                </property>
                <property name="scalePosition">
-                <enum>QwtSlider::TrailingScale</enum>
+                <enum>QwtSlider::ScalePosition::TrailingScale</enum>
                </property>
               </widget>
              </item>
@@ -229,7 +263,7 @@
              <string>Channel 2</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+             <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_2">
              <item>
@@ -247,7 +281,7 @@
                 <UInt>2000</UInt>
                </property>
                <property name="scalePosition">
-                <enum>QwtSlider::TrailingScale</enum>
+                <enum>QwtSlider::ScalePosition::TrailingScale</enum>
                </property>
               </widget>
              </item>
@@ -324,7 +358,7 @@
              <number>10</number>
             </property>
             <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+             <enum>Qt::Orientation::Horizontal</enum>
             </property>
            </widget>
           </item>
@@ -334,7 +368,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select bias control voltage.&lt;br/&gt;&lt;br/&gt;See Section P&lt;span style=&quot; font-style:italic;&quot;&gt;arameter&lt;/span&gt; to check the bias voltage.&lt;br/&gt;Lower control voltage =&amp;gt; higher bias voltage.&lt;br/&gt;Higher control volatege =&amp;gt; lower bias voltage.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
             </property>
             <property name="suffix">
              <string>V</string>
@@ -353,13 +387,13 @@
           <item row="3" column="0">
            <widget class="QLabel" name="biasPowerLabel">
             <property name="frameShape">
-             <enum>QFrame::Box</enum>
+             <enum>QFrame::Shape::Box</enum>
             </property>
             <property name="text">
              <string>Bias OFF</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignCenter</set>
+             <set>Qt::AlignmentFlag::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -409,7 +443,7 @@
              <string>xRate</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignCenter</set>
+             <set>Qt::AlignmentFlag::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -428,13 +462,13 @@
              </size>
             </property>
             <property name="frameShape">
-             <enum>QFrame::Box</enum>
+             <enum>QFrame::Shape::Box</enum>
             </property>
             <property name="text">
              <string>XOR</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignCenter</set>
+             <set>Qt::AlignmentFlag::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -453,13 +487,13 @@
              </size>
             </property>
             <property name="frameShape">
-             <enum>QFrame::Box</enum>
+             <enum>QFrame::Shape::Box</enum>
             </property>
             <property name="text">
              <string>AND</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignCenter</set>
+             <set>Qt::AlignmentFlag::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -484,7 +518,7 @@
              <string>aRate</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignCenter</set>
+             <set>Qt::AlignmentFlag::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -503,13 +537,13 @@
              </size>
             </property>
             <property name="frameShape">
-             <enum>QFrame::Box</enum>
+             <enum>QFrame::Shape::Box</enum>
             </property>
             <property name="text">
              <string>Total</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignCenter</set>
+             <set>Qt::AlignmentFlag::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -534,7 +568,7 @@
              <string>count</string>
             </property>
             <property name="alignment">
-             <set>Qt::AlignCenter</set>
+             <set>Qt::AlignmentFlag::AlignCenter</set>
             </property>
            </widget>
           </item>
