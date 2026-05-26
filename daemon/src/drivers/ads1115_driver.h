@@ -18,6 +18,7 @@ class ADS1115Driver : public Source {
                   boost::asio::io_context& io);
 
     void update() override;
+    auto getVoltage(std::uint8_t channel, bool& ok) -> double;
 
   private:
     void startBurst(const StartBurstSampling& cmd);

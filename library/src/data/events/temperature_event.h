@@ -2,6 +2,7 @@
 #define TEMPERATURE_EVENT_H
 
 struct TemperatureEvent {
+    std::string source{"unknown"};
     float temperature{-1.0};
 };
 

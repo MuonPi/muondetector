@@ -13,6 +13,7 @@ enum class OtherComponent : std::uint32_t {
     TCP_SOURCE_0,
     TCP_COMMAND_DECODER_0,
     GPIO_DRIVER_0,
+    LOG_ENGINE_0,
 };
 
 using ComponentId = std::variant<Device, OtherComponent>;
@@ -29,6 +30,7 @@ inline const std::unordered_map<std::string, ComponentId> componentLookup{
     {"GPIO_DRIVER_0", OtherComponent::GPIO_DRIVER_0},
     {"TCP_SOURCE_0", OtherComponent::TCP_SOURCE_0},
     {"TCP_COMMAND_DECODER_0", OtherComponent::TCP_COMMAND_DECODER_0},
+    {"LOG_ENGINE_0", OtherComponent::LOG_ENGINE_0},
 };
 
 class Component {

@@ -1,6 +1,8 @@
 #include "core/event_bindings.h"
 
+#include "core/component.h"
 #include "core/event_bus.h"
+#include "core/registries/component_manager.h"
 #include "core/registries/data_store.h"
 #include "data/commands/bias_switch_cmd.h"
 #include "data/commands/bias_voltage_cmd.h"
@@ -24,6 +26,7 @@
 #include "data/events/adc_mode_event.h"
 #include "data/events/adc_trace_event.h"
 #include "data/events/ads1115_event.h"
+#include "data/events/bias_current_event.h"
 #include "data/events/bias_switch_event.h"
 #include "data/events/bias_voltage_event.h"
 #include "data/events/calib_event.h"
@@ -34,6 +37,7 @@
 #include "data/events/gpio_inhibit_event.h"
 #include "data/events/gpio_rate_event.h"
 #include "data/events/i2c_stats_event.h"
+#include "data/events/log_trigger_event.h"
 #include "data/events/mcp4728_event.h"
 #include "data/events/mqtt_log_event.h"
 #include "data/events/mqtt_status_event.h"
@@ -45,8 +49,13 @@
 #include "data/events/threshold_setting_event.h"
 #include "data/events/ubx_event.h"
 #include "data/events/version_event.h"
+#include "drivers/ads1115_driver.h"
 #include "sinks/mqtt_sink.h"
 #include "sinks/tcp_sink.h"
+#include "utility/calibration.h"
+#include "utility/conversion.h"
+#include "utility/geohash.h"
+#include "utility/logparameter.h"
 #include "utility/ublox_ratebuffer.h"
 
 #include <array>
@@ -55,7 +64,7 @@
 void EventBindings::setupTcpSink(EventBus& bus, TcpSink& tcp_sink) {
     bus.subscribe<AdcModeEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<AdcTraceEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
-    bus.subscribe<Ads1115Event>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
+    bus.subscribe<ADS1115Event>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<BiasSwitchEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<BiasVoltageEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<CalibEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
@@ -98,6 +107,16 @@ void EventBindings::setupMqttSink(EventBus& bus, MqttSink& mqtt_sink) {
         [&mqtt_sink](const MqttLogEvent& event) { mqtt_sink.handle(event); });
 }
 
+void EventBindings::processGeoPos(EventBus& bus, DataStore& datastore, const GeoPosition& pos) {
+    bus.publish(pos.getPosStruct());
+    auto geoHeightHisto = datastore.histo("geoHeight");
+    if (geoHeightHisto) {
+        bus.publish(LogParameter{"meanGeoHeightMSL",
+                                 std::to_string(geoHeightHisto->getMean()) + " m",
+                                 LogParameter::LOG_LATEST});
+    }
+}
+
 void EventBindings::setupDatastore(EventBus& bus, DataStore& datastore) {
     // GeoPosManager
     GeoPosManager& geoPosManager = datastore.geoPosManager();
@@ -114,11 +133,12 @@ void EventBindings::setupDatastore(EventBus& bus, DataStore& datastore) {
     // transformation
     // Do not publish DatastoreStoreEvent<GnssPosStruct>. For this case GeoPosManager
     // has absolute truth of current position
-    geoPosManager.set_lockin_ready_callback(
-        [&bus](const GeoPosition& pos) { bus.publish(pos.getPosStruct()); });
-    geoPosManager.set_valid_pos_callback(
-        [&bus](const GeoPosition& pos) { bus.publish(pos.getPosStruct()); });
-
+    geoPosManager.set_lockin_ready_callback([&bus, &datastore](const GeoPosition& pos) {
+        EventBindings::processGeoPos(bus, datastore, pos);
+    });
+    geoPosManager.set_valid_pos_callback([&bus, &datastore](const GeoPosition& pos) {
+        EventBindings::processGeoPos(bus, datastore, pos);
+    });
     bus.subscribe<DatastoreStoreEvent<GnssPosStruct>>([&geoPosManager](const auto& event) {
         geoPosManager.fill_from_gps(event.data);
         // DO NOT PUBLISH EVENTS HERE!

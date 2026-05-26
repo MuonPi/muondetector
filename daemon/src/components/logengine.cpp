@@ -1,11 +1,11 @@
 #include "components/logengine.h"
 
 #include "core/event_bus.h"
-#include "data/events/file_message_event.h"
+#include "data/events/file_log_event.h"
 #include "data/events/log_trigger_event.h"
 #include "data/events/mqtt_log_event.h"
-#include "logparameter.h"
 #include "utility/conversion.h"
+#include "utility/logparameter.h"
 
 #include <chrono>
 #include <config.h>
@@ -20,9 +20,7 @@ static inline std::string_view last_token(std::string_view s) {
     return s.substr(pos + 1);
 }
 
-LogEngine::LogEngine(EventBus& bus) : bus_(bus) {
-    bus_.subscribe<LogTriggerEvent>(
-        [this]([[maybe_unused]] const LogTriggerEvent&) { onLogInterval(); });
+LogEngine::LogEngine(ComponentId id, EventBus& bus) : Source(id), bus_(bus) {
 }
 
 LogEngine::~LogEngine() {
@@ -38,7 +36,7 @@ void LogEngine::onLogParameterReceived(const LogParameter& logpar) {
 
         std::string msg{dateStringNow() + " " + logpar.name() + " " + logpar.value()};
         bus_.publish(MqttLogEvent{.msg = msg});
-        bus_.publish(FileMessageEvent{.msg = msg});
+        bus_.publish(FileLogEvent{.msg = msg});
         // reset already existing entries but preserve logType attribute
         if (logData.find(logpar.name()) != logData.end()) {
             int logType = logData[logpar.name()].front().logType();
@@ -59,7 +57,7 @@ void LogEngine::onLogParameterReceived(const LogParameter& logpar) {
     }
 }
 
-void LogEngine::onLogInterval() {
+void LogEngine::update() {
     // Use one timestamp for writing all parameters
     // Otherwise log messages can spread over multiple seconds, making data import challenging
     auto ts = dateStringNow();
@@ -79,7 +77,7 @@ void LogEngine::onLogInterval() {
             // easy to write only the last value to file
             std::string msg{ts + " " + name + " " + list.back().value()};
             bus_.publish(MqttLogEvent{.msg = msg});
-            bus_.publish(FileMessageEvent{.msg = std::move(msg)});
+            bus_.publish(FileLogEvent{.msg = std::move(msg)});
             it = logData.erase(it);
         } else if (list.back().logType() == LogParameter::LOG_AVERAGE) {
 
@@ -113,7 +111,7 @@ void LogEngine::onLogInterval() {
                 std::string msg = ts + " " + std::format("{} {:.7f} {}", name, sum, unitString);
 
                 bus_.publish(MqttLogEvent{.msg = msg});
-                bus_.publish(FileMessageEvent{.msg = std::move(msg)});
+                bus_.publish(FileLogEvent{.msg = std::move(msg)});
             }
 
             it = logData.erase(it);
@@ -122,7 +120,7 @@ void LogEngine::onLogInterval() {
             if (onceLogFlag || list.front().updatedRecently()) {
                 std::string msg{ts + " " + name + " " + list.back().value()};
                 bus_.publish(MqttLogEvent{.msg = msg});
-                bus_.publish(FileMessageEvent{.msg = std::move(msg)});
+                bus_.publish(FileLogEvent{.msg = std::move(msg)});
             }
             while (list.size() > 2) {
                 list.pop_front();
@@ -141,20 +139,20 @@ void LogEngine::onLogInterval() {
                 std::string msg = ts + " " + name + " " + list.back().value();
 
                 bus_.publish(MqttLogEvent{.msg = msg});
-                bus_.publish(FileMessageEvent{.msg = std::move(msg)});
+                bus_.publish(FileLogEvent{.msg = std::move(msg)});
             } else {
 
-                for (auto it = std::next(list.begin()); it != list.end(); ++it) {
+                for (auto it2 = std::next(list.begin()); it2 != list.end(); ++it2) {
 
-                    if (it->value() != it_first->value()) {
+                    if (it2->value() != it_first->value()) {
 
-                        std::string msg = ts + " " + name + " " + it->value();
+                        std::string msg = ts + " " + name + " " + it2->value();
 
                         bus_.publish(MqttLogEvent{.msg = msg});
-                        bus_.publish(FileMessageEvent{.msg = std::move(msg)});
+                        bus_.publish(FileLogEvent{.msg = std::move(msg)});
 
                         // replace reference value
-                        *it_first = *it;
+                        *it_first = *it2;
 
                         break; // optional but usually intended
                     }
