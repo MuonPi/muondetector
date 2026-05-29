@@ -383,7 +383,7 @@ auto FileSink::readConfigFile() -> bool {
 void FileSink::writeToDataFile(const std::string& data) {
     std::scoped_lock lock{m_mutex};
     if (dataFile.is_open() == false) {
-        logWarn("Could not write to data file");
+        logWarn("Could not write to data file " + currentWorkingFilePath.string());
         return;
     }
     dataFile << data << "\n";
@@ -392,7 +392,7 @@ void FileSink::writeToDataFile(const std::string& data) {
 void FileSink::writeToLogFile(const std::string& log) {
     std::scoped_lock lock{m_mutex};
     if (logFile.is_open() == false) {
-        logWarn("Could not write to log file");
+        logWarn("Could not write to log file" + currentWorkingFilePath.string());
         return;
     }
     logFile << log << "\n";
@@ -401,7 +401,7 @@ void FileSink::writeToLogFile(const std::string& log) {
 auto FileSink::createFileName() -> std::string {
     // creates a fileName based on date time and mac address
     if (dataFolderPath == "") {
-        logWarn("could not open data folder");
+        logWarn("could not open data folder " + dataFolderPath.string());
         return "";
     }
     std::string fileName = dateStringNow();

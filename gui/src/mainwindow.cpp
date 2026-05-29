@@ -94,7 +94,7 @@ constexpr std::chrono::milliseconds gpioRateHoldInterval{50};
 /// automatic rate poll interval
 constexpr std::chrono::seconds gpioRatePollInterval{3};
 /// TCP socket connection timeout
-constexpr std::chrono::seconds CONNECTION_TIMEOUT{10};
+constexpr std::chrono::milliseconds CONNECTION_TIMEOUT_MS{2000};
 
 QRegularExpression alphabetical("[a-z]+[A-Z]+");
 
@@ -464,11 +464,6 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
     QStandardItem* item = model->item(1);
     item->setEnabled(false);
 
-    // m_connection_timeout.setSingleShot(true);
-    // m_connection_timeout.setInterval(CONNECTION_TIMEOUT);
-    // connect(&m_connection_timeout, &QTimer::timeout, this,
-    //         [this]() { this->connection_error(255, QString("connection timeout")); });
-    // initialise all ui elements that will be inactive at start
     uiSetDisconnectedState();
 }
 
@@ -497,7 +492,7 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
     uiSetConnectingState();
 
     ui->ipStatusLabel->setText("connecting");
-    int timeout_ms = 2000;
+    int timeout_ms = CONNECTION_TIMEOUT_MS.count();
     connectProgress_ = -timeout_ms;
     ui->progressBar->setMinimum(-timeout_ms);
     ui->progressBar->setMaximum(0);
@@ -524,19 +519,24 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
     connectTimer_->start(50);
 
     auto timer = std::make_shared<boost::asio::steady_timer>(*m_io);
-    timer->expires_after(std::chrono::milliseconds(timeout_ms));
+    timer->expires_after(std::chrono::milliseconds(CONNECTION_TIMEOUT_MS));
     timer->async_wait([this](const boost::system::error_code& ec) {
+        if (ec == boost::asio::error::operation_aborted) {
+            return; // timer was cancelled normally
+        }
         if (!ec) {
             boost::system::error_code ignored;
             clientSocket_->close(ignored);
             clientSocket_.reset();
         }
         connecting_ = false;
+        qDebug() << "timeout";
         QMetaObject::invokeMethod(
             this, [this]() { uiSetDisconnectedState(); }, Qt::QueuedConnection);
     });
 
     clientSocket_->async_connect(endpoint, [this, timer](const boost::system::error_code& ec) {
+        qDebug() << "time cancel";
         timer->cancel();
 
         if (ec) {
@@ -560,6 +560,7 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
             return;
         }
 
+        connecting_ = false;
         auto socket = std::move(clientSocket_);
         clientSocket_.reset();
         clientConn = std::make_shared<TcpConnection>(std::move(*socket));
@@ -595,7 +596,7 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
                 decode(packet);
             }
         });
-        connected();
+        QMetaObject::invokeMethod(this, [this]() { connected(); }, Qt::QueuedConnection);
         clientConn->start();
     });
 }
@@ -1076,6 +1077,7 @@ void MainWindow::resetXorHit() {
 }
 
 void MainWindow::uiSetDisconnectedState() {
+    qDebug() << "ui set disconnected";
     sliderValuesDirty = true;
     // set button and color of label
     ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGray;}");
@@ -1098,6 +1100,7 @@ void MainWindow::uiSetDisconnectedState() {
 }
 
 void MainWindow::uiSetConnectingState() {
+    qDebug() << "ui set connecting";
     ui->ipButton->setEnabled(true);
     ui->ipBox->setEnabled(false);
     ui->progressBar->show();
@@ -1106,6 +1109,7 @@ void MainWindow::uiSetConnectingState() {
 }
 
 void MainWindow::uiSetConnectedState() {
+    qDebug() << "ui set connected";
     sliderValuesDirty = true;
     // change color and text of labels and buttons
     ui->tabWidget->setEnabled(true);
