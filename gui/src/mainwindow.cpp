@@ -474,6 +474,7 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::makeConnection(QString ipAddress, quint16 port) {
+    Q_ASSERT(QThread::currentThread() == qApp->thread());
     if (clientConn != nullptr) {
         QMessageBox::critical(this, "Connection already established",
                               "Cannot make connection if connection is already existing");
@@ -489,26 +490,28 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
     }
     tcp::endpoint endpoint(server_ip, port);
 
-    uiSetConnectingState();
+    QMetaObject::invokeMethod(
+        this,
+        [this]() {
+            uiSetConnectingState();
+            int timeout_ms = CONNECTION_TIMEOUT_MS.count();
+            connectProgress_ = -timeout_ms;
+            ui->progressBar->setMinimum(-timeout_ms);
+            ui->progressBar->setMaximum(0);
+            ui->ipStatusLabel->setText("connecting");
+            ui->progressBar->setValue(connectProgress_);
+            ui->progressBar->show();
+        },
+        Qt::QueuedConnection);
 
-    ui->ipStatusLabel->setText("connecting");
-    int timeout_ms = CONNECTION_TIMEOUT_MS.count();
-    connectProgress_ = -timeout_ms;
-    ui->progressBar->setMinimum(-timeout_ms);
-    ui->progressBar->setMaximum(0);
-    ui->progressBar->setValue(-timeout_ms);
-    ui->progressBar->show();
-
-    connectTimer_ = std::make_unique<QTimer>();
+    connectTimer_ = new QTimer(this);
     connectTimer_->setParent(this);
-    connectTimer_->setInterval(50); // smooth animation (20 FPS)
-    connect(connectTimer_.get(), &QTimer::timeout, this, [this]() mutable {
+    connect(connectTimer_, &QTimer::timeout, this, [this]() mutable {
         connectProgress_ += 50;
 
         if (connectProgress_ > 0) {
             connectProgress_ = 0;
             connectTimer_->stop();
-            connectTimer_->disconnect();
             connectTimer_->deleteLater();
             connectTimer_ = nullptr;
         }
@@ -518,26 +521,38 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
     connecting_ = true;
     connectTimer_->start(50);
 
-    auto timer = std::make_shared<boost::asio::steady_timer>(*m_io);
-    timer->expires_after(std::chrono::milliseconds(CONNECTION_TIMEOUT_MS));
-    timer->async_wait([this](const boost::system::error_code& ec) {
-        if (ec == boost::asio::error::operation_aborted) {
-            return; // timer was cancelled normally
-        }
-        if (!ec) {
-            boost::system::error_code ignored;
-            clientSocket_->close(ignored);
+    QTimer* timer = new QTimer(this);
+    timer->setInterval(std::chrono::milliseconds(CONNECTION_TIMEOUT_MS).count());
+    timer->setSingleShot(true);
+    connect(timer, &QTimer::timeout, this, [this]() {
+        if (clientSocket_) {
+            boost::system::error_code ec;
+            clientSocket_->close(ec);
             clientSocket_.reset();
         }
+
         connecting_ = false;
-        qDebug() << "timeout";
+
         QMetaObject::invokeMethod(
             this, [this]() { uiSetDisconnectedState(); }, Qt::QueuedConnection);
     });
+    timer->start();
 
     clientSocket_->async_connect(endpoint, [this, timer](const boost::system::error_code& ec) {
-        qDebug() << "time cancel";
-        timer->cancel();
+        QMetaObject::invokeMethod(
+            this,
+            [this, timer]() {
+                if (timer != nullptr) {
+                    timer->stop();
+                    timer->deleteLater();
+                }
+                if (connectTimer_ != nullptr) {
+                    connectTimer_->stop();
+                    connectTimer_->deleteLater();
+                    connectTimer_ = nullptr;
+                }
+            },
+            Qt::QueuedConnection);
 
         if (ec) {
             QString msg;
@@ -554,9 +569,16 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
                 msg = QString::fromStdString(ec.message());
             }
 
-            QMessageBox::critical(this, "Connection Failed", msg);
             QMetaObject::invokeMethod(
-                this, [this]() { uiSetDisconnectedState(); }, Qt::QueuedConnection);
+                this,
+                [this, msg]() {
+                    QMessageBox::critical(this, "Connection Failed", msg);
+                    connecting_ = false;
+                    clientSocket_->close();
+                    clientSocket_.reset();
+                    uiSetDisconnectedState();
+                },
+                Qt::QueuedConnection);
             return;
         }
 
@@ -608,8 +630,10 @@ void MainWindow::cancelConnection() {
     connecting_ = false;
 
     // 1. stop UI timer
-    if (connectTimer_) {
+    if (connectTimer_ != nullptr) {
         connectTimer_->stop();
+        connectTimer_->deleteLater();
+        connectTimer_ = nullptr;
     }
 
     // 2. cancel socket connect
@@ -618,18 +642,13 @@ void MainWindow::cancelConnection() {
         clientSocket_->cancel(ec); // interrupts async_connect
         clientSocket_->close(ec);  // ensures full abort
         clientSocket_.reset();
-        connectTimer_->stop();
-        connectTimer_->disconnect();
-        connectTimer_->deleteLater();
-        connectTimer_ = nullptr;
     }
 
     // 3. restore UI
-    uiSetDisconnectedState();
+    QMetaObject::invokeMethod(this, [this]() { uiSetDisconnectedState(); }, Qt::QueuedConnection);
 }
 
 void MainWindow::decode(const TcpPacket& packet) {
-    // qDebug() << "Received event: " << packet.key;
     auto it = decoderMap.find(static_cast<TCP_MSG_KEY>(packet.key));
 
     if (it != decoderMap.end()) {
@@ -1077,7 +1096,6 @@ void MainWindow::resetXorHit() {
 }
 
 void MainWindow::uiSetDisconnectedState() {
-    qDebug() << "ui set disconnected";
     sliderValuesDirty = true;
     // set button and color of label
     ui->ipStatusLabel->setStyleSheet("QLabel {color: darkGray;}");
@@ -1100,7 +1118,6 @@ void MainWindow::uiSetDisconnectedState() {
 }
 
 void MainWindow::uiSetConnectingState() {
-    qDebug() << "ui set connecting";
     ui->ipButton->setEnabled(true);
     ui->ipBox->setEnabled(false);
     ui->progressBar->show();
@@ -1109,7 +1126,6 @@ void MainWindow::uiSetConnectingState() {
 }
 
 void MainWindow::uiSetConnectedState() {
-    qDebug() << "ui set connected";
     sliderValuesDirty = true;
     // change color and text of labels and buttons
     ui->tabWidget->setEnabled(true);

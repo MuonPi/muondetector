@@ -200,7 +200,7 @@ class MainWindow : public QMainWindow {
     std::shared_ptr<TcpConnection> clientConn{nullptr};
     std::size_t device_counter{0};
     std::shared_ptr<NetworkDiscovery> m_networkDiscovery{nullptr};
-    std::unique_ptr<QTimer> connectTimer_{nullptr};
+    QTimer* connectTimer_ = nullptr;
     bool connecting_{false};
 };
 

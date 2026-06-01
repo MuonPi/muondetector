@@ -188,15 +188,6 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     // transform other events to Logging
     LogParameterProcessor::setup(*ctx.bus, *ctx.datastore);
 
-    // --- Calibration from EEPROM ---
-    auto eeprom = ctx.components->get<EEPROM24AA02Driver>(Device::EEPROM24AA02_0);
-    if (eeprom != nullptr) {
-        eeprom->update();
-    } // -> Sets MuonPi::Version::hardware
-    else {
-        logWarn("EEPROM not initializing.");
-    }
-
     // --- GPIO Initialization ---
     auto gpio_driver = ctx.components->get<GpioDriver>(OtherComponent::GPIO_DRIVER_0);
     if (gpio_driver != nullptr) {

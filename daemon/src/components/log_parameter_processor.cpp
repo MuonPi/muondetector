@@ -272,11 +272,11 @@ void LogParameterProcessor::setup(EventBus& bus, DataStore& datastore) {
     });
 
     // retrieve ShowerDetectorCalib from datastore and log eeprom ID
-    auto* ptr = datastore.get<std::shared_ptr<ShowerDetectorCalib>>();
-    if (ptr == nullptr) {
+    if (datastore.lastUpdate<std::weak_ptr<ShowerDetectorCalib>>().has_value() == false) {
+        logError("ShowerDetectorCalib not initialized");
         return;
     }
-    auto weak_ptr = std::weak_ptr<ShowerDetectorCalib>(*ptr);
+    auto weak_ptr = *datastore.get<std::weak_ptr<ShowerDetectorCalib>>();
     if (auto calib = weak_ptr.lock()) {
         bus.publish(LogParameter{"uniqueId", to_hex(calib->getSerialID()), LogParameter::LOG_ONCE});
     }
@@ -386,5 +386,12 @@ void LogParameterProcessor::poll(EventBus& bus, const DataStore& datastore,
     } else {
         bus.publish(LogParameter{"vadc3", std::to_string(v1) + " V", LogParameter::LOG_AVERAGE});
         bus.publish(LogParameter{"vadc4", std::to_string(v2) + " V", LogParameter::LOG_AVERAGE});
+    }
+
+    // Send histograms
+    for (const auto& [name, hist] : datastore.allHistos()) {
+        hist->rescale();
+        // Copy histogram instead of publishing a mere reference
+        bus.publish(Histogram(*hist));
     }
 }
