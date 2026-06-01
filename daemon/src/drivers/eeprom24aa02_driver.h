@@ -19,7 +19,7 @@ class EEPROM24AA02Driver : public Source {
   private:
     DeviceRegistry& registry_;
     EventBus& bus_;
-    std::weak_ptr<ShowerDetectorCalib> calib;
+    std::shared_ptr<ShowerDetectorCalib> calib;
 };
 
 #endif // EEPROM24AA02_DRIVER_H

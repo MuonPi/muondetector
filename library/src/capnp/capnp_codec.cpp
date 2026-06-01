@@ -80,6 +80,7 @@
 #include "data/events/ubx_event.h"
 #include "data/events/version_event.h"
 #include "data/muondetector_structs.h"
+#include "histogram.capnp.h"
 #include "nav_sat.capnp.h"
 #include "network/tcpmessage_keys.h"
 #include "ubx_timemark_struct.capnp.h"
@@ -1216,12 +1217,63 @@ auto CapnpCodec<LogInfoStruct>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_LOG_INFO);
 }
 
-auto CapnpCodec<Histogram>::encode(const Histogram&) -> std::vector<uint8_t> {
-    return {};
+auto CapnpCodec<Histogram>::encode(const Histogram& h) -> std::vector<uint8_t> {
+    ::capnp::MallocMessageBuilder message;
+
+    auto root = message.initRoot<HistogramCapnp>();
+
+    root.setName(h.getName());
+    root.setUnit(h.getUnit());
+
+    root.setNrBins(h.getNrBins());
+    root.setMin(h.getMin());
+    root.setMax(h.getMax());
+
+    root.setOverflow(h.getOverflow());
+    root.setUnderflow(h.getUnderflow());
+
+    root.setAutoscale(h.getAutoscale());
+
+    auto bins = root.initBins(h.histogramMap().size());
+
+    std::size_t idx = 0;
+    for (const auto& [bin, content] : h.histogramMap()) {
+        auto entry = bins[idx++];
+        entry.setBin(bin);
+        entry.setContent(content);
+    }
+
+    kj::VectorOutputStream out;
+    capnp::writeMessage(out, message);
+
+    auto arr = out.getArray();
+    return std::vector<uint8_t>(arr.begin(), arr.end());
 }
 
-auto CapnpCodec<Histogram>::decode(const std::vector<std::uint8_t>&) -> Histogram {
-    return Histogram{};
+auto CapnpCodec<Histogram>::decode(const std::vector<uint8_t>& data) -> Histogram {
+    kj::ArrayPtr<const capnp::word> words(reinterpret_cast<const capnp::word*>(data.data()),
+                                          data.size() / sizeof(capnp::word));
+
+    capnp::FlatArrayMessageReader reader(words);
+
+    auto root = reader.getRoot<HistogramCapnp>();
+
+    Histogram h;
+
+    h.setName(root.getName().cStr());
+    h.setUnit(root.getUnit().cStr());
+
+    h.setNrBins(root.getNrBins());
+    h.setMin(root.getMin());
+    h.setMax(root.getMax());
+
+    h.setAutoscale(root.getAutoscale());
+
+    for (auto entry : root.getBins()) {
+        h.setBinContent(entry.getBin(), entry.getContent());
+    }
+
+    return h;
 }
 
 auto CapnpCodec<Histogram>::messageKey() -> std::uint16_t {
