@@ -153,10 +153,11 @@ void EventBindings::setupDatastore(EventBus& bus, DataStore& datastore) {
     subscribe_all<CfgGNSS, CfgAnt, CfgNavX5, CfgNav5, NavSat, MonTx, MonRx, NavStatus, NavClock,
                   UbxTimeMarkStruct, UbxTimePulseStruct, GnssMonHwStruct, GnssMonHw2Struct,
                   NavTimeGPS, NavTimeUTC, BiasVoltageEvent, MqttStatusEvent, UbxDopStruct,
-                  AdcTraceEvent, BiasSwitchEvent, CalibEvent, GainSwitchEvent, GpioRateEvent,
-                  GpioInhibitEvent, TemperatureEvent, MCP4728Event, PcaSwitchEvent,
-                  PolaritySwitchEvent, GpsVersion, EventTriggerEvent, LogInfoStruct,
-                  PositionModeConfig, VersionEvent>(bus, datastore);
+                  AdcTraceEvent, BiasSwitchEvent, GainSwitchEvent, CalibEvent,
+                  std::weak_ptr<ShowerDetectorCalib>, GpioRateEvent, GpioInhibitEvent,
+                  TemperatureEvent, MCP4728Event, PcaSwitchEvent, PolaritySwitchEvent, GpsVersion,
+                  EventTriggerEvent, LogInfoStruct, PositionModeConfig, VersionEvent>(bus,
+                                                                                      datastore);
 
     // Message Requests will be answered directly from datastore
     bus.subscribe<ThresholdSettingRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {
@@ -361,7 +362,8 @@ void EventBindings::setupDatastore(EventBus& bus, DataStore& datastore) {
     bus.subscribe<HistogramRequestCmd>([&bus, &datastore]([[maybe_unused]] const auto&) {
         for (const auto& [name, hist] : datastore.allHistos()) {
             hist->rescale();
-            bus.publish(*hist);
+            // Copy histogram instead of publishing a mere reference
+            bus.publish(Histogram(*hist));
         }
     });
 }
@@ -474,6 +476,12 @@ void EventBindings::pollDatastore(EventBus& bus, DataStore& datastore) {
                 "VersionEvent in pollDatastore function");
     }
 
+    // Send all histograms to ui
+    for (const auto& [name, hist] : datastore.allHistos()) {
+        hist->rescale();
+        // Copy histogram instead of publishing a mere reference
+        bus.publish(Histogram(*hist));
+    }
     // NOT USED BY GUI:
     // if (datastore.lastUpdate<NavTimeGPS>().has_value()) {
     //     bus.publish(*datastore.get<NavTimeGPS>());

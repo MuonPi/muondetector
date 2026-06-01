@@ -266,3 +266,11 @@ void Histogram::rescale() {
 void Histogram::setAutoscale(bool autoscale) {
     fAutoscale = autoscale;
 }
+
+bool Histogram::getAutoscale() const {
+    return fAutoscale;
+}
+
+const std::map<int, double>& Histogram::histogramMap() const {
+    return fHistogramMap;
+}

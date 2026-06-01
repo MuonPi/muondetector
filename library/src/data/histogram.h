@@ -38,6 +38,8 @@ class Histogram {
     void rescale(double center);
     void rescale();
     void setAutoscale(bool autoscale = true);
+    bool getAutoscale() const;
+    const std::map<int, double>& histogramMap() const;
 
     // friend QDataStream& operator<<(QDataStream& out, const Histogram& h);
     // friend QDataStream& operator>>(QDataStream& in, Histogram& h);
