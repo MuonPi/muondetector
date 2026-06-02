@@ -139,6 +139,7 @@ void SerialUblox::enqueueMessage(const UbxMessage& msg, bool trackAck) {
     } else {
         logError("Tried to queue message " + std::to_string(msg.full_id()) +
                  " but is not allowed at this state!");
+        retryLater();
     }
 }
 
