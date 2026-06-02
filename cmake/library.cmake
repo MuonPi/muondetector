@@ -105,7 +105,10 @@ set(MUONDETECTOR_COMMANDS_HEADER_FILES
 )
 
 add_library(muondetector-shared OBJECT ${MUONDETECTOR_LIBRARY_SOURCE_FILES} ${MUONDETECTOR_LIBRARY_HEADER_FILES})
+add_library(muondetector-static STATIC ${MUONDETECTOR_LIBRARY_SOURCE_FILES} ${MUONDETECTOR_LIBRARY_HEADER_FILES}
+)
 target_compile_definitions(muondetector-shared PUBLIC MUONDETECTOR_LIBRARY_EXPORT)
+target_compile_definitions(muondetector-static PUBLIC MUONDETECTOR_LIBRARY_EXPORT)
 set_target_properties(muondetector-shared PROPERTIES POSITION_INDEPENDENT_CODE 1)
 target_include_directories(muondetector-shared PUBLIC
     "${MUONDETECTOR_LIBRARY_DIR}"
@@ -116,7 +119,22 @@ target_include_directories(muondetector-shared PUBLIC
     "${Boost_INCLUDE_DIRS}"
     )
 
+target_include_directories(muondetector-static PUBLIC
+    "${MUONDETECTOR_LIBRARY_DIR}"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/network"
+    "${MUONDETECTOR_LIBRARY_BINARY_DIR}"
+    "${Boost_INCLUDE_DIRS}"
+    )
+
 target_link_libraries(muondetector-shared PUBLIC
+    muondetector-protocol
+    PkgConfig::LIBSECRET
+    PkgConfig::GLIB
+)
+
+target_link_libraries(muondetector-static PUBLIC
     muondetector-protocol
     PkgConfig::LIBSECRET
     PkgConfig::GLIB

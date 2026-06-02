@@ -7,6 +7,7 @@ option(MUONDETECTOR_BUILD_GUI "Build the gui for the muondetector" ON)
 option(MUONDETECTOR_BUILD_DAEMON "Build the daemon for the muondetector. Defaults to ON on armv7l architecture" ON)
 option(MUONDETECTOR_BUILD_TESTS "Build integration tests" ON)
 option(MUONDETECTOR_BUILD_TCP_DEBUG_CLIENT "Build tcp connection client for testing" ON)
+option(MUONDETECTOR_BUILD_TCP_DEBUG_SERVER "Build tcp testserver" ON)
 set(MUONDETECTOR_ON_RASPBERRYPI OFF)
 
 
@@ -157,6 +158,9 @@ endif ()
 
 if (MUONDETECTOR_BUILD_TCP_DEBUG_CLIENT)
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/tcpclient.cmake")
+endif ()
+if (MUONDETECTOR_BUILD_TCP_DEBUG_SERVER)
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/testserver.cmake")
 endif ()
 
 add_custom_target(clangformat COMMAND clang-format -style=WebKit -i ${MUONDETECTOR_ALL_FILES})
