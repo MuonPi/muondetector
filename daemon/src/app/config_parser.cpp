@@ -279,6 +279,17 @@ void ConfigParser::parse(int argc, char* argv[]) {
             }
         }
 
+        // -------- sds011 --------
+        else if (key == "sds011_n_sleep") {
+            if (next_value(value)) {
+                try {
+                    m_config.sds011_n_sleep = static_cast<unsigned>(std::stoi(value));
+                    m_presence.cliSds011Sleep = true;
+                } catch (...) {
+                }
+            }
+        }
+
         // -------- help --------
         else if (key == "h" || key == "help") {
             print_help(argv[0]);
@@ -297,6 +308,19 @@ inline bool readBoolFlexible(const libconfig::Setting& setting) {
 
         case libconfig::Setting::TypeInt64:
             return static_cast<long long>(setting) != 0;
+
+        default:
+            throw libconfig::SettingTypeException(setting);
+    }
+}
+
+inline long long readIntFlexible(const libconfig::Setting& setting) {
+    switch (setting.getType()) {
+        case libconfig::Setting::TypeInt:
+            return static_cast<long long>(setting);
+
+        case libconfig::Setting::TypeInt64:
+            return static_cast<long long>(setting);
 
         default:
             throw libconfig::SettingTypeException(setting);
@@ -607,6 +631,19 @@ void ConfigParser::apply_defaults() {
                 "'geo_handling.static_coordinates.hor_error'\n" +
                 "'geo_handling.static_coordinates.vert_error'");
     }
+
+    // Load sds011_n_sleep - sds011 sleep between readout, 0 for continuous mode
+    try {
+        int sds_n_sleep = readIntFlexible(m_config.config_file_data->lookup("sds011_n_sleep"));
+        if (sds_n_sleep < 0) {
+            sds_n_sleep = 1;
+        }
+        m_config.sds011_n_sleep = static_cast<unsigned>(sds_n_sleep);
+    } catch (const libconfig::SettingNotFoundException& e) {
+        m_config.sds011_n_sleep = 1;
+    } catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'sds011_n_sleep': " + std::string(e.what()));
+    }
 }
 
 bool ConfigParser::is_valid_ipv4(const std::string& ip) {
@@ -663,6 +700,17 @@ void ConfigParser::validate() {
     if (!m_presence.cfgStationId && !m_presence.cliStationId) {
         logWarn("No 'stationID' in config and no CLI override; using existing/default station ID");
     }
+    if (!m_presence.cfgSds011Devname && !m_presence.cliSds011Devname) {
+        logWarn("No 'sds011_device' in config and no CLI override; using existing/default: "
+                "'/dev/ttyUSB0'");
+    }
+    if (!m_presence.cfgSds011Baudrate && !m_presence.cliSds011Baudrate) {
+        logWarn("No 'sds011_baudrate' in config and no CLI override; using existing/default: 9600");
+    }
+    if (!m_presence.cfgSds011Sleep && !m_presence.cliSds011Sleep) {
+        logWarn("No 'sds011_sleep' in config and no CLI override; using existing/default: "
+                "continuous every 1s readout");
+    }
 
     // Validate IP
     if (!is_valid_ipv4(m_config.serverAddress)) {
@@ -687,4 +735,7 @@ void ConfigParser::report() {
     logInfo("input polarity ch2: " + std::to_string(m_config.polarity[1]));
     logInfo("mqtt user: " + m_config.username + " passw: " + m_config.password);
     logInfo("station id: " + m_config.station_ID);
+    logInfo("sds011_baudrate: " + std::to_string(m_config.sds011_baudrate));
+    logInfo("sds011_device: " + m_config.sds011_devname);
+    logInfo("sds011_sleep: " + std::to_string(m_config.sds011_n_sleep * 60 - 30) + "s");
 }
