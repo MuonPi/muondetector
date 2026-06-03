@@ -11,6 +11,7 @@
 #include "drivers/gpio_driver.h"
 #include "drivers/mcp4728_driver.h"
 #include "drivers/pca9536_driver.h"
+#include "hardware/sds011/sds011.h"
 #include "hardware/ublox/serialublox.h"
 #include "sources/tcp_command_decoder.h"
 #include "sources/tcp_source.h"
@@ -96,6 +97,12 @@ const std::unordered_map<ComponentId, ComponentCreator> ComponentFactory::compon
          return std::make_shared<SerialUblox>(OtherComponent::GPS_DRIVER_0, *ctx.io,
                                               ctx.config->gpsdevname, ctx.config->gnss_baudrate,
                                               ctx.config->gnss_dynamic_model, *ctx.bus);
+     }},
+    {OtherComponent::SDS011_DRIVER_0,
+     [](Context& ctx) {
+         return std::make_shared<Sds011>(OtherComponent::SDS011_DRIVER_0, *ctx.io,
+                                         ctx.config->sds011_devname, ctx.config->sds011_baudrate,
+                                         ctx.config->sds011_n_sleep, *ctx.bus);
      }},
     {OtherComponent::GPIO_DRIVER_0,
      [](Context& ctx) {
