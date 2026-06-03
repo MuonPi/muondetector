@@ -35,6 +35,9 @@ class ConfigParser {
         bool cliPolarity2{false};
         bool cliStationId{false};
         bool cliPositionMode{false};
+        bool cliSds011Devname{false};
+        bool cliSds011Baudrate{false};
+        bool cliSds011Sleep{false};
 
         bool cfgConfigDir{false};
         bool cfgGpsDevice{false};
@@ -52,6 +55,9 @@ class ConfigParser {
         bool cfgPolarity2{false};
         bool cfgStationId{false};
         bool cfgPositionMode{false};
+        bool cfgSds011Devname{false};
+        bool cfgSds011Baudrate{false};
+        bool cfgSds011Sleep{false};
     };
 
     SystemConfig m_config;
