@@ -16,9 +16,7 @@ set(CAPNP_GENERATOR_SCRIPT "${CMAKE_SOURCE_DIR}/tools/generate_capnp.py")
 set(CAPNP_BUILD_SUBDIR "generated/capnp")
 set(CAPNP_BUILD_DIRECTORY "${CMAKE_BINARY_DIR}/${CAPNP_BUILD_SUBDIR}")
 
-set(GENERATED_PROTOCOL_CAPNP "${CAPNP_BUILD_SUBDIR}/protocol.capnp")
-# set(GENERATED_PROTOCOL_CAPNP_FOR_CAPNP "build/${GENERATED_PROTOCOL_CAPNP}")
-set(GENERATED_PROTOCOL_CAPNP_FOR_CAPNP "${CAPNP_BUILD_DIRECTORY}/protocol.capnp")
+set(GENERATED_PROTOCOL_CAPNP "${CAPNP_BUILD_DIRECTORY}/protocol.capnp")
 file(MAKE_DIRECTORY "${CAPNP_BUILD_DIRECTORY}")
 
 # ------------------------------------------------------------
@@ -75,7 +73,8 @@ list(FILTER STATIC_CAPNP_FILES EXCLUDE REGEX ".*/protocol\\.capnp$")
 # Final schema list
 set(ALL_CAPNP_FILES
     ${STATIC_CAPNP_FILES}
-    ${GENERATED_PROTOCOL_CAPNP_FOR_CAPNP}
+    ${GENERATED_PROTOCOL_CAPNP}
+    # ${GENERATED_PROTOCOL_CAPNP_FOR_CAPNP}
 )
 
 # ------------------------------------------------------------
