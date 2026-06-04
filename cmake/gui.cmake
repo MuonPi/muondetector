@@ -243,13 +243,18 @@ install(TARGETS muondetector-gui
     LIBRARY DESTINATION lib
 )
 
+
+if(PACKAGING_MODE)
+    message(STATUS "Packaging mode: disabling Qt deploy")
+    set(QT_SKIP_AUTO_DEPLOY ON)
+else()
 qt_generate_deploy_app_script(
     TARGET muondetector-gui
     OUTPUT_SCRIPT deploy_script
     NO_UNSUPPORTED_PLATFORM_ERROR
 )
-
 install(SCRIPT ${deploy_script})
+endif()
 
 if(WIN32)
 
