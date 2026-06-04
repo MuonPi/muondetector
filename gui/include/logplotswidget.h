@@ -1,6 +1,8 @@
 #ifndef LOGPLOTSWIDGET_H
 #define LOGPLOTSWIDGET_H
 
+#include "data/muondetector_structs.h"
+
 #include <QMap>
 #include <QPointF>
 #include <QString>
@@ -10,8 +12,6 @@
 namespace Ui {
 class LogPlotsWidget;
 }
-
-struct LogInfoStruct;
 
 class LogBuffer {
   public:

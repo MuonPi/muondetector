@@ -1,10 +1,10 @@
 #ifndef MAP_H
 #define MAP_H
 
+#include "data/muondetector_structs.h"
+
 #include <QWidget>
 #include <events/ubx_event.h>
-
-struct PositionModeConfig;
 
 namespace Ui {
 class Map;

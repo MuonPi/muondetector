@@ -1,11 +1,12 @@
 #ifndef CALIBFORM_H
 #define CALIBFORM_H
 
+#include "data/muondetector_structs.h"
+
 #include <QVector>
 #include <QWidget>
 #include <string>
 
-struct CalibStruct;
 class CalibScanDialog;
 
 namespace Ui {

@@ -1,11 +1,11 @@
 #ifndef I2CFORM_H
 #define I2CFORM_H
 
+#include "data/muondetector_structs.h"
+
 #include <QString>
 #include <QWidget>
 #include <vector>
-
-struct I2cDeviceEntry;
 
 namespace Ui {
 class I2cForm;
