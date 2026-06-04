@@ -10,7 +10,6 @@
 #include <qwt_series_data.h>
 
 class QwtPlotHistogram;
-class Histogram;
 
 class CustomHistogram : public QwtPlot, public Histogram {
     Q_OBJECT

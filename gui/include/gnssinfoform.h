@@ -1,15 +1,12 @@
 #ifndef GNSSINFOFORM_H
 #define GNSSINFOFORM_H
 
+#include "data/events/ubx_event.h"
+
 #include <QEvent>
 #include <QMap>
 #include <QWidget>
-#include <events/ubx_event.h>
 #include <vector>
-
-struct GnssPosStruct;
-class GnssSatellite;
-struct GnssMonHwStruct;
 
 namespace Ui {
 class GnssInfoForm;

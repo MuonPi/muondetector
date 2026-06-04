@@ -125,7 +125,7 @@ elseif(WIN32)
 else()
     find_library(
         QWT
-        NAMES qwt-qt6 qwt
+        NAMES qwt qwt-qt6 qwt-qt5
         REQUIRED
     )
 endif()

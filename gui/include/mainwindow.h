@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include "data/events/mqtt_status_event.h"
+#include "data/events/ubx_event.h"
+#include "data/muondetector_structs.h"
 
 #include <QErrorMessage>
 #include <QMainWindow>
@@ -9,7 +11,7 @@
 #include <QTime>
 #include <QTimer>
 #include <QVector>
-
+#include <vector>
 // for sig handling:
 #include <config.h>
 #include <events/tcp_packet_event.h>
@@ -19,20 +21,8 @@
 #include <sys/types.h>
 #include <unordered_map>
 
-struct I2cDeviceEntry;
-struct CalibStruct;
-struct GnssPosStruct;
-struct PositionModeConfig;
-struct GnssConfigStruct;
-class GnssSatellite;
 class CalibForm;
 class CalibScanDialog;
-struct UbxTimePulseStruct;
-class Histogram;
-struct GnssMonHwStruct;
-struct GnssMonHw2Struct;
-struct LogInfoStruct;
-struct UbxTimeMarkStruct;
 class TcpConnection;
 class NetworkDiscovery;
 enum class ADC_SAMPLING_MODE;

@@ -18,10 +18,19 @@ execute_process(COMMAND bash "-c" "git rev-parse --short HEAD | tr -d '\n'"
     OUTPUT_VARIABLE PROJECT_VERSION_HASH)
 
 
-if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "^(armv7|armv6|aarch64|arm64)")
-    set(MUONDETECTOR_BUILD_DAEMON ON)
-    set(MUONDETECTOR_ON_RASPBERRYPI ON)
-endif ()
+
+if(EXISTS "/sys/firmware/devicetree/base/model")
+    file(READ "/sys/firmware/devicetree/base/model" RPI_MODEL)
+    string(FIND "${RPI_MODEL}" "Raspberry Pi" RPI_FOUND)
+
+    if(NOT RPI_FOUND EQUAL -1)
+        set(MUONDETECTOR_ON_RASPBERRYPI ON)
+    endif()
+endif()
+# if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "^(armv7|armv6|aarch64|arm64)")
+#     set(MUONDETECTOR_BUILD_DAEMON ON)
+#     set(MUONDETECTOR_ON_RASPBERRYPI ON)
+# endif ()
 
 set(MUONDETECTOR_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
 
