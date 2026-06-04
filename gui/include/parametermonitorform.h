@@ -1,6 +1,9 @@
 #ifndef PARAMETERMONITORFORM_H
 #define PARAMETERMONITORFORM_H
 
+#include "data/events/ubx_event.h"
+#include "data/muondetector_structs.h"
+
 #include <QWidget>
 #include <gpio_pin_definitions.h>
 #include <muondetector_structs.h>

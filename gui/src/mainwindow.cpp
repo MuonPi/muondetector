@@ -124,6 +124,7 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
     qRegisterMetaType<GnssPosStruct>("GnssPosStruct");
     qRegisterMetaType<bool>("bool");
     qRegisterMetaType<I2cDeviceEntry>("I2cDeviceEntry");
+    qRegisterMetaType<std::vector<I2cDeviceEntry>>("std::vector<I2cDeviceEntry>");
     qRegisterMetaType<CalibStruct>("CalibStruct");
     qRegisterMetaType<std::vector<GnssConfigStruct>>("std::vector<GnssConfigStruct>");
     qRegisterMetaType<std::vector<GnssSatellite>>("std::vector<GnssSatellite>");

@@ -192,6 +192,8 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
 
 set(MUONDETECTOR_DAEMON_INSTALL_FILES
     "${MUONDETECTOR_DAEMON_CONFIG_DIR}/muondetector.conf"
+    "${MUONDETECTOR_DAEMON_CONFIG_DIR}/hardware.conf"
+    "${MUONDETECTOR_DAEMON_CONFIG_DIR}/components.conf"
     )
 
 configure_file(
@@ -252,44 +254,35 @@ if (CMAKE_BUILD_TYPE STREQUAL Release)
             COMMAND ${CMAKE_STRIP} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/muondetector-daemon")
 endif ()
 
-include(GNUInstallDirs)
+######################################################################################################
+# PACKAGING
+######################################################################################################
 
-add_custom_target(prep-daemon ALL COMMAND mkdir -p "${CMAKE_CURRENT_BINARY_DIR}/daemon")
-add_custom_target(changelog-daemon ALL COMMAND gzip -cn9 "${MUONDETECTOR_DAEMON_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/daemon/changelog.gz")
-add_dependencies(changelog-daemon prep-daemon)
-add_custom_target(manpage-daemon ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1.gz")
-# add_custom_target(manpage-login ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1.gz")
+if (${MUONDETECTOR_ON_RASPBERRYPI})
+    include(GNUInstallDirs)
 
-install(TARGETS muondetector-daemon DESTINATION bin COMPONENT daemon)
-# install(TARGETS muondetector-login DESTINATION lib/muondetector/bin COMPONENT daemon)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/daemon/changelog.gz" DESTINATION "${CMAKE_INSTALL_DOCDIR}-daemon" COMPONENT daemon)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1.gz" DESTINATION "share/man/man1/" COMPONENT daemon)
-# install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1.gz" DESTINATION "share/man/man1/" COMPONENT daemon)
-install(FILES "${MUONDETECTOR_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}-daemon" COMPONENT daemon)
-install(FILES ${MUONDETECTOR_DAEMON_INSTALL_FILES} DESTINATION "/etc/muondetector/" COMPONENT daemon)
-install(FILES "${MUONDETECTOR_DAEMON_CONFIG_DIR}/muondetector-daemon.service" DESTINATION "/lib/systemd/system" COMPONENT daemon)
-install(FILES "${MUONDETECTOR_DAEMON_CONFIG_DIR}/pigpiod.conf" DESTINATION "/etc/systemd/system/pigpiod.service.d/" COMPONENT daemon)
-install(PROGRAMS ${MUONDETECTOR_LOGIN_INSTALL_FILES} DESTINATION bin COMPONENT daemon)
+    add_custom_target(prep-daemon ALL COMMAND mkdir -p "${CMAKE_CURRENT_BINARY_DIR}/daemon")
+    add_custom_target(changelog-daemon ALL COMMAND gzip -cn9 "${MUONDETECTOR_DAEMON_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/daemon/changelog.gz")
+    add_dependencies(changelog-daemon prep-daemon)
+    add_custom_target(manpage-daemon ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1.gz")
+    # add_custom_target(manpage-login ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1.gz")
+
+    install(TARGETS muondetector-daemon DESTINATION bin COMPONENT daemon)
+    # install(TARGETS muondetector-login DESTINATION lib/muondetector/bin COMPONENT daemon)
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/daemon/changelog.gz" DESTINATION "${CMAKE_INSTALL_DOCDIR}-daemon" COMPONENT daemon)
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1.gz" DESTINATION "share/man/man1/" COMPONENT daemon)
+    # install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1.gz" DESTINATION "share/man/man1/" COMPONENT daemon)
+    install(FILES "${MUONDETECTOR_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}-daemon" COMPONENT daemon)
+    install(FILES ${MUONDETECTOR_DAEMON_INSTALL_FILES} DESTINATION "/etc/muondetector/" COMPONENT daemon)
+    install(FILES "${MUONDETECTOR_DAEMON_CONFIG_DIR}/muondetector-daemon.service" DESTINATION "/lib/systemd/system" COMPONENT daemon)
+    install(PROGRAMS ${MUONDETECTOR_LOGIN_INSTALL_FILES} DESTINATION bin COMPONENT daemon)
 
 
-
-if (MUONDETECTOR_BUILD_GUI)
-set(CPACK_DEBIAN_DAEMON_PACKAGE_DEPENDS "pigpiod")
-set(CPACK_DEBIAN_DAEMON_PACKAGE_CONTROL_EXTRA "${MUONDETECTOR_DAEMON_CONFIG_DIR}/preinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/postinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/prerm;${MUONDETECTOR_DAEMON_CONFIG_DIR}/conffiles")
-set(CPACK_DEBIAN_DAEMON_PACKAGE_SECTION "net")
-set(CPACK_DEBIAN_DAEMON_DESCRIPTION " Daemon that controls the muon detector board.
- It opens serial and i2c connections to the muondetector board.
- It runs in the background and sends the data to the central server.
- It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
-set(CPACK_COMPONENT_DAEMON_DESCRIPTION "${CPACK_DEBIAN_DAEMON_DESCRIPTION}")
-set(CPACK_DEBIAN_DAEMON_PACKAGE_NAME "muondetector-daemon")
-else ()
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "pigpiod")
-set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${MUONDETECTOR_DAEMON_CONFIG_DIR}/preinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/postinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/prerm;${MUONDETECTOR_DAEMON_CONFIG_DIR}/conffiles")
-set(CPACK_DEBIAN_PACKAGE_SECTION "net")
-set(CPACK_DEBIAN_PACKAGE_DESCRIPTION " Daemon that controls the muon detector board.
- It opens serial and i2c connections to the muondetector board.
- It runs in the background and sends the data to the central server.
- It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
-set(CPACK_DEBIAN_PACKAGE_NAME "muondetector-daemon")
-endif ()
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${MUONDETECTOR_DAEMON_CONFIG_DIR}/preinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/postinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/prerm;${MUONDETECTOR_DAEMON_CONFIG_DIR}/conffiles")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "net")
+    set(CPACK_DEBIAN_PACKAGE_DESCRIPTION " Daemon that controls the muon detector board.
+    It opens serial and i2c connections to the muondetector board.
+    It runs in the background and sends the data to the central server.
+    It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
+    set(CPACK_DEBIAN_PACKAGE_NAME "muondetector-daemon")
+endif()

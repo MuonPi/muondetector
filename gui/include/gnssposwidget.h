@@ -1,6 +1,8 @@
 #ifndef GNSSPOSWIDGET_H
 #define GNSSPOSWIDGET_H
 
+#include "data/events/ubx_event.h"
+
 #include <QDateTime>
 #include <QEvent>
 #include <QHash>
@@ -10,8 +12,6 @@
 #include <QVector>
 #include <QWidget>
 #include <vector>
-
-class GnssSatellite;
 
 constexpr int DEFAULT_CONTROL_POINTS = 5;
 

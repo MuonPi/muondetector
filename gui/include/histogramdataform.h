@@ -1,11 +1,11 @@
 #ifndef HISTOGRAMDATAFORM_H
 #define HISTOGRAMDATAFORM_H
 
+#include "histogram.h"
+
 #include <QMap>
 #include <QString>
 #include <QWidget>
-
-class Histogram;
 
 namespace Ui {
 class histogramDataForm;
