@@ -8,8 +8,8 @@ option(MUONDETECTOR_BUILD_DAEMON "Build the daemon for the muondetector. Default
 option(MUONDETECTOR_BUILD_TESTS "Build integration tests" ON)
 option(MUONDETECTOR_BUILD_TCP_DEBUG_CLIENT "Build tcp connection client for testing" ON)
 option(MUONDETECTOR_BUILD_TCP_DEBUG_SERVER "Build tcp testserver" ON)
+option(PACKAGING_MODE "Disable deploy steps for packaging" OFF)
 set(MUONDETECTOR_ON_RASPBERRYPI OFF)
-
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.cmake")
 
@@ -27,10 +27,6 @@ if(EXISTS "/sys/firmware/devicetree/base/model")
         set(MUONDETECTOR_ON_RASPBERRYPI ON)
     endif()
 endif()
-# if ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "^(armv7|armv6|aarch64|arm64)")
-#     set(MUONDETECTOR_BUILD_DAEMON ON)
-#     set(MUONDETECTOR_ON_RASPBERRYPI ON)
-# endif ()
 
 set(MUONDETECTOR_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
 
