@@ -19,7 +19,13 @@ Sds011::Sds011(ComponentId id, boost::asio::io_context& io, const std::string& p
     , port_(port)
     , baud_(baud)
     , bus_(bus) {
-    makeConnection();
+    try {
+        makeConnection();
+    } catch (std::runtime_error& e) {
+        logWarn("Trying to open " + port + " " + std::string(e.what()) +
+                ". Sds011 will not be initialized!");
+        return;
+    }
     bus.subscribe<Sds011Event>([](const auto& event) {
         std::stringstream sstr;
         sstr << "Data:";
