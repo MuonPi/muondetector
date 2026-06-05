@@ -196,7 +196,6 @@ if(WIN32)
     target_link_libraries(muondetector-gui PRIVATE
         Qt6::Network Qt6::Svg Qt6::Widgets Qt6::Gui Qt6::Quick Qt6::QuickWidgets Qt6::Qml Qt6::Positioning
         ${QWT_LIBRARY}
-        # ${QWT_PREFIX}/lib/libqwt.so
         muondetector-shared
         protocol
         pthread
@@ -208,7 +207,6 @@ elseif(APPLE)
     target_link_libraries(muondetector-gui PRIVATE
         Qt6::Network Qt6::Svg Qt6::Widgets Qt6::Gui Qt6::Quick Qt6::QuickWidgets Qt6::Qml Qt6::Positioning
         ${QWT_LIBRARY}
-        # ${QWT_PREFIX}/lib/libqwt.so
         muondetector-shared
         protocol
         pthread
@@ -219,7 +217,6 @@ else()
     target_link_libraries(muondetector-gui PRIVATE
         Qt6::Network Qt6::Svg Qt6::Widgets Qt6::Gui Qt6::Quick Qt6::QuickWidgets Qt6::Qml Qt6::Positioning
         ${QWT_LIBRARY}
-        # ${QWT_PREFIX}/lib/libqwt.so
         muondetector-shared
         muondetector-protocol
         pthread
@@ -242,14 +239,20 @@ if(PACKAGING_MODE)
     message(STATUS "Packaging mode: disabling Qt deploy")
     set(QT_SKIP_AUTO_DEPLOY ON)
     install(FILES ${CMAKE_SOURCE_DIR}/desktop/muondetector-gui.metainfo.xml
-        DESTINATION share/metainfo)
+        DESTINATION share/metainfo
+    )
+    install(FILES muondetector-gui.desktop
+        DESTINATION share/applications
+        COMPONENT gui
+    )
+    install(FILES muon.ico DESTINATION share/pixmaps/)
 else()
-qt_generate_deploy_app_script(
-    TARGET muondetector-gui
-    OUTPUT_SCRIPT deploy_script
-    NO_UNSUPPORTED_PLATFORM_ERROR
-)
-install(SCRIPT ${deploy_script})
+    qt_generate_deploy_app_script(
+        TARGET muondetector-gui
+        OUTPUT_SCRIPT deploy_script
+        NO_UNSUPPORTED_PLATFORM_ERROR
+    )
+    install(SCRIPT ${deploy_script})
 endif()
 
 if(WIN32)
