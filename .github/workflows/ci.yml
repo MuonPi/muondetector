@@ -14,7 +14,7 @@ jobs:
       - name: Install deps
         run: |
           sudo apt update
-          sudo apt install -y cmake ninja-build build-essential qt6-base-dev libboost-all-dev
+          sudo apt install -y cmake ninja-build build-essential qt6-base-dev libboost-all-dev libcapnp-dev capnproto
 
       - name: Configure
         run: cmake -S . -B build -G Ninja
