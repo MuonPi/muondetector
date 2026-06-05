@@ -37,6 +37,8 @@ set(MUONDETECTOR_GUI_SOURCE_FILES
     "${MUONDETECTOR_GUI_SOURCE_DIR}/spiform.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/status.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/delegates/itemdeletedelegate.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/histogram_series_data.cpp"
+    "${MUONDETECTOR_GUI_SOURCE_DIR}/curve_series_data.cpp"
     )
 
 set(MUONDETECTOR_GUI_HEADER_FILES
@@ -58,6 +60,8 @@ set(MUONDETECTOR_GUI_HEADER_FILES
     "${MUONDETECTOR_GUI_HEADER_DIR}/spiform.h"
     "${MUONDETECTOR_GUI_HEADER_DIR}/status.h"
     "${MUONDETECTOR_GUI_HEADER_DIR}/delegates/itemdeletedelegate.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/histogram_series_data.h"
+    "${MUONDETECTOR_GUI_HEADER_DIR}/curve_series_data.h"
     )
 set(MUONDETECTOR_GUI_UI_FILES
     "${MUONDETECTOR_GUI_UI_DIR}/calibform.ui"
@@ -247,6 +251,8 @@ install(TARGETS muondetector-gui
 if(PACKAGING_MODE)
     message(STATUS "Packaging mode: disabling Qt deploy")
     set(QT_SKIP_AUTO_DEPLOY ON)
+    install(FILES ${CMAKE_SOURCE_DIR}/desktop/muondetector-gui.metainfo.xml
+        DESTINATION share/metainfo)
 else()
 qt_generate_deploy_app_script(
     TARGET muondetector-gui

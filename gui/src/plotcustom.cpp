@@ -1,5 +1,5 @@
+#include "curve_series_data.h"
 #include "qwt_legend_data.h"
-#include "qwt_series_data.h"
 
 #include <QApplication>
 #include <QEvent>
@@ -136,8 +136,7 @@ void PlotCustom::plotSamples(QVector<QPointF>& samples, QwtPlotCurve& curve) {
         step = static_cast<double>(static_cast<int>((xMax - xMin) / 3));
     }
     setAxisScale(QwtPlot::xBottom, xMin, xMax, step);
-    auto* dat = new QwtPointSeriesData(someSamples);
-    curve.setData(dat);
+    curve.setData(new CurveSeriesData(someSamples));
     replot();
 }
 

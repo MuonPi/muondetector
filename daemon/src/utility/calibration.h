@@ -2,7 +2,7 @@
 #define CALIBRATION_H
 
 // clang-format off
-#include <muondetector_structs.h>
+#include "data/muondetector_structs.h"
 #include "hardware/i2cdevices.h"
 // clang-format on
 
@@ -15,8 +15,6 @@
 #include <vector>
 
 const uint16_t CALIB_HEADER = 0x2019;
-
-struct CalibStruct;
 
 // initialization of calib items
 // meaning of entries (columns is:

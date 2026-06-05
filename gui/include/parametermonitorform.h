@@ -9,9 +9,6 @@
 #include <muondetector_structs.h>
 #include <vector>
 
-struct CalibStruct;
-struct UbxTimeMarkStruct;
-
 namespace Ui {
 class ParameterMonitorForm;
 }

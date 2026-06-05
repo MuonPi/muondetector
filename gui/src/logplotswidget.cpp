@@ -1,5 +1,6 @@
 #include "logplotswidget.h"
 
+#include "curve_series_data.h"
 #include "gui/src/ui_logplotswidget.h"
 #include "qwt_plot.h"
 #include "ui_logplotswidget.h"
@@ -122,7 +123,7 @@ void LogPlotsWidget::onTableWidgetCellClicked(int row, int /*column*/) {
     auto it = fLogMap.find(name);
     if (it != fLogMap.end()) {
         ui->logPlot->setTitle(name);
-        ui->logPlot->curve("curve1").setSamples(it->data());
+        ui->logPlot->curve("curve1").setData(new CurveSeriesData(it->data()));
         ui->logPlot->setAxisTitle(QwtPlot::xBottom, "time");
         ui->logPlot->setAxisTitle(QwtPlot::yLeft, it->getUnit());
         ui->logNameLabel->setText(it->getName());

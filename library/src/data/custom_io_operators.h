@@ -1,21 +1,24 @@
 #ifndef CUSTOM_IO_OPERATORS_H
 #define CUSTOM_IO_OPERATORS_H
+
+// #include "data/muondetector_structs.h"
+// #include "events/ubx_event.h"
 #include <chrono>
 #include <iostream>
 
-class GnssSatellite;
-struct UbxTimeMarkStruct;
-struct UbxTimePulseStruct;
-struct GnssMonHwStruct;
-struct GnssMonHw2Struct;
-struct CalibStruct;
-class Histogram;
-struct LogInfoStruct;
-struct GnssPosStruct;
-struct PositionModeConfig;
-namespace MuonPi::Version {
-struct Version;
-}
+// class GnssSatellite;
+// struct UbxTimeMarkStruct;
+// struct UbxTimePulseStruct;
+// struct GnssMonHwStruct;
+// struct GnssMonHw2Struct;
+// struct CalibStruct;
+// class Histogram;
+// struct LogInfoStruct;
+// struct GnssPosStruct;
+// struct PositionModeConfig;
+// namespace MuonPi::Version {
+// struct Version;
+// }
 
 // std::ostream& operator<<(std::ostream& os, const QString& someQString);
 std::ostream& operator<<(std::ostream& os,

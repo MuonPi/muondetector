@@ -1,5 +1,6 @@
 #include "parametermonitorform.h"
 
+#include "curve_series_data.h"
 #include "gui/src/ui_parametermonitorform.h"
 #include "ui_parametermonitorform.h"
 
@@ -252,7 +253,7 @@ void ParameterMonitorForm::onAdcTraceReceived(const std::vector<float>& sampleBu
         vec.push_back(p1);
     }
 
-    ui->adcTracePlot->curve("curve1").setSamples(vec);
+    ui->adcTracePlot->curve("curve1").setData(new CurveSeriesData(vec));
     ui->adcTracePlot->replot();
 }
 
