@@ -14,10 +14,16 @@ jobs:
       - name: Install deps
         run: |
           sudo apt update
-          sudo apt install -y cmake ninja-build build-essential qt6-base-dev libboost-all-dev libcapnp-dev capnproto
+          sudo apt install -y cmake ninja-build build-essential qt6-base-dev libboost-all-dev libcapnp-dev capnproto libglib2.0-dev libsecret-1-dev
 
       - name: Configure
-        run: cmake -S . -B build -G Ninja
+        run: cmake -S . -B build \
+                -DMUONDETECTOR_BUILD_DAEMON=OFF \
+                -DMUONDETECTOR_BUILD_TESTS=OFF \
+                -DMUONDETECTOR_BUILD_TCP_DEBUG_CLIENT=OFF \
+                -DMUONDETECTOR_BUILD_TCP_DEBUG_SERVER=OFF \
+                -DCMAKE_BUILD_TYPE=Release \
+                -G Ninja
 
       - name: Build
         run: cmake --build build
