@@ -16,6 +16,17 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+if(WIN32)
+    find_library(MOSQUITTO
+        NAMES mosquitto
+        HINTS ${MOSQUITTO_DIR}
+        REQUIRED
+    )
+    if(MOSQUITTO)
+        message(STATUS "Mosquitto found: ${MOSQUITTO}")
+    endif()
+endif()
+
 
 set(MUONDETECTOR_GUI_SOURCE_FILES
     "${MUONDETECTOR_GUI_SOURCE_DIR}/calibform.cpp"
@@ -100,40 +111,6 @@ configure_file(
 
 endif()
 
-if(APPLE)
-    #QWT-Framwork suchen
-    find_library(QWT
-        NAMES qwt
-        HINTS /opt/local/libexec/qt6/lib
-        REQUIRED)
-    if(QWT)
-        include_directories(${QWT}/Headers)
-        link_libraries(${QWT})
-        message(STATUS "QWT found: ${QWT}")
-    endif()
-elseif(WIN32)
-    find_library(MOSQUITTO
-        NAMES mosquitto
-        HINTS ${MOSQUITTO_DIR}
-        REQUIRED)
-        if(MOSQUITTO)
-            message(STATUS "Mosquitto found: ${MOSQUITTO}")
-        endif()
-    find_library(QWT
-        NAMES qwt
-        HINTS ${QWT_DIR}/lib
-        REQUIRED)
-        if(QWT)
-            message(STATUS "QWT found: ${QWT}")
-        endif()
-else()
-    find_library(
-        QWT
-        NAMES qwt qwt-qt6 qwt-qt5
-        REQUIRED
-    )
-endif()
-
 qt_add_resources(qml_QRC "${MUONDETECTOR_GUI_RES_DIR}/resources.qrc")
 # find_package(Qt5 COMPONENTS Network Svg Widgets Gui Quick QuickWidgets Qml REQUIRED)
 # find_package(Qt5QuickCompiler)
@@ -191,8 +168,17 @@ else()
   )
 endif()
 
+set(MUONDETECTOR_DEPENDENCIES
+    muondetector-shared
+)
+if (BUILDING_BUNDLED_QWT)
+    set(MUONDETECTOR_DEPENDENCIES
+        ${MUONDETECTOR_DEPENDENCIES}
+        qwt
+    )
+endif()
 
-add_dependencies(muondetector-gui muondetector-shared)
+add_dependencies(muondetector-gui ${MUONDETECTOR_DEPENDENCIES})
 
 set_target_properties(muondetector-gui PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
@@ -200,7 +186,7 @@ target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:${MUONDETECTOR_GUI_HEADER_DIR}>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
     $<BUILD_INTERFACE:${MOSQUITTO_DIR}>
-    $<BUILD_INTERFACE:/usr/include/qwt>
+    $<BUILD_INTERFACE:${QWT_INCLUDE_DIR}>
     #for OSX
     $<BUILD_INTERFACE:/usr/local/include>
 )
@@ -209,10 +195,11 @@ if(WIN32)
 
     target_link_libraries(muondetector-gui PRIVATE
         Qt6::Network Qt6::Svg Qt6::Widgets Qt6::Gui Qt6::Quick Qt6::QuickWidgets Qt6::Qml Qt6::Positioning
+        ${QWT_LIBRARY}
+        # ${QWT_PREFIX}/lib/libqwt.so
         muondetector-shared
         protocol
         pthread
-        ${QWT}
         ${MOSQUITTO}
     )
 
@@ -220,6 +207,8 @@ elseif(APPLE)
 
     target_link_libraries(muondetector-gui PRIVATE
         Qt6::Network Qt6::Svg Qt6::Widgets Qt6::Gui Qt6::Quick Qt6::QuickWidgets Qt6::Qml Qt6::Positioning
+        ${QWT_LIBRARY}
+        # ${QWT_PREFIX}/lib/libqwt.so
         muondetector-shared
         protocol
         pthread
@@ -229,10 +218,11 @@ else()
 
     target_link_libraries(muondetector-gui PRIVATE
         Qt6::Network Qt6::Svg Qt6::Widgets Qt6::Gui Qt6::Quick Qt6::QuickWidgets Qt6::Qml Qt6::Positioning
+        ${QWT_LIBRARY}
+        # ${QWT_PREFIX}/lib/libqwt.so
         muondetector-shared
         muondetector-protocol
         pthread
-        ${QWT}
     )
 
 endif()
