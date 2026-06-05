@@ -24,7 +24,7 @@ class CustomPlot : public QwtPlot {
     // for other plots: subclass "CustomPlot" and put all specific functions (like below) to the new
     // class
 
-    static QwtPlotCurve INVALID_CURVE;
+    static QwtPlotCurve& invalidCurve();
 
   signals:
     void scalingChanged();
