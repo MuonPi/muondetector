@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-x64:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo apt update
+          sudo apt install -y cmake ninja-build build-essential qt6-base-dev libboost-all-dev
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Package .deb
+        run: |
+          cd build
+          cpack -G DEB
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-x64
+          path: build/*.deb
+
+
+  build-armv7:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cross tools
+        run: |
+          sudo apt update
+          sudo apt install -y cmake ninja-build gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-armv7.cmake \
+            -G Ninja
+
+      - name: Build
+        run: cmake --build build
+
+
+  build-arm64:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cross tools
+        run: |
+          sudo apt update
+          sudo apt install -y cmake ninja-build gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-arm64.cmake \
+            -G Ninja
+
+      - name: Build
+        run: cmake --build build
