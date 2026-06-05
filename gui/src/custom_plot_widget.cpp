@@ -15,7 +15,10 @@
 
 #define LOG_BASELINE 0.1
 
-QwtPlotCurve CustomPlot::INVALID_CURVE;
+QwtPlotCurve& CustomPlot::invalidCurve() {
+    static QwtPlotCurve c(QStringLiteral("Invalid"));
+    return c;
+}
 
 CustomPlot::~CustomPlot() {
     for (auto it = fCurveMap.begin(); it != fCurveMap.end(); ++it) {
@@ -70,7 +73,7 @@ QwtPlotCurve& CustomPlot::curve(const QString& curveName) {
     auto it = fCurveMap.find(curveName);
     if (it != fCurveMap.end())
         return **it;
-    return INVALID_CURVE;
+    return invalidCurve();
 }
 
 void CustomPlot::addCurve(const QString& name, const QColor& curveColor) {
