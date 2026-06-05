@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+
+  <id>org.muonpi</id>
+
+  <name>MuonPi GUI</name>
+
+  <summary>Graphical interface for MuonPi detector system</summary>
+
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+
+  <description>
+    <p>
+      The MuonPi GUI is a graphical application for monitoring
+      and controlling the MuonPi muon detection hardware system.
+    </p>
+
+    <p>
+      It provides real-time event visualization, data logging, and diagnostic tools
+      for detector performance evaluation.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">muondetector-gui.desktop</launchable>
+
+  <provides>
+    <binary>muondetector-gui</binary>
+  </provides>
+
+  <categories>
+    <category>Science</category>
+    <category>Education</category>
+    <category>Engineering</category>
+  </categories>
+
+  <keywords>
+    <keyword>physics</keyword>
+    <keyword>detector</keyword>
+    <keyword>muon</keyword>
+    <keyword>DAQ</keyword>
+  </keywords>
+
+  <developer_name>MuonPi Project</developer_name>
+
+  <url type="homepage">https://github.com/MuonPi/muondetector_v2</url>
+
+  <content_rating type="oars-1.1" />
+
+</component>
