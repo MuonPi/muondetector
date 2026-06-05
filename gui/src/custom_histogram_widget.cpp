@@ -1,5 +1,7 @@
 #include "custom_histogram_widget.h"
 
+#include "histogram_series_data.h"
+
 #include <QApplication>
 #include <QEvent>
 #include <QFileDialog>
@@ -190,7 +192,6 @@ void CustomHistogram::update() {
         QwtPlot::replot();
         return;
     }
-    fBarChart->attach(this);
     QVector<QwtIntervalSample> intervals;
     double rangeX = fMax - fMin;
     double xBinSize = rangeX / (fNrBins - 1);
@@ -204,7 +205,9 @@ void CustomHistogram::update() {
         intervals.push_back(interval);
     }
     if (intervals.size() && fBarChart != nullptr)
-        fBarChart->setSamples(intervals);
+        // fBarChart->setSamples(intervals.toList());
+        fBarChart->setData(new HistogramSeriesData(intervals));
+    fBarChart->attach(this);
     if (fLogY) {
         setAxisScale(QwtPlot::yLeft, 0.1, 1.5 * max);
     }

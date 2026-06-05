@@ -1,10 +1,10 @@
 #ifndef CALIBSCANDIALOG_H
 #define CALIBSCANDIALOG_H
 
+#include "data/muondetector_structs.h"
+
 #include <QDialog>
 #include <QVector>
-
-struct CalibStruct;
 
 namespace Ui {
 class CalibScanDialog;

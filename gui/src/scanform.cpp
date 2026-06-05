@@ -1,5 +1,6 @@
 #include "scanform.h"
 
+#include "curve_series_data.h"
 #include "gui/src/ui_scanform.h"
 #include "qwt_plot.h"
 #include "ui_scanform.h"
@@ -248,7 +249,7 @@ void ScanForm::updateScanPlot() {
         vec.push_back(p1);
     }
 
-    ui->scanPlot->curve("parscan").setSamples(vec);
+    ui->scanPlot->curve("parscan").setData(new CurveSeriesData(vec));
     ui->scanPlot->replot();
 }
 
