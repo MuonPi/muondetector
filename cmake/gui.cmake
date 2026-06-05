@@ -238,14 +238,14 @@ install(TARGETS muondetector-gui
 if(PACKAGING_MODE)
     message(STATUS "Packaging mode: disabling Qt deploy")
     set(QT_SKIP_AUTO_DEPLOY ON)
-    install(FILES ${CMAKE_SOURCE_DIR}/desktop/muondetector-gui.metainfo.xml
+    install(FILES ${CMAKE_SOURCE_DIR}/gui/config/muondetector-gui.metainfo.xml
         DESTINATION share/metainfo
     )
-    install(FILES muondetector-gui.desktop
+    install(FILES ${CMAKE_SOURCE_DIR}/gui/config/muondetector-gui.desktop
         DESTINATION share/applications
         COMPONENT gui
     )
-    install(FILES muon.ico DESTINATION share/pixmaps/)
+    install(FILES ${CMAKE_SOURCE_DIR}/gui/config/muon.ico DESTINATION share/pixmaps/)
 else()
     qt_generate_deploy_app_script(
         TARGET muondetector-gui
