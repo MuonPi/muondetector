@@ -19,15 +19,13 @@ jobs:
            libboost-all-dev \
            libcapnp-dev capnproto libglib2.0-dev libsecret-1-dev libconfig-dev
 
-      - name: Configure
+      - name: Inspect generated Capnp
         run: |
-          cmake -S . -B build-x64 \
-                -DMUONDETECTOR_BUILD_DAEMON=OFF \
-                -DMUONDETECTOR_BUILD_TESTS=OFF \
-                -DMUONDETECTOR_BUILD_TCP_DEBUG_CLIENT=OFF \
-                -DMUONDETECTOR_BUILD_TCP_DEBUG_SERVER=OFF \
-                -DCMAKE_BUILD_TYPE=Release \
-                -G Ninja
+          echo "FILES:"
+          find build-x64/generated -name "*.capnp*" -o -name "*.h"
+
+          echo "SEARCH GPIO:"
+          grep -R "GpioEventCapnp" -n build-x64/generated || true
 
       - name: Build
         run: cmake --build build-x64
