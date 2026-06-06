@@ -20,8 +20,6 @@
 #define MUON_HAS_PROTOCOL_CAPNP 1
 #endif
 #ifndef MUON_HAS_PROTOCOL_CAPNP
-#include "ads1115.capnp.h"
-#include "gpio_event.capnp.h"
 #endif
 #include "data/commands/adc_mode_request_cmd.h"
 #include "data/commands/adc_sample_trigger_cmd.h"
