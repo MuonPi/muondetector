@@ -17,7 +17,7 @@ jobs:
           sudo apt install -y cmake ninja-build build-essential \
            qt6-base-dev qt6-svg-dev qt6-declarative-dev qt6-positioning-dev \
            libboost-all-dev \
-           libcapnp-dev capnproto libglib2.0-dev libsecret-1-dev
+           libcapnp-dev capnproto libglib2.0-dev
 
       - name: Configure
         run: cmake -S . -B build-x64 \
