@@ -19,6 +19,14 @@ jobs:
            libboost-all-dev \
            libcapnp-dev capnproto libglib2.0-dev libsecret-1-dev libconfig-dev
 
+      - name: Locate ALL capnp outputs
+        run: |
+          echo "=== SEARCH ALL BUILD ==="
+          find build-x64 -name "*.capnp*" -o -name "*gpio*" || true
+
+          echo "=== SEARCH HEADER ==="
+          find build-x64 -name "protocol.capnp.h" || true
+
       - name: Inspect generated Capnp
         run: |
           echo "FILES:"
