@@ -84,6 +84,9 @@ message(STATUS "Generating CapnProto Files" ${ALL_CAPNP_FILES})
 # ------------------------------------------------------------
 capnp_generate_cpp(CAPNP_SRCS CAPNP_HDRS ${ALL_CAPNP_FILES})
 
+message(STATUS "CAPNP_SRCS" ${CAPNP_SRCS})
+message(STATUS "CAPNP_HDRS" ${CAPNP_HDRS})
+
 # Generated headers usually live beside generated sources
 get_filename_component(CAPNP_INCLUDE_DIR "${CAPNP_HDRS}" DIRECTORY)
 
