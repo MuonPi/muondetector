@@ -247,11 +247,18 @@ if(PACKAGING_MODE)
     )
     install(FILES ${CMAKE_SOURCE_DIR}/gui/config/muon.ico DESTINATION share/pixmaps/)
 else()
-    qt_generate_deploy_app_script(
-        TARGET muondetector-gui
-        OUTPUT_SCRIPT deploy_script
-        NO_UNSUPPORTED_PLATFORM_ERROR
-    )
+    if(Qt6_VERSION VERSION_GREATER_EQUAL 6.5)
+        qt_generate_deploy_app_script(
+            TARGET muondetector-gui
+            OUTPUT_SCRIPT deploy_script
+            NO_UNSUPPORTED_PLATFORM_ERROR
+        )
+    else()
+        qt_generate_deploy_app_script(
+            TARGET muondetector-gui
+            FILENAME_VARIABLE deploy_script
+        )
+    endif()
     install(SCRIPT ${deploy_script})
 endif()
 
