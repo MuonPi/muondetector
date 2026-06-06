@@ -162,7 +162,7 @@ set(MUONDETECTOR_DEPENDENCIES
 if (BUILDING_BUNDLED_QWT)
     set(MUONDETECTOR_DEPENDENCIES
         ${MUONDETECTOR_DEPENDENCIES}
-        qwt
+        qwt_ext
     )
 endif()
 

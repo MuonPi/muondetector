@@ -75,12 +75,10 @@ else()
     set(QWT_INCLUDE_DIR ${CMAKE_BINARY_DIR}/_deps/qwt-src/src)
     set(QWT_LIBRARY     ${CMAKE_BINARY_DIR}/_deps/qwt-build/lib/libqwt.so)
 
-    add_library(qwt UNKNOWN IMPORTED)
+#    set_target_properties(qwt PROPERTIES
+#        IMPORTED_LOCATION ${QWT_LIBRARY}
+#        INTERFACE_INCLUDE_DIRECTORIES ${QWT_INCLUDE_DIR}
+#    )
 
-    set_target_properties(qwt PROPERTIES
-        IMPORTED_LOCATION ${QWT_LIBRARY}
-        INTERFACE_INCLUDE_DIRECTORIES ${QWT_INCLUDE_DIR}
-    )
-
-    add_dependencies(qwt qwt_ext)
+#    add_dependencies(qwt qwt_ext)
 endif()
