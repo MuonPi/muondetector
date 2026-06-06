@@ -22,18 +22,18 @@ jobs:
       - name: Locate ALL capnp outputs
         run: |
           echo "=== SEARCH ALL BUILD ==="
-          find build-x64 -name "*.capnp*" -o -name "*gpio*" || true
+          find . -name "*.capnp*" -o -name "*gpio*" || true
 
           echo "=== SEARCH HEADER ==="
-          find build-x64 -name "protocol.capnp.h" || true
+          find . -name "protocol.capnp.h" || true
 
       - name: Inspect generated Capnp
         run: |
           echo "FILES:"
-          find build-x64/generated -name "*.capnp*" -o -name "*.h"
+          find ./generated -name "*.capnp*" -o -name "*.h"
 
           echo "SEARCH GPIO:"
-          grep -R "GpioEventCapnp" -n build-x64/generated || true
+          grep -R "GpioEventCapnp" -n ./generated || true
 
       - name: Build
         run: cmake --build build-x64
