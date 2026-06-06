@@ -43,42 +43,53 @@ if(QWT_LIBRARY)
     message(STATUS "Using system Qwt")
 
 else()
-    message(STATUS "Building Qwt from source")
     set(BUILDING_BUNDLED_QWT true)
+    message(STATUS "Building Qwt from source")
 
-    find_program(QT_QMAKE_EXECUTABLE
+    include(FetchContent)
+
+    FetchContent_Declare(qwt
+        GIT_REPOSITORY https://git.code.sf.net/p/qwt/git
+        GIT_TAG v6.3.0
+    )
+
+    FetchContent_MakeAvailable(qwt)
+
+    set(QWT_BUILD_DIR ${CMAKE_BINARY_DIR}/_deps/qwt-build)
+    set(QWT_INSTALL_DIR ${CMAKE_BINARY_DIR}/_deps/qwt-install)
+
+    find_program(QMAKE_EXECUTABLE
         NAMES qmake6 qmake-qt6
         REQUIRED
     )
- 
-    find_program(QT_QMAKE_EXECUTABLE qmake REQUIRED)
-    message(STATUS "QMAKE = ${QT_QMAKE_EXECUTABLE}")
 
-    include(ExternalProject)
+    add_custom_command(
+        OUTPUT ${QWT_INSTALL_DIR}/lib/libqwt.so
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${QWT_BUILD_DIR}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${QWT_INSTALL_DIR}
 
-    ExternalProject_Add(qwt_ext
-        GIT_REPOSITORY https://git.code.sf.net/p/qwt/git
-        GIT_TAG v6.3.0
+        COMMAND ${QMAKE_EXECUTABLE}
+                ${qwt_SOURCE_DIR}/qwt.pro
+                QWT_INSTALL_PREFIX=${QWT_INSTALL_DIR}
+                CONFIG+=release
 
-        SOURCE_DIR ${CMAKE_BINARY_DIR}/_deps/qwt-src
-        BINARY_DIR ${CMAKE_BINARY_DIR}/_deps/qwt-build
+        COMMAND make -j
 
-        UPDATE_DISCONNECTED 0
-
-        CONFIGURE_COMMAND
-            ${QT_QMAKE_EXECUTABLE} <SOURCE_DIR>/qwt.pro
-
-        BUILD_COMMAND make
-        INSTALL_COMMAND ""
+        WORKING_DIRECTORY ${QWT_BUILD_DIR}
+        DEPENDS ${qwt_SOURCE_DIR}
+        COMMENT "Building Qwt via qmake"
     )
 
-    set(QWT_INCLUDE_DIR ${CMAKE_BINARY_DIR}/_deps/qwt-src/src)
-    set(QWT_LIBRARY     ${CMAKE_BINARY_DIR}/_deps/qwt-build/lib/libqwt.so)
+    add_custom_target(qwt ALL
+        DEPENDS ${QWT_INSTALL_DIR}/lib/libqwt.so
+    )
 
-#    set_target_properties(qwt PROPERTIES
-#        IMPORTED_LOCATION ${QWT_LIBRARY}
-#        INTERFACE_INCLUDE_DIRECTORIES ${QWT_INCLUDE_DIR}
-#    )
+    add_library(Qwt::Qwt SHARED IMPORTED GLOBAL)
 
-#    add_dependencies(qwt qwt_ext)
+    set_target_properties(Qwt::Qwt PROPERTIES
+        IMPORTED_LOCATION ${QWT_INSTALL_DIR}/lib/libqwt.so
+        INTERFACE_INCLUDE_DIRECTORIES ${qwt_SOURCE_DIR}/src
+    )
+
+    add_dependencies(Qwt::Qwt qwt)
 endif()

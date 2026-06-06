@@ -159,12 +159,6 @@ endif()
 set(MUONDETECTOR_DEPENDENCIES
     muondetector-shared
 )
-if (BUILDING_BUNDLED_QWT)
-    set(MUONDETECTOR_DEPENDENCIES
-        ${MUONDETECTOR_DEPENDENCIES}
-        qwt_ext
-    )
-endif()
 
 add_dependencies(muondetector-gui ${MUONDETECTOR_DEPENDENCIES})
 
@@ -232,7 +226,7 @@ if(WIN32)
 
     target_link_libraries(muondetector-gui PRIVATE
         Qt6::Network Qt6::Svg Qt6::Widgets Qt6::Gui Qt6::Quick Qt6::QuickWidgets Qt6::Qml Qt6::Positioning
-        ${QWT_LIBRARY}
+        Qwt::Qwt
         muondetector-shared
         protocol
         pthread
@@ -243,7 +237,7 @@ elseif(APPLE)
 
     target_link_libraries(muondetector-gui PRIVATE
         Qt6::Network Qt6::Svg Qt6::Widgets Qt6::Gui Qt6::Quick Qt6::QuickWidgets Qt6::Qml Qt6::Positioning
-        ${QWT_LIBRARY}
+        Qwt::Qwt
         muondetector-shared
         protocol
         pthread
@@ -253,7 +247,7 @@ else()
 
     target_link_libraries(muondetector-gui PRIVATE
         Qt6::Network Qt6::Svg Qt6::Widgets Qt6::Gui Qt6::Quick Qt6::QuickWidgets Qt6::Qml Qt6::Positioning
-        ${QWT_LIBRARY}
+        Qwt::Qwt
         muondetector-shared
         muondetector-protocol
         pthread
