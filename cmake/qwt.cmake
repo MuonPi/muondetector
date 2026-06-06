@@ -56,7 +56,6 @@ else()
     FetchContent_MakeAvailable(qwt)
 
     set(QWT_BUILD_DIR ${CMAKE_BINARY_DIR}/_deps/qwt-build)
-    set(QWT_INSTALL_DIR ${CMAKE_BINARY_DIR}/_deps/qwt-install)
 
     find_program(QMAKE_EXECUTABLE
         NAMES qmake6 qmake-qt6
@@ -64,13 +63,11 @@ else()
     )
 
     add_custom_command(
-        OUTPUT ${QWT_INSTALL_DIR}/lib/libqwt.so
+        OUTPUT ${QWT_BUILD_DIR}/lib/libqwt.so
         COMMAND ${CMAKE_COMMAND} -E make_directory ${QWT_BUILD_DIR}
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${QWT_INSTALL_DIR}
 
         COMMAND ${QMAKE_EXECUTABLE}
                 ${qwt_SOURCE_DIR}/qwt.pro
-                QWT_INSTALL_PREFIX=${QWT_INSTALL_DIR}
                 CONFIG+=release
 
         COMMAND make -j
@@ -81,13 +78,13 @@ else()
     )
 
     add_custom_target(qwt ALL
-        DEPENDS ${QWT_INSTALL_DIR}/lib/libqwt.so
+        DEPENDS ${QWT_BUILD_DIR}/lib/libqwt.so
     )
 
     add_library(Qwt::Qwt SHARED IMPORTED GLOBAL)
 
     set_target_properties(Qwt::Qwt PROPERTIES
-        IMPORTED_LOCATION ${QWT_INSTALL_DIR}/lib/libqwt.so
+        IMPORTED_LOCATION ${QWT_BUILD_DIR}/lib/libqwt.so
         INTERFACE_INCLUDE_DIRECTORIES ${qwt_SOURCE_DIR}/src
     )
 
