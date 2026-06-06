@@ -20,7 +20,8 @@ jobs:
            libcapnp-dev capnproto libglib2.0-dev libsecret-1-dev libconfig-dev
 
       - name: Configure
-        run: cmake -S . -B build-x64 \
+        run: |
+          cmake -S . -B build-x64 \
                 -DMUONDETECTOR_BUILD_DAEMON=OFF \
                 -DMUONDETECTOR_BUILD_TESTS=OFF \
                 -DMUONDETECTOR_BUILD_TCP_DEBUG_CLIENT=OFF \
