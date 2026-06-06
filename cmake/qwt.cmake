@@ -46,23 +46,15 @@ else()
     message(STATUS "Building Qwt from source")
     set(BUILDING_BUNDLED_QWT true)
 
-    # 1. ensure tool exists AND IS QT6!
     find_program(QT_QMAKE_EXECUTABLE
         NAMES qmake6 qmake-qt6
         REQUIRED
     )
-
-    # 2. define install prefix
-    set(QWT_PREFIX ${CMAKE_BINARY_DIR}/external/qwt)
-
-    # 3. build external project
-
+ 
     find_program(QT_QMAKE_EXECUTABLE qmake REQUIRED)
     message(STATUS "QMAKE = ${QT_QMAKE_EXECUTABLE}")
 
     include(ExternalProject)
-
-    set(QWT_PREFIX ${CMAKE_BINARY_DIR}/external/qwt)
 
     ExternalProject_Add(qwt_ext
         GIT_REPOSITORY https://git.code.sf.net/p/qwt/git
@@ -75,33 +67,20 @@ else()
 
         CONFIGURE_COMMAND
             ${QT_QMAKE_EXECUTABLE} <SOURCE_DIR>/qwt.pro
-            QWT_INSTALL_PREFIX=${QWT_PREFIX}
-            QWT_INSTALL_LIBS=${QWT_PREFIX}/lib
-            QWT_INSTALL_HEADERS=${QWT_PREFIX}/include
 
         BUILD_COMMAND make
         INSTALL_COMMAND ""
     )
 
-    # 4. force build trigger
-    add_custom_target(qwt ALL DEPENDS qwt_ext)
-
-    # 5. define IMPORTED target AFTER prefix exists
-    # add_library(Qwt::Qwt SHARED IMPORTED GLOBAL)
-
-    # set_target_properties(Qwt::Qwt PROPERTIES
-    #     IMPORTED_LOCATION ${QWT_PREFIX}/lib/libqwt.so
-    #     INTERFACE_INCLUDE_DIRECTORIES ${QWT_PREFIX}/include
-    # )
     set(QWT_INCLUDE_DIR ${CMAKE_BINARY_DIR}/_deps/qwt-src/src)
     set(QWT_LIBRARY     ${CMAKE_BINARY_DIR}/_deps/qwt-build/lib/libqwt.so)
 
-    add_library(Qwt::Qwt UNKNOWN IMPORTED)
+    add_library(qwt UNKNOWN IMPORTED)
 
-    set_target_properties(Qwt::Qwt PROPERTIES
-        IMPORTED_LOCATION ${QWT_PREFIX}/lib/libqwt.so
-        INTERFACE_INCLUDE_DIRECTORIES ${QWT_PREFIX}/include
+    set_target_properties(qwt PROPERTIES
+        IMPORTED_LOCATION ${QWT_LIBRARY}
+        INTERFACE_INCLUDE_DIRECTORIES ${QWT_INCLUDE_DIR}
     )
 
-    add_dependencies(Qwt::Qwt qwt_ext)
+    add_dependencies(qwt qwt_ext)
 endif()
