@@ -77,6 +77,8 @@ set(ALL_CAPNP_FILES
     # ${GENERATED_PROTOCOL_CAPNP_FOR_CAPNP}
 )
 
+message(STATUS "Generating CapnProto Files" ${ALL_CAPNP_FILES})
+
 # ------------------------------------------------------------
 # Generate C++ from schemas
 # ------------------------------------------------------------

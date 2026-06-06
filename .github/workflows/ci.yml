@@ -29,24 +29,24 @@ jobs:
                 -DCMAKE_BUILD_TYPE=Release \
                 -G Ninja
 
-      - name: Locate ALL capnp outputs
-        run: |
-          echo "=== SEARCH ALL BUILD ==="
-          find . -name "*.capnp*" -o -name "*gpio*" || true
+      # - name: Locate ALL capnp outputs
+      #   run: |
+      #     echo "=== SEARCH ALL BUILD ==="
+      #     find . -name "*.capnp*" -o -name "*gpio*" || true
 
-          echo "=== SEARCH HEADER ==="
-          find . -name "protocol.capnp.h" || true
+      #     echo "=== SEARCH HEADER ==="
+      #     find . -name "protocol.capnp.h" || true
 
-      - name: Inspect generated Capnp
-        run: |
-          echo "FILES:"
-          find . -name "*.capnp*" -o -name "*.h"
+      # - name: Inspect generated Capnp
+      #   run: |
+      #     echo "FILES:"
+      #     find . -name "*.capnp*" -o -name "*.h"
 
-          echo "SEARCH GPIO:"
-          grep -R "GpioEventCapnp" -n . || true
+      #     echo "SEARCH GPIO:"
+      #     grep -R "GpioEventCapnp" -n . || true
 
       - name: Build
-        run: cmake --build build-x64
+        run: cmake --build build-x64 ; cat build-x64/CMakeCache.txt | grep CAPNP
 
       - name: Package .deb
         run: |
