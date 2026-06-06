@@ -30,10 +30,10 @@ jobs:
       - name: Inspect generated Capnp
         run: |
           echo "FILES:"
-          find ./generated -name "*.capnp*" -o -name "*.h"
+          find . -name "*.capnp*" -o -name "*.h"
 
           echo "SEARCH GPIO:"
-          grep -R "GpioEventCapnp" -n ./generated || true
+          grep -R "GpioEventCapnp" -n . || true
 
       - name: Build
         run: cmake --build build-x64
