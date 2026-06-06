@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-x64:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - uses: actions/checkout@v4
@@ -14,10 +14,13 @@ jobs:
       - name: Install deps
         run: |
           sudo apt update
-          sudo apt install -y cmake ninja-build build-essential qt6-base-dev libboost-all-dev libcapnp-dev capnproto libglib2.0-dev libsecret-1-dev
+          sudo apt install -y cmake ninja-build build-essential \
+           qt6-base-dev qt6-svg-dev qt6-declarative-dev qt6-positioning-dev
+           libboost-all-dev \
+           libcapnp-dev capnproto libglib2.0-dev libsecret-1-dev
 
       - name: Configure
-        run: cmake -S . -B build \
+        run: cmake -S . -B build-x64 \
                 -DMUONDETECTOR_BUILD_DAEMON=OFF \
                 -DMUONDETECTOR_BUILD_TESTS=OFF \
                 -DMUONDETECTOR_BUILD_TCP_DEBUG_CLIENT=OFF \
@@ -26,22 +29,22 @@ jobs:
                 -G Ninja
 
       - name: Build
-        run: cmake --build build
+        run: cmake --build build-x64
 
       - name: Package .deb
         run: |
-          cd build
+          cd build-x64
           cpack -G DEB
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: deb-x64
-          path: build/*.deb
+          path: build-x64/*.deb
 
 
   build-armv7:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - uses: actions/checkout@v4
@@ -53,30 +56,37 @@ jobs:
 
       - name: Configure
         run: |
-          cmake -S . -B build \
+          cmake -S . -B build-armhf \
             -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-armv7.cmake \
+            -DCMAKE_SYSROOT=$HOME/actions-runner/sysroot \
+            -DCMAKE_BUILD_TYPE=Release \
             -G Ninja
 
       - name: Build
-        run: cmake --build build
+        run: cmake --build build-armhf
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-armhf
+          path: build-armhf/*.deb
 
-  build-arm64:
-    runs-on: ubuntu-latest
+  # build-arm64:
+  #   runs-on: self-hosted
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Install cross tools
-        run: |
-          sudo apt update
-          sudo apt install -y cmake ninja-build gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+  #     - name: Install cross tools
+  #       run: |
+  #         sudo apt update
+  #         sudo apt install -y cmake ninja-build gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
-      - name: Configure
-        run: |
-          cmake -S . -B build \
-            -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-arm64.cmake \
-            -G Ninja
+  #     - name: Configure
+  #       run: |
+  #         cmake -S . -B build \
+  #           -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-arm64.cmake \
+  #           -G Ninja
 
-      - name: Build
-        run: cmake --build build
+  #     - name: Build
+  #       run: cmake --build build
