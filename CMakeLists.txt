@@ -129,6 +129,12 @@ set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/capnp.cmake")
 
+add_custom_command(TARGET muondetector-protocol POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_BINARY_DIR}/generated/capnp/protocol.capnp.h
+            ${CMAKE_BINARY_DIR}/debug/protocol.capnp.h
+)
+
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/library.cmake")
 
 set(MUONDETECTOR_ALL_FILES

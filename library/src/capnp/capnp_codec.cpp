@@ -19,8 +19,6 @@
 #include "../../../build/build/generated/capnp/protocol.capnp.h"
 #define MUON_HAS_PROTOCOL_CAPNP 1
 #endif
-#ifndef MUON_HAS_PROTOCOL_CAPNP
-#endif
 #include "data/commands/adc_mode_request_cmd.h"
 #include "data/commands/adc_sample_trigger_cmd.h"
 #include "data/commands/bias_switch_cmd.h"

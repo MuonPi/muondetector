@@ -37,6 +37,11 @@ jobs:
           cd build-x64
           cpack -G DEB
 
+      - name: Save generated capnp header
+        run: |
+          mkdir -p artifacts
+          cp build-x64/debug/protocol.capnp.h artifacts/
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
