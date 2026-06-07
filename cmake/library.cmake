@@ -9,12 +9,6 @@ configure_file(
     )
 
 
-find_package(PkgConfig REQUIRED)
-
-pkg_check_modules(GLIB REQUIRED IMPORTED_TARGET glib-2.0)
-pkg_check_modules(LIBSECRET REQUIRED IMPORTED_TARGET libsecret-1)
-
-
 # Add Boost
 find_package(Boost CONFIG REQUIRED)
 find_package(Threads REQUIRED)
@@ -62,7 +56,6 @@ set(MUONDETECTOR_LIBRARY_CMD_FILES
 )
 
 set(MUONDETECTOR_LIBRARY_HEADER_FILES
-    "${MUONDETECTOR_LIBRARY_SRC_DIR}/libsecret/credentials.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/capnp/capnp_codec.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/gpio_pin_definitions.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/histogram.h"
@@ -130,12 +123,8 @@ target_include_directories(muondetector-static PUBLIC
 
 target_link_libraries(muondetector-shared PUBLIC
     muondetector-protocol
-    PkgConfig::LIBSECRET
-    PkgConfig::GLIB
 )
 
 target_link_libraries(muondetector-static PUBLIC
     muondetector-protocol
-    PkgConfig::LIBSECRET
-    PkgConfig::GLIB
 )
