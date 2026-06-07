@@ -4,7 +4,12 @@ set(CMAKE_SYSTEM_PROCESSOR arm)
 set(CMAKE_C_COMPILER arm-linux-gnueabihf-gcc)
 set(CMAKE_CXX_COMPILER arm-linux-gnueabihf-g++)
 
-set(CMAKE_FIND_ROOT_PATH ${SYSROOT})
+set(SYSROOT $ENV{HOME}/actions-runner/sysroot)
+
+set(CMAKE_FIND_ROOT_PATH
+    ${SYSROOT}
+    ${SYSROOT}/usr/lib/arm-linux-gnueabihf
+)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
