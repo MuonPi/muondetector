@@ -79,7 +79,7 @@ jobs:
           path: ./*.deb
 
   build-win32:
-    runs-on: [self-hosted, Linux, X64, win32-build]
+    runs-on: [self-hosted, Windows, X64, win32-build]
 
     steps:
       - uses: actions/checkout@v4
