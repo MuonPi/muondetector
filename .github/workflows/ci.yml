@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-x64:
-    runs-on: [self-hosted, X64, Linux]
+    runs-on: [self-hosted, X64, Linux, x64-build]
 
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
 
 
   build-armv7:
-    runs-on: [self-hosted, Linux, X64, armhf-crosscompile]
+    runs-on: [self-hosted, Linux, X64, armhf-build]
 
     steps:
       - uses: actions/checkout@v4
