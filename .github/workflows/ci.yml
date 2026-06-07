@@ -55,7 +55,6 @@ jobs:
 
       - name: Debug sysroot
         run: |
-          echo "HOME=$HOME"
           echo "SYSROOT=$SYSROOT"
           ls -lah $HOME/actions-runner/sysroot || true
           ls -lah /var/armhf/sysroot || true
@@ -79,6 +78,24 @@ jobs:
           name: deb-armhf
           path: ./*.deb
 
+  build-win32:
+    runs-on: [self-hosted, Linux, X64, win32-build]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat `
+          -G "Ninja" `
+          -DCMAKE_MAKE_PROGRAM="C:/Qt/Tools/Ninja/ninja.exe" `
+          -DCMAKE_CXX_COMPILER="C:/Qt/Tools/llvm-mingw1706_64/bin/clang++.exe" `
+          -DMUONDETECTOR_BUILD_DAEMON=OFF `
+          -DMUONDETECTOR_BUILD_TESTS=OFF `
+          -DMUONDETECTOR_BUILD_TCP_DEBUG_CLIENT=OFF `
+          -DMUONDETECTOR_BUILD_TCP_DEBUG_SERVER=OFF `
+          .
   # build-arm64:
   #   runs-on: ubuntu-latest
 
