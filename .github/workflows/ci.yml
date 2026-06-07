@@ -53,13 +53,20 @@ jobs:
           sudo apt update
           sudo apt install -y cmake ninja-build gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 
+      - name: Debug sysroot
+        run: |
+          echo "HOME=$HOME"
+          echo "SYSROOT=$SYSROOT"
+          ls -lah $HOME/actions-runner/sysroot || true
+          ls -lah /var/armhf/sysroot || true
+
       - name: Configure
         run: |
           echo $HOME/actions-runner/sysroot
           cmake -S . \
             -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-armv7.cmake \
-            -DCMAKE_SYSROOT=$HOME/actions-runner/sysroot \
-            -DCapnProto_DIR=$HOME/actions-runner/sysroot/usr/lib/arm-linux-gnueabihf/cmake/CapnProto \
+            -DCMAKE_SYSROOT=/var/armhf/sysroot \
+            -DCapnProto_DIR=/var/armhf/sysroot/usr/lib/arm-linux-gnueabihf/cmake/CapnProto \
             -DCMAKE_BUILD_TYPE=Release \
             -G Ninja
 
