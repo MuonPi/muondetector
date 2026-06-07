@@ -10,12 +10,13 @@ configure_file(
 
 
 # Add Boost
-find_package(Boost CONFIG REQUIRED)
+if (NOT WIN32)
+    find_package(Boost CONFIG REQUIRED)
+endif()
 find_package(Threads REQUIRED)
 
 
 set(MUONDETECTOR_LIBRARY_SOURCE_FILES
-    "${MUONDETECTOR_LIBRARY_SRC_DIR}/libsecret/credentials.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/capnp/capnp_codec.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/config.cpp"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network/tcpconnection.cpp"

@@ -16,18 +16,6 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-if(WIN32)
-    find_library(MOSQUITTO
-        NAMES mosquitto
-        HINTS ${MOSQUITTO_DIR}
-        REQUIRED
-    )
-    if(MOSQUITTO)
-        message(STATUS "Mosquitto found: ${MOSQUITTO}")
-    endif()
-endif()
-
-
 set(MUONDETECTOR_GUI_SOURCE_FILES
     "${MUONDETECTOR_GUI_SOURCE_DIR}/calibform.cpp"
     "${MUONDETECTOR_GUI_SOURCE_DIR}/calibscandialog.cpp"
@@ -167,43 +155,18 @@ set_target_properties(muondetector-gui PROPERTIES POSITION_INDEPENDENT_CODE 1)
 target_include_directories(muondetector-gui PUBLIC
     $<BUILD_INTERFACE:${MUONDETECTOR_GUI_HEADER_DIR}>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
-    $<BUILD_INTERFACE:${MOSQUITTO_DIR}>
     $<BUILD_INTERFACE:${QWT_INCLUDE_DIR}>
     #for OSX
     $<BUILD_INTERFACE:/usr/local/include>
 )
 
-if(WIN32)
-    target_link_libraries(muondetector-gui PRIVATE
-        Qt6::Network Qt6::Svg Qt6::Widgets Qt6::Gui Qt6::Quick Qt6::QuickWidgets Qt6::Qml Qt6::Positioning
-        Qwt::Qwt
-        muondetector-shared
-        protocol
-        pthread
-        ${MOSQUITTO}
-    )
-
-elseif(APPLE)
-
-    target_link_libraries(muondetector-gui PRIVATE
-        Qt6::Network Qt6::Svg Qt6::Widgets Qt6::Gui Qt6::Quick Qt6::QuickWidgets Qt6::Qml Qt6::Positioning
-        Qwt::Qwt
-        muondetector-shared
-        protocol
-        pthread
-    )
-
-else()
-
-    target_link_libraries(muondetector-gui PRIVATE
-        Qt6::Network Qt6::Svg Qt6::Widgets Qt6::Gui Qt6::Quick Qt6::QuickWidgets Qt6::Qml Qt6::Positioning
-        Qwt::Qwt
-        muondetector-shared
-        muondetector-protocol
-        pthread
-    )
-
-endif()
+target_link_libraries(muondetector-gui PRIVATE
+    Qt6::Network Qt6::Svg Qt6::Widgets Qt6::Gui Qt6::Quick Qt6::QuickWidgets Qt6::Qml Qt6::Positioning
+    Qwt::Qwt
+    muondetector-shared
+    muondetector-protocol
+    pthread
+)
 
 ######################################################################################################
 # PACKAGING
@@ -273,75 +236,70 @@ endif()
 ######################################################################################################
 # PACKAGING ON WINDOWS
 ######################################################################################################
-
 if(WIN32)
-    # QWT (manual dependency - Qt does NOT handle this)
-    install(FILES "${QWT_DIR}/lib/qwt.dll"
-        DESTINATION bin
+    find_program(WINDEPLOYQT_EXECUTABLE windeployqt
+        HINTS "${CMAKE_PREFIX_PATH}" "${Qt6_DIR}/../../../bin"
+        REQUIRED
     )
 
-    # MSVC/MinGW runtime (ONLY if you really need them)
-    install(FILES
-        "${SDKROOT}/bin/libwinpthread-1.dll"
-        "${SDKROOT}/bin/libstdc++-6.dll"
-        "${SDKROOT}/bin/libgcc_s_seh-1.dll"
-        DESTINATION bin
+    # windeployqt post-build step
+    add_custom_command(TARGET muondetector-gui POST_BUILD
+        COMMAND "${WINDEPLOYQT_EXECUTABLE}"
+            --no-translations
+            --no-system-d3d-compiler
+            --no-opengl-sw
+            --compiler-runtime
+            "$<TARGET_FILE:muondetector-gui>"
+        COMMENT "Running windeployqt"
     )
 
-    # OpenSSL (still manual unless Qt ships it)
-    install(FILES
-        "${QTTOOLS}/OpenSSL/Win_x64/bin/libssl-1_1-x64.dll"
-        "${QTTOOLS}/OpenSSL/Win_x64/bin/libcrypto-1_1-x64.dll"
-        DESTINATION bin
+    # llvm-mingw runtime DLLs (replaces libgcc/libstdc++ from MinGW)
+    set(LLVM_MINGW_BIN "C:/Qt/Tools/llvm-mingw1706_64/bin")
+    set(COPY_DLLS
+        "${LLVM_MINGW_BIN}/libc++.dll"
+        "${LLVM_MINGW_BIN}/libunwind.dll"
     )
 
-    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/Windeployqt.cmake")
-    set(windeploy_options
-        --qmldir "${MUONDETECTOR_GUI_QML_DIR}"
-        -opengl
-        -printsupport
-    ) # additional options for windeployqt.exe
+    # QWT (still manual)
+    if(DEFINED QWT_DIR)
+        list(APPEND COPY_DLLS "${QWT_DIR}/lib/qwt.dll")
+        install(FILES "${QWT_DIR}/lib/qwt.dll" DESTINATION bin COMPONENT gui)
+    endif()
 
-    windeployqt(muondetector-gui "${PROJECT_BINARY_DIR}/bin" "${windeploy_options}")
-    # create a list of files to copy
-    message(STATUS "sdk: ${SDKROOT}")
-    set( COPY_DLLS
-    "${QWT_DIR}/lib/qwt.dll"
-    "${SDKROOT}/bin/libwinpthread-1.dll"
-    "${SDKROOT}/bin/libstdc++-6.dll"
-    "${SDKROOT}/bin/libgcc_s_seh-1.dll"
-    "${QTTOOLS}/OpenSSL/Win_x64/bin/libssl-1_1-x64.dll"
-    )
+    # OpenSSL 3.x — Qt6 ships these, find them relative to Qt
+    set(QT_BIN_DIR "${Qt6_DIR}/../../../bin")
+    foreach(_ssl libssl-3-x64.dll libcrypto-3-x64.dll)
+        if(EXISTS "${QT_BIN_DIR}/${_ssl}")
+            list(APPEND COPY_DLLS "${QT_BIN_DIR}/${_ssl}")
+            install(FILES "${QT_BIN_DIR}/${_ssl}" DESTINATION bin COMPONENT gui)
+        endif()
+    endforeach()
 
-    # do the copying
-    foreach( file_i ${COPY_DLLS})
-        add_custom_command(
-                TARGET muondetector-gui POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy
-                        "${file_i}"
-                        "${PROJECT_BINARY_DIR}/output/bin/"
+    # Copy all DLLs to output dir at build time
+    foreach(file_i ${COPY_DLLS})
+        add_custom_command(TARGET muondetector-gui POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${file_i}"
+                "${PROJECT_BINARY_DIR}/output/bin/"
+            COMMENT "Copying ${file_i}"
         )
-        install(FILES "${file_i}" DESTINATION "bin" COMPONENT gui)
-    endforeach( file_i )
+    endforeach()
 
+    # NSIS installer
     set(CPACK_GENERATOR "NSIS")
-    set(CPACK_PACKAGE_DESCRIPTION_FILE "${MUONDETECTOR_GUI_CONFIG_DIR}/description.txt")
-    set(CPACK_NSIS_MODIFY_PATH ON)
-
     set(CPACK_PACKAGE_NAME "muondetector-gui")
     set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}")
-
-    include(InstallRequiredSystemLibraries)
-
-    # There is a bug in NSI that does not handle full UNIX paths properly.
-    # Make sure there is at least one set of four backlashes.
-    set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\muondetector-gui.exe")
-    set(CPACK_NSIS_DISPLAY_NAME "Muondetector gui")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "GUI for monitoring and controlling the muondetector-daemon.")
+    set(CPACK_PACKAGE_DESCRIPTION_FILE "${MUONDETECTOR_GUI_CONFIG_DIR}/description.txt")
+    set(CPACK_NSIS_MODIFY_PATH ON)
+    set(CPACK_NSIS_DISPLAY_NAME "Muondetector GUI")
     set(CPACK_NSIS_HELP_LINK "https://muonpi.org")
     set(CPACK_NSIS_URL_INFO_ABOUT "https://muonpi.org")
     set(CPACK_NSIS_CONTACT "support@muonpi.org")
     set(CPACK_NSIS_MUI_ICON "${MUONDETECTOR_GUI_RES_DIR}/res/muon.ico")
     set(CPACK_NSIS_MUI_UNIICON "${MUONDETECTOR_GUI_RES_DIR}/res/muon.ico")
+    set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\muondetector-gui.exe")
     set(CPACK_PACKAGE_EXECUTABLES "muondetector-gui" "muondetector-gui")
-    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "GUI for monitoring and controlling the muondetector-daemon.")
+
+    include(InstallRequiredSystemLibraries)
 endif()

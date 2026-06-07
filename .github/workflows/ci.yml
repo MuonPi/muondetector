@@ -91,6 +91,7 @@ jobs:
           -G "Ninja" `
           -DCMAKE_MAKE_PROGRAM="C:/Qt/Tools/Ninja/ninja.exe" `
           -DCMAKE_CXX_COMPILER="C:/Qt/Tools/llvm-mingw1706_64/bin/clang++.exe" `
+          -DBoost_INCLUDE_DIRS="C:/boost-1.91.0/libs" `
           -DMUONDETECTOR_BUILD_DAEMON=OFF `
           -DMUONDETECTOR_BUILD_TESTS=OFF `
           -DMUONDETECTOR_BUILD_TCP_DEBUG_CLIENT=OFF `

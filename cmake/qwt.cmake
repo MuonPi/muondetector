@@ -11,7 +11,7 @@ if(APPLE)
     endif()
 elseif(WIN32)
     find_library(QWT_LIBRARY
-        NAMES qwt
+        NAMES qwt qwt6
         HINTS ${QWT_DIR}/lib
         QUIET)
         if(QWT_LIBRARY)
@@ -41,6 +41,72 @@ endif()
 if(QWT_LIBRARY)
 
     message(STATUS "Using system Qwt")
+
+elseif(WIN32)
+    message(STATUS "Building Qwt from source (Windows/qmake)")
+
+    include(FetchContent)
+    FetchContent_Declare(qwt
+        GIT_REPOSITORY https://git.code.sf.net/p/qwt/git
+        GIT_TAG v6.3.0
+    )
+    FetchContent_MakeAvailable(qwt)
+
+    set(QWT_BUILD_DIR "${CMAKE_BINARY_DIR}/_deps/qwt-build")
+    set(QWT_INSTALL_DIR "${CMAKE_BINARY_DIR}/_deps/qwt-install")
+    file(MAKE_DIRECTORY "${QWT_BUILD_DIR}")
+
+    find_program(QMAKE_EXECUTABLE
+        NAMES qmake6 qmake
+        HINTS "${Qt6_DIR}/../../../bin"
+        REQUIRED
+    )
+
+    # Configure with qmake
+    execute_process(
+        COMMAND "${QMAKE_EXECUTABLE}"
+            "${qwt_SOURCE_DIR}/qwt.pro"
+            "CONFIG+=release"
+            "QWT_INSTALL_PREFIX=${QWT_INSTALL_DIR}"
+        WORKING_DIRECTORY "${QWT_BUILD_DIR}"
+        RESULT_VARIABLE QWT_QMAKE_RESULT
+    )
+    if(NOT QWT_QMAKE_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to run qmake for Qwt")
+    endif()
+
+    # Build with ninja (qmake generates a Makefile but we can use mingw32-make)
+    find_program(MINGW_MAKE
+        NAMES mingw32-make make
+        HINTS "C:/Qt/Tools/llvm-mingw1706_64/bin"
+              "C:/Qt/Tools/mingw1310_64/bin"
+        REQUIRED
+    )
+
+    execute_process(
+        COMMAND "${MINGW_MAKE}" -j4
+        WORKING_DIRECTORY "${QWT_BUILD_DIR}"
+        RESULT_VARIABLE QWT_BUILD_RESULT
+    )
+    if(NOT QWT_BUILD_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to build Qwt")
+    endif()
+
+    execute_process(
+        COMMAND "${MINGW_MAKE}" install
+        WORKING_DIRECTORY "${QWT_BUILD_DIR}"
+        RESULT_VARIABLE QWT_INSTALL_RESULT
+    )
+    if(NOT QWT_INSTALL_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to install Qwt")
+    endif()
+
+    add_library(Qwt::Qwt SHARED IMPORTED GLOBAL)
+    set_target_properties(Qwt::Qwt PROPERTIES
+        IMPORTED_LOCATION "${QWT_INSTALL_DIR}/lib/qwt.dll"
+        IMPORTED_IMPLIB   "${QWT_INSTALL_DIR}/lib/libqwt.dll.a"
+        INTERFACE_INCLUDE_DIRECTORIES "${QWT_INSTALL_DIR}/include"
+    )
 
 else()
     set(BUILDING_BUNDLED_QWT true)
