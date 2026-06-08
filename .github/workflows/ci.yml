@@ -87,14 +87,17 @@ jobs:
       - name: Configure
         shell: powershell
         run: |
-          C:\Qt\6.11.1\llvm-mingw_64\bin\qtenv2.bat
+          $env:PATH = "C:\Qt\Tools\llvm-mingw_64\bin;$env:PATH"
+          $env:QMAKE_CXX = "C:\Qt\Tools\llvm-mingw_64\bin\clang++.exe"
+          $env:QMAKE_CC  = "C:\Qt\Tools\llvm-mingw_64\bin\clang.exe"
           C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat `
           -G "Ninja" `
           -DCMAKE_PREFIX_PATH="C:/Qt/6.11.1/llvm-mingw_64" `
           -DCMAKE_MAKE_PROGRAM="C:/Qt/Tools/Ninja/ninja.exe" `
-          -DCMAKE_C_COMPILER="C:/Qt/Tools/llvm-mingw1706_64/bin/clang.exe" `
-          -DCMAKE_CXX_COMPILER="C:/Qt/Tools/llvm-mingw1706_64/bin/clang++.exe" `
-          -DCMAKE_RC_COMPILER="C:/Qt/Tools/llvm-mingw1706_64/bin/windres.exe" `
+          -DQMAKE_EXECUTABLE="C:/Qt/6.11.1/llvm-mingw_64/bin/qmake6.exe" `
+          -DCMAKE_C_COMPILER="C:/Qt/Tools/llvm-mingw_64/bin/clang.exe" `
+          -DCMAKE_CXX_COMPILER="C:/Qt/Tools/llvm-mingw_64/bin/clang++.exe" `
+          -DCMAKE_RC_COMPILER="C:/Qt/Tools/llvm-mingw_64/bin/windres.exe" `
           -DBoost_INCLUDE_DIRS="C:/boost_1_91_0" `
           -DMUONDETECTOR_BUILD_DAEMON=OFF `
           -DMUONDETECTOR_BUILD_TESTS=OFF `
