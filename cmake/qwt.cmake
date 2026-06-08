@@ -11,7 +11,7 @@ if(APPLE)
     endif()
 elseif(WIN32)
     find_library(QWT_LIBRARY
-        NAMES qwt
+        NAMES qwt qwt6
         HINTS ${QWT_DIR}/lib
         QUIET)
         if(QWT_LIBRARY)
@@ -43,65 +43,104 @@ if(QWT_LIBRARY)
     message(STATUS "Using system Qwt")
 
 else()
-    message(STATUS "Building Qwt from source")
     set(BUILDING_BUNDLED_QWT true)
+    message(STATUS "Building Qwt from source")
 
-    # 1. ensure tool exists AND IS QT6!
-    find_program(QT_QMAKE_EXECUTABLE
-        NAMES qmake6 qmake-qt6
-        REQUIRED
-    )
+    include(FetchContent)
 
-    # 2. define install prefix
-    set(QWT_PREFIX ${CMAKE_BINARY_DIR}/external/qwt)
-
-    # 3. build external project
-
-    find_program(QT_QMAKE_EXECUTABLE qmake REQUIRED)
-    message(STATUS "QMAKE = ${QT_QMAKE_EXECUTABLE}")
-
-    include(ExternalProject)
-
-    set(QWT_PREFIX ${CMAKE_BINARY_DIR}/external/qwt)
-
-    ExternalProject_Add(qwt_ext
+    FetchContent_Declare(qwt
         GIT_REPOSITORY https://git.code.sf.net/p/qwt/git
         GIT_TAG v6.3.0
-
-        SOURCE_DIR ${CMAKE_BINARY_DIR}/_deps/qwt-src
-        BINARY_DIR ${CMAKE_BINARY_DIR}/_deps/qwt-build
-
-        UPDATE_DISCONNECTED 0
-
-        CONFIGURE_COMMAND
-            ${QT_QMAKE_EXECUTABLE} <SOURCE_DIR>/qwt.pro
-            QWT_INSTALL_PREFIX=${QWT_PREFIX}
-            QWT_INSTALL_LIBS=${QWT_PREFIX}/lib
-            QWT_INSTALL_HEADERS=${QWT_PREFIX}/include
-
-        BUILD_COMMAND make
-        INSTALL_COMMAND ""
     )
 
-    # 4. force build trigger
-    add_custom_target(qwt ALL DEPENDS qwt_ext)
+    set(QWT_BUILD_EXAMPLES OFF CACHE BOOL "")
+    set(QWT_BUILD_TESTS OFF CACHE BOOL "")
 
-    # 5. define IMPORTED target AFTER prefix exists
-    # add_library(Qwt::Qwt SHARED IMPORTED GLOBAL)
+    FetchContent_MakeAvailable(qwt)
 
-    # set_target_properties(Qwt::Qwt PROPERTIES
-    #     IMPORTED_LOCATION ${QWT_PREFIX}/lib/libqwt.so
-    #     INTERFACE_INCLUDE_DIRECTORIES ${QWT_PREFIX}/include
-    # )
-    set(QWT_INCLUDE_DIR ${CMAKE_BINARY_DIR}/_deps/qwt-src/src)
-    set(QWT_LIBRARY     ${CMAKE_BINARY_DIR}/_deps/qwt-build/lib/libqwt.so)
+    set(QWT_BUILD_DIR ${CMAKE_BINARY_DIR}/_deps/qwt-build)
 
-    add_library(Qwt::Qwt UNKNOWN IMPORTED)
+    if (WIN32)
+        find_program(QMAKE_EXECUTABLE
+            NAMES qmake6 qmake-qt6 qmake6.exe
+            REQUIRED
+        )
 
-    set_target_properties(Qwt::Qwt PROPERTIES
-        IMPORTED_LOCATION ${QWT_PREFIX}/lib/libqwt.so
-        INTERFACE_INCLUDE_DIRECTORIES ${QWT_PREFIX}/include
-    )
+        message(STATUS "Found QMAKE_EXECUTABLE " ${QMAKE_EXECUTABLE})
 
-    add_dependencies(Qwt::Qwt qwt_ext)
+        add_custom_command(
+            OUTPUT ${QWT_BUILD_DIR}/lib/qwt.dll ${QWT_BUILD_DIR}/lib/libqwt.a
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${QWT_BUILD_DIR}
+            COMMAND ${CMAKE_COMMAND} -E env
+                "PATH={TOOLCHAIN_PATH};$ENV{PATH}"
+                QMAKESPEC=win32-clang-g++
+                QMAKE_CC=${TOOLCHAIN_PATH}/clang.exe
+                QMAKE_CXX=${TOOLCHAIN_PATH}/clang++.exe
+
+                ${QMAKE_EXECUTABLE}
+                ${qwt_SOURCE_DIR}/qwt.pro
+                CONFIG+=release
+
+            COMMAND ${CMAKE_COMMAND} -E env
+                "PATH={TOOLCHAIN_PATH};$ENV{PATH}"
+                ${TOOLCHAIN_PATH}/mingw32-make.exe -j 24
+
+            WORKING_DIRECTORY ${QWT_BUILD_DIR}
+            DEPENDS ${qwt_SOURCE_DIR}
+            COMMENT "Building Qwt via qmake"
+        )
+
+        add_custom_target(qwt ALL
+            DEPENDS ${QWT_BUILD_DIR}/lib/qwt.dll  ${QWT_BUILD_DIR}/lib/libqwt.a
+        )
+
+        add_library(Qwt::Qwt SHARED IMPORTED GLOBAL)
+        set_target_properties(Qwt::Qwt PROPERTIES
+            IMPORTED_LOCATION "${QWT_BUILD_DIR}/lib/qwt.dll"
+            IMPORTED_IMPLIB   "${QWT_BUILD_DIR}/lib/libqwt.a"
+            INTERFACE_INCLUDE_DIRECTORIES ${qwt_SOURCE_DIR}/src
+        )
+        add_dependencies(Qwt::Qwt qwt)
+    else()
+        find_program(QMAKE_EXECUTABLE
+            NAMES qmake6 qmake-qt6
+            REQUIRED
+        )
+
+        # If build on raspberry pi: 1 core is enough (don't overflow RAM)
+        # Else: as many as possible
+        if (MUONDETECTOR_ON_RASPBERRYPI)
+            set(CPU_CORE_SUFFIX -j1)
+        else()
+            set(CPU_CORE_SUFFIX -j)
+        endif()
+
+        add_custom_command(
+            OUTPUT ${QWT_BUILD_DIR}/lib/libqwt.so
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${QWT_BUILD_DIR}
+
+            COMMAND ${QMAKE_EXECUTABLE}
+                    ${qwt_SOURCE_DIR}/qwt.pro
+                    CONFIG+=release
+
+            COMMAND make ${CPU_CORE_SUFFIX}
+
+            WORKING_DIRECTORY ${QWT_BUILD_DIR}
+            DEPENDS ${qwt_SOURCE_DIR}
+            COMMENT "Building Qwt via qmake"
+        )
+
+        add_custom_target(qwt ALL
+            DEPENDS ${QWT_BUILD_DIR}/lib/libqwt.so
+        )
+
+        add_library(Qwt::Qwt SHARED IMPORTED GLOBAL)
+
+        set_target_properties(Qwt::Qwt PROPERTIES
+            IMPORTED_LOCATION ${QWT_BUILD_DIR}/lib/libqwt.so
+            INTERFACE_INCLUDE_DIRECTORIES ${qwt_SOURCE_DIR}/src
+        )
+
+        add_dependencies(Qwt::Qwt qwt)
+    endif()
 endif()

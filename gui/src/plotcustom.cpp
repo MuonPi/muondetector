@@ -12,7 +12,6 @@
 #include <qpen.h>
 #include <qpoint.h>
 #include <qsizepolicy.h>
-#include <qtypes.h>
 #include <qwt.h>
 #include <qwt_legend.h>
 #include <qwt_plot_canvas.h>

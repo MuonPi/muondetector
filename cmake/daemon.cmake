@@ -8,10 +8,17 @@ configure_file(
     "${MUONDETECTOR_DAEMON_BINARY_DIR}/version.h"
     )
 
+
+find_package(PkgConfig REQUIRED)
+
+pkg_check_modules(GLIB REQUIRED IMPORTED_TARGET glib-2.0)
+pkg_check_modules(LIBSECRET REQUIRED IMPORTED_TARGET libsecret-1)
+
 find_library(LIBCONFIG
     names libconfig++ libconfigpp config++ configpp libconfig config
     REQUIRED
 )
+
 find_library(MOSQUITTO
     names mosquitto
     REQUIRED
@@ -67,6 +74,7 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/factories/device_factory.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/registries/data_store.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/registries/sink_manager.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/libsecret/credentials.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/network/tcpserver.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/sds011/sds011.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/sds011/sds011_parser.cpp"
@@ -148,6 +156,7 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/factories/device_factory.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/registries/device_registry.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/registries/data_store.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/libsecret/credentials.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/network/tcpserver.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/sds011/sds011.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/sds011/sds011_parser.h"
@@ -246,6 +255,8 @@ target_link_libraries(muondetector-daemon PRIVATE
     ${CAPNP_KJ_LIBRARIES}
     muondetector-shared
     muondetector-protocol
+    PkgConfig::LIBSECRET
+    PkgConfig::GLIB
     Threads::Threads
 )
 
