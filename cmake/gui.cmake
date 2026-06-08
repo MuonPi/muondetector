@@ -256,50 +256,59 @@ if(WIN32)
 
     message(STATUS "Found windeployqt " ${WINDEPLOYQT_EXECUTABLE})
 
-    # windeployqt post-build step
-    add_custom_command(TARGET muondetector-gui POST_BUILD
-        COMMAND "${WINDEPLOYQT_EXECUTABLE}"
-            --no-translations
-            --no-system-d3d-compiler
-            --no-opengl-sw
-            --compiler-runtime
-            "$<TARGET_FILE:muondetector-gui>"
-        COMMENT "Running windeployqt"
-    )
-
     # llvm-mingw runtime DLLs (replaces libgcc/libstdc++ from MinGW)
     if (TOOLCHAIN_PATH)
         set(LLVM_MINGW_BIN ${TOOLCHAIN_PATH})
     else()
         set(LLVM_MINGW_BIN "C:/Qt/Tools/llvm-mingw1706_64/bin")
     endif()
-    set(COPY_DLLS
-        "${LLVM_MINGW_BIN}/libc++.dll"
-        "${LLVM_MINGW_BIN}/libunwind.dll"
+    add_custom_command(TARGET muondetector-gui POST_BUILD
+        COMMAND "${WINDEPLOYQT_EXECUTABLE}"
+            --no-system-d3d-compiler
+            --compiler-runtime
+            "$<TARGET_FILE:muondetector-gui>"
+        COMMENT "Running windeployqt"
     )
 
-    # OpenSSL 3.x — Qt6 ships these, find them relative to Qt
-    if (NOT CMAKE_PREFIX_PATH)
-        set(QT_BIN_DIR "${Qt6_DIR}/../../../bin")
-    else()
-        set(QT_BIN_DIR ${CMAKE_PREFIX_PATH})
-    endif()
-    foreach(_ssl libssl-3-x64.dll libcrypto-3-x64.dll)
-        if(EXISTS "${QT_BIN_DIR}/${_ssl}")
-            list(APPEND COPY_DLLS "${QT_BIN_DIR}/${_ssl}")
-            install(FILES "${QT_BIN_DIR}/${_ssl}" DESTINATION bin COMPONENT gui)
-        endif()
-    endforeach()
+    install(TARGETS muondetector-gui
+        RUNTIME DESTINATION bin
+        COMPONENT gui
+    )
 
-    # Copy all DLLs to output dir at build time
-    foreach(file_i ${COPY_DLLS})
-        add_custom_command(TARGET muondetector-gui POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${file_i}"
-                "${PROJECT_BINARY_DIR}/output/bin/"
-            COMMENT "Copying ${file_i}"
+    # Install everything windeployqt dropped into the output bin dir.
+    # This runs at install/package time, after POST_BUILD has finished,
+    # so the directory is fully populated by then.
+    install(DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/"
+        DESTINATION bin
+        COMPONENT gui
+        FILES_MATCHING
+            PATTERN "*.dll"
+            PATTERN "*.exe"
+            PATTERN "*.qm"
+            PATTERN "*.qrc"
+    )
+
+    # Qt plugin subdirectories that windeployqt creates
+    foreach(_subdir
+        platforms
+        styles
+        imageformats
+        iconengines
+        networkinformation
+        tls
+        generic
+    )
+        install(DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${_subdir}"
+            DESTINATION bin
+            COMPONENT gui
+            OPTIONAL          # skip silently if windeployqt didn't create it
+            FILES_MATCHING PATTERN "*.dll"
         )
     endforeach()
+
+
+    install(FILES "${LLVM_MINGW_BIN}/libc++.dll" DESTINATION bin COMPONENT gui)
+    install(FILES "${LLVM_MINGW_BIN}/libunwind.dll" DESTINATION bin COMPONENT gui)
 
     # NSIS installer
     set(CPACK_GENERATOR "NSIS")
@@ -316,11 +325,6 @@ if(WIN32)
     set(CPACK_NSIS_MUI_UNIICON "${MUONDETECTOR_GUI_RES_DIR}/res/muon.ico")
     set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\muondetector-gui.exe")
     set(CPACK_PACKAGE_EXECUTABLES "muondetector-gui" "muondetector-gui")
-
-    include(InstallRequiredSystemLibraries)
-    install(TARGETS muondetector-gui
-        RUNTIME DESTINATION bin
-        COMPONENT gui
-    )
     set(CPACK_COMPONENTS_ALL gui)
+    include(InstallRequiredSystemLibraries)
 endif()
