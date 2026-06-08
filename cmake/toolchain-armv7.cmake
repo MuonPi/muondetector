@@ -1,6 +1,8 @@
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR armv7l)
 
+set(Qt6CoreTools_DIR ${QT_HOST_PATH}/lib/cmake/Qt6CoreTools)
+set(Qt6QmlTools_DIR  ${QT_HOST_PATH}/lib/cmake/Qt6QmlTools)
 
 # Pin host ninja before generator probe
 find_program(CMAKE_MAKE_PROGRAM ninja    PATHS /usr/bin /usr/local/bin NO_DEFAULT_PATH)
@@ -36,3 +38,5 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
+# Prevents CMake from re-rooting absolute paths that are already correct
+set(CMAKE_SYSROOT_COMPILE "${CMAKE_SYSROOT}")
