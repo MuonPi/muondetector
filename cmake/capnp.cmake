@@ -26,8 +26,54 @@ file(MAKE_DIRECTORY "${CAPNP_BUILD_DIRECTORY}")
 # ------------------------------------------------------------
 set(FOUND_LIBATOMIC TRUE)
 
+if(CMAKE_CROSSCOMPILING)
+    set(HOST_CAPNP_EXECUTABLE /usr/bin/capnp CACHE FILEPATH "Host capnp compiler executable")
+    set(CAPNP_EXECUTABLE "${HOST_CAPNP_EXECUTABLE}" CACHE FILEPATH "" FORCE)
+endif()
+
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 find_package(CapnProto QUIET)
+
+if(CMAKE_CROSSCOMPILING)
+    if(NOT EXISTS "${HOST_CAPNP_EXECUTABLE}")
+        message(FATAL_ERROR
+            "Host capnp compiler not found at ${HOST_CAPNP_EXECUTABLE}. "
+            "Install the host capnproto package, or pass -DHOST_CAPNP_EXECUTABLE=/path/to/capnp."
+        )
+    endif()
+
+    execute_process(
+        COMMAND "${HOST_CAPNP_EXECUTABLE}" --version
+        OUTPUT_VARIABLE HOST_CAPNP_VERSION_OUTPUT
+        ERROR_VARIABLE HOST_CAPNP_VERSION_ERROR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE HOST_CAPNP_VERSION_RESULT
+    )
+    if(NOT HOST_CAPNP_VERSION_RESULT EQUAL 0)
+        message(FATAL_ERROR
+            "Failed to run host capnp compiler ${HOST_CAPNP_EXECUTABLE}: "
+            "${HOST_CAPNP_VERSION_ERROR}"
+        )
+    endif()
+
+    string(REGEX MATCH "[0-9]+(\\.[0-9]+)+" HOST_CAPNP_VERSION "${HOST_CAPNP_VERSION_OUTPUT}")
+    message(STATUS "Host capnp compiler: ${HOST_CAPNP_EXECUTABLE} (${HOST_CAPNP_VERSION_OUTPUT})")
+    message(STATUS "Target CapnProto package version: ${CapnProto_VERSION}")
+
+    if(CapnProto_VERSION AND HOST_CAPNP_VERSION
+        AND NOT HOST_CAPNP_VERSION VERSION_EQUAL CapnProto_VERSION
+    )
+        message(FATAL_ERROR
+            "Cap'n Proto version mismatch for cross-compilation. "
+            "The host capnp compiler is ${HOST_CAPNP_VERSION}, but the target sysroot "
+            "Cap'n Proto headers/libraries are ${CapnProto_VERSION}. Generated Cap'n Proto "
+            "C++ requires an exact version match. Install/build a host capnp compiler with "
+            "version ${CapnProto_VERSION} and pass -DHOST_CAPNP_EXECUTABLE=/path/to/capnp, "
+            "or update the sysroot Cap'n Proto dev package to match the host compiler."
+        )
+    endif()
+endif()
 
 if(WIN32 AND NOT CapnProto_FOUND)
     message(STATUS "Building Cap'n Proto from source (Windows)")
