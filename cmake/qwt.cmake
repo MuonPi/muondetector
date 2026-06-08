@@ -71,10 +71,14 @@ else()
         add_custom_command(
             OUTPUT ${QWT_BUILD_DIR}/lib/qwt.dll ${QWT_BUILD_DIR}/lib/libqwt.a
             COMMAND ${CMAKE_COMMAND} -E make_directory ${QWT_BUILD_DIR}
+            COMMAND ${CMAKE_COMMAND} -E env
+                QMAKE_CC=${CMAKE_C_COMPILER}
+                QMAKE_CXX=${CMAKE_CXX_COMPILER}
+                QMAKESPEC=win32-clang-g++
 
-            COMMAND ${QMAKE_EXECUTABLE}
-                    ${qwt_SOURCE_DIR}/qwt.pro
-                    CONFIG+=release
+                ${QMAKE_EXECUTABLE}
+                ${qwt_SOURCE_DIR}/qwt.pro
+                CONFIG+=release
 
             COMMAND "${MINGW_MAKE}" -j ${CPU_CORE_SUFFIX}
 
