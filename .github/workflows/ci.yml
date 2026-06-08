@@ -58,6 +58,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Clean CMake cache
+        run: rm -f CMakeCache.txt && rm -rf CMakeFiles
+
       - name: Verify sysroot
         run: |
           echo "--- Qt6 cmake configs in sysroot ---"
