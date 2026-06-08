@@ -5,10 +5,12 @@ set(QT_HOST_PATH /usr/lib/qt6 CACHE PATH "" FORCE)
 set(Qt6CoreTools_DIR ${QT_HOST_PATH}/lib/cmake/Qt6CoreTools)
 set(Qt6QmlTools_DIR  ${QT_HOST_PATH}/lib/cmake/Qt6QmlTools)
 
-# Pin host ninja before generator probe
-find_program(CMAKE_MAKE_PROGRAM ninja    PATHS /usr/bin /usr/local/bin NO_DEFAULT_PATH)
-find_program(GIT_EXECUTABLE     git      PATHS /usr/bin /usr/local/bin NO_DEFAULT_PATH)
-find_program(Python3_EXECUTABLE python3  PATHS /usr/bin /usr/local/bin NO_DEFAULT_PATH)
+# Pin host tools before CMake's generator/compiler probes. Do not use
+# find_program() here: when CMAKE_SYSROOT is supplied on the command line,
+# CMake can re-root the lookup and find ARM executables inside the sysroot.
+set(CMAKE_MAKE_PROGRAM /usr/bin/ninja CACHE FILEPATH "" FORCE)
+set(GIT_EXECUTABLE     /usr/bin/git CACHE FILEPATH "" FORCE)
+set(Python3_EXECUTABLE /usr/bin/python3 CACHE FILEPATH "" FORCE)
 set(PKG_CONFIG_EXECUTABLE /usr/bin/pkg-config CACHE FILEPATH "" FORCE)
 
 # Hardcode the host cross-compiler directly — do NOT use find_program here,
