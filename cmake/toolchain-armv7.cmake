@@ -33,6 +33,13 @@ endif()
 
 set(CMAKE_FIND_ROOT_PATH "${CMAKE_SYSROOT}")
 
+# Keep pkg-config pointed at the target sysroot. Otherwise modules such as
+# glib-2.0 and libsecret-1 can resolve to host x86_64 paths during configure.
+set(ENV{PKG_CONFIG_SYSROOT_DIR} "${CMAKE_SYSROOT}")
+set(ENV{PKG_CONFIG_LIBDIR}
+    "${CMAKE_SYSROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig:${CMAKE_SYSROOT}/usr/lib/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig"
+)
+
 # For these categories, look ONLY inside the sysroot
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)   # host tools (moc etc.) found via QT_HOST_PATH, not here
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
