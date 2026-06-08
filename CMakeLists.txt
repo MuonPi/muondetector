@@ -28,6 +28,10 @@ if(EXISTS "/sys/firmware/devicetree/base/model")
     endif()
 endif()
 
+if (CMAKE_CROSSCOMPILING)
+    set(MUONDETECTOR_ON_RASPBERRYPI ON)
+endif()
+
 set(MUONDETECTOR_CONFIG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/config")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/output/lib")
@@ -38,7 +42,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_program(CCACHE_PROGRAM ccache)
+if(NOT CMAKE_CROSSCOMPILING)
+    find_program(CCACHE_PROGRAM ccache)
+endif()
 
 if(CCACHE_PROGRAM)
     set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
@@ -118,6 +124,17 @@ set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi <developer@muonpi.org>")
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 endif ()
+
+
+if (CMAKE_CROSSCOMPILING)
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE armhf)
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS_PRIVATE_DIRS
+        "/var/armhf/sysroot/lib"
+        "/var/armhf/sysroot/usr/lib"
+        "/var/armhf/sysroot/usr/lib/arm-linux-gnueabihf"
+    )
+endif()
+
 set(CPACK_RESOURCE_FILE_LICENSE "${MUONDETECTOR_CONFIG_DIR}/license")
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/output/packages")
 set(CPACK_PACKAGE_VENDOR "MuonPi.org")

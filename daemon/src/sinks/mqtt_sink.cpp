@@ -61,14 +61,17 @@ void MqttSink::handle(const MqttLogEvent& event) {
 }
 
 void wrapper_callback_connected(mosquitto* /*mqtt*/, void* object, int result) {
+    logInfo("Wrapper callback connected");
     reinterpret_cast<MqttSink*>(object)->callback_connected(result);
 }
 
 void wrapper_callback_disconnected(mosquitto* /*mqtt*/, void* object, int result) {
+    logInfo("Wrapper callback disconnected");
     reinterpret_cast<MqttSink*>(object)->callback_disconnected(result);
 }
 
 void wrapper_callback_message(mosquitto* /*mqtt*/, void* object, const mosquitto_message* message) {
+    logInfo("Wrapper callback message");
     reinterpret_cast<MqttSink*>(object)->callback_message(message);
 }
 
@@ -91,7 +94,7 @@ void MqttSink::callback_connected(int result) {
         bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Error, msg});
     } else if (result == 0) {
         const std::string msg{"Connected to MQTT."};
-        logWarn(msg);
+        logInfo(msg);
         bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Connected, msg});
         m_tries = 0;
         return;
@@ -280,4 +283,8 @@ void MqttSink::requestConnectionStatus() {
     std::string msg{"connection status = " + std::to_string(static_cast<int>(m_status))};
     logDebug(msg);
     bus_.publish(MqttStatusEvent{m_status, msg});
+}
+
+auto MqttSink::connectionStatus() const -> MqttStatusEvent::Status {
+    return m_status;
 }

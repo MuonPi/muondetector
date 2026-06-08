@@ -25,8 +25,9 @@ class SinkFactory {
         return mqtt_sink;
     }
 
-    static auto createFileSink(std::unique_ptr<SinkManager>& sinks) -> std::shared_ptr<FileSink> {
-        auto file_sink = std::make_shared<FileSink>();
+    static auto createFileSink(EventBus& bus,
+                               std::unique_ptr<SinkManager>& sinks) -> std::shared_ptr<FileSink> {
+        auto file_sink = std::make_shared<FileSink>(bus);
         sinks->add(file_sink);
         return file_sink;
     }

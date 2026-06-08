@@ -1,6 +1,7 @@
 #ifndef FILEHANDLER_H
 #define FILEHANDLER_H
 
+#include "core/event_bus.h"
 #include "data/events/file_log_event.h"
 #include "sinks/sink.h"
 
@@ -21,7 +22,7 @@ class FileSink : public Sink {
         std::uintmax_t size;
         std::filesystem::file_time_type modified;
     };
-    FileSink(std::uint32_t fileSizeMB = 500);
+    FileSink(EventBus& bus, std::uint32_t fileSizeMB = 500);
     ~FileSink();
     std::string getCurrentDataFileName() const;
     std::string getCurrentLogFileName() const;
@@ -29,18 +30,21 @@ class FileSink : public Sink {
     auto dataFileInfo() const -> FileInfo;
     auto logFileInfo() const -> FileInfo;
 
-    std::chrono::seconds currentLogAge();
-    std::chrono::seconds logRotatePeriod() const { return m_logrotate_period; }
-    LogInfoStruct getInfo();
-    LogInfoStruct::status_t getStatus();
+    std::chrono::seconds currentLogAge() const;
+    std::chrono::seconds logRotationPeriod() const;
+    LogInfoStruct getInfo() const;
+    LogInfoStruct::status_t getStatus() const;
 
     void onRotationRemind();
     void handle(const UbxTimeMarkStruct& tm);
     void handle(const FileLogEvent& event);
 
+    void setLogRotationPeriod(std::chrono::seconds period);
+
   private:
     static auto generateNextDailyTime(std::chrono::system_clock::duration offset)
         -> std::chrono::system_clock::time_point;
+    EventBus& bus_;
     std::ofstream dataFile;
     std::ofstream logFile;
 
@@ -73,7 +77,13 @@ class FileSink : public Sink {
     void writeToDataFile(const std::string& data); //!< writes data to the file opened in "dataFile"
     void
     writeToLogFile(const std::string& log); //!< writes log data to the file opened in "logFile"
-    void setLogRotatePeriod(std::chrono::seconds period) { m_logrotate_period = period; }
+    LogInfoStruct getInfoUnlocked() const;
+    std::string getCurrentDataFileNameUnlocked() const;
+    std::string getCurrentLogFileNameUnlocked() const;
+    std::chrono::seconds currentLogAgeUnlocked() const;
+    LogInfoStruct::status_t getStatusUnlocked() const;
+    std::chrono::seconds logRotationPeriodUnlocked() const;
+    void setLogRotationPeriodUnlocked(std::chrono::seconds period);
     mutable std::mutex m_mutex;
     std::string createFileName(); //!< creates a fileName based on date and time
     std::uint32_t m_fileSizeMB;   //!< max file size limit in MB

@@ -733,6 +733,18 @@ auto MainWindow::buildDecoderMap()
                  auto event = CapnpCodec<GpioRateEvent>::decode(packet.payload);
                  QVector<QPointF> out;
                  out.reserve(static_cast<int>(event.rate.size()));
+                 float rateYValue;
+                 if (!event.rate.empty()) {
+                     rateYValue = event.rate.at(event.rate.size() - 1).second;
+                 } else {
+                     rateYValue = 0.0;
+                 }
+                 if (event.whichRate == 0) {
+                     ui->rate1->setText(QString::number(rateYValue, 'g', 3) + "/s");
+                 }
+                 if (event.whichRate == 1) {
+                     ui->rate2->setText(QString::number(rateYValue, 'g', 3) + "/s");
+                 }
 
                  for (const auto& [x, y] : event.rate) {
                      out.emplace_back(x, y);

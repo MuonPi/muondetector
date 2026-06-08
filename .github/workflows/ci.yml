@@ -1,0 +1,252 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-x64:
+    runs-on: [self-hosted, X64, Linux, x64-build]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # - name: Install deps
+      #   run: |
+      #     sudo apt update
+      #     sudo apt install -y cmake ninja-build build-essential \
+      #      qt6-base-dev qt6-svg-dev qt6-declarative-dev qt6-positioning-dev \
+      #      libboost-all-dev \
+      #      libcapnp-dev capnproto libglib2.0-dev libsecret-1-dev libconfig-dev
+
+      - name: Configure
+        run: |
+          cmake -S . \
+                -DCMAKE_GENERATOR=Ninja \
+                -DMUONDETECTOR_BUILD_GUI=ON \
+                -DMUONDETECTOR_BUILD_DAEMON=OFF \
+                -DMUONDETECTOR_BUILD_TESTS=OFF \
+                -DMUONDETECTOR_BUILD_TCP_DEBUG_CLIENT=OFF \
+                -DMUONDETECTOR_BUILD_TCP_DEBUG_SERVER=OFF \
+                -DCMAKE_BUILD_TYPE=Release \
+                -G Ninja
+
+      - name: Build
+        run: cmake --build . --parallel 4
+
+      - name: Package .deb
+        run: cpack -G DEB
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-x64
+          path: ./output/packages/*.deb
+
+
+  build-armhf:
+    runs-on: [self-hosted, Linux, X64, armhf-build]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify cross compiler
+        run: |
+          echo "--- cross compiler location ---"
+          which arm-linux-gnueabihf-g++ || echo "NOT FOUND ON HOST PATH"
+          readlink -f $(which arm-linux-gnueabihf-g++) || true
+          file $(which arm-linux-gnueabihf-g++) || true
+          echo "--- sysroot compiler (must NOT be used) ---"
+          file /var/armhf/sysroot/usr/bin/arm-linux-gnueabihf-g++ || true
+
+      - name: Verify sysroot
+        run: |
+          echo "=============================="
+          echo " SYSROOT CROSS-COMPILATION CHECK"
+          echo "=============================="
+
+          echo "--- Qt6 CMake configs in sysroot ---"
+          find /var/armhf/sysroot -name "Qt6Config.cmake" 2>/dev/null || echo "MISSING - Qt not installed in sysroot"
+
+          echo "--- Qt6 pkgconfig (often needed for cross builds) ---"
+          find /var/armhf/sysroot -name "Qt6*.pc" 2>/dev/null | head -10 || echo "No Qt pkg-config files"
+
+          echo "--- ARM Qt6 libraries ---"
+          find /var/armhf/sysroot -name "libQt6Core.so*" 2>/dev/null | head -5 || echo "MISSING Qt ARM libs"
+
+          echo ""
+          echo "--- CapnProto CMake configs ---"
+          find /var/armhf/sysroot -name "CapnProtoConfig.cmake" 2>/dev/null || echo "MISSING"
+
+          echo "--- CapnProto version (host tools) ---"
+          capnp --version 2>/dev/null || echo "capnp not found"
+          file $(which capnpc-c++ 2>/dev/null) 2>/dev/null || echo "capnpc-c++ not found"
+
+          echo ""
+          echo "--- Host Qt tools (IMPORTANT: must NOT be used for target) ---"
+          which qmake6 || true
+          which moc || true
+          which rcc || true
+          which uic || true
+
+          find /usr/lib/qt6/libexec -maxdepth 1 \
+            \( -name "qmlimportscanner" -o -name "qmlcachegen" -o -name "qmltyperegistrar" \) \
+            -exec file {} \; 2>/dev/null || true
+
+          echo ""
+          echo "=============================="
+          echo " QWT DIAGNOSTICS (IMPORTANT)"
+          echo "=============================="
+
+          echo "--- Qwt headers in sysroot ---"
+          find /var/armhf/sysroot/usr/include \
+            \( -name "qwt_plot*.h" -o -name "qwt*.h" \) \
+            2>/dev/null | head -20 || echo "MISSING Qwt headers"
+
+          echo "--- Qwt libraries in sysroot ---"
+          find /var/armhf/sysroot/usr \
+            \( -name "libqwt*.so*" -o -name "libqwt*.a" \) \
+            2>/dev/null || echo "MISSING Qwt libraries"
+
+          echo "--- Qwt CMake config (usually NOT present) ---"
+          find /var/armhf/sysroot/usr -name "*Qwt*Config.cmake" 2>/dev/null || echo "No Qwt CMake package (expected)"
+
+          echo "--- Qwt pkg-config (if any) ---"
+          find /var/armhf/sysroot/usr/lib/pkgconfig -name "*qwt*.pc" 2>/dev/null || echo "No Qwt pkg-config file"
+
+          echo "--- Qwt install location sanity check ---"
+          ls -la /var/armhf/sysroot/usr/lib | grep qwt || true
+          ls -la /var/armhf/sysroot/usr/include | grep qwt || true
+
+          echo ""
+          echo "=============================="
+          echo " BINARY ARCH VALIDATION"
+          echo "=============================="
+
+          file /var/armhf/sysroot/usr/lib/libqwt.so 2>/dev/null || echo "Qwt library not found"
+
+      - name: Configure
+        run: |
+          QT6_TARGET=$(find /var/armhf/sysroot/usr/lib -name "Qt6Config.cmake" \
+                            -path "*/cmake/Qt6/*" 2>/dev/null \
+                      | head -1 | xargs dirname || true)
+          echo "Resolved Qt6 target cmake dir: ${QT6_TARGET}"
+          test -n "${QT6_TARGET}"
+          cmake -S . \
+                -DCMAKE_GENERATOR=Ninja \
+                -DCMAKE_CROSSCOMPILING=On \
+                -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-armv7.cmake \
+                -DCMAKE_SYSROOT=/var/armhf/sysroot \
+                -DQT_HOST_PATH=/usr \
+                -DQT_HOST_PATH_CMAKE_DIR=/usr/lib/x86_64-linux-gnu/cmake \
+                -DQt6_DIR="${QT6_TARGET}" \
+                -DCMAKE_PREFIX_PATH=/var/armhf/sysroot/usr \
+                -DPython3_EXECUTABLE=$(which python3) \
+                -DHOST_CAPNP_EXECUTABLE=$(which capnp) \
+                -DHOST_CAPNPC_CXX_EXECUTABLE=$(which capnpc-c++) \
+                -DCapnProto_DIR=/var/armhf/sysroot/usr/lib/arm-linux-gnueabihf/cmake/CapnProto \
+                -DMUONDETECTOR_BUILD_GUI=ON \
+                -DMUONDETECTOR_BUILD_DAEMON=ON \
+                -DMUONDETECTOR_BUILD_TESTS=OFF \
+                -DMUONDETECTOR_BUILD_TCP_DEBUG_CLIENT=OFF \
+                -DMUONDETECTOR_BUILD_TCP_DEBUG_SERVER=OFF \
+                -DCMAKE_BUILD_TYPE=Release \
+                \
+                -DQWT_LIBRARY=/var/armhf/sysroot/home/pi/muondetector_v2/build/_deps/qwt-build/lib/libqwt.so \
+                -DQWT_INCLUDE_DIR=/var/armhf/sysroot/home/pi/muondetector_v2/build/_deps/qwt-src/src/ \
+                -DMOSQUITTO=/var/armhf/sysroot/usr/lib/arm-linux-gnueabihf/libmosquitto.so \
+                -DGPIOD=/var/armhf/sysroot/usr/lib/arm-linux-gnueabihf/libgpiod.so \
+                \
+                -G Ninja
+
+      - name: Build
+        run: cmake --build . --parallel 4
+
+      - name: Package .deb
+        run: cpack -G DEB
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-armhf
+          path: ./output/packages/*.deb
+
+  build-win32:
+    runs-on: [self-hosted, Windows, X64, win32-build]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        shell: powershell
+        run: |
+          $toolchain = "C:/Qt/Tools/llvm-mingw1706_64"
+
+          $env:PATH = "$toolchain/bin;$env:PATH"
+
+          $env:QMAKE_CC  = "$toolchain/bin/clang.exe"
+          $env:QMAKE_CXX = "$toolchain/bin/clang++.exe"
+
+          $env:QMAKESPEC = "win32-clang-g++"
+
+          & C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat `
+            -G Ninja `
+            -DCMAKE_PREFIX_PATH="C:/Qt/6.11.1/llvm-mingw_64" `
+            -DQMAKE_EXECUTABLE="C:/Qt/6.11.1/llvm-mingw_64/bin/qmake6.exe" `
+            -DCMAKE_MAKE_PROGRAM="C:/Qt/Tools/Ninja/ninja.exe" `
+            -DTOOLCHAIN_PATH="$toolchain/bin" `
+            -DCMAKE_C_COMPILER="$toolchain/bin/clang.exe" `
+            -DCMAKE_CXX_COMPILER="$toolchain/bin/clang++.exe" `
+            -DCMAKE_RC_COMPILER="$toolchain/bin/windres.exe" `
+            -DBoost_INCLUDE_DIRS="C:/boost_1_91_0" `
+            -DMUONDETECTOR_BUILD_DAEMON=OFF `
+            -DMUONDETECTOR_BUILD_TESTS=OFF `
+            -DMUONDETECTOR_BUILD_TCP_DEBUG_SERVER=OFF `
+            .
+
+      - name: Build & Package
+        shell: powershell
+        run: |
+          $toolchain = "C:/Qt/Tools/llvm-mingw1706_64"
+
+          $env:PATH = "$toolchain/bin;$env:PATH"
+          & C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat `
+            --build . --parallel 4 --target package
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: ./output/packages/*.exe
+
+  release:
+    if: github.event_name == 'push' &&
+        startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - build-x64
+      - build-win32
+      - build-armhf
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Show downloaded files
+        run: find artifacts -type f
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*.deb
+            artifacts/**/*.exe
