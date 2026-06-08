@@ -27,18 +27,30 @@ file(MAKE_DIRECTORY "${CAPNP_BUILD_DIRECTORY}")
 set(FOUND_LIBATOMIC TRUE)
 
 if(CMAKE_CROSSCOMPILING)
-    set(HOST_CAPNP_EXECUTABLE /usr/bin/capnp CACHE FILEPATH "Host capnp compiler executable")
+    set(HOST_CAPNP_EXECUTABLE /usr/local/bin/capnp CACHE FILEPATH "Host capnp compiler executable")
+    set(HOST_CAPNPC_CXX_EXECUTABLE /usr/local/bin/capnpc-c++ CACHE FILEPATH "Host capnp C++ plugin executable")
     set(CAPNP_EXECUTABLE "${HOST_CAPNP_EXECUTABLE}" CACHE FILEPATH "" FORCE)
+    set(CAPNPC_CXX_EXECUTABLE "${HOST_CAPNPC_CXX_EXECUTABLE}" CACHE FILEPATH "" FORCE)
 endif()
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 find_package(CapnProto QUIET)
 
 if(CMAKE_CROSSCOMPILING)
+    set(CAPNP_EXECUTABLE "${HOST_CAPNP_EXECUTABLE}" CACHE FILEPATH "" FORCE)
+    set(CAPNPC_CXX_EXECUTABLE "${HOST_CAPNPC_CXX_EXECUTABLE}" CACHE FILEPATH "" FORCE)
+
     if(NOT EXISTS "${HOST_CAPNP_EXECUTABLE}")
         message(FATAL_ERROR
             "Host capnp compiler not found at ${HOST_CAPNP_EXECUTABLE}. "
             "Install the host capnproto package, or pass -DHOST_CAPNP_EXECUTABLE=/path/to/capnp."
+        )
+    endif()
+    if(NOT EXISTS "${HOST_CAPNPC_CXX_EXECUTABLE}")
+        message(FATAL_ERROR
+            "Host capnp C++ plugin not found at ${HOST_CAPNPC_CXX_EXECUTABLE}. "
+            "Install the matching host capnproto C++ plugin, or pass "
+            "-DHOST_CAPNPC_CXX_EXECUTABLE=/path/to/capnpc-c++."
         )
     endif()
 
@@ -59,6 +71,7 @@ if(CMAKE_CROSSCOMPILING)
 
     string(REGEX MATCH "[0-9]+(\\.[0-9]+)+" HOST_CAPNP_VERSION "${HOST_CAPNP_VERSION_OUTPUT}")
     message(STATUS "Host capnp compiler: ${HOST_CAPNP_EXECUTABLE} (${HOST_CAPNP_VERSION_OUTPUT})")
+    message(STATUS "Host capnp C++ plugin: ${HOST_CAPNPC_CXX_EXECUTABLE}")
     message(STATUS "Target CapnProto package version: ${CapnProto_VERSION}")
 
     if(CapnProto_VERSION AND HOST_CAPNP_VERSION
