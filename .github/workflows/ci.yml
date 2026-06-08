@@ -22,7 +22,6 @@ jobs:
       - name: Configure
         run: |
           cmake -S . \
-                -DCMAKE_MAKE_PROGRAM=/usr/bin/ninja
                 -DCMAKE_GENERATOR=Ninja
                 -DMUONDETECTOR_BUILD_GUI=ON \
                 -DMUONDETECTOR_BUILD_DAEMON=OFF \
@@ -91,13 +90,12 @@ jobs:
           echo "Resolved Qt6 target cmake dir: ${QT6_TARGET}"
 
           cmake -S . \
-                -DCMAKE_MAKE_PROGRAM=$(which ninja) \
+                -DCMAKE_GENERATOR=Ninja \
                 -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-armv7.cmake \
                 -DCMAKE_SYSROOT=/var/armhf/sysroot \
                 -DQT_HOST_PATH=/usr/lib/qt6 \
-                -DQT_HOST_PATH_CMAKE_DIR=/usr/lib/x86_64-linux-gnu/cmake \
                 -DQt6_DIR=/usr/lib/x86_64-linux-gnu/cmake/Qt6 \
-                -DCMAKE_PREFIX_PATH=/usr/lib/qt6;/var/armhf/sysroot/usr \
+                -DCMAKE_PREFIX_PATH="/usr/lib/qt6"
                 -DPython3_EXECUTABLE=$(which python3) \
                 -DCapnProto_DIR=/var/armhf/sysroot/usr/lib/arm-linux-gnueabihf/cmake/CapnProto \
                 -DMUONDETECTOR_BUILD_GUI=ON \
