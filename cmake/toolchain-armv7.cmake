@@ -15,6 +15,11 @@ set(CMAKE_MAKE_PROGRAM /usr/bin/ninja CACHE FILEPATH "" FORCE)
 set(GIT_EXECUTABLE     /usr/bin/git CACHE FILEPATH "" FORCE)
 set(Python3_EXECUTABLE /usr/bin/python3 CACHE FILEPATH "" FORCE)
 set(PKG_CONFIG_EXECUTABLE /usr/bin/pkg-config CACHE FILEPATH "" FORCE)
+if(EXISTS /usr/bin/ccache)
+    set(CCACHE_PROGRAM /usr/bin/ccache CACHE FILEPATH "" FORCE)
+else()
+    set(CCACHE_PROGRAM "" CACHE FILEPATH "" FORCE)
+endif()
 
 # Hardcode the host cross-compiler directly — do NOT use find_program here,
 # it can still be influenced by the cache or prefix path

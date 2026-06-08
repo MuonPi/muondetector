@@ -38,7 +38,16 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_program(CCACHE_PROGRAM ccache)
+if(CMAKE_CROSSCOMPILING)
+    find_program(CCACHE_PROGRAM
+        NAMES ccache
+        PATHS /usr/bin /usr/local/bin
+        NO_DEFAULT_PATH
+        NO_CMAKE_FIND_ROOT_PATH
+    )
+else()
+    find_program(CCACHE_PROGRAM ccache)
+endif()
 
 if(CCACHE_PROGRAM)
     set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
