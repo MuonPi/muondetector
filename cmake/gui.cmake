@@ -10,6 +10,28 @@ set(MUONDETECTOR_GUI_APPLE_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gui/res")
 find_package(Qt6 REQUIRED COMPONENTS
     Network Svg Widgets Gui Quick QuickWidgets Qml Positioning OpenGLWidgets
 )
+
+if(CMAKE_CROSSCOMPILING)
+    set(QT_HOST_LIBEXEC_DIR "${QT_HOST_PATH}/lib/qt6/libexec" CACHE PATH "Host Qt6 libexec directory")
+
+    foreach(_qt_host_tool IN ITEMS
+        moc
+        rcc
+        qmlcachegen
+        qmlimportscanner
+        qmltyperegistrar
+        uic
+    )
+        if(TARGET Qt6::${_qt_host_tool}
+            AND EXISTS "${QT_HOST_LIBEXEC_DIR}/${_qt_host_tool}"
+        )
+            set_property(TARGET Qt6::${_qt_host_tool}
+                PROPERTY IMPORTED_LOCATION "${QT_HOST_LIBEXEC_DIR}/${_qt_host_tool}"
+            )
+        endif()
+    endforeach()
+endif()
+
 qt_standard_project_setup()
 
 set(CMAKE_AUTOUIC ON)

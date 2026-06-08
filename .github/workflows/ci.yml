@@ -72,6 +72,9 @@ jobs:
           find /var/armhf/sysroot -name "libQt6Core.so*" 2>/dev/null | head -5 || echo "MISSING"
           echo "--- Host Qt6 tools ---"
           which moc || find /usr -name "moc" 2>/dev/null | head -3
+          find /usr/lib/qt6/libexec -maxdepth 1 \
+            \( -name "qmlimportscanner" -o -name "qmlcachegen" -o -name "qmltyperegistrar" \) \
+            -exec file {} \; 2>/dev/null || true
 
       - name: Fetch Qwt source manually
         run: |
