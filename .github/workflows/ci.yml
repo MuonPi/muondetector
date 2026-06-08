@@ -94,13 +94,13 @@ jobs:
           $env:QMAKE_CC  = "$toolchain/bin/clang.exe"
           $env:QMAKE_CXX = "$toolchain/bin/clang++.exe"
 
-          $env:QMAKESPEC = "win32-clang"
+          $env:QMAKESPEC = "win32-clang-g++"
 
           & C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat `
             -G Ninja `
             -DCMAKE_PREFIX_PATH="C:/Qt/6.11.1/llvm-mingw_64" `
+            -DQMAKE_EXECUTABLE="C:/Qt/6.11.1/llvm-mingw_64/bin/qmake6.exe" `
             -DCMAKE_MAKE_PROGRAM="C:/Qt/Tools/Ninja/ninja.exe" `
-            -DQMAKE_EXECUTABLE="$toolchain/bin/qmake6.exe" `
             -DCMAKE_C_COMPILER="$toolchain/bin/clang.exe" `
             -DCMAKE_CXX_COMPILER="$toolchain/bin/clang++.exe" `
             -DCMAKE_RC_COMPILER="$toolchain/bin/windres.exe" `
@@ -109,6 +109,10 @@ jobs:
             -DMUONDETECTOR_BUILD_TESTS=OFF `
             -DMUONDETECTOR_BUILD_TCP_DEBUG_SERVER=OFF `
             .
+
+        - name: Build
+          shell: powershell
+          run: C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat --build . -j --target package
   # build-arm64:
   #   runs-on: ubuntu-latest
 

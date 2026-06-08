@@ -66,18 +66,18 @@ else()
         message(STATUS "Found QMAKE_EXECUTABLE " ${QMAKE_EXECUTABLE})
 
         # Configure with qmake
-        execute_process(
-            COMMAND "${QMAKE_EXECUTABLE}"
-                "${qwt_SOURCE_DIR}/qwt.pro"
-                "-d CONFIG+=release"
-            WORKING_DIRECTORY "${QWT_BUILD_DIR}"
-            RESULT_VARIABLE QWT_QMAKE_RESULT
-        )
-        if(NOT QWT_QMAKE_RESULT EQUAL 0)
-            message(FATAL_ERROR "Failed to run qmake for Qwt")
-        endif()
+        # execute_process(
+        #     COMMAND "${QMAKE_EXECUTABLE}"
+        #         "${qwt_SOURCE_DIR}/qwt.pro"
+        #         "-d CONFIG+=release"
+        #     WORKING_DIRECTORY "${QWT_BUILD_DIR}"
+        #     RESULT_VARIABLE QWT_QMAKE_RESULT
+        # )
+        # if(NOT QWT_QMAKE_RESULT EQUAL 0)
+        #     message(FATAL_ERROR "Failed to run qmake for Qwt")
+        # endif()
 
-        # Build with ninja (qmake generates a Makefile but we can use mingw32-make)
+        # # Build with ninja (qmake generates a Makefile but we can use mingw32-make)
         find_program(MINGW_MAKE
             NAMES mingw32-make make
             HINTS "C:/Qt/Tools/llvm-mingw1706_64/bin"
@@ -85,14 +85,33 @@ else()
             REQUIRED
         )
 
-        execute_process(
-            COMMAND "${MINGW_MAKE}" -j
-            WORKING_DIRECTORY "${QWT_BUILD_DIR}"
-            RESULT_VARIABLE QWT_BUILD_RESULT
+        # execute_process(
+        #     COMMAND "${MINGW_MAKE}" -j
+        #     WORKING_DIRECTORY "${QWT_BUILD_DIR}"
+        #     RESULT_VARIABLE QWT_BUILD_RESULT
+        # )
+        # if(NOT QWT_BUILD_RESULT EQUAL 0)
+        #     message(FATAL_ERROR "Failed to build Qwt")
+        # endif()
+        
+        add_custom_command(
+            OUTPUT ${QWT_BUILD_DIR}/lib/qwt.dll ${QWT_BUILD_DIR}/lib/libqwt.a
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${QWT_BUILD_DIR}
+
+            COMMAND ${QMAKE_EXECUTABLE}
+                    ${qwt_SOURCE_DIR}/qwt.pro
+                    CONFIG+=release
+
+            COMMAND "${MINGW_MAKE}" -j ${CPU_CORE_SUFFIX}
+
+            WORKING_DIRECTORY ${QWT_BUILD_DIR}
+            DEPENDS ${qwt_SOURCE_DIR}
+            COMMENT "Building Qwt via qmake"
         )
-        if(NOT QWT_BUILD_RESULT EQUAL 0)
-            message(FATAL_ERROR "Failed to build Qwt")
-        endif()
+
+        add_custom_target(qwt ALL
+            DEPENDS ${QWT_BUILD_DIR}/lib/qwt.dll  ${QWT_BUILD_DIR}/lib/libqwt.a
+        )
 
         add_library(Qwt::Qwt SHARED IMPORTED GLOBAL)
         set_target_properties(Qwt::Qwt PROPERTIES
@@ -100,6 +119,7 @@ else()
             IMPORTED_IMPLIB   "${QWT_BUILD_DIR}/lib/libqwt.a"
             INTERFACE_INCLUDE_DIRECTORIES ${qwt_SOURCE_DIR}/src
         )
+        add_dependencies(Qwt::Qwt qwt)
     else()
         find_program(QMAKE_EXECUTABLE
             NAMES qmake6 qmake-qt6
