@@ -30,6 +30,15 @@ jobs:
                 -DCMAKE_BUILD_TYPE=Release \
                 -G Ninja
 
+      - name: Verify cross compiler
+        run: |
+          echo "--- cross compiler location ---"
+          which arm-linux-gnueabihf-g++ || echo "NOT FOUND ON HOST PATH"
+          readlink -f $(which arm-linux-gnueabihf-g++) || true
+          file $(which arm-linux-gnueabihf-g++) || true
+          echo "--- sysroot compiler (must NOT be used) ---"
+          file /var/armhf/sysroot/usr/bin/arm-linux-gnueabihf-g++ || true
+
       - name: Build
         run: cmake --build . --parallel $(nproc)
 

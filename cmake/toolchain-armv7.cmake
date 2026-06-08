@@ -4,10 +4,11 @@ set(CMAKE_SYSTEM_PROCESSOR armv7l)
 # Pin host ninja before generator probe
 find_program(CMAKE_MAKE_PROGRAM ninja PATHS /usr/bin /usr/local/bin NO_DEFAULT_PATH)
 
-# Use the HOST cross-compiler, not the one inside the sysroot
-find_program(CMAKE_C_COMPILER   arm-linux-gnueabihf-gcc   PATHS /usr/bin NO_DEFAULT_PATH)
-find_program(CMAKE_CXX_COMPILER arm-linux-gnueabihf-g++   PATHS /usr/bin NO_DEFAULT_PATH)
-find_program(CMAKE_STRIP        arm-linux-gnueabihf-strip  PATHS /usr/bin NO_DEFAULT_PATH)
+# Hardcode the host cross-compiler directly — do NOT use find_program here,
+# it can still be influenced by the cache or prefix path
+set(CMAKE_C_COMPILER   /usr/bin/arm-linux-gnueabihf-gcc)
+set(CMAKE_CXX_COMPILER /usr/bin/arm-linux-gnueabihf-g++)
+set(CMAKE_STRIP        /usr/bin/arm-linux-gnueabihf-strip)
 
 
 message(STATUS "CMAKE_PREFIX_PATH" ${CMAKE_PREFIX_PATH})
@@ -31,5 +32,3 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
-# Prevents CMake from re-rooting absolute paths that are already correct
-set(CMAKE_SYSROOT_COMPILE "${CMAKE_SYSROOT}")
