@@ -22,14 +22,36 @@ if(CMAKE_CROSSCOMPILING)
         qmltyperegistrar
         uic
     )
-        if(TARGET Qt6::${_qt_host_tool}
-            AND EXISTS "${QT_HOST_LIBEXEC_DIR}/${_qt_host_tool}"
+        find_program(QT_HOST_${_qt_host_tool}_EXECUTABLE
+            NAMES ${_qt_host_tool}
+            PATHS
+                "${QT_HOST_LIBEXEC_DIR}"
+                "${QT_HOST_PATH}/lib/qt6/bin"
+                "${QT_HOST_PATH}/bin"
+                /usr/lib/qt6/libexec
+                /usr/bin
+                /usr/local/bin
+            NO_DEFAULT_PATH
+            NO_CMAKE_FIND_ROOT_PATH
         )
-            set_property(TARGET Qt6::${_qt_host_tool}
-                PROPERTY IMPORTED_LOCATION "${QT_HOST_LIBEXEC_DIR}/${_qt_host_tool}"
+
+        if(TARGET Qt6::${_qt_host_tool} AND QT_HOST_${_qt_host_tool}_EXECUTABLE)
+            set_target_properties(Qt6::${_qt_host_tool} PROPERTIES
+                IMPORTED_LOCATION "${QT_HOST_${_qt_host_tool}_EXECUTABLE}"
+                IMPORTED_LOCATION_NOCONFIG "${QT_HOST_${_qt_host_tool}_EXECUTABLE}"
             )
         endif()
     endforeach()
+
+    if(NOT QT_HOST_rcc_EXECUTABLE)
+        message(FATAL_ERROR
+            "Host Qt rcc was not found. Install host Qt6 tools, or pass "
+            "-DQT_HOST_rcc_EXECUTABLE=/path/to/host/rcc."
+        )
+    endif()
+
+    set(QT_RCC_EXECUTABLE "${QT_HOST_rcc_EXECUTABLE}" CACHE FILEPATH "" FORCE)
+    set(CMAKE_AUTORCC_EXECUTABLE "${QT_HOST_rcc_EXECUTABLE}" CACHE FILEPATH "" FORCE)
 endif()
 
 qt_standard_project_setup()

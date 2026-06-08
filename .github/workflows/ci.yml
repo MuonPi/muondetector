@@ -77,7 +77,7 @@ jobs:
           echo "--- Host Qt6 tools ---"
           which moc || find /usr -name "moc" 2>/dev/null | head -3
           find /usr/lib/qt6/libexec -maxdepth 1 \
-            \( -name "qmlimportscanner" -o -name "qmlcachegen" -o -name "qmltyperegistrar" \) \
+            \( -name "rcc" -o -name "qmlimportscanner" -o -name "qmlcachegen" -o -name "qmltyperegistrar" \) \
             -exec file {} \; 2>/dev/null || true
           echo "--- Qwt in sysroot ---"
           find /var/armhf/sysroot \
