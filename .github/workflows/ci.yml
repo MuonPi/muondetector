@@ -99,10 +99,15 @@ jobs:
           & C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat `
             -G Ninja `
             -DCMAKE_PREFIX_PATH="C:/Qt/6.11.1/llvm-mingw_64" `
-            -DQMAKE_EXECUTABLE="$toolchain/bin/qmake.exe" `
+            -DCMAKE_MAKE_PROGRAM="C:/Qt/Tools/Ninja/ninja.exe" `
+            -DQMAKE_EXECUTABLE="$toolchain/bin/qmake6.exe" `
             -DCMAKE_C_COMPILER="$toolchain/bin/clang.exe" `
             -DCMAKE_CXX_COMPILER="$toolchain/bin/clang++.exe" `
             -DCMAKE_RC_COMPILER="$toolchain/bin/windres.exe" `
+            -DBoost_INCLUDE_DIRS="C:/boost_1_91_0" `
+            -DMUONDETECTOR_BUILD_DAEMON=OFF `
+            -DMUONDETECTOR_BUILD_TESTS=OFF `
+            -DMUONDETECTOR_BUILD_TCP_DEBUG_SERVER=OFF `
             .
   # build-arm64:
   #   runs-on: ubuntu-latest
