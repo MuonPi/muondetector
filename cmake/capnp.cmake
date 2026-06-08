@@ -26,10 +26,6 @@ file(MAKE_DIRECTORY "${CAPNP_BUILD_DIRECTORY}")
 # ------------------------------------------------------------
 set(FOUND_LIBATOMIC TRUE)
 
-if(CMAKE_CROSSCOMPILING AND NOT Python3_EXECUTABLE)
-    find_program(Python3_EXECUTABLE python3 PATHS /usr/bin /usr/local/bin NO_DEFAULT_PATH)
-endif()
-
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 find_package(CapnProto QUIET)
 
