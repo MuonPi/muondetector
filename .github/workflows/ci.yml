@@ -95,7 +95,7 @@ jobs:
                 -DQT_HOST_PATH=/usr/lib/qt6 \
                 -DQT_HOST_PATH_CMAKE_DIR=/usr/lib/x86_64-linux-gnu/cmake \
                 -DQt6_DIR=/usr/lib/x86_64-linux-gnu/cmake/Qt6 \
-                -DCMAKE_PREFIX_PATH=/var/armhf/sysroot/usr \
+                -DCMAKE_PREFIX_PATH=/usr/lib/qt6;/var/armhf/sysroot/usr \
                 -DPython3_EXECUTABLE=$(which python3) \
                 -DCapnProto_DIR=/var/armhf/sysroot/usr/lib/arm-linux-gnueabihf/cmake/CapnProto \
                 -DMUONDETECTOR_BUILD_GUI=ON \

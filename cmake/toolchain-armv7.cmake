@@ -1,6 +1,7 @@
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR armv7l)
 
+set(QT_HOST_PATH /usr/lib/qt6 CACHE PATH "" FORCE)
 set(Qt6CoreTools_DIR ${QT_HOST_PATH}/lib/cmake/Qt6CoreTools)
 set(Qt6QmlTools_DIR  ${QT_HOST_PATH}/lib/cmake/Qt6QmlTools)
 
