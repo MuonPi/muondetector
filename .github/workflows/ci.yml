@@ -39,7 +39,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: deb-x64
-          path: ./output/package/*.deb
+          path: ./output/packages/*.deb
 
 
   build-armv7:
@@ -63,20 +63,26 @@ jobs:
         run: |
           echo $HOME/actions-runner/sysroot
           cmake -S . \
+            -DCMAKE_CROSS_COMPILING=ON \
             -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-armv7.cmake \
             -DCMAKE_SYSROOT=/var/armhf/sysroot \
             -DCapnProto_DIR=/var/armhf/sysroot/usr/lib/arm-linux-gnueabihf/cmake/CapnProto \
+            -DQT_HOST_PATH=/usr/lib/x86_64-linux-gnu/qt6 \
             -DCMAKE_BUILD_TYPE=Release \
             -G Ninja
 
       - name: Build
         run: cmake --build . --parallel $(nproc)
 
+      - name: Package .deb
+        run: cpack -G DEB
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: deb-armhf
-          path: ./*.deb
+          path: ./output/packages/*.deb
+
 
   build-win32:
     runs-on: [self-hosted, Windows, X64, win32-build]
@@ -123,4 +129,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-x64
-          path: ./output/package/*.exe
+          path: ./output/packages/*.exe
