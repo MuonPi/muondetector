@@ -5,6 +5,7 @@ set(CMAKE_SYSTEM_PROCESSOR armv7l)
 find_program(CMAKE_MAKE_PROGRAM ninja    PATHS /usr/bin /usr/local/bin NO_DEFAULT_PATH)
 find_program(GIT_EXECUTABLE     git      PATHS /usr/bin /usr/local/bin NO_DEFAULT_PATH)
 find_program(Python3_EXECUTABLE python3  PATHS /usr/bin /usr/local/bin NO_DEFAULT_PATH)
+find_program(PKG_CONFIG_EXECUTABLE pkg-config PATHS /usr/bin /usr/local/bin NO_DEFAULT_PATH)
 
 # Hardcode the host cross-compiler directly — do NOT use find_program here,
 # it can still be influenced by the cache or prefix path
