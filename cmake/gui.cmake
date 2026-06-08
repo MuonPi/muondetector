@@ -246,10 +246,13 @@ endif()
 # PACKAGING ON WINDOWS
 ######################################################################################################
 if(WIN32)
-    find_program(WINDEPLOYQT_EXECUTABLE windeployqt
-        HINTS "${CMAKE_PREFIX_PATH}" "${Qt6_DIR}/../../../bin"
-        REQUIRED
-    )
+    if (NOT WINDEPLOYQT_EXECUTABLE)
+        find_program(WINDEPLOYQT_EXECUTABLE
+            NAMES windeployqt.exe windeployqt6.exe
+            HINTS "${CMAKE_PREFIX_PATH}" "${Qt6_DIR}/../../../bin"
+            REQUIRED
+        )
+    endif()
 
     message(STATUS "Found windeployqt " ${WINDEPLOYQT_EXECUTABLE})
 
@@ -265,14 +268,22 @@ if(WIN32)
     )
 
     # llvm-mingw runtime DLLs (replaces libgcc/libstdc++ from MinGW)
-    set(LLVM_MINGW_BIN "C:/Qt/Tools/llvm-mingw1706_64/bin")
+    if (TOOLCHAIN_PATH)
+        set(LLVM_MINGW_BIN ${TOOLCHAIN_PATH})
+    else()
+        set(LLVM_MINGW_BIN "C:/Qt/Tools/llvm-mingw1706_64/bin")
+    endif()
     set(COPY_DLLS
         "${LLVM_MINGW_BIN}/libc++.dll"
         "${LLVM_MINGW_BIN}/libunwind.dll"
     )
 
     # OpenSSL 3.x — Qt6 ships these, find them relative to Qt
-    set(QT_BIN_DIR "${Qt6_DIR}/../../../bin")
+    if (NOT CMAKE_PREFIX_PATH)
+        set(QT_BIN_DIR "${Qt6_DIR}/../../../bin")
+    else()
+        set(QT_BIN_DIR ${CMAKE_PREFIX_PATH})
+    endif()
     foreach(_ssl libssl-3-x64.dll libcrypto-3-x64.dll)
         if(EXISTS "${QT_BIN_DIR}/${_ssl}")
             list(APPEND COPY_DLLS "${QT_BIN_DIR}/${_ssl}")

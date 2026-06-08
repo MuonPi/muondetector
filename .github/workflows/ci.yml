@@ -128,7 +128,8 @@ jobs:
           $toolchain = "C:/Qt/Tools/llvm-mingw1706_64"
 
           $env:PATH = "$toolchain/bin;$env:PATH"
-          & C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat --build . --parallel --target package
+          & C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat `
+            --build . --parallel --target package
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
