@@ -175,6 +175,3 @@ source_group("Generated" FILES
     ${CAPNP_HDRS}
 )
 message(STATUS "Cap'n Proto protocol library ready: muondetector-protocol")
-
-set_target_properties(capnp PROPERTIES EXCLUDE_FROM_ALL TRUE)
-set_target_properties(capnpc_cpp PROPERTIES EXCLUDE_FROM_ALL TRUE)
