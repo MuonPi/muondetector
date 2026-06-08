@@ -145,7 +145,7 @@ jobs:
                       | head -1 | xargs dirname || true)
           echo "Resolved Qt6 target cmake dir: ${QT6_TARGET}"
           test -n "${QT6_TARGET}"
-          cmake -S .. \
+          cmake -S . \
                 -DCMAKE_GENERATOR=Ninja \
                 -DCMAKE_CROSSCOMPILING=On \
                 -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-armv7.cmake \
