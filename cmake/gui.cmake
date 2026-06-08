@@ -239,7 +239,7 @@ endif()
 # PACKAGING ON MAC
 ######################################################################################################
 
-if(WIN32 OR APPLE)
+if(APPLE)
     qt_generate_deploy_app_script(
         TARGET muondetector-gui
         OUTPUT_SCRIPT deploy_script
@@ -255,6 +255,8 @@ if(WIN32)
         HINTS "${CMAKE_PREFIX_PATH}" "${Qt6_DIR}/../../../bin"
         REQUIRED
     )
+
+    message(STATUS "Found windeployqt " ${WINDEPLOYQT_EXECUTABLE})
 
     # windeployqt post-build step
     add_custom_command(TARGET muondetector-gui POST_BUILD
@@ -273,12 +275,6 @@ if(WIN32)
         "${LLVM_MINGW_BIN}/libc++.dll"
         "${LLVM_MINGW_BIN}/libunwind.dll"
     )
-
-    # QWT (still manual)
-    if(DEFINED QWT_DIR)
-        list(APPEND COPY_DLLS "${QWT_DIR}/lib/qwt.dll")
-        install(FILES "${QWT_DIR}/lib/qwt.dll" DESTINATION bin COMPONENT gui)
-    endif()
 
     # OpenSSL 3.x — Qt6 ships these, find them relative to Qt
     set(QT_BIN_DIR "${Qt6_DIR}/../../../bin")
