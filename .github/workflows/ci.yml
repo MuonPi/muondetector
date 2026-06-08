@@ -39,7 +39,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: deb-x64
-          path: ./*.deb
+          path: ./output/package/*.deb
 
 
   build-armv7:
@@ -111,30 +111,16 @@ jobs:
             -DMUONDETECTOR_BUILD_TCP_DEBUG_SERVER=OFF `
             .
 
-      - name: Build
+      - name: Build & Package
         shell: powershell
         run: |
           $toolchain = "C:/Qt/Tools/llvm-mingw1706_64"
 
           $env:PATH = "$toolchain/bin;$env:PATH"
-          & C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat --build . --parallel
-        # --target package
-  # build-arm64:
-  #   runs-on: ubuntu-latest
+          & C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat --build . --parallel --target package
 
-  #   steps:
-  #     - uses: actions/checkout@v4
-
-  #     - name: Install cross tools
-  #       run: |
-  #         sudo apt update
-  #         sudo apt install -y cmake ninja-build gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-
-  #     - name: Configure
-  #       run: |
-  #         cmake -S . -B build \
-  #           -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-arm64.cmake \
-  #           -G Ninja
-
-  #     - name: Build
-  #       run: cmake --build build
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: ./output/package/*.exe
