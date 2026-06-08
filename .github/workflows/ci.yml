@@ -94,7 +94,8 @@ jobs:
                 -DCMAKE_GENERATOR=Ninja \
                 -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-armv7.cmake \
                 -DCMAKE_SYSROOT=/var/armhf/sysroot \
-                -DQT_HOST_PATH=/usr/lib/qt6 \
+                -DQT_HOST_PATH=/usr \
+                -DQT_HOST_PATH_CMAKE_DIR=/usr/lib/x86_64-linux-gnu/cmake \
                 -DQt6_DIR="${QT6_TARGET}" \
                 -DCMAKE_PREFIX_PATH=/var/armhf/sysroot/usr \
                 -DPython3_EXECUTABLE=$(which python3) \

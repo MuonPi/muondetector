@@ -1,9 +1,12 @@
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR armv7l)
 
-set(QT_HOST_PATH /usr/lib/qt6 CACHE PATH "" FORCE)
-set(Qt6CoreTools_DIR ${QT_HOST_PATH}/lib/cmake/Qt6CoreTools)
-set(Qt6QmlTools_DIR  ${QT_HOST_PATH}/lib/cmake/Qt6QmlTools)
+set(QT_HOST_PATH /usr CACHE PATH "" FORCE)
+set(QT_HOST_PATH_CMAKE_DIR /usr/lib/x86_64-linux-gnu/cmake CACHE PATH "" FORCE)
+set(Qt6CoreTools_DIR ${QT_HOST_PATH_CMAKE_DIR}/Qt6CoreTools CACHE PATH "" FORCE)
+set(Qt6GuiTools_DIR ${QT_HOST_PATH_CMAKE_DIR}/Qt6GuiTools CACHE PATH "" FORCE)
+set(Qt6QmlTools_DIR ${QT_HOST_PATH_CMAKE_DIR}/Qt6QmlTools CACHE PATH "" FORCE)
+set(Qt6QuickTools_DIR ${QT_HOST_PATH_CMAKE_DIR}/Qt6QuickTools CACHE PATH "" FORCE)
 
 # Pin host tools before CMake's generator/compiler probes. Do not use
 # find_program() here: when CMAKE_SYSROOT is supplied on the command line,
