@@ -18,25 +18,50 @@ elseif(WIN32)
             message(STATUS "QWT_LIBRARY found: ${QWT_LIBRARY}")
         endif()
 else()
+    set(QWT_SEARCH_DIRS
+        "${CMAKE_SYSROOT}/usr/lib"
+        "${CMAKE_SYSROOT}/usr/lib/arm-linux-gnueabihf"
+        "${CMAKE_SYSROOT}/usr/local/lib"
+        "${CMAKE_SYSROOT}/usr/local/lib/arm-linux-gnueabihf"
+        "${CMAKE_SYSROOT}/opt/qwt/lib"
+    )
+
     find_library(
         QWT_LIBRARY
-        NAMES qwt qwt-qt6
+        NAMES qwt qwt-qt6 qwt6
         # When cross-compiling, search only inside the sysroot
-        HINTS "${CMAKE_SYSROOT}/usr/lib"
-              "${CMAKE_SYSROOT}/usr/lib/arm-linux-gnueabihf"
+        HINTS ${QWT_SEARCH_DIRS}
         QUIET
     )
+
+    if(NOT QWT_LIBRARY)
+        file(GLOB QWT_VERSIONED_LIBRARY_CANDIDATES
+            LIST_DIRECTORIES false
+            "${CMAKE_SYSROOT}/usr/lib/libqwt*.so*"
+            "${CMAKE_SYSROOT}/usr/lib/arm-linux-gnueabihf/libqwt*.so*"
+            "${CMAKE_SYSROOT}/usr/local/lib/libqwt*.so*"
+            "${CMAKE_SYSROOT}/usr/local/lib/arm-linux-gnueabihf/libqwt*.so*"
+            "${CMAKE_SYSROOT}/opt/qwt/lib/libqwt*.so*"
+        )
+        if(QWT_VERSIONED_LIBRARY_CANDIDATES)
+            list(GET QWT_VERSIONED_LIBRARY_CANDIDATES 0 QWT_LIBRARY)
+        endif()
+    endif()
+
     if (QWT_LIBRARY)
         find_path(QWT_INCLUDE_DIR
             NAMES qwt_plot.h
-            HINTS "${CMAKE_SYSROOT}/usr/include"
-            PATH_SUFFIXES qwt
+            HINTS
+                "${CMAKE_SYSROOT}/usr/include"
+                "${CMAKE_SYSROOT}/usr/local/include"
+                "${CMAKE_SYSROOT}/opt/qwt/include"
+            PATH_SUFFIXES qwt qwt6 qwt-qt6
             QUIET
         )
         if (QWT_INCLUDE_DIR)
             message(STATUS "Found QWT_INCLUDE_DIR " ${QWT_INCLUDE_DIR})
         else()
-            message(STATUS "Failed to find QWT_INCLUDE_DIR, guessing /usr/include/qwt")
+            message(STATUS "Failed to find QWT_INCLUDE_DIR")
         endif()
     endif()
 endif()
@@ -44,9 +69,29 @@ endif()
 
 if(QWT_LIBRARY)
 
-    message(STATUS "Using system Qwt")
+    message(STATUS "Using system Qwt: ${QWT_LIBRARY}")
+    if(NOT TARGET Qwt::Qwt)
+        add_library(Qwt::Qwt UNKNOWN IMPORTED GLOBAL)
+        set_target_properties(Qwt::Qwt PROPERTIES
+            IMPORTED_LOCATION "${QWT_LIBRARY}"
+        )
+        if(QWT_INCLUDE_DIR)
+            set_target_properties(Qwt::Qwt PROPERTIES
+                INTERFACE_INCLUDE_DIRECTORIES "${QWT_INCLUDE_DIR}"
+            )
+        endif()
+    endif()
 
 else()
+    if(CMAKE_CROSSCOMPILING)
+        message(FATAL_ERROR
+            "Qwt was not found in the target sysroot (${CMAKE_SYSROOT}). "
+            "The cross build cannot use ${CMAKE_SYSROOT}/usr/bin/qmake6 because it is an ARM executable. "
+            "Install/copy the Raspberry Pi Qwt runtime and headers into the sysroot, or pass "
+            "-DQWT_LIBRARY=/path/to/libqwt*.so -DQWT_INCLUDE_DIR=/path/to/qwt/includes."
+        )
+    endif()
+
     set(BUILDING_BUNDLED_QWT true)
     message(STATUS "Building Qwt from source")
 
