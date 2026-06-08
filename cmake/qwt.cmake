@@ -59,16 +59,17 @@ else()
 
     if (WIN32)
         find_program(QMAKE_EXECUTABLE
-            NAMES qmake6 qmake-qt6
+            NAMES qmake6 qmake-qt6 qmake6.exe
             REQUIRED
         )
+
+        message(STATUS "Found QMAKE_EXECUTABLE " ${QMAKE_EXECUTABLE})
 
         # Configure with qmake
         execute_process(
             COMMAND "${QMAKE_EXECUTABLE}"
                 "${qwt_SOURCE_DIR}/qwt.pro"
-                "CONFIG+=release"
-                "QWT_INSTALL_PREFIX=${QWT_BUILD_DIR}"
+                "-d CONFIG+=release"
             WORKING_DIRECTORY "${QWT_BUILD_DIR}"
             RESULT_VARIABLE QWT_QMAKE_RESULT
         )
@@ -101,7 +102,7 @@ else()
         )
     else()
         find_program(QMAKE_EXECUTABLE
-            NAMES qmake6 qmake-qt6 qmake6.exe
+            NAMES qmake6 qmake-qt6
             REQUIRED
         )
 
