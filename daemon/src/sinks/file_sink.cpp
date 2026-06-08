@@ -132,16 +132,16 @@ LogInfoStruct::status_t FileSink::getStatus() {
     std::scoped_lock lock{m_mutex};
     LogInfoStruct::status_t status{LogInfoStruct::status_t::NORMAL};
     if (std::filesystem::exists(currentWorkingFilePath) == false) {
-        status = LogInfoStruct::status_t::ERROR;
+        status = LogInfoStruct::status_t::ERROR_STATE;
     }
     if (dataFile.is_open() == false) {
-        status = LogInfoStruct::status_t::ERROR;
+        status = LogInfoStruct::status_t::ERROR_STATE;
     }
     if (std::filesystem::exists(currentWorkingLogPath) == false) {
-        status = LogInfoStruct::status_t::ERROR;
+        status = LogInfoStruct::status_t::ERROR_STATE;
     }
     if (logFile.is_open() == false) {
-        status = LogInfoStruct::status_t::ERROR;
+        status = LogInfoStruct::status_t::ERROR_STATE;
     }
     return status;
 }

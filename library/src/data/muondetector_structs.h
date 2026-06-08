@@ -155,7 +155,7 @@ struct I2cDeviceEntry {
 struct LogInfoStruct {
     std::string logFileName;
     std::string dataFileName;
-    enum status_t : std::uint8_t { ERROR = 0, NORMAL, LOG_ONLY, OFF } status;
+    enum status_t : std::uint8_t { ERROR_STATE = 0, NORMAL, LOG_ONLY, OFF } status;
     std::uint32_t logFileSize;
     std::uint32_t dataFileSize;
     std::chrono::seconds logAge;

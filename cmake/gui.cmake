@@ -8,7 +8,7 @@ set(MUONDETECTOR_GUI_APPLE_RES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gui/res")
 
 
 find_package(Qt6 REQUIRED COMPONENTS
-    Network Svg Widgets Gui Quick QuickWidgets Qml Positioning
+    Network Svg Widgets Gui Quick QuickWidgets Qml Positioning OpenGLWidgets
 )
 qt_standard_project_setup()
 
@@ -161,7 +161,7 @@ target_include_directories(muondetector-gui PUBLIC
 )
 
 target_link_libraries(muondetector-gui PRIVATE
-    Qt6::Network Qt6::Svg Qt6::Widgets Qt6::Gui Qt6::Quick Qt6::QuickWidgets Qt6::Qml Qt6::Positioning
+    Qt6::Network Qt6::Svg Qt6::Widgets Qt6::Gui Qt6::Quick Qt6::QuickWidgets Qt6::Qml Qt6::Positioning Qt6::OpenGLWidgets
     Qwt::Qwt
     muondetector-shared
     muondetector-protocol
@@ -183,7 +183,21 @@ if(BUILDING_BUNDLED_QWT)
     set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS_PRIVATE_DIRS
         "${CMAKE_BINARY_DIR}/_deps/qwt-build/lib"
     )
+    if(TARGET Qwt::Qwt)
+        add_custom_command(TARGET muondetector-gui POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_FILE:Qwt::Qwt>
+                "${PROJECT_BINARY_DIR}/output/bin/"
+        )
+    endif()
 endif()
+
+qt_generate_deploy_app_script(
+    TARGET muondetector-gui
+    OUTPUT_SCRIPT deploy_script
+)
+
+install(SCRIPT ${deploy_script} COMPONENT gui)
 
 if(PACKAGING_MODE)
     message(STATUS "Packaging mode: disabling Qt deploy")
@@ -200,7 +214,7 @@ if(PACKAGING_MODE)
         DESTINATION share/pixmaps
         COMPONENT gui
     )
-else()
+elseif(NOT WIN32 AND NOT APPLE)
     include(GNUInstallDirs)
     add_custom_target(prep-gui ALL COMMAND mkdir -p "${CMAKE_CURRENT_BINARY_DIR}/gui")
     add_custom_target(changelog-gui ALL COMMAND gzip -cn9 "${MUONDETECTOR_GUI_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/gui/changelog.gz")
@@ -302,4 +316,9 @@ if(WIN32)
     set(CPACK_PACKAGE_EXECUTABLES "muondetector-gui" "muondetector-gui")
 
     include(InstallRequiredSystemLibraries)
+    install(TARGETS muondetector-gui
+        RUNTIME DESTINATION bin
+        COMPONENT gui
+    )
+    set(CPACK_COMPONENTS_ALL gui)
 endif()

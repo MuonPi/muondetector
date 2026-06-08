@@ -10,6 +10,8 @@
 #
 # ============================================================
 
+set(CAPNP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(CAPNP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(CAPNP_SOURCE_DIRECTORY "${CMAKE_SOURCE_DIR}/library/src/capnp")
 set(CAPNP_GENERATOR_SCRIPT "${CMAKE_SOURCE_DIR}/tools/generate_capnp.py")
 
@@ -58,7 +60,7 @@ if(WIN32 AND NOT CapnProto_FOUND)
     endif()
 
     execute_process(
-        COMMAND "${CMAKE_COMMAND}" --build "${CAPNP_BUILD_DIR}" --config Release -j4
+        COMMAND "${CMAKE_COMMAND}" --build "${CAPNP_BUILD_DIR}" --config Release -j
         RESULT_VARIABLE CAPNP_BUILD_RESULT
     )
     if(NOT CAPNP_BUILD_RESULT EQUAL 0)
@@ -75,7 +77,6 @@ if(WIN32 AND NOT CapnProto_FOUND)
 
     # Point find_package at our freshly built install
     set(CapnProto_DIR "${CAPNP_INSTALL_DIR}/lib/cmake/CapnProto")
-    find_package(CapnProto REQUIRED)
 endif()
 
 add_definitions(${CAPNP_DEFINITIONS})
@@ -174,3 +175,6 @@ source_group("Generated" FILES
     ${CAPNP_HDRS}
 )
 message(STATUS "Cap'n Proto protocol library ready: muondetector-protocol")
+
+set_target_properties(capnp PROPERTIES EXCLUDE_FROM_ALL TRUE)
+set_target_properties(capnpc_cpp PROPERTIES EXCLUDE_FROM_ALL TRUE)

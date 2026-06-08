@@ -118,6 +118,7 @@ set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi <developer@muonpi.org>")
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 endif ()
+
 set(CPACK_RESOURCE_FILE_LICENSE "${MUONDETECTOR_CONFIG_DIR}/license")
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/output/packages")
 set(CPACK_PACKAGE_VENDOR "MuonPi.org")

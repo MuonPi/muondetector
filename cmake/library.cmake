@@ -122,10 +122,10 @@ target_include_directories(muondetector-static PUBLIC
     "${Boost_INCLUDE_DIRS}"
     )
 
-target_link_libraries(muondetector-shared PUBLIC
+target_link_libraries(muondetector-shared PRIVATE
     muondetector-protocol
 )
 
-target_link_libraries(muondetector-static PUBLIC
+target_link_libraries(muondetector-static PRIVATE
     muondetector-protocol
 )
