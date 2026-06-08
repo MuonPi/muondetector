@@ -67,7 +67,7 @@ else()
 endif()
 
 
-if(QWT_LIBRARY)
+if(QWT_LIBRARY AND EXISTS "${QWT_INCLUDE_DIR}")
 
     message(STATUS "Using system Qwt: ${QWT_LIBRARY}")
     if(NOT TARGET Qwt::Qwt)
@@ -83,37 +83,17 @@ if(QWT_LIBRARY)
     endif()
 
 else()
-    if(CMAKE_CROSSCOMPILING)
-        message(FATAL_ERROR
-            "Qwt was not found in the target sysroot (${CMAKE_SYSROOT}). "
-            "The cross build cannot use ${CMAKE_SYSROOT}/usr/bin/qmake6 because it is an ARM executable. "
-            "Install/copy the Raspberry Pi Qwt runtime and headers into the sysroot, or pass "
-            "-DQWT_LIBRARY=/path/to/libqwt*.so -DQWT_INCLUDE_DIR=/path/to/qwt/includes."
-        )
-    endif()
-
-    set(BUILDING_BUNDLED_QWT true)
-    message(STATUS "Building Qwt from source")
-
+    message(STATUS "FetchContent_Declare")
     include(FetchContent)
-
-    if(CMAKE_CROSSCOMPILING AND EXISTS "${CMAKE_SOURCE_DIR}/_deps/qwt-src")
-        # Cross-compiling: use the manually pre-cloned source to avoid
-        # FetchContent internally invoking the ARM git from sysroot
-        message(STATUS "Using pre-cloned Qwt source: ${CMAKE_SOURCE_DIR}/_deps/qwt-src")
-        set(qwt_SOURCE_DIR "${CMAKE_SOURCE_DIR}/_deps/qwt-src")
-        set(FETCHCONTENT_SOURCE_DIR_QWT "${CMAKE_SOURCE_DIR}/_deps/qwt-src")
-    endif()
-
     FetchContent_Declare(qwt
         GIT_REPOSITORY https://git.code.sf.net/p/qwt/git
         GIT_TAG v6.3.0
     )
-
-    set(QWT_BUILD_EXAMPLES OFF CACHE BOOL "")
-    set(QWT_BUILD_TESTS OFF CACHE BOOL "")
-
     FetchContent_MakeAvailable(qwt)
+
+    set(BUILDING_BUNDLED_QWT true)
+    message(STATUS "Building Qwt from source")
+
 
     set(QWT_BUILD_DIR ${CMAKE_BINARY_DIR}/_deps/qwt-build)
 

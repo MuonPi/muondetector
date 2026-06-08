@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-x64:
-    runs-on: [self-hosted, X64, Linux, x64-build, disabled]
+    runs-on: [self-hosted, X64, Linux, x64-build]
 
     steps:
       - uses: actions/checkout@v4
@@ -64,34 +64,79 @@ jobs:
 
       - name: Verify sysroot
         run: |
-          echo "--- Qt6 cmake configs in sysroot ---"
-          find /var/armhf/sysroot -name "Qt6Config.cmake" 2>/dev/null || echo "MISSING - Qt not installed in sysroot"
-          echo "--- CapnProto cmake configs in sysroot ---"
-          find /var/armhf/sysroot -name "CapnProtoConfig.cmake" 2>/dev/null || echo "MISSING"
-          echo "--- CapnProto host/target versions ---"
-          /usr/local/bin/capnp --version || /usr/bin/capnp --version || true
-          file /usr/local/bin/capnpc-c++ || file /usr/bin/capnpc-c++ || true
-          grep -R -E "CapnProto_VERSION|PACKAGE_VERSION" /var/armhf/sysroot/usr/lib/arm-linux-gnueabihf/cmake/CapnProto 2>/dev/null || true
-          echo "--- ARM Qt6 libs ---"
-          find /var/armhf/sysroot -name "libQt6Core.so*" 2>/dev/null | head -5 || echo "MISSING"
-          echo "--- Host Qt6 tools ---"
-          which moc || find /usr -name "moc" 2>/dev/null | head -3
-          find /usr/lib/qt6/libexec -maxdepth 1 \
-            \( -name "rcc" -o -name "qmlimportscanner" -o -name "qmlcachegen" -o -name "qmltyperegistrar" \) \
-            -exec file {} \; 2>/dev/null || true
-          echo "--- Qwt in sysroot ---"
-          find /var/armhf/sysroot \
-            \( -name "libqwt*.so*" -o -name "qwt_plot.h" \) \
-            2>/dev/null | head -20 || true
+          echo "=============================="
+          echo " SYSROOT CROSS-COMPILATION CHECK"
+          echo "=============================="
 
-      - name: Fetch Qwt source manually
-        run: |
-          if [ ! -d "_deps/qwt-src" ]; then
-            mkdir -p _deps
-            /usr/bin/git clone --depth 1 --branch v6.3.0 \
-              https://git.code.sf.net/p/qwt/git \
-              _deps/qwt-src
-          fi
+          echo "--- Qt6 CMake configs in sysroot ---"
+          find /var/armhf/sysroot -name "Qt6Config.cmake" 2>/dev/null || echo "MISSING - Qt not installed in sysroot"
+
+          echo "--- Qt6 pkgconfig (often needed for cross builds) ---"
+          find /var/armhf/sysroot -name "Qt6*.pc" 2>/dev/null | head -10 || echo "No Qt pkg-config files"
+
+          echo "--- ARM Qt6 libraries ---"
+          find /var/armhf/sysroot -name "libQt6Core.so*" 2>/dev/null | head -5 || echo "MISSING Qt ARM libs"
+
+          echo ""
+          echo "--- CapnProto CMake configs ---"
+          find /var/armhf/sysroot -name "CapnProtoConfig.cmake" 2>/dev/null || echo "MISSING"
+
+          echo "--- CapnProto version (host tools) ---"
+          capnp --version 2>/dev/null || echo "capnp not found"
+          file $(which capnpc-c++ 2>/dev/null) 2>/dev/null || echo "capnpc-c++ not found"
+
+          echo ""
+          echo "--- Host Qt tools (IMPORTANT: must NOT be used for target) ---"
+          which qmake6 || true
+          which moc || true
+          which rcc || true
+          which uic || true
+
+          find /usr/lib/qt6/libexec -maxdepth 1 \
+            \( -name "qmlimportscanner" -o -name "qmlcachegen" -o -name "qmltyperegistrar" \) \
+            -exec file {} \; 2>/dev/null || true
+
+          echo ""
+          echo "=============================="
+          echo " QWT DIAGNOSTICS (IMPORTANT)"
+          echo "=============================="
+
+          echo "--- Qwt headers in sysroot ---"
+          find /var/armhf/sysroot/usr/include \
+            \( -name "qwt_plot*.h" -o -name "qwt*.h" \) \
+            2>/dev/null | head -20 || echo "MISSING Qwt headers"
+
+          echo "--- Qwt libraries in sysroot ---"
+          find /var/armhf/sysroot/usr \
+            \( -name "libqwt*.so*" -o -name "libqwt*.a" \) \
+            2>/dev/null || echo "MISSING Qwt libraries"
+
+          echo "--- Qwt CMake config (usually NOT present) ---"
+          find /var/armhf/sysroot/usr -name "*Qwt*Config.cmake" 2>/dev/null || echo "No Qwt CMake package (expected)"
+
+          echo "--- Qwt pkg-config (if any) ---"
+          find /var/armhf/sysroot/usr/lib/pkgconfig -name "*qwt*.pc" 2>/dev/null || echo "No Qwt pkg-config file"
+
+          echo "--- Qwt install location sanity check ---"
+          ls -la /var/armhf/sysroot/usr/lib | grep qwt || true
+          ls -la /var/armhf/sysroot/usr/include | grep qwt || true
+
+          echo ""
+          echo "=============================="
+          echo " BINARY ARCH VALIDATION"
+          echo "=============================="
+
+          file /var/armhf/sysroot/usr/lib/libqwt.so 2>/dev/null || echo "Qwt library not found"
+
+      # - name: Fetch Qwt source manually
+      #   run: |
+      #     if [ ! -d "_deps/qwt-src" ]; then
+      #       mkdir -p _deps
+      #       /usr/bin/git clone --depth 1 --branch v6.3.0 \
+      #         https://git.code.sf.net/p/qwt/git \
+      #         _deps/qwt-src
+      #     fi
+
 
       - name: Configure
         run: |
@@ -100,9 +145,9 @@ jobs:
                       | head -1 | xargs dirname || true)
           echo "Resolved Qt6 target cmake dir: ${QT6_TARGET}"
           test -n "${QT6_TARGET}"
-
-          cmake -S . \
+          cmake -S .. \
                 -DCMAKE_GENERATOR=Ninja \
+                -DCMAKE_CROSSCOMPILING=On \
                 -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-armv7.cmake \
                 -DCMAKE_SYSROOT=/var/armhf/sysroot \
                 -DQT_HOST_PATH=/usr \
@@ -119,6 +164,12 @@ jobs:
                 -DMUONDETECTOR_BUILD_TCP_DEBUG_CLIENT=OFF \
                 -DMUONDETECTOR_BUILD_TCP_DEBUG_SERVER=OFF \
                 -DCMAKE_BUILD_TYPE=Release \
+                \
+                -DQWT_LIBRARY=/var/armhf/sysroot/home/pi/muondetector_v2/build/_deps/qwt-build/lib/libqwt.so \
+                -DQWT_INCLUDE_DIR=/var/armhf/sysroot/home/pi/muondetector_v2/build/_deps/qwt-src/src/ \
+                -DMOSQUITTO=/var/armhf/sysroot/usr/lib/arm-linux-gnueabihf/libmosquitto.so \
+                -DGPIOD=/var/armhf/sysroot/usr/lib/arm-linux-gnueabihf/libgpiod.so \
+                \
                 -G Ninja
 
       - name: Build
@@ -134,7 +185,7 @@ jobs:
           path: ./output/packages/*.deb
 
   build-win32:
-    runs-on: [self-hosted, Windows, X64, win32-build, disabled]
+    runs-on: [self-hosted, Windows, X64, win32-build]
 
     steps:
       - uses: actions/checkout@v4

@@ -26,6 +26,7 @@ endif()
 set(CMAKE_C_COMPILER   /usr/bin/arm-linux-gnueabihf-gcc)
 set(CMAKE_CXX_COMPILER /usr/bin/arm-linux-gnueabihf-g++)
 set(CMAKE_STRIP        /usr/bin/arm-linux-gnueabihf-strip)
+set(QMAKE_EXECUTABLE   /usr/bin/qmake6)
 
 
 message(STATUS "CMAKE_PREFIX_PATH" ${CMAKE_PREFIX_PATH})
@@ -53,8 +54,7 @@ set(ENV{PKG_CONFIG_LIBDIR}
 # For these categories, look ONLY inside the sysroot
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)   # host tools (moc etc.) found via QT_HOST_PATH, not here
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE BOTH)
 
 # Prevents CMake from re-rooting absolute paths that are already correct
 set(CMAKE_SYSROOT_COMPILE "${CMAKE_SYSROOT}")
