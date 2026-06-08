@@ -192,12 +192,6 @@ if(BUILDING_BUNDLED_QWT)
     endif()
 endif()
 
-qt_generate_deploy_app_script(
-    TARGET muondetector-gui
-    OUTPUT_SCRIPT deploy_script
-)
-
-install(SCRIPT ${deploy_script} COMPONENT gui)
 
 if(PACKAGING_MODE)
     message(STATUS "Packaging mode: disabling Qt deploy")
@@ -244,7 +238,8 @@ if(APPLE)
         TARGET muondetector-gui
         OUTPUT_SCRIPT deploy_script
     )
-    install(SCRIPT ${deploy_script})
+
+    install(SCRIPT ${deploy_script} COMPONENT gui)
 endif()
 
 ######################################################################################################
