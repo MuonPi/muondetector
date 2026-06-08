@@ -113,7 +113,11 @@ jobs:
 
       - name: Build
         shell: powershell
-        run: C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat --build . -j
+        run: |
+          $toolchain = "C:/Qt/Tools/llvm-mingw1706_64"
+
+          $env:PATH = "$toolchain/bin;$env:PATH"
+          & C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat --build . --parallel
         # --target package
   # build-arm64:
   #   runs-on: ubuntu-latest
