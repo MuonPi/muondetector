@@ -110,9 +110,9 @@ jobs:
             -DMUONDETECTOR_BUILD_TCP_DEBUG_SERVER=OFF `
             .
 
-        - name: Build
-          shell: powershell
-          run: C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat --build . -j --target package
+      - name: Build
+        shell: powershell
+        run: C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat --build . -j --target package
   # build-arm64:
   #   runs-on: ubuntu-latest
 
