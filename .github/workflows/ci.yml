@@ -70,7 +70,9 @@ jobs:
             -DCapnProto_DIR=/var/armhf/sysroot/usr/lib/arm-linux-gnueabihf/cmake/CapnProto \
             -DQT_HOST_PATH=/usr/lib/x86_64-linux-gnu/qt6 \
             -DQt6_DIR=/usr/lib/x86_64-linux-gnu/qt6/lib/cmake/Qt6 \
-            -DCMAKE_IGNORE_PREFIX_PATH=/var/armhf/sysroot/usr
+            -DCMAKE_IGNORE_PREFIX_PATH=/var/armhf/sysroot/usr \
+            -DCMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu/qt6 \
+            -DFIND_PACKAGE_DEBIAN_MODE=OFF \
             -DCMAKE_BUILD_TYPE=Release \
             -G Ninja
 
