@@ -72,12 +72,13 @@ else()
             OUTPUT ${QWT_BUILD_DIR}/lib/qwt.dll ${QWT_BUILD_DIR}/lib/libqwt.a
             COMMAND ${CMAKE_COMMAND} -E make_directory ${QWT_BUILD_DIR}
             COMMAND ${CMAKE_COMMAND} -E env
-                PATH=C:/Qt/Tools/llvm-mingw1706_64/bin;$ENV{PATH}
+                "PATH=C:/Qt/Tools/llvm-mingw1706_64/bin;$ENV{PATH}"
                 QMAKESPEC=win32-clang-g++
 
                 ${QMAKE_EXECUTABLE}
                 ${qwt_SOURCE_DIR}/qwt.pro
                 CONFIG+=release
+
 
             COMMAND "${MINGW_MAKE}" -j ${CPU_CORE_SUFFIX}
 
