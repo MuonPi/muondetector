@@ -2,6 +2,7 @@
 
 #include "core/logging/logger.h"
 #include "custom_io_operators.h"
+#include "data/events/datastore_store_event.h"
 #include "data/events/file_log_event.h"
 #include "data/events/ubx_event.h"
 #include "utility/conversion.h"
@@ -15,8 +16,9 @@
 
 using namespace std::literals;
 
-FileSink::FileSink(std::uint32_t fileSizeMB)
-    : m_fileSizeMB{fileSizeMB}
+FileSink::FileSink(EventBus& bus, std::uint32_t fileSizeMB)
+    : bus_{bus}
+    , m_fileSizeMB{fileSizeMB}
     , dailyUploadTime{11h + 11min + 11s}
     , lastRotationDateTime{std::chrono::floor<std::chrono::days>(std::chrono::system_clock::now())}
     , nextRotationTime{generateNextDailyTime(dailyUploadTime)} {
@@ -57,14 +59,21 @@ auto FileSink::generateNextDailyTime(std::chrono::system_clock::duration offset)
 
     return candidate;
 }
-
 std::string FileSink::getCurrentDataFileName() const {
     std::scoped_lock lock{m_mutex};
-    return currentWorkingFilePath.empty() ? std::string{} : currentWorkingFilePath.string();
+    return getCurrentDataFileNameUnlocked();
 }
 
 std::string FileSink::getCurrentLogFileName() const {
     std::scoped_lock lock{m_mutex};
+    return getCurrentLogFileNameUnlocked();
+}
+
+std::string FileSink::getCurrentDataFileNameUnlocked() const {
+    return currentWorkingFilePath.empty() ? std::string{} : currentWorkingFilePath.string();
+}
+
+std::string FileSink::getCurrentLogFileNameUnlocked() const {
     return currentWorkingLogPath.empty() ? std::string{} : currentWorkingLogPath.string();
 }
 
@@ -104,8 +113,12 @@ auto FileSink::logFileInfo() const -> FileSink::FileInfo {
 }
 
 // return current log file age in s
-auto FileSink::currentLogAge() -> std::chrono::seconds {
+auto FileSink::currentLogAge() const -> std::chrono::seconds {
     std::scoped_lock lock{m_mutex};
+    return currentLogAgeUnlocked();
+}
+
+std::chrono::seconds FileSink::currentLogAgeUnlocked() const {
     namespace fs = std::filesystem;
     using namespace std::chrono;
 
@@ -128,31 +141,34 @@ auto FileSink::currentLogAge() -> std::chrono::seconds {
     return age;
 }
 
-LogInfoStruct::status_t FileSink::getStatus() {
+LogInfoStruct::status_t FileSink::getStatus() const {
     std::scoped_lock lock{m_mutex};
+    return getStatusUnlocked();
+}
+
+LogInfoStruct::status_t FileSink::getStatusUnlocked() const {
     LogInfoStruct::status_t status{LogInfoStruct::status_t::NORMAL};
     if (std::filesystem::exists(currentWorkingFilePath) == false) {
-        status = LogInfoStruct::status_t::ERROR;
+        status = LogInfoStruct::status_t::ERROR_STATE;
     }
     if (dataFile.is_open() == false) {
-        status = LogInfoStruct::status_t::ERROR;
+        status = LogInfoStruct::status_t::ERROR_STATE;
     }
     if (std::filesystem::exists(currentWorkingLogPath) == false) {
-        status = LogInfoStruct::status_t::ERROR;
+        status = LogInfoStruct::status_t::ERROR_STATE;
     }
     if (logFile.is_open() == false) {
-        status = LogInfoStruct::status_t::ERROR;
+        status = LogInfoStruct::status_t::ERROR_STATE;
     }
     return status;
 }
 
-LogInfoStruct FileSink::getInfo() {
-    std::scoped_lock lock{m_mutex};
+LogInfoStruct FileSink::getInfoUnlocked() const {
     LogInfoStruct lis{};
 
-    lis.logFileName = getCurrentLogFileName();
-    lis.dataFileName = getCurrentDataFileName();
-    lis.status = getStatus();
+    lis.logFileName = getCurrentLogFileNameUnlocked();
+    lis.dataFileName = getCurrentDataFileNameUnlocked();
+    lis.status = getStatusUnlocked();
 
     try {
         lis.logFileSize = std::filesystem::file_size(currentWorkingLogPath);
@@ -166,11 +182,34 @@ LogInfoStruct FileSink::getInfo() {
         lis.dataFileSize = 0;
     }
 
-    lis.logAge = currentLogAge();
-    lis.logRotationDuration = logRotatePeriod();
+    lis.logAge = currentLogAgeUnlocked();
+    lis.logRotationDuration = logRotationPeriodUnlocked();
     lis.logEnabled = true;
 
     return lis;
+}
+
+LogInfoStruct FileSink::getInfo() const {
+    std::scoped_lock lock{m_mutex};
+    return getInfoUnlocked();
+}
+
+std::chrono::seconds FileSink::logRotationPeriod() const {
+    std::scoped_lock lock{m_mutex};
+    return logRotationPeriodUnlocked();
+}
+
+std::chrono::seconds FileSink::logRotationPeriodUnlocked() const {
+    return m_logrotate_period;
+}
+
+void FileSink::setLogRotationPeriod(std::chrono::seconds period) {
+    std::scoped_lock lock{m_mutex};
+    setLogRotationPeriodUnlocked(period);
+}
+
+void FileSink::setLogRotationPeriodUnlocked(std::chrono::seconds period) {
+    m_logrotate_period = period;
 }
 
 void FileSink::start() {
@@ -246,7 +285,7 @@ auto FileSink::openFilesAtPaths(bool writeHeader) -> bool {
 
         logFile << "#time<YYYY-MM-DD_hh-mm-ss> parname value unit\n";
     }
-
+    bus_.publish(DatastoreStoreEvent{getInfoUnlocked()});
     return true;
 }
 

@@ -35,12 +35,12 @@ class NetworkDiscovery {
     void receiverLoop();
 
   private:
-    int sock;
+    int sock{-1};
+    int control_fd{-1};
+    std::atomic<bool> running{false};
+    std::thread rxThread;
     uint16_t port;
     DeviceType type;
-
-    std::thread rxThread;
-    std::atomic<bool> running{false};
 
     Callback callback;
 };

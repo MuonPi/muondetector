@@ -18,9 +18,10 @@ class MqttSink : public Sink {
     bool isInhibited();
     void handle(const UbxTimeMarkStruct& tm);
     void handle(const MqttLogEvent& event);
+    void start(const std::string& username, const std::string& password);
+    auto connectionStatus() const -> MqttStatusEvent::Status;
 
   private:
-    void start(const std::string& username, const std::string& password);
     [[nodiscard]] auto connected() -> bool;
     auto publish(const std::string& topic, const std::string& content) -> bool;
 

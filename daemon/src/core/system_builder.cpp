@@ -5,6 +5,7 @@
 #include "core/logging/logger.h"
 #include "core/scheduler.h"
 #include "core/thread_pool.h"
+#include "libsecret/credentials.h"
 
 // Configurations
 #include "core/component_config.h"
@@ -223,10 +224,16 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
     auto tcp_sink = SinkFactory::createTcpSink(ctx.sinks);
     EventBindings::setupTcpSink(*ctx.bus, *tcp_sink);
 
-    auto mqtt_sink = SinkFactory::createMqttSink(*ctx.bus, ctx.sinks, ctx.config->station_ID);
-    EventBindings::setupMqttSink(*ctx.bus, *mqtt_sink);
+    auto credentials = Credentials::retrieveMqttCredentials();
+    if (credentials.has_value()) {
+        auto mqtt_sink = SinkFactory::createMqttSink(*ctx.bus, ctx.sinks, ctx.config->station_ID);
+        EventBindings::setupMqttSink(*ctx.bus, *mqtt_sink);
+        mqtt_sink->start(credentials.value().username, credentials.value().password);
+    } else {
+        logWarn("No credentials found for MQTT, skipping MQTT start..");
+    }
 
-    auto file_sink = SinkFactory::createFileSink(ctx.sinks);
+    auto file_sink = SinkFactory::createFileSink(*ctx.bus, ctx.sinks);
 
     ctx.bus->subscribe<UbxTimeMarkStruct>(
         [file_sink_weak = std::weak_ptr<FileSink>{file_sink}](const UbxTimeMarkStruct& event) {
