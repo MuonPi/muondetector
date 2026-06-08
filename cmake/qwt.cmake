@@ -101,7 +101,7 @@ else()
         )
     else()
         find_program(QMAKE_EXECUTABLE
-            NAMES qmake6 qmake-qt6
+            NAMES qmake6 qmake-qt6 qmake6.exe
             REQUIRED
         )
 

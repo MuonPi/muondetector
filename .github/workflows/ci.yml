@@ -90,6 +90,7 @@ jobs:
           C:\Qt\6.11.1\llvm-mingw_64\bin\qtenv2.bat
           C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat `
           -G "Ninja" `
+          -DCMAKE_PREFIX_PATH="C:/Qt/6.11.1/llvm-mingw_64" `
           -DCMAKE_MAKE_PROGRAM="C:/Qt/Tools/Ninja/ninja.exe" `
           -DCMAKE_C_COMPILER="C:/Qt/Tools/llvm-mingw1706_64/bin/clang.exe" `
           -DCMAKE_CXX_COMPILER="C:/Qt/Tools/llvm-mingw1706_64/bin/clang++.exe" `
