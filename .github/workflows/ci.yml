@@ -85,7 +85,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Configure
-      - shell: powershell
+        shell: powershell
         run: |
           C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat `
           -G "Ninja" `
