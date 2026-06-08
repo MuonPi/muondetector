@@ -50,21 +50,19 @@ else()
     set(BUILDING_BUNDLED_QWT true)
     message(STATUS "Building Qwt from source")
 
-    if (CMAKE_CROSSCOMPILING)
-        # Force host git so FetchContent doesn't pick up the ARM binary from sysroot
-        find_program(GIT_EXECUTABLE git PATHS /usr/bin /usr/local/bin NO_DEFAULT_PATH REQUIRED)
-        set(GIT_EXECUTABLE "${GIT_EXECUTABLE}" CACHE FILEPATH "Host git" FORCE)
-        message(STATUS "Using host git: ${GIT_EXECUTABLE}")
-    endif()
-
     include(FetchContent)
+
+    if(CMAKE_CROSSCOMPILING AND EXISTS "${CMAKE_SOURCE_DIR}/_deps/qwt-src")
+        # Cross-compiling: use the manually pre-cloned source to avoid
+        # FetchContent internally invoking the ARM git from sysroot
+        message(STATUS "Using pre-cloned Qwt source: ${CMAKE_SOURCE_DIR}/_deps/qwt-src")
+        set(qwt_SOURCE_DIR "${CMAKE_SOURCE_DIR}/_deps/qwt-src")
+        set(FETCHCONTENT_SOURCE_DIR_QWT "${CMAKE_SOURCE_DIR}/_deps/qwt-src")
+    endif()
 
     FetchContent_Declare(qwt
         GIT_REPOSITORY https://git.code.sf.net/p/qwt/git
         GIT_TAG v6.3.0
-        # Disable submodule recursion — qwt doesn't need it and it's what
-        # triggers the GIT_VERSION_STRING check that fails on ARM git
-        GIT_SUBMODULES ""
     )
 
     set(QWT_BUILD_EXAMPLES OFF CACHE BOOL "")
@@ -116,25 +114,10 @@ else()
         )
         add_dependencies(Qwt::Qwt qwt)
     else()
-        # When cross-compiling, qmake must be the HOST qmake that targets ARM,
-        # not the one from the sysroot
-        if(CMAKE_CROSSCOMPILING)
-            find_program(QMAKE_EXECUTABLE
-                NAMES qmake6 qmake-qt6
-                PATHS /usr/lib/qt6/bin
-                      /usr/lib/x86_64-linux-gnu/qt6/bin
-                      /usr/bin
-                NO_DEFAULT_PATH
-                REQUIRED
-            )
-        else()
-            find_program(QMAKE_EXECUTABLE
-                NAMES qmake6 qmake-qt6
-                REQUIRED
-            )
-        endif()
-
-        message(STATUS "Found QMAKE_EXECUTABLE " ${QMAKE_EXECUTABLE})
+        find_program(QMAKE_EXECUTABLE
+            NAMES qmake6 qmake-qt6
+            REQUIRED
+        )
 
         # If build on raspberry pi: 1 core is enough (don't overflow RAM)
         # Else: as many as possible
@@ -142,21 +125,6 @@ else()
             set(CPU_CORE_SUFFIX -j1)
         else()
             set(CPU_CORE_SUFFIX -j)
-        endif()
-
-        # When cross-compiling, pass the sysroot and cross-compiler to qmake
-        if(CMAKE_CROSSCOMPILING)
-            set(QMAKE_CROSS_ARGS
-                "QMAKE_CC=${CMAKE_C_COMPILER}"
-                "QMAKE_CXX=${CMAKE_CXX_COMPILER}"
-                "QMAKE_LINK=${CMAKE_CXX_COMPILER}"
-                "QMAKE_STRIP=${CMAKE_STRIP}"
-                "QMAKE_CFLAGS+=--sysroot=${CMAKE_SYSROOT}"
-                "QMAKE_CXXFLAGS+=--sysroot=${CMAKE_SYSROOT}"
-                "QMAKE_LFLAGS+=--sysroot=${CMAKE_SYSROOT}"
-            )
-        else()
-            set(QMAKE_CROSS_ARGS "")
         endif()
 
         add_custom_command(

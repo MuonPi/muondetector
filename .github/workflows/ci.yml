@@ -30,15 +30,6 @@ jobs:
                 -DCMAKE_BUILD_TYPE=Release \
                 -G Ninja
 
-      - name: Verify cross compiler
-        run: |
-          echo "--- cross compiler location ---"
-          which arm-linux-gnueabihf-g++ || echo "NOT FOUND ON HOST PATH"
-          readlink -f $(which arm-linux-gnueabihf-g++) || true
-          file $(which arm-linux-gnueabihf-g++) || true
-          echo "--- sysroot compiler (must NOT be used) ---"
-          file /var/armhf/sysroot/usr/bin/arm-linux-gnueabihf-g++ || true
-
       - name: Build
         run: cmake --build . --parallel $(nproc)
 
@@ -61,6 +52,15 @@ jobs:
       - name: Clean CMake cache
         run: rm -f CMakeCache.txt && rm -rf CMakeFiles
 
+      - name: Verify cross compiler
+        run: |
+          echo "--- cross compiler location ---"
+          which arm-linux-gnueabihf-g++ || echo "NOT FOUND ON HOST PATH"
+          readlink -f $(which arm-linux-gnueabihf-g++) || true
+          file $(which arm-linux-gnueabihf-g++) || true
+          echo "--- sysroot compiler (must NOT be used) ---"
+          file /var/armhf/sysroot/usr/bin/arm-linux-gnueabihf-g++ || true
+
       - name: Verify sysroot
         run: |
           echo "--- Qt6 cmake configs in sysroot ---"
@@ -71,6 +71,15 @@ jobs:
           find /var/armhf/sysroot -name "libQt6Core.so*" 2>/dev/null | head -5 || echo "MISSING"
           echo "--- Host Qt6 tools ---"
           which moc || find /usr -name "moc" 2>/dev/null | head -3
+
+      - name: Fetch Qwt source manually
+        run: |
+          if [ ! -d "_deps/qwt-src" ]; then
+            mkdir -p _deps
+            /usr/bin/git clone --depth 1 --branch v6.3.0 \
+              https://git.code.sf.net/p/qwt/git \
+              _deps/qwt-src
+          fi
 
       - name: Configure
         run: |
