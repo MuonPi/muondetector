@@ -1,6 +1,9 @@
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR armv7l)
 
+find_program(CMAKE_MAKE_PROGRAM ninja PATHS /usr/bin /usr/local/bin NO_DEFAULT_PATH)
+
+
 set(CMAKE_C_COMPILER   arm-linux-gnueabihf-gcc)
 set(CMAKE_CXX_COMPILER arm-linux-gnueabihf-g++)
 set(CMAKE_STRIP        arm-linux-gnueabihf-strip)
