@@ -45,59 +45,59 @@ jobs:
   build-armv7:
     runs-on: [self-hosted, Linux, X64, armhf-build]
 
-  steps:
-    - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Verify sysroot
-      run: |
-        echo "--- Qt6 cmake configs in sysroot ---"
-        find /var/armhf/sysroot -name "Qt6Config.cmake" 2>/dev/null || echo "MISSING - Qt not installed in sysroot"
-        echo "--- CapnProto cmake configs in sysroot ---"
-        find /var/armhf/sysroot -name "CapnProtoConfig.cmake" 2>/dev/null || echo "MISSING"
-        echo "--- ARM Qt6 libs ---"
-        find /var/armhf/sysroot -name "libQt6Core.so*" 2>/dev/null | head -5 || echo "MISSING"
-        echo "--- Host Qt6 tools ---"
-        which moc || find /usr -name "moc" 2>/dev/null | head -3
+      - name: Verify sysroot
+        run: |
+          echo "--- Qt6 cmake configs in sysroot ---"
+          find /var/armhf/sysroot -name "Qt6Config.cmake" 2>/dev/null || echo "MISSING - Qt not installed in sysroot"
+          echo "--- CapnProto cmake configs in sysroot ---"
+          find /var/armhf/sysroot -name "CapnProtoConfig.cmake" 2>/dev/null || echo "MISSING"
+          echo "--- ARM Qt6 libs ---"
+          find /var/armhf/sysroot -name "libQt6Core.so*" 2>/dev/null | head -5 || echo "MISSING"
+          echo "--- Host Qt6 tools ---"
+          which moc || find /usr -name "moc" 2>/dev/null | head -3
 
-    - name: Configure
-      run: |
-        QT6_TARGET=$(find /var/armhf/sysroot/usr/lib -name "Qt6Config.cmake" \
-                          -path "*/cmake/Qt6/*" 2>/dev/null \
-                    | head -1 | xargs dirname || true)
+      - name: Configure
+        run: |
+          QT6_TARGET=$(find /var/armhf/sysroot/usr/lib -name "Qt6Config.cmake" \
+                            -path "*/cmake/Qt6/*" 2>/dev/null \
+                      | head -1 | xargs dirname || true)
 
-        echo "Resolved Qt6 target cmake dir: ${QT6_TARGET}"
+          echo "Resolved Qt6 target cmake dir: ${QT6_TARGET}"
 
-        cmake -S . \
-          -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-armv7.cmake \
-          -DCMAKE_SYSROOT=/var/armhf/sysroot \
-          \
-          -DQT_HOST_PATH=/usr \
-          -DQT_HOST_PATH_CMAKE_DIR=/usr/lib/x86_64-linux-gnu/cmake \
-          \
-          -DQt6_DIR="${QT6_TARGET}" \
-          -DCMAKE_PREFIX_PATH=/var/armhf/sysroot/usr \
-          \
-          -DCapnProto_DIR=/var/armhf/sysroot/usr/lib/arm-linux-gnueabihf/cmake/CapnProto \
-          \
-          -DMUONDETECTOR_BUILD_GUI=OFF \
-          -DMUONDETECTOR_BUILD_DAEMON=ON \
-          -DMUONDETECTOR_BUILD_TESTS=OFF \
-          -DMUONDETECTOR_BUILD_TCP_DEBUG_CLIENT=OFF \
-          -DMUONDETECTOR_BUILD_TCP_DEBUG_SERVER=OFF \
-          -DCMAKE_BUILD_TYPE=Release \
-          -G Ninja
+          cmake -S . \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-armv7.cmake \
+            -DCMAKE_SYSROOT=/var/armhf/sysroot \
+            \
+            -DQT_HOST_PATH=/usr \
+            -DQT_HOST_PATH_CMAKE_DIR=/usr/lib/x86_64-linux-gnu/cmake \
+            \
+            -DQt6_DIR="${QT6_TARGET}" \
+            -DCMAKE_PREFIX_PATH=/var/armhf/sysroot/usr \
+            \
+            -DCapnProto_DIR=/var/armhf/sysroot/usr/lib/arm-linux-gnueabihf/cmake/CapnProto \
+            \
+            -DMUONDETECTOR_BUILD_GUI=OFF \
+            -DMUONDETECTOR_BUILD_DAEMON=ON \
+            -DMUONDETECTOR_BUILD_TESTS=OFF \
+            -DMUONDETECTOR_BUILD_TCP_DEBUG_CLIENT=OFF \
+            -DMUONDETECTOR_BUILD_TCP_DEBUG_SERVER=OFF \
+            -DCMAKE_BUILD_TYPE=Release \
+            -G Ninja
 
-    - name: Build
-      run: cmake --build . --parallel $(nproc)
+      - name: Build
+        run: cmake --build . --parallel $(nproc)
 
-    - name: Package .deb
-      run: cpack -G DEB
+      - name: Package .deb
+        run: cpack -G DEB
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: deb-armhf
-        path: build/output/packages/*.deb
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-armhf
+          path: build/output/packages/*.deb
 
   build-win32:
     runs-on: [self-hosted, Windows, X64, win32-build]
