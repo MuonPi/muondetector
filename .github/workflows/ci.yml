@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-x64:
-    runs-on: [self-hosted, X64, Linux, x64-build]
+    runs-on: [self-hosted, X64, Linux, x64-build, disabled]
 
     steps:
       - uses: actions/checkout@v4
@@ -84,6 +84,7 @@ jobs:
                 -DQT_HOST_PATH_CMAKE_DIR=/usr/lib/x86_64-linux-gnu/cmake \
                 -DQt6_DIR="${QT6_TARGET}" \
                 -DCMAKE_PREFIX_PATH=/var/armhf/sysroot/usr \
+                -DPython3_EXECUTABLE=$(which python3) \
                 -DCapnProto_DIR=/var/armhf/sysroot/usr/lib/arm-linux-gnueabihf/cmake/CapnProto \
                 -DMUONDETECTOR_BUILD_GUI=ON \
                 -DMUONDETECTOR_BUILD_DAEMON=ON \
@@ -106,7 +107,7 @@ jobs:
           path: ./output/packages/*.deb
 
   build-win32:
-    runs-on: [self-hosted, Windows, X64, win32-build]
+    runs-on: [self-hosted, Windows, X64, win32-build, disabled]
 
     steps:
       - uses: actions/checkout@v4
