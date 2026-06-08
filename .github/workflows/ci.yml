@@ -101,6 +101,7 @@ jobs:
             -DCMAKE_PREFIX_PATH="C:/Qt/6.11.1/llvm-mingw_64" `
             -DQMAKE_EXECUTABLE="C:/Qt/6.11.1/llvm-mingw_64/bin/qmake6.exe" `
             -DCMAKE_MAKE_PROGRAM="C:/Qt/Tools/Ninja/ninja.exe" `
+            -DMINGW_MAKE="$toolchain/bin/mingw32-make.exe" `
             -DCMAKE_C_COMPILER="$toolchain/bin/clang.exe" `
             -DCMAKE_CXX_COMPILER="$toolchain/bin/clang++.exe" `
             -DCMAKE_RC_COMPILER="$toolchain/bin/windres.exe" `

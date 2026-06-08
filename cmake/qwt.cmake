@@ -53,6 +53,9 @@ else()
         GIT_TAG v6.3.0
     )
 
+    set(QWT_BUILD_EXAMPLES OFF CACHE BOOL "")
+    set(QWT_BUILD_TESTS OFF CACHE BOOL "")
+
     FetchContent_MakeAvailable(qwt)
 
     set(QWT_BUILD_DIR ${CMAKE_BINARY_DIR}/_deps/qwt-build)
@@ -65,35 +68,6 @@ else()
 
         message(STATUS "Found QMAKE_EXECUTABLE " ${QMAKE_EXECUTABLE})
 
-        # Configure with qmake
-        # execute_process(
-        #     COMMAND "${QMAKE_EXECUTABLE}"
-        #         "${qwt_SOURCE_DIR}/qwt.pro"
-        #         "-d CONFIG+=release"
-        #     WORKING_DIRECTORY "${QWT_BUILD_DIR}"
-        #     RESULT_VARIABLE QWT_QMAKE_RESULT
-        # )
-        # if(NOT QWT_QMAKE_RESULT EQUAL 0)
-        #     message(FATAL_ERROR "Failed to run qmake for Qwt")
-        # endif()
-
-        # # Build with ninja (qmake generates a Makefile but we can use mingw32-make)
-        find_program(MINGW_MAKE
-            NAMES mingw32-make make
-            HINTS "C:/Qt/Tools/llvm-mingw1706_64/bin"
-                "C:/Qt/Tools/mingw1310_64/bin"
-            REQUIRED
-        )
-
-        # execute_process(
-        #     COMMAND "${MINGW_MAKE}" -j
-        #     WORKING_DIRECTORY "${QWT_BUILD_DIR}"
-        #     RESULT_VARIABLE QWT_BUILD_RESULT
-        # )
-        # if(NOT QWT_BUILD_RESULT EQUAL 0)
-        #     message(FATAL_ERROR "Failed to build Qwt")
-        # endif()
-        
         add_custom_command(
             OUTPUT ${QWT_BUILD_DIR}/lib/qwt.dll ${QWT_BUILD_DIR}/lib/libqwt.a
             COMMAND ${CMAKE_COMMAND} -E make_directory ${QWT_BUILD_DIR}
