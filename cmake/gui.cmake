@@ -143,7 +143,22 @@ configure_file(
 
 endif()
 
-qt_add_resources(qml_QRC "${MUONDETECTOR_GUI_RES_DIR}/resources.qrc")
+if(CMAKE_CROSSCOMPILING)
+    set(qml_QRC "${CMAKE_CURRENT_BINARY_DIR}/qrc_resources.cpp")
+    add_custom_command(
+        OUTPUT "${qml_QRC}"
+        COMMAND "${QT_HOST_rcc_EXECUTABLE}"
+            --name resources
+            --output "${qml_QRC}"
+            "${MUONDETECTOR_GUI_RES_DIR}/resources.qrc"
+        DEPENDS "${MUONDETECTOR_GUI_RES_DIR}/resources.qrc"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        COMMENT "Generating qrc_resources.cpp with host rcc"
+        VERBATIM
+    )
+else()
+    qt_add_resources(qml_QRC "${MUONDETECTOR_GUI_RES_DIR}/resources.qrc")
+endif()
 
 if(APPLE)
 
