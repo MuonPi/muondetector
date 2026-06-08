@@ -87,12 +87,12 @@ jobs:
       - name: Configure
         shell: powershell
         run: |
-          $toolchain = "C:\Qt\Tools\llvm-mingw1706_64"
+          $toolchain = "C:/Qt/Tools/llvm-mingw1706_64"
 
-          $env:PATH = "$toolchain\bin;$env:PATH"
+          $env:PATH = "$toolchain/bin;$env:PATH"
 
-          $env:QMAKE_CC  = "$toolchain\bin\clang.exe"
-          $env:QMAKE_CXX = "$toolchain\bin\clang++.exe"
+          $env:QMAKE_CC  = "$toolchain/bin/clang.exe"
+          $env:QMAKE_CXX = "$toolchain/bin/clang++.exe"
 
           $env:QMAKESPEC = "win32-clang"
 
