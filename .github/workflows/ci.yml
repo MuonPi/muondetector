@@ -32,7 +32,7 @@ jobs:
                 -G Ninja
 
       - name: Build
-        run: cmake --build . --parallel $(nproc)
+        run: cmake --build . --parallel 4
 
       - name: Package .deb
         run: cpack -G DEB
@@ -173,7 +173,7 @@ jobs:
                 -G Ninja
 
       - name: Build
-        run: cmake --build . --parallel $(nproc)
+        run: cmake --build . --parallel 4
 
       - name: Package .deb
         run: cpack -G DEB
@@ -224,7 +224,7 @@ jobs:
 
           $env:PATH = "$toolchain/bin;$env:PATH"
           & C:\Qt\6.11.1\llvm-mingw_64\bin\qt-cmake.bat `
-            --build . --parallel --target package
+            --build . --parallel 4 --target package
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

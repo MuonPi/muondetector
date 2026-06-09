@@ -120,7 +120,7 @@ else()
 
             COMMAND ${CMAKE_COMMAND} -E env
                 "PATH={TOOLCHAIN_PATH};$ENV{PATH}"
-                ${TOOLCHAIN_PATH}/mingw32-make.exe -j 24
+                ${TOOLCHAIN_PATH}/mingw32-make.exe -j 4
 
             WORKING_DIRECTORY ${QWT_BUILD_DIR}
             DEPENDS ${qwt_SOURCE_DIR}
