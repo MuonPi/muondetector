@@ -1,8 +1,12 @@
 name: CI
 
 on:
-  push:
   pull_request:
+    branches:
+      - main
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   build-x64:
@@ -49,9 +53,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Clean CMake cache
-        run: rm -f CMakeCache.txt && rm -rf CMakeFiles
 
       - name: Verify cross compiler
         run: |
@@ -127,16 +128,6 @@ jobs:
           echo "=============================="
 
           file /var/armhf/sysroot/usr/lib/libqwt.so 2>/dev/null || echo "Qwt library not found"
-
-      # - name: Fetch Qwt source manually
-      #   run: |
-      #     if [ ! -d "_deps/qwt-src" ]; then
-      #       mkdir -p _deps
-      #       /usr/bin/git clone --depth 1 --branch v6.3.0 \
-      #         https://git.code.sf.net/p/qwt/git \
-      #         _deps/qwt-src
-      #     fi
-
 
       - name: Configure
         run: |
@@ -231,3 +222,31 @@ jobs:
         with:
           name: windows-x64
           path: ./output/packages/*.exe
+
+  release:
+    if: github.event_name == 'push' &&
+        startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - build-x64
+      - build-win32
+      - build-armhf
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Show downloaded files
+        run: find artifacts -type f
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*.deb
+            artifacts/**/*.exe
