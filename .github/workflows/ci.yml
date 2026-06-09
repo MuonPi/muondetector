@@ -48,7 +48,7 @@ jobs:
           path: ./output/packages/*.deb
 
 
-  build-armv7:
+  build-armhf:
     runs-on: [self-hosted, Linux, X64, armhf-build]
 
     steps:
