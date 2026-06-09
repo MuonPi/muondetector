@@ -128,6 +128,11 @@ endif ()
 
 if (CMAKE_CROSSCOMPILING)
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE armhf)
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS_PRIVATE_DIRS
+        "/var/armhf/sysroot/lib"
+        "/var/armhf/sysroot/usr/lib"
+        "/var/armhf/sysroot/usr/lib/arm-linux-gnueabihf"
+    )
 endif()
 
 set(CPACK_RESOURCE_FILE_LICENSE "${MUONDETECTOR_CONFIG_DIR}/license")
