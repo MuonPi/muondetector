@@ -6,9 +6,9 @@
 #include <string>
 
 struct Sds011Event {
+    std::uint16_t id{0};
     std::uint16_t pm2dot5{0};
     std::uint16_t pm10dot0{0};
-    std::uint16_t id{0};
 };
 
 struct Sds011StatusEvent {

@@ -119,7 +119,7 @@ auto Sds011Parser::build_data_msg() -> Sds011Event {
     std::uint16_t id = static_cast<std::uint16_t>(data_.at(4));
     id |= (static_cast<std::uint16_t>(data_.at(5)) << 8);
 
-    return Sds011Event{.pm2dot5 = pm2dot5, .pm10dot0 = pm10dot0, .id = id};
+    return Sds011Event{.id = id, .pm2dot5 = pm2dot5, .pm10dot0 = pm10dot0};
 }
 
 auto Sds011Parser::build_ack_msg() -> Sds011StatusEvent {

@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 
+struct Sds011Event;
 struct ADS1115Event;
 struct NavSat;
 struct NavClock;
@@ -110,6 +111,7 @@ struct CapnpCodec {
         static auto messageKey() -> std::uint16_t;                                                 \
     };
 
+DECLARE_CODEC(Sds011Event)
 DECLARE_CODEC(ADS1115Event)
 DECLARE_CODEC(NavSat)
 DECLARE_CODEC(NavClock)

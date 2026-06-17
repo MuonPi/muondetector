@@ -48,6 +48,12 @@ messages:
       - { name: status, type: uint8 }
       - { name: text, type: string }
 
+  - name: Sds011EventCapnp
+    fields:
+      - { name: id, type: uint16 }
+      - { name: pm2dot5, type: uint16 }
+      - { name: pm10dot0, type: uint16 }
+
   - name: Ads1115EventCapnp
     fields:
       - { name: deviceId, type: uint32 }

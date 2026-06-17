@@ -188,7 +188,7 @@ endif ()
 
 add_custom_target(clangformat COMMAND clang-format -style=WebKit -i ${MUONDETECTOR_ALL_FILES})
 
-
+set(CPACK_DEBIAN_PACKAGE_NAME "muondetector")
 set(CPACK_DEB_COMPONENT_INSTALL ON)
 
 include(CPack)
