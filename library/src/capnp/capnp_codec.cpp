@@ -70,6 +70,7 @@
 #include "data/events/pca_switch_event.h"
 #include "data/events/polarity_switch_event.h"
 #include "data/events/preamp_switch_event.h"
+#include "data/events/sds011_event.h"
 #include "data/events/spi_stats_event.h"
 #include "data/events/temperature_event.h"
 #include "data/events/threshold_setting_event.h"
@@ -96,6 +97,31 @@ inline capnp::FlatArrayMessageReader makeReader(const std::vector<std::uint8_t>&
     auto wordCount = data.size() / sizeof(capnp::word);
 
     return capnp::FlatArrayMessageReader(kj::ArrayPtr<const capnp::word>(wordPtr, wordCount));
+}
+
+auto CapnpCodec<Sds011Event>::encode(const Sds011Event& event) -> std::vector<std::uint8_t> {
+    capnp::MallocMessageBuilder msg;
+    auto root = msg.initRoot<Sds011EventCapnp>();
+
+    root.setId(event.id);
+    root.setPm2dot5(event.pm2dot5);
+    root.setPm10dot0(event.pm10dot0);
+
+    auto flat = capnp::messageToFlatArray(msg);
+    auto bytes = flat.asBytes();
+
+    return std::vector<std::uint8_t>(bytes.begin(), bytes.end());
+}
+
+auto CapnpCodec<Sds011Event>::decode(const std::vector<std::uint8_t>& data) -> Sds011Event {
+    auto reader = makeReader(data);
+    auto root = reader.getRoot<Sds011EventCapnp>();
+    return Sds011Event{
+        .id = root.getId(), .pm2dot5 = root.getPm2dot5(), .pm10dot0 = root.getPm10dot0()};
+}
+
+auto CapnpCodec<Sds011Event>::messageKey() -> std::uint16_t {
+    return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_SDS011_SAMPLE);
 }
 
 auto CapnpCodec<ADS1115Event>::encode(const ADS1115Event& event) -> std::vector<uint8_t> {

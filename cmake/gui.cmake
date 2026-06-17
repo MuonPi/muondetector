@@ -239,7 +239,7 @@ if(BUILDING_BUNDLED_QWT)
         FILES_MATCHING
         PATTERN "libqwt.so*"
     )
-    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS_PRIVATE_DIRS
+    set(CPACK_DEBIAN_GUI_PACKAGE_SHLIBDEPS_PRIVATE_DIRS
         "${CMAKE_BINARY_DIR}/_deps/qwt-build/lib"
     )
     if(TARGET Qwt::Qwt)
@@ -277,15 +277,14 @@ elseif(NOT WIN32 AND NOT APPLE)
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/gui/changelog.gz" DESTINATION "${CMAKE_INSTALL_DOCDIR}-gui" COMPONENT gui)
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1.gz" DESTINATION "share/man/man1/" COMPONENT gui)
     install(FILES "${MUONDETECTOR_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}-gui" COMPONENT gui)
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "qml-module-qtpositioning (>=6), qml-module-qtlocation (>=6), qml-module-qtquick2 (>=6), qml-module-qtquick-layouts (>=6), qml-module-qtquick-controls2 (>=6), qml-module-qtquick-controls (>=6), qml-module-qtquick-templates2 (>=6)")
-    set(CPACK_DEBIAN_PACKAGE_SECTION "net")
-    set(CPACK_DEBIAN_PACKAGE_DESCRIPTION " GUI for monitoring and controlling the muondetector-daemon.
+    set(CPACK_DEBIAN_GUI_PACKAGE_DEPENDS "qml6-module-qtpositioning (>=6), qml6-module-qtlocation (>=6), qml6-module-qtquick2 (>=6), qml6-module-qtquick-layouts (>=6), qml6-module-qtquick-controls2 (>=6), qml6-module-qtquick-controls (>=6), qml6-module-qtquick-templates2 (>=6)")
+    set(CPACK_DEBIAN_GUI_PACKAGE_SECTION "net")
+    set(CPACK_DEBIAN_GUI_PACKAGE_DESCRIPTION " GUI for monitoring and controlling the muondetector-daemon.
     It connects to muondetector-daemon via TCP. It is based on Qt and C++.
     It lets you change the settings for the muondetector hardware and
     uses qml for displaying the current position on the map if connected
     the muondetector-daemon.
     It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
-    set(CPACK_DEBIAN_PACKAGE_NAME "muondetector-gui")
 endif()
 
 ######################################################################################################

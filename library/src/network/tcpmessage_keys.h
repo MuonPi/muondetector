@@ -90,6 +90,7 @@ enum class TCP_MSG_KEY : std::uint16_t {
     MSG_UBX_NAVCLOCK = 405,
     MSG_UBX_NAVSTATUS = 407,
     // MSG_UBX_DYNAMIC_MODEL = 409,
+    MSG_SDS011_SAMPLE = 411,
 };
 
 #endif // TCPMESSAGE_KEYS_H
