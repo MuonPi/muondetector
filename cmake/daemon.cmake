@@ -51,6 +51,8 @@ set(MUONDETECTOR_I2C_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/ubloxi2c.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/x9119.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/mic184.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/ltr390uv01.cpp"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/as7331.cpp"
 
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/i2cdevice.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/i2cutil.cpp"
@@ -126,6 +128,8 @@ set(MUONDETECTOR_I2C_HEADER_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/ubloxi2c.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/x9119.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/mic184.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/ltr390uv01.h"
+    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/as7331.h"
 
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/i2cdevice.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/i2cutil.h"

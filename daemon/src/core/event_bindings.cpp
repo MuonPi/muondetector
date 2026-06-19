@@ -37,6 +37,7 @@
 #include "data/events/gpio_inhibit_event.h"
 #include "data/events/gpio_rate_event.h"
 #include "data/events/i2c_stats_event.h"
+#include "data/events/interval_event.h"
 #include "data/events/log_trigger_event.h"
 #include "data/events/mcp4728_event.h"
 #include "data/events/mqtt_log_event.h"
@@ -115,6 +116,7 @@ void EventBindings::processGeoPos(EventBus& bus, DataStore& datastore, const Geo
                                  std::to_string(geoHeightHisto->getMean()) + " m",
                                  LogParameter::LOG_LATEST});
     }
+    datastore.fillHisto<GnssPosStruct>(pos.getPosStruct());
 }
 
 void EventBindings::setupDatastore(EventBus& bus, DataStore& datastore) {
@@ -146,14 +148,19 @@ void EventBindings::setupDatastore(EventBus& bus, DataStore& datastore) {
         // data through DatastoreStoreEvent
     });
 
+    bus.subscribe<ADS1115Event>(
+        [&datastore](const ADS1115Event& event) { datastore.fillHisto(event); });
+    bus.subscribe<IntervalEvent>(
+        [&datastore](const IntervalEvent& event) { datastore.fillHisto(event); });
+
     // All events which should be stored are defined here
     // All events with DataStoreStoreEvent<BiasVoltageEvent> ...
     // will be sent to datastore and also sent to GUI via TCP as long as there is a Capnp Codec
     // for it.
     subscribe_all<CfgGNSS, CfgAnt, CfgNavX5, CfgNav5, NavSat, MonTx, MonRx, NavStatus, NavClock,
                   UbxTimeMarkStruct, UbxTimePulseStruct, GnssMonHwStruct, GnssMonHw2Struct,
-                  NavTimeGPS, NavTimeUTC, BiasVoltageEvent, MqttStatusEvent, UbxDopStruct,
-                  AdcTraceEvent, BiasSwitchEvent, GainSwitchEvent, CalibEvent,
+                  NavTimeGPS, NavTimeUTC, BiasCurrentEvent, BiasVoltageEvent, MqttStatusEvent,
+                  UbxDopStruct, AdcTraceEvent, BiasSwitchEvent, GainSwitchEvent, CalibEvent,
                   std::weak_ptr<ShowerDetectorCalib>, GpioRateEvent, GpioInhibitEvent,
                   TemperatureEvent, MCP4728Event, PcaSwitchEvent, PolaritySwitchEvent, GpsVersion,
                   EventTriggerEvent, LogInfoStruct, PositionModeConfig, VersionEvent>(bus,
@@ -474,6 +481,12 @@ void EventBindings::pollDatastore(EventBus& bus, DataStore& datastore) {
     } else {
         logWarn("Datastore does not have data for type "
                 "VersionEvent in pollDatastore function");
+    }
+    if (datastore.lastUpdate<LogInfoStruct>().has_value()) {
+        bus.publish(*datastore.get<LogInfoStruct>());
+    } else {
+        logWarn("Datastore does not have data for type "
+                "LogInfoStruct in pollDatastore function");
     }
 
     // Send all histograms to ui

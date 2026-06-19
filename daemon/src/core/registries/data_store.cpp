@@ -1,7 +1,11 @@
 #include "core/registries/data_store.h"
 
 #include "core/logging/logger.h"
+#include "data/events/ads1115_event.h"
 #include "data/events/bias_current_event.h"
+#include "data/events/bias_voltage_event.h"
+#include "data/events/event_trigger_event.h"
+#include "data/events/interval_event.h"
 #include "data/events/ubx_event.h"
 #include "data/histogram.h"
 #include "data/ublox/ublox_messages.h"
@@ -67,9 +71,9 @@ void DataStore::setupHistos() {
                                                                         2000., true, "ms"));
     m_histo_map.emplace("TPTimeDiff",
                         std::make_shared<Histogram>("TPTimeDiff", 200, -999., 1000., true, "us"));
-    m_histo_map.emplace(
-        "Time-to-Digital Time Diff",
-        std::make_shared<Histogram>("Time-to-Digital Time Diff", 400, 0., 1e6, true, "ns"));
+    // m_histo_map.emplace(
+    //     "Time-to-Digital Time Diff",
+    //     std::make_shared<Histogram>("Time-to-Digital Time Diff", 400, 0., 1e6, true, "ns"));
     m_histo_map.emplace("Bias Voltage",
                         std::make_shared<Histogram>("Bias Voltage", 200, 0., 1., true, "V"));
     m_histo_map.emplace("Bias Current",
@@ -86,6 +90,7 @@ void DataStore::fillHisto(const GnssPosStruct& pos) {
     // auto currentDop = get<UbxDopStruct>(); // do not use get here! this will cause deadlock
     auto* currentDop = getUnlocked<UbxDopStruct>();
     if (currentDop == nullptr) {
+        logWarn("Could not read UbxDopStruct in fillHisto<GnssPosStruct>");
         return;
     }
 
@@ -129,6 +134,38 @@ void DataStore::fillHisto(const UbxTimeMarkStruct& tm) {
 template <>
 void DataStore::fillHisto(const BiasCurrentEvent& event) {
     m_histo_map["Bias Current"]->fill(event.ibias);
+}
+
+template <>
+void DataStore::fillHisto(const BiasVoltageEvent& event) {
+    m_histo_map["Bias Voltage"]->fill(event.voltage);
+}
+
+template <>
+void DataStore::fillHisto(const IntervalEvent& event) {
+    if (event.sig == GPIO_SIGNAL::TIMEPULSE) {
+        m_histo_map["TPTimeDiff"]->fill(1e-3 * event.interval.count());
+    }
+
+    auto* currentEventTrigger = getUnlocked<EventTriggerEvent>();
+    if (currentEventTrigger == nullptr) {
+        logWarn("Could not read EventTriggerEvent in fillHisto<IntervalEvent>");
+        return;
+    }
+    if (event.sig == currentEventTrigger->signal) {
+        m_histo_map["gpioEventInterval"]->fill(1e-6 * event.interval.count());
+    }
+}
+
+template <>
+void DataStore::fillHisto(const ADS1115Event& event) {
+    m_histo_map["adcSampleTime"]->fill(event.convTime);
+}
+
+template <>
+void DataStore::fillHisto(const UbxDopStruct& event) {
+    m_histo_map["pDOP"]->fill(event.pDOP);
+    m_histo_map["tDOP"]->fill(event.tDOP);
 }
 
 auto DataStore::geoPosManager() -> GeoPosManager& {

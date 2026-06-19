@@ -4,7 +4,8 @@
 #include <cstring>
 #include <fcntl.h> // open
 #include <iostream>
-#include <linux/i2c-dev.h> // I2C bus definitions for linux like systems
+#include <linux/i2c-dev.h> // I2C bus definitions for linux like systems#include <linux/i2c.h>
+#include <linux/i2c.h>
 
 using namespace std;
 
@@ -186,13 +187,42 @@ int i2cDevice::writeReg(uint8_t reg, uint8_t* buf, int nBytes) {
     return n - 1;
 }
 
+// int i2cDevice::readReg(uint8_t reg, uint8_t* buf, int nBytes) {
+//     std::lock_guard<std::mutex> lock(fMutex);
+//     int n = write(&reg, 1);
+//     if (n != 1)
+//         return -1;
+//     n = read(buf, nBytes);
+//     return n;
+// }
+
 int i2cDevice::readReg(uint8_t reg, uint8_t* buf, int nBytes) {
     std::lock_guard<std::mutex> lock(fMutex);
-    int n = write(&reg, 1);
-    if (n != 1)
+
+    struct i2c_rdwr_ioctl_data ioctl_data;
+    struct i2c_msg messages[2];
+
+    uint8_t reg_buf = reg;
+
+    messages[0].addr = fAddress;
+    messages[0].flags = 0; // write
+    messages[0].len = 1;
+    messages[0].buf = &reg_buf;
+
+    messages[1].addr = fAddress;
+    messages[1].flags = I2C_M_RD;
+    messages[1].len = nBytes;
+    messages[1].buf = buf;
+
+    ioctl_data.msgs = messages;
+    ioctl_data.nmsgs = 2;
+
+    if (ioctl(fHandle, I2C_RDWR, &ioctl_data) < 0) {
+        perror("i2c readReg failed");
         return -1;
-    n = read(buf, nBytes);
-    return n;
+    }
+
+    return nBytes;
 }
 
 /** Read a single bit from an 8-bit device register.

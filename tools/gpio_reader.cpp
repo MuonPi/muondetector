@@ -7,7 +7,7 @@
 int main() {
     const char* chipPath = "/dev/gpiochip0";
 
-    // 👉 Put ALL input GPIOs you want to monitor here
+    // Put ALL input GPIOs you want to monitor here
     std::vector<unsigned int> lines = {
         18, 22, 27, 5, 12, 16, 23 // adjust as needed
     };
