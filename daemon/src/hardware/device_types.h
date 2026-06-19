@@ -21,6 +21,7 @@ enum class DeviceType {
     MAGNETIC_FIELD,
     GYRO,
     ACCELERATION,
+    LIGHT,
     OTHER
 };
 
@@ -39,6 +40,7 @@ const std::map<DeviceType, std::string> DeviceTypes = {
     {DeviceType::MAGNETIC_FIELD, "MAGNETIC_FIELD"},
     {DeviceType::GYRO, "GYRO"},
     {DeviceType::ACCELERATION, "ACCELERATION"},
+    {DeviceType::LIGHT, "LIGHT"},
     {DeviceType::OTHER, "OTHER"}};
 
 template <DeviceType T = DeviceType::OTHER>
