@@ -12,13 +12,28 @@
 
 set(CAPNP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
 set(CAPNP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(CAPNP_SOURCE_DIRECTORY "${CMAKE_SOURCE_DIR}/library/src/capnp")
-set(CAPNP_GENERATOR_SCRIPT "${CMAKE_SOURCE_DIR}/tools/generate_capnp.py")
+get_filename_component(MUONDETECTOR_ROOT
+    "${CMAKE_CURRENT_LIST_DIR}/.."
+    ABSOLUTE
+)
+set(CAPNP_SOURCE_DIRECTORY
+    "${MUONDETECTOR_ROOT}/library/src/capnp"
+)
+set(CAPNP_GENERATOR_SCRIPT
+    "${MUONDETECTOR_ROOT}/tools/generate_capnp.py"
+)
 
 set(CAPNP_BUILD_SUBDIR "generated/capnp")
-set(CAPNP_BUILD_DIRECTORY "${CMAKE_BINARY_DIR}/${CAPNP_BUILD_SUBDIR}")
+set(CAPNP_BUILD_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${CAPNP_BUILD_SUBDIR}")
 
 set(GENERATED_PROTOCOL_CAPNP "${CAPNP_BUILD_DIRECTORY}/protocol.capnp")
+set(PROTOCOL_CPP
+    ${CAPNP_BUILD_DIRECTORY}/protocol.capnp.c++
+)
+set(PROTOCOL_H
+    ${CAPNP_BUILD_DIRECTORY}/protocol.capnp.h
+)
+
 file(MAKE_DIRECTORY "${CAPNP_BUILD_DIRECTORY}")
 
 # ------------------------------------------------------------
@@ -182,11 +197,20 @@ file(GLOB STATIC_CAPNP_FILES
 # Remove protocol.capnp if someone manually placed one there
 list(FILTER STATIC_CAPNP_FILES EXCLUDE REGEX ".*/protocol\\.capnp$")
 
-# Final schema list
-set(ALL_CAPNP_FILES
-    ${STATIC_CAPNP_FILES}
-    ${GENERATED_PROTOCOL_CAPNP}
-    # ${GENERATED_PROTOCOL_CAPNP_FOR_CAPNP}
+add_custom_command(
+    OUTPUT
+        ${PROTOCOL_CPP}
+        ${PROTOCOL_H}
+
+    COMMAND
+        ${CAPNP_EXECUTABLE}
+        compile
+        -oc++ ${GENERATED_PROTOCOL_CAPNP}
+        -I${CAPNP_SOURCE_DIRECTORY}
+        ${GENERATED_PROTOCOL_CAPNP}
+
+    DEPENDS
+        ${GENERATED_PROTOCOL_CAPNP}
 )
 
 # message(STATUS "Generating CapnProto Files" ${ALL_CAPNP_FILES})
@@ -194,8 +218,10 @@ set(ALL_CAPNP_FILES
 # ------------------------------------------------------------
 # Generate C++ from schemas
 # ------------------------------------------------------------
-capnp_generate_cpp(CAPNP_SRCS CAPNP_HDRS ${ALL_CAPNP_FILES})
+capnp_generate_cpp(CAPNP_SRCS CAPNP_HDRS ${STATIC_CAPNP_FILES})
 
+set(CAPNP_SRCS ${CAPNP_SRCS} ${PROTOCOL_CPP})
+set(CAPNP_HDRS ${CAPNP_HDRS} ${PROTOCOL_H})
 # message(STATUS "CAPNP_SRCS" ${CAPNP_SRCS})
 # message(STATUS "CAPNP_HDRS" ${CAPNP_HDRS})
 
@@ -212,12 +238,14 @@ add_library(muondetector-protocol STATIC
 
 set(CAPNP_INCLUDE_DIRS
     ${CAPNP_SOURCE_DIRECTORY}
-    ${CMAKE_BINARY_DIR}/library/src/capnp
-    ${CMAKE_BINARY_DIR}/generated/capnp
+    ${CMAKE_CURRENT_BINARY_DIR}/library/src/capnp
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/capnp
 )
 
 target_include_directories(muondetector-protocol PUBLIC
     ${CAPNP_INCLUDE_DIRS}
+    ${CAPNP_INCLUDE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 target_link_libraries(muondetector-protocol PUBLIC
