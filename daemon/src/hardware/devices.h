@@ -1,7 +1,7 @@
 #ifndef DEVICES_H
 #define DEVICES_H
 
-#include "hardware/device_types.h"
+#include "device_types.h"
 
 #include <cstdint>
 #include <map>

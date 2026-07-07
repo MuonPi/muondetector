@@ -1,4 +1,4 @@
-#include "hardware/i2c/pca9536.h"
+#include "i2c/pca9536.h"
 
 #include <iomanip>
 #include <iostream>

@@ -1,7 +1,7 @@
 #ifndef _HMC5883_H_
 #define _HMC5883_H_
 
-#include "hardware/i2c/i2cdevice.h"
+#include "i2c/i2cdevice.h"
 
 /* HMC5883  */
 

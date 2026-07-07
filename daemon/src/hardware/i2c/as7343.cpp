@@ -1,4 +1,4 @@
-#include "hardware/i2c/as7343.h"
+#include "i2c/as7343.h"
 
 #include <algorithm>
 #include <bit>

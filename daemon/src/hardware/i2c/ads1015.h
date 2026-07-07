@@ -1,6 +1,6 @@
 #ifndef _ADS1015_H_
 #define _ADS1015_H_
-#include "hardware/i2c/ads1115.h"
+#include "i2c/ads1115.h"
 
 /* ADS1015: 4(2) ch, 12 bit ADC  */
 

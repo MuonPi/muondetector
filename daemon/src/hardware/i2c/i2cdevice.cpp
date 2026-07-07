@@ -1,4 +1,4 @@
-#include "hardware/i2c/i2cdevice.h"
+#include "i2c/i2cdevice.h"
 
 #include <algorithm>
 #include <cstring>

@@ -1,4 +1,4 @@
-#include "hardware/i2c/lm75.h"
+#include "i2c/lm75.h"
 
 #include <iomanip>
 #include <iostream>

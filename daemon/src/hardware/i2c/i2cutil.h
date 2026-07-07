@@ -1,7 +1,7 @@
 #ifndef _I2CUTIL_H_
 #define _I2CUTIL_H_
 
-#include "hardware/i2c/i2cdevice.h"
+#include "i2c/i2cdevice.h"
 
 #include <iomanip>
 #include <iostream>

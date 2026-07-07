@@ -1,4 +1,4 @@
-#include "hardware/i2c/sht31.h"
+#include "i2c/sht31.h"
 
 #include <stdint.h>
 #include <stdio.h>

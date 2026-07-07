@@ -1,4 +1,4 @@
-#include "hardware/i2c/i2cutil.h"
+#include "i2c/i2cutil.h"
 
 #include <iomanip>
 #include <iostream>

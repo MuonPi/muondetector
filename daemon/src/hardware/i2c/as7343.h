@@ -1,7 +1,7 @@
 #ifndef _AS7343_H_
 #define _AS7343_H_
-#include "hardware/device_types.h"
-#include "hardware/i2c/i2cdevice.h"
+#include "device_types.h"
+#include "i2c/i2cdevice.h"
 
 #include <array>
 #include <chrono>

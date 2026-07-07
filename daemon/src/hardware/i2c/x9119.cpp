@@ -1,4 +1,4 @@
-#include "hardware/i2c/x9119.h"
+#include "i2c/x9119.h"
 
 #include <linux/i2c-dev.h> // I2C bus definitions for linux like systems
 #include <linux/i2c.h>     // I2C bus definitions for linux like systems

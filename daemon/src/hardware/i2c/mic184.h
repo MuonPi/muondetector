@@ -1,8 +1,8 @@
 #ifndef _MIC184_H_
 #define _MIC184_H_
-#include "hardware/i2c/i2cdevice.h"
-// #include "hardware/i2c/lm75.h"
-#include "hardware/device_types.h"
+#include "i2c/i2cdevice.h"
+// #include "i2c/lm75.h"
+#include "device_types.h"
 
 class MIC184 : public i2cDevice,
                public DeviceFunction<DeviceType::TEMP>,

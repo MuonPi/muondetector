@@ -1,7 +1,7 @@
 #ifndef I2CDEVICE_WRAPPER_H
 #define I2CDEVICE_WRAPPER_H
 
-#include "hardware/idevice.h"
+#include "idevice.h"
 
 #include <memory>
 

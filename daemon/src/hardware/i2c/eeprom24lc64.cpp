@@ -1,4 +1,4 @@
-#include "hardware/i2c/eeprom24lc64.h"
+#include "i2c/eeprom24lc64.h"
 
 #include <chrono>
 #include <stdint.h>

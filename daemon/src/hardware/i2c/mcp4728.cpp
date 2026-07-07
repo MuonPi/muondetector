@@ -1,4 +1,4 @@
-#include "hardware/i2c/mcp4728.h"
+#include "i2c/mcp4728.h"
 
 #include <chrono>
 #include <cmath>

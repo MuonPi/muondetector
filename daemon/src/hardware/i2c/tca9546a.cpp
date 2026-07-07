@@ -1,4 +1,4 @@
-#include "hardware/i2c/tca9546a.h"
+#include "i2c/tca9546a.h"
 
 #include <stdint.h>
 #include <stdio.h>
