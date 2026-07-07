@@ -1,4 +1,4 @@
-#include "hardware/i2c/as7331.h"
+#include "i2c/as7331.h"
 
 #include <iomanip>
 #include <iostream>

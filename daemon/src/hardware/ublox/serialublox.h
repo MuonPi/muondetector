@@ -19,7 +19,7 @@
 #include "data/commands/ubx_version_dependent_cmd.h"
 #include "data/events/ubx_event.h"
 #include "data/ublox/ublox_structs.h"
-#include "hardware/ublox/ubx_parser.h"
+#include "ublox/ubx_parser.h"
 
 #include <boost/asio.hpp>
 #include <future>

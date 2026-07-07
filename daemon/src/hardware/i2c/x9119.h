@@ -1,7 +1,7 @@
 #ifndef _X9119_H_
 #define _X9119_H_
 
-#include "hardware/i2c/i2cdevice.h"
+#include "i2c/i2cdevice.h"
 
 /* X9119  */
 

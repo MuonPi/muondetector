@@ -1,4 +1,4 @@
-#include "hardware/i2c/adafruit_ssd1306.h"
+#include "i2c/adafruit_ssd1306.h"
 
 #include <stdint.h>
 #include <string.h>

@@ -1,4 +1,4 @@
-#include "hardware/i2c/ltr390uv01.h"
+#include "i2c/ltr390uv01.h"
 
 #include <cstdint>
 #include <unordered_map>

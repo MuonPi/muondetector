@@ -1,4 +1,4 @@
-#include "hardware/ublox/message_processor.h"
+#include "ublox/message_processor.h"
 
 #include "core/logging/logger.h"
 #include "data/custom_io_operators.h"

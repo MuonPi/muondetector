@@ -1,7 +1,7 @@
 #ifndef _LM75_H_
 #define _LM75_H_
-#include "hardware/device_types.h"
-#include "hardware/i2c/i2cdevice.h"
+#include "device_types.h"
+#include "i2c/i2cdevice.h"
 
 class LM75 : public i2cDevice,
              public DeviceFunction<DeviceType::TEMP>,

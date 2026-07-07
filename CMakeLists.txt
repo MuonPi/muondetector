@@ -5,6 +5,7 @@ string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
 
 option(MUONDETECTOR_BUILD_GUI "Build the gui for the muondetector" ON)
 option(MUONDETECTOR_BUILD_DAEMON "Build the daemon for the muondetector. Defaults to ON on armv7l architecture" ON)
+option(MUONDETECTOR_BUILD_HARDWARE_LIB "Build the static library for i2c and uart devices" ON)
 option(MUONDETECTOR_BUILD_TESTS "Build integration tests" OFF)
 option(MUONDETECTOR_BUILD_TCP_DEBUG_CLIENT "Build tcp connection client for testing" OFF)
 option(MUONDETECTOR_BUILD_TCP_DEBUG_SERVER "Build tcp testserver" OFF)
@@ -162,6 +163,11 @@ set(MUONDETECTOR_ALL_FILES
     "${MUONDETECTOR_GUI_HEADER_FILES}"
     )
 endif (MUONDETECTOR_BUILD_GUI)
+
+if (MUONDETECTOR_BUILD_HARDWARE_LIB OR MUONDETECTOR_BUILD_DAEMON)
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/hardware.cmake")
+endif()
+
 if (MUONDETECTOR_BUILD_DAEMON)
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/daemon.cmake")
 

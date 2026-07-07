@@ -1,4 +1,4 @@
-#include "hardware/i2c/ubloxi2c.h"
+#include "i2c/ubloxi2c.h"
 
 #include <algorithm>
 #include <stdint.h>

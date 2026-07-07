@@ -1,4 +1,4 @@
-#include "hardware/ublox/serialublox.h"
+#include "ublox/serialublox.h"
 
 #include "core/component.h"
 #include "core/event_bus.h"
@@ -19,8 +19,8 @@
 #include "data/events/ubx_event.h"
 #include "data/ublox/ublox_messages.h"
 #include "data/ublox/ublox_structs.h"
-#include "hardware/ublox/message_processor.h"
-#include "hardware/ublox/ubx_parser.h"
+#include "ublox/message_processor.h"
+#include "ublox/ubx_parser.h"
 #include "utility/helper_functions.h"
 
 #include <array>

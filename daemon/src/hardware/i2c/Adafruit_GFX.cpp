@@ -23,9 +23,9 @@
 
  ******************************************************************/
 
-#include "hardware/i2c/Adafruit_GFX.h"
+#include "i2c/Adafruit_GFX.h"
 
-#include "hardware/i2c/glcdfont.h"
+#include "i2c/glcdfont.h"
 
 #include <cstring>
 #include <stdio.h>

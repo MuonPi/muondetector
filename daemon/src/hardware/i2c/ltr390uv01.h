@@ -1,7 +1,7 @@
 #ifndef _LTR390UV01_H_
 #define _LTR390UV01_H_
-#include "hardware/device_types.h"
-#include "hardware/i2c/i2cdevice.h"
+#include "device_types.h"
+#include "i2c/i2cdevice.h"
 
 #include <cstdint>
 #include <unordered_map>

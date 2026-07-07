@@ -34,32 +34,6 @@ find_library(GPIOD
     REQUIRED
 )
 
-set(MUONDETECTOR_I2C_SOURCE_FILES
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/Adafruit_GFX.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/adafruit_ssd1306.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/ads1115.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/bme280.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/bmp180.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/eeprom24aa02.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/hmc5883.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/lm75.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/mcp4728.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/pca9536.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/sht21.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/sht31.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/tca9546a.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/ubloxi2c.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/x9119.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/mic184.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/ltr390uv01.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/as7331.cpp"
-
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/i2cdevice.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/i2cutil.cpp"
-
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2cdevices.cpp"
-    )
-
 set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/app/main.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/app/config_parser.cpp"
@@ -103,46 +77,7 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/geohash.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/components/logengine.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/components/log_parameter_processor.cpp"
-
-    "${MUONDETECTOR_I2C_SOURCE_FILES}"
-    "${MUONDETECTOR_SPI_SOURCE_FILES}"
     )
-
-
-set(MUONDETECTOR_I2C_HEADER_FILES
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/Adafruit_GFX.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/adafruit_ssd1306.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/ads1015.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/ads1115.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/bme280.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/bmp180.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/eeprom24aa02.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/glcdfont.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/hmc5883.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/lm75.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/mcp4728.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/pca9536.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/sht21.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/sht31.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/tca9546a.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/ubloxi2c.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/x9119.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/mic184.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/ltr390uv01.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/as7331.h"
-
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/i2cdevice.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2c/i2cutil.h"
-
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/device_types.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/i2cdevices.h"
-    )
-
-# set(MUONDETECTOR_SPI_HEADER_FILES
-#     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/spi/tdc7200.h"
-
-#     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/spidevices.h"
-#     )
 
 set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/app/config_parser.h"
@@ -190,9 +125,6 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/geoposmanager.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/utility/geohash.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/components/log_parameter_processor.h"
-
-    "${MUONDETECTOR_I2C_HEADER_FILES}"
-    "${MUONDETECTOR_SPI_HEADER_FILES}"
     )
 
 set(MUONDETECTOR_LOGIN_SOURCE_FILES
@@ -238,7 +170,7 @@ target_include_directories(muondetector-login PUBLIC
 target_link_libraries(muondetector-login
     ${MOSQUITTO}
     PkgConfig::LIBSECRET
-    muondetector-shared
+    muondetector-static
     muondetector-protocol
 )
 
@@ -260,11 +192,12 @@ target_include_directories(muondetector-daemon PUBLIC
 target_link_libraries(muondetector-daemon PRIVATE
     ${LIBCONFIG}
     ${MOSQUITTO}
-    ${GPIOD}
     ${RT}
     ${CAPNP_LIBRARIES}
     ${CAPNP_KJ_LIBRARIES}
-    muondetector-shared
+    ${GPIOD}
+    muondetector-hardware
+    muondetector-static
     muondetector-protocol
     PkgConfig::LIBSECRET
     PkgConfig::GLIB
