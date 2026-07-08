@@ -6,7 +6,7 @@ arch=('x86_64' 'aarch64')
 
 url="https://github.com/MuonPi/muondetector_v2"
 
-license=('LGPL-3.0-only')
+license=('LGPL-3.0-or-later')
 
 depends=(
     qt6-base

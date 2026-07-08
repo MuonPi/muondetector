@@ -1,11 +1,40 @@
-muondetector-daemon (2.2.0) ; urgency=low
+muondetector-daemon (3.0.0) ; urgency=low
 
-  * Updates:
-  - Moved gpio handling from pigpiod to libgpiod which removes dependency on external application.
-    Requires user to be in gpio group
-  - 
+  * Major updates:
+  - Completely rebuilt the daemon with a component-based,
+    event-driven architecture.
+  - Added configuration-driven construction of devices, sources, sinks,
+    components and maintenance tasks.
+  - Introduced a shared Cap'n Proto protocol for TCP communication with the GUI,
+    including schemas for commands, events, histograms, GNSS data, calibration
+    data and sensor readings.
+  - Added TCP, file and MQTT sinks with centralized event dispatch and data
+    store handling.
+  - Added MQTT credential management through muondetector-login and libsecret.
+  - Replaced the hardware access layer with reusable drivers and a separate
+    hardware library for I2C devices.
+  - Added and integrated drivers for ADS1115, MCP4728, PCA9536, EEPROM24AA02,
+    SSD1306 OLED, GPIO, u-blox GNSS and SDS011 particulate matter sensors.
+  - Added support for additional I2C sensors, including AS7331, AS7343 and
+    LTR390 UV/spectral sensors.
+  - Reworked u-blox handling with a dedicated UBX parser, message processor,
+    command support and initialization flow.
+  - Added log engine processing, file logging, MQTT logging and runtime log
+    parameter handling.
+  - Added CTest-based TCP protocol/server tests plus TCP debug client/server
+    build options.
+  - Reworked CMake, cross-compilation, Debian packaging and GitHub Actions
+    workflows for the rebuilt daemon.
 
- -- MuonPi <developer@muonpi.org>  Sat, 8. June 2024 20:00:00 +0200
+  * Fixes and hardening:
+  - Hardened startup, event dispatching, TCP handling and scheduler behavior
+    against races, deadlocks and stalled polling loops.
+  - Improved GPIO rate handling, histogram delivery, ADC/temperature events,
+    DAC/bias/preamp control events and u-blox command responses.
+  - Improved network discovery status reporting, log output and package install
+    paths, including muondetector-login installation.
+
+ -- MuonPi <developer@muonpi.org>  Wed, 08 Jul 2026 10:50:00 +0200
 
 muondetector-daemon (2.1.1) ; urgency=low
 
