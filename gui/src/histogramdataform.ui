@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>486</width>
+    <width>587</width>
     <height>312</height>
    </rect>
   </property>
@@ -17,7 +17,7 @@
    <item row="0" column="0">
     <widget class="QSplitter" name="splitter">
      <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+      <enum>Qt::Orientation::Horizontal</enum>
      </property>
      <widget class="QWidget" name="layoutWidget">
       <layout class="QVBoxLayout" name="verticalLayout">
@@ -31,7 +31,62 @@
           </widget>
          </item>
          <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="showFitCheckBox">
+           <property name="text">
+            <string>Show fit</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="refreshButton">
+           <property name="maximumSize">
+            <size>
+             <width>80</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Refresh</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="clearAllButton">
+           <property name="maximumSize">
+            <size>
+             <width>60</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Clear all</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QLabel" name="nrHistosLabel">
+           <property name="minimumSize">
+            <size>
+             <width>40</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="maximumSize">
             <size>
              <width>80</width>
@@ -39,13 +94,13 @@
             </size>
            </property>
            <property name="frameShape">
-            <enum>QFrame::Box</enum>
+            <enum>QFrame::Shape::Box</enum>
            </property>
            <property name="text">
             <string>0</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <set>Qt::AlignmentFlag::AlignCenter</set>
            </property>
           </widget>
          </item>
@@ -66,16 +121,16 @@
           </size>
          </property>
          <property name="editTriggers">
-          <set>QAbstractItemView::NoEditTriggers</set>
+          <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
          </property>
          <property name="alternatingRowColors">
           <bool>true</bool>
          </property>
          <property name="selectionMode">
-          <enum>QAbstractItemView::SingleSelection</enum>
+          <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
          </property>
          <property name="selectionBehavior">
-          <enum>QAbstractItemView::SelectRows</enum>
+          <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
          </property>
          <attribute name="horizontalHeaderMinimumSectionSize">
           <number>70</number>
@@ -122,13 +177,13 @@
                </sizepolicy>
               </property>
               <property name="frameShape">
-               <enum>QFrame::Box</enum>
+               <enum>QFrame::Shape::Box</enum>
               </property>
               <property name="text">
                <string>N/A</string>
               </property>
               <property name="alignment">
-               <set>Qt::AlignCenter</set>
+               <set>Qt::AlignmentFlag::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -146,13 +201,13 @@
             <item>
              <widget class="QLabel" name="nrBinsLabel">
               <property name="frameShape">
-               <enum>QFrame::Box</enum>
+               <enum>QFrame::Shape::Box</enum>
               </property>
               <property name="text">
                <string>N/A</string>
               </property>
               <property name="alignment">
-               <set>Qt::AlignCenter</set>
+               <set>Qt::AlignmentFlag::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -170,13 +225,13 @@
             <item>
              <widget class="QLabel" name="nrEntriesLabel">
               <property name="frameShape">
-               <enum>QFrame::Box</enum>
+               <enum>QFrame::Shape::Box</enum>
               </property>
               <property name="text">
                <string>N/A</string>
               </property>
               <property name="alignment">
-               <set>Qt::AlignCenter</set>
+               <set>Qt::AlignmentFlag::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -194,13 +249,13 @@
             <item>
              <widget class="QLabel" name="minLabel">
               <property name="frameShape">
-               <enum>QFrame::Box</enum>
+               <enum>QFrame::Shape::Box</enum>
               </property>
               <property name="text">
                <string>N/A</string>
               </property>
               <property name="alignment">
-               <set>Qt::AlignCenter</set>
+               <set>Qt::AlignmentFlag::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -218,13 +273,13 @@
             <item>
              <widget class="QLabel" name="maxLabel">
               <property name="frameShape">
-               <enum>QFrame::Box</enum>
+               <enum>QFrame::Shape::Box</enum>
               </property>
               <property name="text">
                <string>N/A</string>
               </property>
               <property name="alignment">
-               <set>Qt::AlignCenter</set>
+               <set>Qt::AlignmentFlag::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -242,13 +297,13 @@
             <item>
              <widget class="QLabel" name="underflowLabel">
               <property name="frameShape">
-               <enum>QFrame::Box</enum>
+               <enum>QFrame::Shape::Box</enum>
               </property>
               <property name="text">
                <string>N/A</string>
               </property>
               <property name="alignment">
-               <set>Qt::AlignCenter</set>
+               <set>Qt::AlignmentFlag::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -266,13 +321,13 @@
             <item>
              <widget class="QLabel" name="overflowLabel">
               <property name="frameShape">
-               <enum>QFrame::Box</enum>
+               <enum>QFrame::Shape::Box</enum>
               </property>
               <property name="text">
                <string>N/A</string>
               </property>
               <property name="alignment">
-               <set>Qt::AlignCenter</set>
+               <set>Qt::AlignmentFlag::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -290,13 +345,13 @@
             <item>
              <widget class="QLabel" name="meanLabel">
               <property name="frameShape">
-               <enum>QFrame::Box</enum>
+               <enum>QFrame::Shape::Box</enum>
               </property>
               <property name="text">
                <string>N/A</string>
               </property>
               <property name="alignment">
-               <set>Qt::AlignCenter</set>
+               <set>Qt::AlignmentFlag::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -314,13 +369,13 @@
             <item>
              <widget class="QLabel" name="rmsLabel">
               <property name="frameShape">
-               <enum>QFrame::Box</enum>
+               <enum>QFrame::Shape::Box</enum>
               </property>
               <property name="text">
                <string>N/A</string>
               </property>
               <property name="alignment">
-               <set>Qt::AlignCenter</set>
+               <set>Qt::AlignmentFlag::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -345,10 +400,10 @@
        </size>
       </property>
       <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
+       <enum>QFrame::Shape::StyledPanel</enum>
       </property>
       <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
+       <enum>QFrame::Shadow::Raised</enum>
       </property>
       <layout class="QGridLayout" name="gridLayout">
        <item row="0" column="0">

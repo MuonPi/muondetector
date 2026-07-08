@@ -9,6 +9,7 @@
 class SinkManager {
   public:
     void add(std::shared_ptr<Sink> src);
+    void shutdownAll();
 
   private:
     std::vector<std::shared_ptr<Sink>> m_sinks;

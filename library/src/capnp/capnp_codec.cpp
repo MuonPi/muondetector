@@ -33,6 +33,7 @@
 #include "data/commands/gpio_rate_request_cmd.h"
 #include "data/commands/gpio_rate_reset_cmd.h"
 #include "data/commands/histogram_clear_cmd.h"
+#include "data/commands/histogram_request_cmd.h"
 #include "data/commands/i2c_scan_bus_cmd.h"
 #include "data/commands/i2c_stats_request_cmd.h"
 #include "data/commands/mqtt_inhibit_cmd.h"
@@ -1734,6 +1735,7 @@ EMPTY_CMD_CODEC(BiasSwitchRequestCmd, BiasSwitchRequestCmdCapnp, MSG_BIAS_SWITCH
 EMPTY_CMD_CODEC(TemperatureRequestCmd, TemperatureRequestCmdCapnp, MSG_TEMPERATURE_REQUEST)
 EMPTY_CMD_CODEC(DacEepromSetCmd, DacEepromSetCmdCapnp, MSG_DAC_EEPROM_SET)
 EMPTY_CMD_CODEC(EventTriggerRequestCmd, EventTriggerRequestCmdCapnp, MSG_EVENTTRIGGER_REQUEST)
+EMPTY_CMD_CODEC(HistogramRequestCmd, HistogramRequestCmdCapnp, MSG_HISTOGRAM_REQUEST)
 EMPTY_CMD_CODEC(UbxMsgRateRequestCmd, UbxMsgRateRequestCmdCapnp, MSG_UBX_MSG_RATE_REQUEST)
 
 #undef EMPTY_CMD_CODEC

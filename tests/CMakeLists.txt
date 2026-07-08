@@ -11,12 +11,6 @@ set(MUONDETECTOR_TCP_TEST_COMMON_SOURCES
     $<TARGET_OBJECTS:muondetector-shared>
 )
 
-find_package(PkgConfig REQUIRED)
-
-pkg_check_modules(GLIB REQUIRED IMPORTED_TARGET glib-2.0)
-pkg_check_modules(LIBSECRET REQUIRED IMPORTED_TARGET libsecret-1)
-
-
 function(add_muondetector_tcp_test target_name test_source test_name)
     add_executable(${target_name}
         "${MUONDETECTOR_TESTS_DIR}/${test_source}"
@@ -28,9 +22,6 @@ function(add_muondetector_tcp_test target_name test_source test_name)
         "${MUONDETECTOR_LIBRARY_SRC_DIR}"
         "${MUONDETECTOR_LIBRARY_SRC_DIR}/network"
         "${CAPNP_INCLUDE_DIR}"
-        ${SECRET_INCLUDE_DIR}/libsecret-1
-        ${GLIB_INCLUDE_DIR}/glib-2.0
-        ${GLIB_INCLUDE_DIR}/glib-2.0/glib
     )
 
     target_link_libraries(${target_name} PRIVATE
@@ -38,8 +29,6 @@ function(add_muondetector_tcp_test target_name test_source test_name)
         ${CAPNP_KJ_LIBRARIES}
         muondetector-protocol
         Threads::Threads
-        PkgConfig::LIBSECRET
-        PkgConfig::GLIB
     )
 
     add_test(NAME ${test_name} COMMAND ${target_name})

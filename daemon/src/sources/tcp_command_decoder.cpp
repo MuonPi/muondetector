@@ -16,6 +16,7 @@
 #include "data/commands/gpio_rate_request_cmd.h"
 #include "data/commands/gpio_rate_reset_cmd.h"
 #include "data/commands/histogram_clear_cmd.h"
+#include "data/commands/histogram_request_cmd.h"
 #include "data/commands/i2c_scan_bus_cmd.h"
 #include "data/commands/i2c_stats_request_cmd.h"
 #include "data/commands/mqtt_inhibit_cmd.h"
@@ -33,6 +34,7 @@
 #include "data/commands/ubx_reset_cmd.h"
 #include "data/commands/ubx_save_cmd.h"
 #include "data/commands/ubx_tp5_cmd.h"
+#include "data/events/adc_mode_event.h"
 #include "data/events/gpio_inhibit_event.h"
 #include "network/tcpmessage_keys.h"
 
@@ -151,6 +153,10 @@ void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
                 bus_.publish(CapnpCodec<AdcModeRequestCmd>::decode(event.packet.payload));
                 break;
             }
+            case TCP_MSG_KEY::MSG_ADC_MODE: {
+                bus_.publish(CapnpCodec<AdcModeEvent>::decode(event.packet.payload));
+                break;
+            }
             case TCP_MSG_KEY::MSG_POLARITY_SWITCH: {
                 bus_.publish(CapnpCodec<PolaritySwitchCmd>::decode(event.packet.payload));
                 break;
@@ -195,6 +201,10 @@ void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
                 bus_.publish(CapnpCodec<HistogramClearCmd>::decode(event.packet.payload));
                 break;
             }
+            case TCP_MSG_KEY::MSG_HISTOGRAM_REQUEST: {
+                bus_.publish(CapnpCodec<HistogramRequestCmd>::decode(event.packet.payload));
+                break;
+            }
             case TCP_MSG_KEY::MSG_GPIO_RATE_REQUEST: {
                 bus_.publish(CapnpCodec<GpioRateRequestCmd>::decode(event.packet.payload));
                 break;
@@ -206,6 +216,10 @@ void TcpCommandDecoder::handle(const TcpPacketEvent& event) {
             }
             case TCP_MSG_KEY::MSG_EVENTTRIGGER_REQUEST: {
                 bus_.publish(CapnpCodec<EventTriggerRequestCmd>::decode(event.packet.payload));
+                break;
+            }
+            case TCP_MSG_KEY::MSG_EVENTTRIGGER: {
+                bus_.publish(CapnpCodec<EventTriggerCmd>::decode(event.packet.payload));
                 break;
             }
             default:

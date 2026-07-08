@@ -582,7 +582,7 @@ void ConfigParser::apply_defaults() {
         m_config.username = userNameCfg;
         m_config.password = passwordCfg;
     } catch (const libconfig::SettingNotFoundException& nfex) {
-        logInfo("No 'mqtt_user' or 'mqtt_password' in config; using previously stored credentials");
+        logInfo("No 'mqtt_user' or 'mqtt_password' in config; MQTT publishing disabled");
     } catch (const libconfig::SettingException& e) {
         logWarn("Could not load setting 'mqtt_user' or 'mqtt_password': " + std::string(e.what()));
     }
@@ -741,7 +741,7 @@ void ConfigParser::report() {
     logInfo("gain switch: " + std::to_string(m_config.hi_gain));
     logInfo("input polarity ch1: " + std::to_string(m_config.polarity[0]));
     logInfo("input polarity ch2: " + std::to_string(m_config.polarity[1]));
-    logInfo("mqtt user: " + m_config.username + " passw: " + m_config.password);
+    logInfo("mqtt user: " + m_config.username + " passw: [hidden]");
     logInfo("station id: " + m_config.station_ID);
     logInfo("sds011_baudrate: " + std::to_string(m_config.sds011_baudrate));
     logInfo("sds011_device: " + m_config.sds011_devname);

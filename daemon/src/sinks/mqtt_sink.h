@@ -8,6 +8,8 @@
 #include "data/events/ubx_event.h"
 #include "sinks/sink.h"
 
+#include <atomic>
+
 class mosquitto;
 struct mosquitto_message;
 class MqttSink : public Sink {
@@ -18,6 +20,7 @@ class MqttSink : public Sink {
     bool isInhibited();
     void handle(const UbxTimeMarkStruct& tm);
     void handle(const MqttLogEvent& event);
+    void shutdown() override;
     void start(const std::string& username, const std::string& password);
     auto connectionStatus() const -> MqttStatusEvent::Status;
 
@@ -59,7 +62,7 @@ class MqttSink : public Sink {
 
     mosquitto* m_mqtt{nullptr};
 
-    MqttStatusEvent::Status m_status{MqttStatusEvent::Status::Invalid};
+    std::atomic<MqttStatusEvent::Status> m_status{MqttStatusEvent::Status::Invalid};
 
     std::size_t m_tries{0};
 
@@ -76,7 +79,7 @@ class MqttSink : public Sink {
     std::string m_password{};
     std::string m_client_id{};
 
-    // std::size_t m_publish_error_count{0};
+    std::atomic<std::size_t> m_publish_error_count{0};
     static constexpr std::size_t s_max_publish_errors{3};
 
     friend void wrapper_callback_connected(mosquitto* mqtt, void* object, int result);

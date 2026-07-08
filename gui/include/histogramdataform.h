@@ -15,6 +15,7 @@ class histogramDataForm : public QWidget {
     Q_OBJECT
   signals:
     void histogramCleared(QString histogramName);
+    void histogramsRefreshRequested();
 
   public:
     explicit histogramDataForm(QWidget* parent = 0);
@@ -25,6 +26,7 @@ class histogramDataForm : public QWidget {
 
   private slots:
     void updateHistoTable();
+    void clearAllHistograms();
 
     void onTableWidgetCellClicked(int row, int column);
 

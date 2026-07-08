@@ -3,17 +3,25 @@
 #include "histogram_series_data.h"
 
 #include <QApplication>
+#include <QColor>
 #include <QEvent>
 #include <QFileDialog>
+#include <QFont>
+#include <QLabel>
 #include <QMenu>
+#include <QResizeEvent>
+#include <algorithm>
+#include <cmath>
 #include <histogram.h>
 #include <limits>
 #include <numeric>
+#include <qbrush.h>
 #include <qpen.h>
 #include <qtextstream.h>
 #include <qwt.h>
 #include <qwt_legend.h>
 #include <qwt_plot_canvas.h>
+#include <qwt_plot_curve.h>
 #include <qwt_plot_renderer.h>
 #include <qwt_scale_engine.h>
 #include <qwt_text.h>
@@ -28,6 +36,14 @@ CustomHistogram::~CustomHistogram() {
     if (fBarChart != nullptr) {
         delete fBarChart;
         fBarChart = nullptr;
+    }
+    if (fFitCurve != nullptr) {
+        delete fFitCurve;
+        fFitCurve = nullptr;
+    }
+    if (fFitOverlayLabel != nullptr) {
+        delete fFitOverlayLabel;
+        fFitOverlayLabel = nullptr;
     }
 }
 
@@ -53,6 +69,17 @@ void CustomHistogram::initialize() {
 
     fBarChart->setBrush(QBrush(Qt::darkBlue, Qt::SolidPattern));
     fBarChart->attach(this);
+    fFitCurve = new QwtPlotCurve("Fit");
+    fFitCurve->setPen(QPen(QColor(190, 40, 40), 2));
+    fFitCurve->setRenderHint(QwtPlotCurve::RenderAntialiased, true);
+    fFitCurve->attach(this);
+
+    fFitOverlayLabel = new QLabel(canvas);
+    fFitOverlayLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    fFitOverlayLabel->setWordWrap(false);
+    fFitOverlayLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
+    fFitOverlayLabel->hide();
+    styleFitOverlay();
 
     this->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(this, SIGNAL(customContextMenuRequested(const QPoint&)), this,
@@ -69,9 +96,15 @@ void CustomHistogram::changeEvent(QEvent* e) {
         pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::Base));
         setPalette(pal);
         setCanvasBackground(QApplication::palette().color(QPalette::Base));
+        styleFitOverlay();
         replot();
     }
     QwtPlot::changeEvent(e);
+}
+
+void CustomHistogram::resizeEvent(QResizeEvent* event) {
+    QwtPlot::resizeEvent(event);
+    positionFitOverlay();
 }
 
 void CustomHistogram::setData(const Histogram& hist) {
@@ -86,6 +119,22 @@ void CustomHistogram::setData(const Histogram& hist) {
     for (int i = 0; i < fNrBins; i++)
         fHistogramMap[i] = hist.getBinContent(i);
     update();
+}
+
+auto CustomHistogram::formatFitValue(double value, int precision) const -> QString {
+    if (!std::isfinite(value)) {
+        return "N/A";
+    }
+    return QString::number(value, 'g', precision);
+}
+
+auto CustomHistogram::shouldShowFit() const -> bool {
+    const QString name = QString::fromStdString(fName).toLower();
+    const QString plotTitle = title.toLower();
+
+    return !(name.contains("phase") || plotTitle.contains("phase") || name == "pulseheight" ||
+             name.contains("pulse height") || plotTitle.contains("pulse height") ||
+             name == "ubxeventlength");
 }
 
 void CustomHistogram::popUpMenu(const QPoint& pos) {
@@ -189,6 +238,8 @@ void CustomHistogram::update() {
         return;
     if (fHistogramMap.empty() || fNrBins <= 1) {
         fBarChart->detach();
+        fFitCurve->detach();
+        hideFitOverlay();
         QwtPlot::replot();
         return;
     }
@@ -208,10 +259,263 @@ void CustomHistogram::update() {
         // fBarChart->setSamples(intervals.toList());
         fBarChart->setData(new HistogramSeriesData(intervals));
     fBarChart->attach(this);
+    const QString fitText = fShowFit ? buildFitOverlay(max) : QString{};
+    if (fitText.isEmpty()) {
+        fFitCurve->detach();
+        hideFitOverlay();
+    } else {
+        showFitOverlay(fitText);
+        fFitCurve->attach(this);
+    }
     if (fLogY) {
         setAxisScale(QwtPlot::yLeft, 0.1, 1.5 * max);
     }
     replot();
+}
+
+auto CustomHistogram::buildFitOverlay(double yMax) -> QString {
+    if (fFitCurve == nullptr || fFitOverlayLabel == nullptr || yMax <= 0. || fNrBins <= 1) {
+        return {};
+    }
+    if (!shouldShowFit()) {
+        return {};
+    }
+
+    const double entries = getEntries();
+    if (entries <= 1.) {
+        return {};
+    }
+
+    const double rangeX = fMax - fMin;
+    const double binWidth = rangeX / (fNrBins - 1);
+    if (rangeX <= 0. || binWidth <= 0.) {
+        return {};
+    }
+
+    const double mean = getMean();
+    const double sigma = getRMS();
+    QVector<QPointF> points;
+    constexpr int nPoints = 300;
+
+    if (fName.find("Interval") != std::string::npos) {
+        int peakBin{-1};
+        double peakContent{0.};
+        for (const auto& [bin, content] : fHistogramMap) {
+            if (content <= 0.) {
+                continue;
+            }
+            const double x = bin2Value(bin);
+            if (x < 0. || !std::isfinite(x)) {
+                continue;
+            }
+            if (content > peakContent) {
+                peakBin = bin;
+                peakContent = content;
+            }
+        }
+
+        if (peakBin < 0 || peakContent <= 0.) {
+            return {};
+        }
+
+        const double x0 = bin2Value(peakBin);
+        QVector<QPointF> fitBins;
+        double weightedOffset{0.};
+        double tailEntries{0.};
+        for (const auto& [bin, content] : fHistogramMap) {
+            if (bin < peakBin || content <= 0.) {
+                continue;
+            }
+            const double x = bin2Value(bin);
+            if (!std::isfinite(x) || x < x0) {
+                continue;
+            }
+            fitBins.push_back(QPointF(x, content));
+            weightedOffset += content * (x - x0);
+            tailEntries += content;
+        }
+
+        if (fitBins.size() < 3 || tailEntries <= 0.) {
+            return {};
+        }
+
+        double amplitude = peakContent;
+        double tau = weightedOffset / tailEntries;
+        if (!std::isfinite(tau) || tau <= 0.) {
+            tau = binWidth;
+        }
+        tau = std::max(tau, 0.1 * binWidth);
+
+        double chi2{0.};
+        for (int iteration = 0; iteration < 60; ++iteration) {
+            double hAA{0.};
+            double hAT{0.};
+            double hTT{0.};
+            double bA{0.};
+            double bT{0.};
+
+            for (const QPointF& sample : fitBins) {
+                const double t = sample.x() - x0;
+                const double observed = sample.y();
+                const double exponential = std::exp(-t / tau);
+                const double expected = amplitude * exponential;
+                const double residual = observed - expected;
+                const double weight = 1. / std::max(observed, 1.);
+                const double dAmplitude = exponential;
+                const double dTau = amplitude * exponential * t / (tau * tau);
+
+                hAA += weight * dAmplitude * dAmplitude;
+                hAT += weight * dAmplitude * dTau;
+                hTT += weight * dTau * dTau;
+                bA += weight * dAmplitude * residual;
+                bT += weight * dTau * residual;
+            }
+
+            const double det = hAA * hTT - hAT * hAT;
+            if (std::abs(det) <= std::numeric_limits<double>::epsilon()) {
+                break;
+            }
+
+            const double deltaAmplitude = (bA * hTT - bT * hAT) / det;
+            const double deltaTau = (hAA * bT - hAT * bA) / det;
+            if (!std::isfinite(deltaAmplitude) || !std::isfinite(deltaTau)) {
+                break;
+            }
+
+            amplitude = std::max(amplitude + deltaAmplitude, std::numeric_limits<double>::min());
+            tau = std::max(tau + deltaTau, 0.1 * binWidth);
+
+            const double relativeAmplitudeStep = std::abs(deltaAmplitude) / std::max(amplitude, 1.);
+            const double relativeTauStep = std::abs(deltaTau) / std::max(tau, binWidth);
+            if (relativeAmplitudeStep < 1e-6 && relativeTauStep < 1e-6) {
+                break;
+            }
+        }
+
+        for (const QPointF& sample : fitBins) {
+            const double t = sample.x() - x0;
+            const double observed = sample.y();
+            const double expected = amplitude * std::exp(-t / tau);
+            const double residual = observed - expected;
+            chi2 += residual * residual / std::max(observed, 1.);
+        }
+
+        const double fitMax = std::max(x0, fMax);
+        for (int i = 0; i < nPoints; ++i) {
+            const double x = x0 + (fitMax - x0) * static_cast<double>(i) / (nPoints - 1);
+            const double y = amplitude * std::exp(-(x - x0) / tau);
+            if (std::isfinite(y) && y > 0.) {
+                points.push_back(QPointF(x, y));
+            }
+        }
+        fFitCurve->setSamples(points);
+
+        double intervalSeconds = tau;
+        if (fUnit == "ms") {
+            intervalSeconds *= 1e-3;
+        } else if (fUnit == "us") {
+            intervalSeconds *= 1e-6;
+        } else if (fUnit == "ns") {
+            intervalSeconds *= 1e-9;
+        }
+
+        const int ndf = fitBins.size() - 2;
+        QString text = "Poisson process\nfit tau=" + formatFitValue(tau) +
+                       QString::fromStdString(fUnit) + "\nA=" + formatFitValue(amplitude) +
+                       "\nx0=" + formatFitValue(x0) + QString::fromStdString(fUnit) +
+                       "\nmean=" + formatFitValue(mean) + QString::fromStdString(fUnit) +
+                       "\noverflow=" + formatFitValue(fOverflow);
+        if (intervalSeconds > 0.) {
+            text += "\nrate=" + QString::number(1. / intervalSeconds, 'g', 4) + " Hz";
+        }
+        if (ndf > 0) {
+            text += "\nchi2/ndf=" + QString::number(chi2 / ndf, 'g', 3);
+        }
+        if (sigma > 0. && std::isfinite(sigma)) {
+            text += "\nCV=" + QString::number(sigma / mean, 'g', 3);
+        }
+        return text;
+    }
+
+    if (sigma <= 0. || !std::isfinite(mean) || !std::isfinite(sigma)) {
+        return {};
+    }
+
+    constexpr double pi = 3.14159265358979323846;
+    const double norm = entries * binWidth / (sigma * std::sqrt(2. * pi));
+    for (int i = 0; i < nPoints; ++i) {
+        const double x = fMin + rangeX * static_cast<double>(i) / (nPoints - 1);
+        const double z = (x - mean) / sigma;
+        points.push_back(QPointF(x, norm * std::exp(-0.5 * z * z)));
+    }
+    fFitCurve->setSamples(points);
+
+    QString text = "Gaussian\nmu=" + formatFitValue(mean) + QString::fromStdString(fUnit) +
+                   "\nsigma=" + formatFitValue(sigma) + QString::fromStdString(fUnit) +
+                   "\nFWHM=" + formatFitValue(2.354820045 * sigma) + QString::fromStdString(fUnit) +
+                   "\noverflow=" + formatFitValue(fOverflow);
+    if (std::abs(mean) > std::numeric_limits<double>::epsilon()) {
+        text += "\nrel=" + QString::number(std::abs(sigma / mean) * 100., 'g', 3) + "%";
+    }
+    return text;
+}
+
+void CustomHistogram::styleFitOverlay() {
+    if (fFitOverlayLabel == nullptr) {
+        return;
+    }
+
+    QFont font = QApplication::font();
+    if (font.pointSize() > 0) {
+        font.setPointSize(font.pointSize() + 1);
+    }
+    fFitOverlayLabel->setFont(font);
+
+    const QColor base = QApplication::palette().color(QPalette::Base);
+    if (base.lightness() > 128) {
+        fFitOverlayLabel->setStyleSheet(
+            "QLabel { color: black; border: 1px solid black; border-radius: 2px; "
+            "background-color: rgba(255, 255, 255, 220); padding: 6px 8px; }");
+    } else {
+        fFitOverlayLabel->setStyleSheet(
+            "QLabel { color: white; border: 1px solid white; border-radius: 2px; "
+            "background-color: rgba(0, 0, 0, 0); padding: 6px 8px; }");
+    }
+}
+
+void CustomHistogram::positionFitOverlay() {
+    if (fFitOverlayLabel == nullptr || !fFitOverlayLabel->isVisible()) {
+        return;
+    }
+
+    QWidget* plotCanvas = canvas();
+    if (plotCanvas == nullptr) {
+        return;
+    }
+
+    const int margin = 10;
+    fFitOverlayLabel->setMaximumWidth(std::max(120, plotCanvas->width() / 2));
+    fFitOverlayLabel->adjustSize();
+    const int x = std::max(margin, plotCanvas->width() - fFitOverlayLabel->width() - margin);
+    fFitOverlayLabel->move(x, margin);
+    fFitOverlayLabel->raise();
+}
+
+void CustomHistogram::showFitOverlay(const QString& text) {
+    if (fFitOverlayLabel == nullptr) {
+        return;
+    }
+
+    styleFitOverlay();
+    fFitOverlayLabel->setText(text);
+    fFitOverlayLabel->show();
+    positionFitOverlay();
+}
+
+void CustomHistogram::hideFitOverlay() {
+    if (fFitOverlayLabel != nullptr) {
+        fFitOverlayLabel->hide();
+    }
 }
 
 void CustomHistogram::clear() {
@@ -231,6 +535,8 @@ void CustomHistogram::setEnabled(bool status) {
         const QPen grayPen(Qt::gray);
         grid->setPen(grayPen);
         fBarChart->detach();
+        fFitCurve->detach();
+        hideFitOverlay();
         setTitle("");
     }
     fEnabled = status;
@@ -253,6 +559,15 @@ void CustomHistogram::setLogY(bool logscale) {
         fBarChart->setBaseline(0);
         fLogY = false;
     }
+}
+
+void CustomHistogram::setShowFit(bool show) {
+    fShowFit = show;
+    if (!fShowFit) {
+        fFitCurve->detach();
+        hideFitOverlay();
+    }
+    update();
 }
 
 void CustomHistogram::setXMin(double val) {

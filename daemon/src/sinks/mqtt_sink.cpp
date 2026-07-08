@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <iostream>
 #include <mosquitto.h>
+#include <sstream>
 #include <string>
 
 void logResult(int result, const std::string& topic) {
@@ -47,6 +48,10 @@ MqttSink::~MqttSink() {
     cleanup();
 }
 
+void MqttSink::shutdown() {
+    cleanup();
+}
+
 void MqttSink::handle(const UbxTimeMarkStruct& tm) {
     // output is: rising falling timeAcc valid timeBase utcAvailable
     std::stringstream sstr;
@@ -61,38 +66,43 @@ void MqttSink::handle(const MqttLogEvent& event) {
 }
 
 void wrapper_callback_connected(mosquitto* /*mqtt*/, void* object, int result) {
-    logInfo("Wrapper callback connected");
+    logDebug("Wrapper callback connected");
     reinterpret_cast<MqttSink*>(object)->callback_connected(result);
 }
 
 void wrapper_callback_disconnected(mosquitto* /*mqtt*/, void* object, int result) {
-    logInfo("Wrapper callback disconnected");
+    logDebug("Wrapper callback disconnected");
     reinterpret_cast<MqttSink*>(object)->callback_disconnected(result);
 }
 
 void wrapper_callback_message(mosquitto* /*mqtt*/, void* object, const mosquitto_message* message) {
-    logInfo("Wrapper callback message");
+    logDebug("Wrapper callback message");
     reinterpret_cast<MqttSink*>(object)->callback_message(message);
 }
 
 void MqttSink::callback_connected(int result) {
     if (result == 1) {
+        setStatus(MqttStatusEvent::Status::Error);
         const std::string msg{"MQTT connection failed: Wrong protocol version"};
         logWarn(msg);
         bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Error, msg});
     } else if (result == 2) {
+        setStatus(MqttStatusEvent::Status::Error);
         const std::string msg{"MQTT connection failed: Credentials rejected"};
         logWarn(msg);
         bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Error, msg});
     } else if (result == 3) {
+        setStatus(MqttStatusEvent::Status::Error);
         const std::string msg{"MQTT connection failed: Broker unavailable"};
         logWarn(msg);
         bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Error, msg});
     } else if (result > 3) {
+        setStatus(MqttStatusEvent::Status::Error);
         const std::string msg{"MQTT connection failed: Other reason"};
         logWarn(msg);
         bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Error, msg});
     } else if (result == 0) {
+        setStatus(MqttStatusEvent::Status::Connected);
         const std::string msg{"Connected to MQTT."};
         logInfo(msg);
         bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Connected, msg});
@@ -102,11 +112,13 @@ void MqttSink::callback_connected(int result) {
     if (m_tries < s_max_tries) {
         m_tries++;
     } else {
+        setStatus(MqttStatusEvent::Status::Error);
         const std::string msg{"Too many retries."};
         logWarn(msg);
         bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Error, msg});
     }
     std::string msg{"Connecting to MQTT..."};
+    setStatus(MqttStatusEvent::Status::Connecting);
     logInfo(msg);
     bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Connecting, msg});
     logInfo("Tried to connect " + std::to_string(m_tries) + " times. Next try after " +
@@ -116,12 +128,14 @@ void MqttSink::callback_connected(int result) {
 void MqttSink::callback_disconnected(int result) {
     if (result != 0) {
         if (connected()) {
+            setStatus(MqttStatusEvent::Status::Error);
             std::string msg{"MQTT disconnected unexpectedly: " + std::to_string(result)};
             logWarn(msg);
             bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Error, msg});
         }
     } else {
-        bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Disconnecting, "MQTT disconnected."});
+        setStatus(MqttStatusEvent::Status::Disconnected);
+        bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Disconnected, "MQTT disconnected."});
     }
 }
 
@@ -131,19 +145,21 @@ void MqttSink::callback_message(const mosquitto_message* message) {
 
 void MqttSink::setStatus(MqttStatusEvent::Status status) {
     logDebug("set_status " + std::to_string(static_cast<int>(status)));
-    m_status = status;
+    m_status.store(status);
 }
 
 bool MqttSink::isInhibited() {
-    return (m_status == MqttStatusEvent::Status::Inhibited);
+    return (m_status.load() == MqttStatusEvent::Status::Inhibited);
 }
 
 void MqttSink::setInhibited(bool inhibited) {
     if (inhibited) {
-        if (m_status == MqttStatusEvent::Status::Connected) {
+        if (m_status.load() == MqttStatusEvent::Status::Connected) {
+            setStatus(MqttStatusEvent::Status::Inhibited);
             bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Inhibited});
         }
     } else {
+        setStatus(MqttStatusEvent::Status::Invalid);
         bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Invalid});
     }
 }
@@ -170,16 +186,19 @@ void MqttSink::mqttConnect() {
         initialise(m_client_id);
     }
 
+    setStatus(MqttStatusEvent::Status::Connecting);
     bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Connecting});
 
     auto result{mosquitto_username_pw_set(m_mqtt, m_username.c_str(), m_password.c_str())};
     if (result != MOSQ_ERR_SUCCESS) {
+        setStatus(MqttStatusEvent::Status::Error);
         logWarn("Error setting username and password: " + std::string(mosquitto_strerror(result)));
         return;
     }
     result = mosquitto_connect_async(m_mqtt, MuonPi::Config::MQTT::host, MuonPi::Config::MQTT::port,
                                      MuonPi::Config::MQTT::keepalive_interval.count());
     if (result != MOSQ_ERR_SUCCESS) {
+        setStatus(MqttStatusEvent::Status::Error);
         logDebug("Error on called mosquitto_connect_async");
         return;
     }
@@ -187,15 +206,18 @@ void MqttSink::mqttConnect() {
 
 void MqttSink::mqttDisconnect() {
     if (m_mqtt != nullptr) {
-        if (m_status == MqttStatusEvent::Status::Connected) {
+        if (m_status.load() == MqttStatusEvent::Status::Connected) {
+            setStatus(MqttStatusEvent::Status::Disconnecting);
             bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Disconnecting});
             auto result{mosquitto_disconnect(m_mqtt)};
             if (result == MOSQ_ERR_SUCCESS) {
+                setStatus(MqttStatusEvent::Status::Disconnected);
                 bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Disconnected});
             } else {
                 std::string msg{"Could not disconnect from Mqtt: "};
                 logDebug("Could not disconnect from Mqtt: " +
                          std::string{mosquitto_strerror(result)});
+                setStatus(MqttStatusEvent::Status::Invalid);
                 bus_.publish(MqttStatusEvent{MqttStatusEvent::Status::Invalid});
             }
         }
@@ -203,7 +225,7 @@ void MqttSink::mqttDisconnect() {
 }
 
 auto MqttSink::connected() -> bool {
-    return (m_mqtt != nullptr) && (m_status == MqttStatusEvent::Status::Connected);
+    return (m_mqtt != nullptr) && (m_status.load() == MqttStatusEvent::Status::Connected);
 }
 
 void MqttSink::initialise(const std::string& client_id) {
@@ -269,22 +291,36 @@ auto MqttSink::publish(const std::string& topic, const std::string& content) -> 
     if (!connected()) {
         return false;
     }
-    auto result{mosquitto_publish(m_mqtt, nullptr, topic.c_str(), static_cast<int>(content.size()),
+    std::string usertopic{topic};
+    usertopic += m_username + "/" + m_station_id;
+
+    auto result{mosquitto_publish(m_mqtt, nullptr, usertopic.c_str(),
+                                  static_cast<int>(content.size()),
                                   reinterpret_cast<const void*>(content.c_str()), 1, false)};
 
     if (result == MOSQ_ERR_SUCCESS) {
+        m_publish_error_count = 0;
         return true;
     }
-    logWarn("Couldn't publish mqtt message: " + std::string{mosquitto_strerror(result)});
+    const auto error_count = ++m_publish_error_count;
+    if (error_count < s_max_publish_errors) {
+        logWarn("Couldn't publish mqtt message for topic '" + usertopic +
+                "': " + std::string{mosquitto_strerror(result)});
+    } else if (error_count == s_max_publish_errors) {
+        logWarn("Couldn't publish mqtt message for topic '" + usertopic + "' (message repeated " +
+                std::to_string(s_max_publish_errors) +
+                " times): " + std::string{mosquitto_strerror(result)});
+    }
     return false;
 }
 
 void MqttSink::requestConnectionStatus() {
-    std::string msg{"connection status = " + std::to_string(static_cast<int>(m_status))};
+    const auto status = m_status.load();
+    std::string msg{"connection status = " + std::to_string(static_cast<int>(status))};
     logDebug(msg);
-    bus_.publish(MqttStatusEvent{m_status, msg});
+    bus_.publish(MqttStatusEvent{status, msg});
 }
 
 auto MqttSink::connectionStatus() const -> MqttStatusEvent::Status {
-    return m_status;
+    return m_status.load();
 }

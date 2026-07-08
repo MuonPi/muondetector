@@ -18,10 +18,12 @@ int main(int argc, char* argv[]) {
     auto guard = boost::asio::make_work_guard(*io);
     auto ioThread = std::thread([&io]() { io->run(); });
 
-    MainWindow w(io);
-    w.show();
-
-    auto result = app.exec();
+    int result = 0;
+    {
+        MainWindow w(io);
+        w.show();
+        result = app.exec();
+    }
     io->stop();
     ioThread.join();
     return result;

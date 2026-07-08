@@ -1,5 +1,6 @@
 #include "gui/src/ui_map.h"
 
+#include <QDebug>
 #include <QQmlComponent>
 #include <QQmlContext>
 #include <QQmlEngine>
@@ -11,7 +12,6 @@
 #include <ui_map.h>
 
 Map::Map(QWidget* parent) : QWidget(parent), mapUi(new Ui::Map) {
-    QVariantMap parameters;
     mapUi->setupUi(this);
 
     connect(mapUi->setConfigPushButton, &QPushButton::clicked, this,
@@ -28,7 +28,16 @@ Map::Map(QWidget* parent) : QWidget(parent), mapUi(new Ui::Map) {
     view->setResizeMode(QQuickWidget::SizeRootObjectToView);
 
     view->setSource(QUrl("qrc:/qml/CustomMap.qml"));
+    if (view->status() == QQuickWidget::Error) {
+        for (const auto& error : view->errors()) {
+            qWarning() << "Could not load map QML:" << error.toString();
+        }
+    }
     mapComponent = view->rootObject();
+    if (mapComponent == nullptr) {
+        qWarning() << "Map QML root object is null";
+        return;
+    }
     QObject::connect(mapComponent, SIGNAL(coordinateSignal(double, double)), this,
                      SLOT(coordinateQmlSignal(double, double)));
 }

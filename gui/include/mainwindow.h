@@ -7,6 +7,7 @@
 
 #include <QErrorMessage>
 #include <QMainWindow>
+#include <QPointer>
 #include <QStandardItemModel>
 #include <QTime>
 #include <QTimer>
@@ -106,6 +107,7 @@ class MainWindow : public QMainWindow {
     void makeConnection(QString ipAddress, quint16 port);
     void onTriggerSelectionChanged(GPIO_SIGNAL signal);
     void onHistogramCleared(QString histogramName);
+    void requestHistograms();
     void sendSetAdcMode(ADC_SAMPLING_MODE mode);
     void sendRateScanStart(uint8_t ch);
     void gpioInhibit(bool inhibit);

@@ -3,6 +3,7 @@
 
 class Sink {
   public:
+    virtual void shutdown() {};
     virtual ~Sink() = default;
 };
 

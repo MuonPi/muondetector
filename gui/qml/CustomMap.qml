@@ -13,11 +13,15 @@ CustomMapForm {
         name: "osm"
         PluginParameter {
             name: "osm.mapping.custom.host"
-            value: "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            value: "https://tile.openstreetmap.org/"
         }
         PluginParameter {
             name: "osm.mapping.providersrepository.disabled"
             value: true
+        }
+        PluginParameter {
+            name: "osm.useragent"
+            value: "muondetector-gui"
         }
     }
     function setCircle(lon,lat,hAcc)
@@ -35,10 +39,23 @@ CustomMapForm {
     signal coordinateSignal(double lat, double lon)
     MapComponent{
         id: map
+        readonly property color overlayTextColor: "#1f2328"
+        readonly property color overlayBorderColor: "#b8c0cc"
+        readonly property color overlayBackgroundColor: "#f7f8fa"
+        readonly property color overlayHoverColor: "#e6e9ef"
+        readonly property color overlayDownColor: "#d0d7de"
         property double lastLon: 8.673828
         property double lastLat: 0.569212
         property double lastAlt: 0.
         plugin: osmPlugin
+        function useCustomMapType()
+        {
+            if (supportedMapTypes.length > 0) {
+                activeMapType = supportedMapTypes[supportedMapTypes.length - 1]
+            }
+        }
+        Component.onCompleted: useCustomMapType()
+        onSupportedMapTypesChanged: useCustomMapType()
         anchors.top: parent.top
         width: parent.width
         height: parent.height
@@ -113,21 +130,33 @@ CustomMapForm {
                 height: 30
                 spacing: 0
                 Layout.row: 0
+                background: Rectangle {
+                    color: map.overlayBackgroundColor
+                    border.color: map.overlayBorderColor
+                    border.width: 1
+                }
                 RowLayout{
                     Rectangle{
                         Layout.column: 0
                         height: 30
                         width: 60
                         Layout.alignment: Qt.AlignTop
-                        color: "white"
+                        color: map.overlayBackgroundColor
                         ToolButton{
                             id: centerButton
                             anchors.fill: parent
                             text: "center"
                             onClicked: map.jumpToLocation()
+                            contentItem: Text {
+                                text: centerButton.text
+                                font: centerButton.font
+                                color: map.overlayTextColor
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
                             background: Rectangle {
-                                    color: parent.down ? "#bbbbbb" :
-                                            (parent.hovered ? "#d6d6d6" : "#f6f6f6")
+                                    color: parent.down ? map.overlayDownColor :
+                                            (parent.hovered ? map.overlayHoverColor : map.overlayBackgroundColor)
                             }
                         }
                     }
@@ -136,15 +165,22 @@ CustomMapForm {
                         width: 90
                         Layout.alignment: Qt.AlignTop
                         height: 30
-                        color:"white"
+                        color: map.overlayBackgroundColor
                         CheckBox{
                             id: control
                             anchors.fill: parent
                             text: "follow"
                             checked: true
+                            contentItem: Text {
+                                text: control.text
+                                font: control.font
+                                color: map.overlayTextColor
+                                verticalAlignment: Text.AlignVCenter
+                                leftPadding: control.indicator.width + control.spacing
+                            }
                             background: Rectangle {
-                                    color: parent.down ? "#bbbbbb" :
-                                            (parent.hovered ? "#d6d6d6" : "#f6f6f6")
+                                    color: parent.down ? map.overlayDownColor :
+                                            (parent.hovered ? map.overlayHoverColor : map.overlayBackgroundColor)
                             }
                         }
                     }
@@ -155,26 +191,35 @@ CustomMapForm {
                 width: 200
                 Layout.alignment: Qt.AlignTop
                 height: 50
+                background: Rectangle {
+                    color: map.overlayBackgroundColor
+                    border.color: map.overlayBorderColor
+                    border.width: 1
+                }
                 ColumnLayout{
                     Label {
                         Layout.row: 0
                         id: lonLabel
                         text: "lon"
+                        color: map.overlayTextColor
                     }
                     Label {
                         Layout.row: 1
                         id: latLabel
                         text: "lat"
+                        color: map.overlayTextColor
                     }
                     Label {
                         Layout.row: 2
                         id: altLabel
                         text: "alt"
+                        color: map.overlayTextColor
                     }
                     Label {
                         Layout.row: 3
                         id: posErrLabel
                         text: "err"
+                        color: map.overlayTextColor
                     }
                 }
             }

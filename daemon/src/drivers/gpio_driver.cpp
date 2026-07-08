@@ -173,9 +173,10 @@ void GpioDriver::sendGpioRatesAverage() {
         std::uint8_t whichRate = 2;
         if (sig == EVT_AND) {
             whichRate = 1;
-        }
-        if (sig == EVT_XOR) {
+        } else if (sig == EVT_XOR) {
             whichRate = 0;
+        } else {
+            continue;
         }
         bus_.publish(DatastoreStoreEvent{
             GpioRateEvent{.whichRate = whichRate, .rate = ratebuffer->sampleAndRetrieve(now)}});
@@ -230,9 +231,12 @@ void GpioDriver::init(const MuonPi::Version::Version& hardwareVersion) {
 
     configureLines(outputs, {.dir = SIGNAL_DIRECTION::DIR_OUT, .initialValue = false});
 
-    // set up rate buffers for all GPIO interrupts
-    gpioRatebuffers.emplace(EVT_AND, std::make_shared<EventRateBuffer>());
-    gpioRatebuffers.emplace(EVT_XOR, std::make_shared<EventRateBuffer>());
+    // Set up buffers for input intervals. Only AND/XOR are sampled as rate plots above.
+    for (const auto& [sig, desc] : GPIO_SIGNAL_MAP) {
+        if (desc.direction == DIR_IN && pinmap_.contains(sig)) {
+            gpioRatebuffers.emplace(sig, std::make_shared<EventRateBuffer>());
+        }
+    }
 
     start();
 }
@@ -255,7 +259,7 @@ void GpioDriver::processEvent(GpioEvent&& event) {
         bus_.publish(std::move(event));
     }
     if (data.second.has_value()) {
-        bus_.publish(std::move(data.second));
+        bus_.publish(std::move(*data.second));
     }
 }
 

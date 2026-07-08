@@ -281,6 +281,9 @@ messages:
   - name: EventTriggerRequestCmdCapnp
     fields: []
 
+  - name: HistogramRequestCmdCapnp
+    fields: []
+
   - name: HistogramClearCmdCapnp
     fields:
       - { name: histogramName, type: string }

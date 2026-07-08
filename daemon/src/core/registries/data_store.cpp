@@ -1,17 +1,21 @@
 #include "core/registries/data_store.h"
 
+#include "config.h"
 #include "core/logging/logger.h"
 #include "data/events/ads1115_event.h"
 #include "data/events/bias_current_event.h"
-#include "data/events/bias_voltage_event.h"
 #include "data/events/event_trigger_event.h"
+#include "data/events/gpio_event.h"
 #include "data/events/interval_event.h"
 #include "data/events/ubx_event.h"
 #include "data/histogram.h"
 #include "data/ublox/ublox_messages.h"
+#include "utility/calibration.h"
 #include "utility/geoposmanager.h"
 #include "utility/ublox_ratebuffer.h"
 // #include "data/"
+
+#include <cmath>
 
 DataStore::DataStore()
     : m_geopos_manager{std::make_unique<GeoPosManager>()}
@@ -69,13 +73,15 @@ void DataStore::setupHistos() {
         std::make_shared<Histogram>("gpioEventIntervalShort", 50, 0., 49., false, "us"));
     m_histo_map.emplace("UbxEventInterval", std::make_shared<Histogram>("UbxEventInterval", 200, 0.,
                                                                         2000., true, "ms"));
-    m_histo_map.emplace("TPTimeDiff",
-                        std::make_shared<Histogram>("TPTimeDiff", 200, -999., 1000., true, "us"));
+    m_histo_map.emplace("TPTimePhase", std::make_shared<Histogram>("TPTimePhase", 500, -500000.,
+                                                                   500000., false, "us"));
+    m_histo_map.emplace("TPTimeJitter",
+                        std::make_shared<Histogram>("TPTimeJitter", 400, -50., 50., true, "us"));
     // m_histo_map.emplace(
     //     "Time-to-Digital Time Diff",
     //     std::make_shared<Histogram>("Time-to-Digital Time Diff", 400, 0., 1e6, true, "ns"));
     m_histo_map.emplace("Bias Voltage",
-                        std::make_shared<Histogram>("Bias Voltage", 200, 0., 1., true, "V"));
+                        std::make_shared<Histogram>("Bias Voltage", 200, 0., 80., true, "V"));
     m_histo_map.emplace("Bias Current",
                         std::make_shared<Histogram>("Bias Current", 200, 0., 50., true, "uA"));
     m_histo_map.emplace("pDOP", std::make_shared<Histogram>("pDOP", 200, 0., 10., true));
@@ -137,16 +143,7 @@ void DataStore::fillHisto(const BiasCurrentEvent& event) {
 }
 
 template <>
-void DataStore::fillHisto(const BiasVoltageEvent& event) {
-    m_histo_map["Bias Voltage"]->fill(event.voltage);
-}
-
-template <>
 void DataStore::fillHisto(const IntervalEvent& event) {
-    if (event.sig == GPIO_SIGNAL::TIMEPULSE) {
-        m_histo_map["TPTimeDiff"]->fill(1e-3 * event.interval.count());
-    }
-
     auto* currentEventTrigger = getUnlocked<EventTriggerEvent>();
     if (currentEventTrigger == nullptr) {
         logWarn("Could not read EventTriggerEvent in fillHisto<IntervalEvent>");
@@ -154,18 +151,66 @@ void DataStore::fillHisto(const IntervalEvent& event) {
     }
     if (event.sig == currentEventTrigger->signal) {
         m_histo_map["gpioEventInterval"]->fill(1e-6 * event.interval.count());
+        m_histo_map["gpioEventIntervalShort"]->fill(1e-3 * event.interval.count());
     }
 }
 
 template <>
+void DataStore::fillHisto(const GpioEvent& event) {
+    if (event.gpio_signal != GPIO_SIGNAL::TIMEPULSE) {
+        return;
+    }
+
+    auto usecs =
+        std::chrono::duration_cast<std::chrono::microseconds>(event.timestamp.time_since_epoch())
+            .count();
+    usecs = usecs % 1'000'000LL;
+    if (usecs > 500'000LL) {
+        usecs -= 1'000'000LL;
+    }
+
+    m_histo_map["TPTimePhase"]->fill(static_cast<double>(usecs));
+
+    if (event.edge != EventEdge::Rising) {
+        return;
+    }
+
+    if (m_last_timepulse_rising.has_value()) {
+        const auto interval = event.timestamp - *m_last_timepulse_rising;
+        const double intervalUs = std::chrono::duration<double, std::micro>(interval).count();
+        const double jitterUs = intervalUs - 1.0e6;
+        if (std::abs(jitterUs) < 5.0e5) {
+            m_histo_map["TPTimeJitter"]->fill(jitterUs);
+        }
+    }
+    m_last_timepulse_rising = event.timestamp;
+}
+
+template <>
 void DataStore::fillHisto(const ADS1115Event& event) {
+    if (event.channel == MuonPi::Config::Hardware::ADC::Channel::amplitude) {
+        m_histo_map["pulseHeight"]->fill(event.voltage);
+    }
+    if (event.channel == MuonPi::Config::Hardware::ADC::Channel::bias2) {
+        auto* raw = getUnlocked<std::weak_ptr<ShowerDetectorCalib>>();
+        if (raw != nullptr) {
+            if (auto calib = raw->lock()) {
+                const auto& vdivItem = calib->getCalibItem("VDIV");
+                if (vdivItem.name == "VDIV") {
+                    double vdiv{0.};
+                    ShowerDetectorCalib::getValueFromString(vdivItem.value, vdiv);
+                    m_histo_map["Bias Voltage"]->fill(event.voltage * vdiv * 0.01);
+                }
+            }
+        }
+    }
     m_histo_map["adcSampleTime"]->fill(event.convTime);
 }
 
 template <>
 void DataStore::fillHisto(const UbxDopStruct& event) {
-    m_histo_map["pDOP"]->fill(event.pDOP);
-    m_histo_map["tDOP"]->fill(event.tDOP);
+    m_histo_map["pDOP"]->fill(event.pDOP / 100.);
+    m_histo_map["tDOP"]->fill(event.tDOP / 100.);
 }
 
 auto DataStore::geoPosManager() -> GeoPosManager& {

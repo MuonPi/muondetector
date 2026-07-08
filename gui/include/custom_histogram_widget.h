@@ -5,10 +5,12 @@
 
 #include <QVector>
 #include <qwt_plot.h>
+#include <qwt_plot_curve.h>
 #include <qwt_plot_grid.h>
 #include <qwt_plot_histogram.h>
 #include <qwt_series_data.h>
 
+class QLabel;
 class QwtPlotHistogram;
 
 class CustomHistogram : public QwtPlot, public Histogram {
@@ -36,8 +38,10 @@ class CustomHistogram : public QwtPlot, public Histogram {
     bool getLogX() const { return fLogX; }
     void setLogY(bool);
     bool getLogY() const { return fLogY; }
+    void setShowFit(bool show);
+    bool getShowFit() const { return fShowFit; }
     void rescalePlot();
-    void changeEvent(QEvent* e);
+    void changeEvent(QEvent* e) override;
 
     QwtPlotHistogram* getHistogramPlot() { return fBarChart; }
 
@@ -49,9 +53,22 @@ class CustomHistogram : public QwtPlot, public Histogram {
 
   private:
     QwtPlotHistogram* fBarChart = nullptr;
+    QwtPlotCurve* fFitCurve = nullptr;
+    QLabel* fFitOverlayLabel = nullptr;
+    auto buildFitOverlay(double yMax) -> QString;
+    auto formatFitValue(double value, int precision = 4) const -> QString;
+    auto shouldShowFit() const -> bool;
+    void showFitOverlay(const QString& text);
+    void hideFitOverlay();
+    void positionFitOverlay();
+    void styleFitOverlay();
     bool fLogY = false;
     bool fLogX = false;
+    bool fShowFit = true;
     bool fEnabled{false};
+
+  protected:
+    void resizeEvent(QResizeEvent* event) override;
 };
 
 #endif // CUSTOMHISTOGRAM_H

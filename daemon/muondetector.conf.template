@@ -18,7 +18,8 @@ ublox_device = "/dev/ttyAMA0"
 # default: 9600
 ublox_baud = 38400
 
-# The user credentials under which the device establishes an MQTT connection with the server and publishes data and log messages 
+# The user credentials under which the device establishes an MQTT connection with the server and publishes data and log messages.
+# Use 'muondetector-login store' to verify credentials and update the installed config file.
 mqtt_user = "user"
 mqtt_password = "0123"
 
