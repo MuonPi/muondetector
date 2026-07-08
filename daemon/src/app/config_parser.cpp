@@ -69,6 +69,8 @@ void ConfigParser::print_help(const std::string& progName) {
     std::cout << "GNSS:\n";
     std::cout << "  -b <baud>                 Set GNSS baudrate\n";
     std::cout << "  -d                        Dump raw GNSS data\n";
+    std::cout << "  --showin, --showincoming  Show incoming UBX messages as hex\n";
+    std::cout << "  --showout, --showoutgoing Show outgoing UBX messages as hex\n";
     std::cout << "  [gps_device]              Device path (e.g. /dev/ttyUSB0)\n\n";
 
     std::cout << "Networking:\n";
@@ -98,6 +100,7 @@ void ConfigParser::print_help(const std::string& progName) {
     std::cout << "Misc:\n";
     std::cout << "  --id <string>             Station ID\n";
     std::cout << "  --pca <mask>              PCA port mask\n";
+    std::cout << "  --sds011_n_sleep <n>      SDS011 sleep/readout interval parameter\n";
 }
 
 void ConfigParser::parse(int argc, char* argv[]) {

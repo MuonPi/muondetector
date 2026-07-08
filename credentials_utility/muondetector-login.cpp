@@ -102,8 +102,9 @@ auto doStore() -> int {
 
 void printUsage(const char* program) {
     std::cout << "Usage:\n"
-              << "  " << program << " store <username> <password>\n"
-              << "  " << program << " get <username>\n";
+              << "  " << program << " store\n"
+              << "  " << program << " get\n"
+              << "  " << program << " clear\n";
 }
 
 int main(int argc, char** argv) {

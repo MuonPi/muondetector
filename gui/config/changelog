@@ -1,3 +1,29 @@
+muondetector-gui (3.0.0) ; urgency=low
+
+  * Updates:
+  - Kept the existing GUI workflow and visual layout while adapting it to the
+    rebuilt muondetector-daemon.
+  - Updated the GUI communication layer to the new shared Cap'n Proto TCP
+    protocol.
+  - Updated parsing of daemon events and responses for histograms, curves, GPIO
+    rates, calibration data, GNSS data, I2C statistics, ADC traces, temperatures
+    and hardware status.
+  - Updated command handling for bias, DAC, preamp, calibration, GPIO, histogram
+    and u-blox controls to match the rebuilt daemon.
+  - Added connection timeout progress feedback and improved connected-state
+    handling.
+  - Updated CMake, Qt6 cross-compilation support, packaging mode and GitHub
+    Actions workflows.
+
+  * Fixes:
+  - Fixed Raspberry Pi and cross-compiled GUI builds.
+  - Fixed crashes from invalid curve data and missing histogram updates.
+  - Fixed missing satellite/status information and several state update issues
+    in existing controls.
+  - Fixed missing package files and incorrect configuration/package directories.
+
+ -- MuonPi.org <developer@muonpi.org>  Wed, 08 Jul 2026 10:50:00 +0200
+
 muondetector-gui (2.1.1) ; urgency=low
 
   * Bugfixes:

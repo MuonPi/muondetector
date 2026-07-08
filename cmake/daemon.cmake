@@ -136,15 +136,6 @@ set(MUONDETECTOR_LOGIN_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/mqtt_sink.cpp"
     )
 
-set(MUONDETECTOR_LOGIN_INSTALL_FILES
-    "${MUONDETECTOR_DAEMON_CONFIG_DIR}/muondetector-login"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/logging/logger.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/thread_pool.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/core/event_bus.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/libsecret/credentials.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/mqtt_sink.h"
-    )
-
 set(MUONDETECTOR_DAEMON_INSTALL_FILES
     "${MUONDETECTOR_DAEMON_CONFIG_DIR}/muondetector.conf"
     "${MUONDETECTOR_DAEMON_CONFIG_DIR}/hardware.conf"
@@ -154,6 +145,11 @@ set(MUONDETECTOR_DAEMON_INSTALL_FILES
 configure_file(
     "${MUONDETECTOR_DAEMON_CONFIG_DIR}/muondetector-daemon.1"
     "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1"
+    )
+
+configure_file(
+    "${MUONDETECTOR_DAEMON_CONFIG_DIR}/muondetector-login.1"
+    "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1"
     )
 
 
@@ -220,17 +216,16 @@ if (${MUONDETECTOR_ON_RASPBERRYPI})
     add_custom_target(changelog-daemon ALL COMMAND gzip -cn9 "${MUONDETECTOR_DAEMON_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/daemon/changelog.gz")
     add_dependencies(changelog-daemon prep-daemon)
     add_custom_target(manpage-daemon ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1.gz")
-    # add_custom_target(manpage-login ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1.gz")
+    add_custom_target(manpage-login ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1.gz")
 
     install(TARGETS muondetector-daemon DESTINATION bin COMPONENT daemon)
-    install(TARGETS muondetector-login DESTINATION lib/muondetector/bin COMPONENT daemon)
+    install(TARGETS muondetector-login DESTINATION bin COMPONENT daemon)
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/daemon/changelog.gz" DESTINATION "${CMAKE_INSTALL_DOCDIR}-daemon" COMPONENT daemon)
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-daemon.1.gz" DESTINATION "share/man/man1/" COMPONENT daemon)
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-login.1.gz" DESTINATION "share/man/man1/" COMPONENT daemon)
     install(FILES "${MUONDETECTOR_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}-daemon" COMPONENT daemon)
     install(FILES ${MUONDETECTOR_DAEMON_INSTALL_FILES} DESTINATION "/etc/muondetector/" COMPONENT daemon)
     install(FILES "${MUONDETECTOR_DAEMON_CONFIG_DIR}/muondetector-daemon.service" DESTINATION "/lib/systemd/system" COMPONENT daemon)
-    install(PROGRAMS ${MUONDETECTOR_LOGIN_INSTALL_FILES} DESTINATION bin COMPONENT daemon)
 
     set(CPACK_DEBIAN_DAEMON_PACKAGE_CONTROL_EXTRA "${MUONDETECTOR_DAEMON_CONFIG_DIR}/preinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/postinst;${MUONDETECTOR_DAEMON_CONFIG_DIR}/prerm;${MUONDETECTOR_DAEMON_CONFIG_DIR}/conffiles")
     set(CPACK_DEBIAN_DAEMON_PACKAGE_SECTION "net")

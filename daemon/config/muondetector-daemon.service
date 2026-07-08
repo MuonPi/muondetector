@@ -5,7 +5,7 @@ After=sockets.target network-online.target
 [Service]
 Type=simple
 User=muonuser
-ExecStart=/usr/bin/muondetector-daemon -c
+ExecStart=/usr/bin/muondetector-daemon
 ExecStop=/bin/kill $MAINPID
 Restart=always
 TimeoutSec=10
