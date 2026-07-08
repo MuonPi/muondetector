@@ -148,10 +148,16 @@ void EventBindings::setupDatastore(EventBus& bus, DataStore& datastore) {
         // data through DatastoreStoreEvent
     });
 
+    // Ephemeral events are not stored in DataStore, but their values still feed histograms.
     bus.subscribe<ADS1115Event>(
         [&datastore](const ADS1115Event& event) { datastore.fillHisto(event); });
+    bus.subscribe<BiasCurrentEvent>(
+        [&datastore](const BiasCurrentEvent& event) { datastore.fillHisto(event); });
+    bus.subscribe<GpioEvent>([&datastore](const GpioEvent& event) { datastore.fillHisto(event); });
     bus.subscribe<IntervalEvent>(
         [&datastore](const IntervalEvent& event) { datastore.fillHisto(event); });
+    bus.subscribe<MqttStatusEvent>(
+        [&datastore](const MqttStatusEvent& event) { datastore.store(event); });
 
     // All events which should be stored are defined here
     // All events with DataStoreStoreEvent<BiasVoltageEvent> ...
@@ -159,12 +165,11 @@ void EventBindings::setupDatastore(EventBus& bus, DataStore& datastore) {
     // for it.
     subscribe_all<CfgGNSS, CfgAnt, CfgNavX5, CfgNav5, NavSat, MonTx, MonRx, NavStatus, NavClock,
                   UbxTimeMarkStruct, UbxTimePulseStruct, GnssMonHwStruct, GnssMonHw2Struct,
-                  NavTimeGPS, NavTimeUTC, BiasCurrentEvent, BiasVoltageEvent, MqttStatusEvent,
-                  UbxDopStruct, AdcTraceEvent, BiasSwitchEvent, GainSwitchEvent, CalibEvent,
-                  std::weak_ptr<ShowerDetectorCalib>, GpioRateEvent, GpioInhibitEvent,
-                  TemperatureEvent, MCP4728Event, PcaSwitchEvent, PolaritySwitchEvent, GpsVersion,
-                  EventTriggerEvent, LogInfoStruct, PositionModeConfig, VersionEvent>(bus,
-                                                                                      datastore);
+                  NavTimeGPS, NavTimeUTC, MqttStatusEvent, UbxDopStruct, AdcTraceEvent,
+                  BiasSwitchEvent, GainSwitchEvent, CalibEvent, std::weak_ptr<ShowerDetectorCalib>,
+                  GpioRateEvent, GpioInhibitEvent, TemperatureEvent, MCP4728Event, PcaSwitchEvent,
+                  PolaritySwitchEvent, GpsVersion, EventTriggerEvent, LogInfoStruct,
+                  PositionModeConfig, VersionEvent>(bus, datastore);
 
     // Message Requests will be answered directly from datastore
     bus.subscribe<ThresholdSettingRequestCmd>([&datastore, &bus]([[maybe_unused]] const auto&) {

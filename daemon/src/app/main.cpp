@@ -139,7 +139,9 @@ int main(int argc, char* argv[]) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
+    networkDiscovery.reset();
     context.scheduler->stop();
+    context.sinks->shutdownAll();
     pool.stop();
 
     // stop asio
@@ -149,6 +151,5 @@ int main(int argc, char* argv[]) {
     // wait for io thread
     t1.join();
 
-    networkDiscovery.reset();
     return EXIT_SUCCESS;
 }

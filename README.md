@@ -129,7 +129,6 @@ sudo apt install \
   libboost-dev \
   libconfig++-dev \
   libglib2.0-dev \
-  libsecret-1-dev \
   libmosquitto-dev \
   libgpiod-dev \
   qt6-base-dev \
@@ -229,7 +228,7 @@ Installed packages place configuration below `/etc/muondetector/`:
 Store MQTT credentials before starting the daemon:
 
 ```bash
-muondetector-login store
+sudo muondetector-login store
 ```
 
 Start and inspect the systemd service:

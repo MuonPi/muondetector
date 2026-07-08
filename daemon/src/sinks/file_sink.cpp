@@ -189,6 +189,16 @@ LogInfoStruct FileSink::getInfoUnlocked() const {
     return lis;
 }
 
+void FileSink::publishInfoUnlocked() {
+    if (dataFile.is_open()) {
+        dataFile.flush();
+    }
+    if (logFile.is_open()) {
+        logFile.flush();
+    }
+    bus_.publish(DatastoreStoreEvent{getInfoUnlocked()});
+}
+
 LogInfoStruct FileSink::getInfo() const {
     std::scoped_lock lock{m_mutex};
     return getInfoUnlocked();
@@ -238,6 +248,7 @@ void FileSink::onRotationRemind() {
 
     auto now = std::chrono::system_clock::now();
     if (now < nextRotationTime) {
+        publishInfoUnlocked();
         return;
     }
     rotateFiles();
@@ -285,7 +296,7 @@ auto FileSink::openFilesAtPaths(bool writeHeader) -> bool {
 
         logFile << "#time<YYYY-MM-DD_hh-mm-ss> parname value unit\n";
     }
-    bus_.publish(DatastoreStoreEvent{getInfoUnlocked()});
+    publishInfoUnlocked();
     return true;
 }
 
@@ -426,6 +437,7 @@ void FileSink::writeToDataFile(const std::string& data) {
         return;
     }
     dataFile << data << "\n";
+    publishInfoUnlocked();
 }
 
 void FileSink::writeToLogFile(const std::string& log) {
@@ -435,6 +447,7 @@ void FileSink::writeToLogFile(const std::string& log) {
         return;
     }
     logFile << log << "\n";
+    publishInfoUnlocked();
 }
 
 auto FileSink::createFileName() -> std::string {

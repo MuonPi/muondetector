@@ -215,9 +215,38 @@ double Histogram::bin2Value(int bin) const {
 }
 
 void Histogram::rescale(double center, double width) {
-    setMin(center - width / 2.);
-    setMax(center + width / 2.);
-    clear();
+    if (width <= 0.) {
+        return;
+    }
+
+    const double oldMin{fMin};
+    const double oldMax{fMax};
+    const auto oldMap{fHistogramMap};
+
+    fMin = center - width / 2.;
+    fMax = center + width / 2.;
+    fHistogramMap.clear();
+    fUnderflow = fOverflow = 0.;
+
+    const double oldRange{oldMax - oldMin};
+    if (oldRange <= 0. || fNrBins <= 1) {
+        return;
+    }
+
+    for (const auto& [oldBin, content] : oldMap) {
+        if (std::fabs(content) <= std::numeric_limits<double>::epsilon()) {
+            continue;
+        }
+        const double value{oldRange * oldBin / (fNrBins - 1) + oldMin};
+        const int newBin{value2Bin(value)};
+        if (newBin < 0) {
+            fUnderflow += content;
+        } else if (newBin >= fNrBins) {
+            fOverflow += content;
+        } else {
+            fHistogramMap[newBin] += content;
+        }
+    }
 }
 
 void Histogram::rescale(double center) {
@@ -250,11 +279,11 @@ void Histogram::rescale() {
         // range is too small, underflow and overflow have more than 1% of all entries
         rescale(0.5 * range + getMin(), 1.1 * range);
     } else if (ufl > 0.005 * entries) {
-        setMin(getMax() - range * 1.2);
-        clear();
+        const double newMin{getMax() - range * 1.2};
+        rescale(0.5 * (newMin + getMax()), getMax() - newMin);
     } else if (ofl > 0.005 * entries) {
-        setMax(getMin() + range * 1.2);
-        clear();
+        const double newMax{getMin() + range * 1.2};
+        rescale(0.5 * (getMin() + newMax), newMax - getMin());
     } else if (ufl < 1e-3 && ofl < 1e-3) {
         // check if range is too wide
         if (entries > 100. && static_cast<double>(highest - lowest) / fNrBins < 0.05) {

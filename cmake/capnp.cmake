@@ -1,24 +1,21 @@
 # ============================================================
 # capnp.cmake
-# Drop-in Cap'n Proto + YAML generator integration
-# ============================================================
-
-# Usage in main CMakeLists.txt:
-#
-#   include(cmake/capnp.cmake)
-#   target_link_libraries(muondetector-shared PUBLIC muondetector-protocol)
-#
+# Unified Cap'n Proto + YAML generator integration
 # ============================================================
 
 set(CAPNP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
 set(CAPNP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+
 get_filename_component(MUONDETECTOR_ROOT
     "${CMAKE_CURRENT_LIST_DIR}/.."
     ABSOLUTE
 )
+
 set(CAPNP_SOURCE_DIRECTORY
     "${MUONDETECTOR_ROOT}/library/src/capnp"
 )
+
 set(CAPNP_GENERATOR_SCRIPT
     "${MUONDETECTOR_ROOT}/tools/generate_capnp.py"
 )
@@ -27,12 +24,6 @@ set(CAPNP_BUILD_SUBDIR "generated/capnp")
 set(CAPNP_BUILD_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${CAPNP_BUILD_SUBDIR}")
 
 set(GENERATED_PROTOCOL_CAPNP "${CAPNP_BUILD_DIRECTORY}/protocol.capnp")
-set(PROTOCOL_CPP
-    ${CAPNP_BUILD_DIRECTORY}/protocol.capnp.c++
-)
-set(PROTOCOL_H
-    ${CAPNP_BUILD_DIRECTORY}/protocol.capnp.h
-)
 
 file(MAKE_DIRECTORY "${CAPNP_BUILD_DIRECTORY}")
 
@@ -41,33 +32,37 @@ file(MAKE_DIRECTORY "${CAPNP_BUILD_DIRECTORY}")
 # ------------------------------------------------------------
 set(FOUND_LIBATOMIC TRUE)
 
-if(CMAKE_CROSSCOMPILING)
-    set(HOST_CAPNP_EXECUTABLE /usr/local/bin/capnp CACHE FILEPATH "Host capnp compiler executable")
-    set(HOST_CAPNPC_CXX_EXECUTABLE /usr/local/bin/capnpc-c++ CACHE FILEPATH "Host capnp C++ plugin executable")
-    set(CAPNP_EXECUTABLE "${HOST_CAPNP_EXECUTABLE}" CACHE FILEPATH "" FORCE)
-    set(CAPNPC_CXX_EXECUTABLE "${HOST_CAPNPC_CXX_EXECUTABLE}" CACHE FILEPATH "" FORCE)
-endif()
-
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 find_package(CapnProto QUIET)
 
+# ------------------------------------------------------------
+# Cross compilation: use host capnp tools, target CapnProto libs
+# ------------------------------------------------------------
 if(CMAKE_CROSSCOMPILING)
-    set(CAPNP_EXECUTABLE "${HOST_CAPNP_EXECUTABLE}" CACHE FILEPATH "" FORCE)
-    set(CAPNPC_CXX_EXECUTABLE "${HOST_CAPNPC_CXX_EXECUTABLE}" CACHE FILEPATH "" FORCE)
+    set(HOST_CAPNP_EXECUTABLE /usr/local/bin/capnp
+        CACHE FILEPATH "Host capnp compiler executable"
+    )
+
+    set(HOST_CAPNPC_CXX_EXECUTABLE /usr/local/bin/capnpc-c++
+        CACHE FILEPATH "Host capnp C++ plugin executable"
+    )
 
     if(NOT EXISTS "${HOST_CAPNP_EXECUTABLE}")
         message(FATAL_ERROR
             "Host capnp compiler not found at ${HOST_CAPNP_EXECUTABLE}. "
-            "Install the host capnproto package, or pass -DHOST_CAPNP_EXECUTABLE=/path/to/capnp."
+            "Pass -DHOST_CAPNP_EXECUTABLE=/path/to/capnp."
         )
     endif()
+
     if(NOT EXISTS "${HOST_CAPNPC_CXX_EXECUTABLE}")
         message(FATAL_ERROR
             "Host capnp C++ plugin not found at ${HOST_CAPNPC_CXX_EXECUTABLE}. "
-            "Install the matching host capnproto C++ plugin, or pass "
-            "-DHOST_CAPNPC_CXX_EXECUTABLE=/path/to/capnpc-c++."
+            "Pass -DHOST_CAPNPC_CXX_EXECUTABLE=/path/to/capnpc-c++."
         )
     endif()
+
+    set(CAPNP_EXECUTABLE "${HOST_CAPNP_EXECUTABLE}" CACHE FILEPATH "" FORCE)
+    set(CAPNPC_CXX_REAL_EXECUTABLE "${HOST_CAPNPC_CXX_EXECUTABLE}")
 
     execute_process(
         COMMAND "${HOST_CAPNP_EXECUTABLE}" --version
@@ -77,6 +72,7 @@ if(CMAKE_CROSSCOMPILING)
         ERROR_STRIP_TRAILING_WHITESPACE
         RESULT_VARIABLE HOST_CAPNP_VERSION_RESULT
     )
+
     if(NOT HOST_CAPNP_VERSION_RESULT EQUAL 0)
         message(FATAL_ERROR
             "Failed to run host capnp compiler ${HOST_CAPNP_EXECUTABLE}: "
@@ -85,6 +81,7 @@ if(CMAKE_CROSSCOMPILING)
     endif()
 
     string(REGEX MATCH "[0-9]+(\\.[0-9]+)+" HOST_CAPNP_VERSION "${HOST_CAPNP_VERSION_OUTPUT}")
+
     message(STATUS "Host capnp compiler: ${HOST_CAPNP_EXECUTABLE} (${HOST_CAPNP_VERSION_OUTPUT})")
     message(STATUS "Host capnp C++ plugin: ${HOST_CAPNPC_CXX_EXECUTABLE}")
     message(STATUS "Target CapnProto package version: ${CapnProto_VERSION}")
@@ -93,82 +90,138 @@ if(CMAKE_CROSSCOMPILING)
         AND NOT HOST_CAPNP_VERSION VERSION_EQUAL CapnProto_VERSION
     )
         message(FATAL_ERROR
-            "Cap'n Proto version mismatch for cross-compilation. "
-            "The host capnp compiler is ${HOST_CAPNP_VERSION}, but the target sysroot "
-            "Cap'n Proto headers/libraries are ${CapnProto_VERSION}. Generated Cap'n Proto "
-            "C++ requires an exact version match. Install/build a host capnp compiler with "
-            "version ${CapnProto_VERSION} and pass -DHOST_CAPNP_EXECUTABLE=/path/to/capnp, "
-            "or update the sysroot Cap'n Proto dev package to match the host compiler."
+            "Cap'n Proto version mismatch. Host compiler is ${HOST_CAPNP_VERSION}, "
+            "target package is ${CapnProto_VERSION}."
         )
     endif()
 endif()
 
-if(WIN32 AND NOT CapnProto_FOUND)
-    message(STATUS "Building Cap'n Proto from source (Windows)")
+# ------------------------------------------------------------
+# Windows: build host capnp tools from source
+# ------------------------------------------------------------
+if(WIN32 AND NOT CMAKE_CROSSCOMPILING AND NOT CapnProto_FOUND)
+    message(STATUS "Building Cap'n Proto from source for Windows")
 
     include(FetchContent)
+
     FetchContent_Declare(capnproto
         GIT_REPOSITORY https://github.com/capnproto/capnproto.git
         GIT_TAG v1.4.0
     )
+
     FetchContent_MakeAvailable(capnproto)
 
     set(CAPNP_BUILD_DIR "${CMAKE_BINARY_DIR}/_deps/capnproto-build")
-    set(CAPNP_INSTALL_DIR "${CMAKE_BINARY_DIR}/_deps/capnproto-install")
     file(MAKE_DIRECTORY "${CAPNP_BUILD_DIR}")
 
     execute_process(
         COMMAND "${CMAKE_COMMAND}"
-            "-G" "Ninja"
+            -G Ninja
             "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
             "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
             "-DCMAKE_BUILD_TYPE=Release"
-            "-DCMAKE_INSTALL_PREFIX=${CAPNP_INSTALL_DIR}"
             "-DBUILD_TESTING=OFF"
             "${capnproto_SOURCE_DIR}/c++"
         WORKING_DIRECTORY "${CAPNP_BUILD_DIR}"
         RESULT_VARIABLE CAPNP_CONFIG_RESULT
     )
+
     if(NOT CAPNP_CONFIG_RESULT EQUAL 0)
-        message(FATAL_ERROR "Failed to configure Cap'n Proto")
+        message(FATAL_ERROR "Failed to configure host Cap'n Proto tools")
     endif()
 
     execute_process(
-        COMMAND "${CMAKE_COMMAND}" --build "${CAPNP_BUILD_DIR}" --config Release -j
+        COMMAND "${CMAKE_COMMAND}" --build "${CAPNP_BUILD_DIR}" --config Release
         RESULT_VARIABLE CAPNP_BUILD_RESULT
     )
+
     if(NOT CAPNP_BUILD_RESULT EQUAL 0)
-        message(FATAL_ERROR "Failed to build Cap'n Proto")
+        message(FATAL_ERROR "Failed to build host Cap'n Proto tools")
     endif()
 
-    execute_process(
-        COMMAND "${CMAKE_COMMAND}" --install "${CAPNP_BUILD_DIR}"
-        RESULT_VARIABLE CAPNP_INSTALL_RESULT
+    find_program(CAPNP_EXECUTABLE
+        NAMES capnp.exe capnp
+        PATHS
+            "${CAPNP_BUILD_DIR}"
+            "${CAPNP_BUILD_DIR}/src/capnp"
+            "${CAPNP_BUILD_DIR}/src/capnp/output/bin"
+            "${CAPNP_BUILD_DIR}/c++/src/capnp/output/bin"
+        NO_DEFAULT_PATH
+        REQUIRED
     )
-    if(NOT CAPNP_INSTALL_RESULT EQUAL 0)
-        message(FATAL_ERROR "Failed to install Cap'n Proto")
+
+    find_program(CAPNPC_CXX_REAL_EXECUTABLE
+        NAMES capnpc-c++.exe capnpc-c++
+        PATHS
+            "${CAPNP_BUILD_DIR}"
+            "${CAPNP_BUILD_DIR}/src/capnp"
+            "${CAPNP_BUILD_DIR}/src/capnp/output/bin"
+            "${CAPNP_BUILD_DIR}/c++/src/capnp/output/bin"
+        NO_DEFAULT_PATH
+        REQUIRED
+    )
+
+    message(STATUS "Using capnp: ${CAPNP_EXECUTABLE}")
+    message(STATUS "Using capnpc-c++: ${CAPNPC_CXX_REAL_EXECUTABLE}")
+
+    if(NOT EXISTS "${CAPNP_EXECUTABLE}")
+        message(FATAL_ERROR "capnp.exe was not built at ${CAPNP_EXECUTABLE}")
     endif()
 
-    # Point find_package at our freshly built install
-    set(CapnProto_DIR "${CAPNP_INSTALL_DIR}/lib/cmake/CapnProto")
+    if(NOT EXISTS "${CAPNPC_CXX_REAL_EXECUTABLE}")
+        message(FATAL_ERROR "capnpc-c++.exe was not built at ${CAPNPC_CXX_REAL_EXECUTABLE}")
+    endif()
+
+    if(TARGET capnp AND NOT TARGET CapnProto::capnp)
+        add_library(CapnProto::capnp ALIAS capnp)
+    endif()
+
+    if(TARGET kj AND NOT TARGET CapnProto::kj)
+        add_library(CapnProto::kj ALIAS kj)
+    endif()
+endif()
+
+# ------------------------------------------------------------
+# Normal native builds: use package-provided tools
+# ------------------------------------------------------------
+if(NOT CMAKE_CROSSCOMPILING AND NOT WIN32)
+    if(NOT CAPNP_EXECUTABLE)
+        find_program(CAPNP_EXECUTABLE capnp REQUIRED)
+    endif()
+
+    if(NOT CAPNPC_CXX_REAL_EXECUTABLE)
+        find_program(CAPNPC_CXX_REAL_EXECUTABLE capnpc-c++ REQUIRED)
+    endif()
+endif()
+
+if(NOT CAPNP_EXECUTABLE)
+    message(FATAL_ERROR "CAPNP_EXECUTABLE is not set")
+endif()
+
+if(NOT CAPNPC_CXX_REAL_EXECUTABLE)
+    message(FATAL_ERROR "CAPNPC_CXX_REAL_EXECUTABLE is not set")
+endif()
+
+get_filename_component(CAPNPC_CXX_DIR "${CAPNPC_CXX_REAL_EXECUTABLE}" DIRECTORY)
+
+if(NOT TARGET CapnProto::capnp OR NOT TARGET CapnProto::kj)
+    message(FATAL_ERROR
+        "CapnProto library targets are missing. Need CapnProto::capnp and CapnProto::kj."
+    )
 endif()
 
 add_definitions(${CAPNP_DEFINITIONS})
 
 # ------------------------------------------------------------
-# Input / Generated Files
+# Generate protocol.capnp from YAML at configure time
 # ------------------------------------------------------------
 set(PROTOCOL_YAML "${CAPNP_SOURCE_DIRECTORY}/protocol.yaml")
 
-# ------------------------------------------------------------
-# Generate protocol.capnp at configure time
-# This avoids build-time ordering issues with capnp_generate_cpp()
-# ------------------------------------------------------------
 message(STATUS "Generating protocol.capnp from protocol.yaml")
 
 execute_process(
     COMMAND
-        ${Python3_EXECUTABLE}
+        "${Python3_EXECUTABLE}"
         "${CAPNP_GENERATOR_SCRIPT}"
         "${PROTOCOL_YAML}"
         "${GENERATED_PROTOCOL_CAPNP}"
@@ -179,54 +232,82 @@ if(NOT GEN_RESULT EQUAL 0)
     message(FATAL_ERROR "Failed to generate protocol.capnp")
 endif()
 
-# ------------------------------------------------------------
-# Reconfigure automatically if YAML changes
-# ------------------------------------------------------------
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${PROTOCOL_YAML}"
 )
 
 # ------------------------------------------------------------
-# Collect static .capnp files
+# Collect all schemas
 # ------------------------------------------------------------
 file(GLOB STATIC_CAPNP_FILES
     CONFIGURE_DEPENDS
     "${CAPNP_SOURCE_DIRECTORY}/*.capnp"
 )
 
-# Remove protocol.capnp if someone manually placed one there
 list(FILTER STATIC_CAPNP_FILES EXCLUDE REGEX ".*/protocol\\.capnp$")
 
-add_custom_command(
-    OUTPUT
-        ${PROTOCOL_CPP}
-        ${PROTOCOL_H}
-
-    COMMAND
-        ${CAPNP_EXECUTABLE}
-        compile
-        -oc++ ${GENERATED_PROTOCOL_CAPNP}
-        -I${CAPNP_SOURCE_DIRECTORY}
-        ${GENERATED_PROTOCOL_CAPNP}
-
-    DEPENDS
-        ${GENERATED_PROTOCOL_CAPNP}
+set(ALL_CAPNP_FILES
+    ${STATIC_CAPNP_FILES}
+    ${GENERATED_PROTOCOL_CAPNP}
 )
 
-# message(STATUS "Generating CapnProto Files" ${ALL_CAPNP_FILES})
-
 # ------------------------------------------------------------
-# Generate C++ from schemas
+# Unified Cap'n Proto C++ generation
 # ------------------------------------------------------------
-capnp_generate_cpp(CAPNP_SRCS CAPNP_HDRS ${STATIC_CAPNP_FILES})
+set(CAPNP_SRCS)
+set(CAPNP_HDRS)
 
-set(CAPNP_SRCS ${CAPNP_SRCS} ${PROTOCOL_CPP})
-set(CAPNP_HDRS ${CAPNP_HDRS} ${PROTOCOL_H})
-# message(STATUS "CAPNP_SRCS" ${CAPNP_SRCS})
-# message(STATUS "CAPNP_HDRS" ${CAPNP_HDRS})
+foreach(CAPNP_SCHEMA ${ALL_CAPNP_FILES})
+    file(RELATIVE_PATH CAPNP_RELATIVE_SCHEMA
+        "${MUONDETECTOR_ROOT}"
+        "${CAPNP_SCHEMA}"
+    )
 
-# Generated headers usually live beside generated sources
-get_filename_component(CAPNP_INCLUDE_DIR "${CAPNP_HDRS}" DIRECTORY)
+    if(CAPNP_RELATIVE_SCHEMA MATCHES "^\\.\\.")
+        file(RELATIVE_PATH CAPNP_RELATIVE_SCHEMA
+            "${CMAKE_CURRENT_BINARY_DIR}"
+            "${CAPNP_SCHEMA}"
+        )
+    endif()
+
+    set(CAPNP_GENERATED_CPP
+        "${CMAKE_CURRENT_BINARY_DIR}/${CAPNP_RELATIVE_SCHEMA}.c++"
+    )
+
+    set(CAPNP_GENERATED_H
+        "${CMAKE_CURRENT_BINARY_DIR}/${CAPNP_RELATIVE_SCHEMA}.h"
+    )
+
+    get_filename_component(CAPNP_GENERATED_DIR "${CAPNP_GENERATED_CPP}" DIRECTORY)
+    file(MAKE_DIRECTORY "${CAPNP_GENERATED_DIR}")
+
+    add_custom_command(
+        OUTPUT
+            "${CAPNP_GENERATED_CPP}"
+            "${CAPNP_GENERATED_H}"
+        COMMAND
+            "${CMAKE_COMMAND}" -E env
+            "PATH=${CAPNPC_CXX_DIR};$ENV{PATH}"
+            "${CAPNP_EXECUTABLE}"
+            compile
+            -oc++:.
+            "--src-prefix=${MUONDETECTOR_ROOT}"
+            "-I${MUONDETECTOR_ROOT}"
+            "-I${CAPNP_SOURCE_DIRECTORY}"
+            "-I${CAPNP_BUILD_DIRECTORY}"
+            "${CAPNP_SCHEMA}"
+        WORKING_DIRECTORY
+            "${CMAKE_CURRENT_BINARY_DIR}"
+        DEPENDS
+            "${CAPNP_SCHEMA}"
+        COMMENT
+            "Generating C++ from ${CAPNP_SCHEMA}"
+        VERBATIM
+    )
+
+    list(APPEND CAPNP_SRCS "${CAPNP_GENERATED_CPP}")
+    list(APPEND CAPNP_HDRS "${CAPNP_GENERATED_H}")
+endforeach()
 
 # ------------------------------------------------------------
 # Protocol library
@@ -236,16 +317,12 @@ add_library(muondetector-protocol STATIC
     ${CAPNP_HDRS}
 )
 
-set(CAPNP_INCLUDE_DIRS
-    ${CAPNP_SOURCE_DIRECTORY}
-    ${CMAKE_CURRENT_BINARY_DIR}/library/src/capnp
-    ${CMAKE_CURRENT_BINARY_DIR}/generated/capnp
-)
-
 target_include_directories(muondetector-protocol PUBLIC
-    ${CAPNP_INCLUDE_DIRS}
-    ${CAPNP_INCLUDE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR}
+    "${CAPNP_SOURCE_DIRECTORY}"
+    "${CAPNP_BUILD_DIRECTORY}"
+    "${CMAKE_CURRENT_BINARY_DIR}"
+    "${CMAKE_CURRENT_BINARY_DIR}/library/src/capnp"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/capnp"
 )
 
 target_link_libraries(muondetector-protocol PUBLIC
@@ -255,10 +332,7 @@ target_link_libraries(muondetector-protocol PUBLIC
 
 target_compile_features(muondetector-protocol PUBLIC cxx_std_20)
 
-source_group("Capnp Schemas" FILES ${STATIC_CAPNP_FILES})
-source_group("Generated" FILES
-    ${GENERATED_PROTOCOL_CAPNP}
-    ${CAPNP_SRCS}
-    ${CAPNP_HDRS}
-)
+source_group("Capnp Schemas" FILES ${ALL_CAPNP_FILES})
+source_group("Generated" FILES ${CAPNP_SRCS} ${CAPNP_HDRS})
+
 message(STATUS "Cap'n Proto protocol library ready: muondetector-protocol")

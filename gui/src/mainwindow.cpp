@@ -42,6 +42,7 @@
 #include <data/commands/gpio_rate_request_cmd.h>
 #include <data/commands/gpio_rate_reset_cmd.h>
 #include <data/commands/histogram_clear_cmd.h>
+#include <data/commands/histogram_request_cmd.h>
 #include <data/commands/i2c_scan_bus_cmd.h>
 #include <data/commands/i2c_stats_request_cmd.h>
 #include <data/commands/mqtt_inhibit_cmd.h>
@@ -385,6 +386,8 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
     connect(this, &MainWindow::histogramReceived, histoTab,
             &histogramDataForm::onHistogramReceived);
     connect(histoTab, &histogramDataForm::histogramCleared, this, &MainWindow::onHistogramCleared);
+    connect(histoTab, &histogramDataForm::histogramsRefreshRequested, this,
+            &MainWindow::requestHistograms);
     ui->tabWidget->addTab(histoTab, "Statistics");
 
     ParameterMonitorForm* paramTab = new ParameterMonitorForm(this);
@@ -469,7 +472,12 @@ MainWindow::MainWindow(std::shared_ptr<boost::asio::io_context> io, QWidget* par
 }
 
 MainWindow::~MainWindow() {
-    clientConn.reset();
+    if (clientConn != nullptr) {
+        clientConn->setDisconnectHandler(nullptr);
+        clientConn->setPacketHandler(nullptr);
+        clientConn->stop();
+        clientConn.reset();
+    }
     saveSettings(addresses);
     delete ui;
 }
@@ -482,7 +490,8 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
         return;
     }
     boost::system::error_code ec;
-    clientSocket_ = std::make_shared<tcp::socket>(*m_io);
+    auto pendingSocket = std::make_shared<tcp::socket>(*m_io);
+    clientSocket_ = pendingSocket;
     auto server_ip = boost::asio::ip::make_address_v4(ipAddress.toStdString(), ec);
     if (ec) {
         QMessageBox::critical(this, "Connection Failed",
@@ -522,105 +531,122 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
     connecting_ = true;
     connectTimer_->start(50);
 
-    QTimer* timer = new QTimer(this);
+    QPointer<QTimer> timer = new QTimer(this);
     timer->setInterval(std::chrono::milliseconds(CONNECTION_TIMEOUT_MS).count());
     timer->setSingleShot(true);
-    connect(timer, &QTimer::timeout, this, [this]() {
-        if (clientSocket_) {
-            boost::system::error_code ec;
-            clientSocket_->close(ec);
-            clientSocket_.reset();
-        }
-
-        connecting_ = false;
-
-        QMetaObject::invokeMethod(
-            this, [this]() { uiSetDisconnectedState(); }, Qt::QueuedConnection);
-    });
-    timer->start();
-
-    clientSocket_->async_connect(endpoint, [this, timer](const boost::system::error_code& ec) {
-        QMetaObject::invokeMethod(
-            this,
-            [this, timer]() {
-                if (timer != nullptr) {
-                    timer->stop();
-                    timer->deleteLater();
-                }
-                if (connectTimer_ != nullptr) {
-                    connectTimer_->stop();
-                    connectTimer_->deleteLater();
-                    connectTimer_ = nullptr;
-                }
-            },
-            Qt::QueuedConnection);
-
-        if (ec) {
-            QString msg;
-            if (!connecting_) {
-                QMetaObject::invokeMethod(
-                    this, [this]() { uiSetDisconnectedState(); }, Qt::QueuedConnection);
-                return;
-            }
-
-            if (ec == boost::asio::error::operation_aborted ||
-                ec == boost::asio::error::bad_descriptor) {
-                msg = "Connection timeout";
-            } else {
-                msg = QString::fromStdString(ec.message());
-            }
-
-            QMetaObject::invokeMethod(
-                this,
-                [this, msg]() {
-                    QMessageBox::critical(this, "Connection Failed", msg);
-                    connecting_ = false;
-                    clientSocket_->close();
-                    clientSocket_.reset();
-                    uiSetDisconnectedState();
-                },
-                Qt::QueuedConnection);
+    connect(timer, &QTimer::timeout, this, [this, pendingSocket]() {
+        if (!connecting_ || clientSocket_ != pendingSocket) {
             return;
         }
 
         connecting_ = false;
-        auto socket = std::move(clientSocket_);
-        clientSocket_.reset();
-        clientConn = std::make_shared<TcpConnection>(std::move(*socket));
 
-        auto weakConn = std::weak_ptr<TcpConnection>(clientConn);
-        clientConn->setDisconnectHandler([this](const boost::system::error_code& code) {
-            QMetaObject::invokeMethod(
-                this,
-                [this, code]() {
-                    qDebug() << "Connection closed!";
-                    if (code == boost::asio::error::operation_aborted /* We do clientConn.reset() */
-                        || code == boost::asio::error::eof /* Clean disconnect from server */) {
-                        QMetaObject::invokeMethod(
-                            this, [this]() { uiSetDisconnectedState(); }, Qt::QueuedConnection);
-                    } else {
-                        connection_error(code.value(), QString::fromStdString(code.message()));
-                    }
-                    clientConn->setDisconnectHandler(
-                        nullptr); // stop disconnect handling after stopped
-                    clientConn->setPacketHandler(
-                        nullptr); // wait for dangling async read processes...
-                    clientConn.reset();
-                },
-                Qt::QueuedConnection);
-        });
-        clientConn->setPacketHandler([weakConn, this](const TcpPacket& packet) {
-            if (auto conn = weakConn.lock()) {
-                if (static_cast<TCP_MSG_KEY>(packet.key) == TCP_MSG_KEY::MSG_PING) {
-                    conn->sendPacket(static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PONG),
-                                     packet.payload);
+        if (connectTimer_ != nullptr) {
+            connectTimer_->stop();
+            connectTimer_->deleteLater();
+            connectTimer_ = nullptr;
+        }
+
+        if (clientSocket_) {
+            boost::system::error_code ec;
+            clientSocket_->close(ec);
+        }
+
+        QMessageBox::critical(this, "Connection Failed", "Connection timeout");
+        clientSocket_.reset();
+        uiSetDisconnectedState();
+    });
+    timer->start();
+
+    QPointer<MainWindow> self(this);
+    pendingSocket->async_connect(endpoint, [self, pendingSocket,
+                                            timer](const boost::system::error_code& ec) {
+        if (self == nullptr) {
+            return;
+        }
+
+        QMetaObject::invokeMethod(
+            self,
+            [self, pendingSocket, timer, ec]() mutable {
+                if (self == nullptr) {
                     return;
                 }
-                decode(packet);
-            }
-        });
-        QMetaObject::invokeMethod(this, [this]() { connected(); }, Qt::QueuedConnection);
-        clientConn->start();
+
+                MainWindow* window = self.data();
+
+                if (timer != nullptr) {
+                    timer->stop();
+                    timer->deleteLater();
+                }
+                if (window->connectTimer_ != nullptr) {
+                    window->connectTimer_->stop();
+                    window->connectTimer_->deleteLater();
+                    window->connectTimer_ = nullptr;
+                }
+
+                if (!window->connecting_ || window->clientSocket_ != pendingSocket) {
+                    return;
+                }
+
+                if (ec) {
+                    const QString msg = QString::fromStdString(ec.message());
+                    QMessageBox::critical(window, "Connection Failed", msg);
+                    window->connecting_ = false;
+                    if (window->clientSocket_) {
+                        boost::system::error_code ignored;
+                        window->clientSocket_->close(ignored);
+                        window->clientSocket_.reset();
+                    }
+                    window->uiSetDisconnectedState();
+                    return;
+                }
+
+                window->connecting_ = false;
+                window->clientSocket_.reset();
+                window->clientConn = std::make_shared<TcpConnection>(std::move(*pendingSocket));
+
+                auto weakConn = std::weak_ptr<TcpConnection>(window->clientConn);
+                window->clientConn->setDisconnectHandler(
+                    [window](const boost::system::error_code& code) {
+                        QMetaObject::invokeMethod(
+                            window,
+                            [window, code]() {
+                                qDebug() << "Connection closed!";
+                                const bool expectedDisconnect =
+                                    code == boost::asio::error::operation_aborted ||
+                                    code == boost::asio::error::eof;
+                                if (expectedDisconnect) {
+                                    QMetaObject::invokeMethod(
+                                        window, [window]() { window->uiSetDisconnectedState(); },
+                                        Qt::QueuedConnection);
+                                } else {
+                                    window->connection_error(
+                                        code.value(), QString::fromStdString(code.message()));
+                                }
+                                window->clientConn->setDisconnectHandler(
+                                    nullptr); // stop disconnect handling after
+                                              // stopped
+                                window->clientConn->setPacketHandler(
+                                    nullptr); // wait for dangling async read
+                                              // processes...
+                                window->clientConn.reset();
+                            },
+                            Qt::QueuedConnection);
+                    });
+                window->clientConn->setPacketHandler([weakConn, window](const TcpPacket& packet) {
+                    if (auto conn = weakConn.lock()) {
+                        if (static_cast<TCP_MSG_KEY>(packet.key) == TCP_MSG_KEY::MSG_PING) {
+                            conn->sendPacket(static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PONG),
+                                             packet.payload);
+                            return;
+                        }
+                        window->decode(packet);
+                    }
+                });
+                window->connected();
+                window->clientConn->start();
+            },
+            Qt::QueuedConnection);
     });
 }
 
@@ -835,6 +861,7 @@ auto MainWindow::buildDecoderMap()
             {TCP_MSG_KEY::MSG_UBX_TIMEMARK,
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<UbxTimeMarkStruct>::decode(packet.payload);
+                 ui->eventCounter->setText(QString::number(event.evtCounter));
                  emit intCounterReceived(event.evtCounter);
                  emit timeMarkReceived(event);
              }},
@@ -914,6 +941,7 @@ auto MainWindow::buildDecoderMap()
              [this](const TcpPacket& packet) {
                  auto event = CapnpCodec<MqttStatusEvent>::decode(packet.payload);
                  emit mqttStatusChanged(event.status == MqttStatusEvent::Status::Connected);
+                 emit mqttStatusChanged(event);
              }},
             {TCP_MSG_KEY::MSG_GPIO_INHIBIT,
              [this](const TcpPacket& packet) {
@@ -1069,6 +1097,10 @@ void MainWindow::onHistogramCleared(QString histogramName) {
     sendCmdIfConnected(clientConn, HistogramClearCmd{histogramName.toStdString()});
 }
 
+void MainWindow::requestHistograms() {
+    sendCmdIfConnected(clientConn, HistogramRequestCmd{});
+}
+
 void MainWindow::sendSetAdcMode(ADC_SAMPLING_MODE mode) {
     AdcModeEvent cmd{};
     cmd.mode = static_cast<std::uint8_t>(mode);
@@ -1122,6 +1154,7 @@ void MainWindow::uiSetDisconnectedState() {
     ui->discr1Edit->clear();
     ui->discr2Slider->setValue(0);
     ui->discr2Edit->clear();
+    ui->eventCounter->setText("count");
     ui->biasPowerLabel->setStyleSheet("QLabel {color: darkGray;}");
     ui->tabWidget->setEnabled(false);
     ui->controlWidget->setEnabled(false);

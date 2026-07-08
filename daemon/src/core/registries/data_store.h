@@ -16,9 +16,10 @@ class Histogram;
 struct GnssPosStruct;
 struct UbxTimeMarkStruct;
 struct BiasCurrentEvent;
-struct BiasVoltageEvent;
 struct IntervalEvent;
 struct ADS1115Event;
+struct GpioEvent;
+class ShowerDetectorCalib;
 class DataStore {
   private:
     struct Entry {
@@ -86,9 +87,8 @@ class DataStore {
 
     // Define here which messages will be used to fill histograms with data
     // For each type in the list there must be a specialization in data_store.cpp
-    using histo_enabled_types =
-        type_list<GnssPosStruct, UbxTimeMarkStruct, BiasCurrentEvent, BiasVoltageEvent,
-                  IntervalEvent, ADS1115Event, UbxDopStruct>;
+    using histo_enabled_types = type_list<GnssPosStruct, UbxTimeMarkStruct, BiasCurrentEvent,
+                                          IntervalEvent, ADS1115Event, GpioEvent, UbxDopStruct>;
     // AdcTraceEvent,
     // ADS1115Event,
     // NavSat,
@@ -125,6 +125,7 @@ class DataStore {
     std::unordered_map<std::string, std::shared_ptr<Histogram>> m_histo_map;
     std::unique_ptr<GeoPosManager> m_geopos_manager;
     std::unique_ptr<CounterRateBuffer> m_ublox_ratebuffer;
+    std::optional<std::chrono::steady_clock::time_point> m_last_timepulse_rising;
     std::unordered_map<std::type_index, Entry> data_;
     mutable std::mutex mutex_;
 };
@@ -139,13 +140,13 @@ template <>
 void DataStore::fillHisto(const BiasCurrentEvent& event);
 
 template <>
-void DataStore::fillHisto(const BiasVoltageEvent& event);
-
-template <>
 void DataStore::fillHisto(const IntervalEvent& event);
 
 template <>
 void DataStore::fillHisto(const ADS1115Event& event);
+
+template <>
+void DataStore::fillHisto(const GpioEvent& event);
 
 template <>
 void DataStore::fillHisto(const UbxDopStruct& event);

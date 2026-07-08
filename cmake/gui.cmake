@@ -324,6 +324,7 @@ if(WIN32)
         COMMAND "${WINDEPLOYQT_EXECUTABLE}"
             --no-system-d3d-compiler
             --compiler-runtime
+            --qmldir "${MUONDETECTOR_GUI_QML_DIR}"
             "$<TARGET_FILE:muondetector-gui>"
         COMMENT "Running windeployqt"
     )
@@ -353,6 +354,8 @@ if(WIN32)
         imageformats
         iconengines
         networkinformation
+        geoservices
+        position
         tls
         generic
     )
@@ -363,6 +366,12 @@ if(WIN32)
             FILES_MATCHING PATTERN "*.dll"
         )
     endforeach()
+
+    install(DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/qml"
+        DESTINATION bin
+        COMPONENT gui
+        OPTIONAL
+    )
 
 
     install(FILES "${LLVM_MINGW_BIN}/libc++.dll" DESTINATION bin COMPONENT gui)

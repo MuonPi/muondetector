@@ -47,7 +47,7 @@ constexpr const char* data_topic{"muonpi/data/"};
 constexpr const char* log_topic{"muonpi/log/"};
 } // namespace MQTT
 namespace Histogram {
-constexpr std::chrono::seconds interval{60};
+constexpr std::chrono::seconds interval{5};
 } // namespace Histogram
 namespace Log {
 constexpr std::chrono::seconds interval{60};

@@ -327,12 +327,11 @@ void LogParameterProcessor::poll(EventBus& bus, const DataStore& datastore,
         return;
     }
     // retrieve calibration from datastore and apply to voltages
-    auto* raw = datastore.get<std::shared_ptr<ShowerDetectorCalib>>();
+    auto* raw = datastore.get<std::weak_ptr<ShowerDetectorCalib>>();
     if (raw == nullptr) {
         return;
     }
-    auto calib_weak = std::weak_ptr<ShowerDetectorCalib>(*raw);
-    if (auto calib = calib_weak.lock()) {
+    if (auto calib = raw->lock()) {
         if (calib->getCalibItem("VDIV").name != "VDIV") {
             return;
         }

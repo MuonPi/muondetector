@@ -3,7 +3,6 @@
 #include <data/ublox/ublox_messages.h>
 #include <events/ubx_event.h>
 #include <qbuttongroup.h>
-#include <qpushbutton.h>
 #include <ubloxsettingsform.h>
 #include <ui_ubloxsettingsform.h>
 #include <vector>

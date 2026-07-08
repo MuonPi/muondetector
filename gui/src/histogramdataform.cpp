@@ -3,16 +3,33 @@
 #include "gui/src/ui_histogramdataform.h"
 #include "ui_histogramdataform.h"
 
+#include <algorithm>
 #include <histogram.h>
+#include <qcheckbox.h>
+#include <qheaderview.h>
+#include <qpushbutton.h>
 #include <qtablewidget.h>
 
 histogramDataForm::histogramDataForm(QWidget* parent)
     : QWidget(parent), ui(new Ui::histogramDataForm) {
     ui->setupUi(this);
+    connect(ui->refreshButton, &QPushButton::clicked, this,
+            &histogramDataForm::histogramsRefreshRequested);
+    connect(ui->clearAllButton, &QPushButton::clicked, this,
+            &histogramDataForm::clearAllHistograms);
     connect(ui->histoWidget, &CustomHistogram::histogramCleared,
             [this](const QString histogramName) { emit histogramCleared(histogramName); });
     connect(ui->tableWidget, &QTableWidget::cellClicked, this,
             &histogramDataForm::onTableWidgetCellClicked);
+    connect(ui->showFitCheckBox, &QCheckBox::toggled, ui->histoWidget,
+            &CustomHistogram::setShowFit);
+    ui->histoWidget->setShowFit(ui->showFitCheckBox->isChecked());
+    ui->tableWidget->horizontalHeader()->setStretchLastSection(false);
+    ui->tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    ui->tableWidget->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+    ui->tableWidget->setColumnWidth(1, std::max(fontMetrics().horizontalAdvance("1000000"),
+                                                fontMetrics().horizontalAdvance("Entries")) +
+                                           28);
 }
 
 histogramDataForm::~histogramDataForm() {
@@ -38,12 +55,21 @@ void histogramDataForm::updateHistoTable() {
         ui->tableWidget->setItem(i, 1, newItem2);
         i++;
     }
+    ui->tableWidget->setColumnWidth(1, std::max(fontMetrics().horizontalAdvance("1000000"),
+                                                fontMetrics().horizontalAdvance("Entries")) +
+                                           28);
     if (fCurrentHisto.size()) {
         for (int j = 0; j < ui->tableWidget->rowCount(); j++) {
             if (ui->tableWidget->item(j, 0)->text() == fCurrentHisto) {
                 onTableWidgetCellClicked(j, 0);
             }
         }
+    }
+}
+
+void histogramDataForm::clearAllHistograms() {
+    for (auto it = fHistoMap.cbegin(); it != fHistoMap.cend(); ++it) {
+        emit histogramCleared(it.key());
     }
 }
 

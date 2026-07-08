@@ -10,7 +10,7 @@ muondetector-daemon (3.0.0) ; urgency=low
     data and sensor readings.
   - Added TCP, file and MQTT sinks with centralized event dispatch and data
     store handling.
-  - Added MQTT credential management through muondetector-login and libsecret.
+  - Added MQTT credential management through muondetector-login.
   - Replaced the hardware access layer with reusable drivers and a separate
     hardware library for I2C devices.
   - Added and integrated drivers for ADS1115, MCP4728, PCA9536, EEPROM24AA02,

@@ -78,6 +78,7 @@ class FileSink : public Sink {
     void
     writeToLogFile(const std::string& log); //!< writes log data to the file opened in "logFile"
     LogInfoStruct getInfoUnlocked() const;
+    void publishInfoUnlocked();
     std::string getCurrentDataFileNameUnlocked() const;
     std::string getCurrentLogFileNameUnlocked() const;
     std::chrono::seconds currentLogAgeUnlocked() const;

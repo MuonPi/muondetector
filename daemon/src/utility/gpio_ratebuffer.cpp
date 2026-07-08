@@ -150,6 +150,9 @@ auto EventRateBuffer::handle(const GpioEvent& event)
     }
 
     // 4. accepted event bookkeeping
+    if (m_lastAcceptedEvent != invalid_time) {
+        m_lastInterval = event.timestamp - m_lastAcceptedEvent;
+    }
     m_lastAcceptedEvent = event.timestamp;
 
     m_rateEstimator.add(event.timestamp);

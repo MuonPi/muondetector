@@ -9,11 +9,6 @@ configure_file(
     )
 
 
-find_package(PkgConfig REQUIRED)
-
-pkg_check_modules(GLIB REQUIRED IMPORTED_TARGET glib-2.0)
-pkg_check_modules(LIBSECRET REQUIRED IMPORTED_TARGET libsecret-1)
-
 find_library(LIBCONFIG
     names libconfig++ libconfigpp config++ configpp libconfig config
     REQUIRED
@@ -50,7 +45,6 @@ set(MUONDETECTOR_DAEMON_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/factories/device_factory.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/registries/data_store.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/registries/sink_manager.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/libsecret/credentials.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/network/tcpserver.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/sds011/sds011.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/sds011/sds011_parser.cpp"
@@ -95,7 +89,6 @@ set(MUONDETECTOR_DAEMON_HEADER_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/factories/device_factory.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/registries/device_registry.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/registries/data_store.h"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/libsecret/credentials.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/network/tcpserver.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/sds011/sds011.h"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/hardware/sds011/sds011_parser.h"
@@ -132,7 +125,6 @@ set(MUONDETECTOR_LOGIN_SOURCE_FILES
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/logging/logger.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/thread_pool.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/core/event_bus.cpp"
-    "${MUONDETECTOR_DAEMON_SRC_DIR}/libsecret/credentials.cpp"
     "${MUONDETECTOR_DAEMON_SRC_DIR}/sinks/mqtt_sink.cpp"
     )
 
@@ -160,12 +152,10 @@ set_target_properties(muondetector-login PROPERTIES POSITION_INDEPENDENT_CODE 1)
 target_include_directories(muondetector-login PUBLIC
     $<BUILD_INTERFACE:${MUONDETECTOR_DAEMON_SRC_DIR}>
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
-    # $<BUILD_INTERFACE:${SECRET_INCLUDE_DIR}/libsecret-1>
 )
 
 target_link_libraries(muondetector-login
     ${MOSQUITTO}
-    PkgConfig::LIBSECRET
     muondetector-static
     muondetector-protocol
 )
@@ -181,8 +171,6 @@ target_include_directories(muondetector-daemon PUBLIC
     $<BUILD_INTERFACE:${LIBRARY_INCLUDE_DIR}>
     $<BUILD_INTERFACE:${CAPNP_INCLUDE_DIRS}>
     $<BUILD_INTERFACE:${Boost_INCLUDE_DIRS}>
-    $<BUILD_INTERFACE:${SECRET_INCLUDE_DIR}/libsecret-1>
-    # $<BUILD_INTERFACE:${GLIB_INCLUDE_DIR}/glib-2.0>
 )
 
 target_link_libraries(muondetector-daemon PRIVATE
@@ -195,8 +183,6 @@ target_link_libraries(muondetector-daemon PRIVATE
     muondetector-hardware
     muondetector-static
     muondetector-protocol
-    PkgConfig::LIBSECRET
-    PkgConfig::GLIB
     Threads::Threads
 )
 

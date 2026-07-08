@@ -10,17 +10,33 @@ muondetector-login \- manage stored MQTT credentials for muondetector-daemon
 .B muondetector-login
 stores, retrieves or clears the MQTT credentials used by
 .BR muondetector-daemon (1).
+Credentials are written to
+.IR /etc/muondetector/muondetector.conf
+as
+.B mqtt_user
+and
+.BR mqtt_password .
 .SH OPTIONS
 .TP
 \fBstore\fP
 Prompt for username and password, verify the MQTT connection and store the
-credentials in the user's secret storage.
+credentials in the daemon configuration file. This usually requires root
+permissions:
+.PP
+.EX
+sudo muondetector-login store
+.EE
 .TP
 \fBget\fP
-Print the currently stored credentials, if present.
+Print the configured MQTT username and report whether a password is configured.
 .TP
 \fBclear\fP
-Remove stored credentials.
+Remove MQTT credential entries from the daemon configuration file. This usually
+requires root permissions:
+.PP
+.EX
+sudo muondetector-login clear
+.EE
 .SH SEE ALSO
 .BR muondetector-daemon (1)
 .SH BUGS
