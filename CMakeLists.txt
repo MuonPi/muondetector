@@ -196,5 +196,17 @@ add_custom_target(clangformat COMMAND clang-format -style=WebKit -i ${MUONDETECT
 
 set(CPACK_DEBIAN_PACKAGE_NAME "muondetector")
 set(CPACK_DEB_COMPONENT_INSTALL ON)
+set(CPACK_COMPONENTS_ALL gui daemon)
+
+
+set(CPACK_DEBIAN_GUI_PACKAGE_NAME "muondetector-gui")
+set(CPACK_DEBIAN_DAEMON_PACKAGE_NAME "muondetector-daemon")
+
+if(BUILDING_BUNDLED_QWT)
+    set(
+        CPACK_DEBIAN_GUI_PACKAGE_SHLIBDEPS_PRIVATE_DIRS
+        "${CMAKE_BINARY_DIR}/_deps/qwt-build/lib"
+    )
+endif()
 
 include(CPack)
