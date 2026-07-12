@@ -220,13 +220,29 @@ target_include_directories(muondetector-gui PUBLIC
 )
 
 target_link_libraries(muondetector-gui PRIVATE
-    Qt6::Network Qt6::Svg Qt6::Widgets Qt6::Gui Qt6::Quick Qt6::QuickWidgets Qt6::Qml Qt6::Positioning Qt6::OpenGLWidgets
+    Qt6::Network
+    Qt6::Svg
+    Qt6::Widgets
+    Qt6::Gui
+    Qt6::Quick
+    Qt6::QuickWidgets
+    Qt6::Qml
+    Qt6::Positioning
+    Qt6::OpenGLWidgets
     Qwt::Qwt
     muondetector-shared
     muondetector-protocol
     pthread
 )
 
+include(GNUInstallDirs)
+
+install(
+    TARGETS muondetector-gui
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    BUNDLE DESTINATION "."
+    COMPONENT gui
+)
 ######################################################################################################
 # PACKAGING
 ######################################################################################################
@@ -251,40 +267,91 @@ if(BUILDING_BUNDLED_QWT)
     endif()
 endif()
 
-
 if(PACKAGING_MODE)
     message(STATUS "Packaging mode: disabling Qt deploy")
     set(QT_SKIP_AUTO_DEPLOY ON)
-    install(FILES ${CMAKE_SOURCE_DIR}/gui/config/muondetector-gui.metainfo.xml
-        DESTINATION share/metainfo
-        COMPONENT gui
-    )
-    install(FILES ${CMAKE_SOURCE_DIR}/gui/config/muondetector-gui.desktop
-        DESTINATION share/applications
-        COMPONENT gui
-    )
-    install(FILES ${CMAKE_SOURCE_DIR}/gui/config/muon.ico
-        DESTINATION share/pixmaps
-        COMPONENT gui
-    )
-elseif(NOT WIN32 AND NOT APPLE)
-    include(GNUInstallDirs)
-    add_custom_target(prep-gui ALL COMMAND mkdir -p "${CMAKE_CURRENT_BINARY_DIR}/gui")
-    add_custom_target(changelog-gui ALL COMMAND gzip -cn9 "${MUONDETECTOR_GUI_CONFIG_DIR}/changelog" > "${CMAKE_CURRENT_BINARY_DIR}/gui/changelog.gz")
-    add_dependencies(changelog-gui prep-gui)
-    add_custom_target(manpage-gui ALL COMMAND gzip -cn9 "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1" > "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1.gz")
 
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/gui/changelog.gz" DESTINATION "${CMAKE_INSTALL_DOCDIR}-gui" COMPONENT gui)
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1.gz" DESTINATION "share/man/man1/" COMPONENT gui)
-    install(FILES "${MUONDETECTOR_CONFIG_DIR}/copyright" DESTINATION "${CMAKE_INSTALL_DOCDIR}-gui" COMPONENT gui)
-    set(CPACK_DEBIAN_GUI_PACKAGE_DEPENDS "qml6-module-qtpositioning (>=6), qml6-module-qtlocation (>=6), qml6-module-qtquick2 (>=6), qml6-module-qtquick-layouts (>=6), qml6-module-qtquick-controls2 (>=6), qml6-module-qtquick-controls (>=6), qml6-module-qtquick-templates2 (>=6)")
+    install(
+        FILES "${MUONDETECTOR_GUI_CONFIG_DIR}/muondetector-gui.metainfo.xml"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo"
+        COMPONENT gui
+    )
+
+    install(
+        FILES "${MUONDETECTOR_GUI_CONFIG_DIR}/muondetector-gui.desktop"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
+        COMPONENT gui
+    )
+
+    install(
+        FILES "${MUONDETECTOR_GUI_CONFIG_DIR}/muon.ico"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/pixmaps"
+        COMPONENT gui
+    )
+endif()
+
+if(NOT WIN32 AND NOT APPLE)
+    add_custom_target(
+        prep-gui ALL
+        COMMAND "${CMAKE_COMMAND}" -E make_directory
+                "${CMAKE_CURRENT_BINARY_DIR}/gui"
+    )
+
+    add_custom_target(
+        changelog-gui ALL
+        COMMAND gzip -cn9
+                "${MUONDETECTOR_GUI_CONFIG_DIR}/changelog"
+                >
+                "${CMAKE_CURRENT_BINARY_DIR}/gui/changelog.gz"
+        VERBATIM
+    )
+
+    add_dependencies(changelog-gui prep-gui)
+
+    add_custom_target(
+        manpage-gui ALL
+        COMMAND gzip -cn9
+                "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1"
+                >
+                "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1.gz"
+        VERBATIM
+    )
+
+    install(
+        FILES "${CMAKE_CURRENT_BINARY_DIR}/gui/changelog.gz"
+        DESTINATION "${CMAKE_INSTALL_DOCDIR}-gui"
+        COMPONENT gui
+    )
+
+    install(
+        FILES "${CMAKE_CURRENT_BINARY_DIR}/muondetector-gui.1.gz"
+        DESTINATION "${CMAKE_INSTALL_MANDIR}/man1"
+        COMPONENT gui
+    )
+
+    install(
+        FILES "${MUONDETECTOR_CONFIG_DIR}/copyright"
+        DESTINATION "${CMAKE_INSTALL_DOCDIR}-gui"
+        COMPONENT gui
+    )
+
+    set(CPACK_DEBIAN_GUI_PACKAGE_DEPENDS
+        "qml6-module-qtpositioning (>= 6),
+         qml6-module-qtlocation (>= 6),
+         qml6-module-qtquick (>= 6),
+         qml6-module-qtquick-layouts (>= 6),
+         qml6-module-qtquick-controls (>= 6)"
+    )
+
     set(CPACK_DEBIAN_GUI_PACKAGE_SECTION "net")
-    set(CPACK_DEBIAN_GUI_PACKAGE_DESCRIPTION " GUI for monitoring and controlling the muondetector-daemon.
-    It connects to muondetector-daemon via TCP. It is based on Qt and C++.
-    It lets you change the settings for the muondetector hardware and
-    uses qml for displaying the current position on the map if connected
-    the muondetector-daemon.
-    It is licensed under the GNU Lesser General Public License version 3 (LGPL v3).")
+
+    set(CPACK_DEBIAN_GUI_PACKAGE_DESCRIPTION
+        "GUI for monitoring and controlling the muondetector-daemon.
+ It connects to muondetector-daemon via TCP. It is based on Qt and C++.
+ It lets you change the settings for the muondetector hardware and
+ uses QML for displaying the current position on the map.
+ It is licensed under the GNU Lesser General Public License version 3."
+    )
 endif()
 
 ######################################################################################################
@@ -327,11 +394,6 @@ if(WIN32)
             --qmldir "${MUONDETECTOR_GUI_QML_DIR}"
             "$<TARGET_FILE:muondetector-gui>"
         COMMENT "Running windeployqt"
-    )
-
-    install(TARGETS muondetector-gui
-        RUNTIME DESTINATION bin
-        COMPONENT gui
     )
 
     # Install everything windeployqt dropped into the output bin dir.
