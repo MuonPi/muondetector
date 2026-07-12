@@ -239,8 +239,7 @@ include(GNUInstallDirs)
 
 install(
     TARGETS muondetector-gui
-    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-    BUNDLE DESTINATION "."
+    RUNTIME DESTINATION bin
     COMPONENT gui
 )
 
