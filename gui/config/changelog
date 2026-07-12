@@ -1,3 +1,9 @@
+muondetector-daemon (3.0.1) ; urgency=low
+
+  * Fixed armhf GUI build
+
+ -- MuonPi <developer@muonpi.org>  Wed, 12 Jul 2026 18:05:00 +0200
+
 muondetector-gui (3.0.0) ; urgency=low
 
   * Updates:
