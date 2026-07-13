@@ -144,8 +144,8 @@ bool BME280::setHSamplingMode(
     buf[0] = ctrl_meas;
     n += writeReg(0xf2, buf, 1);
     n += readReg(0xf4, buf, 1);
-    writeReg(0xf4, buf, 1);
-    return (n == 2);
+    n += writeReg(0xf4, buf, 1);
+    return (n == 4);
 }
 
 bool BME280::setDefaultSettings() {
@@ -311,15 +311,16 @@ TPH BME280::readTPCU() {
     TPH val;
     if (!measure()) {
         std::cerr << "error: measurement invalid";
-        val.adc_P = INT32_MIN;
-        val.adc_T = INT32_MIN;
-        val.adc_H = INT32_MIN;
         return val;
     }
 
     int n = readReg(0xf7, readBuf, 8); // read T, P and H registers;
     if (fDebugLevel > 1)
         printf("%d bytes read\n", n);
+    if (n != 8) {
+        std::cerr << "error: incomplete BME280 data read";
+        return val;
+    }
     uint32_t adc_P = ((uint32_t) readBuf[0]) << 12;
     adc_P |= ((uint32_t) readBuf[1]) << 4;
     adc_P |= ((uint32_t) readBuf[2]) >> 4;
@@ -332,6 +333,7 @@ TPH BME280::readTPCU() {
     val.adc_P = (int32_t) adc_P;
     val.adc_T = (int32_t) adc_T;
     val.adc_H = (int32_t) adc_H;
+    val.valid = true;
     return val;
 }
 
@@ -375,12 +377,10 @@ void BME280::readCalibParameters() {
         printf("BME280 eeprom calib data:\n");
     }
 
-    bool ok = true;
+    bool ok = (n == 33);
     for (int i = 0; i < 12; i++) {
         fCalibParameters[i] = ((uint16_t) readBuf[2 * i]) |
                               (((uint16_t) readBuf[2 * i + 1]) << 8); // 2x 8-Bit ergibt 16-Bit Wort
-        if (fCalibParameters[i] == 0 || fCalibParameters[i] == 0xffff)
-            ok = false;
         if (fDebugLevel > 1)
             printf("calib%d: %d \n", i, fCalibParameters[i]);
     }
@@ -403,6 +403,11 @@ void BME280::readCalibParameters() {
     if (fDebugLevel > 1)
         printf("calib%d: %d \n", 17, fCalibParameters[17]);
 
+    if (fCalibParameters[0] == 0 || fCalibParameters[0] == 0xffff || fCalibParameters[3] == 0 ||
+        fCalibParameters[3] == 0xffff) {
+        ok = false;
+    }
+
     if (fDebugLevel > 1) {
         if (ok) {
             printf("calib data is valid.\n");
@@ -416,6 +421,9 @@ void BME280::readCalibParameters() {
 
 TPH BME280::getTPHValues() {
     TPH vals = readTPCU();
+    if (!vals.valid) {
+        return vals;
+    }
     vals.T = getTemperature(vals.adc_T);
     vals.P = getPressure(vals.adc_P);
     vals.H = getHumidity(vals.adc_H);

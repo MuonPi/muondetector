@@ -60,17 +60,12 @@ bool LTR390UV01::identify() {
     if (fMode == MODE_FAILED) {
         return false;
     }
-    if (!devicePresent()) {
-        return false;
-    }
-    uint16_t dataword{0};
-    uint8_t conf_reg{0};
-
-    return true;
+    return devicePresent();
 }
 
 bool LTR390UV01::devicePresent() {
-    return true;
+    std::uint8_t deviceId{0};
+    return readReg(registerMap.at(REG::PART_ID), &deviceId, 1) == 1;
 }
 
 void LTR390UV01::init() {
@@ -127,8 +122,10 @@ auto LTR390UV01::id() -> std::uint8_t {
 }
 
 auto LTR390UV01::mainStatus() -> Status {
-    std::uint8_t buf;
-    readReg(registerMap.at(REG::MAIN_STATUS), &buf, 1);
+    std::uint8_t buf{0};
+    if (readReg(registerMap.at(REG::MAIN_STATUS), &buf, 1) != 1) {
+        return {};
+    }
     return Status{.powerOnStatus = ((buf >> 5) & 0x01) == 0x01,
                   .interruptStatus = ((buf >> 4) & 0x01) == 0x01,
                   .dataStatus = ((buf >> 3) & 0x01) == 0x01};
@@ -160,10 +157,11 @@ void LTR390UV01::setGain(GAIN gain) {
 }
 
 auto LTR390UV01::readUVS() -> std::uint32_t {
-    std::uint8_t buf[3];
+    std::uint8_t buf[3]{0};
     auto result = readReg(registerMap.at(REG::UVSDATA), buf, 3);
-    if (result == -1) {
+    if (result != 3) {
         std::cerr << "Reading LTR390UV01 UVS returned -1";
+        return 0;
     }
     std::uint32_t data{0x00};
     data |= static_cast<std::uint32_t>(buf[2] & 0x0f);
@@ -175,10 +173,11 @@ auto LTR390UV01::readUVS() -> std::uint32_t {
 }
 
 auto LTR390UV01::readALS() -> std::uint32_t {
-    std::uint8_t buf[3];
+    std::uint8_t buf[3]{0};
     auto result = readReg(registerMap.at(REG::ALSDATA), buf, 3);
-    if (result == -1) {
+    if (result != 3) {
         std::cerr << "Reading LTR390UV01 ALS returned -1";
+        return 0;
     }
     std::uint32_t data{0x00};
     data |= static_cast<std::uint32_t>(buf[2] & 0x0f);

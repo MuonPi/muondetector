@@ -3,13 +3,18 @@
 
 #include "i2c/i2cdevice.h"
 
+#include <cstdint>
+
 /* BME280  */
 // struct to store temperature, pressure and humidity data in different ways
 struct TPH {
-    uint32_t adc_T;
-    uint32_t adc_P;
-    uint32_t adc_H;
-    double T, P, H;
+    uint32_t adc_T{0};
+    uint32_t adc_P{0};
+    uint32_t adc_H{0};
+    double T{-999.0};
+    double P{-999.0};
+    double H{-999.0};
+    bool valid{false};
 };
 class BME280 : public i2cDevice { // t_max = 112.8 ms for all three measurements at max oversampling
   public:
