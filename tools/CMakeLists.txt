@@ -14,6 +14,7 @@ add_executable(ltr390_reader
 target_include_directories(ltr390_reader PRIVATE
     .
     ../daemon/src
+    ../daemon/src/hardware
 )
 
 add_executable(as7331_reader
@@ -25,6 +26,7 @@ add_executable(as7331_reader
 target_include_directories(as7331_reader PRIVATE
     .
     ../daemon/src
+    ../daemon/src/hardware
 )
 
 add_executable(as7343_reader
@@ -36,4 +38,17 @@ add_executable(as7343_reader
 target_include_directories(as7343_reader PRIVATE
     .
     ../daemon/src
+    ../daemon/src/hardware
+)
+
+add_executable(bme280_reader
+    bme280_reader.cpp
+    ../daemon/src/hardware/i2c/i2cdevice.cpp
+    ../daemon/src/hardware/i2c/bme280.cpp
+)
+
+target_include_directories(bme280_reader PRIVATE
+    .
+    ../daemon/src
+    ../daemon/src/hardware
 )
