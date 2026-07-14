@@ -4,11 +4,12 @@
 #include "ui_histogramdataform.h"
 
 #include <algorithm>
-#include <histogram.h>
 #include <qcheckbox.h>
 #include <qheaderview.h>
 #include <qpushbutton.h>
 #include <qtablewidget.h>
+
+import muondetector.histogram;
 
 histogramDataForm::histogramDataForm(QWidget* parent)
     : QWidget(parent), ui(new Ui::histogramDataForm) {

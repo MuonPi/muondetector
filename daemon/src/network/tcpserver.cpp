@@ -3,7 +3,8 @@
 #include "core/event_bus.h"
 #include "data/events/server_conn_count_event.h"
 #include "sinks/tcp_sink.h"
-#include "tcpmessage_keys.h"
+
+import muondetector.tcpmessage_keys;
 
 using boost::asio::ip::tcp;
 

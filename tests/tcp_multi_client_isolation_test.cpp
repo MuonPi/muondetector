@@ -5,7 +5,6 @@
 #include "sinks/tcp_sink.h"
 #include "sources/tcp_source.h"
 #include "tcpconnection.h"
-#include "tcpmessage_keys.h"
 
 #include <array>
 #include <atomic>
@@ -18,6 +17,8 @@
 #include <string>
 #include <thread>
 #include <vector>
+
+import muondetector.tcpmessage_keys;
 
 using boost::asio::ip::tcp;
 

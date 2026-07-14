@@ -12,7 +12,6 @@
 #include <QResizeEvent>
 #include <algorithm>
 #include <cmath>
-#include <histogram.h>
 #include <limits>
 #include <numeric>
 #include <qbrush.h>
@@ -25,6 +24,8 @@
 #include <qwt_plot_renderer.h>
 #include <qwt_scale_engine.h>
 #include <qwt_text.h>
+
+import muondetector.histogram;
 
 typedef std::numeric_limits<double> dbl;
 

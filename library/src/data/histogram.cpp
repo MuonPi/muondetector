@@ -1,10 +1,10 @@
-#include "histogram.h"
-
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <map>
 #include <string>
+
+import muondetector.histogram;
 
 Histogram::Histogram(const std::string& name, int nrBins, double min, double max, bool autoscale,
                      const std::string& unit) noexcept

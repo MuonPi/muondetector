@@ -1,13 +1,14 @@
 #include "network/tcpserver.h"
 #include "sinks/tcp_sink.h"
 #include "tcpconnection.h"
-#include "tcpmessage_keys.h"
 
 #include <boost/asio.hpp>
 #include <chrono>
 #include <future>
 #include <iostream>
 #include <thread>
+
+import muondetector.tcpmessage_keys;
 
 using boost::asio::ip::tcp;
 

@@ -80,7 +80,6 @@
 #include "data/muondetector_structs.h"
 #include "histogram.capnp.h"
 #include "nav_sat.capnp.h"
-#include "network/tcpmessage_keys.h"
 #include "ubx_timemark_struct.capnp.h"
 #include "version_event.capnp.h"
 
@@ -92,6 +91,8 @@
 #include <ctime>
 #include <utility>
 #include <vector>
+
+import muondetector.tcpmessage_keys;
 
 inline capnp::FlatArrayMessageReader makeReader(const std::vector<std::uint8_t>& data) {
     auto wordPtr = reinterpret_cast<const capnp::word*>(data.data());

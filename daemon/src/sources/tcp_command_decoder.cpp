@@ -36,10 +36,11 @@
 #include "data/commands/ubx_tp5_cmd.h"
 #include "data/events/adc_mode_event.h"
 #include "data/events/gpio_inhibit_event.h"
-#include "network/tcpmessage_keys.h"
 
 #include <exception>
 #include <string>
+
+import muondetector.tcpmessage_keys;
 
 TcpCommandDecoder::TcpCommandDecoder(ComponentId id, EventBus& bus) : Component(id), bus_(bus) {
     bus_.subscribe<TcpPacketEvent>([this](const TcpPacketEvent& event) { this->handle(event); });

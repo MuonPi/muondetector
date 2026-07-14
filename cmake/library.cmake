@@ -27,6 +27,12 @@ set(MUONDETECTOR_LIBRARY_SOURCE_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/custom_io_operators.cpp"
     )
 
+set(MUONDETECTOR_LIBRARY_MODULE_FILES
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/gpio_pin_definitions.cppm"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/histogram.cppm"
+    "${MUONDETECTOR_LIBRARY_SRC_DIR}/network/tcpmessage_keys.cppm"
+    )
+
 set(MUONDETECTOR_LIBRARY_EVENT_FILES
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/events/adc_mode_event.h"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data/events/adc_trace_event.h"
@@ -101,6 +107,14 @@ set(MUONDETECTOR_COMMANDS_HEADER_FILES
 add_library(muondetector-shared OBJECT ${MUONDETECTOR_LIBRARY_SOURCE_FILES} ${MUONDETECTOR_LIBRARY_HEADER_FILES})
 add_library(muondetector-static STATIC ${MUONDETECTOR_LIBRARY_SOURCE_FILES} ${MUONDETECTOR_LIBRARY_HEADER_FILES}
 )
+target_sources(muondetector-shared PUBLIC
+    FILE_SET CXX_MODULES FILES
+    ${MUONDETECTOR_LIBRARY_MODULE_FILES}
+)
+target_sources(muondetector-static PUBLIC
+    FILE_SET CXX_MODULES FILES
+    ${MUONDETECTOR_LIBRARY_MODULE_FILES}
+)
 target_compile_definitions(muondetector-shared PUBLIC MUONDETECTOR_LIBRARY_EXPORT)
 target_compile_definitions(muondetector-static PUBLIC MUONDETECTOR_LIBRARY_EXPORT)
 set_target_properties(muondetector-shared PROPERTIES POSITION_INDEPENDENT_CODE 1)
@@ -125,7 +139,18 @@ target_include_directories(muondetector-static PUBLIC
 target_link_libraries(muondetector-shared PRIVATE
     muondetector-protocol
 )
+target_link_libraries(muondetector-shared PUBLIC
+    Threads::Threads
+)
 
 target_link_libraries(muondetector-static PRIVATE
     muondetector-protocol
 )
+target_link_libraries(muondetector-static PUBLIC
+    Threads::Threads
+)
+
+if(CMAKE_USE_PTHREADS_INIT)
+    target_compile_options(muondetector-shared PUBLIC -pthread)
+    target_compile_options(muondetector-static PUBLIC -pthread)
+endif()

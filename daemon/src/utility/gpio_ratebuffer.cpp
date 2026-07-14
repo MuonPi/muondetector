@@ -4,11 +4,12 @@
 #include "core/logging/logger.h"
 #include "data/events/gpio_event.h"
 #include "data/events/interval_event.h"
-#include "gpio_pin_definitions.h"
 
 #include <algorithm>
 #include <iostream>
 #include <vector>
+
+import muondetector.gpio_pin_definitions;
 
 EdgeFilter::EdgeFilter(const std::optional<EventEdge>& filter_edge) : m_filter_edge{filter_edge} {
 }

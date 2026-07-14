@@ -15,8 +15,9 @@
 #include <atomic>
 #include <config.h>
 #include <csignal>
-#include <gpio_pin_definitions.h>
 #include <pthread.h>
+
+import muondetector.gpio_pin_definitions;
 
 static const std::string CONFIG_FILE = std::string(MuonPi::Config::file);
 static const std::string SETTINGS_FILE =

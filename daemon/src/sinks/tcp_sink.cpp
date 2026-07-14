@@ -4,12 +4,13 @@
 #include "data/events/ads1115_event.h"
 #include "sink.h"
 #include "tcpconnection.h"
-#include "tcpmessage_keys.h"
 
 #include <algorithm>
 #include <cstring>
 #include <mutex>
 #include <vector>
+
+import muondetector.tcpmessage_keys;
 
 void TcpSink::addConnection(std::shared_ptr<TcpConnection> conn) {
     std::lock_guard<std::mutex> lock(mutex_);

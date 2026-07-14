@@ -27,6 +27,7 @@ function(add_muondetector_tcp_test target_name test_source test_name)
     target_link_libraries(${target_name} PRIVATE
         ${CAPNP_LIBRARIES}
         ${CAPNP_KJ_LIBRARIES}
+        muondetector-shared
         muondetector-protocol
         Threads::Threads
     )

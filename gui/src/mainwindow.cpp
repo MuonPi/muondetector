@@ -78,15 +78,16 @@
 #include <data/events/threshold_setting_event.h>
 #include <data/events/ubx_event.h>
 #include <data/events/version_event.h>
-#include <gpio_pin_definitions.h>
-#include <histogram.h>
 #include <iostream>
 #include <muondetector_structs.h>
 #include <qcompleter.h>
 #include <qdir.h>
 #include <qstandardpaths.h>
-#include <tcpmessage_keys.h>
 #include <unordered_map>
+
+import muondetector.gpio_pin_definitions;
+import muondetector.histogram;
+import muondetector.tcpmessage_keys;
 
 using namespace std;
 

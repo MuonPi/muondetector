@@ -1,10 +1,10 @@
 #include "tcpconnection.h"
 
-#include "tcpmessage_keys.h"
-
 #include <algorithm>
 #include <iostream>
 #include <utility>
+
+import muondetector.tcpmessage_keys;
 
 namespace {
 constexpr std::uint32_t kMagic = 0x4D554F4Eu; // "MUON"

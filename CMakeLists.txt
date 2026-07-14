@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.10)
+cmake_minimum_required (VERSION 3.28)
 project (muondetector LANGUAGES CXX C)
 
 string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
@@ -42,6 +42,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/output/bin")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(NOT CMAKE_GENERATOR MATCHES "Ninja|Visual Studio")
+    message(FATAL_ERROR "C++20 modules require the Ninja, Ninja Multi-Config, or Visual Studio generator. Reconfigure with `cmake -G Ninja ...`.")
+endif()
+
+set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
 if(NOT CMAKE_CROSSCOMPILING)
     find_program(CCACHE_PROGRAM ccache)

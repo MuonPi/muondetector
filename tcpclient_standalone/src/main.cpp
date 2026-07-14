@@ -6,7 +6,6 @@
 #include "data/events/gpio_event.h"
 #include "data/events/tcp_packet_event.h"
 #include "network/tcpconnection.h"
-#include "network/tcpmessage_keys.h"
 #include "sinks/tcp_sink.h"
 #include "sources/tcp_source.h"
 
@@ -16,6 +15,8 @@
 #include <kj/array.h>
 #include <sstream>
 #include <unordered_map>
+
+import muondetector.tcpmessage_keys;
 
 using boost::asio::ip::tcp;
 

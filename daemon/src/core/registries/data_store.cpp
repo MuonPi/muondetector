@@ -8,7 +8,6 @@
 #include "data/events/gpio_event.h"
 #include "data/events/interval_event.h"
 #include "data/events/ubx_event.h"
-#include "data/histogram.h"
 #include "data/ublox/ublox_messages.h"
 #include "utility/calibration.h"
 #include "utility/geoposmanager.h"
@@ -16,6 +15,8 @@
 // #include "data/"
 
 #include <cmath>
+
+import muondetector.histogram;
 
 DataStore::DataStore()
     : m_geopos_manager{std::make_unique<GeoPosManager>()}
