@@ -258,14 +258,19 @@ set(CAPNP_SRCS)
 set(CAPNP_HDRS)
 
 foreach(CAPNP_SCHEMA ${ALL_CAPNP_FILES})
-    file(RELATIVE_PATH CAPNP_RELATIVE_SCHEMA
-        "${MUONDETECTOR_ROOT}"
+    file(RELATIVE_PATH CAPNP_RELATIVE_TO_BUILD
+        "${CMAKE_CURRENT_BINARY_DIR}"
         "${CAPNP_SCHEMA}"
     )
 
-    if(CAPNP_RELATIVE_SCHEMA MATCHES "^\\.\\.")
+    if(NOT CAPNP_RELATIVE_TO_BUILD MATCHES "^\\.\\.")
+        set(CAPNP_SRC_PREFIX "${CMAKE_CURRENT_BINARY_DIR}")
+        set(CAPNP_RELATIVE_SCHEMA "${CAPNP_RELATIVE_TO_BUILD}")
+    else()
+        set(CAPNP_SRC_PREFIX "${MUONDETECTOR_ROOT}")
+
         file(RELATIVE_PATH CAPNP_RELATIVE_SCHEMA
-            "${CMAKE_CURRENT_BINARY_DIR}"
+            "${MUONDETECTOR_ROOT}"
             "${CAPNP_SCHEMA}"
         )
     endif()
@@ -291,7 +296,7 @@ foreach(CAPNP_SCHEMA ${ALL_CAPNP_FILES})
             "${CAPNP_EXECUTABLE}"
             compile
             -oc++:.
-            "--src-prefix=${MUONDETECTOR_ROOT}"
+            "--src-prefix=${CAPNP_SRC_PREFIX}"
             "-I${MUONDETECTOR_ROOT}"
             "-I${CAPNP_SOURCE_DIRECTORY}"
             "-I${CAPNP_BUILD_DIRECTORY}"

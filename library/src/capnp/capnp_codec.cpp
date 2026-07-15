@@ -3,22 +3,6 @@
 #include "adc_trace_event.capnp.h"
 #include "calib_event.capnp.h"
 #include "cfg_gnss.capnp.h"
-#include "gpio_rate_event.capnp.h"
-#include "i2c_stats_event.capnp.h"
-#include "mcp4728_event.capnp.h"
-#include "mon_rx.capnp.h"
-#include "mon_tx.capnp.h"
-#include "position_mode_config.capnp.h"
-#if __has_include("protocol.capnp.h")
-#include "protocol.capnp.h"
-#define MUON_HAS_PROTOCOL_CAPNP 1
-#elif __has_include("build/generated/capnp/protocol.capnp.h")
-#include "build/generated/capnp/protocol.capnp.h"
-#define MUON_HAS_PROTOCOL_CAPNP 1
-#elif __has_include("../../../build/build/generated/capnp/protocol.capnp.h")
-#include "../../../build/build/generated/capnp/protocol.capnp.h"
-#define MUON_HAS_PROTOCOL_CAPNP 1
-#endif
 #include "data/commands/adc_mode_request_cmd.h"
 #include "data/commands/adc_sample_trigger_cmd.h"
 #include "data/commands/bias_switch_cmd.h"
@@ -78,9 +62,16 @@
 #include "data/events/ubx_event.h"
 #include "data/events/version_event.h"
 #include "data/muondetector_structs.h"
+#include "gpio_rate_event.capnp.h"
 #include "histogram.capnp.h"
+#include "i2c_stats_event.capnp.h"
+#include "mcp4728_event.capnp.h"
+#include "mon_rx.capnp.h"
+#include "mon_tx.capnp.h"
 #include "nav_sat.capnp.h"
 #include "network/tcpmessage_keys.h"
+#include "position_mode_config.capnp.h"
+#include "protocol.capnp.h"
 #include "ubx_timemark_struct.capnp.h"
 #include "version_event.capnp.h"
 
