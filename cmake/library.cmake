@@ -110,6 +110,10 @@ target_include_directories(muondetector-shared PUBLIC
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network"
     "${MUONDETECTOR_LIBRARY_BINARY_DIR}"
+    "${CAPNP_SOURCE_DIRECTORY}"
+    "${CAPNP_BUILD_DIRECTORY}"
+    "${CMAKE_BINARY_DIR}"
+    "${CMAKE_BINARY_DIR}/library/src/capnp"
     "${Boost_INCLUDE_DIRS}"
     )
 
@@ -119,8 +123,15 @@ target_include_directories(muondetector-static PUBLIC
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/data"
     "${MUONDETECTOR_LIBRARY_SRC_DIR}/network"
     "${MUONDETECTOR_LIBRARY_BINARY_DIR}"
+    "${CAPNP_SOURCE_DIRECTORY}"
+    "${CAPNP_BUILD_DIRECTORY}"
+    "${CMAKE_BINARY_DIR}"
+    "${CMAKE_BINARY_DIR}/library/src/capnp"
     "${Boost_INCLUDE_DIRS}"
     )
+
+add_dependencies(muondetector-shared muondetector-protocol)
+add_dependencies(muondetector-static muondetector-protocol)
 
 target_link_libraries(muondetector-shared PRIVATE
     muondetector-protocol
