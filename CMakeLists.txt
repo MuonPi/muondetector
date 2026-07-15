@@ -202,11 +202,4 @@ set(CPACK_COMPONENTS_ALL gui daemon)
 set(CPACK_DEBIAN_GUI_PACKAGE_NAME "muondetector-gui")
 set(CPACK_DEBIAN_DAEMON_PACKAGE_NAME "muondetector-daemon")
 
-if(BUILDING_BUNDLED_QWT)
-    set(
-        CPACK_DEBIAN_GUI_PACKAGE_SHLIBDEPS_PRIVATE_DIRS
-        "${CMAKE_BINARY_DIR}/_deps/qwt-build/lib"
-    )
-endif()
-
 include(CPack)
