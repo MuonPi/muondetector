@@ -158,16 +158,16 @@ jobs:
                 -DGPIOD=/var/armhf/sysroot/usr/lib/arm-linux-gnueabihf/libgpiod.so
 
       - name: Build
-        run: cmake --build . --parallel 4
+        run: cmake --build build-armhf --parallel 4
 
       - name: Package .deb
-        run: cpack -G DEB
+        run: cpack --config build-armhf/CPackConfig.cmake
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: deb-armhf
-          path: ./output/packages/*.deb
+          path: ./build-armhf/output/packages/*.deb
 
   build-win32:
     runs-on: [self-hosted, Windows, X64, win32-build]
