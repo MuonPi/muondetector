@@ -139,12 +139,8 @@ sudo apt install \
   libqt6opengl6-dev \
   qml6-module-qtlocation \
   qml6-module-qtpositioning \
-  qml6-module-qtquick2 \
   qml6-module-qtquick-controls \
-  qml6-module-qtquick-controls2 \
-  qml6-module-qtquick-layouts \
-  qml6-module-qtquick-templates2 \
-  libqwt-qt6-dev
+  qml6-module-qtquick-layouts
 ```
 
 Clone and configure the build:
