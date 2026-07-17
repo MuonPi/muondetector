@@ -1,4 +1,11 @@
 cmake_minimum_required (VERSION 3.10)
+
+if((CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    AND NOT CMAKE_OSX_ARCHITECTURES
+)
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "macOS architectures to build")
+endif()
+
 project (muondetector LANGUAGES CXX C)
 
 string(TIMESTAMP PROJECT_DATE_STRING "%b %d, %Y")
@@ -125,6 +132,12 @@ set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/MuonPi/muondetector")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MuonPi <developer@muonpi.org>")
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 endif ()
+
+if(APPLE)
+    set(CPACK_GENERATOR "DragNDrop")
+    set(CPACK_PACKAGE_NAME "muondetector-gui")
+    set(CPACK_COMPONENTS_ALL gui)
+endif()
 
 
 if (CMAKE_CROSSCOMPILING)

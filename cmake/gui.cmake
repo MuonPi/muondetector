@@ -239,6 +239,7 @@ include(GNUInstallDirs)
 
 install(
     TARGETS muondetector-gui
+    BUNDLE DESTINATION .
     RUNTIME DESTINATION bin
     COMPONENT gui
 )
@@ -278,7 +279,7 @@ if(MUONDETECTOR_QWT_PRIVATE_LIBRARY_DIRS)
     )
 endif()
 
-if(MUONDETECTOR_INSTALL_PRIVATE_QWT)
+if(MUONDETECTOR_INSTALL_PRIVATE_QWT AND NOT APPLE)
     install(
         DIRECTORY "${MUONDETECTOR_QWT_LIBRARY_DIR}/"
         DESTINATION lib
@@ -396,6 +397,22 @@ if(APPLE)
     )
 
     install(SCRIPT ${deploy_script} COMPONENT gui)
+
+    set(MUONDETECTOR_MACOS_FIXUP_CODE [=[
+include(BundleUtilities)
+
+set(BU_CHMOD_BUNDLE_ITEMS ON)
+set(_muondetector_bundle "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/muondetector-gui.app")
+set(_muondetector_qwt_dirs "@MUONDETECTOR_QWT_PRIVATE_LIBRARY_DIRS@")
+
+if(EXISTS "${_muondetector_bundle}")
+    fixup_bundle("${_muondetector_bundle}" "" "${_muondetector_qwt_dirs}")
+else()
+    message(FATAL_ERROR "Expected app bundle was not installed: ${_muondetector_bundle}")
+endif()
+]=])
+    string(CONFIGURE "${MUONDETECTOR_MACOS_FIXUP_CODE}" MUONDETECTOR_MACOS_FIXUP_CODE @ONLY)
+    install(CODE "${MUONDETECTOR_MACOS_FIXUP_CODE}" COMPONENT gui)
 endif()
 
 ######################################################################################################

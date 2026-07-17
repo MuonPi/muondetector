@@ -1,12 +1,24 @@
 #Find QWT_LIBARY
 if(APPLE)
     find_library(QWT_LIBRARY
-        NAMES qwt
-        HINTS /opt/local/libexec/qt6/lib
+        NAMES qwt qwt-qt6 qwt6
+        HINTS
+            /opt/local/libexec/qt6/lib
+            /opt/homebrew/lib
+            /usr/local/lib
         QUIET)
+
     if(QWT_LIBRARY)
-        include_directories(${QWT_LIBRARY}/Headers)
-        link_libraries(${QWT_LIBRARY})
+        find_path(QWT_INCLUDE_DIR
+            NAMES qwt_plot.h
+            HINTS
+                /opt/local/libexec/qt6/include
+                /opt/local/include
+                /opt/homebrew/include
+                /usr/local/include
+            PATH_SUFFIXES qwt qwt6 qwt-qt6
+            QUIET
+        )
         message(STATUS "QWT_LIBRARY found: ${QWT_LIBRARY}")
     endif()
 elseif(WIN32)
@@ -137,6 +149,56 @@ else()
             IMPORTED_IMPLIB   "${QWT_BUILD_DIR}/lib/libqwt.a"
             INTERFACE_INCLUDE_DIRECTORIES ${qwt_SOURCE_DIR}/src
         )
+        add_dependencies(Qwt::Qwt qwt)
+    elseif(APPLE)
+        find_program(QMAKE_EXECUTABLE
+            NAMES qmake6 qmake-qt6
+            REQUIRED
+        )
+
+        if (MUONDETECTOR_ON_RASPBERRYPI)
+            set(CPU_CORE_SUFFIX -j1)
+        else()
+            set(CPU_CORE_SUFFIX -j)
+        endif()
+
+        set(QWT_LIBRARY "${QWT_BUILD_DIR}/lib/libqwt.dylib")
+        set(QWT_QMAKE_ARCH_ARGS)
+
+        if(CMAKE_OSX_ARCHITECTURES)
+            string(REPLACE ";" " " QWT_QMAKE_APPLE_DEVICE_ARCHS "${CMAKE_OSX_ARCHITECTURES}")
+            list(APPEND QWT_QMAKE_ARCH_ARGS
+                "QMAKE_APPLE_DEVICE_ARCHS=${QWT_QMAKE_APPLE_DEVICE_ARCHS}"
+            )
+        endif()
+
+        add_custom_command(
+            OUTPUT ${QWT_LIBRARY}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${QWT_BUILD_DIR}
+
+            COMMAND ${QMAKE_EXECUTABLE}
+                    ${qwt_SOURCE_DIR}/qwt.pro
+                    CONFIG+=release
+                    ${QWT_QMAKE_ARCH_ARGS}
+
+            COMMAND make ${CPU_CORE_SUFFIX}
+
+            WORKING_DIRECTORY ${QWT_BUILD_DIR}
+            DEPENDS ${qwt_SOURCE_DIR}
+            COMMENT "Building Qwt via qmake"
+        )
+
+        add_custom_target(qwt ALL
+            DEPENDS ${QWT_LIBRARY}
+        )
+
+        add_library(Qwt::Qwt SHARED IMPORTED GLOBAL)
+
+        set_target_properties(Qwt::Qwt PROPERTIES
+            IMPORTED_LOCATION ${QWT_LIBRARY}
+            INTERFACE_INCLUDE_DIRECTORIES ${qwt_SOURCE_DIR}/src
+        )
+
         add_dependencies(Qwt::Qwt qwt)
     else()
         find_program(QMAKE_EXECUTABLE
