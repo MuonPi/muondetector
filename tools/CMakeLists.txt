@@ -52,3 +52,51 @@ target_include_directories(bme280_reader PRIVATE
     ../daemon/src
     ../daemon/src/hardware
 )
+
+add_executable(sht31_reader
+    sht31_reader.cpp
+    ../daemon/src/hardware/i2c/i2cdevice.cpp
+    ../daemon/src/hardware/i2c/sht31.cpp
+)
+
+target_include_directories(sht31_reader PRIVATE
+    .
+    ../daemon/src
+    ../daemon/src/hardware
+)
+
+add_executable(sht21_reader
+    sht21_reader.cpp
+    ../daemon/src/hardware/i2c/i2cdevice.cpp
+    ../daemon/src/hardware/i2c/sht21.cpp
+)
+
+target_include_directories(sht21_reader PRIVATE
+    .
+    ../daemon/src
+    ../daemon/src/hardware
+)
+
+add_executable(lm75_reader
+    lm75_reader.cpp
+    ../daemon/src/hardware/i2c/i2cdevice.cpp
+    ../daemon/src/hardware/i2c/lm75.cpp
+)
+
+target_include_directories(lm75_reader PRIVATE
+    .
+    ../daemon/src
+    ../daemon/src/hardware
+)
+
+add_executable(mic184_reader
+    mic184_reader.cpp
+    ../daemon/src/hardware/i2c/i2cdevice.cpp
+    ../daemon/src/hardware/i2c/mic184.cpp
+)
+
+target_include_directories(mic184_reader PRIVATE
+    .
+    ../daemon/src
+    ../daemon/src/hardware
+)
