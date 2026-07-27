@@ -1,6 +1,11 @@
-set(MUONDETECTOR_HARDWARE_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/daemon/src/hardware")
+get_filename_component(MUONDETECTOR_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+set(MUONDETECTOR_HARDWARE_SRC_DIR "${MUONDETECTOR_SOURCE_DIR}/daemon/src/hardware")
 set(MUONDETECTOR_DAEMON_BINARY_DIR "${CMAKE_BINARY_DIR}/daemon")
 
+find_library(GPIOD
+    names gpiod libgpiod
+    REQUIRED
+)
 
 set(MUONDETECTOR_I2C_SOURCE_FILES
     "${MUONDETECTOR_HARDWARE_SRC_DIR}/i2c/Adafruit_GFX.cpp"
@@ -26,6 +31,10 @@ set(MUONDETECTOR_I2C_SOURCE_FILES
     "${MUONDETECTOR_HARDWARE_SRC_DIR}/i2c/i2cutil.cpp"
 
     "${MUONDETECTOR_HARDWARE_SRC_DIR}/i2cdevices.cpp"
+    )
+
+set(MUONDETECTOR_OOK_SOURCE_FILES
+    "${MUONDETECTOR_HARDWARE_SRC_DIR}/ook/ook_transmitter.cpp"
     )
 
 set(MUONDETECTOR_I2C_HEADER_FILES
@@ -57,13 +66,24 @@ set(MUONDETECTOR_I2C_HEADER_FILES
     "${MUONDETECTOR_HARDWARE_SRC_DIR}/i2cdevices.h"
     )
 
+set(MUONDETECTOR_OOK_HEADER_FILES
+    "${MUONDETECTOR_HARDWARE_SRC_DIR}/ook/ook_transmitter.h"
+    )
+
 add_library(muondetector-hardware STATIC
     ${MUONDETECTOR_I2C_SOURCE_FILES}
     ${MUONDETECTOR_I2C_HEADER_FILES}
+    ${MUONDETECTOR_OOK_SOURCE_FILES}
+    ${MUONDETECTOR_OOK_HEADER_FILES}
 )
 
 target_include_directories(muondetector-hardware
     PUBLIC
         $<BUILD_INTERFACE:${MUONDETECTOR_HARDWARE_SRC_DIR}>
         $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries(muondetector-hardware
+    PUBLIC
+        ${GPIOD}
 )

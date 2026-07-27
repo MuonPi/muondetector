@@ -5,6 +5,10 @@ project(readers LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if(NOT TARGET muondetector-hardware)
+    include("${CMAKE_CURRENT_LIST_DIR}/../cmake/hardware.cmake")
+endif()
+
 add_executable(ltr390_reader
     ltr390_reader.cpp
     ../daemon/src/hardware/i2c/i2cdevice.cpp
@@ -99,4 +103,18 @@ target_include_directories(mic184_reader PRIVATE
     .
     ../daemon/src
     ../daemon/src/hardware
+)
+
+add_executable(ook_sender
+    ook_sender.cpp
+)
+
+target_include_directories(ook_sender PRIVATE
+    .
+    ../daemon/src
+    ../daemon/src/hardware
+)
+
+target_link_libraries(ook_sender PRIVATE
+    muondetector-hardware
 )
