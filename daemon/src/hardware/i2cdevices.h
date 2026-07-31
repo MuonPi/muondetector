@@ -11,6 +11,7 @@
 #include "i2c/lm75.h"
 #include "i2c/mcp4728.h"
 #include "i2c/mic184.h"
+#include "i2c/mpu6050.h"
 #include "i2c/pca9536.h"
 #include "i2c/sht21.h"
 #include "i2c/sht31.h"

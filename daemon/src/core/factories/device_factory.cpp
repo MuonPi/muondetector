@@ -122,6 +122,17 @@ const std::unordered_map<Device, DeviceCreator> DeviceFactory::deviceCreator = {
                  to_hex(device_p->getAddress()));
          return std::make_unique<I2CDeviceWrapper<PCA9536>>(std::move(device_p));
      }},
+    {Device::MPU6050_0,
+     [](const DeviceConfig& cfg) -> std::unique_ptr<I2CDeviceWrapper<MPU6050>> {
+         auto device_p = std::make_unique<MPU6050>(cfg.device.value().c_str(), cfg.address.value());
+         if (!device_p->probeDevicePresence() || !device_p->init()) {
+             deviceNotFoundError(device_p->getName(), cfg.address.value());
+             return nullptr;
+         }
+         logInfo("motion " + device_p->getName() + " identified at 0x" +
+                 to_hex(device_p->getAddress()));
+         return std::make_unique<I2CDeviceWrapper<MPU6050>>(std::move(device_p));
+     }},
     {Device::UBLOX_I2C_0,
      [](const DeviceConfig& cfg) -> std::unique_ptr<I2CDeviceWrapper<UbloxI2c>> {
          auto device_p =

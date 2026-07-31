@@ -93,6 +93,30 @@ target_include_directories(lm75_reader PRIVATE
     ../daemon/src/hardware
 )
 
+add_executable(gy521_reader
+    gy521_reader.cpp
+    ../daemon/src/hardware/i2c/i2cdevice.cpp
+    ../daemon/src/hardware/i2c/mpu6050.cpp
+)
+
+target_include_directories(gy521_reader PRIVATE
+    .
+    ../daemon/src
+    ../daemon/src/hardware
+)
+
+add_executable(hmc5883_reader
+    hmc5883_reader.cpp
+    ../daemon/src/hardware/i2c/i2cdevice.cpp
+    ../daemon/src/hardware/i2c/hmc5883.cpp
+)
+
+target_include_directories(hmc5883_reader PRIVATE
+    .
+    ../daemon/src
+    ../daemon/src/hardware
+)
+
 add_executable(mic184_reader
     mic184_reader.cpp
     ../daemon/src/hardware/i2c/i2cdevice.cpp
