@@ -21,5 +21,6 @@ int main() {
     as7343.init(config);
 
     auto spectrum = as7343.readSpectrum();
+    as7343.printSpectrum(spectrum);
     // std::cout << as7343.getConfig();
 }
