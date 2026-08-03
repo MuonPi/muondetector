@@ -13,6 +13,7 @@
 #include "i2c/mic184.h"
 #include "i2c/mpu6050.h"
 #include "i2c/pca9536.h"
+#include "i2c/qmc5883.h"
 #include "i2c/sht21.h"
 #include "i2c/sht31.h"
 #include "i2c/tca9546a.h"

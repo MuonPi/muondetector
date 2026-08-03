@@ -133,6 +133,28 @@ const std::unordered_map<Device, DeviceCreator> DeviceFactory::deviceCreator = {
                  to_hex(device_p->getAddress()));
          return std::make_unique<I2CDeviceWrapper<MPU6050>>(std::move(device_p));
      }},
+    {Device::HMC5883_0,
+     [](const DeviceConfig& cfg) -> std::unique_ptr<I2CDeviceWrapper<HMC5883>> {
+         auto device_p = std::make_unique<HMC5883>(cfg.device.value().c_str(), cfg.address.value());
+         if (!device_p->probeDevicePresence() || !device_p->init()) {
+             deviceNotFoundError(device_p->getName(), cfg.address.value());
+             return nullptr;
+         }
+         logInfo("magnetic field " + device_p->getName() + " identified at 0x" +
+                 to_hex(device_p->getAddress()));
+         return std::make_unique<I2CDeviceWrapper<HMC5883>>(std::move(device_p));
+     }},
+    {Device::QMC5883_0,
+     [](const DeviceConfig& cfg) -> std::unique_ptr<I2CDeviceWrapper<QMC5883>> {
+         auto device_p = std::make_unique<QMC5883>(cfg.device.value().c_str(), cfg.address.value());
+         if (!device_p->probeDevicePresence() || !device_p->init()) {
+             deviceNotFoundError(device_p->getName(), cfg.address.value());
+             return nullptr;
+         }
+         logInfo("magnetic field " + device_p->getName() + " identified at 0x" +
+                 to_hex(device_p->getAddress()));
+         return std::make_unique<I2CDeviceWrapper<QMC5883>>(std::move(device_p));
+     }},
     {Device::UBLOX_I2C_0,
      [](const DeviceConfig& cfg) -> std::unique_ptr<I2CDeviceWrapper<UbloxI2c>> {
          auto device_p =

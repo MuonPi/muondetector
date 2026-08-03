@@ -48,6 +48,18 @@ i2cDevice* instantiateI2cDevice(uint8_t addr) {
         device->identify();
         return device;
     }
+    ident = HMC5883::identifyDevice(static_cast<uint8_t>(addr));
+    if (ident) {
+        device = new HMC5883(addr);
+        device->identify();
+        return device;
+    }
+    ident = QMC5883::identifyDevice(static_cast<uint8_t>(addr));
+    if (ident) {
+        device = new QMC5883(addr);
+        device->identify();
+        return device;
+    }
     ident = MPU6050::identifyDevice(static_cast<uint8_t>(addr));
     if (ident) {
         device = new MPU6050(addr);

@@ -117,6 +117,18 @@ target_include_directories(hmc5883_reader PRIVATE
     ../daemon/src/hardware
 )
 
+add_executable(qmc5883_reader
+    qmc5883_reader.cpp
+    ../daemon/src/hardware/i2c/i2cdevice.cpp
+    ../daemon/src/hardware/i2c/qmc5883.cpp
+)
+
+target_include_directories(qmc5883_reader PRIVATE
+    .
+    ../daemon/src
+    ../daemon/src/hardware
+)
+
 add_executable(mic184_reader
     mic184_reader.cpp
     ../daemon/src/hardware/i2c/i2cdevice.cpp
