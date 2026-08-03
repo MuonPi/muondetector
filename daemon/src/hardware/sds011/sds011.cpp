@@ -30,8 +30,9 @@ Sds011::Sds011(ComponentId id, boost::asio::io_context& io, const std::string& p
         std::stringstream sstr;
         sstr << "Data:";
         sstr << " id: " << static_cast<unsigned>(event.id);
-        sstr << " 2.5µm : " << static_cast<unsigned>(event.pm2dot5) << " µg/m³";
-        sstr << " 10.0µm : " << static_cast<unsigned>(event.pm10dot0) << " µg/m³";
+        sstr << std::fixed << std::setprecision(1);
+        sstr << " PM2.5: " << static_cast<double>(event.pm2dot5) / 10.0 << " µg/m³";
+        sstr << " PM10: " << static_cast<double>(event.pm10dot0) / 10.0 << " µg/m³";
         logInfo(sstr.str());
     });
     bus.subscribe<Sds011StatusEvent>([](const auto& event) {
@@ -72,6 +73,7 @@ void Sds011::setMode(Mode mode, std::uint8_t n_sleep) {
             break;
         case Mode::Interval:
             modeByte = n_sleep;
+            break;
         default:
             return;
             break;

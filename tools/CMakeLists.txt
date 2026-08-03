@@ -5,6 +5,12 @@ project(readers LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+configure_file(
+    "${CMAKE_CURRENT_LIST_DIR}/format.sh"
+    "${CMAKE_CURRENT_BINARY_DIR}/format.sh"
+    COPYONLY
+)
+
 if(NOT TARGET muondetector-hardware)
     include("${CMAKE_CURRENT_LIST_DIR}/../cmake/hardware.cmake")
 endif()
@@ -127,6 +133,18 @@ target_include_directories(qmc5883_reader PRIVATE
     .
     ../daemon/src
     ../daemon/src/hardware
+)
+
+add_executable(sds011_reader
+    sds011_reader.cpp
+    ../daemon/src/hardware/sds011/sds011_parser.cpp
+)
+
+target_include_directories(sds011_reader PRIVATE
+    .
+    ../daemon/src
+    ../daemon/src/hardware
+    ../library/src
 )
 
 add_executable(mic184_reader
