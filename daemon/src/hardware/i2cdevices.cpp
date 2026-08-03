@@ -60,9 +60,21 @@ i2cDevice* instantiateI2cDevice(uint8_t addr) {
         device->identify();
         return device;
     }
+    ident = VEML6075::identifyDevice(static_cast<uint8_t>(addr));
+    if (ident) {
+        device = new VEML6075(addr);
+        device->identify();
+        return device;
+    }
     ident = MPU6050::identifyDevice(static_cast<uint8_t>(addr));
     if (ident) {
         device = new MPU6050(addr);
+        device->identify();
+        return device;
+    }
+    ident = SEN0321::identifyDevice(static_cast<uint8_t>(addr));
+    if (ident) {
+        device = new SEN0321(addr);
         device->identify();
         return device;
     }

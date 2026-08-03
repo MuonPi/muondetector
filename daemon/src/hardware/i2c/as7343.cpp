@@ -510,6 +510,8 @@ auto AS7343::readSpectrum() -> std::vector<SpectralValue> {
 
     const auto& mapping = autoSmuxChannelMapping.at(config.autoSmuxMode);
     const std::size_t expectedChannels = mapping.size();
+    const auto start = std::chrono::steady_clock::now();
+    constexpr auto timeout = std::chrono::milliseconds(1000);
 
     spectrumBuffer.reserve(expectedChannels);
 
@@ -517,6 +519,12 @@ auto AS7343::readSpectrum() -> std::vector<SpectralValue> {
     startMeasurement();
 
     while (true) {
+        if (std::chrono::steady_clock::now() - start > timeout) {
+            stopMeasurement();
+            std::cerr << "AS7343 spectrum read timeout\n";
+            return {};
+        }
+
         if (status().fifoOv) {
             clearFifo();
             spectrumBuffer.clear();
@@ -539,24 +547,26 @@ auto AS7343::readSpectrum() -> std::vector<SpectralValue> {
         }
 
         if (spectrumBuffer.size() >= expectedChannels) {
-            printSpectrum(spectrumBuffer);
             adjustExposureIfNeeded(spectrumBuffer, status());
-            spectrumBuffer.clear();
+            stopMeasurement();
+            return spectrumBuffer;
         }
     }
 
     return spectrumBuffer;
 }
 
-auto AS7343::adjustExposureIfNeeded(const std::vector<SpectralValue>& spectrum,
+auto AS7343::adjustExposureIfNeeded(const std::vector<SpectralValue>& values,
                                     const Status& status) -> bool {
-    if (spectrum.empty())
+    (void) status;
+
+    if (values.empty())
         return false;
 
     std::uint16_t maximum = 0;
     SpectralChannel maxChannel{};
 
-    for (const auto& value : spectrum) {
+    for (const auto& value : values) {
         if (value.value > maximum) {
             maximum = value.value;
             maxChannel = value.channel;
@@ -622,7 +632,8 @@ auto AS7343::readFifoFrame() -> std::optional<FifoFrame> {
         return std::nullopt;
     }
 
-    FifoFrame frame{.fifoMap = config.fifoMap};
+    FifoFrame frame{};
+    frame.fifoMap = config.fifoMap;
 
     std::vector<std::uint8_t> raw(frameSize);
     if (readReg(registerMap.at(REG::FDATA), raw.data(), raw.size()) !=
@@ -846,10 +857,18 @@ void AS7343::setInterrupts(bool saturation, bool spectral, bool fifo, bool syste
 
 void AS7343::setSpectralInterruptThresholds(std::uint16_t low, std::uint16_t high,
                                             std::uint8_t channel, std::uint8_t persistence) {
+    (void) low;
+    (void) high;
+    (void) channel;
+    (void) persistence;
 }
 
 void AS7343::setFlickerDetection(bool enable, std::uint16_t fdTime, GAIN fdGain,
                                  std::uint8_t agcGainMax) {
+    (void) enable;
+    (void) fdTime;
+    (void) fdGain;
+    (void) agcGainMax;
 }
 
 void AS7343::setAutoZeroFrequency(std::uint8_t frequency) {
@@ -859,6 +878,7 @@ void AS7343::setAutoZeroFrequency(std::uint8_t frequency) {
 }
 
 void AS7343::setAutoExposure(bool enable) {
+    (void) enable;
 }
 
 void AS7343::manualAutoZero() {

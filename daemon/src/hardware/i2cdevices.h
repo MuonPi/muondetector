@@ -15,10 +15,12 @@
 #include "i2c/ozone3click.h"
 #include "i2c/pca9536.h"
 #include "i2c/qmc5883.h"
+#include "i2c/sen0321.h"
 #include "i2c/sht21.h"
 #include "i2c/sht31.h"
 #include "i2c/tca9546a.h"
 #include "i2c/ubloxi2c.h"
+#include "i2c/veml6075.h"
 #include "i2c/x9119.h"
 
 // #include "i2c/i2cdevice.h"

@@ -155,6 +155,29 @@ const std::unordered_map<Device, DeviceCreator> DeviceFactory::deviceCreator = {
                  to_hex(device_p->getAddress()));
          return std::make_unique<I2CDeviceWrapper<QMC5883>>(std::move(device_p));
      }},
+    {Device::VEML6075_0,
+     [](const DeviceConfig& cfg) -> std::unique_ptr<I2CDeviceWrapper<VEML6075>> {
+         auto device_p =
+             std::make_unique<VEML6075>(cfg.device.value().c_str(), cfg.address.value());
+         if (!device_p->probeDevicePresence() || !device_p->init()) {
+             deviceNotFoundError(device_p->getName(), cfg.address.value());
+             return nullptr;
+         }
+         logInfo("uv " + device_p->getName() + " identified at 0x" +
+                 to_hex(device_p->getAddress()));
+         return std::make_unique<I2CDeviceWrapper<VEML6075>>(std::move(device_p));
+     }},
+    {Device::SEN0321_0,
+     [](const DeviceConfig& cfg) -> std::unique_ptr<I2CDeviceWrapper<SEN0321>> {
+         auto device_p = std::make_unique<SEN0321>(cfg.device.value().c_str(), cfg.address.value());
+         if (!device_p->probeDevicePresence() || !device_p->init()) {
+             deviceNotFoundError(device_p->getName(), cfg.address.value());
+             return nullptr;
+         }
+         logInfo("ozone " + device_p->getName() + " identified at 0x" +
+                 to_hex(device_p->getAddress()));
+         return std::make_unique<I2CDeviceWrapper<SEN0321>>(std::move(device_p));
+     }},
     {Device::OZONE3CLICK_0,
      [](const DeviceConfig& cfg) -> std::unique_ptr<I2CDeviceWrapper<Ozone3Click>> {
          auto device_p =
