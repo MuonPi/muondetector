@@ -147,6 +147,18 @@ target_include_directories(sds011_reader PRIVATE
     ../library/src
 )
 
+add_executable(ozone3click_reader
+    ozone3click_reader.cpp
+    ../daemon/src/hardware/i2c/i2cdevice.cpp
+    ../daemon/src/hardware/i2c/ozone3click.cpp
+)
+
+target_include_directories(ozone3click_reader PRIVATE
+    .
+    ../daemon/src
+    ../daemon/src/hardware
+)
+
 add_executable(mic184_reader
     mic184_reader.cpp
     ../daemon/src/hardware/i2c/i2cdevice.cpp

@@ -12,6 +12,7 @@
 #include "i2c/mcp4728.h"
 #include "i2c/mic184.h"
 #include "i2c/mpu6050.h"
+#include "i2c/ozone3click.h"
 #include "i2c/pca9536.h"
 #include "i2c/qmc5883.h"
 #include "i2c/sht21.h"

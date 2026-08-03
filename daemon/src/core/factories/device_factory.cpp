@@ -155,6 +155,19 @@ const std::unordered_map<Device, DeviceCreator> DeviceFactory::deviceCreator = {
                  to_hex(device_p->getAddress()));
          return std::make_unique<I2CDeviceWrapper<QMC5883>>(std::move(device_p));
      }},
+    {Device::OZONE3CLICK_0,
+     [](const DeviceConfig& cfg) -> std::unique_ptr<I2CDeviceWrapper<Ozone3Click>> {
+         auto device_p =
+             std::make_unique<Ozone3Click>(cfg.device.value().c_str(), cfg.address.value());
+         if (!device_p->probeDevicePresence() || !device_p->init()) {
+             deviceNotFoundError(device_p->getName(), cfg.address.value());
+             return nullptr;
+         }
+         logInfo("ozone adc " + device_p->getName() + " identified at LMP91000 0x" +
+                 to_hex(device_p->lmpAddress()) + " and MCP3221 0x" +
+                 to_hex(device_p->adcAddress()));
+         return std::make_unique<I2CDeviceWrapper<Ozone3Click>>(std::move(device_p));
+     }},
     {Device::UBLOX_I2C_0,
      [](const DeviceConfig& cfg) -> std::unique_ptr<I2CDeviceWrapper<UbloxI2c>> {
          auto device_p =
