@@ -63,6 +63,18 @@ target_include_directories(bme280_reader PRIVATE
     ../daemon/src/hardware
 )
 
+add_executable(ads1115_reader
+    ads1115_reader.cpp
+    ../daemon/src/hardware/i2c/i2cdevice.cpp
+    ../daemon/src/hardware/i2c/ads1115.cpp
+)
+
+target_include_directories(ads1115_reader PRIVATE
+    .
+    ../daemon/src
+    ../daemon/src/hardware
+)
+
 add_executable(sht31_reader
     sht31_reader.cpp
     ../daemon/src/hardware/i2c/i2cdevice.cpp

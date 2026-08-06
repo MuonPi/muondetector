@@ -156,7 +156,12 @@ def main() -> int:
     parser.add_argument(
         "--raw",
         action="store_true",
-        help="print only the decoded payload text",
+        help="print only the decoded payload text (CRC-valid frames by default)",
+    )
+    parser.add_argument(
+        "--accept-bad-crc",
+        action="store_true",
+        help="also print corrupted frames; useful when investigating reception problems",
     )
     args = parser.parse_args()
 
@@ -164,6 +169,9 @@ def main() -> int:
     for line in sys.stdin:
         for candidate in collect_candidates(line):
             for frame in decode_frames(candidate):
+                if frame.crc_received != frame.crc_expected and not args.accept_bad_crc:
+                    continue
+
                 now = time.monotonic()
                 last_seen = last_printed.get(frame.frame_hex)
                 if (
