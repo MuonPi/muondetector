@@ -57,21 +57,32 @@ AS7331::AS7331(uint8_t slaveAddress) : i2cDevice(slaveAddress) {
 AS7331::~AS7331() {
 }
 
+bool AS7331::init() {
+    return identify();
+}
+
 bool AS7331::identify() {
     if (fMode == MODE_FAILED) {
         return false;
     }
-    if (!devicePresent()) {
+
+    std::uint8_t agen{0};
+
+    if (readReg(registerMap.at(REG::AGEN), &agen, 1) < 0) {
         return false;
     }
-    uint16_t dataword{0};
-    uint8_t conf_reg{0};
 
-    return true;
+    // AGEN:
+    //   bits 7:4 = DEVID = 0x2
+    //   bits 3:0 = MUT   = 0x1
+    //
+    // Expected AS7331 value: 0x21
+    return agen == 0x21;
 }
 
 bool AS7331::devicePresent() {
-    return true;
+    std::uint16_t data{};
+    return readWord(&data);
 }
 
 void AS7331::reset() {

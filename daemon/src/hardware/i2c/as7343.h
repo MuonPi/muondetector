@@ -240,8 +240,8 @@ class AS7343 : public i2cDevice,
     virtual ~AS7343();
 
     void reset();
-    void powerOn();
-    void init(const Config& conf);
+    bool powerOn();
+    bool init(const Config& conf);
     auto name() const -> std::string;
     auto ids() -> ID;
     auto status() -> Status;

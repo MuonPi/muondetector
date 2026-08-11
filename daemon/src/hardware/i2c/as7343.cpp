@@ -239,9 +239,12 @@ auto AS7343::readIds() -> bool {
     return true;
 }
 
-void AS7343::init(const Config& conf) {
-    powerOn();
-    readIds();
+bool AS7343::init(const Config& conf) {
+    if (!powerOn() || !identify()) {
+        return false;
+    }
+    reset();
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     config = conf;
     // Configure chip
@@ -258,13 +261,12 @@ void AS7343::init(const Config& conf) {
     setFifoThreshold(conf.fifoThreshold);
     setAutoSMUX(conf.autoSmuxMode);
     setFifoMap(conf.fifoMap);
+    return true;
 }
 
-void AS7343::powerOn() {
+bool AS7343::powerOn() {
     std::uint8_t buf{0x01};
-    if (writeReg(registerMap.at(REG::ENABLE), &buf, 1) < 0) {
-        std::cerr << "Failed to power on" << std::endl;
-    }
+    return !(writeReg(registerMap.at(REG::ENABLE), &buf, 1) < 0);
 }
 
 void AS7343::reset() {

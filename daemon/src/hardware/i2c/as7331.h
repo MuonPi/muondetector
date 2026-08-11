@@ -67,6 +67,7 @@ class AS7331 : public i2cDevice,
     AS7331(uint8_t slaveAddress);
     virtual ~AS7331();
 
+    bool init();
     void reset();
     auto opStatus() -> Status;
     void setOpState(OP_STATE state);
