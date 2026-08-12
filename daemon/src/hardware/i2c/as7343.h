@@ -234,6 +234,28 @@ class AS7343 : public i2cDevice,
                                  // latched to this ASTATUS read.
     };
 
+    struct AS7343ExposurePreset {
+        const char* name;
+        AS7343::GAIN gain;
+        std::uint8_t atime;
+        std::uint16_t astep;
+    };
+
+    struct AS7343Measurement {
+        const AS7343ExposurePreset* preset{};
+        std::uint8_t preset_index{};
+        std::vector<AS7343::SpectralValue> spectrum;
+        AS7343::Status status;
+        std::uint16_t max_raw{};
+        bool saturated{};
+        bool near_full_scale{};
+    };
+
+    static constexpr uint8_t AS7343_SPECTRUM_CHANNELS{18};
+    static constexpr uint8_t AS7343_EXPOSURE_METADATA_VALUES{11};
+    static constexpr uint8_t AS7343_LOG_VALUES{AS7343_SPECTRUM_CHANNELS +
+                                               AS7343_EXPOSURE_METADATA_VALUES};
+
     AS7343();
     AS7343(const char* busAddress, uint8_t slaveAddress);
     AS7343(uint8_t slaveAddress);
@@ -273,6 +295,57 @@ class AS7343 : public i2cDevice,
     bool identify() override;
     bool probeDevicePresence() override { return devicePresent(); }
     bool devicePresent() override;
+
+    double as7343_gain_multiplier(AS7343::GAIN gain) {
+        switch (gain) {
+            case AS7343::GAIN::_0dot5x:
+                return 0.5;
+            case AS7343::GAIN::_1x:
+                return 1.0;
+            case AS7343::GAIN::_2x:
+                return 2.0;
+            case AS7343::GAIN::_4x:
+                return 4.0;
+            case AS7343::GAIN::_8x:
+                return 8.0;
+            case AS7343::GAIN::_16x:
+                return 16.0;
+            case AS7343::GAIN::_32x:
+                return 32.0;
+            case AS7343::GAIN::_64x:
+                return 64.0;
+            case AS7343::GAIN::_128x:
+                return 128.0;
+            case AS7343::GAIN::_256x:
+                return 256.0;
+            case AS7343::GAIN::_512x:
+                return 512.0;
+            case AS7343::GAIN::_1024x:
+                return 1024.0;
+            case AS7343::GAIN::_2048x:
+                return 2048.0;
+        }
+
+        return 0.0;
+    }
+
+    double as7343_integration_time_ms(const AS7343ExposurePreset& preset);
+
+    std::uint16_t as7343_adc_full_scale(const AS7343ExposurePreset& preset);
+
+    AS7343Measurement analyze_as7343_measurement(const AS7343ExposurePreset& preset,
+                                                 std::uint8_t preset_index,
+                                                 std::vector<AS7343::SpectralValue> spectr,
+                                                 AS7343::Status status);
+
+    const AS7343Measurement*
+    select_best_as7343_measurement(const std::vector<AS7343Measurement>& measurements);
+
+    std::optional<AS7343Measurement> read_as7343_auto_exposure_measurement(
+        const std::array<AS7343::AS7343ExposurePreset, 3>& presets);
+
+    void fill_as7343_log_values(const AS7343Measurement& measurement,
+                                double (&values)[AS7343_LOG_VALUES]);
 
   protected:
     static const std::unordered_map<AUTO_SMUX_MODE, std::vector<SpectralChannel>>

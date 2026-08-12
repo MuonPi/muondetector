@@ -900,3 +900,102 @@ void AS7343::manualAutoZero() {
     if (writeReg(registerMap.at(REG::CONTROL), &buf, 1) < 0) {
     }
 }
+
+double AS7343::as7343_integration_time_ms(const AS7343ExposurePreset& preset) {
+    return static_cast<double>(preset.atime + 1) * static_cast<double>(preset.astep + 1) * 2.78 /
+           1000.0;
+}
+
+std::uint16_t AS7343::as7343_adc_full_scale(const AS7343ExposurePreset& preset) {
+    const auto full_scale =
+        static_cast<std::uint32_t>(preset.atime + 1) * static_cast<std::uint32_t>(preset.astep + 1);
+    return static_cast<std::uint16_t>(std::min<std::uint32_t>(full_scale, 0xffff));
+}
+
+AS7343::AS7343Measurement
+AS7343::analyze_as7343_measurement(const AS7343ExposurePreset& preset, std::uint8_t preset_index,
+                                   std::vector<AS7343::SpectralValue> spectr,
+                                   AS7343::Status status) {
+    AS7343Measurement measurement{
+        .preset = &preset,
+        .preset_index = preset_index,
+        .spectrum = std::move(spectr),
+        .status = status,
+    };
+
+    if (measurement.spectrum.empty())
+        return measurement;
+
+    const auto max_it =
+        std::max_element(measurement.spectrum.begin(), measurement.spectrum.end(),
+                         [](const auto& a, const auto& b) { return a.value < b.value; });
+
+    measurement.max_raw = max_it != measurement.spectrum.end() ? max_it->value : 0;
+    measurement.saturated = status.asat || status.asatAnalog || status.asatDigital;
+    measurement.near_full_scale =
+        measurement.max_raw >= static_cast<std::uint16_t>(as7343_adc_full_scale(preset) * 9 / 10);
+
+    return measurement;
+}
+
+const AS7343::AS7343Measurement*
+AS7343::select_best_as7343_measurement(const std::vector<AS7343Measurement>& measurements) {
+    const AS7343Measurement* fallback = nullptr;
+
+    for (const auto& measurement : measurements) {
+        if (!measurement.spectrum.empty()) {
+            fallback = &measurement;
+            break;
+        }
+    }
+
+    for (auto it = measurements.rbegin(); it != measurements.rend(); ++it) {
+        if (!it->spectrum.empty() && !it->saturated && !it->near_full_scale)
+            return &(*it);
+    }
+
+    return fallback;
+}
+
+std::optional<AS7343::AS7343Measurement> AS7343::read_as7343_auto_exposure_measurement(
+    const std::array<AS7343::AS7343ExposurePreset, 3>& presets) {
+    std::vector<AS7343Measurement> measurements;
+    measurements.reserve(presets.size());
+
+    for (std::uint8_t preset_index{0}; preset_index < presets.size(); preset_index++) {
+        const auto& preset = presets.at(preset_index);
+        setGain(preset.gain);
+        setIntegrationTime(preset.atime, preset.astep);
+
+        auto spectr = readSpectrum();
+        measurements.push_back(
+            analyze_as7343_measurement(preset, preset_index, std::move(spectr), status()));
+    }
+
+    if (const auto* selected = select_best_as7343_measurement(measurements))
+        return *selected;
+
+    return std::nullopt;
+}
+
+void AS7343::fill_as7343_log_values(const AS7343::AS7343Measurement& measurement,
+                                    double (&values)[AS7343_LOG_VALUES]) {
+    for (std::uint8_t i{0}; i < AS7343_SPECTRUM_CHANNELS; i++)
+        values[i] = measurement.spectrum.at(i).value;
+
+    // Appended after the 18 raw channels:
+    // preset_index, tint_ms, gain_x, atime, astep, adc_full_scale, saturated,
+    // analog_saturated, digital_saturated, near_full_scale, max_raw.
+    std::size_t value_index{0};
+    values[value_index++] = measurement.preset_index;
+    values[value_index++] = as7343_integration_time_ms(*measurement.preset);
+    values[value_index++] = as7343_gain_multiplier(measurement.preset->gain);
+    values[value_index++] = measurement.preset->atime;
+    values[value_index++] = measurement.preset->astep;
+    values[value_index++] = as7343_adc_full_scale(*measurement.preset);
+    values[value_index++] = measurement.saturated ? 1.0 : 0.0;
+    values[value_index++] = measurement.status.asatAnalog ? 1.0 : 0.0;
+    values[value_index++] = measurement.status.asatDigital ? 1.0 : 0.0;
+    values[value_index++] = measurement.near_full_scale ? 1.0 : 0.0;
+    values[value_index++] = measurement.max_raw;
+}
