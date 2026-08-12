@@ -527,7 +527,11 @@ auto AS7343::readSpectrum() -> std::vector<SpectralValue> {
             return {};
         }
 
-        if (status().fifoOv) {
+        std::uint8_t status4{};
+        const bool fifoOverflow =
+            readReg(registerMap.at(REG::STATUS4), &status4, 1) >= 0 && ((status4 >> 7) & 0x01);
+
+        if (fifoOverflow) {
             clearFifo();
             spectrumBuffer.clear();
             std::cerr << "AS7343 FIFO overflow, resynchronizing\n";
@@ -549,7 +553,9 @@ auto AS7343::readSpectrum() -> std::vector<SpectralValue> {
         }
 
         if (spectrumBuffer.size() >= expectedChannels) {
-            adjustExposureIfNeeded(spectrumBuffer, status());
+            if (config.autoExposure) {
+                adjustExposureIfNeeded(spectrumBuffer, status());
+            }
             stopMeasurement();
             return spectrumBuffer;
         }
@@ -562,34 +568,25 @@ auto AS7343::adjustExposureIfNeeded(const std::vector<SpectralValue>& values,
                                     const Status& status) -> bool {
     (void) status;
 
-    if (values.empty())
+    if (!config.autoExposure || values.empty())
         return false;
 
     std::uint16_t maximum = 0;
-    SpectralChannel maxChannel{};
 
     for (const auto& value : values) {
         if (value.value > maximum) {
             maximum = value.value;
-            maxChannel = value.channel;
         }
     }
-
-    std::cout << "Auto exposure: max=" << maximum << " channel=" << channelInfo.at(maxChannel).name
-              << "\n";
 
     // Too bright -> decrease exposure
     if (maximum > config.autoExposureHighTarget) {
         // decreaseExposure();
-
-        std::cout << "Exposure decreased\n";
     }
 
     // Too dark -> increase exposure
     else if (maximum < config.autoExposureLowTarget) {
         // increaseExposure();
-
-        std::cout << "Exposure increased\n";
     }
     return true;
 }
@@ -701,12 +698,17 @@ void AS7343::setGain(GAIN gain) {
 
     if (writeReg(registerMap.at(REG::CFG1), &buf, 1) < 0) {
         std::cerr << "Could not set AS7343 gain." << std::endl;
+        return;
     }
+
+    config.gain = gain;
 }
 
 void AS7343::setIntegrationTime(std::uint8_t atime, std::uint16_t astep) {
+    bool ok = true;
     if (writeReg(registerMap.at(REG::ATIME), &atime, 1) < 0) {
         std::cerr << "Could not set AS7343 ATIME." << std::endl;
+        ok = false;
     }
 
     std::array<std::uint8_t, 2> astepBuf{static_cast<std::uint8_t>(astep & 0xff),
@@ -714,6 +716,16 @@ void AS7343::setIntegrationTime(std::uint8_t atime, std::uint16_t astep) {
 
     if (writeReg(registerMap.at(REG::ASTEP), astepBuf.data(), astepBuf.size()) < 0) {
         std::cerr << "Could not set AS7343 ASTEP." << std::endl;
+        ok = false;
+    }
+
+    if (ok) {
+        config.atime = atime;
+        config.astep = astep;
+
+        const auto fullScale =
+            static_cast<std::uint32_t>(atime + 1) * static_cast<std::uint32_t>(astep + 1);
+        adcFullscale = static_cast<std::uint16_t>(std::min<std::uint32_t>(fullScale, 0xffff));
     }
 }
 
@@ -880,7 +892,7 @@ void AS7343::setAutoZeroFrequency(std::uint8_t frequency) {
 }
 
 void AS7343::setAutoExposure(bool enable) {
-    (void) enable;
+    config.autoExposure = enable;
 }
 
 void AS7343::manualAutoZero() {
