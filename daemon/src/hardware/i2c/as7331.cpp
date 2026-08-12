@@ -58,7 +58,7 @@ AS7331::~AS7331() {
 }
 
 bool AS7331::init() {
-    return identify();
+    return (reset() && identify());
 }
 
 bool AS7331::identify() {
@@ -85,9 +85,9 @@ bool AS7331::devicePresent() {
     return readWord(&data);
 }
 
-void AS7331::reset() {
+bool AS7331::reset() {
     std::uint8_t cmd = 0x08; // sw reset
-    writeReg(registerMap.at(REG::OSR_STATUS), &cmd, 1);
+    return !(writeReg(registerMap.at(REG::OSR_STATUS), &cmd, 1) < 0);
 }
 
 auto AS7331::opStatus() -> Status {

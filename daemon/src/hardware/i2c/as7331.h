@@ -68,7 +68,7 @@ class AS7331 : public i2cDevice,
     virtual ~AS7331();
 
     bool init();
-    void reset();
+    bool reset();
     auto opStatus() -> Status;
     void setOpState(OP_STATE state);
     void setGain(GAIN gain);
