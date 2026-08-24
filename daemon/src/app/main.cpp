@@ -30,6 +30,35 @@ extern "C" void handleSignal(int) {
     Runtime::g_running = false;
 }
 
+auto makeDefaultSettings() -> std::shared_ptr<libconfig::Config> {
+    auto settings = std::make_shared<libconfig::Config>();
+
+    // Find the stored settings in settings file. Add all entries if they don't yet
+    // exist.
+    libconfig::Setting& root = settings->getRoot();
+
+    auto& geo_handling = root.add("geo_handling", libconfig::Setting::TypeGroup);
+
+    geo_handling.add("mode", libconfig::Setting::TypeString) = "Auto";
+
+    auto& static_coords = geo_handling.add("static_coordinates", libconfig::Setting::TypeGroup);
+
+    static_coords.add("lon", libconfig::Setting::TypeFloat) = 0.0;
+    static_coords.add("lat", libconfig::Setting::TypeFloat) = 0.0;
+    static_coords.add("alt", libconfig::Setting::TypeFloat) = 0.0;
+    static_coords.add("hor_error", libconfig::Setting::TypeFloat) = 0.0;
+    static_coords.add("vert_error", libconfig::Setting::TypeFloat) = 0.0;
+
+    // Write out the updated configuration.
+    try {
+        settings->writeFile(SETTINGS_FILE.c_str());
+        std::cout << "Initialized settings successfully written to: " << SETTINGS_FILE << std::endl;
+    } catch (const libconfig::FileIOException& fioex_new) {
+        std::cerr << "I/O error while writing settings file: " << SETTINGS_FILE << std::endl;
+    }
+    return settings;
+}
+
 int main(int argc, char* argv[]) {
     // first, we must set the locale to be independent of the number format of the system's locale.
     // We rely on parsing floating point numbers with a decimal point (not a komma) which might fail
@@ -46,41 +75,24 @@ int main(int argc, char* argv[]) {
               << "(build " + std::string(__TIMESTAMP__) + ")\n";
 
     // Read the file. If there is an error, report it and exit.
-    auto cfg = ConfigParser::loadConfigFile(CONFIG_FILE);
-
+    auto cfg = std::make_shared<libconfig::Config>();
+    try {
+        cfg = ConfigParser::loadConfigFile(CONFIG_FILE);
+    } catch (const libconfig::FileIOException&) {
+        return EXIT_FAILURE;
+    } catch (const libconfig::ParseException&) {
+        return EXIT_FAILURE;
+    }
     // Read in the settings file. If there is an error, create the settings
     // tree and proceed anyway
 
     auto settings = std::make_shared<libconfig::Config>();
+
     try {
         settings = ConfigParser::loadConfigFile(SETTINGS_FILE);
     } catch (const libconfig::FileIOException& fioex) {
-        // Find the stored settings in settings file. Add all entries if they don't yet
-        // exist.
-        libconfig::Setting& root = settings->getRoot();
-        // create setting fields
-        root.add("geo_handling", libconfig::Setting::TypeGroup);
-        libconfig::Setting& geo_handling = root["geo_handling"];
-        geo_handling.add("mode", libconfig::Setting::TypeString) = "Auto";
-        geo_handling.add("static_coordinates", libconfig::Setting::TypeGroup);
-        libconfig::Setting& static_coords = geo_handling["static_coordinates"];
-        static_coords.add("lon", libconfig::Setting::TypeFloat) = 0.;
-        static_coords.add("lat", libconfig::Setting::TypeFloat) = 0.;
-        static_coords.add("alt", libconfig::Setting::TypeFloat) = 0.;
-        static_coords.add("hor_error", libconfig::Setting::TypeFloat) = 0.;
-        static_coords.add("vert_error", libconfig::Setting::TypeFloat) = 0.;
-        // Write out the updated configuration.
-        try {
-            settings->writeFile(SETTINGS_FILE.c_str());
-            std::cout << "Initialized settings successfully written to: " << SETTINGS_FILE
-                      << std::endl;
-        } catch (const libconfig::FileIOException& fioex_new) {
-            std::cerr << "I/O error while writing settings file: " << SETTINGS_FILE << std::endl;
-        }
+        settings = makeDefaultSettings();
     } catch (const libconfig::ParseException& pex) {
-        std::cerr << "Parse error at " + std::string(pex.getFile()) + " : line " +
-                         std::to_string(pex.getLine()) + " - " + std::string(pex.getError())
-                  << std::endl;
         return EXIT_FAILURE;
     }
 

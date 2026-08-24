@@ -222,7 +222,7 @@ Installed packages place configuration below `/etc/muondetector/`:
 /etc/muondetector/muondetector.conf
 /etc/muondetector/hardware.conf
 /etc/muondetector/components.conf
-/etc/muondetector/settings.conf
+/var/muondetector/settings.conf
 ```
 
 Store MQTT credentials before starting the daemon:

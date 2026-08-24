@@ -35,6 +35,7 @@ auto ConfigParser::loadConfigFile(const std::string& file) -> std::shared_ptr<li
         cfg->readFile(file.c_str());
     } catch (const libconfig::FileIOException& fioex) {
         logError("Error while reading config file " + file);
+        throw fioex;
     } catch (const libconfig::ParseException& pex) {
         logError("Parse error at " + std::string(pex.getFile()) + " : line " +
                  std::to_string(pex.getLine()) + " - " + std::string(pex.getError()));
