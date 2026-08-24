@@ -1,4 +1,3 @@
 /etc/muondetector/muondetector.conf
 /etc/muondetector/hardware.conf
 /etc/muondetector/components.conf
-/var/muondetector/settings.conf
