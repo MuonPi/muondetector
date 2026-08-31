@@ -4,7 +4,7 @@ pkgrel=1
 pkgdesc="Muon detector GUI application (git version)"
 arch=('x86_64' 'aarch64')
 
-url="https://github.com/MuonPi/muondetector_v2"
+url="https://github.com/MuonPi/muondetector"
 
 license=('LGPL-3.0-or-later')
 
@@ -21,21 +21,21 @@ makedepends=(
   'gcc'
 )
 
-source=("git+$url.git#branch=dev")
+source=("git+$url.git#branch=main")
 sha256sums=('SKIP')
 
 # dynamic version from git
 pkgver() {
-  cd "$srcdir/muondetector_v2"
+  cd "$srcdir/muondetector"
   printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 }
 
 prepare() {
-  cd "$srcdir/muondetector_v2"
+  cd "$srcdir/muondetector"
 }
 
 build() {
-  cd "$srcdir/muondetector_v2"
+  cd "$srcdir/muondetector"
 
   cmake -B build -S . \
     -G Ninja \
@@ -51,7 +51,7 @@ build() {
 }
 
 package() {
-  cd "$srcdir/muondetector_v2"
+  cd "$srcdir/muondetector"
 
   DESTDIR="$pkgdir" cmake --install build --prefix /usr --strip
 }
