@@ -139,6 +139,23 @@ void AS7331::setGain(GAIN gain) {
     currentGain = gain;
 }
 
+void AS7331::setIntegrationTime(std::uint8_t time) {
+    if (time > 14)
+        time = 14;
+
+    std::uint8_t buf{};
+
+    readReg(registerMap.at(REG::CREG_1), &buf, 1);
+
+    // Preserve GAIN, replace TIME
+    buf &= 0xF0;
+    buf |= (time & 0x0F);
+
+    writeReg(registerMap.at(REG::CREG_1), &buf, 1);
+
+    currentTime = time;
+}
+
 auto AS7331::toString(const Status& s) -> std::string {
     std::stringstream ss;
 

@@ -79,7 +79,7 @@ class AS7331 : public i2cDevice,
     auto getConfig() -> std::string;
 
     auto getAGEN() -> std::uint8_t;
-    // void setIntegrationTime(std::uint8_t value); // TCONV = 2^value ms (EXCEPTION: value == 15 ->
+    void setIntegrationTime(std::uint8_t value); // TCONV = 2^value ms (EXCEPTION: value == 15 ->
     // TCONV = 1 ms)
 
     auto readUVA() -> std::optional<double>; // [µW/cm^2]
