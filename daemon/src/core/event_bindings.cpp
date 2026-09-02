@@ -45,6 +45,7 @@
 #include "data/events/pca_switch_event.h"
 #include "data/events/polarity_switch_event.h"
 #include "data/events/preamp_switch_event.h"
+#include "data/events/sds011_event.h"
 #include "data/events/spi_stats_event.h"
 #include "data/events/temperature_event.h"
 #include "data/events/threshold_setting_event.h"
@@ -99,6 +100,7 @@ void EventBindings::setupTcpSink(EventBus& bus, TcpSink& tcp_sink) {
     bus.subscribe<LogInfoStruct>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<PositionModeConfig>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
     bus.subscribe<VersionEvent>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
+    bus.subscribe<Sds011Event>([&tcp_sink](const auto& ev) { tcp_sink.handle(ev); });
 }
 
 void EventBindings::setupMqttSink(EventBus& bus, MqttSink& mqtt_sink) {
