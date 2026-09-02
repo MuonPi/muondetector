@@ -986,7 +986,7 @@ void AS7343::fill_as7343_log_values(const AS7343::AS7343Measurement& measurement
     // Appended after the 18 raw channels:
     // preset_index, tint_ms, gain_x, atime, astep, adc_full_scale, saturated,
     // analog_saturated, digital_saturated, near_full_scale, max_raw.
-    std::size_t value_index{0};
+    std::size_t value_index{AS7343_SPECTRUM_CHANNELS};
     values[value_index++] = measurement.preset_index;
     values[value_index++] = as7343_integration_time_ms(*measurement.preset);
     values[value_index++] = as7343_gain_multiplier(measurement.preset->gain);
