@@ -17,7 +17,6 @@
 
 class Sds011 : public Component {
   public:
-    enum class Mode { Continuous, Sleep, Interval };
     enum class CommandType {
         ReportingMode = 2,
         QueryData = 4,
@@ -29,10 +28,6 @@ class Sds011 : public Component {
     Sds011(ComponentId id, boost::asio::io_context& io, const std::string& port, unsigned int baud,
            std::uint8_t n_sleep, EventBus& bus);
 
-    /**
-     * n_sleep: work 30s and then sleep n*60s - 30s
-     */
-    void setMode(Mode mode, std::uint8_t n_sleep = 1);
     void query(CommandType type);
 
   private:
