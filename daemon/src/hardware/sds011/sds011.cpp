@@ -54,11 +54,10 @@ Sds011::Sds011(ComponentId id, boost::asio::io_context& io, const std::string& p
         }
         logInfo(sstr.str());
     });
-    if (n_sleep == 0) {
-        setMode(Mode::Continuous);
-    } else {
-        setMode(Mode::Interval, n_sleep);
-    }
+
+    sendCommand(CommandType::SleepAndWork, 0x01); // not sleep
+    sendCommand(CommandType::WorkingPeriod, n_sleep);
+    sendCommand(CommandType::ReportingMode, 0x00); // Reporting mode active reporting
 }
 
 void Sds011::setMode(Mode mode, std::uint8_t n_sleep) {
@@ -137,8 +136,18 @@ void Sds011::makeConnection() {
     if (ec) {
         throw std::runtime_error(ec.message());
     }
-
     serial_.set_option(boost::asio::serial_port_base::baud_rate(baud_));
+
+    serial_.set_option(boost::asio::serial_port_base::character_size(8));
+
+    serial_.set_option(
+        boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::none));
+
+    serial_.set_option(
+        boost::asio::serial_port_base::stop_bits(boost::asio::serial_port_base::stop_bits::one));
+
+    serial_.set_option(boost::asio::serial_port_base::flow_control(
+        boost::asio::serial_port_base::flow_control::none));
 
     int fd = serial_.native_handle();
     tcflush(fd, TCIOFLUSH);
@@ -149,26 +158,29 @@ void Sds011::makeConnection() {
 void Sds011::startAsyncRead() {
     serial_.async_read_some(
         boost::asio::buffer(buffer_),
-        boost::asio::bind_executor(
-            rx_strand_, [this](boost::system::error_code ec, std::size_t length) {
-                if (ec) {
-                    handleError("read", ec);
-                    // retryLater();
-                    return;
-                }
+        boost::asio::bind_executor(rx_strand_, [this](boost::system::error_code ec,
+                                                      std::size_t length) {
+            if (ec) {
+                handleError("read", ec);
+                // retryLater();
+                return;
+            }
 
-                sds011Parser.feed(reinterpret_cast<const std::uint8_t*>(buffer_.data()), length,
-                                  [this](Sds011Msg&& msg) {
-                                      if (std::holds_alternative<Sds011Event>(msg)) {
-                                          bus_.publish(std::get<Sds011Event>(msg));
-                                      }
-                                      if (std::holds_alternative<Sds011StatusEvent>(msg)) {
-                                          bus_.publish(std::get<Sds011StatusEvent>(msg));
-                                      }
-                                  });
+            sds011Parser.feed(reinterpret_cast<const std::uint8_t*>(buffer_.data()), length,
+                              [this](Sds011Msg&& msg) {
+                                  if (std::holds_alternative<Sds011Event>(msg)) {
+                                      bus_.publish(std::get<Sds011Event>(msg));
+                                      logInfo("Sds011 Event: " +
+                                              std::to_string(std::get<Sds011Event>(msg).pm10dot0));
+                                  }
+                                  if (std::holds_alternative<Sds011StatusEvent>(msg)) {
+                                      bus_.publish(std::get<Sds011StatusEvent>(msg));
+                                      logInfo("Sds011 Status Event");
+                                  }
+                              });
 
-                startAsyncRead(); // continue reading
-            }));
+            startAsyncRead(); // continue reading
+        }));
 }
 
 void Sds011::enqueueMessage(const std::string& msg) {
@@ -181,6 +193,38 @@ void Sds011::enqueueMessage(const std::string& msg) {
             do_write();
         }
     });
+}
+
+std::string Sds011::makeCommand(CommandType type, std::optional<std::uint8_t> writeValue) {
+
+    std::array<std::uint8_t, 19> frame{};
+
+    frame[0] = 0xAA;
+    frame[1] = 0xB4;
+    frame[2] = static_cast<std::uint8_t>(type);
+
+    if (writeValue) {
+        frame[3] = 0x01;
+        frame[4] = *writeValue;
+    }
+
+    frame[15] = 0xFF;
+    frame[16] = 0xFF;
+
+    std::uint8_t checksum = 0;
+    for (std::size_t i = 2; i <= 16; ++i) {
+        checksum += frame[i];
+    }
+
+    frame[17] = checksum;
+    frame[18] = 0xAB;
+
+    return {reinterpret_cast<const char*>(frame.data()), frame.size()};
+}
+
+void Sds011::sendCommand(CommandType type, std::optional<std::uint8_t> value) {
+
+    enqueueMessage(makeCommand(type, value));
 }
 
 void Sds011::do_write() {

@@ -4,6 +4,7 @@
 #include "core/thread_pool.h"
 #include "data/events/ads1115_event.h"
 #include "data/events/gpio_event.h"
+#include "data/events/sds011_event.h"
 #include "data/events/tcp_packet_event.h"
 #include "network/tcpconnection.h"
 #include "network/tcpmessage_keys.h"
@@ -66,18 +67,27 @@ int main() {
     EventBus bus(pool);
     TcpSource tcpSource(OtherComponent::TCP_SOURCE_0, bus);
 
-    bus.subscribe<GpioEvent>([](const GpioEvent& event) {
-        logInfo("GpioEvent: " + std::to_string(event.gpio_pin) +
-                " edge: " + (event.edge == EventEdge::Rising ? "rising" : "falling"));
+    // bus.subscribe<GpioEvent>([](const GpioEvent& event) {
+    //     logInfo("GpioEvent: " + std::to_string(event.gpio_pin) +
+    //             " edge: " + (event.edge == EventEdge::Rising ? "rising" : "falling"));
+    // });
+    bus.subscribe<Sds011Event>([](const Sds011Event& event) {
+        logInfo("Sds011Event: " + std::to_string(event.pm2dot5) + " " +
+                std::to_string(event.pm10dot0));
     });
-    bus.subscribe<TcpPacketEvent>([&bus](const TcpPacketEvent& event) { decode(bus, event); });
+    bus.subscribe<TcpPacketEvent>([&bus](const TcpPacketEvent& event) {
+        decode(bus, event);
+        if (event.packet.key == static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_SDS011_SAMPLE)) {
+            logInfo("Event is MSG_SDS011_SAMPLE");
+        }
+    });
 
     std::thread ioThread([&io]() { io->run(); });
     auto guard = boost::asio::make_work_guard(*io);
 
     tcp::socket clientSocket(*io);
     boost::system::error_code ec;
-    auto server_ip = boost::asio::ip::make_address_v4("192.168.2.16", ec);
+    auto server_ip = boost::asio::ip::make_address_v4("100.68.14.21", ec);
     if (ec) {
         logError("Invalid IP: " + ec.message());
     }

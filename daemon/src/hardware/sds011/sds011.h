@@ -38,6 +38,8 @@ class Sds011 : public Component {
   private:
     void makeConnection();
     void startAsyncRead();
+    std::string makeCommand(CommandType type, std::optional<std::uint8_t> writeValue);
+    void sendCommand(CommandType type, std::optional<std::uint8_t> value);
 
     void handleError(const std::string& where, const boost::system::error_code& ec) {
         std::cerr << "Error in " << where << ": " << ec.message() << std::endl;
