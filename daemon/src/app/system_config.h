@@ -40,7 +40,7 @@ struct SystemConfig {
                                             PositionModeConfig::FilterType::None};
     std::string sds011_devname{"/dev/ttyUSB0"};
     unsigned sds011_baudrate{9600};
-    unsigned sds011_n_sleep{0};
+    unsigned sds011_sleep{0};
     std::shared_ptr<libconfig::Config> config_file_data{nullptr};
     std::shared_ptr<libconfig::Config> settings_file_data{nullptr};
     std::string hardwareConfigPath{"/etc/muondetector/hardware.conf"};

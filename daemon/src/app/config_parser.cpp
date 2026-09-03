@@ -101,7 +101,7 @@ void ConfigParser::print_help(const std::string& progName) {
     std::cout << "Misc:\n";
     std::cout << "  --id <string>             Station ID\n";
     std::cout << "  --pca <mask>              PCA port mask\n";
-    std::cout << "  --sds011_n_sleep <n>      SDS011 sleep/readout interval parameter\n";
+    std::cout << "  --sds011_sleep <n>      SDS011 sleep/readout interval parameter\n";
 }
 
 void ConfigParser::parse(int argc, char* argv[]) {
@@ -289,10 +289,10 @@ void ConfigParser::parse(int argc, char* argv[]) {
         }
 
         // -------- sds011 --------
-        else if (key == "sds011_n_sleep") {
+        else if (key == "sds011_sleep") {
             if (next_value(value)) {
                 try {
-                    m_config.sds011_n_sleep = static_cast<unsigned>(std::stoi(value));
+                    m_config.sds011_sleep = static_cast<unsigned>(std::stoi(value));
                     m_presence.cliSds011Sleep = true;
                 } catch (...) {
                 }
@@ -641,17 +641,37 @@ void ConfigParser::apply_defaults() {
                 "'geo_handling.static_coordinates.vert_error'");
     }
 
-    // Load sds011_n_sleep - sds011 sleep between readout, 0 for continuous mode
+    // Load sds011_sleep - sds011 sleep between readout, 0 for continuous mode
     try {
-        int sds_n_sleep = readIntFlexible(m_config.config_file_data->lookup("sds011_n_sleep"));
+        int sds_n_sleep = readIntFlexible(m_config.config_file_data->lookup("sds011_sleep"));
         if (sds_n_sleep < 0) {
             sds_n_sleep = 1;
         }
-        m_config.sds011_n_sleep = static_cast<unsigned>(sds_n_sleep);
+        m_config.sds011_sleep = static_cast<unsigned>(sds_n_sleep);
     } catch (const libconfig::SettingNotFoundException& e) {
-        m_config.sds011_n_sleep = 1;
+        m_config.sds011_sleep = 1;
+        m_presence.cfgSds011Sleep = true;
     } catch (const libconfig::SettingException& e) {
-        logWarn("Could not load setting 'sds011_n_sleep': " + std::string(e.what()));
+        logWarn("Could not load setting 'sds011_sleep': " + std::string(e.what()));
+    }
+    try {
+        int sds011_baudrate = readIntFlexible(m_config.config_file_data->lookup("sds011_baudrate"));
+        m_config.sds011_baudrate = static_cast<unsigned>(sds011_baudrate);
+    } catch (const libconfig::SettingNotFoundException& e) {
+        m_config.sds011_baudrate = 9600;
+        m_presence.cfgSds011Baudrate = true;
+    } catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'sds011_baudrate': " + std::string(e.what()));
+    }
+    try {
+        std::string sds011_devname =
+            static_cast<std::string>(m_config.config_file_data->lookup("sds011_devname"));
+        m_config.sds011_devname = sds011_devname;
+    } catch (const libconfig::SettingNotFoundException& e) {
+        m_config.sds011_devname = "/dev/ttyUSB0";
+        m_presence.cfgSds011Devname = true;
+    } catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'sds011_devname': " + std::string(e.what()));
     }
 }
 
@@ -710,7 +730,7 @@ void ConfigParser::validate() {
         logWarn("No 'stationID' in config and no CLI override; using existing/default station ID");
     }
     if (!m_presence.cfgSds011Devname && !m_presence.cliSds011Devname) {
-        logWarn("No 'sds011_device' in config and no CLI override; using existing/default: "
+        logWarn("No 'sds011_devname' in config and no CLI override; using existing/default: "
                 "'/dev/ttyUSB0'");
     }
     if (!m_presence.cfgSds011Baudrate && !m_presence.cliSds011Baudrate) {
@@ -745,6 +765,6 @@ void ConfigParser::report() {
     logInfo("mqtt user: " + m_config.username + " passw: [hidden]");
     logInfo("station id: " + m_config.station_ID);
     logInfo("sds011_baudrate: " + std::to_string(m_config.sds011_baudrate));
-    logInfo("sds011_device: " + m_config.sds011_devname);
-    logInfo("sds011_sleep: " + std::to_string(m_config.sds011_n_sleep * 60 - 30) + "s");
+    logInfo("sds011_devname: " + m_config.sds011_devname);
+    logInfo("sds011_sleep: " + std::to_string(m_config.sds011_sleep * 60 - 30) + "s");
 }

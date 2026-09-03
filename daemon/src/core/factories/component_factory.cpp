@@ -102,7 +102,7 @@ const std::unordered_map<ComponentId, ComponentCreator> ComponentFactory::compon
      [](Context& ctx) {
          return std::make_shared<Sds011>(OtherComponent::SDS011_DRIVER_0, *ctx.io,
                                          ctx.config->sds011_devname, ctx.config->sds011_baudrate,
-                                         ctx.config->sds011_n_sleep, *ctx.bus);
+                                         ctx.config->sds011_sleep, *ctx.bus);
      }},
     {OtherComponent::GPIO_DRIVER_0,
      [](Context& ctx) {
