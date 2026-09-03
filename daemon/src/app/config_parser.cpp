@@ -643,19 +643,20 @@ void ConfigParser::apply_defaults() {
 
     // Load sds011_sleep - sds011 sleep between readout, 0 for continuous mode
     try {
-        int sds_n_sleep = readIntFlexible(m_config.config_file_data->lookup("sds011_sleep"));
+        int sds_n_sleep = static_cast<int>(m_config.config_file_data->lookup("sds011_sleep"));
         if (sds_n_sleep < 0) {
-            sds_n_sleep = 1;
+            sds_n_sleep = 0;
         }
         m_config.sds011_sleep = static_cast<unsigned>(sds_n_sleep);
     } catch (const libconfig::SettingNotFoundException& e) {
-        m_config.sds011_sleep = 1;
+        m_config.sds011_sleep = 0;
         m_presence.cfgSds011Sleep = true;
     } catch (const libconfig::SettingException& e) {
         logWarn("Could not load setting 'sds011_sleep': " + std::string(e.what()));
     }
     try {
-        int sds011_baudrate = readIntFlexible(m_config.config_file_data->lookup("sds011_baudrate"));
+        int sds011_baudrate =
+            static_cast<int>(m_config.config_file_data->lookup("sds011_baudrate"));
         m_config.sds011_baudrate = static_cast<unsigned>(sds011_baudrate);
     } catch (const libconfig::SettingNotFoundException& e) {
         m_config.sds011_baudrate = 9600;
@@ -766,5 +767,8 @@ void ConfigParser::report() {
     logInfo("station id: " + m_config.station_ID);
     logInfo("sds011_baudrate: " + std::to_string(m_config.sds011_baudrate));
     logInfo("sds011_devname: " + m_config.sds011_devname);
-    logInfo("sds011_sleep: " + std::to_string(m_config.sds011_sleep * 60 - 30) + "s");
+    logInfo(
+        "sds011_sleep: " +
+        std::to_string(std::max(static_cast<std::int32_t>(m_config.sds011_sleep * 60) - 30, 0)) +
+        "s");
 }
