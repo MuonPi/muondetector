@@ -184,6 +184,7 @@ void GpioDriver::sendGpioRatesAverage() {
 }
 
 void GpioDriver::init(const MuonPi::Version::Version& hardwareVersion) {
+    logPinMap(hardwareVersion);
 
     biasInverted = (MuonPi::Version::hardware.major == 1) ? false : true;
     pinmap_ = GPIO_PINMAP_VERSIONS[hardwareVersion.major];
@@ -239,6 +240,28 @@ void GpioDriver::init(const MuonPi::Version::Version& hardwareVersion) {
     }
 
     start();
+}
+
+void GpioDriver::logPinMap(const MuonPi::Version::Version& hardwareVersion) {
+    const auto& pinmap = GPIO_PINMAP_VERSIONS[hardwareVersion.major];
+
+    logDebug("========================================");
+    logDebug("GPIO PINMAP");
+    logDebug("Hardware version: " + std::to_string(hardwareVersion.major));
+    logDebug("Number of mapped signals: " + std::to_string(pinmap.size()));
+
+    for (const auto& [signal, gpio] : pinmap) {
+        std::string name = "UNKNOWN";
+
+        auto signalIt = GPIO_SIGNAL_MAP.find(signal);
+        if (signalIt != GPIO_SIGNAL_MAP.end()) {
+            name = signalIt->second.name;
+        }
+
+        logDebug("  " + name + " -> BCM GPIO " + std::to_string(gpio));
+    }
+
+    logDebug("========================================");
 }
 
 void GpioDriver::processEvent(GpioEvent&& event) {
