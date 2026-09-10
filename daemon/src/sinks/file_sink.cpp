@@ -23,7 +23,6 @@ FileSink::FileSink(EventBus& bus, std::uint32_t fileSizeMB)
     , lastRotationDateTime{std::chrono::floor<std::chrono::days>(std::chrono::system_clock::now())}
     , nextRotationTime{generateNextDailyTime(dailyUploadTime)} {
     std::string fullPath{MuonPi::Config::data_path};
-    configPath = fullPath + "/";
     configFilePath = fullPath + "/currentWorkingFileInformation.conf";
     dataFolderPath = fullPath + "/data/";
     std::filesystem::create_directories(dataFolderPath);

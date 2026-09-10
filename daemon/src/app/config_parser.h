@@ -9,6 +9,8 @@
 #include <optional>
 #include <string>
 
+extern MuonPi::Version::Version hardware;
+
 class ConfigParser {
   public:
     ConfigParser(int argc, char* argv[], SystemConfig&& f_config);
@@ -19,6 +21,7 @@ class ConfigParser {
 
   private:
     struct PresenceFlags {
+        bool cliConfigHardwareVersion{false};
         bool cliConfigDir{false};
         bool cliGpsDevice{false};
         bool cliGpioDevice{false};
@@ -39,6 +42,7 @@ class ConfigParser {
         bool cliSds011Baudrate{false};
         bool cliSds011Sleep{false};
 
+        bool cfgConfigHardwareVersion{false};
         bool cfgConfigDir{false};
         bool cfgGpsDevice{false};
         bool cfgGpioDevice{false};

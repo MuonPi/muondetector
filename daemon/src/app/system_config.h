@@ -32,6 +32,8 @@ struct SystemConfig {
     bool gnss_dump_raw{false};
     int gnss_baudrate{9600};
     bool gnss_config{false};
+    int hardwareVersion{3};
+    int defaultHardwareVersion{3};
     UbxDynamicModel gnss_dynamic_model{UbxDynamicModel::stationary};
     PositionModeConfig position_mode_config{PositionModeConfig::Mode::Auto,
                                             {},

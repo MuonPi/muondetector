@@ -71,9 +71,9 @@ ADS1115Driver::ADS1115Driver(ComponentId id, DeviceRegistry& registry, EventBus&
     device->setPga(ADS1115::PGA4V);   // set full scale range to 4 Volts
     device->setRate(ADS1115::SPS860); // set sampling rate to the maximum of 860 samples per second
     device->setAGC(false);            // turn AGC off for all channels
-    if (!device->setDataReadyPinMode()) {
-        logError("error: failed setting data ready pin mode (setting thresh regs)");
-    }
+    // if (!device->setDataReadyPinMode()) {
+    //     logError("error: failed setting data ready pin mode (setting thresh regs)");
+    // }
 
     device->registerConversionReadyCallback(
         [this](ADS1115::Sample sample) { onSampleReady(sample); });

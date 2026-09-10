@@ -34,7 +34,5 @@ auto TempSource::dev() -> DeviceFunction<DeviceType::TEMP>* {
     if (auto* wrapper = registry_.get<I2CDeviceWrapper<MIC184>>(deviceId)) {
         return &wrapper->device();
     }
-
-    logError("Temperature device not found");
     return nullptr;
 }

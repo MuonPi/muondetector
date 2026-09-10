@@ -1,5 +1,6 @@
 #include "config_parser.h"
 
+#include "config.h"
 #include "core/logging/logger.h"
 #include "system_config.h"
 
@@ -365,6 +366,21 @@ void ConfigParser::apply_defaults() {
         logWarn("Could not load setting 'component_config': " + std::string(e.what()));
     }
 
+    // Load default hardware version
+    try {
+        m_config.defaultHardwareVersion =
+            static_cast<int>(m_config.config_file_data->lookup("hardware_version"));
+
+        if (m_config.defaultHardwareVersion < 1 || m_config.defaultHardwareVersion > 3) {
+            logWarn("Invalid 'hardware_version' in config; using default hardware version 3");
+            m_config.defaultHardwareVersion = 3;
+        }
+    } catch (const libconfig::SettingNotFoundException&) {
+        // Keep SystemConfig default
+    } catch (const libconfig::SettingException& e) {
+        logWarn("Could not load setting 'hardware_version': " + std::string(e.what()));
+    }
+
     // Load max_geohash_length
     try {
         m_config.maxGeohashLength = m_config.config_file_data->lookup("max_geohash_length");
@@ -648,9 +664,8 @@ void ConfigParser::apply_defaults() {
             sds_n_sleep = 0;
         }
         m_config.sds011_sleep = static_cast<unsigned>(sds_n_sleep);
-    } catch (const libconfig::SettingNotFoundException& e) {
-        m_config.sds011_sleep = 0;
         m_presence.cfgSds011Sleep = true;
+    } catch (const libconfig::SettingNotFoundException& e) {
     } catch (const libconfig::SettingException& e) {
         logWarn("Could not load setting 'sds011_sleep': " + std::string(e.what()));
     }

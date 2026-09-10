@@ -48,7 +48,6 @@ class FileSink : public Sink {
     std::ofstream dataFile;
     std::ofstream logFile;
 
-    std::filesystem::path configPath;
     std::filesystem::path configFilePath;
     std::filesystem::path dataFolderPath;
     std::filesystem::path currentWorkingFilePath;
