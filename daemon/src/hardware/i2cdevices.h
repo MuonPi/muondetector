@@ -2,6 +2,7 @@
 #define _I2CDEVICES_H_
 
 #include "i2c/adafruit_ssd1306.h"
+#include "i2c/adxl355.h"
 #include "i2c/ads1015.h"
 #include "i2c/ads1115.h"
 #include "i2c/bme280.h"

@@ -20,7 +20,8 @@ enum class Device : std::uint32_t {
     SEN0321_0,
     OZONE3CLICK_0,
     UBLOX_I2C_0,
-    ADAFRUIT_SSD1306_0
+    ADAFRUIT_SSD1306_0,
+    ADXL355_0
 };
 
 inline const std::map<std::string, Device> deviceLookup = {
@@ -38,6 +39,8 @@ inline const std::map<std::string, Device> deviceLookup = {
     {"SEN0321_0", Device::SEN0321_0},
     {"OZONE3CLICK_0", Device::OZONE3CLICK_0},
     {"UBLOX_I2C_0", Device::UBLOX_I2C_0},
-    {"ADAFRUIT_SSD1306_0", Device::ADAFRUIT_SSD1306_0}};
+    {"ADAFRUIT_SSD1306_0", Device::ADAFRUIT_SSD1306_0},
+    {"ADXL355_0", Device::ADXL355_0}
+};
 
 #endif // DEVICES_H
