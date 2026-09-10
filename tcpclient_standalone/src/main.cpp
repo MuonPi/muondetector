@@ -71,9 +71,13 @@ int main() {
     //     logInfo("GpioEvent: " + std::to_string(event.gpio_pin) +
     //             " edge: " + (event.edge == EventEdge::Rising ? "rising" : "falling"));
     // });
-    bus.subscribe<Sds011Event>([](const Sds011Event& event) {
-        logInfo("Sds011Event: " + std::to_string(event.pm2dot5) + " " +
-                std::to_string(event.pm10dot0));
+    // bus.subscribe<Sds011Event>([](const Sds011Event& event) {
+    //     logInfo("Sds011Event: " + std::to_string(event.pm2dot5) + " " +
+    //             std::to_string(event.pm10dot0));
+    // });
+    bus.subscribe<ADS1115Event>([](const ADS1115Event& event) {
+        logInfo("ADS1115Event: " + std::to_string(event.channel) + " " +
+                std::to_string(event.voltage));
     });
     bus.subscribe<TcpPacketEvent>([&bus](const TcpPacketEvent& event) {
         decode(bus, event);
@@ -87,7 +91,7 @@ int main() {
 
     tcp::socket clientSocket(*io);
     boost::system::error_code ec;
-    auto server_ip = boost::asio::ip::make_address_v4("100.68.14.21", ec);
+    auto server_ip = boost::asio::ip::make_address_v4("192.168.2.43", ec);
     if (ec) {
         logError("Invalid IP: " + ec.message());
     }

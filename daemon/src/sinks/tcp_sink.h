@@ -3,7 +3,6 @@
 
 #include "capnp/capnp_codec.h"
 #include "core/logging/logger.h"
-#include "data/events/ads1115_event.h"
 #include "sink.h"
 #include "tcpconnection.h"
 
@@ -34,9 +33,6 @@ void TcpSink::handle(const T& event) {
 
     std::vector<std::uint8_t> packet = CapnpCodec<T>::encode(event);
     std::uint16_t key = CapnpCodec<T>::messageKey();
-
-    // logWarn("Send event: " + std::to_string(key) + " to " + std::to_string(conns.size()) +
-    //         " connection(s)");
 
     for (std::size_t i = 0; i < conns.size(); ++i) {
         if (!conns[i])

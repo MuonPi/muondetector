@@ -21,16 +21,27 @@ using namespace std;
 
 const CalibStruct ShowerDetectorCalib::InvalidCalibStruct = CalibStruct("", "", 0, "");
 
-ShowerDetectorCalib::ShowerDetectorCalib(EEPROM24AA02& eep) : fEeprom(eep) {
+ShowerDetectorCalib::ShowerDetectorCalib(EEPROM24AA02* eep) : fEeprom(eep) {
     init();
 }
 
 void ShowerDetectorCalib::init() {
     const uint16_t n = 256;
+
     for (int i = 0; i < n; i++)
         fEepBuffer[i] = 0;
+
+    // Always create the default calibration values.
     buildCalibList();
-    fEepromValid = fEeprom.probeDevicePresence() && readFromEeprom();
+
+    // No EEPROM available: keep the defaults.
+    if (fEeprom == nullptr) {
+        fEepromValid = false;
+        fValid = false;
+        return;
+    }
+
+    fEepromValid = fEeprom->probeDevicePresence() && readFromEeprom();
 }
 
 void ShowerDetectorCalib::buildCalibList() {
@@ -103,10 +114,15 @@ void ShowerDetectorCalib::setCalibItem(const std::string& name, const CalibStruc
 }
 
 bool ShowerDetectorCalib::readFromEeprom() {
+    if (fEeprom == nullptr) {
+        fEepromValid = false;
+        fValid = false;
+        return false;
+    }
     const uint16_t n = 256;
     for (int i = 0; i < n; i++)
         fEepBuffer[i] = 0;
-    bool success = (fEeprom.readBytes(0, n, fEepBuffer) == n);
+    bool success = (fEeprom->readBytes(0, n, fEepBuffer) == n);
     if (!success) {
         fEepromValid = false;
         return false;
@@ -156,8 +172,10 @@ bool ShowerDetectorCalib::readFromEeprom() {
 }
 
 bool ShowerDetectorCalib::writeToEeprom() {
-    if (!fEepromValid)
+    if (fEeprom == nullptr || !fEepromValid) {
         return false;
+    }
+
     // before we write to eeprom, increase the write cycle counter
     CalibStruct item = getCalibItem("WRITE_CYCLES");
     uint32_t cycleCounter;
@@ -166,13 +184,13 @@ bool ShowerDetectorCalib::writeToEeprom() {
     setCalibItem("WRITE_CYCLES", cycleCounter);
     // write content of all calib parameters to buffer before actually writing to the eep
     updateBuffer();
-    bool success = fEeprom.writeBytes(0, 256, fEepBuffer);
+    bool success = fEeprom->writeBytes(0, 256, fEepBuffer);
     if (!success) {
         cerr << "error: write to eeprom failed!" << endl;
         return false;
     }
     if (fVerbose > 1)
-        cout << "eep write took " << fEeprom.getLastTimeInterval() << " ms" << endl;
+        cout << "eep write took " << fEeprom->getLastTimeInterval() << " ms" << endl;
     // reset update flags of all properties since we just wrote them freshly into the EEPROM
     return true;
 }

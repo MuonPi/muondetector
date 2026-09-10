@@ -31,7 +31,7 @@ class ShowerDetectorCalib {
   public:
     static const CalibStruct InvalidCalibStruct;
 
-    ShowerDetectorCalib(EEPROM24AA02& eep);
+    explicit ShowerDetectorCalib(EEPROM24AA02* eep = nullptr);
 
     bool readFromEeprom();
     bool writeToEeprom();
@@ -62,7 +62,7 @@ class ShowerDetectorCalib {
     void buildCalibList();
 
     std::vector<CalibStruct> fCalibList;
-    EEPROM24AA02& fEeprom;
+    EEPROM24AA02* fEeprom = nullptr;
     uint8_t fEepBuffer[256];
     bool fEepromValid = false;
     bool fValid = false;

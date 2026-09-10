@@ -640,7 +640,10 @@ void MainWindow::makeConnection(QString ipAddress, quint16 port) {
                                              packet.payload);
                             return;
                         }
-                        window->decode(packet);
+
+                        QMetaObject::invokeMethod(
+                            window, [window, packet]() { window->decode(packet); },
+                            Qt::QueuedConnection);
                     }
                 });
                 window->connected();

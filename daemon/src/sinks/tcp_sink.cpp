@@ -1,7 +1,6 @@
 #include "tcp_sink.h"
 
 #include "core/event_bus.h"
-#include "data/events/ads1115_event.h"
 #include "sink.h"
 #include "tcpconnection.h"
 #include "tcpmessage_keys.h"
