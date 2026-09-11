@@ -2,8 +2,10 @@
 #include "core/event_bus.h"
 #include "core/logging/logger.h"
 #include "core/thread_pool.h"
+#include "data/commands/preamp_switch_cmd.h"
 #include "data/events/ads1115_event.h"
 #include "data/events/gpio_event.h"
+#include "data/events/preamp_switch_event.h"
 #include "data/events/sds011_event.h"
 #include "data/events/tcp_packet_event.h"
 #include "network/tcpconnection.h"
@@ -53,6 +55,12 @@ void decode(EventBus& bus, const TcpPacketEvent& event) {
         case TCP_MSG_KEY::MSG_GPIO_EVENT:
             bus.publish(CapnpCodec<GpioEvent>::decode(event.packet.payload));
             break;
+        case TCP_MSG_KEY::MSG_PREAMP_SWITCH:
+            bus.publish(CapnpCodec<PreampSwitchEvent>::decode(event.packet.payload));
+            break;
+        case TCP_MSG_KEY::MSG_ADC_SAMPLE:
+            bus.publish(CapnpCodec<ADS1115Event>::decode(event.packet.payload));
+            break;
         default:
             print(event);
             break;
@@ -75,16 +83,16 @@ int main() {
     //     logInfo("Sds011Event: " + std::to_string(event.pm2dot5) + " " +
     //             std::to_string(event.pm10dot0));
     // });
-    bus.subscribe<ADS1115Event>([](const ADS1115Event& event) {
-        logInfo("ADS1115Event: " + std::to_string(event.channel) + " " +
-                std::to_string(event.voltage));
+    // bus.subscribe<ADS1115Event>([](const ADS1115Event& event) {
+    //     logInfo("ADS1115Event: " + std::to_string(event.channel) + " " +
+    //             std::to_string(event.voltage));
+    // });
+
+    bus.subscribe<PreampSwitchEvent>([](const PreampSwitchEvent& event) {
+        logInfo("PreampSwitchEvent: " + std::to_string(event.channel) + " " +
+                std::to_string(event.state));
     });
-    bus.subscribe<TcpPacketEvent>([&bus](const TcpPacketEvent& event) {
-        decode(bus, event);
-        if (event.packet.key == static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_SDS011_SAMPLE)) {
-            logInfo("Event is MSG_SDS011_SAMPLE");
-        }
-    });
+    bus.subscribe<TcpPacketEvent>([&bus](const TcpPacketEvent& event) { decode(bus, event); });
 
     std::thread ioThread([&io]() { io->run(); });
     auto guard = boost::asio::make_work_guard(*io);

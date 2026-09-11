@@ -209,6 +209,7 @@ messages:
   - name: PreampSwitchCmdCapnp
     fields:
       - { name: channel, type: uint8 }
+      - { name: state, type: bool }
 
   - name: PreampSwitchRequestCmdCapnp
     fields: []

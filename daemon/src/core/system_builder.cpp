@@ -306,7 +306,7 @@ Context SystemBuilder::build(ThreadPool& pool, const SystemConfig& config) {
         "hardwareVersionString", MuonPi::Version::hardware.string(), LogParameter::LOG_ONCE));
 
     // --- Set Gpio Output ---
-    ctx.bus->publish(BiasSwitchCmd{true});
+    ctx.bus->publish(BiasSwitchCmd{config.bias_ON});
     ctx.bus->publish(PreampSwitchCmd{0, config.preamp_enable[0]});
     ctx.bus->publish(PreampSwitchCmd{1, config.preamp_enable[1]});
     ctx.bus->publish(GainSwitchCmd{config.hi_gain});

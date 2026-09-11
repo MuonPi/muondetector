@@ -21,7 +21,7 @@ class ConfigParser {
 
   private:
     struct PresenceFlags {
-        bool cliConfigHardwareVersion{false};
+        bool cliDefaultHardwareVersion{false};
         bool cliConfigDir{false};
         bool cliGpsDevice{false};
         bool cliGpioDevice{false};
@@ -42,7 +42,7 @@ class ConfigParser {
         bool cliSds011Baudrate{false};
         bool cliSds011Sleep{false};
 
-        bool cfgConfigHardwareVersion{false};
+        bool cfgDefaultHardwareVersion{false};
         bool cfgConfigDir{false};
         bool cfgGpsDevice{false};
         bool cfgGpioDevice{false};

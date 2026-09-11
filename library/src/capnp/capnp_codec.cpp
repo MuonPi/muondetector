@@ -1604,6 +1604,7 @@ auto CapnpCodec<PreampSwitchCmd>::encode(const PreampSwitchCmd& cmd) -> std::vec
     capnp::MallocMessageBuilder msg;
     auto root = msg.initRoot<PreampSwitchCmdCapnp>();
     root.setChannel(cmd.channel);
+    root.setState(cmd.state);
     auto flat = capnp::messageToFlatArray(msg);
     auto bytes = flat.asBytes();
     return {bytes.begin(), bytes.end()};
@@ -1611,7 +1612,7 @@ auto CapnpCodec<PreampSwitchCmd>::encode(const PreampSwitchCmd& cmd) -> std::vec
 auto CapnpCodec<PreampSwitchCmd>::decode(const std::vector<std::uint8_t>& data) -> PreampSwitchCmd {
     auto reader = makeReader(data);
     auto root = reader.getRoot<PreampSwitchCmdCapnp>();
-    return PreampSwitchCmd{root.getChannel()};
+    return PreampSwitchCmd{.channel = root.getChannel(), .state = root.getState()};
 }
 auto CapnpCodec<PreampSwitchCmd>::messageKey() -> std::uint16_t {
     return static_cast<std::uint16_t>(TCP_MSG_KEY::MSG_PREAMP_SWITCH);

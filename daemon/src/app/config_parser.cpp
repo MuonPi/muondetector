@@ -375,6 +375,7 @@ void ConfigParser::apply_defaults() {
             logWarn("Invalid 'hardware_version' in config; using default hardware version 3");
             m_config.defaultHardwareVersion = 3;
         }
+        m_presence.cfgDefaultHardwareVersion = true;
     } catch (const libconfig::SettingNotFoundException&) {
         // Keep SystemConfig default
     } catch (const libconfig::SettingException& e) {
@@ -697,6 +698,10 @@ bool ConfigParser::is_valid_ipv4(const std::string& ip) {
 }
 
 void ConfigParser::validate() {
+    if (!m_presence.cfgDefaultHardwareVersion && !m_presence.cliDefaultHardwareVersion) {
+        logWarn("No default hardware config in config/CLI; using default hardware config or from "
+                "EEPROM");
+    }
     if (!m_presence.cfgGpsDevice && !m_presence.cliGpsDevice && m_config.gpsdevname.empty()) {
         logWarn(
             "No GNSS device provided by config/settings/CLI; GNSS module will stay disconnected");
