@@ -685,9 +685,7 @@ void MainWindow::decode(const TcpPacket& packet) {
         it->second(packet);
         updateUiProperties();
     } else {
-        QMessageBox::critical(
-            this, "Received Unknown Message",
-            QString::fromStdString("Unknown message key: " + std::to_string(packet.key)));
+        qDebug() << "Received Unknown Message " << std::to_string(packet.key);
     }
 }
 
